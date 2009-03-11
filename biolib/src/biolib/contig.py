@@ -1126,7 +1126,7 @@ class Location(object):
         #self  ---------
         #range --------- 
         start, end = self._get_start_end(location)
-        #here we also need strand, forward and static_parent
+        #here we also need strand, forward and static_parent  
         try:
             strand = location.strand
         except AttributeError:
