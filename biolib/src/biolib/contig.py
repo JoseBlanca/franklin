@@ -210,7 +210,13 @@ class Contig(object):
                         sliced.
         '''
         return self.get_attr_item(index)
-
+    def __repr__(self):
+        ''' It writes  the reads of the contigs'''
+        info_repr = ''
+        for read in self._seqs:
+            info_repr += read.__repr__()
+        return "Consesus:" + self._consensus.__repr__() + info_repr
+        
     def _row_instance(self, row_index, req_property):
         '''It returns the row requested. Index should be int.
         The row can be the row in self.seqs or a proprerty of it.
@@ -356,19 +362,22 @@ def locate_sequence(sequence, location=None, mask=None, masker=None,
     parent -- The parent sequence to which the LocatableSequence will be 
               refered (default None)
     '''
+    #strs to ints
+    if mask:
+        mask = [int(number) for number in mask]
     # pylint: disable-msg=R0913
     #I know that it has a lot of arguments, but the LocatableSequence is
     #a complex class
     loc = None
     if location is None:
         start = 0
-        end = len(sequence) - 1
+        end   = len(sequence) - 1
     elif isinstance(location, int):
         start = location
-        end = location + len(sequence) - 1
+        end   = location + len(sequence) - 1
     else:
-        start = location[0]
-        end = location[1]
+        start = int(location[0])
+        end   = int (location[1])
     loc = NonStaticParentLocation(start=start, end=end, strand=strand,
                                   forward=forward, parent=parent)
     mask_instance = None
@@ -657,7 +666,10 @@ class LocatableSequence(object):
         '''
         #the requested property
         return self.get_attr_item(index)
-
+    def __repr__(self):
+        ''' It writes'''
+        return self._location.__repr__() + self._sequence.__repr__() + "\n"
+        
     def get_attr_item(self, index, req_property=None):
         '''It returns the requested item.
 
@@ -874,7 +886,9 @@ class Location(object):
         Mind that the Location can start at a position different than 0.
         '''
         return self.end - self.start + 1
-
+    def __repr__(self):
+        ''' It prints the location start and end'''
+        return "Location: start  %d, end %d\t" % (self._start, self._end)
     def apply_to_parent(self):
         '''It returns the parent sequence fragment that corresponds to the
         Location.

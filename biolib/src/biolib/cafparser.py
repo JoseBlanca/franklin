@@ -8,6 +8,8 @@ contig. It creates a file for each contig to  easyly use them
 '''
 
 from re import match
+from biolib.contig import Contig, locate_sequence
+from SeqRecord import SeqRecord
 
 class CafFile(object):
     ''' This class is used to create and manipulate caf files using an index'''
@@ -18,9 +20,8 @@ class CafFile(object):
             fname : caf file name
         '''
         self._fname     = fname
-        self._caf_index = {}
+        self._caf_file = {}
         self._caf_file2caf_index()
-        
     def _caf_file2caf_index(self):
         '''It takes a caf file and after reading it it returns an index with 
            section positions. We define section as the paragraph of text where
@@ -31,24 +32,16 @@ class CafFile(object):
                     cccccccccc
          It stores as well if the secuence is a contig or a read
          '''
-         
-        
-        sec_in = False
-        type_  = None
         
         fhandler = open(self._fname,'rt')
         rawline  = "Filled"
+        sec_in = False
         while len(rawline) != 0:
             
             prior_tell = fhandler.tell()
             rawline    = fhandler.readline()
             line       = rawline.strip()
-            if sec_in:
-                if line == "Is_read"  :
-                    type_ = "Is_read"
-                elif line == "Is_contig": 
-                    type_ = "Is_contig"
-                
+            
             if match("\w*\s*:\s*\w*", line):
                 mode, name = line.split(":")
                 mode = mode.strip()
@@ -58,29 +51,30 @@ class CafFile(object):
                 else:
                     sec_in = False
                 
-                if name not in self._caf_index.keys():
-                    self._caf_index[name] = {}
+                if name not in self._caf_file.keys():
+                    self._caf_file[name] = {}
                 
-                self._caf_index[name]['name'] = name
-                self._caf_index[name]['type'] = type_
-                self._caf_index[name][mode]   = prior_tell
-                
-
+                self._caf_file[name]['name'] = name
+                self._caf_file[name][mode]   = prior_tell
+            if sec_in:
+                if line == "Is_read" :
+                    self._caf_file[name]['type'] = "Is_read"
+                elif line == "Is_contig": 
+                    self._caf_file[name]['type'] = "Is_contig"
+                    
     def contigs(self):
         '''It returns a generator with the contigs'''
         
-        for seq_rec in self._caf_index:
-            if self._caf_index[seq_rec]['type'] == 'Is_contig':
-                print self._caf_index[seq_rec]['name']
-                yield self._get_sec_rec_full(self._caf_index[seq_rec]['name'])
-
+        for seq_rec in self._caf_file:
+            if self._caf_file[seq_rec]['type'] == 'Is_contig':
+                seq_rec_name = self._caf_file[seq_rec]['name']
+                yield self._get_seq_rec_full(seq_rec_name)
     def reads(self):
         '''It returns a generator with the reads'''
         
-        for seq_rec in self._caf_index:
-            if self._caf_index[seq_rec]['type'] == 'Is_read':
-                yield  self._get_sec_rec_full(self._caf_index[seq_rec]['name'])
-  
+        for seq_rec in self._caf_file:
+            if self._caf_file[seq_rec]['type'] == 'Is_read':
+                yield  self._get_seq_rec_full(self._caf_file[seq_rec]['name'])
     def _return_section(self, position):
         ''' It returns a section giving a position in the file. It will take
         the text until it finds the next statement ( DNA: , Sequence: or
@@ -100,21 +94,19 @@ class CafFile(object):
             content.append(line)
             line = fhandler.readline()
         return content
-    
     def _get_dna(self, sec_rec_name):
         ''' It returns the dna secuence in a string.It needs the sec_rec name
         '''
-        dna_pos     = self._caf_index[sec_rec_name]['DNA']
+        dna_pos     = self._caf_file[sec_rec_name]['DNA']
         dna_section = self._return_section(dna_pos)
         dna = ''
         for line in dna_section:
             dna += line.strip()
         return dna  
-
     def _get_base_quality(self, sec_rec_name):
         ''' It returns the base quality array. It needs the sec_rec name '''
          
-        base_quality_pos     = self._caf_index[sec_rec_name]['BaseQuality']
+        base_quality_pos     = self._caf_file[sec_rec_name]['BaseQuality']
         base_quality_section = self._return_section(base_quality_pos)
         
         base_quality = []
@@ -122,14 +114,12 @@ class CafFile(object):
             line          = line.strip()
             base_quality += line.split(' ')
         return base_quality
-    
     @staticmethod
     def _get_align_to_scf(line):
         ''' It reads Alig_to_SCF line and returns a tupla with the info
          structured. Tupla order: scf_start, scf_end, read_start, read_end '''
         item       = line.split(" ")
-        return (item[1], item[2], item[3], item[4])
-    
+        return (int(item[1]), int(item[2]), int(item[3]), int(item[4]))
     @staticmethod
     def _get_assembled_from(line):
         ''' It reads Assembled_from line and returns 2 elements: The first is
@@ -137,8 +127,7 @@ class CafFile(object):
         The order of the tupla is: (contig_start, contig_end, read_start,
          read_end)'''
         item         = line.split(" ")
-        return item[1], (item[2], item[3], item[4], item[5])
-    
+        return item[1], (int(item[2]), int(item[3]), int(item[4]), int(item[5]))
     def _get_seq_rec(self, sec_rec_name):
         ''' It return a dictionary with the content of the secuence section.
             It stores the key and the value, but there are  2 exceptions:
@@ -161,7 +150,7 @@ class CafFile(object):
         reads    = {}
         scf_alignment = []
         
-        sequence_pos     = self._caf_index[sec_rec_name]['Sequence']
+        sequence_pos     = self._caf_file[sec_rec_name]['Sequence']
         sequence_section = self._return_section(sequence_pos)
         
         for line in sequence_section:
@@ -191,20 +180,111 @@ class CafFile(object):
             sec_info['scf_alignments'] = scf_alignments
         
         return sec_info
-        
-    def _get_sec_rec_full(self, sec_rec_name):
+    def _get_seq_rec_full(self, seq_rec_name):
         ''' It returns the complete info of a sec_record. It uses the index 
          to access the file so we do no t need to read the whole file.
          We need the name of the sec record '''
         
-        
-        
-        sec_rec_info = self._get_seq_rec(sec_rec_name) 
+        seq_rec_info = self._get_seq_rec(seq_rec_name) 
         # First we take dna secuence
-        sec_rec_info['DNA'] = self._get_dna(sec_rec_name)
+        seq_rec_info['DNA'] = self._get_dna(seq_rec_name)
         # If BaseQuality is in the sec record       
-        if 'BaseQuality' in self._caf_index[sec_rec_name].keys():
-            sec_rec_info['BaseQuality'] = self._get_base_quality(sec_rec_name)
+        if 'BaseQuality' in self._caf_file[seq_rec_name].keys():
+            seq_rec_info['BaseQuality'] = self._get_base_quality(seq_rec_name)
         
-        return sec_rec_info
+        return seq_rec_info
     
+    def read_record2read(self, seq_rec_name):
+        ''' This wraper takes the dictionary taked from each sec record
+        and put them into a biopython seq_rec objetc'''
+        
+        if self._caf_file[seq_rec_name]['type'] == 'Is_read':
+            
+            seq_info    = self._get_seq_rec(seq_rec_name)
+            seq_dna     = self._get_dna(seq_rec_name)
+            seq_quality = self._get_base_quality(seq_rec_name)
+     
+            seq_rec  = SeqRecord(seq = seq_dna, id = seq_rec_name, \
+                                 name = seq_rec_name )
+            seq_rec.letter_annotations['quality'] = seq_quality
+            seq_rec.annotations =  seq_info
+            return seq_rec
+        else:
+#            print "*"+self._caf_file[seq_rec_name]['type']+"*"
+            print seq_rec_name
+            raise RuntimeError ('This sec record it supposed to be a read\
+                                 record and is not')
+    @staticmethod  
+    def _correct_minus(reads):
+        ''' It corrects the problem of the minus(-)  coordenates. This function
+        returns a int that is de maximun minus numer.example:
+                   -2101234567890
+            contig    aaaaaaaa
+            read1   cccccc
+            read2      eeeeee
+            In this case the maximun minus number is 2 and we use it to 
+            move the other seqs
+            ''' 
+        correction = 0
+        for read in reads:
+            contig_start = reads[read][0][0]
+            read_start   = reads[read][0][2]
+            diff         = contig_start - read_start
+            if diff < correction:
+                correction = diff
+        return abs(correction)
+                
+    def contig_record2contig(self, contig_name):
+        ''' This wraper takes the dictionary taked from each sec record
+         and put them into a contig objetc or a sec_record object'''
+
+        contig_info = self._get_seq_rec(contig_name)
+        contig_dna  = self._get_dna(contig_name)
+        if contig_info['type'] == 'Is_contig':
+            reads      = contig_info['reads']
+            correction = self._correct_minus(reads)
+           
+            
+            if len(contig_dna) == 0:
+                contig     = Contig()
+            else:
+                consensus  = locate_sequence(sequence=contig_dna, \
+                                             location = correction)
+                contig     = Contig(consensus=consensus)
+                
+            for read in reads:
+                read_sections = reads[read]
+                if len(read_sections) > 1:
+                    #We it's unpadded there is more than one list of coordentes 
+                    raise RuntimeError('This is an unppadded sec record and \
+                     we do not admit them. Use caf tools to convert it to \
+                     padded')
+                else:
+                    contig_start  = int(read_sections[0][0]) + correction
+                    read_start    = int(read_sections[0][2]) 
+                    contig_start -= read_start
+
+                #Data to fill the contig
+                seq_rec = self.read_record2read(read)
+                sec_strand = seq_rec.annotations['Strand']
+#                print seq_rec.annotations['Clipping']
+                mask = seq_rec.annotations['Clipping'].split(" ")[1:]
+                
+                if sec_strand.lower() == 'forward':
+                    strand  = 1
+                    forward = True
+                else:
+                    strand = -1
+                    forward = False
+                
+                contig.append_to_location(sequence=seq_rec, start=contig_start,\
+                                          strand=strand, forward=forward, \
+                                          mask=mask)
+        return contig
+                 
+    
+            
+        
+         
+         
+        
