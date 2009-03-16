@@ -244,11 +244,12 @@ class CafFile(object):
             reads      = contig_info['reads']
             correction = self._correct_minus(reads)
            
-            
             if len(contig_dna) == 0:
                 contig     = Contig()
             else:
-                consensus  = locate_sequence(sequence=contig_dna, \
+                consensus = SeqRecord(seq=contig_dna, id='Consensus',
+                                      name = contig_name)
+                consensus  = locate_sequence(sequence = consensus, \
                                              location = correction)
                 contig     = Contig(consensus=consensus)
                 
@@ -277,7 +278,8 @@ class CafFile(object):
                     strand = -1
                     forward = False
                 
-                contig.append_to_location(sequence=seq_rec, start=contig_start,\
+                contig.append_to_location(sequence=seq_rec, \
+                                          start=contig_start,\
                                           strand=strand, forward=forward, \
                                           mask=mask)
         return contig
