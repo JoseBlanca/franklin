@@ -43,16 +43,13 @@ class CafFile(object):
         fhandler = open(self._fname,'rt')
         rawline  = "Filled"
         sec_in = False
-        debug_lines = 0
+
         while len(rawline) != 0:
             
             prior_tell = fhandler.tell()
             rawline    = fhandler.readline()
             line       = rawline.strip()
             
-            if debug_lines == 4000000:
-                rawline = ''
-            debug_lines += 1
             #if match("\w*\s*:\s*\w*", line):
             mode = rawline.split(':', 1)[0].strip().lower()
             if mode in ('dna', 'basequality', 'sequence'):
