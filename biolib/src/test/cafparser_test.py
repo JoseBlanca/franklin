@@ -9,31 +9,60 @@ from biolib.cafparser import CafFile
 class Test(unittest.TestCase):
     ''' It tests '''
     def setUp(self):
-        self._file2test = '/home/peio/eucalyptus_out.caf'
+        ''' It defines the files to use in the tests and creates 
+        the index object to use in other tests '''
+        self._example_caf_file_name = '../doc/Caf_example_file.caf'
+        self._example_caf_file      = CafFile(self._example_caf_file_name)
         
-    def test_caf_parser(self):
-        ''' It tests if we can create and caf file giving a file name'''
-#        caf_file_name = '../doc/Caf_example_file.caf'
-        caf_file = CafFile(self._file2test)
-        assert caf_file
-
+        
+    def test_index_creation(self):
+        '''It checks if the indexes have been created '''
+        caf_file = self._example_caf_file
+        assert len(caf_file._qual_index) == 21 
+        assert len(caf_file._seq_index)  == 22
+        assert len(caf_file._dna_index)  == 22
+        assert len(caf_file._type_index) == 22
+           
     def test_reads(self):
         ''' we check if we can take the reads from the caf file'''
-#        caf_file_name = '../doc/Caf_example_file.caf'
-        caf_file = CafFile(self._file2test)
+        caf_file = self._example_caf_file
         
+        num_reads = 0
         for read in caf_file.reads():
-            read_object = caf_file.read_record2read(read['name'])
-            assert read_object
-    
+            num_reads  += 1
+            assert read
+        # We check if our read method finds all reads
+        # in caf example file (21)
+        assert num_reads ==   21  
+
     def test_contigs(self):
         ''' It checks if the contig method returns contigs'''
-#        caf_file_name = '../doc/Caf_example_file.caf'
-        caf_file = CafFile(self._file2test)
-        for contig in caf_file.contigs():
-            contig_object = caf_file.contig_record2contig(contig['name'])
-            print contig_object 
-            
+        caf_file = self._example_caf_file
 
+        num_contig = 0
+        for contig in caf_file.contigs():
+            num_contig += 1
+            assert contig
+#            print contig_object
+        # We check if our contig method finds all contigs in
+        # caf example file  (1) 
+        assert num_contig == 1 
+        
+    def test_check_consensus_seq(self):
+        ''' It checks if we get the consensus seq. It only checks the first 10 
+        nucleotides TTCAAGCGAT and the quality '''
+        
+        caf_file = self._example_caf_file
+        for contig in caf_file.contigs():
+            print contig
+            assert  contig.consensus[:10] == 'TTCAAGCGAT'
+
+    
+    def xtest_long_index(self):
+        ''' It checks if we can open a long test'''
+        long_caf_file_name         = '/home/peio/eucalyptus_out.caf'
+        long_caf_file      = CafFile(long_caf_file_name)
+        
+        
 if __name__ == "__main__":
     unittest.main()
