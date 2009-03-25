@@ -20,8 +20,12 @@ class CafFile(object):
             fname : caf file name
         '''
         self._fname     = fname
-        self._caf_file = {}
+        self._qual_index = {}
+        self._seq_index = {}
+        self._dna_index = {}
+        self._type_index = {}
         self._caf_file2caf_index()
+
     def _caf_file2caf_index(self):
         '''It takes a caf file and after reading it it returns an index with 
            section positions. We define section as the paragraph of text where
@@ -32,49 +36,59 @@ class CafFile(object):
                     cccccccccc
          It stores as well if the secuence is a contig or a read
          '''
-        
+        qual_index = {}
+        seq_index = {}
+        dna_index = {}
+        type_index = {}
         fhandler = open(self._fname,'rt')
         rawline  = "Filled"
         sec_in = False
+        debug_lines = 0
         while len(rawline) != 0:
             
             prior_tell = fhandler.tell()
             rawline    = fhandler.readline()
             line       = rawline.strip()
             
-            if match("\w*\s*:\s*\w*", line):
-                mode, name = line.split(":")
-                mode = mode.strip()
+            if debug_lines == 4000000:
+                rawline = ''
+            debug_lines += 1
+            #if match("\w*\s*:\s*\w*", line):
+            mode = rawline.split(':', 1)[0].strip().lower()
+            if mode in ('dna', 'basequality', 'sequence'):
+                mode_, name = line.split(":")
                 name = name.strip()
                 if mode == "Sequence":
                     sec_in = True
                 else:
                     sec_in = False
-                
-                if name not in self._caf_file.keys():
-                    self._caf_file[name] = {}
-                
-                self._caf_file[name]['name'] = name
-                self._caf_file[name][mode]   = prior_tell
+                if mode == 'dna':
+                    dna_index[name] = prior_tell
+                elif mode == 'basequality':
+                    qual_index[name] = prior_tell
+                elif mode == 'sequence':
+                    seq_index[name] = prior_tell    
+
             if sec_in:
-                if line == "Is_read" :
-                    self._caf_file[name]['type'] = "Is_read"
+                if line == "Is_read":
+                    type_index[name] = "Is_read"
                 elif line == "Is_contig": 
-                    self._caf_file[name]['type'] = "Is_contig"
+                    type_index[name] = "Is_contig"
                     
     def contigs(self):
         '''It returns a generator with the contigs'''
-        
-        for seq_rec in self._caf_file:
-            if self._caf_file[seq_rec]['type'] == 'Is_contig':
-                seq_rec_name = self._caf_file[seq_rec]['name']
+        for seq_rec in self._seq_index:
+            if self._type_index[seq_rec] == 'Is_contig':
+                seq_rec_name = seq_rec
                 yield self._get_seq_rec_full(seq_rec_name)
+
     def reads(self):
         '''It returns a generator with the reads'''
         
-        for seq_rec in self._caf_file:
-            if self._caf_file[seq_rec]['type'] == 'Is_read':
-                yield  self._get_seq_rec_full(self._caf_file[seq_rec]['name'])
+        for seq_rec in self._seq_index:
+            if self._type_index[seq_rec] == 'Is_read':
+                yield  self._get_seq_rec_full(seq_rec)
+
     def _return_section(self, position):
         ''' It returns a section giving a position in the file. It will take
         the text until it finds the next statement ( DNA: , Sequence: or
@@ -94,19 +108,20 @@ class CafFile(object):
             content.append(line)
             line = fhandler.readline()
         return content
+
     def _get_dna(self, sec_rec_name):
         ''' It returns the dna secuence in a string.It needs the sec_rec name
         '''
-        dna_pos     = self._caf_file[sec_rec_name]['DNA']
+        dna_pos     = self._dna_index[sec_rec_name]
         dna_section = self._return_section(dna_pos)
         dna = ''
         for line in dna_section:
             dna += line.strip()
-        return dna  
+        return dna
+  
     def _get_base_quality(self, sec_rec_name):
         ''' It returns the base quality array. It needs the sec_rec name '''
-         
-        base_quality_pos     = self._caf_file[sec_rec_name]['BaseQuality']
+        base_quality_pos     = self._qual_index[sec_rec_name]
         base_quality_section = self._return_section(base_quality_pos)
         
         base_quality = []
@@ -114,12 +129,14 @@ class CafFile(object):
             line          = line.strip()
             base_quality += line.split(' ')
         return base_quality
+
     @staticmethod
     def _get_align_to_scf(line):
         ''' It reads Alig_to_SCF line and returns a tupla with the info
          structured. Tupla order: scf_start, scf_end, read_start, read_end '''
         item       = line.split(" ")
         return (int(item[1]), int(item[2]), int(item[3]), int(item[4]))
+
     @staticmethod
     def _get_assembled_from(line):
         ''' It reads Assembled_from line and returns 2 elements: The first is
@@ -128,20 +145,22 @@ class CafFile(object):
          read_end)'''
         item         = line.split(" ")
         return item[1], (int(item[2]), int(item[3]), int(item[4]), int(item[5]))
+
     def _get_seq_rec(self, sec_rec_name):
         ''' It return a dictionary with the content of the secuence section.
-            It stores the key and the value, but there are  2 exceptions:
-            1) reads key's value is a dict with the reads. Where the key is 
-            the read name and the value are a list of tuples where each tupla
-            contains:
-                (contig_start, contig_end, read_start,read_end)
 
-            2) scf_alignments key's value is a dict with the alignemnts.
-             Where the key is the SCF file name and the value is a list of
-             tuples where each tupla contains:
-                (scf_start, scf_end, read_start, read_end)
-            '''
-        
+        It stores the key and the value, but there are  2 exceptions:
+        1) reads key's value is a dict with the reads. Where the key is 
+        the read name and the value are a list of tuples where each tupla
+        contains:
+            (contig_start, contig_end, read_start,read_end)
+
+        2) scf_alignments key's value is a dict with the alignemnts.
+         Where the key is the SCF file name and the value is a list of
+         tuples where each tupla contains:
+            (scf_start, scf_end, read_start, read_end)
+        '''
+       
         # variable type in this section. All of them are in array to easy use
         # of them
         seq_type = ('Is_read', 'Is_contig', 'Is_group', 'Is_assembly')
@@ -150,7 +169,7 @@ class CafFile(object):
         reads    = {}
         scf_alignment = []
         
-        sequence_pos     = self._caf_file[sec_rec_name]['Sequence']
+        sequence_pos     = self._seq_index[sec_rec_name]
         sequence_section = self._return_section(sequence_pos)
         
         for line in sequence_section:
@@ -188,8 +207,8 @@ class CafFile(object):
         seq_rec_info = self._get_seq_rec(seq_rec_name) 
         # First we take dna secuence
         seq_rec_info['DNA'] = self._get_dna(seq_rec_name)
-        # If BaseQuality is in the sec record       
-        if 'BaseQuality' in self._caf_file[seq_rec_name].keys():
+        # If BaseQuality is in the sec record
+        if seq_rec_name in self._qual_index:
             seq_rec_info['BaseQuality'] = self._get_base_quality(seq_rec_name)
         
         return seq_rec_info
@@ -198,7 +217,7 @@ class CafFile(object):
         ''' This wraper takes the dictionary taked from each sec record
         and put them into a biopython seq_rec objetc'''
         
-        if self._caf_file[seq_rec_name]['type'] == 'Is_read':
+        if self._type_index[seq_rec_name] == 'Is_read':
             
             seq_info    = self._get_seq_rec(seq_rec_name)
             seq_dna     = self._get_dna(seq_rec_name)
@@ -210,7 +229,6 @@ class CafFile(object):
             seq_rec.annotations =  seq_info
             return seq_rec
         else:
-#            print "*"+self._caf_file[seq_rec_name]['type']+"*"
             print seq_rec_name
             raise RuntimeError ('This sec record it supposed to be a read\
                                  record and is not')
