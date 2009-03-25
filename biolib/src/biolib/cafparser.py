@@ -36,10 +36,7 @@ class CafFile(object):
                     cccccccccc
          It stores as well if the secuence is a contig or a read
          '''
-        qual_index = {}
-        seq_index = {}
-        dna_index = {}
-        type_index = {}
+        
         fhandler = open(self._fname,'rt')
         rawline  = "Filled"
         sec_in = False
@@ -55,30 +52,30 @@ class CafFile(object):
             if mode in ('dna', 'basequality', 'sequence'):
                 mode_, name = line.split(":")
                 name = name.strip()
-                if mode == "Sequence":
+                if mode == "sequence":
                     sec_in = True
                 else:
                     sec_in = False
+                
                 if mode == 'dna':
-                    dna_index[name] = prior_tell
+                    self._dna_index[name] = prior_tell
                 elif mode == 'basequality':
-                    qual_index[name] = prior_tell
+                    self._qual_index[name] = prior_tell
                 elif mode == 'sequence':
-                    seq_index[name] = prior_tell    
+                    self._seq_index[name] = prior_tell    
 
             if sec_in:
                 if line == "Is_read":
-                    type_index[name] = "Is_read"
+                    self._type_index[name] = "Is_read"
                 elif line == "Is_contig": 
-                    type_index[name] = "Is_contig"
+                    self._type_index[name] = "Is_contig"
                     
     def contigs(self):
         '''It returns a generator with the contigs'''
-        for seq_rec in self._seq_index:
-            if self._type_index[seq_rec] == 'Is_contig':
-                seq_rec_name = seq_rec
-                yield self._get_seq_rec_full(seq_rec_name)
-
+        for seq_rec_name in self._seq_index:
+            if self._type_index[seq_rec_name] == 'Is_contig':
+                yield self.contig(seq_rec_name)
+    
     def reads(self):
         '''It returns a generator with the reads'''
         
@@ -210,7 +207,7 @@ class CafFile(object):
         
         return seq_rec_info
     
-    def read_record2read(self, seq_rec_name):
+    def read(self, seq_rec_name):
         ''' This wraper takes the dictionary taked from each sec record
         and put them into a biopython seq_rec objetc'''
         
@@ -249,7 +246,7 @@ class CafFile(object):
                 correction = diff
         return abs(correction)
                 
-    def contig_record2contig(self, contig_name):
+    def contig(self, contig_name):
         ''' This wraper takes the dictionary taked from each sec record
          and put them into a contig objetc or a sec_record object'''
 
@@ -281,7 +278,7 @@ class CafFile(object):
                     contig_start -= read_start
 
                 #Data to fill the contig
-                seq_rec = self.read_record2read(read)
+                seq_rec = self.read(read)
                 sec_strand = seq_rec.annotations['Strand']
 #                print seq_rec.annotations['Clipping']
                 mask = seq_rec.annotations['Clipping'].split(" ")[1:]
