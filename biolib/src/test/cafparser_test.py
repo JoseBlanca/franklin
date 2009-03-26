@@ -6,12 +6,14 @@ Created on 2009 mar 11
 import unittest
 from biolib.cafparser import CafFile
 
+
 class Test(unittest.TestCase):
     ''' It tests '''
+    #pylint: disable-msg=W0123
     def setUp(self):
         ''' It defines the files to use in the tests and creates 
         the index object to use in other tests '''
-        self._example_caf_file_name = '../doc/Caf_example_file.caf'
+        self._example_caf_file_name = 'Caf_example_file.caf'
         self._example_caf_file      = CafFile(self._example_caf_file_name)
         
         
