@@ -75,7 +75,11 @@ class SeqRecord(object):
         return len(self.seq)
     def __getitem__(self, index):
         '''It returns a new sliced SeqRecord.'''
-        return self.__class__(seq=self.seq[index])
+        rec = self.__class__(seq=self.seq[index])
+        for annot in self.letter_annotations:
+            rec.letter_annotations[annot] = \
+                                           self.letter_annotations[annot][index]
+        return rec
     def complement(self):
         '''It returns a complemented SeqRecord'''
         return self.__class__(seq=_complement(self.seq))
@@ -83,6 +87,20 @@ class SeqRecord(object):
         '''It returns a new SeqRecord with seqs added.'''
         seq = self.seq + other.seq
         return self.__class__(seq=seq)
+
+class SeqRecord2(SeqRecord):
+    '''A simple seq with name do some tests.
+    
+    This SeqRecord returns a seq item when the index for getitem is int
+    '''
+    # pylint: disable-msg=R0903
+    #We know that there are too few public methods, we don't need more
+    def __getitem__(self, index):
+        '''It returns a new sliced SeqRecord.'''
+        if isinstance(index, int):
+            return self.seq[index]
+        else:
+            return SeqRecord[index]
     
 class Seqmut(object):
     '''This mutable seq class has only test porpouses'''

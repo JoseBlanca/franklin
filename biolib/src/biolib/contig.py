@@ -139,25 +139,6 @@ class Contig(object):
         return self._end - self._start + 1
     ncols = property(__get_ncols)
 
-    def __getitem__(self, index):
-        '''It returns a sequence or a new Contig.
-
-        The index can be an item or a tuple of two items, these two items
-        correspond to the row and the column indexes. These items can be 
-        int or slice.
-        Depending on the index requested different items will be returned.
-        int   -> a row (a sequence) like the one that was appended.
-        slice -> a new Contig with the sequences contained in the slice.
-        None, int -> a column wrapped in the class of the kind that form the
-                     rows.
-        None, slice -> a new Contig with all the row sequences sliced.
-        int, int -> An item in the assembly.
-        int, slice -> a sequence slice (the same as assembly[int][slice])
-        slice, int -> A column with not all sequences taken into account.
-        slice, slice -> A new Contig with the sequences contained in the slice
-                        sliced.
-        '''
-        return self.get_attr_item(index)
     def __repr__(self):
         ''' It writes  the reads of the contigs'''
         info_repr = ''
@@ -165,18 +146,15 @@ class Contig(object):
             info_repr += read.__repr__()
         return "Consesus:" + self._consensus.__repr__() + info_repr
         
-    def _row_instance(self, row_index, req_property):
+    def _row_instance(self, row_index):
         '''It returns the row requested. Index should be int.
         The row can be the row in self.seqs or a proprerty of it.
         '''
-        row_instance = self._seqs[row_index]
-        if req_property is not None:
-            row_instance = getattr(row_instance, req_property)
-        return row_instance
-    def _getitem_int_int(self, row_index, col_index, req_property):
+        return self._seqs[row_index]
+    def _getitem_int_int(self, row_index, col_index):
         '''It returns an item of a sequence, (a col in a row).'''
-        return self._row_instance(row_index, req_property)[col_index]
-    def _getitem_int_slice(self, row_index, col_index, req_property):
+        return self._row_instance(row_index)[col_index]
+    def _getitem_int_slice(self, row_index, col_index):
         '''It returns a row or an sliced row, (a sliced seq  or a seq).'''
         #the SeqRecord case is special, when we ask for an item in the
         #seqRecord we return SeqRecord.seq[item], but with a slice
@@ -185,7 +163,7 @@ class Contig(object):
         if seq.__class__.__name__.find('SeqRecord') != -1:
             row = self._seqs[row_index]
         else:
-            row = self._row_instance(row_index, req_property)
+            row = self._row_instance(row_index)
         #do we really want a slice or we want the whole row?
         if col_index.start is None and col_index.stop is None and \
            col_index.step is None:
@@ -204,7 +182,7 @@ class Contig(object):
         if step is None:
             step = 1
         return range(start, stop, step)
-    def _getitem_slice_slice(self, row_index, col_index, req_property):
+    def _getitem_slice_slice(self, row_index, col_index):
         '''It returns a new Contig with the sliced rows.'''
         #we create the new assembly that will be returned
         new_assembly = self.__class__()
@@ -212,7 +190,7 @@ class Contig(object):
             # pylint: disable-msg=W0704
             #It's ok to do nothing here
             try:
-                row = self._getitem_int_slice(row_int, col_index, req_property)
+                row = self._getitem_int_slice(row_int, col_index)
                 new_assembly.append(row)
             except IndexError:
                 #some sequences might not span in this column range
@@ -222,14 +200,14 @@ class Contig(object):
         if consensus is not None:
             new_assembly.consensus = consensus[col_index]
         return new_assembly
-    def _getitem_slice_int(self, row_index, col_index, req_property):
+    def _getitem_slice_int(self, row_index, col_index):
         '''It returns a column.'''
         #which row range are we requesting?
         items = None
         seq_like = None
         for row_int in self._slice_to_range(row_index):
             try:
-                item = self._getitem_int_int(row_int, col_index, req_property)
+                item = self._getitem_int_int(row_int, col_index)
             except IndexError:
                 #this row does not cover this column
                 continue
@@ -255,16 +233,23 @@ class Contig(object):
                     items.append(item)
         return items
 
-    def get_attr_item(self, index, req_property=None):
-        '''It returns the requested item.
+    def __getitem__(self, index):
+        '''It returns a sequence or a new Contig.
 
-        This method is not meant to be public. Do not use it outside the 
-        Contig class.
-        It not just a standard __getitem__ because it requires a requested
-        property. It will return the item from that property that should be
-        a sequence-like object with the same length as self.seq.
-        This method implements the possibility of using assembly.seq[index] or
-        assembly.qual[index]
+        The index can be an item or a tuple of two items, these two items
+        correspond to the row and the column indexes. These items can be 
+        int or slice.
+        Depending on the index requested different items will be returned.
+        int   -> a row (a sequence) like the one that was appended.
+        slice -> a new Contig with the sequences contained in the slice.
+        None, int -> a column wrapped in the class of the kind that form the
+                     rows.
+        None, slice -> a new Contig with all the row sequences sliced.
+        int, int -> An item in the assembly.
+        int, slice -> a sequence slice (the same as assembly[int][slice])
+        slice, int -> A column with not all sequences taken into account.
+        slice, slice -> A new Contig with the sequences contained in the slice
+                        sliced.
         '''
 
         #fisrt we make sure that we have a tuple as index
@@ -284,13 +269,13 @@ class Contig(object):
         row_type = type(row_index)
         col_type = type(col_index)
         if row_type == int and col_type == int:
-            return self._getitem_int_int(row_index, col_index, req_property)
+            return self._getitem_int_int(row_index, col_index)
         elif row_type == int and col_type == slice:
-            return self._getitem_int_slice(row_index, col_index, req_property)
+            return self._getitem_int_slice(row_index, col_index)
         elif row_type == slice and col_type == int:
-            return self._getitem_slice_int(row_index, col_index, req_property)
+            return self._getitem_slice_int(row_index, col_index)
         elif row_type == slice and col_type == slice:
-            return self._getitem_slice_slice(row_index, col_index, req_property)
+            return self._getitem_slice_slice(row_index, col_index)
 
 
 def locate_sequence(sequence, location=None, mask=None, masker=None,

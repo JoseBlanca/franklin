@@ -1,10 +1,12 @@
 '''It checks that the contig code is ok.'''
+# disable: Too many lines in module
+# pylint: disable-msg=C0302
 
 import unittest
 from biolib.contig import Location, NonStaticParentLocation, \
                           LocatableSequence, _reparent_location, \
                           locate_sequence, Contig
-from test.test_utils import Seq, SeqWithQuality, SeqRecord, Seqmut
+from test.test_utils import Seq, SeqWithQuality, SeqRecord, Seqmut, SeqRecord2
 
 # pylint: disable-msg=R0201
 # disable to many public methods
@@ -634,9 +636,6 @@ class ReparentLocationTests(unittest.TestCase):
         loc2 = _reparent_location(loc, seq)
         assert loc is loc2
 
-
-
-
 class LocatableSequenceTests(unittest.TestCase):
     '''It checks the LocatableSequence behaviour'''
     def setUp(self):
@@ -819,7 +818,7 @@ class LocatableSequenceTests(unittest.TestCase):
 
     def test_getitem_slice(self):
         '''We test that we get the correct LocatableSequence after a slice'''
-#now we slice it
+        #now we slice it
         #ref   0123456
         #ref   ATCTATG
         #seq1    0123
@@ -866,7 +865,7 @@ class LocatableSequenceTests(unittest.TestCase):
 
     def test_reverse(self):
         '''It tests that we can reverse the LocatableSequence.'''
-                #reverse
+        #reverse
         #ref   0123456
         #ref   ATCTATG
         #seq1    0123
@@ -906,7 +905,7 @@ class LocatableSequenceTests(unittest.TestCase):
 
     def test_complement(self):
         '''It tests that we can complement a LocatableSequence.'''
-                #complement
+        #complement
         #ref   0123456
         #ref   ATCTATG
         #seq1    0123
@@ -1210,7 +1209,7 @@ class ContigTests(unittest.TestCase):
         assert contig.ncols == 6
         assert contig[1, 0].seq == 'C'
         assert contig[0, 1:4].sequence.seq == 'AT'
-        assert contig[0, 1:4].qual[1] == 5
+        assert contig[0, 1:4].sequence.qual[0] == 5
 
         #now we get a column
         col = contig[:, 2]
@@ -1236,6 +1235,21 @@ class ContigTests(unittest.TestCase):
         assert contig21.ncols == 6
         assert contig21[0, 0] == 'T'
         assert contig21[1, 2] == 'T'
+
+    def test_seqrecord_column(self):
+        '''From a Contig composed by SeqRecord we obtain a SeqRecord if we
+        ask for a column.'''
+        #we have to SeqRecords, the one that we would like to have and
+        #the one in the BioPython CVS (2009-03-26)
+        #it should work with both
+        contig = Contig([SeqRecord('ACT'), SeqRecord('ACT')])
+        col = contig[:, 0]
+        assert col.__class__.__name__.find('SeqRecord') != -1
+
+        contig = Contig([SeqRecord2('ACT'), SeqRecord2('ACT')])
+        col = contig[:, 0]
+        print type(col)
+        assert col.__class__.__name__.find('SeqRecord') != -1
 
     def test_consensus(self):
         '''It tests that a consensus can be added.'''
