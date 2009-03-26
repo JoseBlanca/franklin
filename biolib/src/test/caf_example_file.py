@@ -1,3 +1,19 @@
+'''It creates an example caf file using the with statement.
+It works like:
+    with ExampleCafFile() as path:
+        print path
+'''
+#there a long lines because the caf file is like that
+#pylint: disable-msg=C0301
+#too many lines due to the caf file
+#pylint: disable-msg=C0302
+#too few public methods, not a problem only for usign with "with"
+#pylint: disable-msg=R0903
+import tempfile
+import os.path
+
+CAF_FILE_CONTENT = \
+'''
 DNA : 22ak93c2.r1t
 GTCGCnCATAAGATTACGAGATCTCGAGCTCGGTACCCTTCAAGCGATTCTCCTGCCTCA
 GCCTCCCGAGTAGCTGGGATTATAGACTGTGCGTGCGCCACCATGCCTGGCTAATTTTTG
@@ -1358,4 +1374,35 @@ TGGGATCACAGGCATGTGACATCACACCCAGCTAATTTATTTATTTATTTATTTTTTAAG
 AGACTGGATCGACTGGGCACAGTGGCTCATGCCTGTAATCCCAnCACTTTGGGAGGCCGA
 GGCAGGTGGATTACCGAGGTCAGGAGTTCAAGACCAGCCTGACCAACATGGAGAAACCCC
 ATCTCTACTAAAAATACAAAATGAGCTGGGCATGGTGGTGCATGCCTGTAATCC
+'''
+
+class ExampleCafFile(object):
+    '''Creates an example caf file in a tmp dir.'''
+    def __init__(self):
+        '''It initializes the instance.'''
+        self._caf_fileh = None
+        self._caf_file_path = None
+
+    def __enter__(self):
+        '''It creates the caf temp file.'''
+        self._caf_fileh, self._caf_file_path = self._create_example_caf_file()
+        return self._caf_file_path
+
+    def __exit__(self, type, value, traceback):
+        '''It removes the caf temp file.'''
+        #we don't need the parameters, they're there just because with
+        #requires it
+        #pylint: disable-msg=W0613
+        #pylint: disable-msg=W0622
+        self._caf_fileh.close()
+
+    @staticmethod
+    def _create_example_caf_file():
+        '''Creates an example caf file in a tmp dir and it returns the file
+        handler and the path.'''
+        fileh = tempfile.NamedTemporaryFile(suffix='.caf', mode='w')
+        fileh.write(CAF_FILE_CONTENT)
+        path = os.path.join(tempfile.gettempdir(), fileh.name)
+        return fileh, path
+
 
