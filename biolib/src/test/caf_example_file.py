@@ -13,7 +13,7 @@ import tempfile
 import os.path
 
 CAF_FILE_CONTENT = \
-'''
+r'''
 DNA : 22ak93c2.r1t
 GTCGCnCATAAGATTACGAGATCTCGAGCTCGGTACCCTTCAAGCGATTCTCCTGCCTCA
 GCCTCCCGAGTAGCTGGGATTATAGACTGTGCGTGCGCCACCATGCCTGGCTAATTTTTG
@@ -1402,6 +1402,7 @@ class ExampleCafFile(object):
         handler and the path.'''
         fileh = tempfile.NamedTemporaryFile(suffix='.caf', mode='w')
         fileh.write(CAF_FILE_CONTENT)
+        fileh.flush()
         path = os.path.join(tempfile.gettempdir(), fileh.name)
         return fileh, path
 

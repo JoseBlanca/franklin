@@ -5,17 +5,18 @@ Created on 2009 mar 11
 '''
 from __future__ import with_statement
 import unittest
-from biolib.cafparser import CafFile
+from biolib.cafparser import CafParser
 
 from caf_example_file import ExampleCafFile
 
 class Test(unittest.TestCase):
     ''' It tests '''
-        
-    def test_reads(self):
+    
+    @staticmethod
+    def test_reads():
         ''' we check if we can take the reads from the caf file'''
         with ExampleCafFile() as fname:
-            caf_parser  = CafFile(fname)
+            caf_parser  = CafParser(fname)
             num_reads = 0
             for read in caf_parser.reads():
                 num_reads  += 1
@@ -24,11 +25,11 @@ class Test(unittest.TestCase):
             # in caf example file (21)
             assert num_reads ==   21  
 
-    def test_contigs(self):
+    @staticmethod
+    def test_contigs():
         ''' It checks if the contig method returns contigs'''
         with ExampleCafFile() as fname:
-            caf_parser  = CafFile(fname)
-
+            caf_parser  = CafParser(fname)
             num_contig = 0
             for contig in caf_parser.contigs():
                 num_contig += 1
@@ -36,22 +37,22 @@ class Test(unittest.TestCase):
             # We check if our contig method finds all contigs in
             # caf example file  (1) 
             assert num_contig == 1 
-        
-    def test_check_consensus_seq(self):
+    @staticmethod   
+    def test_check_consensus_seq():
         ''' It checks if we get the consensus seq. It only checks the first 10 
         nucleotides TTCAAGCGAT and the quality '''
         
         with ExampleCafFile() as fname:
-            caf_parser  = CafFile(fname)
+            caf_parser  = CafParser(fname)
             for contig in caf_parser.contigs():
-                print contig
-                assert  contig.consensus[:10] == 'TTCAAGCGAT'
+                assert contig.consensus.sequence.seq[:10] == 'TTCAAGCGAT'
 
-    
-    def xtest_long_index(self):
+    @staticmethod
+    def xtest_long_index():
         ''' It checks if we can open a long test'''
-        long_caf_file_name         = '/home/peio/eucalyptus_out.caf'
-        long_caf_file      = CafFile(long_caf_file_name)
+        long_caf_file_name = '/home/peio/eucalyptus_out.caf'
+        long_caf_file      = CafParser(long_caf_file_name)
+        assert long_caf_file
         
         
 if __name__ == "__main__":

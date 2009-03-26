@@ -11,7 +11,7 @@ from re import match
 from biolib.contig import Contig, locate_sequence
 from SeqRecord import SeqRecord
 
-class CafFile(object):
+class CafParser(object):
     ''' This class is used to create and manipulate caf files using an index'''
     def __init__(self, fname):
         
@@ -72,6 +72,7 @@ class CafFile(object):
                     
     def contigs(self):
         '''It returns a generator with the contigs'''
+        
         for seq_rec_name in self._seq_index:
             if self._type_index[seq_rec_name] == 'Is_contig':
                 yield self.contig(seq_rec_name)
@@ -79,9 +80,9 @@ class CafFile(object):
     def reads(self):
         '''It returns a generator with the reads'''
         
-        for seq_rec in self._seq_index:
-            if self._type_index[seq_rec] == 'Is_read':
-                yield  self._get_seq_rec_full(seq_rec)
+        for seq_rec_name in self._seq_index:
+            if self._type_index[seq_rec_name] == 'Is_read':
+                yield  self.read(seq_rec_name)
 
     def _return_section(self, position):
         ''' It returns a section giving a position in the file. It will take
