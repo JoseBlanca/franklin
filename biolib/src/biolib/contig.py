@@ -146,24 +146,9 @@ class Contig(object):
             info_repr += read.__repr__()
         return "Consesus:" + self._consensus.__repr__() + info_repr
         
-    def _row_instance(self, row_index):
-        '''It returns the row requested. Index should be int.
-        The row can be the row in self.seqs or a proprerty of it.
-        '''
-        return self._seqs[row_index]
-    def _getitem_int_int(self, row_index, col_index):
-        '''It returns an item of a sequence, (a col in a row).'''
-        return self._row_instance(row_index)[col_index]
     def _getitem_int_slice(self, row_index, col_index):
         '''It returns a row or an sliced row, (a sliced seq  or a seq).'''
-        #the SeqRecord case is special, when we ask for an item in the
-        #seqRecord we return SeqRecord.seq[item], but with a slice
-        #we return seqRecord
-        seq = self._seqs[row_index]
-        if seq.__class__.__name__.find('SeqRecord') != -1:
-            row = self._seqs[row_index]
-        else:
-            row = self._row_instance(row_index)
+        row = self._seqs[row_index]
         #do we really want a slice or we want the whole row?
         if col_index.start is None and col_index.stop is None and \
            col_index.step is None:
@@ -207,7 +192,7 @@ class Contig(object):
         seq_like = None
         for row_int in self._slice_to_range(row_index):
             try:
-                item = self._getitem_int_int(row_int, col_index)
+                item = self._seqs[row_int][col_index]
             except IndexError:
                 #this row does not cover this column
                 continue
@@ -269,7 +254,7 @@ class Contig(object):
         row_type = type(row_index)
         col_type = type(col_index)
         if row_type == int and col_type == int:
-            return self._getitem_int_int(row_index, col_index)
+            return self._seqs[row_index][col_index]
         elif row_type == int and col_type == slice:
             return self._getitem_int_slice(row_index, col_index)
         elif row_type == slice and col_type == int:

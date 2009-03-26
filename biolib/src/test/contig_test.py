@@ -1248,7 +1248,6 @@ class ContigTests(unittest.TestCase):
 
         contig = Contig([SeqRecord2('ACT'), SeqRecord2('ACT')])
         col = contig[:, 0]
-        print type(col)
         assert col.__class__.__name__.find('SeqRecord') != -1
 
     def test_consensus(self):
