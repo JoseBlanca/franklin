@@ -686,7 +686,6 @@ class LocatableSequenceTests(unittest.TestCase):
                                                  forward=False)
         self.orig_seqs['seq4'] = seq4
 
-
     @staticmethod
     def check_locseq(locseq, properties):
         '''It tests that the LocatableSequence has the given properties.'''
@@ -1121,44 +1120,6 @@ class LocatableSequenceTests(unittest.TestCase):
         self.assertRaises(IndexError, revseq.__getitem__, slice(4, 5))
         self.assertRaises(IndexError, revseq.__getitem__, slice(-6, -5))
         
-    def test_properties_accessors(self):
-        '''It checks that we can access to seq and qual in SeqWithQual.'''
-        seq = Seq('ACTG')
-        qual = [1, 2, 3, 4]
-        seqwithqual = SeqWithQuality(seq, qual)
-        locseq = locate_sequence(seqwithqual)
-        
-        #an .seq[int] returns an item of the .seq property
-        assert str(locseq.seq[1]) == 'C'
-        #an .qual[int] returns an item of the .qual property
-        assert locseq.qual[1] == 2
-        #an .seq[slice] it returns a LocatableSequence with .seq in it
-        assert locseq.seq[:].sequence == seq
-        #an .qual[slice] it returns a LocatableSequence with .qual in it
-        assert str(locseq.qual[:].sequence) == str(qual)
-        assert isinstance(locseq[:], LocatableSequence)
-        assert locseq[:].sequence.seq == seq
-
-        #we a reverse-complemented SeqWithQuality
-        locseq = locate_sequence(seqwithqual, strand=-1, forward=False)
-        assert locseq.seq[0] == 'C'
-        assert locseq.qual[0] == 4
-
-        #with a mask
-        locseq = locate_sequence(seqwithqual, mask=(2, 3))
-        self.assertRaises(IndexError, locseq.__getitem__, 0)
-
-        #with a SeqRecord we can access the seq property
-        seq = 'ACTG'
-        seqrec = SeqRecord(seq, qual)
-        locseq = locate_sequence(sequence=seqrec)
-        #an .seq[int] returns an item of the .seq property
-        assert locseq.seq[1] == 'C'
-        #an .seq[slice] it returns a LocatableSequence with .seq in it
-        assert locseq.seq[:].sequence == seq
-        assert isinstance(locseq[:], LocatableSequence)
-        assert locseq[:].sequence.seq == seq
-
 class ContigTests(unittest.TestCase):
     '''It checks the Contig class behaviour.'''
     def test_basic_behaviour(self):
@@ -1207,22 +1168,22 @@ class ContigTests(unittest.TestCase):
 
         contig = Contig()
         #seq0
-        seq0 = 'TAGAT'
-        contig.append(seq0)
+        seq = 'TAGAT'
+        contig.append(seq)
         #seq1
-        seq1 = 'CTAT'
-        contig.append_to_location(seq1, start=2)
+        seq = 'CTAT'
+        contig.append_to_location(seq, start=2)
         #seq2
-        seq2 = 'tTCTag'
-        mask2 = (1, 3)
-        contig.append_to_location(seq2, mask=mask2)
+        seq = 'tTCTag'
+        mask = (1, 3)
+        contig.append_to_location(seq, mask=mask)
         #seq3
-        seq3 = 'TAGAT'
-        contig.append_to_location(seq3, strand=-1)
+        seq = 'TAGAT'
+        contig.append_to_location(seq, strand=-1)
         #seq4
-        seq4 = 'cgAGc'
-        mask4 = (2, 3)
-        contig.append_to_location(seq4, start=1, strand=-1, mask=mask4)
+        seq = 'cgAGc'
+        mask = (2, 3)
+        contig.append_to_location(seq, start=1, strand=-1, mask=mask)
 
         assert len(contig) == 5
         assert contig.ncols == 6
@@ -1247,10 +1208,9 @@ class ContigTests(unittest.TestCase):
 
         assert len(contig) == 2
         assert contig.ncols == 6
-        assert contig.seq[1, 0] == 'C'
+        assert contig[1, 0].seq == 'C'
         assert contig[0, 1:4].sequence.seq == 'AT'
-        assert contig.seq[0, 1:4].sequence == 'AT'
-        assert contig.qual[0, 1:4][1] == 5
+        assert contig[0, 1:4].qual[1] == 5
 
         #now we get a column
         col = contig[:, 2]
@@ -1258,9 +1218,9 @@ class ContigTests(unittest.TestCase):
         assert col.seq == 'AA'
         assert str(col.qual) == str([5, 2])
         #only the seq
-        assert contig.seq[:, 0] == 'C'
+        assert contig[:, 0].seq == 'C'
         #only the qual
-        assert str(contig.qual[:, 5]) == str([8])
+        assert str(contig[:, 5].qual) == str([8])
 
         #let's slice an assembly
         #      0123456789

@@ -1,25 +1,5 @@
 '''This module provides the code to represent a sequence contig.'''
 
-class _SequenceAttribute(object):
-    '''This class is used to create the properties that return different
-    properties of the contained sequence (self.seq).
-    It's used to provided the syntactic sugar: locseq.seq[1] locseq.qual[1]
-    '''
-    #This is just syntax sugar, it should do very little
-    # pylint: disable-msg=R0903
-    def __init__(self, parent, req_attr):
-        '''The initialitation.
-        keyword arguments:
-        parent -- The parent object that owns the property (e.g. the locseq)
-        req_attr -- The property requested to the contained sequence.
-        '''
-        self._parent = parent
-        self._req_attr = req_attr
-    def __getitem__(self, index):
-        '''It returns an item or an slice of the requested property.'''
-        return self._parent.get_attr_item(index=index,
-                                          req_property=self._req_attr)
-
 class Contig(object):
     '''It represents a list of aligned sequences with a list-like interface.
 
@@ -64,41 +44,11 @@ class Contig(object):
 
     def _set_consensus(self, consensus):
         '''It sets the consensus sequence.'''
-        #we need to know which properties has the consensus
-        if consensus is not None:
-            self._set_available_attributes(consensus)
         self._consensus = consensus
     def _get_consensus(self):
         '''It returns the consensus sequence.'''
         return self._consensus
     consensus = property(_get_consensus, _set_consensus)
-
-    def _set_available_attributes(self, sequence):
-        '''It creates the properties with getitems that will be available.
-
-        It requires a sequence to check.
-        For instance for a SeqWithQuality will be:
-            - self.seq
-            - self.qual
-        '''
-        # pylint: disable-msg=W0201
-        #These attributes are optional that's why I don't define them in the
-        #__init__
-        #this function should only run once
-        if self._attrs_set:
-            return
-        #if self._seqs[0] has a seq and a qual property we have to create
-        #these sequence properties to be able to access them
-        seq_props = dir(sequence)
-        if 'seq' in seq_props and 'qual' in seq_props:
-            self.qual = _SequenceAttribute(self, 'qual')
-            self.seq = _SequenceAttribute(self, 'seq')
-        #with the SeqRecord we want to be able to access the .seq
-        if sequence.__class__.__name__.find('SeqRecord') != -1:
-            #SeqRecord is unindexable, so we want the seq property
-            self._def_attr = 'seq'
-            self.seq = _SequenceAttribute(self, 'seq')
-        self._attrs_set = True
 
     def extend(self, sequences):
         '''It extends the list by appending elements from the iterable.'''
@@ -179,8 +129,6 @@ class Contig(object):
             self._end = end
         #we add the sequence to the list
         self._seqs.append(sequence)
-        #now we have to check which properties have the sequence
-        self._set_available_attributes(sequence)
 
     def __len__(self):
         '''It returns the number of rows in the alignment.'''
@@ -505,7 +453,6 @@ class LocatableSequence(object):
         self._mask = None
         self._set_mask(mask)
         self._masker = masker
-        self._set_available_attributes()
 
     @staticmethod
     def _check_location(seq, location):
@@ -519,37 +466,6 @@ class LocatableSequence(object):
         if  len(seq) != len(location):
             msg = 'Sequence and Location lengths do not match.'
             raise ValueError(msg)
-
-
-    def _set_available_attributes(self):
-        '''It creates the properties with getitems that will be available.
-
-        For instance for a SeqWithQuality will be:
-            - self._seq
-            - self._seq.seq
-            - self._seq.qual
-        '''
-        #these attributes are defined here because they won't exists in
-        #many cases.
-        # pylint: disable-msg=W0201
-        
-        sequence = self.sequence
-        #when __getitem__ is used directly what do we return?
-        self._def_attr = 'sequence'
-        #if self.seq has a seq and a qual property we have to create
-        #these sequence properties to be able to access them
-        seq_props = dir(sequence)
-        if 'seq' in seq_props and 'qual' in seq_props:
-            self.qual = _SequenceAttribute(self, 'qual')
-            self.seq = _SequenceAttribute(self, 'seq')
-            #we could think on an simpler solution, but it wouldn't work
-            #with masked, located or reversed sequences, so do not think
-            #on doing the following
-            #self.seq = self.sequence.seq
-            #self.qual = self.sequence.qual
-        #with the SeqRecord we want to be able to access the .seq
-        if sequence.__class__.__name__.find('SeqRecord') != -1:
-            self.seq = _SequenceAttribute(self, 'seq')
 
     def _set_location(self, location):
         '''It sets the location and it checks that the seqs fits in it.
@@ -594,15 +510,8 @@ class LocatableSequence(object):
         return self._masker
     masker = property(_get_masker)
 
-    def _sequence_property(self, attribute=None, complement=False):
-        '''It returns the self.sequence or a property of it.
-        
-        A property can be self.sequence.qual or self.sequence.seq or whatever.
-        The attribute defines which property will be returned. If None it
-        will return self.sequence.
-        The attribute is an str with the name of the attribute.
-        The property can be asked also to the complemented sequence.
-        '''
+    def _sequence_property(self, complement=False):
+        '''It returns the self.sequence or its complement.'''
         # pylint: disable-msg=W0201
         #is defined here, but is used only here
         self._comp_cache = {}
@@ -630,15 +539,12 @@ class LocatableSequence(object):
                 msg = 'The sequence seems mutable, we support only non-mutables'
                 raise ValueError(msg)
         #Which property do we return? self.sequence or self.sequence.seq?
-        if attribute is None:
-            return sequence
-        else:
-            return getattr(sequence, attribute)
+        return sequence
         
-    def _masked_comp_seq_int(self, index, req_attribute):
+    def _masked_comp_seq_int(self, index):
         '''A get item for int indexes function that takes into account the
         mask and the need to complement.
-        It requires an int index and the requested property.
+        It requires an int index.
         It takes into account if we need the complement or not.
         '''
         #This is the sequence that we should return, it can be
@@ -646,7 +552,7 @@ class LocatableSequence(object):
         complement = False
         if self.location.strand == -1:
             complement = True
-        sequence = self._sequence_property(req_attribute, complement)
+        sequence = self._sequence_property(complement)
         #if there is no mask we just return using the seq getitem
         if self._mask is None: 
             return sequence.__getitem__(index)
@@ -659,27 +565,14 @@ class LocatableSequence(object):
             else:
                 raise IndexError('Item from the masked regions requested.')
 
-    def __getitem__(self, index):
-        '''It returns an item or a new LocatableSequence.
-
-        The index should be in the coord. system of self.
-        '''
-        #the requested property
-        return self.get_attr_item(index)
     def __repr__(self):
         ''' It writes'''
         return self._location.__repr__() + self._sequence.__repr__() + "\n"
         
-    def get_attr_item(self, index, req_property=None):
-        '''It returns the requested item.
+    def __getitem__(self, index):
+        '''It returns an item or a new LocatableSequence.
 
-        This method is not meant to be public. Do not use it outside the 
-        LocatableSequence class.
-        It's not just a standard __getitem__ because it requires a requested
-        property. It will return the item from that property that should be
-        a sequence-like object with the same length as self.seq.
-        This method implements the possibility of using locseq.seq[index] or
-        locseq.qual[index]
+        The index should be in the coord. system of self.
         '''
         #we need the index in the coord system of self and of self.seq
         self_index = index
@@ -702,7 +595,7 @@ class LocatableSequence(object):
             raise IndexError('Index outside the scope covered by the seq')
         #do we return an item?
         if isinstance(seq_index, int):
-            return self._masked_comp_seq_int(seq_index, req_property)
+            return self._masked_comp_seq_int(seq_index)
         #or we return a new LocatableSeq?
         else:
             #we do not support step slices different than None, 1 or -1
@@ -723,13 +616,13 @@ class LocatableSequence(object):
             stop = seq_index.stop
             #we get the requested seq property, self.sequence,
             #self.sequence.qual or whatever
-            seq_property = self._sequence_property(req_property)
+            sequence = self.sequence
             if (start is None or start == 0) and \
-               (stop is None or stop >= len(seq_property)) and \
+               (stop is None or stop >= len(sequence)) and \
                seq_index.step != -1:
-                new_seq = seq_property
+                new_seq = sequence
             else:
-                new_seq = seq_property.__getitem__(seq_index)
+                new_seq = sequence[seq_index]
             return self.__class__(sequence=new_seq, location=new_loc,
                                               mask=new_mask, masker=self.masker)
 
