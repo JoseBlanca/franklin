@@ -100,7 +100,7 @@ class SeqRecord2(SeqRecord):
         if isinstance(index, int):
             return self.seq[index]
         else:
-            return SeqRecord[index]
+            return SeqRecord.__getitem__(self, index)
     
 class Seqmut(object):
     '''This mutable seq class has only test porpouses'''

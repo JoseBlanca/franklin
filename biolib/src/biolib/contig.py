@@ -215,7 +215,7 @@ class Contig(object):
                 if items is None:
                     items = [item]
                 else:
-                    items.append(item)
+                    items.append(item[0])
         return items
 
     def __getitem__(self, index):
