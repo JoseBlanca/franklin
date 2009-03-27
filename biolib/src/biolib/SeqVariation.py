@@ -90,6 +90,12 @@ class SeqVariation(object):
                 del alleles[allele]
         self._num_reads = alleles
 
+    def is_indel(self):
+        '''It returns True if the variation is an indel.'''
+        for allele in self._num_reads:
+            if allelle == CONFIG.indel_char:
+                return True
+        return False
     alleles = property(_get_alleles)
     
 def seq_var_in_alignment(contig):
