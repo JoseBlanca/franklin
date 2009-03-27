@@ -380,17 +380,6 @@ def _move_index(index, amount):
             new_stop = stop + amount
         return slice(new_start, new_stop, index.step)
 
-COMPLEMENT_DICT = { 'a':'t', 'c':'g', 'g':'c', 't':'a', 'u':'t',
-                   'm':'k', 'r':'y', 'w':'w', 's':'s', 'y':'r',
-                   'k':'m', 'v':'b', 'h':'d', 'd':'h', 'b':'v',
-                   'x':'x', 'n':'n',
-                   'A':'T', 'C':'G', 'G':'C', 'T':'A', 'U':'T',
-                   'M':'K', 'R':'Y', 'W':'W', 'S':'S', 'Y':'R',
-                   'K':'M', 'V':'B', 'H':'D', 'D':'H', 'B':'V',
-                   'X':'X', 'N':'N', '*':'*', '-':'-', ' ':' ',
-                   '.':'.'
-                   }
-
 class LocatableSequence(object):
     '''It's a container for sequence like objects.
 
@@ -401,6 +390,8 @@ class LocatableSequence(object):
     end of the sequence.
     The objects derived from this class are non-mutable.
     '''
+    #it has noly one public method, but a complex pythonic behaviour
+    # pylint: disable-msg=R0903
     def __init__(self, sequence, location=None, mask=None, masker=None):
         '''To initialize an object only a sequence-like object is required.
 

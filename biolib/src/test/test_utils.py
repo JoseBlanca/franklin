@@ -88,20 +88,6 @@ class SeqRecord(object):
         seq = self.seq + other.seq
         return self.__class__(seq=seq)
 
-class SeqRecord2(SeqRecord):
-    '''A simple seq with name do some tests.
-    
-    This SeqRecord returns a seq item when the index for getitem is int
-    '''
-    # pylint: disable-msg=R0903
-    #We know that there are too few public methods, we don't need more
-    def __getitem__(self, index):
-        '''It returns a new sliced SeqRecord.'''
-        if isinstance(index, int):
-            return self.seq[index]
-        else:
-            return SeqRecord.__getitem__(self, index)
-    
 class Seqmut(object):
     '''This mutable seq class has only test porpouses'''
     # pylint: disable-msg=R0903
