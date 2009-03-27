@@ -30,10 +30,22 @@ class Seq(object):
     def __str__(self):
         '''The string representation'''
         return self.seq
+    def __repr__(self):
+        '''The string representation'''
+        return self.seq
     def __getitem__(self, index):
         '''The slicing'''
         return self.seq[index]
-
+    def __add__(self, seq2):
+        '''  adding '''
+        return self.seq + seq2.seq
+    def __eq__(self, seq2):
+        '''equals '''
+        if self.seq == seq2:
+            return True
+        else:
+            return False
+    
 class SeqWithQuality(object):
     '''A simple seq with Quality class to do some tests.'''
     # pylint: disable-msg=R0903
