@@ -76,6 +76,7 @@ class SeqVariation(object):
     def _get_alleles(self):
         ''' It returns a dict with the aleles.'''
         return self._num_reads
+    
     def _set_alleles(self, alleles):
         ''' It sets the alleles dict.
         It takes into account the min_number_of_reads and it remove the ones
@@ -92,54 +93,58 @@ class SeqVariation(object):
         self._num_reads = alleles
     alleles = property(_get_alleles)
 
-    def is_indel(self):
-        '''It returns True if the variation is an indel.'''
-        if self.kind() == 'is_indel':
+    def is_complex(self):
+        '''It returns True if the variation is a complex '''
+        if self.kind() == 'complex':
             return True
         else:
             return False
-
+        
+    def is_indel(self):
+        '''It returns True if the variation is an indel.'''
+        if self.kind() == 'indel':
+            return True
+        else:
+            return False
+        
+    def is_snp(self):
+        '''It returns True if the variation is a snp '''
+        if self.kind() == 'snp':
+            return True
+        else:
+            return False
+    
     def kind(self):
         '''It returns the kind of variation: snp, indel or complex.'''
-        #if there is only one allele is invariable
-        if len(self._num_reads) < 2:
-            return 'is_invariable'
-        is_indel = False
-        is_complex = False
-        if len(self._num_reads.values[0]) == 1 and False:
-            #is there some indel?
-            for allele in self._num_reads:
-                if allele == CONFIG.indel_char:
-                    is_indel = True
-                    break
-        else:
-            #if there are more than one letter in the alleles they might be
-            #complex
-            #in this case if there are alleles with indels they should have
-            #only indels
-            for allele in self._num_reads:
-                #if it begins with an indel
-                if allele[0] == CONFIG.indel_char:
-                    #if everything is an indel
-                    if allele ==  CONFIG.indel_char * len(allele):
-                        is_indel = True
-                    else:
-                        is_complex = True
-            if is_complex:
-                return 'is_complex'
-            elif is_indel:
-                return 'is_indel'
+        num_alleles    = len(self._num_reads)
+        inchar = CONFIG.indel_char
+        #if there is only one allele is invariable 
+        if num_alleles < 2:
+            var_kind = 'invariable'
+        elif num_alleles == 2:
+            allele1, allele2 = self._num_reads.keys()
+            if allele1 == inchar * len(allele1) and inchar not in allele2:
+                var_kind = 'indel'
+            elif allele2 == inchar * len(allele2) and inchar not in allele1:
+                var_kind =  'indel'
+            elif inchar in allele1 or inchar in allele2:
+                var_kind =  'complex'
             else:
-                return 'is_snp'
+                var_kind =  'snp'
+            
+        elif num_alleles >2:
+            alleles = self._num_reads.keys()
+            if len(alleles[0]) == 1 and inchar not in alleles:
+                var_kind = 'snp'
+            else:
+                var_kind =  'complex'
+        return var_kind
     
 def seq_var_in_alignment(contig):
     ''' We use this method to catch the Sequence variation from an
      alignment. The alignment (contig) MUST BE a list of Biopython SeqRecord
      class objects'''      
-    
-    ncols     = contig.ncols
-    
-    for loc_order in range(ncols):
-        colum_seq = contig[:, loc_order]
-        yield  colum_seq
+    for loc_order in range(contig.ncols ):
+        colum_seq = contig[:, loc_order:loc_order+1]
+        print len( colum_seq)
          
