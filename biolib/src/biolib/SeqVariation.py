@@ -30,6 +30,7 @@ class _SeqVarConf(object):
         self.only_snp         = only_snp
         self.indel_char      = indel_char
 
+
 CONFIG = _SeqVarConf()
 
 class SeqVariation(object):
@@ -89,14 +90,47 @@ class SeqVariation(object):
             if CONFIG.only_snp and allele == CONFIG.indel_char:
                 del alleles[allele]
         self._num_reads = alleles
+    alleles = property(_get_alleles)
 
     def is_indel(self):
         '''It returns True if the variation is an indel.'''
-        for allele in self._num_reads:
-            if allelle == CONFIG.indel_char:
-                return True
-        return False
-    alleles = property(_get_alleles)
+        if self.kind() == 'is_indel':
+            return True
+        else:
+            return False
+
+    def kind(self):
+        '''It returns the kind of variation: snp, indel or complex.'''
+        #if there is only one allele is invariable
+        if len(self._num_reads) < 2:
+            return 'is_invariable'
+        is_indel = False
+        is_complex = False
+        if len(self._num_reads.values[0]) == 1 and False:
+            #is there some indel?
+            for allele in self._num_reads:
+                if allele == CONFIG.indel_char:
+                    is_indel = True
+                    break
+        else:
+            #if there are more than one letter in the alleles they might be
+            #complex
+            #in this case if there are alleles with indels they should have
+            #only indels
+            for allele in self._num_reads:
+                #if it begins with an indel
+                if allele[0] == CONFIG.indel_char:
+                    #if everything is an indel
+                    if allele ==  CONFIG.indel_char * len(allele):
+                        is_indel = True
+                    else:
+                        is_complex = True
+            if is_complex:
+                return 'is_complex'
+            elif is_indel:
+                return 'is_indel'
+            else:
+                return 'is_snp'
     
 def seq_var_in_alignment(contig):
     ''' We use this method to catch the Sequence variation from an

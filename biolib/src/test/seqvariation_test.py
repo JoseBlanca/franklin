@@ -50,6 +50,7 @@ class SeqVariationTest(unittest.TestCase):
         indel = CONFIG.indel_char
         snp = SeqVariation(alleles={'A':3, indel:3})
         assert len(snp.alleles) == 1
+        CONFIG.only_snp = False
 
     @staticmethod
     def test_kind():
@@ -58,7 +59,7 @@ class SeqVariationTest(unittest.TestCase):
         indel = CONFIG.indel_char
         snp = SeqVariation(alleles={'A':3, indel:3})
         assert snp.is_indel()
-        assert snp.kind == 'indel'
+        assert snp.kind() == 'indel'
 
     @staticmethod
     def test_seq_variation_generator():
