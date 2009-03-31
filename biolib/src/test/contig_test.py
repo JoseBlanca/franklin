@@ -1256,6 +1256,18 @@ class ContigTests(unittest.TestCase):
         contig2 = contig1[:, :2]
         assert contig2.consensus == 'AC'
 
+    def test_empty_seqs(self):
+        '''We want also the empty seqs, could we get them?'''
+        seq = locate_sequence('ACTG', location=5)
+        contig = Contig([seq])
+        #default behaviour
+        new_contig = contig[:, 0:1]
+        assert len(new_contig) == 0
+        #now we want the empty seqs
+        contig.return_empty_seq = True
+        new_contig = contig[:, 0:1]
+        assert new_contig[0] is None
+
 def main():
     '''It runs the tests'''
     unittest.main()

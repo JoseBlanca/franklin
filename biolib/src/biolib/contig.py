@@ -46,6 +46,10 @@ class Contig(object):
         #By default we asume that we're dealing with an alignment not with a
         #contig
         self._contig_mode = False
+        #by default the contig won't return empty lines, but that behavior
+        #can be modified. If return_empty_seq is True it will return rows
+        #with a None value when a sequence slicing returns an IndexError
+        self.return_empty_seq = False
 
         if sequences is not None:
             self.extend(sequences)
@@ -132,7 +136,10 @@ class Contig(object):
             end = loc.end
         except AttributeError:
             start = 0
-            end = len(sequence) - 1
+            if sequence is not None:
+                end = len(sequence) - 1
+            else:
+                end = 0
         if start < self._start:
             self._start = start
         if end > self._end:
@@ -189,7 +196,10 @@ class Contig(object):
                 new_assembly.append(row)
             except IndexError:
                 #some sequences might not span in this column range
-                pass
+                if self.return_empty_seq:
+                    new_assembly.append(None)
+                else:
+                    pass
         #now we have to slice the consensus
         consensus = self.consensus
         if consensus is not None:
@@ -598,6 +608,10 @@ class LocatableSequence(object):
             return self.__class__(sequence=new_seq, location=new_loc,
                                               mask=new_mask, masker=self.masker)
 
+    def __len__(self):
+        '''It returns the length.'''
+        return len(self.sequence)
+
     def complement(self):
         '''It returns a new LocatableSequence with a complemented seq.
 
@@ -615,9 +629,7 @@ class LocatableSequence(object):
         return self.__class__(sequence=new_seq, location=new_loc, mask=new_mask,
                               masker=self.masker)
 
-    def __len__(self):
-        '''It returns the length.'''
-        return len(self.sequence)
+    empty_region_seq_builder = raise_error_outside_limits
 
 def _reparent_location(location, parent):
     '''Given a Location it returns a new Location with the given parent.
