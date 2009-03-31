@@ -140,11 +140,12 @@ class SeqVariation(object):
                 var_kind =  'complex'
         return var_kind
     
-def seq_var_in_alignment(contig):
+def seqvariations_in_alignment(contig):
     ''' We use this method to catch the Sequence variation from an
      alignment. The alignment (contig) MUST BE a list of Biopython SeqRecord
      class objects'''      
-    for loc_order in range(contig.ncols ):
-        colum_seq = contig[:, loc_order:loc_order+1]
-        print len( colum_seq)
+
+    col_index = 0   #in which column are we now?
+    reads_with_indels = [] #which reads from the last columns where indels?
+    while True:
          

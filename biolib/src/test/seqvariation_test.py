@@ -4,9 +4,9 @@ Created on 2009 mar 25
 @author: peio
 '''
 import unittest
-from biolib.SeqVariation import CONFIG, SeqVariation, seq_var_in_alignment
-from biolib.contig import Contig, Location
-from test.test_utils import SeqWithQuality, SeqRecord
+from biolib.SeqVariation import CONFIG, SeqVariation, seqvariations_in_alignment
+from biolib.contig import Contig
+from test.test_utils import SeqRecord
 
 class SeqVariationConfig(unittest.TestCase):
     '''Here we will check if the SeqVariation module can be configured.
@@ -60,34 +60,32 @@ class SeqVariationTest(unittest.TestCase):
         seq_var = SeqVariation(alleles={'A':3, inchar:3})
         assert seq_var.is_indel()
         
-        seq_var = SeqVariation(alleles={'AA':3, '%s%s' %(inchar, inchar):3})
+        seq_var = SeqVariation(alleles={'AA':3, inchar * 2:3})
         assert seq_var.is_indel()
         
-        seq_var = SeqVariation(alleles={'AA%s' % inchar :3,
-                                    '%s%s%s' % (inchar, inchar,inchar):3})
+        seq_var = SeqVariation(alleles={'AA' + inchar :3, inchar * 3:3})
         assert seq_var.is_complex()
         
         seq_var = SeqVariation(alleles={'A':3, 'T':4})
         assert seq_var.is_snp()
         
-        seq_var = SeqVariation(alleles={'A%sA' % inchar:3,
-                                        'A%s%s' % (inchar,inchar) :4})
+        seq_var = SeqVariation(alleles={'A':3, 'T':4, inchar:3})
         assert seq_var.is_complex()
-                           
         
-        
+        seq_var = SeqVariation(alleles={'A' + inchar + 'A':3,
+                                        'A' + inchar * 2 :4})
+        assert seq_var.is_complex()
 
+class VariationGeneratorTest(unittest.TestCase):
+    '''It test if we can get the variations'''
     @staticmethod
     def test_seq_variation_generator():
-        '''It checks if the '''
-        seqs = [SeqRecord('aga', name='seq1'), \
-                SeqRecord('ctc',name='seq2')]
+        '''It checks if we can get the variations.''' 
+        seqs = [SeqRecord('aga'), SeqRecord('ctc')]
         contig = Contig(sequences = seqs)
-        seq_var_in_alignment(contig)
-        
-        
-#        for seq_var in seq_var_in_alignment(contig):
-#            pass
+
+        for seqvar in seqvariations_in_alignment(contig):
+            print seqvar
 
 
 if __name__ == "__main__":
