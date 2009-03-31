@@ -310,8 +310,6 @@ class LocationTests(unittest.TestCase):
         assert loc.get_location_index(slice(2, 6)) == slice(None, 3)
         assert loc.get_location_index(1) is None
         assert loc.get_location_index(6) is None
-        
-        
 
     def test_overlaps(self):
         '''Locations overlaps'''
@@ -1118,6 +1116,19 @@ class LocatableSequenceTests(unittest.TestCase):
         self.assertRaises(IndexError, revseq.__getitem__, -5)
         self.assertRaises(IndexError, revseq.__getitem__, slice(4, 5))
         self.assertRaises(IndexError, revseq.__getitem__, slice(-6, -5))
+
+    @staticmethod
+    def test_outside_limits_config():
+        '''It checks that we can configure what we get outside the seq limits'''
+        import biolib.contig as contig
+        locseq = contig.locate_sequence('ACTG', location=7, mask=(2, 3))
+        #we can configure what we get outside the sequence
+        contig.empty_region_seq_builder = lambda : ''
+        assert locseq[0] == ''
+        #now what we get in the masked region
+        contig.default_masker = lambda x: 'x'
+        assert locseq[8] == 'x'
+
         
 class ContigTests(unittest.TestCase):
     '''It checks the Contig class behaviour.'''
@@ -1244,7 +1255,6 @@ class ContigTests(unittest.TestCase):
         #now we slice the contig
         contig2 = contig1[:, :2]
         assert contig2.consensus == 'AC'
-
 
 def main():
     '''It runs the tests'''

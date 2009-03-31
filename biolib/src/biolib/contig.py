@@ -1,5 +1,21 @@
 '''This module provides the code to represent a sequence contig.'''
 
+#for configuration I like lowercase variables
+#pylint: disable-msg=C0103
+def default_masker_function(seq):
+    '''It returns an index error to be used as default masker'''
+    raise IndexError('Index in masked sequence region')
+#by default when a sequence in a masked region is requested an IndexError is
+#raised
+default_masker = default_masker_function
+
+def raise_error_outside_limits():
+    '''It returns an index error to be used outside the seqs boundaries'''
+    raise IndexError('Index outside sequence limits')
+#by default when an item is requested outside the sequence boundaries an
+#IndexError is raised
+empty_region_seq_builder = raise_error_outside_limits
+
 class Contig(object):
     '''It represents a list of aligned sequences with a list-like interface.
 
@@ -33,13 +49,6 @@ class Contig(object):
 
         if sequences is not None:
             self.extend(sequences)
-        #TODO what happens when the consensus does not start at zero.
-        #like in:
-        # seq1 acGATGATACATac
-        # seq1  tGATGATACct
-        #cons    GATGATACAT
-        #The more logical would be to put the consensus in a LocatableSeq using
-        #a helper function with a start parameter
         self.consensus = consensus
 
     def _set_consensus(self, consensus):
@@ -94,6 +103,7 @@ class Contig(object):
         #This is a helper function and it really requieres those optional
         #arguments, I don't know how to remove them
         
+        # pylint: disable-msg=W0511
         #TODO. check alphabets
         #if the sequences have an alphabet check that the alphabets are
         #compatible.
@@ -524,7 +534,7 @@ class LocatableSequence(object):
             if self.masker is not None:
                 return self.masker(sequence.__getitem__(index))
             else:
-                raise IndexError('Item from the masked regions requested.')
+                return default_masker(sequence.__getitem__(index))
 
     def __repr__(self):
         ''' It writes'''
@@ -553,7 +563,8 @@ class LocatableSequence(object):
         else:
             seq_index = self._location.get_location_index(index)
         if seq_index is None:
-            raise IndexError('Index outside the scope covered by the seq')
+            #we're outside the sequence, by default we raise an IndexError
+            return empty_region_seq_builder()
         #do we return an item?
         if isinstance(seq_index, int):
             return self._masked_comp_seq_int(seq_index)
