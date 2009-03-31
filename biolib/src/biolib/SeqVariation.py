@@ -12,7 +12,7 @@ class _SeqVarConf(object):
     #we could use a namedtuple but it would be less clear.
     #pylint: disable-msg=R0903
     def __init__(self, min_num_of_reads=2, only_snp=False,
-                indel_char='-'):
+                indel_char='-', empty_char=''):
         ''' Here we initialize teh object with the configuration we want.
         
         This configuration will affect to all classes and functions from this
@@ -28,7 +28,8 @@ class _SeqVarConf(object):
         '''
         self.min_num_of_reads = min_num_of_reads
         self.only_snp         = only_snp
-        self.indel_char      = indel_char
+        self.indel_char       = indel_char
+        self.empty_char       = empty_char
 
 
 CONFIG = _SeqVarConf()
@@ -139,13 +140,87 @@ class SeqVariation(object):
             else:
                 var_kind =  'complex'
         return var_kind
-    
+
+def _alleles_from_contig(contig):
+    '''Given a contig it returns a dict with the alleles as keys and the
+    number of times they appear as values.
+    It filters the alleles with less that min_num_of_reads.
+    '''
+    alleles = {}
+    for row_index, sequence in enumerate(contig):
+        if  sequence is None:
+            continue 
+        allele = sequence.seq.lower()
+        if allele not in alleles:
+            alleles[allele] = []
+        alleles[allele].append(row_index)
+    #we filter the alleles that have not been read enough times
+    for allele in alleles.keys():
+        if len(alleles[allele]) < CONFIG.min_num_of_reads  :
+            del alleles[allele]
+    return alleles
+  
 def seqvariations_in_alignment(contig):
     ''' We use this method to catch the Sequence variation from an
      alignment. The alignment (contig) MUST BE a list of Biopython SeqRecord
      class objects'''      
+    inchar           = CONFIG.indel_char
+    col_number = 0
+    while col_number < contig.ncols:
+        cseq = contig[:, col_number: col_number + 1]
+        #which are the alleles?
+        alleles = _alleles_from_contig(cseq)
+        if inchar not in alleles:
+            if len(alleles) < 2:
+                seqvar = SeqVariation(alleles=alleles, \
+                                      location=col_number, \
+                                      alilgnment=contig)     
+        else:
+            # We are finding allele's length, And we follow continuous indels
+            indel_list       = alleles[inchar]
+            right_col_number = col_number + 1
+            while True:
+                #here we create a new subcontig with one more column
+                subcontig            = contig[:, col_number: right_col_number]
+                subcontig_alleles    = _alleles_from_contig(subcontig)
+                subcontig_indel_list = subcontig_alleles[inchar]
+                cont_indels          = \
+                    set(indel_list).intersection(set(subcontig_indel_list))
+                if len(cont_indels) == 0:
+                    #Indels doesn't continue, so
+                    #I do a new subcontig only with subcontig_indel_list aleles
+                    colindex          = slice(col_number, right_col_number - 1)
+                    good_reads_contig = [contig[seqindex, colindex] \
+                                          for seqindex in subcontig_indel_list]
+                    final_contig      = contig(sequences=good_reads_contig)
+                    # Here  we process the new contig and if it is  we put it 
+                    # into a new Seqvariation class objet
+                    if len(subcontig_alleles) < 2:
+                        loc = Location(start=col_number, end=right_col_number)
+                        seqvar = SeqVariation(alleles  = subcontig_alleles, 
+                                              location = loc, 
+                                              alignment= contig)
+                    break
+                else:
+                    indel_list        = subcontig_indel_list
+                    right_col_number += 1
+                    
+            col_number += right_col_number        
+            #here hay process the new contig and proccess if it is a variation,
+            # or not. If it is a variation I calculate what kind of variation
+            # it is
+    
+        yield seqvar             
+                    
+                
 
-    col_index = 0   #in which column are we now?
-    reads_with_indels = [] #which reads from the last columns where indels?
-    while True:
-         
+
+
+
+
+
+
+
+
+
+
