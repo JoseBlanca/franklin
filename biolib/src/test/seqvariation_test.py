@@ -85,7 +85,9 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
 
         for seqvar in seqvariations_in_alignment(contig):
-            print seqvar
+            if CONFIG.indel_char in seqvar:
+                print seqvar
+                
 
 
 if __name__ == "__main__":
