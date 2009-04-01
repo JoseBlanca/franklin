@@ -81,6 +81,20 @@ class VariationGeneratorTest(unittest.TestCase):
     @staticmethod
     def test_seq_variation_generator():
         '''It checks if we can get the variations.''' 
+        def check_alleles(expected_alleles, contig):
+            '''It checks that all the alleles for all variations are found'''
+            detected_vars = 0
+            for seqvar in seqvariations_in_alignment(contig):
+                expected = expected_alleles[detected_vars]
+                found = seqvar.alleles.keys()
+                diff = set(expected).difference(found)
+                #print diff
+                #print 'expected ->', expected
+                #print 'found    ->', found
+                assert not diff
+                detected_vars += 1
+            assert detected_vars == len(expected_alleles)
+            
         CONFIG.min_num_of_reads = 2
         #can we find snp?
         allele1 = 'AtA'
@@ -88,11 +102,8 @@ class VariationGeneratorTest(unittest.TestCase):
         seqs = [SeqRecord(allele1), SeqRecord(allele2), SeqRecord(allele1),
                 SeqRecord(allele2)]
         contig = Contig(sequences = seqs)
-
-        expected_alleles = (('A', 'C'), ('A','T'))
-        for var_index, seqvar in enumerate(seqvariations_in_alignment(contig)):
-            for allele in seqvar.alleles:
-                assert allele in expected_alleles[var_index]
+        expected_alleles = (('A','C'), ('A','T'))
+        check_alleles(expected_alleles, contig)
 
         #can we find indels with length 1?
         allele1 = '-t-'
@@ -100,12 +111,36 @@ class VariationGeneratorTest(unittest.TestCase):
         seqs = [SeqRecord(allele1), SeqRecord(allele2), SeqRecord(allele1),
                 SeqRecord(allele2)]
         contig = Contig(sequences = seqs)
-        expected_alleles = (('-', 'C'), ('-','T'))
-        for var_index, seqvar in enumerate(seqvariations_in_alignment(contig)):
-            for allele in seqvar.alleles:
-                assert allele in expected_alleles[var_index]
-
-
+        expected_alleles = (('-','C'), ('-','T'))
+        check_alleles(expected_alleles, contig)
+        
+        
+        
+        allele1 = SeqRecord('--')
+        allele2 = SeqRecord('-a')
+        allele3 = SeqRecord('aa')
+        seqs = [allele1, allele2, allele3, allele3, allele3]
+        contig = Contig(sequences = seqs)
+        expected_alleles = ()
+        check_alleles(expected_alleles, contig)
+        
+        
+        allele1 = SeqRecord('AAA')
+        allele2 = SeqRecord('--A')
+        allele3 = SeqRecord('A--')
+        seqs = [allele1, allele1, allele2, allele2, allele3, allele3]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (('AAA', '--A', 'A--'), )
+        check_alleles(expected_alleles, contig)
+        
+        allele1 = SeqRecord('AAA')
+        allele2 = SeqRecord('A--')
+        allele3 = SeqRecord('--A')
+        allele4 = SeqRecord('-AA')
+        seqs = [allele1, allele1, allele2, allele2, allele3, allele4]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (('AA','--'), )
+        check_alleles(expected_alleles, contig)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

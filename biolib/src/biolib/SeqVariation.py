@@ -3,7 +3,7 @@ Created on 2009 mar 25
 
 @author: peio
 '''
-from biolib.contig import NonStaticParentLocation
+from biolib.contig import NonStaticParentLocation,Contig
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -186,39 +186,67 @@ def seqvariations_in_alignment(contig):
                 yield seqvariation_alleles_with_list(alleles=alleles,
                                                      location=col_number,
                                                      alignment=contig)
+            col_number += 1
         else:
             # We are finding allele's length, And we follow continuous indels
-            indel_list       = alleles[inchar]
+            indel_reads      = set(alleles[inchar])
+            previous_alleles = alleles
             right_col_number = col_number + 1
             while True:
-                #here we create a new subcontig with one more column
-                subcontig            = contig[:, col_number: right_col_number]
-                subcontig_alleles    = _alleles_from_contig(subcontig)
-                subcontig_indel_list = subcontig_alleles[inchar]
-                cont_indels          = \
-                    set(indel_list).intersection(set(subcontig_indel_list))
+                #we need to know if the indel continues in the next column or
+                #not if there is no next column the indel does not continue
+                if right_col_number <= contig.ncols:
+                    #here we create a new subcontig with one more column
+                    subcontig         = contig[:, col_number:right_col_number+1]
+                    subcontig_alleles = _alleles_from_contig(subcontig)
+                    # We get a list of alleles with indel as the last character
+                    subcontig_indel_reads = set()
+                    # All the reads readed at least CONFIG.min_num_reads times 
+                    subcontig_good_reads  = set()
+                    for allele in subcontig_alleles:
+                        subcontig_good_reads = \
+                            subcontig_good_reads.union(subcontig_alleles[allele])
+                        if allele[-1] == inchar:
+                            subcontig_indel_reads = \
+                            subcontig_indel_reads.union(subcontig_alleles[allele])
+                    # These are the read number with the indels we are elongating
+                    cont_indels = indel_reads.intersection(subcontig_indel_reads)
+                else:
+                    cont_indels = set()
+                    subcontig_indel_reads = indel_reads
+                    subcontig_alleles = previous_alleles
                 if len(cont_indels) == 0:
                     #Indels doesn't continue, so
                     #I do a new subcontig only with subcontig_indel_list aleles
-                    colindex          = slice(col_number, right_col_number - 1)
+                    colindex          = slice(col_number, right_col_number)
                     good_reads_contig = [contig[seqindex, colindex] \
-                                          for seqindex in subcontig_indel_list]
-                    final_contig      = contig(sequences=good_reads_contig)
-                    # Here  we process the new contig and if it is  we put it 
-                    # into a new Seqvariation class objet
-                    if len(subcontig_alleles) < 2:
-                        loc = NonStaticParentLocation(start=col_number,
-                                                      end=right_col_number)
-                        yield SeqVariation(alleles  = subcontig_alleles, 
+                                        for seqindex in subcontig_good_reads]
+                    final_contig      = Contig(sequences=good_reads_contig)
+                    #we have to recalculate the previous alleles using the
+                    #good_reads_contig
+                    previous_alleles = _alleles_from_contig(final_contig)
+
+                    #do we have more than one allele == is a seqvar?
+                    if len(previous_alleles) > 1:
+                        if col_number == right_col_number - 1:
+                            loc = col_number
+                        else:
+                            loc = NonStaticParentLocation(start=col_number,
+                                                      end=right_col_number -1)
+                        yield SeqVariation(alleles  = previous_alleles, 
                                            location = loc, 
                                            alignment= contig)
+                        col_number = right_col_number
+                        #we have yield a seqvar, so we go to the main while
+                        break
+                    indel_reads      = subcontig_indel_reads
+                    previous_alleles = subcontig_alleles
+                    #after elongating the indel we haven't found a seqvar
+                    #we don't return a seqvar so colnumber goes to the next
+                    #column
+                    col_number += 1
                     break
                 else:
-                    indel_list        = subcontig_indel_list
+                    #the indel is still growing
+                    indel_reads        = subcontig_indel_reads
                     right_col_number += 1
-                    
-            col_number += right_col_number
-            #here hay process the new contig and proccess if it is a variation,
-            # or not. If it is a variation I calculate what kind of variation
-            # it is     
-        col_number += 1
