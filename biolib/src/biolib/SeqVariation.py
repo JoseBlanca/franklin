@@ -3,7 +3,7 @@ Created on 2009 mar 25
 
 @author: peio
 '''
-#from biolib.contig import Location
+from biolib.contig import NonStaticParentLocation
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -33,6 +33,18 @@ class _SeqVarConf(object):
 
 
 CONFIG = _SeqVarConf()
+
+def seqvariation_alleles_with_list(alleles, name=None, location=None,
+                                   alignment=None):
+    '''This is an alternative init for the SeqVariation.
+    
+    Here each value in the alleles dict is a list instead of an int with the
+    count.
+    '''
+    int_alleles = {}
+    for allele in alleles:
+        int_alleles[allele] = len(alleles[allele])
+    return SeqVariation(int_alleles, name, location, alignment)
 
 class SeqVariation(object):
     '''
@@ -132,7 +144,6 @@ class SeqVariation(object):
                 var_kind =  'complex'
             else:
                 var_kind =  'snp'
-            
         elif num_alleles >2:
             alleles = self._num_reads.keys()
             if len(alleles[0]) == 1 and inchar not in alleles:
@@ -150,31 +161,31 @@ def _alleles_from_contig(contig):
     for row_index, sequence in enumerate(contig):
         if  sequence is None:
             continue 
-        allele = sequence.seq.lower()
+        allele = sequence.seq.upper()
         if allele not in alleles:
             alleles[allele] = []
         alleles[allele].append(row_index)
     #we filter the alleles that have not been read enough times
     for allele in alleles.keys():
-        if len(alleles[allele]) < CONFIG.min_num_of_reads  :
+        if len(alleles[allele]) < CONFIG.min_num_of_reads:
             del alleles[allele]
     return alleles
   
 def seqvariations_in_alignment(contig):
     ''' We use this method to catch the Sequence variation from an
-     alignment. The alignment (contig) MUST BE a list of Biopython SeqRecord
+     alignment. The alignment (contig) must be a list of SeqRecord-like
      class objects'''      
-    inchar           = CONFIG.indel_char
+    inchar     = CONFIG.indel_char
     col_number = 0
     while col_number < contig.ncols:
         cseq = contig[:, col_number: col_number + 1]
         #which are the alleles?
         alleles = _alleles_from_contig(cseq)
         if inchar not in alleles:
-            if len(alleles) < 2:
-                seqvar = SeqVariation(alleles=alleles, \
-                                      location=col_number, \
-                                      alilgnment=contig)     
+            if len(alleles) > 1:
+                yield seqvariation_alleles_with_list(alleles=alleles,
+                                                     location=col_number,
+                                                     alignment=contig)
         else:
             # We are finding allele's length, And we follow continuous indels
             indel_list       = alleles[inchar]
@@ -196,31 +207,18 @@ def seqvariations_in_alignment(contig):
                     # Here  we process the new contig and if it is  we put it 
                     # into a new Seqvariation class objet
                     if len(subcontig_alleles) < 2:
-                        loc = Location(start=col_number, end=right_col_number)
-                        seqvar = SeqVariation(alleles  = subcontig_alleles, 
-                                              location = loc, 
-                                              alignment= contig)
+                        loc = NonStaticParentLocation(start=col_number,
+                                                      end=right_col_number)
+                        yield SeqVariation(alleles  = subcontig_alleles, 
+                                           location = loc, 
+                                           alignment= contig)
                     break
                 else:
                     indel_list        = subcontig_indel_list
                     right_col_number += 1
                     
-            col_number += right_col_number        
+            col_number += right_col_number
             #here hay process the new contig and proccess if it is a variation,
             # or not. If it is a variation I calculate what kind of variation
-            # it is
-    
-        yield seqvar             
-                    
-                
-
-
-
-
-
-
-
-
-
-
-
+            # it is     
+        col_number += 1

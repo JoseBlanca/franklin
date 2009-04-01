@@ -81,13 +81,30 @@ class VariationGeneratorTest(unittest.TestCase):
     @staticmethod
     def test_seq_variation_generator():
         '''It checks if we can get the variations.''' 
-        seqs = [SeqRecord('aga'), SeqRecord('ctc')]
+        CONFIG.min_num_of_reads = 2
+        #can we find snp?
+        allele1 = 'AtA'
+        allele2 = 'CtT'
+        seqs = [SeqRecord(allele1), SeqRecord(allele2), SeqRecord(allele1),
+                SeqRecord(allele2)]
         contig = Contig(sequences = seqs)
 
-        for seqvar in seqvariations_in_alignment(contig):
-            if CONFIG.indel_char in seqvar:
-                print seqvar
-                
+        expected_alleles = (('A', 'C'), ('A','T'))
+        for var_index, seqvar in enumerate(seqvariations_in_alignment(contig)):
+            for allele in seqvar.alleles:
+                assert allele in expected_alleles[var_index]
+
+        #can we find indels with length 1?
+        allele1 = '-t-'
+        allele2 = 'CtT'
+        seqs = [SeqRecord(allele1), SeqRecord(allele2), SeqRecord(allele1),
+                SeqRecord(allele2)]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (('-', 'C'), ('-','T'))
+        for var_index, seqvar in enumerate(seqvariations_in_alignment(contig)):
+            for allele in seqvar.alleles:
+                assert allele in expected_alleles[var_index]
+
 
 
 if __name__ == "__main__":
