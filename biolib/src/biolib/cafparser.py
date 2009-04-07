@@ -9,12 +9,12 @@ contig. It creates a file for each contig to  easyly use them
 
 from re import match
 from biolib.contig import Contig, locate_sequence
-from SeqRecord import SeqRecord
+from biolib.Seqs import SeqWithQuality
 
 class CafParser(object):
-    ''' This class is used to create and manipulate caf files using an index'''
+    ''' This class is used to parse caf files.'''
     def __init__(self, fname):
-        
+
         '''The initialitation.
         keyword arguments:
             fname : caf file name
@@ -50,6 +50,7 @@ class CafParser(object):
             #if match("\w*\s*:\s*\w*", line):
             mode = rawline.split(':', 1)[0].strip().lower()
             if mode in ('dna', 'basequality', 'sequence'):
+                #pylint: disable-msg=W0612
                 mode_, name = line.split(":")
                 name = name.strip()
                 if mode == "sequence":
@@ -71,7 +72,7 @@ class CafParser(object):
                     self._type_index[name] = "Is_contig"
                     
     def contigs(self):
-        '''It returns a generator with the contigs'''
+        '''It returns a generator that yields the contigs.'''
         
         for seq_rec_name in self._seq_index:
             if self._type_index[seq_rec_name] == 'Is_contig':
@@ -115,8 +116,11 @@ class CafParser(object):
         return dna
   
     def _get_base_quality(self, sec_rec_name):
-        ''' It returns the base quality array. It needs the sec_rec name '''
-        base_quality_pos     = self._qual_index[sec_rec_name]
+        ''' It returns the base quality list. It needs the sec_rec name.'''
+        try:
+            base_quality_pos = self._qual_index[sec_rec_name]
+        except KeyError:
+            raise ValueError('No quality for the given read')
         base_quality_section = self._return_section(base_quality_pos)
         
         base_quality = []
@@ -208,25 +212,20 @@ class CafParser(object):
         
         return seq_rec_info
     
-    def read(self, seq_rec_name):
-        ''' This wraper takes the dictionary taked from each sec record
-        and put them into a biopython seq_rec objetc'''
+    def read(self, name):
+        '''Given a read name it returns a SeqWithQuality object'''
         
-        if self._type_index[seq_rec_name] == 'Is_read':
+        if self._type_index[name] == 'Is_read':
             
-            seq_info    = self._get_seq_rec(seq_rec_name)
-            seq_dna     = self._get_dna(seq_rec_name)
-            seq_quality = self._get_base_quality(seq_rec_name)
+            seq_info = self._get_seq_rec(name)
+            dna      = self._get_dna(name)
+            quality  = self._get_base_quality(name)
      
-            seq_rec  = SeqRecord(seq = seq_dna, id = seq_rec_name, \
-                                 name = seq_rec_name )
-            seq_rec.letter_annotations['quality'] = seq_quality
+            seq_rec  = SeqWithQuality(seq=dna, name=name, qual=quality )
             seq_rec.annotations =  seq_info
             return seq_rec
         else:
-            print seq_rec_name
-            raise RuntimeError ('This sec record it supposed to be a read\
-                                 record and is not')
+            raise RuntimeError (name + 'does not corresponds to a read')
     @staticmethod  
     def _correct_minus(reads):
         ''' It corrects the problem of the minus(-)  coordenates. This function
@@ -247,31 +246,33 @@ class CafParser(object):
                 correction = diff
         return abs(correction)
                 
-    def contig(self, contig_name):
-        ''' This wraper takes the dictionary taked from each sec record
-         and put them into a contig objetc or a sec_record object'''
+    def contig(self, name):
+        '''Given a name it returns a Contig'''
 
-        contig_info = self._get_seq_rec(contig_name)
-        contig_dna  = self._get_dna(contig_name)
+        contig_info = self._get_seq_rec(name)
+        dna         = self._get_dna(name)
+        try:
+            qual = self._get_base_quality(name)
+        except ValueError:
+            qual = None
         if contig_info['type'] == 'Is_contig':
             reads      = contig_info['reads']
             correction = self._correct_minus(reads)
            
-            if len(contig_dna) == 0:
-                contig     = Contig()
+            if len(dna) == 0:
+                contig    = Contig()
             else:
-                consensus = SeqRecord(seq=contig_dna, id='Consensus',
-                                      name = contig_name)
-                consensus  = locate_sequence(sequence = consensus, \
+                consensus = SeqWithQuality(seq=dna, name=name, qual=qual)
+                consensus = locate_sequence(sequence = consensus, \
                                              location = correction)
-                contig     = Contig(consensus=consensus)
+                contig    = Contig(consensus=consensus)
                 
             for read in reads:
                 read_sections = reads[read]
                 if len(read_sections) > 1:
                     #We it's unpadded there is more than one list of coordentes 
                     raise RuntimeError('This is an unppadded sec record and \
-                     we do not admit them. Use caf tools to convert it to \
+                     we do not support them. Use caf tools to convert it to \
                      padded')
                 else:
                     contig_start  = int(read_sections[0][0]) + correction
@@ -281,7 +282,6 @@ class CafParser(object):
                 #Data to fill the contig
                 seq_rec = self.read(read)
                 sec_strand = seq_rec.annotations['Strand']
-#                print seq_rec.annotations['Clipping']
                 mask = seq_rec.annotations['Clipping'].split(" ")[1:]
                 
                 if sec_strand.lower() == 'forward':
@@ -295,11 +295,5 @@ class CafParser(object):
                                           start=contig_start,\
                                           strand=strand, forward=forward, \
                                           mask=mask)
-        return contig
+        return contig 
                  
-    
-            
-        
-         
-         
-        
