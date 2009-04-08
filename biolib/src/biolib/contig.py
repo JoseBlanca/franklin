@@ -171,24 +171,33 @@ class Contig(object):
            col_index.step is None:
             return row
         else:
-            return row[col_index]
-    def _slice_to_range(self, index):
-        '''Given a slice it returns a range.'''
+            try:
+                return row[col_index]
+            except IndexError:
+                #some sequences might not span in this column range
+                if self.return_empty_seq:
+                    return  None
+                else:
+                    raise                 
+    @staticmethod            
+    def _slice_to_range(index, length):
+        '''Given a slice and the length of the sequence it returns a range.'''
         start = index.start
         if start is None:
             start = 0
         stop = index.stop
         if stop is None:
-            stop = len(self)
+            stop = length
         step = index.step
         if step is None:
             step = 1
         return range(start, stop, step)
+
     def _getitem_slice_slice(self, row_index, col_index):
         '''It returns a new Contig with the sliced rows.'''
         #we create the new assembly that will be returned
         new_assembly = self.__class__()
-        for row_int in self._slice_to_range(row_index):
+        for row_int in self._slice_to_range(row_index, len(self)):
             # pylint: disable-msg=W0704
             #It's ok to do nothing here
             try:
@@ -201,21 +210,31 @@ class Contig(object):
                 else:
                     pass
         #now we have to slice the consensus
-        consensus = self.consensus
-        if consensus is not None:
-            new_assembly.consensus = consensus[col_index]
+        try:
+            consensus = self.consensus
+            if consensus is not None:
+                new_assembly.consensus = consensus[col_index]
+        except IndexError:
+            if self.return_empty_seq:
+                new_assembly.consensus = None
+            else:
+                pass
+                
         return new_assembly
     def _getitem_slice_int(self, row_index, col_index):
         '''It returns a column.'''
         #which row range are we requesting?
-        items = None
+        items    = None
         seq_like = None
-        for row_int in self._slice_to_range(row_index):
+        for row_int in self._slice_to_range(row_index, len(self)):
             try:
                 item = self._seqs[row_int][col_index]
             except IndexError:
                 #this row does not cover this column
-                continue
+                if self.return_empty_seq:
+                    item = None
+                else:
+                    continue
             #are we dealing with seq-like items like strs or Seq
             #or with non-seq items like the int of a quality
             if seq_like is None:
@@ -235,7 +254,7 @@ class Contig(object):
                 if items is None:
                     items = [item]
                 else:
-                    items.append(item[0])
+                    items.append(item)
         return items
 
     def __getitem__(self, index):
@@ -274,7 +293,13 @@ class Contig(object):
         row_type = type(row_index)
         col_type = type(col_index)
         if row_type == int and col_type == int:
-            return self._seqs[row_index][col_index]
+            try:
+                return self._seqs[row_index][col_index]
+            except IndexError:
+                if self.return_empty_seq:
+                    return None
+                else:
+                    raise
         elif row_type == int and col_type == slice:
             return self._getitem_int_slice(row_index, col_index)
         elif row_type == slice and col_type == int:

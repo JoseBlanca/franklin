@@ -245,10 +245,25 @@ class CafParser(object):
             if diff < correction:
                 correction = diff
         return abs(correction)
-                
+    
+    @staticmethod
+    def _read_mask(read_lenght, annot_dict):
+        ''' It returns the mask of the read. It gets the information using
+         the annotations dictionary'''
+        read = range(1, read_lenght)
+        for key in annot_dict:
+            if key.lower() == 'clippping' or key.lower() == 'seq_vec':
+                start = annot_dict[key].split(" ")[1]
+                end   = annot_dict[key].split(" ")[2]
+                for i in range(int(start), int(end)):
+                    if i in read:
+                        read.remove(i)
+        mask_start = read[0]
+        mask_end   = read[-1]
+        return [mask_start, mask_end]
+         
     def contig(self, name):
         '''Given a name it returns a Contig'''
-
         contig_info = self._get_seq_rec(name)
         dna         = self._get_dna(name)
         try:
@@ -280,11 +295,11 @@ class CafParser(object):
                     contig_start -= read_start
 
                 #Data to fill the contig
-                seq_rec = self.read(read)
-                sec_strand = seq_rec.annotations['Strand']
-                mask = seq_rec.annotations['Clipping'].split(" ")[1:]
+                seq_rec    = self.read(read)
+                seq_strand = seq_rec.annotations['Strand']
+                mask       = self._read_mask(len(seq_rec.seq), seq_rec.annotations)
                 
-                if sec_strand.lower() == 'forward':
+                if seq_strand.lower() == 'forward':
                     strand  = 1
                     forward = True
                 else:

@@ -34,11 +34,11 @@ class SeqWithQuality(object):
         ''' It returns another object but only with the sclice chosed'''
         if isinstance(index, int):
             qual = [self.qual[index]]
-        else:
+        elif isinstance(index,slice):
             qual = self.qual[index]
-        return self.__class__(name = '%s_%d' %(self.name, index), \
-                                  seq  = self._seq[index], \
-                                  qual = qual )
+        name = '%s_%s' % (self.name, str(index))
+        return self.__class__(name = name, seq  = self._seq[index], \
+                              qual = qual )
     def __len__(self):       
         ''' It returns the length of the sequence'''
         return len(self._seq)
@@ -49,7 +49,7 @@ class SeqWithQuality(object):
         sprint += 'Seq  : ' + self._seq.__repr__()  + '\n'
         sprint += 'Quality : '
         for qual in self._qual:
-            sprint += '%d ' % qual
+            sprint += '%d ' % int(qual)
         sprint += '\n'
         return sprint 
     

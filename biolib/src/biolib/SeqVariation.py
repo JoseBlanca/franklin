@@ -3,7 +3,7 @@ Created on 2009 mar 25
 
 @author: peio
 '''
-from biolib.contig import NonStaticParentLocation,Contig
+from biolib.contig import NonStaticParentLocation, Contig
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -33,18 +33,6 @@ class _SeqVarConf(object):
 
 
 CONFIG = _SeqVarConf()
-
-def seqvariation_alleles_with_list(alleles, name=None, location=None,
-                                   alignment=None):
-    '''This is an alternative init for the SeqVariation.
-    
-    Here each value in the alleles dict is a list instead of an int with the
-    count.
-    '''
-    int_alleles = {}
-    for allele in alleles:
-        int_alleles[allele] = len(alleles[allele])
-    return SeqVariation(int_alleles, name, location, alignment)
 
 class SeqVariation(object):
     '''
@@ -80,9 +68,9 @@ class SeqVariation(object):
         
         pstring  = 'SequenceVariation: ' + str(self.name) + '\n'
         if self.location:
-            pstring += self.location.__repr__() + '\n'
-        if self.alignment:
-            pstring += self.alignment.__repr__() + '\n'
+            pstring += 'Location:' + self.location.__repr__() + '\n'
+#        if self.alignment:
+#            pstring += self.alignment.name + '\n'
         pstring += self._num_reads.__repr__()
         return pstring
     
@@ -97,7 +85,11 @@ class SeqVariation(object):
         '''
         for allele in alleles.keys():
             #we remove the alleles with not enough reads
-            if alleles[allele] < CONFIG.min_num_of_reads:
+            if isinstance(alleles[allele], int):
+                allele_count = alleles[allele]
+            else:
+                allele_count = len(alleles[allele])
+            if allele_count < CONFIG.min_num_of_reads:
                 del alleles[allele]
                 continue
             #we remove the indels if we don't want them
@@ -161,7 +153,14 @@ def _alleles_from_contig(contig):
     for row_index, sequence in enumerate(contig):
         if  sequence is None:
             continue 
-        allele = sequence.seq.upper()
+        try:
+            # This is to use when he sequence is a seqRecord
+            # or a SeqWithQuality
+            allele = sequence.seq.upper()
+        except:
+            #This is to use when the sequence is a locatable sequence 
+            allele = sequence.sequence.seq.upper()
+            
         if allele not in alleles:
             alleles[allele] = []
         alleles[allele].append(row_index)
@@ -183,86 +182,140 @@ def _alleles_dict_to_set(alleles):
         if allele[-1] == CONFIG.indel_char:
             indel_reads = indel_reads.union(alleles[allele])
     return indel_reads, all_reads
-def _alleles_in_subcontig(contig, colindex, rows):
-    ''' It takes and index for columns (slice or int), a list of rows (reads)
-    and the contig. It returns the aleles in this subcontig'''
+
+def _build_location_from_index(index):
+    ''' It returns alocation or a int depending on the length between
+    start and end.
+    The index can be an int or a Location.
+    '''
+    if isinstance(index, int):
+        start = index
+        stop = index + 1
+    else:
+        start = index.start
+        stop = index.stop
+
+    if start == stop - 1:
+        loc = start
+    else:
+        loc = NonStaticParentLocation(start=start, end=stop - 1)
+    return loc
+
+def _seqvariation_in_subcontig(contig, colindex, rows):
+    '''Given a contig a column index and a list of rows (seqs) it looks if
+    there is a SeqVariation. If it founds one it returns it, otherwise it
+    returns None.'''
+    #which are the alleles in this subcontig?
     seqs      = [contig[seqindex, colindex] for seqindex in rows]
     subcontig = Contig(sequences=seqs)
     alleles   = _alleles_from_contig(subcontig)
-    return alleles 
 
-def _build_location(start, end):
-    ''' It returns alocation or a int depending on the length between
-    start and end'''
-    if start == end:
-        loc = start
+    #do we have more than one allele == is a seqvar?
+    if len(alleles) > 1:
+        loc = _build_location_from_index(colindex)
+        return SeqVariation(alleles=alleles, location=loc, alignment=contig)
     else:
-        loc = NonStaticParentLocation(start=start, end=end)
-    return loc
+        return None
 
 
-def seqvariations_in_alignment(contig):
-    ''' We use this method to catch the Sequence variation from an
-     alignment. The alignment (contig) must be a list of SeqRecord-like
-     class objects'''      
+def seqvariations_in_alignment(alignment):
+    ''' We use this method to yield the SequenceVariation found in an alignment.
+    
+    The alignment (contig) must be a list of SeqRecord-like class objects.'''
     inchar     = CONFIG.indel_char
-    col_number = 0
-    while col_number < contig.ncols:
-        cseq = contig[:, col_number: col_number + 1]
-        #which are the alleles?
+    alignment.return_empty_seq = True
+
+    col_index = 341
+    #we go through every column in the alignment
+    while col_index < alignment.ncols:
+        print col_index
+        #which are the alleles in the column col_index?
+        cseq = alignment[:, col_index: col_index + 1]
+        # If all the secuences that we get in this column are none,
+        # we have finished
         alleles = _alleles_from_contig(cseq)
+        #are we dealing with an indel or with an snp?
         if inchar not in alleles:
+            #the snp case is simple, we return it and we go for the next column
             if len(alleles) > 1:
-                yield seqvariation_alleles_with_list(alleles=alleles,
-                                                     location=col_number,
-                                                     alignment=contig)
-            col_number += 1
+                yield SeqVariation(alleles=alleles, location=col_index,
+                                   alignment=alignment)
+            col_index += 1
         else:
-            # We are finding allele's length, And we follow continuous indels
+            # the indel case is complex because an indel can cover several
+            # columns
+            # We need to know where the indel finish, so we go to the following
+            # columns looking for the end.
             indel_reads      = set(alleles[inchar])
             previous_alleles = alleles
-            right_col_number = col_number + 1
+            #we know look for the indel span
+            col_indel_end = col_index + 1 #the last column covered by the indel
             while True:
-                #we need to know if the indel continues in the next column or
-                #not if there is no next column the indel does not continue
-                if right_col_number <= contig.ncols:
-                    #here we create a new subcontig with one more column
-                    subcontig         = contig[:, col_number:right_col_number+1]
-                    subcontig_alleles = _alleles_from_contig(subcontig)
-                    # With this function we return a set of all reads and 
-                    # another set of reads that finish with indel
-                    (subcontig_indel_reads,subcontig_good_reads) =\
-                    _alleles_dict_to_set(subcontig_alleles) 
+                #if there are more columns
+                if col_indel_end <= alignment.ncols:
+                    #we need to know if the indel continues or not
+                    #we calculate a set with the reads that are still streching
+                    #the indel.
                     
-                    # These are the read number with the indels we are elongating
+                    #we need the alleles taking into account the whole span of
+                    #the indel to deal with situations like:
+                    #    --
+                    #    -A
+                    subcontig         = alignment[:, col_index:col_indel_end+1]
+                    subcontig_alleles = _alleles_from_contig(subcontig)
+                    #Which reads have an indel in the last column?
+                    #subcontig_good_reads are the reads in this alignment
+                    #        section that have an allele read at least 
+                    #        min_num_reads times
+                    #subcontig_indel_reads are the reads in the section that
+                    #        we're considering now that finish with an indel
+                    subcontig_indel_reads, subcontig_good_reads = \
+                                         _alleles_dict_to_set(subcontig_alleles)
+                    #So here we have the reads that are streching the indel
+                    #These are the reads that finished with an indel in the
+                    #previous iteration (the previous col_indel_end) and are
+                    #still an indel
+                    #        --T          --T
+                    #        ---          TT-
+                    #          ^- follows   ^- not follows
+                    #pylint: disable-msg=C0301
                     cont_indels = indel_reads.intersection(subcontig_indel_reads)
                 else:
+                    # If there are no more columns. 
+                    # So none of the indels  continues.  
                     cont_indels           = set()
+                    # We need to save the last valid reads with indels.
                     subcontig_indel_reads = indel_reads
+                    #We should take in account the alleles of the last iteration
                     subcontig_alleles     = previous_alleles
-                if len(cont_indels) == 0:
-                    #Indels doesn't continue, so
-                    #I do a new subcontig only with subcontig_indel_list aleles
-                    colindex         = slice(col_number, right_col_number)
-                    previous_alleles = _alleles_in_subcontig(contig, colindex, \
-                                                        subcontig_good_reads)
-                    #do we have more than one allele == is a seqvar?
-                    if len(previous_alleles) > 1:
-                        loc = _build_location(col_number, right_col_number -1)
-                        yield SeqVariation(alleles  = previous_alleles, 
-                                           location = loc, 
-                                           alignment= contig)
-                        col_number = right_col_number
-                        #we have yield a seqvar, so we go to the main while
+                if len(cont_indels) == 0: # Indel doesn't continue
+                    # I do a new subcontig only with subcontig_indel_list aleles
+                    # maybe we have to return a SeqVariation. It depends if 
+                    # enough alleles have been read more than min_number_reads
+                    # times 
+                    colindex = slice(col_index, col_indel_end)
+                    seqvar   = _seqvariation_in_subcontig(alignment, colindex, \
+                                                 subcontig_good_reads)
+                    if seqvar is not None:
+                        yield seqvar
+                        col_index = col_indel_end
+                        # we have yield a seqvar, so we are done with the indel 
+                        # streching
                         break
+                    # To have to actualize the set of reads that still finish 
+                    # with an indel in order to continue with the new iteration
                     indel_reads      = subcontig_indel_reads
                     previous_alleles = subcontig_alleles
-                    #after elongating the indel we haven't found a seqvar
-                    #we don't return a seqvar so colnumber goes to the next
-                    #column
-                    col_number += 1
+                    # After elongating the indel we haven't found a seqvar
+                    # So we are done with the indel streaching 
+                    # Now We go to search for the sext seqvar in the alignment's
+                    # next column
+                    col_index += 1
                     break
                 else:
-                    #the indel is still growing
-                    indel_reads       = subcontig_indel_reads
-                    right_col_number += 1
+                    # The indel is still growing
+                    # We actualizes the list of reads that continues streching
+                    # the indel
+                    indel_reads    = subcontig_indel_reads
+                    # We strech it one more column    
+                    col_indel_end += 1

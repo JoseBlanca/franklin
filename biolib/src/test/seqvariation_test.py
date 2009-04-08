@@ -5,8 +5,8 @@ Created on 2009 mar 25
 '''
 import unittest
 from biolib.SeqVariation import CONFIG, SeqVariation, seqvariations_in_alignment
-from biolib.contig import Contig
-from test.test_utils import SeqRecord
+from biolib.contig import Contig, locate_sequence
+from test.test_utils import SeqRecord, SeqWithQuality
 
 class SeqVariationConfig(unittest.TestCase):
     '''Here we will check if the SeqVariation module can be configured.
@@ -53,16 +53,28 @@ class SeqVariationTest(unittest.TestCase):
         CONFIG.only_snp = False
 
     @staticmethod
+    def test_init_with_seq_lists():
+        '''It test that SeqVariation also work with {'A':[seq1], 'T':[seq2]}'''
+        CONFIG.min_num_of_reads = 2
+        snp = SeqVariation(alleles={'A':[1, 2], 'T':['seq1', 'seq2'], '-':[1]})
+        assert len(snp.alleles) == 2
+        
+    @staticmethod
     def test_kind():
         '''it checks that we can get the kind of variation.'''
         inchar = CONFIG.indel_char
         
         seq_var = SeqVariation(alleles={'A':3, inchar:3})
         assert seq_var.is_indel()
-        
+ 
+        seq_var = SeqVariation(alleles={'A':[1, 2, 3], inchar:[4, 5, 6]})
+        assert seq_var.is_indel()
+
         seq_var = SeqVariation(alleles={'AA':3, inchar * 2:3})
         assert seq_var.is_indel()
-        
+        seq_var = SeqVariation(alleles={'AA':[1, 2, 3], inchar * 2:[4, 5, 6]})
+        assert seq_var.is_indel()
+
         seq_var = SeqVariation(alleles={'AA' + inchar :3, inchar * 3:3})
         assert seq_var.is_complex()
         
@@ -76,6 +88,7 @@ class SeqVariationTest(unittest.TestCase):
                                         'A' + inchar * 2 :4})
         assert seq_var.is_complex()
 
+    
 class VariationGeneratorTest(unittest.TestCase):
     '''It test if we can get the variations'''
     @staticmethod
@@ -88,9 +101,9 @@ class VariationGeneratorTest(unittest.TestCase):
                 expected = expected_alleles[detected_vars]
                 found = seqvar.alleles.keys()
                 diff = set(expected).difference(found)
-                #print diff
-                #print 'expected ->', expected
-                #print 'found    ->', found
+                print diff
+                print 'expected ->', expected
+                print 'found    ->', found
                 assert not diff
                 detected_vars += 1
             assert detected_vars == len(expected_alleles)
@@ -141,7 +154,24 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('AA','--'), )
         check_alleles(expected_alleles, contig)
-
+        
+        allele1 = SeqRecord('AAA')
+        seqs = [allele1, allele1, allele1]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (() )
+        check_alleles(expected_alleles, contig)
+        
+       
+        
+        # here ww check if it works when the seqs in the contigs are 
+        # locatable sequences
+        allele1 = locate_sequence(sequence=SeqRecord('AA'), location=0)
+        allele2 = locate_sequence(sequence=SeqRecord('TA'), location=1)
+        seqs = [allele1, allele1, allele2, allele2]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (('AT'), )
+        check_alleles(expected_alleles, contig)
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
     unittest.main()

@@ -1256,18 +1256,61 @@ class ContigTests(unittest.TestCase):
         contig2 = contig1[:, :2]
         assert contig2.consensus == 'AC'
 
-    def test_empty_seqs(self):
+    def test_empty_seqs_slice(self):
         '''We want also the empty seqs, could we get them?'''
-        seq = locate_sequence('ACTG', location=5)
-        contig = Contig([seq])
+        seq = [locate_sequence('ACTG', location=5), 'AAAA','TTTTTT']
+        contig = Contig(seq)
+        # Slice slice combination
         #default behaviour
         new_contig = contig[:, 0:1]
-        assert len(new_contig) == 0
+        assert len(new_contig) == 2
         #now we want the empty seqs
         contig.return_empty_seq = True
         new_contig = contig[:, 0:1]
         assert new_contig[0] is None
+    
+        # int slice combination
+        contig.return_empty_seq = True
+        new_contig = contig[0,2:3]
+        assert new_contig is None
+        
+    def test_empty_seqs_int(self):
+        '''We want also the empty seqs, could we get them?'''
+        seq = [locate_sequence('ACTG', location=5), 'AAAA','TTTTTT']
+        contig = Contig(seq)        
 
+        # These are with slice int combination
+        #default behaviour
+        contig.return_empty_seq = False
+        new_contig = contig[:, 1]
+        assert len(new_contig) == 2
+        #now we want the empty seqs
+        contig.return_empty_seq = True
+        new_contig = contig[:, 0]
+        assert new_contig[0] is None
+        
+        #These are with int int combination
+        #default behaviour
+        contig.return_empty_seq = False
+        try:
+            contig[0, 1]
+            self.fail("Index Error expected")
+        except IndexError:
+            pass
+        
+        
+        
+        
+    
+    @staticmethod
+    def test_consensus_empty():
+        ''' We test here if the contig watches what returns the contig when 
+        you ask a column that doesn't exist'''
+        consensus = locate_sequence('TT', location=0)
+        contig = Contig(sequences=['AAAA'], consensus = consensus)
+        assert  contig[:, 4:4].consensus  == None
+        
+   
 def main():
     '''It runs the tests'''
     unittest.main()
