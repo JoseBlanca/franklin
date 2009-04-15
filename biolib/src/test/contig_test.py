@@ -325,6 +325,11 @@ class LocationTests(unittest.TestCase):
             #and with tuples (start, end)
             assert loc1.overlaps(tuple2) == loc_pair[2]
 
+        #this test was added to catch an obscure error in a snp processing
+        #tool
+        loc1 = Location(start=1, end=303)
+        assert not loc1.overlaps((305, None))
+
     def test_contains(self):
         '''It test that the location can check if contains another one'''
         loc_pairs = (((1, 3), (2, 5), False), ((1, 6), (4, 5), True),

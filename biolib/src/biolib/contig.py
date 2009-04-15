@@ -1004,6 +1004,10 @@ class Location(object):
             start = 0
         if end is None:
             end = self.end
+        #if start was bigger than self.end and end was None
+        #at this point end could be lower than start
+        if end < start:
+            end = start
         if self.start >= start and self.start <= end:
             return True
         if self.end >= start and self.end <= end:

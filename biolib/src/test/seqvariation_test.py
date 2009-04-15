@@ -161,9 +161,7 @@ class VariationGeneratorTest(unittest.TestCase):
         expected_alleles = (() )
         check_alleles(expected_alleles, contig)
         
-       
-        
-        # here ww check if it works when the seqs in the contigs are 
+        # here we check if it works when the seqs in the contigs are 
         # locatable sequences
         allele1 = locate_sequence(sequence=SeqRecord('AA'), location=0)
         allele2 = locate_sequence(sequence=SeqRecord('TA'), location=1)
@@ -172,6 +170,7 @@ class VariationGeneratorTest(unittest.TestCase):
         expected_alleles = (('AT'), )
         check_alleles(expected_alleles, contig)
         
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
     unittest.main()

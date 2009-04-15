@@ -154,10 +154,10 @@ def _alleles_from_contig(contig):
         if  sequence is None:
             continue 
         try:
-            # This is to use when he sequence is a seqRecord
+            # This is to used when he sequence is a seqRecord
             # or a SeqWithQuality
             allele = sequence.seq.upper()
-        except:
+        except AttributeError:
             #This is to use when the sequence is a locatable sequence 
             allele = sequence.sequence.seq.upper()
             
@@ -225,10 +225,9 @@ def seqvariations_in_alignment(alignment):
     inchar     = CONFIG.indel_char
     alignment.return_empty_seq = True
 
-    col_index = 341
     #we go through every column in the alignment
+    col_index = 0
     while col_index < alignment.ncols:
-        print col_index
         #which are the alleles in the column col_index?
         cseq = alignment[:, col_index: col_index + 1]
         # If all the secuences that we get in this column are none,
