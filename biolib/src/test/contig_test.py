@@ -1134,6 +1134,27 @@ class LocatableSequenceTests(unittest.TestCase):
         contig.default_masker = lambda x: 'x'
         assert locseq[8] == 'x'
 
+    @staticmethod
+    def test_str():
+        'It test the str writting of the LocatableSequence.'
+        #with an start
+        locseq = locate_sequence(sequence='ACTG', location=4)
+        assert locseq.__str__() == '    ACTG'
+        #with a parent
+        locseq = locate_sequence(sequence='ACTG', location=4,
+                                 parent='01234567890')
+        assert locseq.__str__() == '    ACTG   '
+        #with a mask and a masker
+        locseq = locate_sequence(sequence='ACTG', mask=(1, 2),
+                                 masker=lambda x: x.lower())
+        assert locseq.__str__() == 'aCTg'
+        #with a mask and no masker
+        locseq = locate_sequence(sequence='ACTG', mask=(1, 2))
+        assert locseq.__str__() == 'xCTx'
+        #with everything
+        locseq = locate_sequence(sequence='ACTG', location=1, mask=(1, 2),
+                                 masker=lambda x: x.lower(), parent='012345')
+        assert locseq.__str__() == ' aCTg '
         
 class ContigTests(unittest.TestCase):
     '''It checks the Contig class behaviour.'''
@@ -1263,7 +1284,7 @@ class ContigTests(unittest.TestCase):
 
     def test_empty_seqs_slice(self):
         '''We want also the empty seqs, could we get them?'''
-        seq = [locate_sequence('ACTG', location=5), 'AAAA','TTTTTT']
+        seq = [locate_sequence('ACTG', location=5), 'AAAA', 'TTTTTT']
         contig = Contig(seq)
         # Slice slice combination
         #default behaviour
@@ -1276,12 +1297,12 @@ class ContigTests(unittest.TestCase):
     
         # int slice combination
         contig.return_empty_seq = True
-        new_contig = contig[0,2:3]
+        new_contig = contig[0, 2:3]
         assert new_contig is None
         
     def test_empty_seqs_int(self):
         '''We want also the empty seqs, could we get them?'''
-        seq = [locate_sequence('ACTG', location=5), 'AAAA','TTTTTT']
+        seq = [locate_sequence('ACTG', location=5), 'AAAA', 'TTTTTT']
         contig = Contig(seq)        
 
         # These are with slice int combination
@@ -1298,15 +1319,13 @@ class ContigTests(unittest.TestCase):
         #default behaviour
         contig.return_empty_seq = False
         try:
+            #pylint: disable-msg=W0104
+            #the statement does has an effect
             contig[0, 1]
             self.fail("Index Error expected")
         except IndexError:
             pass
         
-        
-        
-        
-    
     @staticmethod
     def test_consensus_empty():
         ''' We test here if the contig watches what returns the contig when 
@@ -1314,7 +1333,13 @@ class ContigTests(unittest.TestCase):
         consensus = locate_sequence('TT', location=0)
         contig = Contig(sequences=['AAAA'], consensus = consensus)
         assert  contig[:, 4:4].consensus  == None
-        
+
+    @staticmethod
+    def test_contig_str():
+        'It checks the str contig representation'
+        consensus = locate_sequence('AA', location=1)
+        contig = Contig(sequences=['xAAx'], consensus = consensus)
+        assert str(contig) == '0              ->xAAx\nconsensus      -> AA\n'
    
 def main():
     '''It runs the tests'''

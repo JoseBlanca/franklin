@@ -156,10 +156,31 @@ class Contig(object):
         return self._end - self._start + 1
     ncols = property(__get_ncols)
 
+    def __str__(self):
+        'It produces a string that shows all the reads and consensus'
+        tostring = []
+        #all the reads
+        for index, read in enumerate(self):
+            try:
+                name = read.name
+            except AttributeError:
+                name = str(index)
+            tostring.append(name.ljust(15))
+            tostring.append('->')
+            tostring.append(str(read))
+            tostring.append('\n')
+        #the consensus
+        if self.consensus is not None:
+            tostring.append('consensus'.ljust(15))
+            tostring.append('->')
+            tostring.append(str(self.consensus))
+            tostring.append('\n')
+        return ''.join(tostring)
+
     def __repr__(self):
-        ''' It writes  the reads of the contigs'''
+        '''It writes  the reads of the contigs'''
         info_repr = ''
-        for read in self._seqs:
+        for read in self:
             info_repr += read.__repr__()
         return "Consesus:" + self._consensus.__repr__() + info_repr
         
@@ -306,7 +327,6 @@ class Contig(object):
             return self._getitem_slice_int(row_index, col_index)
         elif row_type == slice and col_type == slice:
             return self._getitem_slice_slice(row_index, col_index)
-
 
 def locate_sequence(sequence, location=None, mask=None, masker=None,
                     strand=None, forward=True, parent=None):
@@ -570,6 +590,32 @@ class LocatableSequence(object):
                 return self.masker(sequence.__getitem__(index))
             else:
                 return default_masker(sequence.__getitem__(index))
+
+    def __str__(self):
+        'It returns the LocatableSequence as a string'
+        location = self.location
+        start = location.start
+        end = location.end
+        parent = location.parent
+        seq = self.sequence
+        #the LocatableSequence has several sections
+        #first part till the start
+        tostring = []
+        if start > 0:
+            tostring.append(' ' * start)
+        #the sequence (that could be masked in part)
+        mask = self.mask
+        if mask is not None:
+            for loc in range(start, end + 1):
+                tostring.append(self.__getitem__(loc))
+        else:
+            tostring.append(str(self.sequence))
+        #the last part from sequence end till the parent end
+        if parent is not None:
+            last_empty_spaces = len(parent) - len(seq) - start
+            if last_empty_spaces:
+                tostring.append(' ' * last_empty_spaces)
+        return ''.join(tostring)
 
     def __repr__(self):
         ''' It writes'''
