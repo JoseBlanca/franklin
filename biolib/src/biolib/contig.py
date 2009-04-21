@@ -161,17 +161,23 @@ class Contig(object):
         tostring = []
         #all the reads
         for index, read in enumerate(self):
+            #maybe the sequence has a name property
             try:
                 name = read.name
             except AttributeError:
-                name = str(index)
-            tostring.append(name.ljust(15))
+                #if it's a LocatableSequence the name should be the in
+                #the sequence property
+                try:
+                    name = read.sequence.name
+                except AttributeError:
+                    name = str(index)
+            tostring.append(name.ljust(20))
             tostring.append('->')
             tostring.append(str(read))
             tostring.append('\n')
         #the consensus
         if self.consensus is not None:
-            tostring.append('consensus'.ljust(15))
+            tostring.append('consensus'.ljust(20))
             tostring.append('->')
             tostring.append(str(self.consensus))
             tostring.append('\n')
@@ -604,12 +610,11 @@ class LocatableSequence(object):
         if start > 0:
             tostring.append(' ' * start)
         #the sequence (that could be masked in part)
-        mask = self.mask
-        if mask is not None:
-            for loc in range(start, end + 1):
-                tostring.append(self.__getitem__(loc))
-        else:
-            tostring.append(str(self.sequence))
+        for loc in range(start, end + 1):
+            try:
+                tostring.append(str(self.__getitem__(loc)))
+            except IndexError:
+                tostring.append(' ')
         #the last part from sequence end till the parent end
         if parent is not None:
             last_empty_spaces = len(parent) - len(seq) - start

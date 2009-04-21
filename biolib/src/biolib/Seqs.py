@@ -53,8 +53,10 @@ class SeqWithQuality(object):
         sprint += '\n'
         return sprint 
     
-    
-            
+    def __str__(self):
+        'It returns just the str of the seq property'
+        return str(self.seq)
+
     def complement(self):
         ''' it returns a new object with the complementary strand of the seq '''
         
