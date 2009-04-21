@@ -17,14 +17,17 @@ def main():
     var_count = {}
     contig_count = 0
     for contig in caf_parser.contigs():
+        contig = caf_parser.contig('eucalyptus_lrc1')
         contig_count += 1
         for seqvar in seqvariations_in_alignment(contig):
             kind = seqvar.kind()
             if not kind in var_count:
                 var_count[kind] = 0
             var_count[kind] += 1
+        break
     print 'contigs: ' + str(contig_count)
     print 'variations:' + str(var_count)
+    print contig
 
 
 if __name__ == '__main__':

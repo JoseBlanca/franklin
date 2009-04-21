@@ -16,6 +16,6 @@ setup(
     packages=['biolib'],
     package_dir={'':'.'},
     package_data={'mypkg': ['data/*']},
-    requires=['Nose'],
+    requires=['Nose', 'BioPython'],
     test_suite='nose.collector'
 )
