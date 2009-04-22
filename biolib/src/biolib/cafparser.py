@@ -10,6 +10,7 @@ contig. It creates a file for each contig to  easyly use them
 from re import match
 from biolib.contig import Contig, locate_sequence
 from biolib.Seqs import SeqWithQuality
+from Bio.Seq import Seq
 
 class CafParser(object):
     ''' This class is used to parse caf files.'''
@@ -221,7 +222,7 @@ class CafParser(object):
             dna      = self._get_dna(name)
             quality  = self._get_base_quality(name)
      
-            seq_rec  = SeqWithQuality(seq=dna, name=name, qual=quality )
+            seq_rec  = SeqWithQuality(seq=Seq(dna), name=name, qual=quality )
             seq_rec.annotations =  seq_info
             return seq_rec
         else:
@@ -239,7 +240,10 @@ class CafParser(object):
             ''' 
         correction = 0
         for read in reads:
-            contig_start = reads[read][0][0]
+            if reads[read][0][0] > reads[read][0][1]:
+                contig_start = reads[read][0][1]
+            else:
+                contig_start = reads[read][0][0]
             read_start   = reads[read][0][2]
             diff         = contig_start - read_start
             if diff < correction:
@@ -273,11 +277,10 @@ class CafParser(object):
         if contig_info['type'] == 'Is_contig':
             reads      = contig_info['reads']
             correction = self._correct_minus(reads)
-           
             if len(dna) == 0:
                 contig    = Contig()
             else:
-                consensus = SeqWithQuality(seq=dna, name=name, qual=qual)
+                consensus = SeqWithQuality(seq=Seq(dna), name=name, qual=qual)
                 consensus = locate_sequence(sequence = consensus, \
                                              location = correction)
                 contig    = Contig(consensus=consensus)
@@ -290,22 +293,23 @@ class CafParser(object):
                      we do not support them. Use caf tools to convert it to \
                      padded')
                 else:
-                    contig_start  = int(read_sections[0][0]) + correction
+                    if read_sections[0][0] > read_sections[0][1]:
+                        contig_start = int(read_sections[0][1]) + correction
+                        forward = False
+                    else:
+                        contig_start = int(read_sections[0][0]) + correction
+                        forward = True
                     read_start    = int(read_sections[0][2]) 
                     contig_start -= read_start
 
                 #Data to fill the contig
                 seq_rec    = self.read(read)
-                seq_strand = seq_rec.annotations['Strand']
                 mask       = self._read_mask(len(seq_rec.seq), seq_rec.annotations)
                 
-                if seq_strand.lower() == 'forward':
+                if forward:
                     strand  = 1
-                    forward = True
                 else:
                     strand = -1
-                    forward = False
-                
                 contig.append_to_location(sequence=seq_rec, \
                                           start=contig_start,\
                                           strand=strand, forward=forward, \
