@@ -9,7 +9,7 @@ class AceParser(object):
     def __init__(self, fname):
         '''It initializes the ace parser with an ace file name.'''
         self._fileh = open(fname)
-        self._contig_index = {} #in which line is every contig located
+        self._contig_index = {} #in which byte is every contig located
         self._build_index()
 
     def _build_index(self):
@@ -121,7 +121,7 @@ class AceParser(object):
         reads['consensus'] = {}
         reads['consensus']['name'] = co_items[1]
         reads['consensus']['complemented'] = co_items[5]
-        reads['consensus']['sequence'] = ''.join(co_items[6:])
+        reads['consensus']['dna'] = ''.join(co_items[6:])
         #In the ace format the consensus always start at the position 1, (0 in
         #the 0 based python indexing scheme)
         reads['consensus']['start'] = 0
@@ -131,13 +131,10 @@ class AceParser(object):
         #fix padded qualities
         #Consensus quality values are provided for the bases alone, the gaps
         #not being represented
-        seq = reads['consensus']['sequence']
+        seq = reads['consensus']['dna']
         qual = reads['consensus']['quality']
         seq, qual = self._fix_consensus_quality(seq, qual)
         reads['consensus']['quality'] = qual
-        #print len(seq), len(qual), seq.count('*')
-        #print ' '.join(list(reads['consensus']['sequence']))
-        #print reads['consensus']['quality']
 
         #which are the reads?
         read_names = contig_dict['AF'].keys()
@@ -156,6 +153,8 @@ class AceParser(object):
             reads[name]['name'] = name  #just to be compatible with the
                                         #consensus dict structure
             reads[name]['complemented'] = items[2]
+            #in fact all reads are forward now
+            reads[name]['forward'] = True
             #we count from 0 so: start = start - 1
             reads[name]['start'] = int(items[3]) - 1
             #which is the minimum start
@@ -165,7 +164,7 @@ class AceParser(object):
                 contig_start = reads[name]['start']
             #the read sequence
             items = contig_dict['RD'][name].split()
-            reads[name]['sequence'] = ''.join(items[5:])
+            reads[name]['dna'] = ''.join(items[5:])
             #QA, quality clip
             #QA line contains two 1-based ranges. The second range represents
             #the clear range of the read, with respect to the read sequence
@@ -182,12 +181,10 @@ class AceParser(object):
         #now we can create the contig
         contig = Contig()
         for read_name in reads:
-            seq = Seq(reads[read_name]['sequence'])
+            seq = Seq(reads[read_name]['dna'])
             start = reads[read_name]['start']
             name = reads[read_name]['name'] #different for the consensus
             if read_name == 'consensus':
-                print name
-                print len(seq), len(reads[read_name]['quality'])
                 seq = SeqWithQuality(name=name, seq=seq,
                                      qual=reads[read_name]['quality'])
                 con = \
@@ -214,5 +211,4 @@ class AceParser(object):
         '''It yields all contigs.'''
         for name in self._contig_index:
             yield self.contig(name)
-
 

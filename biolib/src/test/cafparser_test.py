@@ -36,6 +36,7 @@ class Test(unittest.TestCase):
         for contig in caf_parser.contigs():
             num_contig += 1
             assert contig
+            print contig
         # We check if our contig method finds all contigs in
         # caf example file  (1) 
         assert num_contig == 1 
