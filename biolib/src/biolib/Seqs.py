@@ -8,6 +8,8 @@ class SeqWithQuality(object):
     '''
     This class is a container of a sequence with quality atribute
     '''
+    #we don't need more public methods
+    #pylint: disable-msg=R0903
 
     def __init__(self, name, seq, qual= None):
         '''
@@ -25,7 +27,7 @@ class SeqWithQuality(object):
         self.qual  = self._set_qual(qual)
      
     def __add__(self, seq2):
-        '''It return a new object with both seqs joined '''
+        '''It returns a new object with both seq and qual joined '''
         return self.__class__(name = self.name, \
                               seq  = self._seq + seq2.seq, \
                               qual = self._qual + seq2.qual)
@@ -68,6 +70,7 @@ class SeqWithQuality(object):
         return self.__class__(name = self.name + '_complemented', \
                               seq  = self._seq.complement(), \
                               qual = self._qual) 
+
     def _get_qual(self):
         ''' It returns the quality of the sequence'''
         return self._qual
@@ -87,5 +90,31 @@ class SeqWithQuality(object):
         ''' It returns the seq of the sequence '''
         return self._seq
     seq = property(_get_seq)
-    
-        
+
+class Seq(str):
+    "It represents a sequence. It's basically an str with some extra methods"
+    # too many public method is str's fault
+    #pylint: disable-msg=R0904
+    def __init__(self, seq):
+        'It requires a sequence (str) to be initialized.'
+        self._super = str   #the super class
+        self._super.__init__(seq)
+
+    def complement(self):
+        'It returns a complemented the sequence'
+        compdict = { 'a':'t', 'c':'g', 'g':'c', 't':'a', 'u':'t',
+                     'm':'k', 'r':'y', 'w':'w', 's':'s', 'y':'r',
+                     'k':'m', 'v':'b', 'h':'d', 'd':'h', 'b':'v',
+                     'x':'x', 'n':'n',
+                     'A':'T', 'C':'G', 'G':'C', 'T':'A', 'U':'T',
+                     'M':'K', 'R':'Y', 'W':'W', 'S':'S', 'Y':'R',
+                     'K':'M', 'V':'B', 'H':'D', 'D':'H', 'B':'V',
+                     'X':'X', 'N':'N', '*':'*', '-':'-', ' ':' '
+                     }
+        return self.__class__(''.join([compdict[base] for base in self]))
+
+    def __add__(self, seq):
+        'It returns an new added sequence'
+        add_result = self._super.__add__(self, seq)
+        return self.__class__(add_result)
+

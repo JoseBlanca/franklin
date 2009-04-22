@@ -4,8 +4,7 @@ Created on 2009 mar 27
 @author: peio
 '''
 import unittest
-from biolib.Seqs import SeqWithQuality
-from test.test_utils import Seq
+from biolib.Seqs import SeqWithQuality, Seq
 
 class SeqsTest(unittest.TestCase):
     '''Tests the seq with quality class '''
@@ -15,7 +14,7 @@ class SeqsTest(unittest.TestCase):
         ''' Here we test it we can initialice a seq with quality
          and if we can print it. Seq is going to be a normal string'''
         
-        sequence1 = Seq('aaavvttt')
+        #sequence1 = Seq('aaavvttt')
         
         # First we initialice the quality in the init 
         seq1 = SeqWithQuality(name = 'seq1', seq='aaavvttt', \
@@ -74,7 +73,30 @@ class SeqsTest(unittest.TestCase):
         assert seq3.seq == 'aaacctttaaaccttt'
         assert seq3.qual == [2, 4 , 1, 4, 5, 6, 12, 34, 2, 4 , 1, 4, 5, \
                              6, 12, 34]
-        
+
+class SeqTest(unittest.TestCase):
+    'It tests the Seq object.'
+    @staticmethod
+    def test_complement():
+        'It test the Seq complement method'
+        seq = Seq('ACTG')
+        seq2 = seq.complement()
+        assert seq2 == 'TGAC'
+
+    @staticmethod
+    def test_add():
+        'It tests the add method'
+        seq = Seq('AC') + Seq('TG')
+        assert seq == 'ACTG'
+        assert seq.complement() #is still a Seq
+
+    @staticmethod
+    def getitem():
+        'It tests the get item method'
+        seq = Seq('ACTG')
+        seq2 = seq[1:3]
+        assert seq2 == 'AC'
+        assert seq2.complement() #is still a Seq
 
 
 if __name__ == "__main__":
