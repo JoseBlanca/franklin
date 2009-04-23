@@ -95,10 +95,13 @@ class Seq(str):
     "It represents a sequence. It's basically an str with some extra methods"
     # too many public method is str's fault
     #pylint: disable-msg=R0904
+    _super = str
+    def __new__(cls, string, *args, **kargs):
+        'It creates a new Seq instance'
+        return str.__new__(cls, string)
     def __init__(self, seq):
         'It requires a sequence (str) to be initialized.'
-        self._super = str   #the super class
-        self._super.__init__(seq)
+        pass
 
     def complement(self):
         'It returns a complemented the sequence'
