@@ -152,15 +152,8 @@ def _alleles_from_contig(contig):
     alleles = {}
     for row_index, sequence in enumerate(contig):
         if  sequence is None:
-            continue 
-        try:
-            # This is to used when he sequence is a seqRecord
-            # or a SeqWithQuality
-            allele = sequence.seq.upper()
-        except AttributeError:
-            #This is to use when the sequence is a locatable sequence 
-            allele = sequence.sequence.seq.upper()
-            
+            continue
+        allele = str(sequence).upper()
         if allele not in alleles:
             alleles[allele] = []
         alleles[allele].append(row_index)
@@ -234,11 +227,13 @@ def seqvariations_in_alignment(alignment):
         # we have finished
         alleles = _alleles_from_contig(cseq)
         #are we dealing with an indel or with an snp?
+        if len(alleles) < 2:
+            col_index += 1
+            continue
         if inchar not in alleles:
             #the snp case is simple, we return it and we go for the next column
-            if len(alleles) > 1:
-                yield SeqVariation(alleles=alleles, location=col_index,
-                                   alignment=alignment)
+            yield SeqVariation(alleles=alleles, location=col_index,
+                               alignment=alignment)
             col_index += 1
         else:
             # the indel case is complex because an indel can cover several

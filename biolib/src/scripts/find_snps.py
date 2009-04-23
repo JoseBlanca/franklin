@@ -15,17 +15,19 @@ def main():
     #caf_file = '/home/jose/tmp/example.caf'
     caf_file = '/home/peio/devel/biolib/src/data/example3.caf'
     ace_file = '/home/peio/devel/biolib/src/data/example3.ace'
-    print "starting caf file indexing"
-    caf_parser = CafParser(caf_file)
-    print "caf file indexing finished"
+    print "starting file indexing"
+    parser = AceParser(ace_file)
+    parser = CafParser(caf_file)
+    
+    print "file indexing finished"
     
     var_count = {}
     contig_count = 0
-    for contig in caf_parser.contigs():
+    for contig in parser.contigs():
         contig_count += 1
         for seqvar in seqvariations_in_alignment(contig):
-            print "hola"
             kind = seqvar.kind()
+            print seqvar.location
             if not kind in var_count:
                 var_count[kind] = 0
             var_count[kind] += 1
@@ -35,4 +37,7 @@ def main():
 
 
 if __name__ == '__main__':
+    import cProfile
+    #cProfile.run('main()')
     main()
+

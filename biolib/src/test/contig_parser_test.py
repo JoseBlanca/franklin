@@ -96,8 +96,12 @@ class CafTest(unittest.TestCase):
             assert str(contig[83][46:56]) == 'GGCCGGG-GC'
             assert str(contig[19][41:51]) == 'TTA-CGGCCG'
             #reverses
-            assert str(contig[204][139:149]) == 'ATCCACTTTT'
-            assert str(contig[198][8:18])    == 'CTCCCTGTGN'
+            read =  contig[204][139:149]
+            assert str(read) == 'ATCCACTTTT'
+            read = contig[198][8:18]
+            assert str(read) == 'CTCCCTGTGN'
+            for i,read in enumerate(contig):
+                print i, read.sequence.name
             
 class AceTest(unittest.TestCase):
     ''' It tests the ace alignment parser'''
@@ -139,6 +143,19 @@ class AceTest(unittest.TestCase):
         # We check if our contig method finds all contigs in
         # caf example file  (1) 
         assert num_contig == 8
-    
+
+    @staticmethod
+    def test_read_seq():
+        '''It checks if the reads have the correct secuence. We will check
+        randomonly selected columns'''
+        fname = os.path.join(DATA_DIR, 'example3.caf')
+        ace_parser  = AceParser(fname)
+        for contig in ace_parser.contigs():
+            for read in contig:
+                if read.sequence.name == 'E3MFGYR01AWFJG':
+                    assert str(read[46:56]) == 'GGCCGGG-GC'
+                if read.sequence.name == 'E3MFGYR02JMR2C':
+                    assert str(read[41:51]) == 'TTA-CGGCCG'
+
 if __name__ == "__main__":
     unittest.main()

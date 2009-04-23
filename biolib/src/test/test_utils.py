@@ -99,6 +99,9 @@ class SeqRecord(object):
         '''It returns a new SeqRecord with seqs added.'''
         seq = self.seq + other.seq
         return self.__class__(seq=seq)
+    def __str__(self):
+        'It prints the str for the seq'
+        return str(self.seq)
     def __repr__(self):
         '''It prints the content '''
         return self.seq.__repr__() 

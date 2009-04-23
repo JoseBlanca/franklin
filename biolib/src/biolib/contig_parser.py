@@ -9,9 +9,8 @@ It allow to parse these file format and put the information into
 
 from re import match
 from biolib.contig import Contig, locate_sequence
-from biolib.Seqs import SeqWithQuality
+from biolib.Seqs import SeqWithQuality, Seq
 from Bio.Seq import Seq
-
 
 def _build_contig_from_dict(reads):
     'Given a dict with the contig info it returns a Contig'
@@ -458,7 +457,7 @@ class AceParser(object):
         RuntimeError'''
         quality = quality[:] #we copy to leave the original intact
         for index, base in enumerate(sequence):
-            if base == '*':
+            if base == '-':
                 quality.insert(index, 0)
         if len(sequence) != len(quality):
             msg = 'Consensus seq and qual do not match when qual is fixed.'
@@ -487,7 +486,10 @@ class AceParser(object):
         reads['consensus'] = {}
         reads['consensus']['name'] = co_items[1]
         reads['consensus']['complemented'] = co_items[5]
-        reads['consensus']['dna'] = ''.join(co_items[6:])
+        dna =''.join(co_items[6:])
+        #we have to change the * for -
+        dna = dna.replace('*', '-')
+        reads['consensus']['dna'] = dna
         #In the ace format the consensus always start at the position 1, (0 in
         #the 0 based python indexing scheme)
         reads['consensus']['start'] = 0
@@ -530,7 +532,10 @@ class AceParser(object):
                 contig_start = reads[name]['start']
             #the read sequence
             items = contig_dict['RD'][name].split()
-            reads[name]['dna'] = ''.join(items[5:])
+            #we have to replace the * with -
+            dna = ''.join(items[5:])
+            dna = dna.replace('*', '-')
+            reads[name]['dna'] = dna 
             #QA, quality clip
             #QA line contains two 1-based ranges. The second range represents
             #the clear range of the read, with respect to the read sequence
@@ -544,23 +549,7 @@ class AceParser(object):
         #not supported by our Contig, so we move everything to the right
         self._move_contig_dict(reads, -contig_start)
         return reads   
-#        #now we can create the contig
-#        contig = Contig()
-#        for read_name in reads:
-#            seq = Seq(reads[read_name]['dna'])
-#            start = reads[read_name]['start']
-#            name = reads[read_name]['name'] #different for the consensus
-#            if read_name == 'consensus':
-#                seq = SeqWithQuality(name=name, seq=seq,
-#                                     qual=reads[read_name]['quality'])
-#                con = \
-#                  locate_sequence(seq, location=start, parent=contig)
-#                contig.consensus = con
-#            else:
-#                seq = SeqWithQuality(name=name, seq=seq)
-#                mask = reads[read_name]['mask']
-#                contig.append_to_location(seq, start=start, mask=mask)
-#        return contig
+
 
     def contig(self, name):
         '''Given a contig name it returns a Contig instance'''
