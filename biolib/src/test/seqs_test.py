@@ -97,6 +97,7 @@ class SeqTest(unittest.TestCase):
         seq2 = seq[1:3]
         assert seq2 == 'AC'
         assert seq2.complement() #is still a Seq
+        assert seq[::-1].complement() #is still a Seq
 
 
 if __name__ == "__main__":
