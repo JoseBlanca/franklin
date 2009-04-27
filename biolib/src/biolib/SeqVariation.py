@@ -12,7 +12,7 @@ class _SeqVarConf(object):
     #we could use a namedtuple but it would be less clear.
     #pylint: disable-msg=R0903
     def __init__(self, min_num_of_reads=2, only_snp=False,
-                indel_char='-', empty_char=''):
+                indel_char='-', empty_char='', valid_alleles=None):
         ''' Here we initialize teh object with the configuration we want.
         
         This configuration will affect to all classes and functions from this
@@ -30,7 +30,10 @@ class _SeqVarConf(object):
         self.only_snp         = only_snp
         self.indel_char       = indel_char
         self.empty_char       = empty_char
-
+        if valid_alleles is None:
+            valid_alleles  = ['A', 'a', 'T', 't', 'C', 'c', 'G', 'g', \
+                              self.indel_char]
+        self.valid_alleles = valid_alleles
 
 CONFIG = _SeqVarConf()
 
@@ -148,11 +151,31 @@ def _alleles_from_contig(contig):
     '''Given a contig it returns a dict with the alleles as keys and the
     number of times they appear as values.
     It filters the alleles with less that min_num_of_reads.
+    It filters the alleles we don't want
     '''
     alleles = {}
+    
     for row_index, sequence in enumerate(contig):
+        # This is to be able to deal with seqrecords or with strings
+        # used in list of reads
         if  sequence is None:
             continue
+        # We do it to support list of strings as a contig
+        try:
+            if sequence.isspace():
+                continue
+            #pylint: disable-msg=W0704
+        except AttributeError:
+            pass
+        #Here we check if the allele have, valid nucleotides, defined in 
+        #the configuration
+        have_novalid_nucleotide = False
+        for letter in sequence:
+            if str(letter) not in CONFIG.valid_alleles:
+                have_novalid_nucleotide = True
+        if have_novalid_nucleotide:
+            continue
+        
         allele = str(sequence).upper()
         if allele not in alleles:
             alleles[allele] = []
@@ -199,7 +222,10 @@ def _seqvariation_in_subcontig(contig, colindex, rows):
     there is a SeqVariation. If it founds one it returns it, otherwise it
     returns None.'''
     #which are the alleles in this subcontig?
-    seqs      = [contig[seqindex, colindex] for seqindex in rows]
+    seqs = []
+    for seqindex in rows:
+        seqs.append(contig[seqindex][colindex])
+
     subcontig = Contig(sequences=seqs)
     alleles   = _alleles_from_contig(subcontig)
 
@@ -210,19 +236,49 @@ def _seqvariation_in_subcontig(contig, colindex, rows):
     else:
         return None
 
+def _select_colum_from_list(alignment, col_start, col_end):
+    ''' Given a list and , row start and row end it returns a list with 
+    items from each row in given column(s)'''
+    new_alignment = []
+    for read in alignment:
+        item = read[col_start:col_end]
+        if not item:
+            item = ' ' * (col_end - col_start)
+        new_alignment.append(item)
+    return new_alignment
 
+def _longest_read(alignment):
+    ''' It returns the longest string lenght in the list'''
+    longest = 0
+    for read in alignment:
+        len_read = len(read)
+        if len_read > longest:
+            longest = len_read
+    return longest
+    
 def seqvariations_in_alignment(alignment):
     ''' We use this method to yield the SequenceVariation found in an alignment.
     
     The alignment (contig) must be a list of SeqRecord-like class objects.'''
+    proxycontig = contig_to_read_list(alignment)
     inchar     = CONFIG.indel_char
-    alignment.return_empty_seq = True
-
+    # This is made to be able to use a list of sequences instead of a contig
+    try:
+        alignment.return_empty_seq = True
+    except AttributeError:
+        pass
+    try:
+        ncols = alignment.ncols
+    except AttributeError:
+        ncols = _longest_read(alignment)
+ 
     #we go through every column in the alignment
     col_index = 0
-    while col_index < alignment.ncols:
+    while col_index < ncols:
         #which are the alleles in the column col_index?
-        cseq = alignment[:, col_index: col_index + 1]
+        #
+        cseq = _select_colum_from_list(proxycontig, col_index, col_index + 1) 
+            
         # If all the secuences that we get in this column are none,
         # we have finished
         alleles = _alleles_from_contig(cseq)
@@ -246,7 +302,7 @@ def seqvariations_in_alignment(alignment):
             col_indel_end = col_index + 1 #the last column covered by the indel
             while True:
                 #if there are more columns
-                if col_indel_end <= alignment.ncols:
+                if col_indel_end <= ncols:
                     #we need to know if the indel continues or not
                     #we calculate a set with the reads that are still streching
                     #the indel.
@@ -255,7 +311,10 @@ def seqvariations_in_alignment(alignment):
                     #the indel to deal with situations like:
                     #    --
                     #    -A
-                    subcontig         = alignment[:, col_index:col_indel_end+1]
+                    subcontig = _select_colum_from_list(proxycontig, \
+                                                            col_index, \
+                                                            col_indel_end + 1) 
+                        
                     subcontig_alleles = _alleles_from_contig(subcontig)
                     #Which reads have an indel in the last column?
                     #subcontig_good_reads are the reads in this alignment
@@ -288,7 +347,7 @@ def seqvariations_in_alignment(alignment):
                     # enough alleles have been read more than min_number_reads
                     # times 
                     colindex = slice(col_index, col_indel_end)
-                    seqvar   = _seqvariation_in_subcontig(alignment, colindex, \
+                    seqvar   = _seqvariation_in_subcontig(proxycontig, colindex, \
                                                  subcontig_good_reads)
                     if seqvar is not None:
                         yield seqvar
@@ -313,3 +372,11 @@ def seqvariations_in_alignment(alignment):
                     indel_reads    = subcontig_indel_reads
                     # We strech it one more column    
                     col_indel_end += 1
+
+def contig_to_read_list(contig):
+    ''' It takes a contig class object and it fill a list with the reads.
+    All the reads are '''
+    reads = []
+    for read in contig:
+        reads.append(str(read))
+    return reads

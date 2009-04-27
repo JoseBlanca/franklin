@@ -376,6 +376,34 @@ def locate_sequence(sequence, location=None, mask=None, masker=None,
     return LocatableSequence(sequence=sequence, location=loc,
                              mask=mask_instance, masker=masker)
 
+def _sequence_end(sequence):
+    '''If there is a parent where does the parent ends, else
+    self.end.'''
+    #if the sequence has an stop, that's what we need.
+    #We don't want just the length, because the sequence could
+    #start at a position different than zero   
+    try:
+        return sequence.end
+    except AttributeError:
+        return len(sequence) - 1
+
+def _positive_int(index, parent, sequence):
+    '''It returns the same int index, but positive.'''
+    if index is None:
+        return None
+    elif index < 0:
+        if parent is not None:
+            length = _sequence_end(parent)
+        else:
+            length = _sequence_end(sequence)
+        return length + index + 1
+    return index
+def _positive_slice(index, parent, sequence):
+    '''It returns the same slice but with positive indexes.'''
+    return slice(_positive_int(index.start, parent, sequence),
+                 _positive_int(index.stop, parent, sequence),
+                 index.step)
+
 def _positive(index, sequence, parent=None):
     '''Given an index it returns its positive version.
     
@@ -397,40 +425,10 @@ def _positive(index, sequence, parent=None):
     sequence -- the sequence in which the index is
     parent -- the parent in which the index is (default None)
     '''
-    end_cache = None
-    def sequence_end(sequence, end_cache=end_cache):
-        '''If there is a parent where does the parent ends, else
-        self.end.'''
-        #if the sequence has an stop, that's what we need.
-        #We don't want just the length, because the sequence could
-        #start at a position different than zero
-        if end_cache is not None:
-            return end_cache
-        try:
-            end_cache = sequence.end
-        except AttributeError:
-            end_cache = len(sequence) - 1
-        return end_cache
-    def positive_int(index):
-        '''It returns the same int index, but positive.'''
-        if index is None:
-            return None
-        elif index < 0:
-            if parent is not None:
-                length = sequence_end(parent)
-            else:
-                length = sequence_end(sequence)
-            return length + index + 1
-        return index
-    def positive_slice(index):
-        '''It returns the same slice but with positive indexes.'''
-        return slice(positive_int(index.start), positive_int(index.stop),
-                     index.step)
-
     if isinstance(index, slice):
-        return positive_slice(index)
+        return _positive_slice(index, parent, sequence)
     else:
-        return positive_int(index)
+        return _positive_int(index, parent, sequence)
 def _move_index(index, amount):
     '''It returns a new index displaced an amount of units.
     
@@ -511,7 +509,7 @@ class LocatableSequence(object):
         else:
             self._check_location(self.sequence, location)
         self._location = location
-
+ 
     def _set_mask(self, mask):
         '''It sets the mask and it checks that it fits in the sequence.'''
         # check_location_fits
@@ -596,30 +594,71 @@ class LocatableSequence(object):
                 return self.masker(sequence.__getitem__(index))
             else:
                 return default_masker(sequence.__getitem__(index))
-
+    
+    @staticmethod
+    def _masked_str(seq, unmask, masker):
+        '''It returns the LocatableSequence as a string'''
+        unmask_start = unmask.start
+        unmask_end   = unmask.end
+        tostring     = []
+        #from 0 to umask
+        if masker is not None:
+            tostring.append(masker(seq[:unmask_start]))
+        else:
+            tostring.append(' ' * unmask_start)
+        #the umasked region
+        tostring.append(seq[unmask_start:unmask_end + 1])
+        #the last masked part
+        if masker is not None:
+            tostring.append(masker(seq[unmask_end + 1:]))
+        else:
+            tostring.append(' ' * (len(seq) - unmask_end - 1))
+        return ''.join(tostring)
+    
+    def _masked_comp_seq(self):
+        '''It takes a locatable sequences and return another locatable sequence
+        but with the '''
+        complement = False
+        if self.location.strand == -1:
+            complement = True
+            seq    = self._sequence_property(complement)
+#            seq    = str(seq)
+            seq    = seq[::-1]
+        else:
+            seq = self._sequence
+        seq = str(seq)
+        masker = self.masker
+        mask   = self.mask
+        if mask is not None:
+            if complement:
+                mask = mask[::-1]
+            return self._masked_str(seq, mask, masker)
+        else:
+            return seq
+        
     def __str__(self):
         'It returns the LocatableSequence as a string'
         location = self.location
-        start = location.start
-        end = location.end
-        parent = location.parent
-        seq = self.sequence
+        seq      = self.sequence
+        start    = location.start
+        end      = location.end
+        parent   = location.parent
+        
         #the LocatableSequence has several sections
         #first part till the start
         tostring = []
         if start > 0:
             tostring.append(' ' * start)
         #the sequence (that could be masked in part)
-        for loc in range(start, end + 1):
-            try:
-                tostring.append(str(self.__getitem__(loc)))
-            except IndexError:
-                tostring.append(' ')
+        sequence = self._masked_comp_seq()
+        #print sequence
+        tostring.append(sequence)
         #the last part from sequence end till the parent end
         if parent is not None:
             last_empty_spaces = len(parent) - len(seq) - start
             if last_empty_spaces:
                 tostring.append(' ' * last_empty_spaces)
+        
         return ''.join(tostring)
 
     def __repr__(self):
@@ -631,10 +670,11 @@ class LocatableSequence(object):
 
         The index should be in the coord. system of self.
         '''
+        location = self.location
         #we need the index in the coord system of self and of self.seq
         self_index = index
         #we have to be sure that it is positive
-        index = _positive(index, self, self.location.parent)
+        index = _positive(index, self, location.parent)
         #we transform the index in the coord. system of self.seq
         #if self.seq is reversed the index should be moved one position to the
         #left, because otherwise it won't represent the same region. stop is 
@@ -643,11 +683,10 @@ class LocatableSequence(object):
         #region covered by index     xxxx
         #direct index                [   [ start=2, stop=6
         #reversed index             ]   ]  stop=1, start=5 
-        if not self.location.forward and isinstance(index, slice):
-            seq_index = self._location.get_location_index(
-                                                  _move_index(index, -1))
+        if not location.forward and isinstance(index, slice):
+            seq_index = location.get_location_index(_move_index(index, -1))
         else:
-            seq_index = self._location.get_location_index(index)
+            seq_index = location.get_location_index(index)
         if seq_index is None:
             #we're outside the sequence, by default we raise an IndexError
             return empty_region_seq_builder()
@@ -660,10 +699,9 @@ class LocatableSequence(object):
             if self_index.step not in (None, 1, -1):
                 raise IndexError('slice step not supported (only 1, -1, None)')
             #we slice everything
-            loc = self.location
             new_loc = None
-            if loc is not None:
-                new_loc = loc[self_index]
+            if location is not None:
+                new_loc = location[self_index]
             mask = self.mask
             new_mask = None
             if mask is not None:
@@ -1051,19 +1089,22 @@ class Location(object):
         #range  ---      ---------    ------    -----
         #if start or end is None we convert them to ints to allow the
         #comparisons
+        #this is an optimization based on a cprofiler run
+        self_start = self.start
+        self_end = self.end
         if start is None:
             start = 0
         if end is None:
-            end = self.end
-        #if start was bigger than self.end and end was None
-        #at this point end could be lower than start
-        if end < start:
-            end = start
-        if self.start >= start and self.start <= end:
+            end = self_end
+            #if start was bigger than self.end and end was None
+            #at this point end could be lower than start
+            if end < start:
+                end = start
+        if self_start >= start and self_start <= end:
             return True
-        if self.end >= start and self.end <= end:
+        if self_end >= start and self_end <= end:
             return True
-        if self.start <= start and self.end >= end:
+        if self_start <= start and self_end >= end:
             return True
         return False
 
@@ -1129,7 +1170,40 @@ class Location(object):
         if static is not None and static != self.parent_is_static():
             answer = False
         return answer
+    def intersection(self, location2):
+        ''' It returns a new location with the intersection of the two locations
+         given'''
+        forward  = self.forward
+        strand   = self.strand
+        forward2 = location2.forward
+        strand2  = location2.strand
 
+        if forward != forward2 or strand != strand2 :
+            raise ValueError("Strand and fordward must be the same for both")
+            
+        start1 = self.start
+        end1  = self.end
+        start2 = location2.start
+        end2  = location2.end
+        
+        
+        if start1 < start2 and end1 < start2:
+            return None
+        elif start1 > end2 and end1> end2:
+            return None
+        else:
+            if start1 > start2:
+                start = start1
+            else:
+                start = start2
+            if end1 > end2:
+                end = end2
+            else:
+                end = end1
+        
+        return self.__class__(start=start, end=end, strand=strand, \
+                              forward=forward, parent=self.parent)
+         
 class NonStaticParentLocation(Location):
     '''Its a Location with a parent affected by the slicing.
  

@@ -127,7 +127,14 @@ class VariationGeneratorTest(unittest.TestCase):
         expected_alleles = (('-','C'), ('-','T'))
         check_alleles(expected_alleles, contig)
         
-        
+        #can we find indels with length 1?
+        allele1 = '-tn'
+        allele2 = 'CtT'
+        seqs = [SeqRecord(allele1), SeqRecord(allele2), SeqRecord(allele1),
+                SeqRecord(allele2)]
+        contig = Contig(sequences = seqs)
+        expected_alleles = (('-','C'),)
+        check_alleles(expected_alleles, contig)
         
         allele1 = SeqRecord('--')
         allele2 = SeqRecord('-a')
@@ -160,6 +167,7 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (() )
         check_alleles(expected_alleles, contig)
+        
         
         # here we check if it works when the seqs in the contigs are 
         # locatable sequences

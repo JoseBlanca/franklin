@@ -361,7 +361,6 @@ class CafParser(object):
             read_len = len(dna)
             self._calc_read_coords_in_contig(assembled_from_line[0], read_len,
                                              reads[read_name])
-
         #some reads might be negative, we want the most negative one moved
         #to the position 0 because our Contig does not support negative values
         contig_start = self._contig_start(reads)
