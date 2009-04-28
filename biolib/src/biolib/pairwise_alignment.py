@@ -49,10 +49,10 @@ def _parse_tabular_bl2seq(output):
         hsp['alignment'] = {}
         hsp['alignment'][name1] = {}
         hsp['alignment'][name2] = {}
-        hsp['alignment'][name1]['start'] = int(items[6])
-        hsp['alignment'][name1]['end'] = int(items[7])
-        hsp['alignment'][name2]['start'] = int(items[8])
-        hsp['alignment'][name2]['end'] = int(items[9])
+        hsp['alignment'][name1]['start'] = int(items[6]) - 1
+        hsp['alignment'][name1]['end'] = int(items[7]) - 1
+        hsp['alignment'][name2]['start'] = int(items[8]) - 1
+        hsp['alignment'][name2]['end'] = int(items[9]) - 1 
         hsps.append(hsp)
     return hsps
 
@@ -120,10 +120,10 @@ def _parse_water(output):
     result['alignment'][name1] = {}
     name2 = ali_lines[1].split()[0]
     result['alignment'][name2] = {}
-    result['alignment'][name1]['start'] = int(ali_lines[0].split()[1])
-    result['alignment'][name2]['start'] = int(ali_lines[1].split()[1])
-    result['alignment'][name1]['end'] = int(ali_lines[2].split()[-1])
-    result['alignment'][name2]['end'] = int(ali_lines[3].split()[-1])
+    result['alignment'][name1]['start'] = int(ali_lines[0].split()[1]) - 1
+    result['alignment'][name2]['start'] = int(ali_lines[1].split()[1]) - 1
+    result['alignment'][name1]['end'] = int(ali_lines[2].split()[-1]) - 1
+    result['alignment'][name2]['end'] = int(ali_lines[3].split()[-1]) - 1
     return result
 
 def water(seq1, seq2, gapopen=20):
@@ -135,6 +135,7 @@ def water(seq1, seq2, gapopen=20):
     cmd = ['water', filen1, filen2, '-stdout', '-auto', '-snucleotide1',
            '-snucleotide2', '-gapopen', str(gapopen)]
     stdout, stderr, retcode = call(cmd)
+    print stdout
     if retcode:
         raise RuntimeError('Problem running water: '+ stderr)
     fileh1.close()
