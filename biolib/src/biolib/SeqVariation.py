@@ -26,6 +26,8 @@ class _SeqVarConf(object):
             only_snp: a bool (default False)
             indel_char: the character used for the inserts (default '-')
         '''
+        #too many arguments
+        #pylint: disable-msg=R0913
         self.min_num_of_reads = min_num_of_reads
         self.only_snp         = only_snp
         self.indel_char       = indel_char
@@ -36,6 +38,14 @@ class _SeqVarConf(object):
         self.valid_alleles = valid_alleles
 
 CONFIG = _SeqVarConf()
+
+def _allele_count(allele):
+    'It returns how many times an allele has been read.'
+    if isinstance(allele, int):
+        allele_count = allele
+    else:
+        allele_count = len(allele)
+    return allele_count
 
 class SeqVariation(object):
     '''
@@ -72,8 +82,6 @@ class SeqVariation(object):
         pstring  = 'SequenceVariation: ' + str(self.name) + '\n'
         if self.location:
             pstring += 'Location:' + self.location.__repr__() + '\n'
-#        if self.alignment:
-#            pstring += self.alignment.name + '\n'
         pstring += self._num_reads.__repr__()
         return pstring
     
@@ -88,10 +96,7 @@ class SeqVariation(object):
         '''
         for allele in alleles.keys():
             #we remove the alleles with not enough reads
-            if isinstance(alleles[allele], int):
-                allele_count = alleles[allele]
-            else:
-                allele_count = len(alleles[allele])
+            allele_count = _allele_count(alleles[allele])
             if allele_count < CONFIG.min_num_of_reads:
                 del alleles[allele]
                 continue
@@ -146,6 +151,19 @@ class SeqVariation(object):
             else:
                 var_kind =  'complex'
         return var_kind
+
+    def sorted_alleles(self):
+        '''It returns a list of sorted alleles according to the number of times
+        that have been read'''
+        #first we build the list
+        alleles = []
+        alleles_dict = self.alleles
+        for name, times in alleles_dict.items():
+            alleles.append((name, times))
+        #now we sort it
+        return sorted(alleles,
+                      lambda x, y:_allele_count(y[1]) - _allele_count(x[1]))
+
 
 def _alleles_from_contig(contig):
     '''Given a contig it returns a dict with the alleles as keys and the
@@ -260,23 +278,21 @@ def seqvariations_in_alignment(alignment):
     ''' We use this method to yield the SequenceVariation found in an alignment.
     
     The alignment (contig) must be a list of SeqRecord-like class objects.'''
-    proxycontig = contig_to_read_list(alignment)
+    #the proxycontig strategy is used because is much much faster than 
+    #using our contig object directly
+    proxycontig = _contig_to_read_list(alignment)
     inchar     = CONFIG.indel_char
-    # This is made to be able to use a list of sequences instead of a contig
     try:
         alignment.return_empty_seq = True
+        #pylint: disable-msg=W0704
     except AttributeError:
         pass
-    try:
-        ncols = alignment.ncols
-    except AttributeError:
-        ncols = _longest_read(alignment)
+    ncols = alignment.ncols
  
     #we go through every column in the alignment
     col_index = 0
     while col_index < ncols:
         #which are the alleles in the column col_index?
-        #
         cseq = _select_colum_from_list(proxycontig, col_index, col_index + 1) 
             
         # If all the secuences that we get in this column are none,
@@ -311,8 +327,8 @@ def seqvariations_in_alignment(alignment):
                     #the indel to deal with situations like:
                     #    --
                     #    -A
-                    subcontig = _select_colum_from_list(proxycontig, \
-                                                            col_index, \
+                    subcontig = _select_colum_from_list(proxycontig,
+                                                            col_index,
                                                             col_indel_end + 1) 
                         
                     subcontig_alleles = _alleles_from_contig(subcontig)
@@ -347,8 +363,9 @@ def seqvariations_in_alignment(alignment):
                     # enough alleles have been read more than min_number_reads
                     # times 
                     colindex = slice(col_index, col_indel_end)
-                    seqvar   = _seqvariation_in_subcontig(proxycontig, colindex, \
-                                                 subcontig_good_reads)
+                    seqvar = _seqvariation_in_subcontig(proxycontig,
+                                                        colindex,
+                                                        subcontig_good_reads)
                     if seqvar is not None:
                         yield seqvar
                         col_index = col_indel_end
@@ -373,10 +390,22 @@ def seqvariations_in_alignment(alignment):
                     # We strech it one more column    
                     col_indel_end += 1
 
-def contig_to_read_list(contig):
+def _contig_to_read_list(contig):
     ''' It takes a contig class object and it fill a list with the reads.
     All the reads are '''
     reads = []
     for read in contig:
         reads.append(str(read))
     return reads
+
+
+#functions to characterize the sequence variations
+
+def second_allele_read_times(seq_variation, times=2):
+    '''It returns True if the second most abundant allele has been read at least
+    the given times'''
+    alleles = seq_variation.sorted_alleles()
+    if _allele_count(alleles[1][1]) >= times:
+        return True
+    return False
+

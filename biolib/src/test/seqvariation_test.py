@@ -4,11 +4,13 @@ Created on 2009 mar 25
 @author: peio
 '''
 import unittest
-from biolib.SeqVariation import CONFIG, SeqVariation, seqvariations_in_alignment
+from biolib.SeqVariation import (CONFIG, SeqVariation,
+                                 seqvariations_in_alignment,
+                                 second_allele_read_times)
 from biolib.contig import Contig, locate_sequence
-from test.test_utils import SeqRecord, SeqWithQuality
+from test.test_utils import SeqRecord
 
-class SeqVariationConfig(unittest.TestCase):
+class SeqVariationConfigTest(unittest.TestCase):
     '''Here we will check if the SeqVariation module can be configured.
     '''
     @staticmethod
@@ -88,25 +90,40 @@ class SeqVariationTest(unittest.TestCase):
                                         'A' + inchar * 2 :4})
         assert seq_var.is_complex()
 
-    
+    @staticmethod
+    def test_sorted_alleles():
+        'It checks that we can get the alleles sorted by the reads.'
+        snp = SeqVariation(alleles={'A':2, 'T':3})
+        sorted_alleles = snp.sorted_alleles()
+        assert sorted_alleles[0][0] == 'T'
+        assert sorted_alleles[0][1] == 3
+        assert sorted_alleles[1][0] == 'A'
+        assert sorted_alleles[1][1] == 2
+
+        #with lists
+        snp = SeqVariation(alleles={'A':(1, 2), 'T':(2, 3, 4)})
+        sorted_alleles = snp.sorted_alleles()
+        assert sorted_alleles[0][0] == 'T'
+        assert sorted_alleles[0][1] == (2, 3, 4)
+        assert sorted_alleles[1][0] == 'A'
+        assert sorted_alleles[1][1] == (1, 2)
+
+def check_alleles(expected_alleles, contig):
+    '''It checks that all the alleles for all variations are found'''
+    detected_vars = 0
+    for seqvar in seqvariations_in_alignment(contig):
+        expected = expected_alleles[detected_vars]
+        found = seqvar.alleles.keys()
+        diff = set(expected).difference(found)
+        assert not diff
+        detected_vars += 1
+    assert detected_vars == len(expected_alleles)
+
 class VariationGeneratorTest(unittest.TestCase):
     '''It test if we can get the variations'''
     @staticmethod
     def test_seq_variation_generator():
         '''It checks if we can get the variations.''' 
-        def check_alleles(expected_alleles, contig):
-            '''It checks that all the alleles for all variations are found'''
-            detected_vars = 0
-            for seqvar in seqvariations_in_alignment(contig):
-                expected = expected_alleles[detected_vars]
-                found = seqvar.alleles.keys()
-                diff = set(expected).difference(found)
-                print diff
-                print 'expected ->', expected
-                print 'found    ->', found
-                assert not diff
-                detected_vars += 1
-            assert detected_vars == len(expected_alleles)
             
         CONFIG.min_num_of_reads = 2
         #can we find snp?
@@ -168,7 +185,9 @@ class VariationGeneratorTest(unittest.TestCase):
         expected_alleles = (() )
         check_alleles(expected_alleles, contig)
         
-        
+    @staticmethod
+    def test_seq_variation_with_locseq():
+        '''It checks if we can get the variations using LocatableSequence.''' 
         # here we check if it works when the seqs in the contigs are 
         # locatable sequences
         allele1 = locate_sequence(sequence=SeqRecord('AA'), location=0)
@@ -178,6 +197,18 @@ class VariationGeneratorTest(unittest.TestCase):
         expected_alleles = (('AT'), )
         check_alleles(expected_alleles, contig)
         
+
+class SeqVariationFilteringTest(unittest.TestCase):
+    'It checks the filtering methods.'
+    @staticmethod
+    def test_filter_by_number_reads():
+        'It checks that filter the reads with not much reads.'
+        #It checks the number of times that the second most abundant allele 
+        #has been read
+        snp = SeqVariation(alleles={'A':2, 'T':3, 'C':4})
+        assert second_allele_read_times(snp, times=3) == True
+        assert second_allele_read_times(snp, times=4) == False
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
