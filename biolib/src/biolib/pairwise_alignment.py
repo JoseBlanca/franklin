@@ -135,7 +135,6 @@ def water(seq1, seq2, gapopen=20):
     cmd = ['water', filen1, filen2, '-stdout', '-auto', '-snucleotide1',
            '-snucleotide2', '-gapopen', str(gapopen)]
     stdout, stderr, retcode = call(cmd)
-    print stdout
     if retcode:
         raise RuntimeError('Problem running water: '+ stderr)
     fileh1.close()
