@@ -481,3 +481,88 @@ def second_allele_read_times(seq_variation, times=2):
         return True
     return False
 
+def seqvar_close_to_consensus_limit(seq_variation, max_distance):
+    '''True if the sequence variation is close to the contig limits.
+    
+    It checks if the seq_variation is not within the range covered by the
+    consensus and if it's close to one of its limits. In both cases it will
+    return True.
+    '''
+    #where does the sequence variation starts and ends?
+    seq_var_loc = seq_variation.location
+    try:
+        #it's a location
+        seq_var_start = seq_var_loc.start
+        seq_var_end   = seq_var_loc.end
+    except AttributeError:
+        #it's an int
+        seq_var_start = seq_var_loc
+        seq_var_end   = seq_var_loc
+
+    #where does the consensus starts and ends?
+    contig = seq_variation.alignment
+    if contig is None:
+        raise ValueError('SeqVariation is not associated with an alignment')
+    consensus = contig.consensus
+    if consensus is None:
+        raise ValueError('The alignment has no consensus')
+    #the consensus might be a LocatableSequence or an standard sequence
+    try:
+        con_loc = consensus.location
+        con_start = con_loc.start
+        con_end   = con_loc.end
+    except AttributeError:
+        con_start = 0
+        con_end   = len(consensus) - 1
+
+    #Now we can check the limits
+    if (seq_var_start < con_start + max_distance or 
+        seq_var_end   > con_end - max_distance):
+        return True
+    return False
+
+def calculate_pic(seq_variation):
+    '''It calculates and returns the Polymorphic Information Content.
+    
+    The PIC was defined in Botstein 1980. Am. J. Hum. Genet. 32, 314 331 as  the
+    probability that a given marker genotype of an offspring of an affected
+    parent will allow deduction of the parental genotype at the marker locus.
+    The calculation is done following Shete et al. 2000 Theoretical Population
+    Biology 57, 265 271.
+    '''
+    #pylint: disable-msg=C0103
+    def _pic_sum_1(alleles, n):
+        'It returns the first summation for the pic calculation'
+        # n is the number of times taht all alleles has been read
+        # x is the number of times that one allele has been read
+        suma = 0
+        n = float(n)
+        div = n * ( n - 1)
+        for allele_times in alleles:
+            x = allele_times
+            this_sum = x * ( x - 1) / div
+            suma += this_sum
+        return suma
+    def _pic_sum_2(alleles, n):
+        'It returns the second summation for the pic calculation'
+        suma = 0
+        n = float(n)
+        div = n * ( n - 1) * (n - 2) * ( n - 3)
+        for allele_times_i in alleles:
+            x_i = allele_times_i
+            for allele_times_j in alleles:
+                x_j = allele_times_j
+                this_sum = (x_i * (x_i - 1) * x_j * (x_j - 1)) / div
+                suma += this_sum
+        return suma
+
+    alleles = seq_variation.alleles
+    #the alleles can have the count or a list with the alleles, we make sure
+    #that all have a count, and we convert the dict to a list
+    alleles = [float(_allele_count(allele)) for allele in alleles.values()]
+    #how many alleles are in total?
+    n_alleles = sum(alleles)
+    sum_1 = _pic_sum_1(alleles, n_alleles)
+    sum_2 = _pic_sum_2(alleles, n_alleles)
+    pic = 1.0 - sum_1 - sum_2
+    return pic

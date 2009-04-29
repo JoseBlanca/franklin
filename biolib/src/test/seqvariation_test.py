@@ -7,7 +7,9 @@ import unittest
 from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  seqvariations_in_alignment,
                                  second_allele_read_times,
-                                 remove_bad_quality_alleles)
+                                 remove_bad_quality_alleles,
+                                 seqvar_close_to_consensus_limit,
+                                 calculate_pic)
 from biolib.contig import Contig, locate_sequence, Location
 from biolib.Seqs import SeqWithQuality
 from test.test_utils import SeqRecord
@@ -338,6 +340,57 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
         
+    def test_close_to_consensus_end(self):
+        'It checks the filtering out of the seqvars close to the end.'
+        con = 'ATCTGACTT'
+        seq = 'TT' + con + 'TT'
+        consensus = locate_sequence(con, location=2)
+        cont = Contig([seq, seq], consensus=consensus)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=1, alignment=cont)
+        assert seqvar_close_to_consensus_limit(snp, max_distance=2)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=3, alignment=cont)
+        assert seqvar_close_to_consensus_limit(snp, max_distance=2)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=4, alignment=cont)
+        assert not seqvar_close_to_consensus_limit(snp, max_distance=2)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=10, alignment=cont)
+        assert seqvar_close_to_consensus_limit(snp, max_distance=2)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=12, alignment=cont)
+        assert seqvar_close_to_consensus_limit(snp, max_distance=2)
+
+        #without LocatableSequences
+        con = 'ATCTGACTT'
+        seq = con
+        cont = Contig([seq, seq], consensus=con)
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=2, alignment=cont)
+        assert seqvar_close_to_consensus_limit(snp, max_distance=3)
+        assert not seqvar_close_to_consensus_limit(snp, max_distance=1)
+
+        #some errors
+        #no consensus
+        #pylint: disable-msg=W0704
+        cont = Contig([seq, seq])
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=2, alignment=cont)
+        try:
+            seqvar_close_to_consensus_limit(snp, max_distance=3)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
+        #no contig
+        snp = SeqVariation(alleles={'A':2, 'T':3}, location=2)
+        try:
+            seqvar_close_to_consensus_limit(snp, max_distance=3)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
+
+    @staticmethod
+    def test_calculate_pic():
+        'It checks that we are able to calculate the PIC values'
+        snp1 = SeqVariation(alleles={'A':200, 'T':200})
+        snp2 = SeqVariation(alleles={'A':300, 'T':100})
+        pic_1 = calculate_pic(snp1)
+        pic_2 = calculate_pic(snp2)
+        assert pic_1 > pic_2
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
