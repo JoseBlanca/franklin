@@ -6,8 +6,10 @@ Created on 2009 mar 25
 import unittest
 from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  seqvariations_in_alignment,
-                                 second_allele_read_times)
+                                 second_allele_read_times,
+                                 remove_bad_quality_alleles)
 from biolib.contig import Contig, locate_sequence
+from biolib.Seqs import SeqWithQuality
 from test.test_utils import SeqRecord
 
 class SeqVariationConfigTest(unittest.TestCase):
@@ -209,7 +211,30 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert second_allele_read_times(snp, times=3) == True
         assert second_allele_read_times(snp, times=4) == False
 
+    @staticmethod
+    def test_remove_bad_quality_alleles():
+        'It test it we can remove the alleles with bad qualities'
+        #the good reads in 454 are around a quality of 25 to 40
+        #a bad letter is less than 20
+        #for sanger the phred quality values are related to the probability
+        #of having an error in the sequence
+        #http://www.phrap.com/phred/
+        #Phred quality score  Probability base is wrong   Accuracy of the base
+        #       10                   1 in 10                  90%
+        #       20                   1 in 100                 99%
+        #       30                   1 in 1,000               99.9%
+        #       40                   1 in 10,000              99.99%
+        #       50                   1 in 100,000             99.999%
+        seq1 = SeqWithQuality('AATAA', [30, 30, 30, 30, 30])
+        seq2 = SeqWithQuality('AACAA', [30, 30, 30, 30, 30])
+        seq3 = SeqWithQuality('AAGAA', [30, 30, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25, window=1)
+        assert len(snp2.alleles) == 2
 
+        #if there is no quality we get an error
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
     unittest.main()
