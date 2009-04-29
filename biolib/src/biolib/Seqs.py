@@ -11,7 +11,7 @@ class SeqWithQuality(object):
     #we don't need more public methods
     #pylint: disable-msg=R0903
 
-    def __init__(self, name, seq, qual= None):
+    def __init__(self, seq, qual= None, name=None):
         '''
         To initialice this class we need name and seq arguments.
         Arguments:
