@@ -617,7 +617,7 @@ class LocatableSequence(object):
     
     def _masked_comp_seq(self):
         '''It takes a locatable sequences and return another locatable sequence
-        but with the '''
+        but with the reverse complemented sequence'''
         complement = False
         if self.location.strand == -1:
             complement = True
