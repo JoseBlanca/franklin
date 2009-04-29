@@ -206,25 +206,13 @@ class Contig(object):
                     return  None
                 else:
                     raise                 
-    @staticmethod            
-    def _slice_to_range(index, length):
-        '''Given a slice and the length of the sequence it returns a range.'''
-        start = index.start
-        if start is None:
-            start = 0
-        stop = index.stop
-        if stop is None:
-            stop = length
-        step = index.step
-        if step is None:
-            step = 1
-        return range(start, stop, step)
+    
 
     def _getitem_slice_slice(self, row_index, col_index):
         '''It returns a new Contig with the sliced rows.'''
         #we create the new assembly that will be returned
         new_assembly = self.__class__()
-        for row_int in self._slice_to_range(row_index, len(self)):
+        for row_int in slice_to_range(row_index, len(self)):
             # pylint: disable-msg=W0704
             #It's ok to do nothing here
             try:
@@ -253,7 +241,7 @@ class Contig(object):
         #which row range are we requesting?
         items    = None
         seq_like = None
-        for row_int in self._slice_to_range(row_index, len(self)):
+        for row_int in slice_to_range(row_index, len(self)):
             try:
                 item = self._seqs[row_int][col_index]
             except IndexError:
@@ -1278,3 +1266,20 @@ class NonStaticParentLocation(Location):
             new_strand = -new_strand
         return self.__class__(start=self.start, end=self.end,
                               strand=new_strand, forward=self.forward)
+
+          
+def slice_to_range(index, length):
+    '''Given a slice and the length of the sequence it returns a range.'''
+    try:
+        start = index.start
+    except AttributeError:
+        return [index]
+    if start is None:
+        start = 0
+    stop = index.stop
+    if stop is None:
+        stop = length
+    step = index.step
+    if step is None:
+        step = 1
+    return range(start, stop, step)
