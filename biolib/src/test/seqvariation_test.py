@@ -8,7 +8,7 @@ from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  seqvariations_in_alignment,
                                  second_allele_read_times,
                                  remove_bad_quality_alleles)
-from biolib.contig import Contig, locate_sequence
+from biolib.contig import Contig, locate_sequence, Location
 from biolib.Seqs import SeqWithQuality
 from test.test_utils import SeqRecord
 
@@ -211,8 +211,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert second_allele_read_times(snp, times=3) == True
         assert second_allele_read_times(snp, times=4) == False
 
-    @staticmethod
-    def test_remove_bad_quality_alleles():
+    
+    def test_remove_bad_quality_alleles(self):
         'It test it we can remove the alleles with bad qualities'
         #the good reads in 454 are around a quality of 25 to 40
         #a bad letter is less than 20
@@ -225,16 +225,120 @@ class SeqVariationFilteringTest(unittest.TestCase):
         #       30                   1 in 1,000               99.9%
         #       40                   1 in 10,000              99.99%
         #       50                   1 in 100,000             99.999%
-        seq1 = SeqWithQuality('AATAA', [30, 30, 30, 30, 30])
-        seq2 = SeqWithQuality('AACAA', [30, 30, 30, 30, 30])
-        seq3 = SeqWithQuality('AAGAA', [30, 30, 15, 30, 30])
+        seq1 = SeqWithQuality(seq='AATAA', qual=[30, 30, 30, 30, 30])
+        seq2 = SeqWithQuality(seq='AACAA', qual=[30, 30, 30, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGAA', qual=[30, 30, 15, 30, 30])
         contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
         snp = SeqVariation(location=2, alignment=contig,
                            alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
-        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25, window=1)
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
 
+
+        #The same test but with locatable sequences
+        seq1 = locate_sequence(sequence=SeqWithQuality(seq='AATAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq2 = locate_sequence(sequence=SeqWithQuality(seq='AACAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq3 = SeqWithQuality(seq='AAGAA', qual=[30, 30, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert len(snp2.alleles) == 2
+
+        
+        #The same test but with locatable sequences. One of the sequences does
+        # not have quality, We provide default quelity
+        seq1 = locate_sequence(sequence=SeqWithQuality(seq='AATAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq2 = locate_sequence(sequence=SeqWithQuality(seq='AACAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq3 = SeqWithQuality(seq='AAGAA' )
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25, \
+                                          default_quality=25)
+        assert len(snp2.alleles) == 3
+        
+        # One of the sequences does not have quality, We do not provide 
+        # default quelity. It have to give and error
+        seq1 = locate_sequence(sequence=SeqWithQuality(seq='AATAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq2 = locate_sequence(sequence=SeqWithQuality(seq='AACAA', \
+                                                     qual=[30, 30, 30, 30, 30]),
+                               location=0)
+        seq3 = SeqWithQuality(seq='AAGAA' )
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        self.failUnlessRaises(ValueError, remove_bad_quality_alleles, \
+                              snp, qual_threshold=25)
+        
+        # The  gaps does not hace quality , so we ignore the quelity but we use
+        # them 
+        seq1 = SeqWithQuality(seq='AA-AA', qual=[30, 30, 0, 30, 30])
+        seq2 = SeqWithQuality(seq='AACAA', qual=[30, 30, 30, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGAA', qual=[30, 30, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'-':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert len(snp2.alleles) == 2
         #if there is no quality we get an error
+        
+        # Now we have to check if it return a seqvar with only one allele after
+        # the quality testing
+        seq1 = SeqWithQuality(seq='AATAA', qual=[30, 30, 15, 30, 30])
+        seq2 = SeqWithQuality(seq='AACAA', qual=[30, 30, 30, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGAA', qual=[30, 30, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        snp = SeqVariation(location=2, alignment=contig,
+                           alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert snp2 is None        
+        
+        # It checks indels with more than one column
+        seq1 = SeqWithQuality(seq='AA--AA', qual=[30, 30, 0, 0, 30, 30])
+        seq2 = SeqWithQuality(seq='AACCAA', qual=[30, 30, 30, 30, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGGAA', qual=[30, 30, 15, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        
+        snp = SeqVariation(location=Location(start=2, end=3), alignment=contig,
+                           alleles={'--':[0, 1], 'CC':[2, 3], 'GG':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert len(snp2.alleles) == 2
+        
+        #It check a complex SeqVar
+        seq1 = SeqWithQuality(seq='AA--AA', qual=[30, 30, 0, 0, 30, 30])
+        seq2 = SeqWithQuality(seq='AAC-AA', qual=[30, 30, 30, 0, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGGAA', qual=[30, 30, 15, 15, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
+        
+        snp = SeqVariation(location=Location(start=2, end=3), alignment=contig,
+                           alleles={'--':[0, 1], 'C-':[2, 3], 'GG':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert len(snp2.alleles) == 2
+        
+        #It check a complex SeqVar
+        seq1 = SeqWithQuality(seq='AA---AA', qual=[30, 30, 0, 0, 0, 30, 30])
+        seq2 = SeqWithQuality(seq='AAC--AA', qual=[30, 30, 30, 0, 0, 30, 30])
+        seq3 = SeqWithQuality(seq='AAGGGAA', qual=[30, 30, 15, 15, 15, 30, 30])
+        seq4 = SeqWithQuality(seq='AAGGGAA', qual=[30, 30, 15, 30, 30, 30, 30])
+        contig = Contig([seq1, seq1, seq2, seq2, seq3, seq4])
+        
+        snp = SeqVariation(location=Location(start=2, end=4), alignment=contig,
+                           alleles={'---':[0, 1], 'C--':[2, 3], 'GGG':[4, 5]})
+        snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
+        assert len(snp2.alleles) == 2
+        
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
     unittest.main()

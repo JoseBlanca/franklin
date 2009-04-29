@@ -3,7 +3,7 @@ Created on 2009 mar 25
 
 @author: peio
 '''
-from biolib.contig import NonStaticParentLocation, Contig
+from biolib.contig import NonStaticParentLocation, Contig, slice_to_range
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -273,7 +273,79 @@ def _longest_read(alignment):
         if len_read > longest:
             longest = len_read
     return longest
+
+def remove_bad_quality_alleles(seqvar, qual_threshold=None, \
+                               default_quality=None):
+    ''' It removes bad quality alleles given a seqvar'''
+    if  qual_threshold is None:
+        raise ValueError('Quality threshold must be implicit')
     
+    alleles  = seqvar.alleles
+    contig   = seqvar.alignment
+    location = seqvar.location
+    
+    bad_alleles = [] # Alleles we are not going to use
+    for allele in alleles:
+        # Gaps does not have quality, and it is OK
+        if CONFIG.indel_char in allele:
+            continue
+        quality_allele = _allele_quality(contig, alleles[allele], location,
+                                          default_quality)
+
+        # We check it the quality is enought to use
+        if quality_allele < qual_threshold:
+            bad_alleles.append(allele)
+    for allele in bad_alleles:
+        del alleles[allele]
+    
+    if len(alleles) >1:
+        return SeqVariation(alleles=alleles, location=seqvar.location, \
+                            alignment=seqvar.alignment)
+    else:
+        return None
+def _allele_quality(contig, reads, location, default_quality):
+    ''' It returns the quality of a allele'''
+    quality_allele = 0
+    for read_num in reads:
+        read = contig[read_num]
+        # If the location is more than one column we need to obtain de media
+        # of all columns involved
+        try:
+            columns = slice_to_range(location, None)
+        except AttributeError:
+            start = location.start
+            end = location.end
+            columns = slice_to_range(slice(start, end + 1), None)
+        
+        
+        # We sum all qualities of the allele
+        read_allele_quality = _read_allele_quality(columns, read, 
+                                                   default_quality)
+        quality_allele += read_allele_quality
+    # this is the media of the qualities
+    return quality_allele / len(reads)
+
+
+def _read_allele_quality(columns, read, default_quality):
+    '''it returns of the cuality of the alelle in one read '''
+    quality_row = 0
+    for column_location in columns:
+        #It checks if the read have quality, and if we are giving a 
+        #default quality for the reads that haven't
+        try:
+            #The easiest way to get simple columns is using this. 
+            # Because it complements and reverses if is needed
+            nucleotide_quality = read[column_location].qual[0]
+        except TypeError:
+            if default_quality is None:
+                msg = "No Quality in read and no default provided"
+                raise ValueError(msg)
+            else:
+                nucleotide_quality = default_quality
+        quality_row += nucleotide_quality
+
+    return quality_row / (len(columns))
+             
 def seqvariations_in_alignment(alignment):
     ''' We use this method to yield the SequenceVariation found in an alignment.
     
