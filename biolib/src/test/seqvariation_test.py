@@ -407,10 +407,25 @@ class SeqVariationrEnzime(unittest.TestCase):
         cont = Contig([seq, seq], consensus=consensus)
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=7, alignment=cont)
             
-        enzimes = cap_enzime(snp, True)
-        assert ['HinfI', 'TscAI'] == enzimes
+        enzymes = cap_enzime(snp, True)
+        assert ['HinfI', 'TscAI'] == enzymes
         
-    
+    @staticmethod
+    def test_ecori():
+        '''It test a know enzyme reaction ecori '''
+        
+        seq_eco   = 'gaattc'
+        seq_noeco = 'gaatcc'
+        
+        con  ='ATGATGATG' + seq_eco + 'ATGATGATGTGGGAT'
+        seq1 = 'ATGATGATG' + seq_eco + 'ATGATGATGTGGGAT'
+        seq2 = 'ATGATGATG' + seq_noeco + 'ATGATGATGTGGGAT'
+        cont = Contig([seq1, seq2], consensus=con)
+        
+        snp = SeqVariation(alleles={'C':2, 'T':3}, location=13, alignment=cont)
+        
+        enzymes = cap_enzime(snp)
+        assert 'EcoRI' in enzymes
 
 
 if __name__ == "__main__":
