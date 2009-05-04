@@ -76,7 +76,7 @@ class CafTest(unittest.TestCase):
         ''' It checks if we locate the reads in good coordinates'''
         fname = os.path.join(DATA_DIR, 'example3.caf')
         caf_parser  = CafParser(fname)
-        for contig in caf_parser.contigs():
+        for contig  in caf_parser.contigs():
             #consensus start
             assert contig.consensus.location.start == 5
             # These are reverse strands
@@ -100,7 +100,7 @@ class CafTest(unittest.TestCase):
             assert str(read) == 'ATCCACTTTT'
             read = contig[198][8:18]
             assert str(read) == 'CTCCCTGTGN'
-            for i,read in enumerate(contig):
+            for i, read in enumerate(contig):
                 print i, read.sequence.name
             
 class AceTest(unittest.TestCase):

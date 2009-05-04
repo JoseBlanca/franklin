@@ -54,5 +54,22 @@ def create_temp_fasta_files(seq1, seq2):
     return fileh1, fileh2
 
 
+def get_start_end(location):
+    '''It accepts an int, Location or tuple and it returns the start, end,
+    forward and strand.'''
+    #int
+    if isinstance(location, int):
+        start = location
+        end = location
+    #tuple
+    elif isinstance(location, tuple):
+        start = location[0]
+        end = location[1]
+    #location
+    else:
+        start = location.start
+        end = location.end
+    return start, end
+
 if __name__ == '__main__':
     pass

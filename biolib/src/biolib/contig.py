@@ -1,4 +1,5 @@
 '''This module provides the code to represent a sequence contig.'''
+from biolib.biolib_utils import get_start_end
 
 #for configuration I like lowercase variables
 #pylint: disable-msg=C0103
@@ -1047,23 +1048,23 @@ class Location(object):
                               strand=new_strand, forward=self.forward,
                               parent=self.parent)
 
-    @staticmethod
-    def _get_start_end(location):
-        '''It accepts an int, Location or tuple and it returns the start, end,
-        forward and strand.'''
-        #int
-        if isinstance(location, int):
-            start = location
-            end = location
-        #tuple
-        elif isinstance(location, tuple):
-            start = location[0]
-            end = location[1]
-        #location
-        else:
-            start = location.start
-            end = location.end
-        return start, end
+#    @staticmethod
+#    def _get_start_end(location):
+#        '''It accepts an int, Location or tuple and it returns the start, end,
+#        forward and strand.'''
+#        #int
+#        if isinstance(location, int):
+#            start = location
+#            end = location
+#        #tuple
+#        elif isinstance(location, tuple):
+#            start = location[0]
+#            end = location[1]
+#        #location
+#        else:
+#            start = location.start
+#            end = location.end
+#        return start, end
 
     def overlaps(self, location):
         '''It returns True if the locations overlap, False otherwise.
@@ -1072,7 +1073,7 @@ class Location(object):
         Keyword argument:
         location -- A Location to compare.
         '''
-        start, end = self._get_start_end(location)
+        start, end = get_start_end(location)
         #self    -----     -----     -----     --------
         #range  ---      ---------    ------    -----
         #if start or end is None we convert them to ints to allow the
@@ -1103,7 +1104,7 @@ class Location(object):
         Keyword argument:
         location -- A Location or an int to compare.
         '''
-        start, end = self._get_start_end(location)
+        start, end = get_start_end(location)
         #slice
         #self  ------------
         #range   --------- 
@@ -1125,7 +1126,7 @@ class Location(object):
         '''
         #self  ---------
         #range --------- 
-        start, end = self._get_start_end(location)
+        start, end = get_start_end(location)
         #here we also need strand, forward and static_parent  
         try:
             strand = location.strand

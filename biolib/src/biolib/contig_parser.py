@@ -108,10 +108,10 @@ class CafParser(object):
     def contigs(self):
         '''It returns a generator that yields the contigs.'''
         
-        for seq_rec_name in self._seq_index:
-            if self._type_index[seq_rec_name] == 'Is_contig':
-                yield self.contig(seq_rec_name)
-    
+        for name in self._seq_index:
+            if self._type_index[name] == 'Is_contig':
+                yield self.contig(name)
+                
     def reads(self):
         '''It returns a generator with the reads'''
         

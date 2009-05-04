@@ -241,7 +241,7 @@ def _build_location_from_index(index):
         loc = NonStaticParentLocation(start=start, end=stop - 1)
     return loc
 
-def _seqvariation_in_subcontig(contig, colindex, rows):
+def _seqvariation_in_subcontig(contig, alignment, colindex, rows):
     '''Given a contig a column index and a list of rows (seqs) it looks if
     there is a SeqVariation. If it founds one it returns it, otherwise it
     returns None.'''
@@ -256,7 +256,7 @@ def _seqvariation_in_subcontig(contig, colindex, rows):
     #do we have more than one allele == is a seqvar?
     if len(alleles) > 1:
         loc = _build_location_from_index(colindex)
-        return SeqVariation(alleles=alleles, location=loc, alignment=contig)
+        return SeqVariation(alleles=alleles, location=loc, alignment=alignment)
     else:
         return None
 
@@ -442,6 +442,7 @@ def seqvariations_in_alignment(alignment):
                     # times 
                     colindex = slice(col_index, col_indel_end)
                     seqvar = _seqvariation_in_subcontig(proxycontig,
+                                                        alignment,
                                                         colindex,
                                                         subcontig_good_reads)
                     if seqvar is not None:

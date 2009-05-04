@@ -3,9 +3,9 @@ Created on 2009 api 7
 
 @author: peio
 '''
-from biolib.SeqVariation import seqvariations_in_alignment, contig_to_read_list
+from biolib.SeqVariation import seqvariations_in_alignment
 from biolib.contig_parser import CafParser, AceParser
-from biolib.contig_cleaner import contig_strip
+from biolib.contig_cleaner import contig_strip, water_alignment_strip
 #from sys import argv 
 
 def main():
@@ -29,9 +29,11 @@ def main():
 #        for read in contig:
 #            print read.location
 #            print read.location.forward
-        print contig
-        contig = contig_strip(contig, 5)
 #        print contig
+#        contig = contig[9:10]
+        contig = contig_strip(contig, 5)
+        contig = water_alignment_strip(contig)
+        print contig
             
         print "Searching snps"
         for seqvar in seqvariations_in_alignment(contig):

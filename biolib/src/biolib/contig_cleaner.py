@@ -6,8 +6,10 @@ Created on 2009 api 27
 from biolib.contig import  Contig, Location
 from biolib.pairwise_alignment import water
 
-def contig_strip(contig, strip_number):
+def contig_strip(contig, strip_number=None):
     '''It strips the contig's read ends and starts '''
+    if strip_number is None:
+        raise ValueError('Number of nucleotides to strip needed')
     striped_contig = Contig(consensus = contig.consensus)
     for read in contig:
         read_location = read.location
