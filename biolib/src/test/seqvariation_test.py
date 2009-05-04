@@ -9,10 +9,13 @@ from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  second_allele_read_times,
                                  remove_bad_quality_alleles,
                                  seqvar_close_to_consensus_limit,
-                                 calculate_pic)
+                                 calculate_pic,
+                                 cap_enzime)
 from biolib.contig import Contig, locate_sequence, Location
 from biolib.Seqs import SeqWithQuality
 from test.test_utils import SeqRecord
+
+
 
 class SeqVariationConfigTest(unittest.TestCase):
     '''Here we will check if the SeqVariation module can be configured.
@@ -392,6 +395,24 @@ class SeqVariationFilteringTest(unittest.TestCase):
         pic_2 = calculate_pic(snp2)
         assert pic_1 > pic_2
         
+class SeqVariationrEnzime(unittest.TestCase):
+    ''' It checks if we have problems with remaps and it functions'''
+    
+    @staticmethod
+    def test_remap():
+        '''It test if the remap external program works '''
+        con  = 'Actgactgactgtca'
+        seq  = 'Actgacttactgtca'
+        consensus = locate_sequence(con, location=0)
+        cont = Contig([seq, seq], consensus=consensus)
+        snp = SeqVariation(alleles={'C':2, 'T':3}, location=7, alignment=cont)
+            
+        enzimes = cap_enzime(snp, True)
+        assert ['HinfI', 'TscAI'] == enzimes
+        
+    
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
     unittest.main()

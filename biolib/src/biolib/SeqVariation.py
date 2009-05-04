@@ -4,6 +4,7 @@ Created on 2009 mar 25
 @author: peio
 '''
 from biolib.contig import NonStaticParentLocation, Contig, slice_to_range
+from biolib.biolib_utils import call, temp_fasta_file
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -36,7 +37,12 @@ class _SeqVarConf(object):
             valid_alleles  = ['A', 'a', 'T', 't', 'C', 'c', 'G', 'g', \
                               self.indel_char]
         self.valid_alleles = valid_alleles
-
+        #Encimes to use with remap
+        self.common_enzymes = ['ecori', 'smai', 'bamhi', 'alui', 'bglii', 
+                               'sali', 'bgli', 'clai', 'bsteii', 'taqi', 
+                               'psti', 'pvuii', 'hindiii', 'ecorv', 'xbai', 
+                               'haeiii', 'xhoi', 'kpni', 'scai', 'banii', 
+                               'hinfi', 'drai', 'apai', 'asp718'] 
 CONFIG = _SeqVarConf()
 
 def _allele_count(allele):
@@ -566,3 +572,91 @@ def calculate_pic(seq_variation):
     sum_2 = _pic_sum_2(alleles, n_alleles)
     pic = 1.0 - sum_1 - sum_2
     return pic
+
+def cap_enzime(snp, all_enzymes=False):
+    ''' It looks in the 2 most frecuent alleles if there is each of the enzimes
+    cut diferently'''
+    location = snp.location
+    # It takes the two most frecuent alleles
+    alleles = snp.sorted_alleles()
+    allele1 = alleles[0][0]
+    allele2 = alleles[1][0]
+    # Now we need to know with sequence pice take from the consensus
+    # How big is the piece to use with remap?
+    piece_from_location = 7
+    piece_start = location - piece_from_location
+    if piece_start < 0 :
+        raise ValueError(' The snp is too close to begining of consensus')
+    piece_end = location + piece_from_location
+    consensus = str(snp.alignment.consensus)
+    #the base sequence
+    seq1      = consensus[piece_start: piece_end + 1]
+    seq2      = seq1[:]
+    #the allele1 and 2 sequences
+    try:
+        al_start = location.start - piece_start
+    except AttributeError:
+        al_start = location -piece_start
+    al_stop  = al_start + len(allele1)
+    seq1 = seq1[:al_start] + allele1 + seq1[al_stop:]
+    seq2 = seq1[:al_start] + allele2 + seq1[al_stop:]
+    if len(seq1.strip()) < (piece_from_location * 2 + 1):
+        raise ValueError(' The snp is in the end of the consensus')
+    
+    enzymes1 = _remap_run(seq1, all_enzymes)
+    enzymes2 = _remap_run(seq2, all_enzymes)
+    
+    enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
+    return list(enzymes)
+    
+    
+def _remap_run(seq, all_enzymes):
+    '''this command runs remap EMBOSS binary and returns ...'''
+    # Minimun length of the restriction enzyme recognition site
+    sitelen = 4
+    seq_file = temp_fasta_file(seq, name=None)
+    seq_filename = seq_file.name
+    
+    if all_enzymes:
+        enzymes = 'all'
+    else:
+        enzymes = ",".join(CONFIG.common_enzymes)
+    
+    cmd = ['remap', '-sequence', seq_filename, '-enzymes', enzymes, 
+           '-sitelen' , str(sitelen), 'stdout']
+
+    try:
+        stdout, stderr, retcode  = call(cmd)
+    except OSError:
+        raise OSError('remap binary does not exits or it is not in path')
+    
+    if retcode:
+
+        raise RuntimeError('remap err: '+ stderr)
+    
+    return  _parse_remap_output(stdout)
+    
+def _parse_remap_output(remap_output):
+    ''' It takes the remap output and it returns a set list with the enzymes
+     that cut there'''
+    section = ''
+    enzymes = [] 
+    for line in remap_output.split('\n'):
+        line = line.strip()
+        if line.isspace() or len(line) < 2:
+            continue
+        if section == 'cut':
+            if line.startswith('#'):
+                section = ''
+            else:
+                enzymes.append(line.split()[0])
+                
+        if line.startswith('# Enzymes that cut'):
+            section = 'cut' 
+            continue
+                   
+    return enzymes
+           
+    
+    
+     
