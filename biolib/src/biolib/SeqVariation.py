@@ -4,7 +4,7 @@ Created on 2009 mar 25
 @author: peio
 '''
 from biolib.contig import NonStaticParentLocation, Contig, slice_to_range
-from biolib.biolib_utils import call, temp_fasta_file
+from biolib.biolib_utils import call, temp_fasta_file, get_start_end
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -537,72 +537,82 @@ def calculate_pic(seq_variation):
     The calculation is done following Shete et al. 2000 Theoretical Population
     Biology 57, 265 271.
     '''
+    
     #pylint: disable-msg=C0103
-    def _pic_sum_1(alleles, n):
-        'It returns the first summation for the pic calculation'
-        # n is the number of times taht all alleles has been read
-        # x is the number of times that one allele has been read
-        suma = 0
-        n = float(n)
-        div = n * ( n - 1)
-        for allele_times in alleles:
-            x = allele_times
-            this_sum = x * ( x - 1) / div
-            suma += this_sum
+    def _pic_sum_1(alleles, num_reads, num_alleles):
+        '''It returns the first summation for the pic calculation'''
+        # P is the frecuency one allele have been read
+        suma  = 0 
+        for i in range(num_alleles):
+            frec = (alleles[i] / num_reads) ** 2
+            suma += frec
         return suma
-    def _pic_sum_2(alleles, n):
-        'It returns the second summation for the pic calculation'
+    
+    def _pic_sum_2(alleles, num_reads, num_alleles):
+        '''It returns the second summation for the pic calculation '''
         suma = 0
-        n = float(n)
-        div = n * ( n - 1) * (n - 2) * ( n - 3)
-        for allele_times_i in alleles:
-            x_i = allele_times_i
-            for allele_times_j in alleles:
-                x_j = allele_times_j
-                this_sum = (x_i * (x_i - 1) * x_j * (x_j - 1)) / div
-                suma += this_sum
-        return suma
-
+        for i in range(num_alleles - 1):
+            freci = (alleles[i] / num_reads) ** 2
+            for j in range(i + 1, num_alleles):
+                frecj = (alleles[j] / num_reads) ** 2
+                suma += freci * frecj
+        return suma       
+                
+                           
     alleles = seq_variation.alleles
     #the alleles can have the count or a list with the alleles, we make sure
     #that all have a count, and we convert the dict to a list
     alleles = [float(_allele_count(allele)) for allele in alleles.values()]
-    #how many alleles are in total?
-    n_alleles = sum(alleles)
-    sum_1 = _pic_sum_1(alleles, n_alleles)
-    sum_2 = _pic_sum_2(alleles, n_alleles)
-    pic = 1.0 - sum_1 - sum_2
+    #how many reads are in total?
+    num_reads = float(sum(alleles))
+    #how many alleles are in total
+    num_alleles = len(alleles)
+    sum_1 = _pic_sum_1(alleles, num_reads, num_alleles)
+    sum_2 = _pic_sum_2(alleles, num_reads, num_alleles)
+    
+    
+    pic = 1.0 - sum_1 - ( 2* sum_2)
     return pic
 
 def cap_enzime(snp, all_enzymes=False):
     ''' It looks in the 2 most frecuent alleles if there is each of the enzimes
     cut diferently'''
     location = snp.location
+    loc_start, loc_end = get_start_end(location)
     # It takes the two most frecuent alleles
     alleles = snp.sorted_alleles()
-    allele1 = alleles[0][0]
-    allele2 = alleles[1][0]
-    # Now we need to know with sequence pice take from the consensus
+    allele1_orig = alleles[0][0]
+    allele2_orig = alleles[1][0]
+    inchar = CONFIG.indel_char
+    if inchar in allele1_orig:
+        allele1 = allele1_orig.replace(inchar, '')
+    else:
+        allele1 = allele1_orig
+    if inchar in allele2_orig:
+        allele2 = allele2_orig.replace(inchar, '')
+    else:
+        allele2 = allele2_orig
+    
+    # Now we need to know with sequence piece take from the consensus
     # How big is the piece to use with remap?
     piece_from_location = 7
-    piece_start = location - piece_from_location
+    piece_start = loc_start - piece_from_location
     if piece_start < 0 :
-        raise ValueError(' The snp is too close to begining of consensus')
-    piece_end = location + piece_from_location
+        return None
+        #raise ValueError(' The snp is too close to begining of consensus')
+    piece_end = loc_end + piece_from_location
     consensus = str(snp.alignment.consensus)
     #the base sequence
     seq1      = consensus[piece_start: piece_end + 1]
     seq2      = seq1[:]
     #the allele1 and 2 sequences
-    try:
-        al_start = location.start - piece_start
-    except AttributeError:
-        al_start = location -piece_start
+    al_start = loc_start - piece_start
     al_stop  = al_start + len(allele1)
     seq1 = seq1[:al_start] + allele1 + seq1[al_stop:]
     seq2 = seq1[:al_start] + allele2 + seq1[al_stop:]
     if len(seq1.strip()) < (piece_from_location * 2 + 1):
-        raise ValueError(' The snp is in the end of the consensus')
+        return None
+        #raise ValueError('The snp is in the end of the consensus')
     
     enzymes1 = _remap_run(seq1, all_enzymes)
     enzymes2 = _remap_run(seq2, all_enzymes)
