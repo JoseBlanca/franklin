@@ -571,7 +571,7 @@ def calculate_pic(seq_variation):
     sum_2 = _pic_sum_2(alleles, num_reads, num_alleles)
     
     
-    pic = 1.0 - sum_1 - ( 2* sum_2)
+    pic = 1.0 - sum_1 - ( 2 * sum_2)
     return pic
 
 def cap_enzime(snp, all_enzymes=False):
