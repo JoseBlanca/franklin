@@ -417,7 +417,8 @@ class SeqVariationrEnzime(unittest.TestCase):
         contig    = Contig(consensus=consensus)
         contig.append_to_location(seq, 0)
         contig.append_to_location(seq, 0)
-        snp = SeqVariation(alleles={'C':2, 'T':3}, location=(7,8), alignment=cont)
+        snp = SeqVariation(alleles={'C':2, 'T':3}, location=(7, 8), 
+                           alignment=cont)
         enzymes = cap_enzime(snp, True)
         assert ['HinfI', 'TscAI'] == enzymes
                
