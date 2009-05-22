@@ -20,12 +20,12 @@ def call(cmd):
 
 def fasta_str(seq, name):
     'Given a sequence it returns a string with the fasta'
-    fasta_str = ['>']
-    fasta_str.append(name)
-    fasta_str.append('\n')
-    fasta_str.append(str(seq))
-    fasta_str.append('\n')
-    return ''.join(fasta_str)
+    fasta_str_ = ['>']
+    fasta_str_.append(name)
+    fasta_str_.append('\n')
+    fasta_str_.append(str(seq))
+    fasta_str_.append('\n')
+    return ''.join(fasta_str_)
 
 def _get_seq_name(seq, name):
     'Given a sequence and its default name it returns its name'
@@ -112,13 +112,13 @@ def get_best_orf(seq, matrix_path=None):
     orf_prot = parse_fasta(file_orfh)[0]
     return orf_dna, orf_prot
 
-def remove_from_orf(orf_dna, orf_prot, aa='X'):
+def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
     ''' It removes an aminoaacid from dna and protein seq'''
     dna  = []
     prot = []
     pos       = 0
     for letter in orf_prot:
-        if letter.upper() != aa:
+        if letter.upper() != aminoacid:
             prot.append(letter)
             dna.append(orf_dna[pos:pos + 3])
         pos += 3
@@ -136,8 +136,112 @@ def translate(seq):
     if retcode != 0:
         raise RuntimeError(stderr)
     return parse_fasta(stdout)
+def _remove_atributes_to_tag(tag):
+    '''It removees atributes to a xml tag '''
+    mod_tag = "".join(tag).split(' ')
+    if len(mod_tag) >1:
+        return mod_tag[0] + '>'
+    else:
+        return mod_tag[0]
 
-#def iprscan_run(seq):
+def _get_xml_header(fhand, tag):
+    '''It takes the header of the xml file '''
+    fhand.seek(0, 2)
+    end_file = fhand.tell()
+
+    fhand.seek(0, 0)
+    header      = []
+    current_tag = []
+    listed_tag = '<' + tag + '>'
+    while True:
+        if end_file <= fhand.tell():
+            raise ValueError('End Of File. Tag Not found')
+            
+        letter = fhand.read(1)
+        if letter == '<':
+            in_tag = True
+        if in_tag:
+            current_tag.append(letter)
+        else:
+            header.append(letter)
+        if letter == '>':
+            mod_tag = _remove_atributes_to_tag(current_tag)
+            if listed_tag == mod_tag:
+                return  ''.join(header)
+            else:
+                header.extend(current_tag)
+                current_tag = []
+            in_tag = False
+def _get_xml_tail(fhand, tag):
+    '''It takes the tail of the xml file '''
+    in_tag = False
+    tail = []
+    current_tag  = []
+    fhand.seek(-1, 2)
+    listed_tag = list('</'+ tag +'>')
+    listed_tag.reverse()
+    while True:
+        if fhand.tell() == 0:
+            raise ValueError('Start Of File. Tag Not found')
+        letter = fhand.read(1)
+        if letter == '>':
+            in_tag = True
+        if in_tag:
+            current_tag.append(letter)
+        else:
+            tail.append(letter)
+        
+        if letter == '<':
+            if current_tag == listed_tag:
+                tail.reverse()
+                return "".join(tail)
+            else:
+                tail.extend(current_tag)
+                current_tag = []
+            in_tag = False 
+        
+        fhand.seek(-2, 1)
+    
+def xml_itemize(fhand, tag):  
+    '''It takes a xnl file and it chunks it by the given key. It adds header if 
+    exists to each of the pieces. It is a generator'''
+    fhand.seek(0, 2)
+    end_file = fhand.tell()
+    
+    header = _get_xml_header(fhand, tag)
+    tail   = _get_xml_tail(fhand, tag)
+    section      = []
+    current_tag  = []
+    listed_tag_s = '<' + tag + '>'
+    listed_tag_e = '</' + tag + '>'
+    in_tag, in_section = False, False
+    
+    fhand.seek(0, 0)
+    
+    while True:
+        if end_file <= fhand.tell():
+            break
+        letter = fhand.read(1)
+        if letter == '<':
+            in_tag = True
+        if in_tag:
+            current_tag.append(letter)
+        if in_section:
+            section.append(letter)            
+        if letter == '>':
+            if listed_tag_s == _remove_atributes_to_tag(current_tag):
+                in_section = True
+                section.extend(current_tag)
+            elif listed_tag_e == _remove_atributes_to_tag(current_tag):
+                yield  header + "".join(section) + tail
+                section = []
+                in_section = False
+            in_tag = False
+            current_tag = []
+        
+    
+    
+    
  
 if __name__ == '__main__':
     pass
