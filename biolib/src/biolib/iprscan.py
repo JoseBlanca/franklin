@@ -66,7 +66,7 @@ class InterProHandler(ContentHandler):
         protein      = self.proteins[0]
         self.proteins = self.proteins[1:]
         return protein
-        
+
 def xml_iprscan_parser_iter(fhand):
     '''It parses an iprscan xml result file.
     
