@@ -1,4 +1,5 @@
 '''This class '''
+from Bio.Blast import NCBIXML
 
 class BlastSummary(object):
     '''It holds the most relevant information about a blast, query and subj ids,
@@ -355,8 +356,7 @@ class BlastSummaries(object):
         '''
         self._blast_name  = blast
         self._filters     = []
-        self._blast_parse = None
-        self._open_blast_file()
+        self._blast_parse = NCBIXML.parse(blast)
         self.iter = iter(self._blast_parse)
     def __iter__(self):
         '''It is necesary to convert our object in iterable '''
@@ -387,17 +387,7 @@ class BlastSummaries(object):
                                                 filter_['max_incompatibility'],
                                                 filter_['min_similarity'])
         return summary
-    def _open_blast_file(self):
-        '''It opens the blast file or raises an error if the file is
-        not found
-        '''
-        try:
-            blasth = file(self._blast_name, 'r')
-        except IOError:
-            raise OSError('Blast file not found: ' + self._blast_name)
 
-        from Bio.Blast import NCBIXML
-        self._blast_parse = NCBIXML.parse(blasth)
     def add_filter_best_expects(self, min_expect, expect_tolerance):
         '''It will remove all the query-subj pairs that doesn't meet the
         criteria. It selects only the ones with the best expect values. 

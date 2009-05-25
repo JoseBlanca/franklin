@@ -16,17 +16,13 @@ class BlastSummariesTests(unittest.TestCase):
     def test_summarizer_init():
         ''' Basic init test'''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        BlastSummaries(blast=fname)
-
-    def test_missing_blast_file_error(self):
-        ''' Missing blast file test'''
-        self.failUnlessRaises(OSError, BlastSummaries, blast='foo' )
+        BlastSummaries(open(fname,'r'))
 
     @staticmethod
     def test_no_filter():
         '''Test if no filter '''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        summaries = BlastSummaries(blast=fname)
+        summaries = BlastSummaries(open(fname,'r'))
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':1, 'cCL1Contig4':5,
                      'cCL1Contig5':8}
         for result in summaries:
@@ -36,7 +32,7 @@ class BlastSummariesTests(unittest.TestCase):
     def test_filter_best_expects():
         ''' Test Filter: Best expected  '''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        summaries = BlastSummaries(blast=fname)
+        summaries = BlastSummaries(open(fname,'r'))
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':1, 'cCL1Contig4':1,
                    'cCL1Contig5':2}
         summaries.add_filter_best_expects(min_expect = 1e-4,
@@ -49,7 +45,7 @@ class BlastSummariesTests(unittest.TestCase):
     def test_filter_expect_threshold():
         ''' Test Filter: expected treshold  '''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        summaries = BlastSummaries(blast=fname)
+        summaries = BlastSummaries(open(fname,'r'))
         expected  = {'cCL1Contig2':2, 'cCL1Contig4':2, 'cCL1Contig5':2}
         summaries.add_filter_expect_threshold(min_expect = 1e-34)
         for result in summaries:
@@ -61,7 +57,7 @@ class BlastSummariesTests(unittest.TestCase):
     def test_filter_similarity_threshold():
         ''' Test Filter: similarity treshold  '''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        summaries = BlastSummaries(blast=fname)
+        summaries = BlastSummaries(open(fname,'r'))
         expected  = {'cCL1Contig4':1}
         summaries.add_filter_similarity_threshold(min_length = 430,
                                               min_similarity = 90)
@@ -73,7 +69,7 @@ class BlastSummariesTests(unittest.TestCase):
     def test_filter_compatibility_threshold():
         ''' Test Filter: filter compatibility treshold  '''
         fname = os.path.join(DATA_DIR, 'blast.xml')
-        summaries = BlastSummaries(blast=fname)
+        summaries = BlastSummaries(open(fname,'r'))
         expected  = {'cCL1Contig4':1}
         summaries.add_filter_compatibility_threshold(min_compatibility = 400,
                                                  max_incompatibility = 50,
