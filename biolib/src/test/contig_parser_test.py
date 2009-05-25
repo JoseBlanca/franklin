@@ -100,8 +100,7 @@ class CafTest(unittest.TestCase):
             assert str(read) == 'ATCCACTTTT'
             read = contig[198][8:18]
             assert str(read) == 'CTCCCTGTGN'
-            for i, read in enumerate(contig):
-                print i, read.sequence.name
+            
             
 class AceTest(unittest.TestCase):
     ''' It tests the ace alignment parser'''
