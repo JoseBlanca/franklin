@@ -4,7 +4,7 @@ Created on 2009 mai 21
 @author: peio
 '''
 import unittest, os, biolib
-from biolib.iprscan_parser import xml_iprscan_parser_iter
+from biolib.iprscan import xml_iprscan_parser_iter
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
