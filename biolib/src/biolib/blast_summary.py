@@ -1,5 +1,6 @@
 '''This class '''
 from Bio.Blast import NCBIXML
+import re
 
 class BlastSummary(object):
     '''It holds the most relevant information about a blast, query and subj ids,
@@ -23,22 +24,18 @@ class BlastSummary(object):
         '''It returns the hits for this blast'''
         return self._hits
     hits = property(get_hits)
-    
     def get_query_length(self):
         '''It returns the query length in number of residues'''
         return self._query_length
     query_length = property(get_query_length)
-
     def get_query_name(self):
         '''It returns the query_id for this blast summary'''
         return self._query_name
     query_name = property(get_query_name)
-
     def get_query_definition(self):
         '''It returns the query definition for this blast summary'''
         return self._query_definition
     query_definition = property(get_query_definition)
-
     def _summarize(self):
         '''It creates the summary. The summary has the structure:
         
@@ -63,14 +60,15 @@ class BlastSummary(object):
         
         #length of query sequence
         self._query_length     = self._blast.query_letters 
-        self._query_name         = query_id
+        self._query_name       = query_id
         self._query_definition = definition
         
         for alignment in self._blast.alignments:
-            subject_name = alignment.title.split()[0]
+            hit_name = alignment.title.split()[0]
             #sometimes the blast leaves an lcl| in the id
-            subject_length = alignment.length
+            hit_length = alignment.length
             hsps = []
+            hit_start, hit_end = None, None 
             for hsp in alignment.hsps:
                 expect         = hsp.expect
                 subject_start  = hsp.sbjct_start
@@ -78,23 +76,47 @@ class BlastSummary(object):
                 query_start    = hsp.query_start
                 query_end      = hsp.query_end
                 hsp_length     = len(hsp.query)
+                # We have to check the strand of the seq subject
+                if subject_start < subject_end:
+                    subject_strand = '+'
+                else:
+                    subject_strand = '-'
+                    subject_start, subject_end = subject_end, subject_start
+                # Alse the query strand
+                if query_start < query_end:
+                    query_strand = '+'
+                else:
+                    query_strand = '-'
+                    query_start, query_end = query_end, query_start
+                
+                
                 try:
                     similarity = hsp.positives*100.0/float(hsp_length)
                 except TypeError:
                     similarity = None
                 hsps.append({
-                    'expect'       : expect,
-                    'subject_start': subject_start,
-                    'subject_end'  : subject_end,
-                    'query_start'  : query_start,
-                    'query_end'    : query_end,
+                    'expect'         : expect,
+                    'subject_start'  : subject_start,
+                    'subject_end'    : subject_end,
+                    'subject_strand' : subject_strand, 
+                    'query_start'    : query_start,
+                    'query_end'      : query_end,
+                    'query_strand'   : query_strand, 
                     'similarity'   : similarity })
+                # It takes the first loc and the last loc of the hsp to
+                # determine hit start and end
+                if hit_start is None or query_start < hit_start:
+                    hit_start = query_start
+                if hit_end is None or query_end > hit_end:
+                    hit_end = query_end
+                
             self._hits.append({
-                'subject_name'   : subject_name,
-                'subject_length' : subject_length,
-                'expect'         : hsps[0]['expect'],
-                'hsps'           : hsps })
-
+                'name'   : hit_name,
+                'length' : hit_length,
+                'start'  : hit_start,   
+                'end'    : hit_end, 
+                'expect' : hsps[0]['expect'],
+                'hsps'   : hsps })
     def filter_best_expects(self, min_expect, expect_tolerance):
         '''It will remove all the query-subj pairs that doesn't meed the
         criteria. It select only the ones with the best expect values. 
@@ -120,7 +142,6 @@ class BlastSummary(object):
             if abs(log10(expect) - log_best_expect) < log_tolerance:
                 filtered_hits.append(hit)
         self._hits = filtered_hits
-
     def filter_expect_threshold(self, min_expect):
         '''It will remove all the query-subj pairs that doesn't meet the
         criteria. It select only the ones with the expect values above the
@@ -133,7 +154,6 @@ class BlastSummary(object):
             if expect <= min_expect:
                 filtered_hits.append(hit)
         self._hits = filtered_hits
-
     def _secure_hsps(self):
         '''If there is no secure copy of the original ones it will create one'''
         import copy
@@ -167,7 +187,6 @@ class BlastSummary(object):
             if hsp_len >= min_length:
                 filtered_hits.append(hit)
         self._hits = filtered_hits
-
     def _merge_overlaping_hsps(self):
         '''hsp 1  -------        ----->    -----------
            hsp 2       ------
@@ -223,7 +242,6 @@ class BlastSummary(object):
                             }
                         )
             hit['hsps_mod'] = merged_hsps
-    
     @staticmethod
     def _hsp_length(hsps):
         '''It returns the length covered by a list of hsp'''
@@ -245,7 +263,6 @@ class BlastSummary(object):
         self._filter_hits_under_similarity_threshold(min_similarity)
         self._merge_overlaping_hsps()
         self._filter_hits_under_length_threshold(min_length)
-
     def _incompatible_length(self, hit):
         '''It returns the incompatible length. The length of the region
         that should be alignmed but it is not.
@@ -266,7 +283,7 @@ class BlastSummary(object):
         else:
             query_orientation = -1
         query_len   = self.query_length
-        subject_len = hit['subject_length']
+        subject_len = hit['length']
 
         #First we add the first incompatible track
         #------------------------------------
@@ -323,7 +340,6 @@ class BlastSummary(object):
             if incompatible_len < max_incompatibility:
                 filtered_hits.append(hit)
         self._hits = filtered_hits
-
     def filter_compatibility_threshold(self, min_compatibility,
                                 max_incompatibility, min_similarity):
         '''It will remove all the query-subj pairs that doesn't meet the
@@ -346,7 +362,6 @@ class BlastSummary(object):
         self._filter_hits_under_length_threshold(min_compatibility)
         self._filter_hits_above_incompatibility_threshold(max_incompatibility)
 
-
 class BlastSummaries(object):
     '''This class will yield blastSummaries when given a blast result.'''
     def __init__(self, blast):
@@ -355,9 +370,11 @@ class BlastSummaries(object):
         blast -- an XML blast file name
         '''
         self._blast_name  = blast
+        blast.seek(0, 0)
+
         self._filters     = []
         self._blast_parse = NCBIXML.parse(blast)
-        self.iter = iter(self._blast_parse)
+        self.iter         = iter(self._blast_parse)
     def __iter__(self):
         '''It is necesary to convert our object in iterable '''
         return self
@@ -437,3 +454,86 @@ class BlastSummaries(object):
                 'min_compatibility':min_compatibility,
                 'max_incompatibility':max_incompatibility,
                 'min_similarity':min_similarity})
+
+def _transform_name_with_regexp(name, regexp):
+    '''It returns a matching patter of the name if it matches the regexp '''
+    if regexp is None:
+        return name
+    else:
+        reg    = re.compile(regexp)
+        try:
+            result = reg.match(name)
+            return result.groups()[0]
+        except AttributeError:
+            print("regexp doesn't match")
+            return name
+
+def _get_dbxref_name(database, name):
+    '''It takes db and name and returns dbxref section of the 9th column 
+    of the gff3 file '''
+    if database:
+        return ",Dbxref=%s" % _add_db_tag(name, database)
+    else:
+        return  ""
+def _add_db_tag(name, database):
+    '''It adds the database tag to the name '''
+    if database:
+        return "%s:%s" % (database, name)
+    else:
+        return name
+def summarie_to_gff3(summary, feature_type, query_db=None, subject_db=None,
+                      query_regex=None, subject_regex=None):
+    ''' It convert a  blast record in a gff3 output. There are arguments that 
+    need some explication:
+         .- feature_type : This is mandatory. And is the SOFA feature that 
+            describes better the query secuence. This is because we have to put
+            a feature where the other match and match_part "hang on"
+        .- *_regexp: These regular expresion are use to transform the name into
+            our naming schema. his is howto use it. You need to put parentesis 
+            in the matching region that you need to conserve in the name.
+            Example.SGD-12345 To conserve the number part you need => "SGD-(\d)"
+        .- *.db: These two variables are use to relate the secuences that came 
+        from  external databases. Using Dbxref.
+    '''
+    gff3 = []
+    
+    name = summary.query_name
+    name = _transform_name_with_regexp(name, query_regex)
+    query_length =  summary.query_length
+    hits = summary.hits
+    
+    # Gbrowser needs a feature where the others features "hang on". It needs a
+    # sequence with start and end to locate the other secuences. To match our 
+    # Id schema, we have to trasform them with source database and regexps
+    
+    dbxref_query = _get_dbxref_name(query_db, name)   
+    column_9  = "ID=%s,Name=%s%s " % (name, name, dbxref_query)
+    feature_line = "%s\t.\t%s\t1\t%d\t.\t.\t.\t%s" % (name, feature_type,
+                                                     query_length, column_9 )
+    gff3.append(feature_line)
+    
+    
+    for index, hit in enumerate(hits):
+        hit_id = 'match_%s_%03d' % (name, index + 1)
+        
+        # here the order of the three functions is important !!
+        hit_name = _transform_name_with_regexp(hit['name'], subject_regex)
+        dbxref_subject = _get_dbxref_name(subject_db, hit_name)
+        hit_name = _add_db_tag(hit_name, subject_db)
+        
+        column_9 = 'ID=%s;Name=%s%s' % (hit_id, hit_name, dbxref_subject)
+        hit_line = '%s\t.\tmatch\t%d\t%d\t%s\t.\t.\t%s' % (name, hit['start'],
+                                                      hit['end'],hit['expect'], 
+                                                      column_9)
+        gff3.append(hit_line)
+        for hsp in hit['hsps']:
+            column_9 = 'ID=%s;Name=%s;target=%s %d %d %s %s' % \
+               (hit_id, hit_name, hit_name, hsp['subject_start'],
+                 hsp['subject_end'], hsp['subject_strand'], dbxref_subject)
+            hsp_line = '%s\t.\tmatch_part\t%d\t%d\t%s\t%s\t.\t%s' % \
+              (name, hsp['query_start'], hsp['query_end'], hsp['expect'], 
+               hsp['query_strand'], column_9)
+            gff3.append(hsp_line)
+    
+    gff3.append('###')
+    return "\n".join(gff3)
