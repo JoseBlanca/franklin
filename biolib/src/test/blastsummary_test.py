@@ -4,7 +4,7 @@ Created on 2009 mai 7
 @author: peio
 '''
 import unittest
-from biolib.blast_summary import BlastSummaries
+from biolib.blast_summary import BlastSummaries, summarie_to_gff3
 import biolib
 import os.path
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -17,7 +17,7 @@ class BlastSummariesTests(unittest.TestCase):
         ''' Basic init test'''
         fname = os.path.join(DATA_DIR, 'blast.xml')
         BlastSummaries(open(fname,'r'))
-
+    
     @staticmethod
     def test_no_filter():
         '''Test if no filter '''
@@ -77,7 +77,31 @@ class BlastSummariesTests(unittest.TestCase):
         for result in summaries:
             if result.query_name in expected:
                 assert expected[result.query_name] == len(result.hits)
+    @staticmethod
+    def test_reverse_alignments():
+        '''It tests that the aligment subject are in reverse strand 
+        And we change them'''
+        fname = os.path.join(DATA_DIR, 'blast.xml')
+        summaries = BlastSummaries(open(fname,'r'))
+        for summarie in summaries:
+            for hit in summarie._hits:
+                for hsp in hit['hsps']:
+                    assert hsp['query_start'] < hsp['query_end']
+                    assert hsp['subject_start'] < hsp['subject_end']
 
-
+class BlastSummaries2gff3Tests(unittest.TestCase):
+    '''It test function related to blast2gff '''
+    
+    @staticmethod
+    def test_summarie_to_gff3(): 
+        '''It test summarie_to_gff3 '''
+        fname = os.path.join(DATA_DIR, 'blast.xml')
+        fname = '/home/peio/work_in/blast2go/SGN-U576037-Alignment.xml'
+        summaries = BlastSummaries(open(fname,'r'))
+        for summarie in summaries:
+            print summarie_to_gff3(summarie, 'cluster', query_db="SGD", 
+                                   query_regex="SGN-(\w+)", 
+                                   subject_regex="gi\|(\w+)*", subject_db ="GB")
+         
 if __name__ == "__main__":
     unittest.main()
