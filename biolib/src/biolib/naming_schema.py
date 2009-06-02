@@ -2,7 +2,9 @@
 
 from sqlalchemy import (Table, Column, Integer, String, Boolean, ForeignKey,
                         MetaData, create_engine, sql)
+from contig_parser import CafParser, AceParser
 from db_connection import DbConnection
+import re
 
 def _create_naming_database(db_connection):
     'It creates a new empty database to hold the naming schema status'
@@ -160,6 +162,15 @@ class NamingSchema(object):
         self._curr_code = next_code
         return next_code
 
+    def __getitem__(self, name):
+        '''An alias for get_next_name.
+        
+        It returns the next name available. The given name won't be taken into
+        account. This method is here to do a compatible interface with the
+        CachedNamingSchema.
+        '''
+        return self.get_next_name()
+
     def _get_last_name_in_db(self):
         '''It returns the last name for the given feature'''
         project_id = self._conn.get_id('projects', {'short_name':self._project})
@@ -207,8 +218,102 @@ class NamingSchema(object):
                                       'feature_type':feature_type,
                                       'last_name':current})
 
+class CachedNamingSchema(object):
+    '''Given a naming schema it creates a cache of already given names.
+    
+    The interface is dict-like. There's a __getitem__ that returns a new name
+    for every given name.
+    When a name is asked for the first time it is stored at the cache and
+    after that if it's asked again the cached copy will be returned.
+    '''
+    def __init__(self, naming_schema):
+        '''Given a naming schema it returns names.
+        
+        It keeps a cache and it uses that cache before calling the naming
+        schema.
+        '''
+        self._cache = {}
+        self._naming = naming_schema
 
+    def __getitem__(self, name):
+        'Given a name it returns a new name using the cache or naming schema.'
+        if name in self._cache:
+            return self._cache
+        new_name = self._naming.get_next_name()
+        self._cache[name] = new_name
+        return new_name
 
+REPLACE_RE = {
+    'fasta':[(r'^(>)([^ \n]+)', 2)]
+}
+
+def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
+    '''It changes the accession names in the files.
+    
+    Given a naming schema and a file kind
+    names found in the in file and it writes the result in the output file.
+    '''
+    def repl_factory(regex, group_num):
+        '''It creates a repl function for the re.sub function.
+        
+        We need one of these function for each regular expression given.
+        Besides the regex we need the group number that has the name to be
+        changed.
+        '''
+        #the function
+        def repl_fun(matchobj):
+            'It returns the replacement for the match.group(1) string'
+            replace = []
+            for group_i, group in enumerate(matchobj.groups()):
+                if group_i + 1 == group_num:
+                    replace.append(naming[group])
+                else:
+                    replace.append(group)
+            return ''.join(replace)
+        #the re object
+        re_obj = re.compile(regex)
+        return repl_fun, re_obj
+
+    #the repl and re_obj for each regular expression
+    re_list = REPLACE_RE[file_kind]
+    regex_list = []
+    for regex in re_list:
+        func, re_obj = repl_factory(regex[0], regex[1])
+        regex_list.append({'function':func, 're':re_obj})
+
+    fhand_in.seek(0)
+    fhand_out.seek(0)
+    for line in fhand_in:
+        for regex in regex_list:
+            line = re.sub(regex['re'], regex['function'], line)
+        fhand_out.write(line)
+
+def create_names_for_contigs(fhand, file_kind, naming):
+    '''Given a file it creates the new names to substitute the names found
+    in the file.
+    
+    It can support several file kinds, like caf or ace.
+    It also requires a naming schema that gives new names for every old name.
+    The naming schema should be a dict with several naming_schemas as values and
+    the sequence types like contig and est as values.
+    '''
+    if file_kind == 'caf':
+        contig_parser = CafParser(fhand)
+    elif file_kind == 'ace':
+        contig_parser = AceParser(fhand)
+    else:
+        raise ValueError('Unsupported file type: ' + file_kind)
+
+    #the naming should be a dict with names for the contigs and ests.
+    if 'contig' not in naming or 'read' not in naming:
+        raise ValueError('Naming for the contig and read should be provided')
+
+    names = {}
+    for contig in contig_parser.contig_names():
+        names[contig] = naming['contig'][contig]
+    for read in contig_parser.read_names():
+        names[read] = naming['read'][read]
+    return names
 
 def main():
     conn = DbConnection(database=':memory:', drivername='sqlite')

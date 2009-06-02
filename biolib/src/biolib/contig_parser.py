@@ -47,18 +47,30 @@ def _build_contig_from_dict(reads):
 
 class CafParser(object):
     ''' This class is used to parse caf files.'''
-    def __init__(self, fname):
+    def __init__(self, fhand):
 
         '''The initialitation.
         keyword arguments:
-            fname : caf file name
+            fhand : caf file
         '''
-        self._fname     = fname
+        self._fhand     = fhand
         self._qual_index = {}
         self._seq_index = {}
         self._dna_index = {}
         self._type_index = {}
         self._build_index()
+
+    def contig_names(self):
+        'It yields the contig names.'
+        for name, kind in self._type_index.items():
+            if kind == 'Is_contig':
+                yield name
+
+    def read_names(self):
+        'It yields the read names.'
+        for name, kind in self._type_index.items():
+            if kind == 'Is_read':
+                yield name
 
     def _build_index(self):
         '''It takes a caf file and after reading it it returns an index with 
@@ -70,11 +82,9 @@ class CafParser(object):
                     cccccccccc
          It stores as well if the secuence is a contig or a read
          '''
-        
-        fhandler = open(self._fname,'rt')
         rawline  = "Filled"
         sec_in = False
-
+        fhandler = self._fhand
         while len(rawline) != 0:
             
             prior_tell = fhandler.tell()
@@ -124,7 +134,7 @@ class CafParser(object):
         the text until it finds the next statement ( DNA: , Sequence: or
         BaseQuality '''
         content = []
-        fhandler = open(self._fname, 'r')
+        fhandler = self._fhand
         fhandler.seek(position)
         
         line = fhandler.readline()# To pass the header
@@ -370,10 +380,12 @@ class CafParser(object):
 
 class AceParser(object):
     '''It parses the ace assembly files.'''
-    def __init__(self, fname):
+    def __init__(self, fhand):
         '''It initializes the ace parser with an ace file name.'''
-        self._fileh = open(fname)
+        self._fileh = fhand
         self._contig_index = {} #in which byte is every contig located
+        self._contig_names = []      #a list with the contig names
+        self._read_names   = []      #a list with the read names
         self._build_index()
 
     def _build_index(self):
@@ -391,7 +403,21 @@ class AceParser(object):
             if line.startswith('CO') and line[2].isspace():
                 contig_name = line.split()[1]
                 index[contig_name] = file_position
+                self._contig_names.append(contig_name)
+            if line.startswith('RD') and line[2].isspace():
+                read_name = line.split()[1]
+                self._read_names.append(read_name)
         self._contig_index = index
+
+    def contig_names(self):
+        'It yields the contig names.'
+        for name in self._contig_names:
+            yield name
+
+    def read_names(self):
+        'It yields the read names.'
+        for name in self._read_names:
+            yield name
  
     def _read_contig_from_file(self, position):
         '''Given a position in the file it reads the next contig.
@@ -485,7 +511,7 @@ class AceParser(object):
         reads['consensus'] = {}
         reads['consensus']['name'] = co_items[1]
         reads['consensus']['complemented'] = co_items[5]
-        dna =''.join(co_items[6:])
+        dna = ''.join(co_items[6:])
         #we have to change the * for -
         dna = dna.replace('*', '-')
         reads['consensus']['dna'] = dna
