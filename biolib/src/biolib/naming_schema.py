@@ -1,9 +1,7 @@
 'It gives unique names for the features in the databases'
 
-from sqlalchemy import (Table, Column, Integer, String, Boolean, ForeignKey,
-                        MetaData, create_engine, sql)
-from contig_parser import CafParser, AceParser
-from db_connection import DbConnection
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
+from biolib.contig_parser import CafParser, AceParser
 import re
 
 def _create_naming_database(db_connection):
@@ -30,6 +28,8 @@ def _create_naming_database(db_connection):
 
 class _CodeGenerator(object):
     '''This class gives the next code, giving the last one'''
+    # pylint: disable-msg=R0903
+    #no need for more public methods
     def __init__(self, seed):
         '''init'''
         self._last_code  = seed
@@ -99,11 +99,11 @@ class NamingSchema(object):
     @staticmethod
     def _get_so_term(feature_kind):
         'It returns the Sequence Ontology term  for the given feature'
-        so = {'EST':'SO:0000345', 'transcribed_cluster':'SO:0001457',
+        so_terms = {'EST':'SO:0000345', 'transcribed_cluster':'SO:0001457',
              }
-        if not feature_kind in so:
+        if not feature_kind in so_terms:
             raise ValueError('Unkown feature_kind, please use so')
-        return so[feature_kind]
+        return so_terms[feature_kind]
 
     def _get_type_code(self):
         'It returns the two letter code for the feature kind.'
@@ -226,6 +226,8 @@ class CachedNamingSchema(object):
     When a name is asked for the first time it is stored at the cache and
     after that if it's asked again the cached copy will be returned.
     '''
+    # pylint: disable-msg=R0903
+    #no need for more public methods
     def __init__(self, naming_schema):
         '''Given a naming schema it returns names.
         
@@ -315,23 +317,3 @@ def create_names_for_contigs(fhand, file_kind, naming):
         names[read] = naming['read'][read]
     return names
 
-def main():
-    conn = DbConnection(database=':memory:', drivername='sqlite')
-    _create_naming_database(conn)
-    #we wet some codes for a project
-    names = NamingSchema('melonomics', 'EST', conn)
-    names.insert_project(code='ms', description='The melonomics project')
-    assert names.get_next_name() == 'msES000001'
-    assert names.get_next_name() == 'msES000002'
-    #now we store the last code in the database
-    names.commit_last_name()
-    names = NamingSchema('melonomics', 'EST', conn)
-    assert names.get_next_name() == 'msES000003'
-    assert names.get_next_name() == 'msES000004'
-    names.commit_last_name()
-    names = NamingSchema('melonomics', 'EST', conn)
-    assert names.get_next_name() == 'msES000005'
-    assert names.get_next_name() == 'msES000006'
-
-if __name__ == '__main__':
-    main()

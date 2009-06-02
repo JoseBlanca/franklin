@@ -1,8 +1,6 @@
 '''A helper class for simple database manipulations.'''
 
-import sqlite3
 import sqlalchemy
-from sqlalchemy.orm import mapper, relation, backref
 from sqlalchemy import sql
 
 class DbConnection(object):
@@ -10,6 +8,8 @@ class DbConnection(object):
 
     It's a thin convenience wrapper around the sqlalchemy connection.
     '''
+    #pylint: disable-msg=R0913
+    #I think is more clear with those arguments
     def __init__(self, database, username='', password='',
                  drivername='postgres', host='localhost'):
         'It initialites and it creates a connection to the database'
@@ -141,15 +141,13 @@ class DbConnection(object):
         used in the where clause.'''
         columns = table.columns
         where_parts = []
-        if isinstance(where, dict):
-            for key, value in where.items():
-                col = columns[key]
-                #in sqlalchemy the following is called generative selects
-                where_parts.append(col == value)
-        else:
-            col_id = cols[table + '_id']
-            stmt = table_cls.delete(col_id == row_id)
+        for key, value in where.items():
+            col = columns[key]
+            #in sqlalchemy the following is called generative selects
+            where_parts.append(col == value)
         if len(where_parts) > 1:
+            #pylint: disable-msg=W0142
+            #i don't know how to do it without this magic *where_parts
             return sql.and_(*where_parts)
         else:
             return where_parts[0]
@@ -291,14 +289,13 @@ class DbConnection(object):
 
 def test_chadosql():
     'It test my chado sql class'
-    chado = ChadoConnection(database='chado', username='chado_admin',
+    chado = DbConnection(database='chado', username='chado_admin',
                        password='chado_pass', drivername='postgres',
                        host='fisico')
     print chado.delete('dbxref', {'accession':'ac657'})
     print chado.delete('db', {'name':'hola2'})
     print chado.delete('db', {'name':'hola'})
     print chado.delete('db', {'name':'caracola'})
-    print chado.insert_db(name='hola2')
     print chado.insert(table='db', 
                        values=[{'name':'hola'}, {'name':'caracola'}])
     #print db_id
@@ -307,7 +304,7 @@ def test_chadosql():
     print chado.insert(table='dbxref',
                        values={'db_id':{'name':'hola'}, 'accession':'ac657'})
 
-    db_id = chado.get_id('db', {'name':'hola'})
+    chado.get_id('db', {'name':'hola'})
     dbxref_id = chado.get_id('dbxref', {'accession':'ac657'})
     print 'dbxref', dbxref_id
 
@@ -316,197 +313,18 @@ def test_chadosql():
     print chado.delete('db', {'name':'hola'})
     print chado.delete('db', {'name':'caracola'})
 
-def create_test_database(db_name):
-    'It creates a memory sqlite3 database'
-    conn = sqlite3.connect(db_name)
-    cur = conn.cursor()
-    table_feature = '''CREATE TABLE feature (
-                            feature_id INTEGER PRIMARY KEY,
-                            name       TEXT,
-                            type_id    INTEGER)'''
-    cur.execute(table_feature)
-    table_cvterm  = '''CREATE TABLE cvterm (
-                            cvterm_id INTEGER PRIMARY KEY,
-                            name       TEXT)'''
-    cur.execute(table_cvterm)
-    #we fill the cvterm
-    terms = ['EST', 'contig']
-    for index, term in enumerate(terms):
-        insert = 'INSERT INTO cvterm values(%d, "%s")' % (index, term)
-        cur.execute(insert)
-    #we fill the features
-    features = [('est01', 0), ('est02', 0), ('contig01', 1)]
-    for index, (name, type_id) in enumerate(features):
-        insert = 'INSERT INTO feature values(%d, "%s", %d)' % \
-                                                 (index, name, type_id)
-        cur.execute(insert)
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def test_sqlalchemy(db_name):
-    'Some sqlalchemy hacking to learn something'
-    #the metadata that stores the db schema
-    metadata = sqlalchemy.MetaData()
-    #we connect to the db
-    url = sqlalchemy.engine.url.URL('sqlite', database=db_name)
-    url = 'postgres://chado_admin:chado_pass@fisico/chado'
-    engine = sqlalchemy.create_engine(url)
-    #reflecting tables
-    metadata.bind  = engine
-    dbs  = sqlalchemy.Table('db', metadata, autoload=True)
-    dbxrefs = sqlalchemy.Table('dbxref', metadata, autoload=True)
-    #we could load all table in one go
-    #metadata.reflect(bind=engine)
-
-    #now the mapping
-    class Db(object):
-        pass
-    class Dbxref(object):
-        session = None
-        db_class = None
-        def set_db_name(self, name):
-            #how to look for an id
-            session = self.session
-            try:
-                our_db = session.query(self.db_class).filter_by(name=name).one()
-                self.db_name = db_name
-                self.db_id = our_db.db_id
-            except sqlalchemy.orm.exc.NoResultFound:
-                raise ValueError('No db with the given name: ' + name)
-        def get_db_name(self):
-            return self._db_name
-        db_name_ = property(get_db_name, set_db_name)
-
-    mapper(Db, dbs)
-    mapper(Dbxref, dbxrefs)
-           #  properties={'db_id':relation(Db, backref=backref('dbxrefs'))})
-    #a session
-    from sqlalchemy.orm import sessionmaker
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    #emergency deletion
-    if False:
-        our_db = session.query(Db).filter_by(name='otra_db').first()
-        our_dbxref = session.query(Dbxref).filter_by(accession='hola').first()
-        print our_db.name, our_dbxref.accession
-        session.delete(our_dbxref)
-        session.delete(our_db)
-        session.commit()
-
-    #a query
-    print [db.name for db in session.query(Db)[:10]]
-    print [dbxref.accession for dbxref in session.query(Dbxref)[:10]]
-
-    #an insert
-    new_db = Db()
-    new_db.name = 'otra_db'
-    session.add(new_db)
-    #we can find it
-    our_db = session.query(Db).filter_by(name='otra_db').first()
-    db_id = our_db.db_id
-    #we add a dbxref insert
-    new_dbxref = Dbxref()
-    new_dbxref.db_id = db_id
-    new_dbxref.accession = 'hola'
-    session.add(new_dbxref)
-    #now we we really commit the change to the db
-    session.commit()
-
-    Dbxref.session = session
-    Dbxref.db_class = Db
-    another_dbxref = Dbxref()
-    another_dbxref.db_name_ = 'otra_db'
-    another_dbxref.accession = 'hola2'
-
-    #but we can also delete it
-    our_db = session.query(Db).filter_by(name='otra_db').first()
-    our_dbxref = session.query(Dbxref).filter_by(accession='hola').first()
-    print our_db.name, our_dbxref.accession
-    session.delete(our_dbxref)
-    session.delete(our_db)
-    session.commit()
-
-def test_sqlsoup(db_name):
-    'Some sqlalchemy hacking to learn something'
-    url = 'postgres://chado_admin:chado_pass@fisico/chado'
-    db = SqlSoup(url)
-    terms = db.cvterm.order_by(db.cvterm)[:10]
-    print [term.name for term in terms]
-
-def test_sqlalchemy_sql(db_name):
-    'The sql interface'
-    #if you don't need objects, don't use them!
-    url = 'postgres://chado_admin:chado_pass@fisico/chado'
-    engine = sqlalchemy.create_engine(url)
-
-    #the metadata that stores the db schema
-    metadata = sqlalchemy.MetaData()
-    #reflecting tables
-    metadata.bind  = engine
-    try:
-        dbs  = sqlalchemy.Table('db', metadata, autoload=True)
-        dbxrefs = sqlalchemy.Table('dbxref', metadata, autoload=True)
-    except sqlalchemy.exc.OperationalError:
-        raise RuntimeError('Database not available')
-    #we could load all table in one go
-    #metadata.reflect(bind=engine)
-
-    #the connection
-    conn = engine.connect()
-
-    #start a transaction
-    #trans = conn.begin()
-    #trans.commit()
-    #trans.rollback()
-
-
-    #a select
-    s = sql.select([dbs])
-    result = conn.execute(s)
-    #each row is a tuple
-    print [item[1] for item in result]
-    #if we're done with one result we should close it
-    result.close()
-
-    #we can get only one
-    s = sql.select(columns=[dbs])
-    result = conn.execute(s)
-    #each row is a tuple
-    row = result.fetchone()
-    result.close()
-    #row behaves like a tuple
-    print row[2]
-    #or like a dict
-    print row['description']
-
-    #we can ask only for some column
-    s = sql.select(columns=[dbs.c.name])
-    result = conn.execute(s)
-    print [item for item in result]
-    result.close()
-
-    #where 
-    s = sql.select([dbs.c.name], dbs.c.name=='GO_REF')
-    result = conn.execute(s)
-    row = result.fetchone()
-    print row['name']
-    result.close()
 
 def main():
     'It runs everything'
-    import tempfile
-    db_fhand = tempfile.NamedTemporaryFile()
-    db_name = db_fhand.name
-    create_test_database(db_name)
-    db_fhand.flush()
+    #import tempfile
+    #db_fhand = tempfile.NamedTemporaryFile()
+    #db_name = db_fhand.name
     #test_sqlalchemy(db_name)
     #test_sqlsoup(db_name)
     #test_sqlalchemy_sql(db_name)
-    db_fhand.close()
+    #db_fhand.close()
 
-    test_chadosql()
+    #test_chadosql()
 
     
 if __name__ == '__main__':
