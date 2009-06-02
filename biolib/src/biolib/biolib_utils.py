@@ -238,10 +238,3 @@ def xml_itemize(fhand, tag):
                 in_section = False
             in_tag = False
             current_tag = []
-        
-    
-    
-    
- 
-if __name__ == '__main__':
-    pass
