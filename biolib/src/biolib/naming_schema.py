@@ -25,7 +25,6 @@ def _create_naming_database(db_connection):
     engine = db_connection.engine
     metadata.create_all(engine)
 
-
 class _CodeGenerator(object):
     '''This class gives the next code, giving the last one'''
     # pylint: disable-msg=R0903
@@ -246,7 +245,14 @@ class CachedNamingSchema(object):
         return new_name
 
 REPLACE_RE = {
-    'fasta':[(r'^(>)([^ \n]+)', 2)]
+    'fasta':[(r'^(>)([^ \n]+)(.*)$', 2)],
+    'caf'  :[(r'^(DNA *: *)([^ \n]+)(.*)$', 2),
+             (r'^(BaseQuality *: *)([^ \n]+)(.*)$', 2),
+             (r'^(Sequence *: *)([^ \n]+)(.*)$', 2),
+             (r'^(Assembled_from *)([^ ]+)( .*)$', 2)],
+    'ace'  :[(r'^(CO +)([^ ]+)(.*)$', 2),
+             (r'^(AF +)([^ ]+)(.*)$', 2),
+             (r'^(RD +)([^ ]+)(.*)$', 2)]
 }
 
 def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
