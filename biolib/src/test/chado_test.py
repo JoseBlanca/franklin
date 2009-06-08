@@ -7,7 +7,7 @@ import unittest
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.orm import sessionmaker
-from biolib.chado_orm import setup_maping
+from biolib.chado import setup_maping
 
 
 def create_chado_example():
