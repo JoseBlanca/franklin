@@ -5,12 +5,7 @@ Created on 2009 eka 4
 '''
 import sqlalchemy
 from sqlalchemy import create_engine, Table
-from sqlalchemy.orm import mapper, relation
-def connect_database(database, username='', password='', host='localhost'):
-    '''It conects to a chado database and returns a engine'''
-    db_url ='postgres://%s:%s@%s/%s' % (username, password, host, database)
-    return create_engine(db_url)
-    
+from sqlalchemy.orm import mapper, relation, sessionmaker
 
 def setup_maping(engine, mapping_definitions):
     '''It setups a sqlalchemy mapping for the tables we are interested.
@@ -96,6 +91,74 @@ def setup_maping(engine, mapping_definitions):
     
     return table_classes, row_classes
 
+def connect_database(database, username='', password='', host='localhost'):
+    '''It conects to a chado database and returns a engine'''
+    db_url ='postgres://%s:%s@%s/%s' % (username, password, host, database)
+    return create_engine(db_url)
+    
+class Chado(object):
+    'A chado orm'
+    # The mapping for a chado database
+    _mapping_definitions = [{'name' :'db'}, 
+                   {'name':'dbxref', 'relations':[('one2many', 'db')]}]
+    def __init__(self, engine):
+        'The init requires an sqlalchemy engine.'
+        self._table_classes, self._row_classes = \
+                               setup_maping(engine, self._mapping_definitions)
+        session_klass = sessionmaker(bind=engine)
+        self._session = session_klass()
+
+    def create(self, kind, attributes):
+        '''It creates an object of the given kind and it adds it to the chado db
+
+        kind - The object kind (e.g. database, feature)
+        attributes - a dict with the column names as keys.
+        '''
+        #which row object?
+        row_klass = self._row_classes[kind]
+
+        #now we create the object
+        row_inst = row_klass()
+        for attr, value in attributes.items():
+            setattr(row_inst, attr, value)
+        self._session.add(row_inst)
+        return row_inst
+
+    def select(self, kind, attributes):
+        'It returns the query with the given kind with the given attributes'
+        #which row object?
+        row_klass = self._row_classes[kind]
+
+        #pylint: disable-msg=W0142
+        #sqlalchemy likes magic
+        return self._session.query(row_klass).filter_by(**attributes)
+
+    def select_one(self, kind, attributes):
+        'It returns one instance the given kind with the given attributes'
+        #which row object?
+        return self.select(kind, attributes).one()
+
+    def get(self, kind, attributes):
+        '''It returns one attribute with the given attributes and kind
+        
+        If more than one row match with the unique attributes from the given
+        ones an error will be raised.
+        If some of the attributes of the non unique ones are changed they will
+        be updated.
+        '''
+        try:
+            return self.select_one(kind, attributes)
+        except :
+            return self.create(kind, attributes)
+
+    def flush(self):
+        'It flushes the session and commits all the changes to the database'
+        self._session.flush()
+
+    def rollback(self):
+        'It rollsback the sesssion'
+        self._session.rollback()
+
 def add_libraries(session, fhand, library_info):
     '''This function is used to add libraries to chado using a input file.
     The input file format is as follows:
@@ -107,8 +170,6 @@ def add_libraries(session, fhand, library_info):
         /library_definition
     '''
     libraries = _parse_libraries_file(fhand)
-    
-    
     
 def _parse_libraries_file(fhand):
     ''' It parses the file and returns a list with dictionaries for each 

@@ -7,7 +7,7 @@ import unittest
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import setup_maping
+from biolib.chado import setup_maping, Chado
 
 
 def create_chado_example():
@@ -56,5 +56,42 @@ class ChadoOrmTest(unittest.TestCase):
         a_dbxref = session.query(Dbxref).filter_by(accession='CMV9789').first()
         assert (1, 1) == (a_dbxref.dbxref_id, a_dbxref.db_id) 
  
+    def test_chado_orm_helper(self):
+        'It test the create, select and get helper functions'
+        engine = create_chado_example()
+        chado = Chado(engine)
+        #######
+        #create
+        #######
+        new_db = chado.create(kind='db', attributes={'name':'hola_db',
+                                            'description':'a fake database'})
+        assert new_db.name == 'hola_db'
+        #if we try to create another one and we flush it we get an error
+        try:
+            chado.create(kind='db', attributes={'name':'hola_db'})
+            chado.flush()
+            self.fail()
+        except sqlalchemy.exc.IntegrityError:
+            chado.rollback()
+
+        #######
+        #select
+        #######
+        new_db = chado.create(kind='db', attributes={'name':'hola_db',
+                                            'description':'a fake database'})
+        new_dbxref = chado.create(kind='dbxref', attributes={'accession':'666',
+                                                             'db':new_db})
+        
+        the_db = chado.select_one(kind='db', attributes={'name':'hola_db'})
+        assert new_db is the_db
+        the_dbxref = chado.select_one(kind='dbxref',
+                                      attributes={'accession':'666',
+                                                  'db':new_db})
+        assert new_dbxref is the_dbxref
+
+        ######
+        #get
+        ######
+        the_db = chado.get(kind='db', attributes={'name':'hola_db'})
 if __name__ == '__main__':
     unittest.main()
