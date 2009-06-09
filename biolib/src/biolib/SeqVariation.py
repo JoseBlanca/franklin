@@ -271,6 +271,15 @@ def _select_colum_from_list(alignment, col_start, col_end):
         new_alignment.append(item)
     return new_alignment
 
+def longest_read(alignment):
+    ''' It returns the longest string lenght in the list'''
+    longest = 0
+    for read in alignment:
+        len_read = len(read)
+        if len_read > longest:
+            longest = len_read
+    return longest
+
 def remove_bad_quality_alleles(seqvar, qual_threshold=None, \
                                default_quality=None):
     ''' It removes bad quality alleles given a seqvar'''
