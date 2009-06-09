@@ -6,7 +6,7 @@ Created on 2009 eka 2
 '''
 from optparse import OptionParser
 from biolib.contig_parser import CafParser, AceParser
-from biolib.SeqVariation import contig_to_read_list, longest_read
+from biolib.SeqVariation import contig_to_read_list
 import matplotlib.pyplot as plt
 
 def contig_stats(contig, data_dict):
@@ -27,6 +27,15 @@ def contig_stats(contig, data_dict):
                                                data_dict['coverage_frec'])
     
     return  data_dict
+
+def longest_read(alignment):
+    ''' It returns the longest string lenght in the list'''
+    longest = 0
+    for read in alignment:
+        len_read = len(read)
+        if len_read > longest:
+            longest = len_read
+    return longest
 
 def coverage_frec(contig, coverage_data):
     '''It calculates the coverafe frecuency and it puts into the data dict '''
@@ -79,10 +88,10 @@ def main():
     print "Starting file indexing"  
     if infile[-3:].lower() == 'ace':
         print "File type: ace"
-        parser = AceParser(infile)
+        parser = AceParser(open(infile, 'r'))
     elif infile[-3:].lower() == 'caf':
         print "File type: caf"
-        parser = CafParser(infile)
+        parser = CafParser(open(infile,'r'))
     print "File indexing finished"
     
     data_dict = None
