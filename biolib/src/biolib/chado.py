@@ -6,6 +6,7 @@ Created on 2009 eka 4
 import sqlalchemy
 from sqlalchemy import create_engine, Table
 from sqlalchemy.orm import mapper, relation, sessionmaker
+import csv
 
 def setup_maping(engine, mapping_definitions):
     '''It setups a sqlalchemy mapping for the tables we are interested.
@@ -124,8 +125,10 @@ class Chado(object):
         self._session.add(row_inst)
         return row_inst
 
-    def select(self, kind, attributes):
+    def select(self, kind, attributes=None):
         'It returns the query with the given kind with the given attributes'
+        if attributes is None:
+            attributes = {}
         #which row object?
         row_klass = self._row_classes[kind]
 
@@ -207,36 +210,14 @@ def _parse_libraries_file(fhand):
             libraries.append(library)
     return libraries  
 
-def add_basic_chado_table(fhand, table):
-    '''It adds to chado rows about a given table . It needs a file with this
-     format:
-         First line: Header. Start with # caracter and after tab delimited 
-         colum definition. It have to match with table columns. but not with id
-         Next lines: Tab delimited. One line per table row. Values corresponing
-          to column definition
+def add_csv_to_chado(fhand, table, engine):
+    '''It adds to chado rows about a given table.
+
+    It needs a csv file with the field names in the first row, a table name and
+    a sqlalchemy engine.
     '''
-    table_info = _parse_basic_chado_table_file(fhand)
-     
-def _parse_basic_chado_table_file(fhand):
-    '''It does the real parsing, return a dict with  '''
-    table_data  = []
-    line        = fhand.readline().strip()
-    columns     = line[1:].split()
-    num_columns = len(columns)
-    for column in columns:
-        table_data[column] = []
-        
-    for i, line in enumerate(fhand):
-        if line.isspace() or line[0] == '#':
-            continue
-        items = line.strip().split()
-        if len(items) != num_columns:
-            raise IndexError('File not well done. Line %d with errors' % i+2)
-        for j, item in enumerate(items):
-            table_data[columns[j]].append(item)
-    return table_data
-        
-        
-     
-     
-      
+    chado = Chado(engine)
+    for row in csv.DictReader(fhand, delimiter=','):
+        chado.get(kind=table, attributes=row)
+    chado.flush()
+ 

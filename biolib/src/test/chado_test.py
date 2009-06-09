@@ -4,10 +4,11 @@ Created on 2009 eka 5
 @author: peio
 '''
 import unittest
+from StringIO import StringIO
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import setup_maping, Chado
+from biolib.chado import setup_maping, Chado, add_csv_to_chado
 
 
 def create_chado_example():
@@ -93,5 +94,37 @@ class ChadoOrmTest(unittest.TestCase):
         #get
         ######
         the_db = chado.get(kind='db', attributes={'name':'hola_db'})
+
+
+EXAMPLE_DBS = \
+'''name,description
+my_db,some database
+another_db,yet another database
+'''
+
+class AddCsvChadoTest(unittest.TestCase):
+    'It test that we can dump a csv file to a chado database'
+    @staticmethod
+    def test_add_csv_to_chado():
+        'It test that we can dump a csv file to a chado database'
+        db_fhand = StringIO(EXAMPLE_DBS)
+        engine = create_chado_example()
+        #we add the file to the chado table
+        add_csv_to_chado(db_fhand, table='db', engine=engine)
+
+        #are they really there?
+        chado = Chado(engine)
+        db_ins = chado.select_one('db', {'name':'my_db'})
+        assert db_ins.description == 'some database'
+
+        #if we try to add it again we won't get more
+        dbs = chado.select('db').all()
+        assert len(dbs) == 2
+        add_csv_to_chado(db_fhand, table='db', engine=engine)
+        assert len(dbs) == 2
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
