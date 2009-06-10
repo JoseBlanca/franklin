@@ -89,12 +89,11 @@ def main():
             add_csv_to_chado(fhand, table_name, engine)
     
     # Once I have add cv and  db We can add our ontologies
-    
-    for ontology_file in ontologies:
-        print "Adding ontology %s" % ontology_file
-        fhand_ontology = open(os.path.join(directory,ontology_file), 'rb')
-        load_ontology(fhand_ontology, dbname, dbuser, dbpass, dbhost )
-    
+#    for ontology_file in ontologies:
+#        print "Adding ontology %s" % ontology_file
+#        fhand_ontology = open(os.path.join(directory,ontology_file), 'rb')
+#        load_ontology(fhand_ontology, dbname, dbuser, dbpass, dbhost )
+#    
     
      
  
