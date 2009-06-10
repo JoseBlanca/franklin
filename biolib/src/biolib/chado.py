@@ -252,20 +252,20 @@ def add_csv_to_chado(fhand, table, engine):
          %s''' % (table, msg))
     chado.commit()
 
-def load_ontology(ontology_fname, dbname, dbuser, dbpass, dbhost):
+def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     '''It adds a ontology to chado. 
     
     It Uses chado-xml and depends on a gmod instalation. You need gmod installed
-     locally. It is very important that the obo file is weel formed'''
+     locally. It is very important that the obo file is weel formed
+    '''
     fileh = tempfile.NamedTemporaryFile()
-    cmd = ['go2chadoxml',  ontology_fname, '>', fileh.name]
+    cmd = ['go2chadoxml',  ontology_fhand.name]
     stdout, stderr, retcode = call(cmd)
     if retcode:
         raise RuntimeError('go2chadoxml: ' + stderr)
-    print fileh.name
-    
-    raw_input()
-    
+    else:
+        fileh.write(stdout)
+    fileh.flush()
     cmd = ['stag-storenode.pl', '-d', 
         'dbi:Pg:dbname=%s;host=%s;port=5432' % (dbname, dbhost),
         '--user', dbuser, '--password', dbpass, fileh.name]

@@ -6,8 +6,9 @@ Created on 2009 eka 9
 from optparse import OptionParser
 from biolib.chado import add_csv_to_chado, connect_database, load_ontology
 from biolib.biolib_utils import call
+import os
 
-TABLES     = 'db, dbxref, organism, cv, cvterm'
+TABLES     = 'db, organism, cv '
 ONTOLOGIES = 'cmv_internal_go_lib'
 
 
@@ -90,7 +91,9 @@ def main():
     # Once I have add cv and  db We can add our ontologies
     
     for ontology_file in ontologies:
-        load_ontology(ontology_file, dbname, dbuser, dbpass, dbhost )
+        print "Adding ontology %s" % ontology_file
+        fhand_ontology = open(os.path.join(directory,ontology_file), 'rb')
+        load_ontology(fhand_ontology, dbname, dbuser, dbpass, dbhost )
     
     
      
