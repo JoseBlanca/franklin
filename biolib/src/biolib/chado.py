@@ -263,6 +263,9 @@ def load_ontology(ontology_fname, dbname, dbuser, dbpass, dbhost):
     if retcode:
         raise RuntimeError('go2chadoxml: ' + stderr)
     print fileh.name
+    
+    raw_input()
+    
     cmd = ['stag-storenode.pl', '-d', 
         'dbi:Pg:dbname=%s;host=%s;port=5432' % (dbname, dbhost),
         '--user', dbuser, '--password', dbpass, fileh.name]
