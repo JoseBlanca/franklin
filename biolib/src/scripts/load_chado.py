@@ -4,10 +4,11 @@ Created on 2009 eka 9
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.chado import add_csv_to_chado, connect_database
+from biolib.chado import add_csv_to_chado, connect_database, load_ontology
 from biolib.biolib_utils import call
-TABLES ='db,dbxref,organism,cv,cvterm'
-ONTOLOGIES=
+
+TABLES     = 'db, dbxref, organism, cv, cvterm'
+ONTOLOGIES = ''
 
 
 
@@ -66,8 +67,8 @@ def main():
     if options.ontolgies is None:
         ontologies_ = ONTOLOGIES
     else:
-        ontologies_=options.ontolgies
-    ontologies = [ontology.strip() for ontology in ontolgies_.split(',')]
+        ontologies_ = options.ontologies
+    ontologies = [ontology.strip() for ontology in ontologies_.split(',')]
         
         
     if options.reload:
@@ -88,8 +89,8 @@ def main():
     
     # Once I have add cv and  db We can add our ontologies
     
-    for ontology_file in ontolgies:
-        load_ontologies(ontology_file)
+    for ontology_file in ontologies:
+        load_ontology(ontology_file)
     
     
      

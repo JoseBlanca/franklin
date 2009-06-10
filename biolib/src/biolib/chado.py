@@ -252,7 +252,7 @@ def add_csv_to_chado(fhand, table, engine):
          %s''' % (table, msg))
     chado.commit()
 
-def add_own_ontolgy(ontology_fname, dbname, dbuser, dbpass, dbhost):
+def load_ontology(ontology_fname, dbname, dbuser, dbpass, dbhost):
     '''It adds a ontology to chado. 
     
     It Uses chado-xml and depends on a gmod instalation. You need gmod installed
