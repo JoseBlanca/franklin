@@ -8,7 +8,7 @@ from biolib.chado import add_csv_to_chado, connect_database, load_ontology
 from biolib.biolib_utils import call
 
 TABLES     = 'db, dbxref, organism, cv, cvterm'
-ONTOLOGIES = ''
+ONTOLOGIES = 'cmv_internal_go_lib'
 
 
 
@@ -64,7 +64,7 @@ def main():
         tables_ = options.tables
     tables = [table.strip() for table in tables_.split(',')]
     
-    if options.ontolgies is None:
+    if options.ontologies is None:
         ontologies_ = ONTOLOGIES
     else:
         ontologies_ = options.ontologies
@@ -90,7 +90,7 @@ def main():
     # Once I have add cv and  db We can add our ontologies
     
     for ontology_file in ontologies:
-        load_ontology(ontology_file)
+        load_ontology(ontology_file, dbname, dbuser, dbpass, dbhost )
     
     
      
