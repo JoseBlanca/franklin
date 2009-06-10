@@ -9,11 +9,19 @@ from uuid import uuid4
 import os.path
 import StringIO
 
-def call(cmd):
+def call(cmd, env=None, stdin=None, ):
     'It calls a command and it returns stdout, stderr and retcode'
+    if stdin is None:
+        pstdin = None
+    else:
+        pstdin = stdin
+        
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+                               stderr=subprocess.PIPE, env=env, stdin=pstdin)
+    if stdin is None:
+        stdout, stderr = process.communicate()
+    else:
+        stdout, stderr = process.communicate(stdin)
     retcode = process.returncode
     return stdout, stderr, retcode
 

@@ -6,9 +6,12 @@ Created on 2009 eka 5
 import unittest
 from StringIO import StringIO
 import sqlalchemy
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
+from sqlalchemy import exc as sa_exc
+from sqlalchemy.orm import exc as orm_exc
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,\
+                     UniqueConstraint
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import setup_maping, Chado, add_csv_to_chado
+from biolib.chado import setup_maping, Chado, add_csv_to_chado, add_libraries
 
 
 def create_chado_example():
@@ -30,6 +33,36 @@ def create_chado_example():
                                 nullable=False, unique=True),
                          Column('accession', String, nullable=False, 
                                 unique=True))
+    cv_table = Table('cv', metadata,
+                     Column('cv_id', Integer, primary_key=True),
+                     Column('name', String, nullable=False, unique=True),
+                     Column('definition', String))
+    organism_table = Table('organism', metadata,
+                     Column('organism_id', Integer, primary_key=True),
+                     Column('abbreviation', String),
+                     Column('genus', String, nullable=False),
+                     Column('species', String, nullable=False),
+                     Column('common_name ', String),
+                     UniqueConstraint('genus','species'))
+    cvterm_table = Table('cvterm', metadata,
+                   Column('cvterm_id', Integer, primary_key=True),
+                   Column('cv_id', Integer, ForeignKey('cv.cv_id'), 
+                           nullable=False),
+                   Column('name', String, nullable=False),
+                   Column('definition', String),
+                   Column('dbxref_id', Integer, ForeignKey('dbxref.dbxref_id')),
+                          UniqueConstraint('cv_id','name'))
+    library_table = Table('library', metadata,
+                        Column('library_id', Integer, primary_key=True),
+                        Column('organism_id', Integer,
+                               ForeignKey('organism.organism_id'), 
+                               nullable=False),
+                        Column('name', String),
+                        Column('uniquename', String, nullable=False),
+                        Column('type_id', Integer, 
+                               ForeignKey('cvterm.cvterm_id'), nullable=False),
+                       UniqueConstraint('organism_id', 'uniquename', 'type_id'))
+                   
     metadata.create_all(engine)
     return engine
 
@@ -55,7 +88,8 @@ class ChadoOrmTest(unittest.TestCase):
         new_dbxref = Dbxref(db=new_db, accession='CMV9789')
         session.add(new_dbxref)
         a_dbxref = session.query(Dbxref).filter_by(accession='CMV9789').first()
-        assert (1, 1) == (a_dbxref.dbxref_id, a_dbxref.db_id) 
+        assert isinstance(a_dbxref.dbxref_id, int)
+        assert isinstance(a_dbxref.db_id,int) 
  
     def test_chado_orm_helper(self):
         'It test the create, select and get helper functions'
@@ -70,7 +104,7 @@ class ChadoOrmTest(unittest.TestCase):
         #if we try to create another one and we flush it we get an error
         try:
             chado.create(kind='db', attributes={'name':'hola_db'})
-            chado.flush()
+            chado.commit()
             self.fail()
         except sqlalchemy.exc.IntegrityError:
             chado.rollback()
@@ -93,7 +127,14 @@ class ChadoOrmTest(unittest.TestCase):
         ######
         #get
         ######
-        the_db = chado.get(kind='db', attributes={'name':'hola_db'})
+        the_db  = chado.get(kind='db', attributes={'name':'hola_db'})
+        the_db2 = chado.get(kind='db', attributes={'name':'hola_db'})
+        assert the_db is the_db2
+        chado.commit()
+        chado2 = Chado(engine)
+        the_db3  = chado2.select_one(kind='db', attributes={'name':'hola_db'})
+        assert the_db3.name == 'hola_db'
+        
 
 
 EXAMPLE_DBS = \
@@ -123,7 +164,40 @@ class AddCsvChadoTest(unittest.TestCase):
         add_csv_to_chado(db_fhand, table='db', engine=engine)
         assert len(dbs) == 2
 
+EXAMPLE_Library = \
+''' Version 1
+library_definition
+    name: a
+    type:genomic
+    cvterms: SO:0001, SO:0002
+    props: SO:333, SO:asdaa
+/library_definition
 
+library_definition
+    name:b
+    type: genomic B
+    cvterms:SO:0003, SO:0004
+    props: SO:222, SO:3456
+/library_definition
+'''
+class AddLibraryToChado(unittest.TestCase):
+    'It test that we can dump a library file'
+    @staticmethod
+    def test_add_libraries():
+        'It test that we can dum a library file to chado'
+        library_fhand = StringIO(EXAMPLE_Library)
+        engine = create_chado_example()
+        add_libraries(library_fhand, engine)
+#        chado = Chado(engine)
+#        try:
+#            library_ins = chado.select_one('library', {'name':'a'})
+#            assert library_ins
+#            assert library_ins.type == 'genomic'
+#        except orm_exc.NoResultFound:
+#            raise RuntimeError ('HAsta que no aniada nada no funcionara')
+        
+        
+        
 
 
 if __name__ == '__main__':

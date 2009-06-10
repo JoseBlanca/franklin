@@ -4,9 +4,11 @@ Created on 2009 eka 4
 @author: peio
 '''
 import sqlalchemy
+from sqlalchemy.orm import exc as orm_exc
 from sqlalchemy import create_engine, Table
 from sqlalchemy.orm import mapper, relation, sessionmaker
-import csv
+from biolib.biolib_utils import call
+import csv, tempfile
 
 def setup_maping(engine, mapping_definitions):
     '''It setups a sqlalchemy mapping for the tables we are interested.
@@ -100,8 +102,16 @@ def connect_database(database, username='', password='', host='localhost'):
 class Chado(object):
     'A chado orm'
     # The mapping for a chado database
-    _mapping_definitions = [{'name' :'db'}, 
-                   {'name':'dbxref', 'relations':[('one2many', 'db')]}]
+    _mapping_definitions = [
+                    {'name' :'db'},
+                    {'name':'cv'},
+                    {'name':'organism'}, 
+                    {'name':'dbxref', 'relations' :[('one2many', 'db')]},
+                    {'name':'cvterm', 'relations' :[('one2many', 'cv'), 
+                                                    ('one2many', 'dbxref')]},
+                    {'name':'library', 'relations':[('one2many', 'organism'),
+                                                    ('one2many', 'cvterm')]}
+                   ]
     def __init__(self, engine):
         'The init requires an sqlalchemy engine.'
         self._table_classes, self._row_classes = \
@@ -151,18 +161,18 @@ class Chado(object):
         '''
         try:
             return self.select_one(kind, attributes)
-        except :
+        except orm_exc.NoResultFound:
             return self.create(kind, attributes)
 
-    def flush(self):
+    def commit(self):
         'It flushes the session and commits all the changes to the database'
-        self._session.flush()
+        self._session.commit()
 
     def rollback(self):
         'It rollsback the sesssion'
         self._session.rollback()
 
-def add_libraries(session, fhand, library_info):
+def add_libraries(fhand, engine):
     '''This function is used to add libraries to chado using a input file.
     The input file format is as follows:
         library_definition
@@ -173,7 +183,16 @@ def add_libraries(session, fhand, library_info):
         /library_definition
     '''
     libraries = _parse_libraries_file(fhand)
-    
+    chado     = Chado(engine)
+    for library in libraries:
+#        for cv in cvterms:
+#            cv_obj = chado.select_one('cv', name=cv)
+#            cv_obj.cv_id
+#            for term_name in cv:
+#                
+#        chado.select_one('cvterm', )
+       # print library
+       pass
 def _parse_libraries_file(fhand):
     ''' It parses the file and returns a list with dictionaries for each 
     library'''
@@ -184,27 +203,33 @@ def _parse_libraries_file(fhand):
         line = line.strip()
         if line.startswith('library_definition'):
             library = {}
-        elif line.startswith('\tname'):
+        elif line.startswith('name'):
             name = line.split(':')[1]
-            library['name'] = name
-        elif line.startswith('\ttype'):
+            library['name'] = name.strip()
+        elif line.startswith('type'):
             type_ = line.split(':')[1]
-            library['type'] = type_
-        elif line.startswith('\tcvterms'):
+            library['type'] = type_.strip()
+        elif line.startswith('cvterms'):
             cvterms = {}
             data_field = line.split(':', 1)[1]
             cvterm_pairs = data_field.split(',')
             for cvterm_pair in cvterm_pairs:
                 cvname, cvtermname = cvterm_pair.split(':')
-                cvterms[cvname] = cvtermname
+                cvname, cvtermname = cvname.strip(), cvtermname.strip()
+                if cvname not in  cvterms:
+                    cvterms[cvname] = []
+                cvterms[cvname].append(cvtermname)
             library['cvterms'] = cvterms
-        elif line.startswith('\tprops'):
+        elif line.startswith('props'):
             properties = {}
             data_field = line.split(':', 1)[1]
             property_pairs = data_field.split(',')
             for property_pair in property_pairs:
                 cvname, cvtermname = property_pair.split(':')
-                properties[cvname] = cvtermname
+                cvname, cvtermname = cvname.strip(), cvtermname.strip()
+                if cvname not in  properties:
+                    properties[cvname] = []
+                properties[cvname].append(cvtermname)
             library['property'] = properties      
         elif line.startswith('/library_definition'):
             libraries.append(library)
@@ -217,7 +242,29 @@ def add_csv_to_chado(fhand, table, engine):
     a sqlalchemy engine.
     '''
     chado = Chado(engine)
-    for row in csv.DictReader(fhand, delimiter=','):
-        chado.get(kind=table, attributes=row)
-    chado.flush()
- 
+    try:
+        for row in csv.DictReader(fhand, delimiter=','):
+            chado.get(kind=table, attributes=row)
+            
+    except (orm_exc.NoResultFound, sqlalchemy.exc.IntegrityError), msg:
+        chado.rollback()
+        raise RuntimeError('''There have been a error during inserts in table %s
+         %s''' % (table, msg))
+    chado.commit()
+
+def add_own_ontolgy(ontology_fname, dbname, dbuser, dbpass, dbhost):
+    '''It adds a ontology to chado. 
+    
+    It Uses chado-xml and depends on a gmod instalation. You need gmod installed
+     locally. It is very important that the obo file is weel formed'''
+    fileh = tempfile.NamedTemporaryFile()
+    cmd = ['go2chadoxml',  ontology_fname, '>', fileh.name]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError('go2chadoxml: ' + stderr)
+    cmd = ['stag-storenode.pl', '-d', 
+        'dbi:Pg:dbname=%s;host=%s;port=5432' % (dbname, dbhost),
+        '--user', dbuser, '--password', dbpass, fileh.name]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError('stag-storenode.pl: ' + stderr)
