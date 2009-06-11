@@ -12,6 +12,12 @@ from biolib.contig import Contig, locate_sequence
 from biolib.Seqs import SeqWithQuality, Seq
 from Bio.Seq import Seq
 
+def get_parser(fhand, format):
+    'Given a file and a format it returns a suitable Contig parser'
+    available_parsers = {'caf': CafParser, 'ace': AceParser}
+    parser = available_parsers[format](fhand)
+    return parser
+
 def _build_contig_from_dict(reads):
     'Given a dict with the contig info it returns a Contig'
     #now we can create the contig

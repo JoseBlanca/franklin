@@ -4,7 +4,7 @@ Created on 2009 mar 11
 @author: peio
 '''
 import unittest
-from biolib.contig_io import CafParser, AceParser
+from biolib.contig_io import get_parser
 import biolib
 import os.path
 
@@ -17,7 +17,6 @@ class CafTest(unittest.TestCase):
     def test_reads():
         ''' we check if we can take the reads from the caf file'''
         fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
-        #caf_parser = CafParser(fname)
         caf_parser = get_parser(fhand, format='caf')
         num_reads = 0
         for read in caf_parser.reads():
@@ -30,8 +29,8 @@ class CafTest(unittest.TestCase):
     @staticmethod
     def test_contigs():
         ''' It checks if the contig method returns contigs'''
-        fname = os.path.join(DATA_DIR, 'example.caf')
-        caf_parser  = CafParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
         num_contig = 0
         for contig in caf_parser.contigs():
             num_contig += 1
@@ -43,8 +42,8 @@ class CafTest(unittest.TestCase):
     @staticmethod
     def test_contigs2():
         ''' It checks if the contig method returns contigs, '''
-        fname = os.path.join(DATA_DIR, 'example2.caf')
-        caf_parser  = CafParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example2.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
         num_contig = 0
         for contig in caf_parser.contigs():
             num_contig += 1
@@ -58,12 +57,11 @@ class CafTest(unittest.TestCase):
         ''' It checks if we get the consensus seq. It only checks the first 10 
         nucleotides TTCAAGCGAT and the quality '''
         
-        fname = os.path.join(DATA_DIR, 'example.caf')
-        caf_parser  = CafParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
         for contig in caf_parser.contigs():
             assert str(contig.consensus.sequence.seq[:10]) == 'TTCAAGCGAT'
-            
-    
+ 
     @staticmethod
     def xtest_long_index():
         ''' It checks if we can open a long test'''
@@ -73,9 +71,9 @@ class CafTest(unittest.TestCase):
     
     @staticmethod
     def test_alignement_seq():
-        ''' It checks if we locate the reads in good coordinates'''
-        fname = os.path.join(DATA_DIR, 'example3.caf')
-        caf_parser  = CafParser(fname)
+        '''It checks if we locate the reads in good coordinates'''
+        fhand = open(os.path.join(DATA_DIR, 'example3.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
         for contig  in caf_parser.contigs():
             #consensus start
             assert contig.consensus.location.start == 5
@@ -89,8 +87,8 @@ class CafTest(unittest.TestCase):
     def test_read_seq():
         '''It checks if the reads have the correct secuence. We will check
         randomonly selected columns'''
-        fname = os.path.join(DATA_DIR, 'example3.caf')
-        caf_parser  = CafParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example3.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
         for contig in caf_parser.contigs():
             #forward
             assert str(contig[83][46:56]) == 'GGCCGGG-GC'
@@ -106,34 +104,34 @@ class AceTest(unittest.TestCase):
     
     def test_contig(self):
         '''It tests that we can get a read by its name.'''
-        fileh = open(os.path.join(DATA_DIR, 'example3.ace'), 'r')
-        
-        parser = AceParser(fileh)
+        fhand = open(os.path.join(DATA_DIR, 'example3.ace'), 'r')
+        ace_parser = get_parser(fhand, format='ace')
         #if we ask for a wrong contig we get an error
         try:
-            parser.contig('not_in_file')
+            ace_parser.contig('not_in_file')
             self.fail('KeyError expected')
             #pylint: disable-msg=W0704
         except ValueError:
             pass
         #now for a real contig
-        contig = AceParser(fileh).contig('eucalyptus_lrc1')
+        contig = ace_parser.contig('eucalyptus_lrc1')
         assert contig
-   
+ 
     @staticmethod   
     def test_check_consensus_seq():
         ''' It checks if we get the consensus seq. It only checks the first 10 
         nucleotides TTCAAGCGAT and the quality '''
-        
-        fname = os.path.join(DATA_DIR, 'example.caf')
-        ace_parser  = AceParser(fname)
+ 
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        ace_parser = get_parser(fhand, format='ace')
         for contig in ace_parser.contigs():
             assert str(contig.consensus.sequence.seq[:10]) == 'TTCAAGCGAT'
+
     @staticmethod
     def test_contigs():
-        ''' It checks if the contig method returns contigs'''
-        fname = os.path.join(DATA_DIR, 'example.ace')
-        ace_parser  = AceParser(fname)
+        '''It checks if the contig method returns contigs'''
+        fhand = open(os.path.join(DATA_DIR, 'example.ace'), 'r')
+        ace_parser = get_parser(fhand, format='ace')
         num_contig = 0
         for contig in ace_parser.contigs():
             num_contig += 1
@@ -146,8 +144,8 @@ class AceTest(unittest.TestCase):
     def test_read_seq():
         '''It checks if the reads have the correct secuence. We will check
         randomonly selected columns'''
-        fname = os.path.join(DATA_DIR, 'example3.caf')
-        ace_parser  = AceParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example3.caf'), 'r')
+        ace_parser = get_parser(fhand, format='ace')
         for contig in ace_parser.contigs():
             for read in contig:
                 if read.sequence.name == 'E3MFGYR01AWFJG':
