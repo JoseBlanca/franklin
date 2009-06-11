@@ -10,8 +10,8 @@ from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
 from biolib.chado import (setup_maping, Chado, add_csv_to_chado,
-                          libraries_in_file)
-
+                          add_libraries)
+from test.test_naming_schema import NamingSchema
 
 def create_chado_example():
     '''It creates a chado mini schema with only two tables and one relaion 
@@ -50,7 +50,7 @@ def create_chado_example():
                    Column('name', String, nullable=False),
                    Column('definition', String),
                    Column('dbxref_id', Integer, ForeignKey('dbxref.dbxref_id')),
-                          UniqueConstraint('cv_id','name'))
+                          UniqueConstraint('cv_id','name')) 
     library_table = Table('library', metadata,
                         Column('library_id', Integer, primary_key=True),
                         Column('organism_id', Integer,
@@ -144,18 +144,16 @@ class ChadoOrmTest(unittest.TestCase):
         engine = create_chado_example()
         chado = Chado(engine)
         #one test with db and dbxref
-        new_db = chado.get(kind='db', attributes={'name':'hola_db',
-                                               'description':'a fake database'})
-        new_dbxref = chado.get(kind='dbxref',
-                              attributes={'accession':'666',
-                                          'db_id':{'name':'hola_db'}})
+        chado.get(kind='db', attributes={'name':'hola_db',
+                                         'description':'a fake database'})
+        chado.get(kind='dbxref', attributes={'accession':'666',
+                                             'db_id':{'name':'hola_db'}})
         #a similar example that should fail
         #in this case the get should not create recursively all the instances
         #for all the referenced data.
         try:
-            new_dbxref = chado.get(kind='dbxref',
-                              attributes={'accession':'666',
-                                          'db_id':{'name':'hola2_db'}})
+            chado.get(kind='dbxref', attributes={'accession':'666',
+                                                'db_id':{'name':'hola2_db'}})
             self.fail('ValueError expected')
         except ValueError:
             pass
@@ -192,12 +190,14 @@ EXAMPLE_LIBRARY = \
 library_definition
     name: a
     type: library type:genomic
+    organism:Cucumis melo
     cvterms: SO:0001, SO:0002
     properties: property type:strain:Oregon-R, property type:stage:adult male
 
 library_definition
     name:b
-    type: library type:genomic B
+    type: library type:genomic
+    organism: Cucumis melo
     cvterms:SO:0003, SO:0004
     properties: SO:222, SO:3456
 '''
@@ -206,29 +206,35 @@ class AddLibraryToChado(unittest.TestCase):
     @staticmethod
     def test_add_libraries():
         'It test that we can add a library file to chado'
-        #the parser
         library_fhand = StringIO(EXAMPLE_LIBRARY)
-        expected_libs = [{'name':'a', 'type':'library type:genomic'},
-                         {'name':'b', 'type':'library type:genomic B'}]
-        for index, library in enumerate(libraries_in_file(library_fhand)):
-            assert library['name'] == expected_libs[index]['name']
-            assert library['type'] == expected_libs[index]['type']
-        
-        library_fhand = StringIO(EXAMPLE_LIBRARY)
-        #engine = create_chado_example()
-        #for library in libraries_in_file(library_fhand):
-            #add_library_to_chado(library, engine)
-        #    print library
-#        chado = Chado(engine)
-#        try:
-#            library_ins = chado.select_one('library', {'name':'a'})
-#            assert library_ins
-#            assert library_ins.type == 'genomic'
-#        except orm_exc.NoResultFound:
-#            raise RuntimeError ('HAsta que no aniada nada no funcionara')
+        engine = create_chado_example()
+        chado = Chado(engine)
+        # create data necesary to add library
+        chado.get(kind='cv', attributes={'name':'library type',
+                                         'definition':'a fake cv'})
+        chado.get(kind='db', attributes={'name':'hola_db',
+                                         'description':'a fake database'})
+        chado.get(kind='organism', attributes={'genus':'Cucumis', 
+                                               'species':'melo'})
+        chado.get(kind='dbxref', attributes={'accession':'001',
+                                             'db_id':{'name':'hola_db'}})
+        chado.get(kind='cvterm', attributes={'name':'genomic',
+                                             'cv_id':{'name':'library type'},
+                                             'dbxref_id':{'accession':'001',
+                                                   'db_id':{'name':'hola_db'}}})
         
         
-
-
+        cvterm = chado.select_one(kind='cvterm', 
+                                  attributes={'cv_id': {'name': 'library type'},
+                                              'name' : 'genomic'} )
+        
+        name_schema = NamingSchema('project', 'lb', 'a connection')
+        add_libraries(library_fhand, engine, 'lib_proj', name_schema)
+        
+        library_ins = chado.select_one('library', {'name':'a'})
+        assert library_ins
+        assert library_ins.type.name == 'genomic'
+        assert library_ins.name == 'a'
+        
 if __name__ == '__main__':
     unittest.main()

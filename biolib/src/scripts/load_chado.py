@@ -8,7 +8,8 @@ from biolib.chado import add_csv_to_chado, connect_database, load_ontology
 from biolib.biolib_utils import call
 import os
 
-TABLES     = 'db, organism, cv '
+NO_RELATION_TABLES = 'db, organism, cv '
+TABLES     = NO_RELATION_TABLES + ''
 ONTOLOGIES = 'cmv_internal_go_lib'
 
 
@@ -79,10 +80,9 @@ def main():
     engine = connect_database(dbname, username=dbuser, password=dbpass,
                                host=dbhost)
     
-    
     # Let's add info to tables
-    no_relation_tables = ['db', 'cv', 'organism']
-    for table_name in no_relation_tables:
+    for table_name in NO_RELATION_TABLES.split(','):
+        table_name = table_name.strip()
         if  table_name in tables:
             print "Adding data to %s table" % table_name
             fhand = open('%s/%s.txt' % (directory, table_name) ,'r')

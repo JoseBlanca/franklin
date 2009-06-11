@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, Table
 from sqlalchemy.orm import mapper, relation, sessionmaker
 from biolib.biolib_utils import call
 import csv, tempfile
+from biolib.naming_schema import NamingSchema
 
 def _get_foreign_key(table, column):
     '''It returns the table and column names pointed by the foreign key.
@@ -232,17 +233,18 @@ class Chado(object):
                 #if we really have a foreign key in this colum (key)
                 #we ask for the instance with the value as attributes
                 if referenced_table is None:
-                    msg = 'A dict given for a column with no foreign key'
-                    msg += '\ttable:%s column:$s dict:$s ', (table, column,
-                                                       str(this_col_attributes))
+                    msg  = 'A dict given for a column with no foreign key -> '
+                    msg += 'table:%s column:%s dict:%s ' % \
+                            (table, column, str(this_col_attributes))
                     raise ValueError(msg)
                 try:
                     row_instance = self.select_one(referenced_table,
                                            attributes=this_col_attributes)
                     #from sqlalchemy.orm import exc as orm_exc
                 except sqlalchemy.orm.exc.NoResultFound:
-                    msg = 'Failed to select a row instance for:'
-                    msg += 'table %s, attributes: %s' % (table, str(attributes))
+                    msg = 'Failed to select a row instance for:\n'
+                    msg += '\ttable %s \n\tattributes: %s' % \
+                                    (referenced_table, str(this_col_attributes))
                     raise ValueError(msg)
                 #where is the table for the current kind defined in the 
                 #mapping definitions list?
@@ -276,95 +278,7 @@ class Chado(object):
     def rollback(self):
         'It rollsback the sesssion'
         self._session.rollback()
-
-def add_libraries(fhand, engine):
-    '''This function is used to add libraries to chado using a input file.
-    The input file format is as follows:
-        library_definition
-            name : name
-            type : type
-            cvterms: cvname:cvtermname, cvname:cvtermname, ...
-            props: cvname:cvtermname, cvname:cvtermname, ...
-        /library_definition
-    '''
-    libraries = _parse_libraries_file(fhand)
-    chado     = Chado(engine)
-    for library in libraries:
-#        for cv in cvterms:
-#            cv_obj = chado.select_one('cv', name=cv)
-#            cv_obj.cv_id
-#            for term_name in cv:
-#                
-#        chado.select_one('cvterm', )
-       # print library
-        pass
-
-def libraries_in_file(fhand):
-    ''' It parses the file and yields a dictionary for each  library'''
-    library = {}
-    for line in fhand:
-        line = line.strip()
-        if line.startswith('library_definition'):
-            #a new library starts
-            if library:    #there was a previous library
-                yield library
-                library = {} #for the following library
-            continue
-        elif not line:
-            continue
-        elif line.startswith('format-version'):
-            continue
-        #if we're here line should be key: value1,value2, value3
-        key, values = line.split(':', 1)
-        key = key.strip()
-        values = [value.strip() for value in values.split(',')]
-        #some values should be scalars not lists
-        if key in ('name', 'type'):
-            values = values[0]
-        library[key] = values
-    else:
-        #the last library
-        yield library
-
-def _parse_libraries(fhand):
-    ''' It parses the file and yields a dictionary for each  library'''
-    for line in fhand:
-        if line.isspace() or line[0] == '#':
-            continue
-        line = line.strip()
-        if line.startswith('library_definition'):
-            library = {}
-        elif line.startswith('name'):
-            name = line.split(':')[1]
-            library['name'] = name.strip()
-        elif line.startswith('type'):
-            type_ = line.split(':')[1]
-            library['type'] = type_.strip()
-        elif line.startswith('cvterms'):
-            cvterms = {}
-            data_field = line.split(':', 1)[1]
-            cvterm_pairs = data_field.split(',')
-            for cvterm_pair in cvterm_pairs:
-                cvname, cvtermname = cvterm_pair.split(':')
-                cvname, cvtermname = cvname.strip(), cvtermname.strip()
-                if cvname not in  cvterms:
-                    cvterms[cvname] = []
-                cvterms[cvname].append(cvtermname)
-            library['cvterms'] = cvterms
-        elif line.startswith('props'):
-            properties = {}
-            data_field = line.split(':', 1)[1]
-            property_pairs = data_field.split(',')
-            for property_pair in property_pairs:
-                cvname, cvtermname = property_pair.split(':')
-                cvname, cvtermname = cvname.strip(), cvtermname.strip()
-                if cvname not in  properties:
-                    properties[cvname] = []
-                properties[cvname].append(cvtermname)
-            library['property'] = properties      
-        elif line.startswith('/library_definition'):
-            yield library
-
+        
 def add_csv_to_chado(fhand, table, engine):
     '''It adds to chado rows about a given table.
 
@@ -402,3 +316,71 @@ def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     stdout, stderr, retcode = call(cmd)
     if retcode:
         raise RuntimeError('stag-storenode.pl: ' + stderr)
+def add_libraries(fhand, engine, project, name_schema):
+    '''This function is used to add libraries to chado using a input file.
+    The input file format is as follows:
+        library_definition
+            name : name
+            type : type
+            organism: GenusSpecies
+            cvterms: cvname:cvtermname, cvname:cvtermname, ...
+            props: cvname:cvtermname, cvname:cvtermname, ...
+        /library_definition
+    '''
+    chado          = Chado(engine)
+    for parsed_library in _libraries_in_file(fhand):
+        try:
+            library_attrs  = _library_to_chado_figure(parsed_library, 
+                                                      name_schema)
+            chado.get(kind = 'library', attributes=library_attrs)
+            chado.commit()
+            name_schema.commit_last_name()
+        except Exception:
+            chado.rollback()
+            raise     
+
+def _library_to_chado_figure(parsed_library, name_schema):
+    '''It converts the dictionary that returns the parser in a format that
+    our chado_insert_function understand'''
+    # First get genus, specie
+    genus, specie = parsed_library['organism'].split(' ')
+    # get Type
+    cvname, cvtermname = parsed_library['type'].split(':')
+    library_attrs = {'organism_id':{'genus': genus, 'species':specie},
+                     'type_id'    :{'cv_id'    :{'name':cvname},
+                                    'name'     : cvtermname},
+                     'name'       : parsed_library['name'],
+                     'uniquename' : name_schema.get_next_name() }
+    return library_attrs
+    
+    
+     
+     
+     
+def _libraries_in_file(fhand):
+    ''' It parses the file and yields a dictionary for each  library'''
+    library = {}
+    for line in fhand:
+        line = line.strip()
+        if line.startswith('library_definition'):
+            #a new library starts
+            if library:    #there was a previous library
+                yield library
+                library = {} #for the following library
+            continue
+        elif not line:
+            continue
+        elif line.startswith('format-version'):
+            continue
+        #if we're here line should be key: value1,value2, value3
+        key, values = line.split(':', 1)
+        key = key.strip()
+        values = [value.strip() for value in values.split(',')]
+        #some values should be scalars not lists
+        if key in ('name', 'type', 'organism'):
+            values = values[0]
+        library[key] = values
+    else:
+        #the last library
+        yield library
+
