@@ -3,9 +3,8 @@ Created on 2009 mar 11
 
 @author: peio
 '''
-from __future__ import with_statement
 import unittest
-from biolib.contig_parser import CafParser, AceParser
+from biolib.contig_io import CafParser, AceParser
 import biolib
 import os.path
 
@@ -107,9 +106,9 @@ class AceTest(unittest.TestCase):
     
     def test_contig(self):
         '''It tests that we can get a read by its name.'''
-        filen = os.path.join(DATA_DIR, 'example3.ace')
+        fileh = open(os.path.join(DATA_DIR, 'example3.ace'), 'r')
         
-        parser = AceParser(filen)
+        parser = AceParser(fileh)
         #if we ask for a wrong contig we get an error
         try:
             parser.contig('not_in_file')
@@ -118,8 +117,8 @@ class AceTest(unittest.TestCase):
         except ValueError:
             pass
         #now for a real contig
-        contig = AceParser(filen).contig('eucalyptus_lrc1')
-        assert contig    
+        contig = AceParser(fileh).contig('eucalyptus_lrc1')
+        assert contig
    
     @staticmethod   
     def test_check_consensus_seq():

@@ -1,7 +1,7 @@
 'It gives unique names for the features in the databases'
 
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
-from biolib.contig_parser import CafParser, AceParser
+from biolib.contig_io import CafParser, AceParser
 import re
 
 def _create_naming_database(db_connection):
