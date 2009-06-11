@@ -16,8 +16,9 @@ class CafTest(unittest.TestCase):
     @staticmethod
     def test_reads():
         ''' we check if we can take the reads from the caf file'''
-        fname = os.path.join(DATA_DIR, 'example.caf')
-        caf_parser  = CafParser(fname)
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        #caf_parser = CafParser(fname)
+        caf_parser = get_parser(fhand, format='caf')
         num_reads = 0
         for read in caf_parser.reads():
             num_reads  += 1
@@ -99,8 +100,7 @@ class CafTest(unittest.TestCase):
             assert str(read) == 'ATCCACTTTT'
             read = contig[198][8:18]
             assert str(read) == 'CTCCCTGTGN'
-            
-            
+ 
 class AceTest(unittest.TestCase):
     ''' It tests the ace alignment parser'''
     
