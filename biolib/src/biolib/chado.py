@@ -180,6 +180,8 @@ class Chado(object):
         'It returns the query with the given kind with the given attributes'
         if attributes is None:
             attributes = {}
+        #do any of the attributes to get an instance from a foreign key?
+        attributes = self._resolve_foreign_keys(kind, attributes)
         #which row object?
         row_klass = self._row_classes[kind]
 
@@ -199,7 +201,7 @@ class Chado(object):
         '''
         cache_key = table + '%' + column
         if cache_key in self._foreign_cache:
-            return self._foreign_cache
+            return self._foreign_cache[cache_key]
 
         referer_table    = self._table_classes[table]
         referer_col      = referer_table.columns[column]
@@ -216,6 +218,42 @@ class Chado(object):
             if table == mapping['name']:
                 return index
 
+    def _resolve_foreign_keys(self, table, attributes):
+        '''Given a table an a dict with the colnames and values it fixes all
+        the foreign keys.
+        '''
+        new_attrs = {}
+        for column, this_col_attributes in attributes.items():
+            if isinstance(this_col_attributes, dict):
+                #we have to get the instance associated with this dict?
+                #we need to know the table and pointed by the foreign key
+                #pylint: disable-msg=W0612
+                referenced_table, col = self._get_foreign_key(table, column)
+                #if we really have a foreign key in this colum (key)
+                #we ask for the instance with the value as attributes
+                if referenced_table is None:
+                    msg = 'A dict given for a column with no foreign key'
+                    msg += '\ttable:%s column:$s dict:$s ', (table, column,
+                                                       str(this_col_attributes))
+                    raise ValueError(msg)
+                try:
+                    row_instance = self.select_one(referenced_table,
+                                           attributes=this_col_attributes)
+                    #from sqlalchemy.orm import exc as orm_exc
+                except sqlalchemy.orm.exc.NoResultFound:
+                    msg = 'Failed to select a row instance for:'
+                    msg += 'table %s, attributes: %s' % (table, str(attributes))
+                    raise ValueError(msg)
+                #where is the table for the current kind defined in the 
+                #mapping definitions list?
+                indx = self._table_index_in_mapping(table)
+                rel_attr = \
+                self._mapping_definitions[indx]['relations'][column]['rel_attr']
+                new_attrs[rel_attr] = row_instance
+            else:
+                new_attrs[column] = this_col_attributes
+        return new_attrs
+
     def get(self, kind, attributes):
         '''It returns one attribute with the given attributes and kind
         
@@ -225,29 +263,7 @@ class Chado(object):
         be updated.
         '''
         #do any of the attributes to get an instance from a foreign key?
-        new_attrs = {}
-        for column, value in attributes.items():
-            if isinstance(value, dict):
-                #we have to get the instance associated with this dict?
-                #we need to know the table and pointed by the foreign key
-                table, col = self._get_foreign_key(kind, column)
-                #if we really have a foreign key in this colum (key)
-                #we ask for the instance with the value as attributes
-                if table is None:
-                    msg = 'A dict given for a column with no foreign key'
-                    msg += '\ttable:%s column:$s dict:$s ', (kind, key,
-                                                             str(value))
-                    raise ValueError(msg)
-                row_instance = self.get(table, attributes=value)
-                #where is the table for the current kind defined in the 
-                #mapping definitions list?
-                indx = self._table_index_in_mapping(kind)
-                rel_attr = \
-                self._mapping_definitions[indx]['relations'][column]['rel_attr']
-                new_attrs[rel_attr] = row_instance
-            else:
-                new_attrs[column] = value
-        attributes = new_attrs
+        attributes = self._resolve_foreign_keys(kind, attributes)
         try:
             return self.select_one(kind, attributes)
         except orm_exc.NoResultFound:

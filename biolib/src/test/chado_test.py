@@ -143,11 +143,22 @@ class ChadoOrmTest(unittest.TestCase):
         columns'''
         engine = create_chado_example()
         chado = Chado(engine)
+        #one test with db and dbxref
         new_db = chado.get(kind='db', attributes={'name':'hola_db',
                                                'description':'a fake database'})
         new_dbxref = chado.get(kind='dbxref',
                               attributes={'accession':'666',
                                           'db_id':{'name':'hola_db'}})
+        #a similar example that should fail
+        #in this case the get should not create recursively all the instances
+        #for all the referenced data.
+        try:
+            new_dbxref = chado.get(kind='dbxref',
+                              attributes={'accession':'666',
+                                          'db_id':{'name':'hola2_db'}})
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
 
 EXAMPLE_DBS = \
 '''name,description
