@@ -95,6 +95,9 @@ class NamingSchema(object):
     def __getitem__(self, name):
         '''An alias for get_next_name.'''
         return self.get_next_name()
+    def commit_last_name(self):
+        'The pega'
+        pass
 
 class ChangeNameTest(unittest.TestCase):
     '''It test that we can modify the names/accs in different kind of files'''
