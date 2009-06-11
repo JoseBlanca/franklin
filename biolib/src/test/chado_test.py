@@ -6,12 +6,11 @@ Created on 2009 eka 5
 import unittest
 from StringIO import StringIO
 import sqlalchemy
-from sqlalchemy import exc as sa_exc
-from sqlalchemy.orm import exc as orm_exc
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,\
-                     UniqueConstraint
+from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey, 
+                        UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import setup_maping, Chado, add_csv_to_chado, add_libraries
+from biolib.chado import (setup_maping, Chado, add_csv_to_chado,
+                          libraries_in_file)
 
 
 def create_chado_example():
@@ -30,9 +29,9 @@ def create_chado_example():
     dbxref_table = Table('dbxref', metadata,
                          Column('dbxref_id', Integer, primary_key=True),
                          Column('db_id', Integer, ForeignKey('db.db_id'), 
-                                nullable=False, unique=True),
-                         Column('accession', String, nullable=False, 
-                                unique=True))
+                                nullable=False),
+                         Column('accession', String, nullable=False),
+                         UniqueConstraint('db_id','accession'))
     cv_table = Table('cv', metadata,
                      Column('cv_id', Integer, primary_key=True),
                      Column('name', String, nullable=False, unique=True),
@@ -73,7 +72,11 @@ class ChadoOrmTest(unittest.TestCase):
         '''It test basic mapping setup '''
         engine = create_chado_example()
         mapping_definitions = [{'name' :'db'}, 
-                       {'name':'dbxref', 'relations':[('one2many', 'db')]}]
+                       {'name':'dbxref',
+                        'relations':{'db_id':{'kind':'one2many',
+                                           'rel_attr':'db'}
+                                    }
+                       }]
         #pylint: disable-msg=W0612
         table_classes, row_classes = setup_maping(engine, mapping_definitions)
         #pylint: disable-msg=C0103
@@ -89,9 +92,9 @@ class ChadoOrmTest(unittest.TestCase):
         session.add(new_dbxref)
         a_dbxref = session.query(Dbxref).filter_by(accession='CMV9789').first()
         assert isinstance(a_dbxref.dbxref_id, int)
-        assert isinstance(a_dbxref.db_id,int) 
+        assert isinstance(a_dbxref.db_id, int) 
  
-    def test_chado_orm_helper(self):
+    def test_chado_orm_helper_basic(self):
         'It test the create, select and get helper functions'
         engine = create_chado_example()
         chado = Chado(engine)
@@ -134,8 +137,17 @@ class ChadoOrmTest(unittest.TestCase):
         chado2 = Chado(engine)
         the_db3  = chado2.select_one(kind='db', attributes={'name':'hola_db'})
         assert the_db3.name == 'hola_db'
-        
-
+ 
+    def test_chado_orm_helper_recursive(self):
+        '''We can get instances from the session giving dicts inside the id
+        columns'''
+        engine = create_chado_example()
+        chado = Chado(engine)
+        new_db = chado.get(kind='db', attributes={'name':'hola_db',
+                                               'description':'a fake database'})
+        new_dbxref = chado.get(kind='dbxref',
+                              attributes={'accession':'666',
+                                          'db_id':{'name':'hola_db'}})
 
 EXAMPLE_DBS = \
 '''name,description
@@ -164,30 +176,38 @@ class AddCsvChadoTest(unittest.TestCase):
         add_csv_to_chado(db_fhand, table='db', engine=engine)
         assert len(dbs) == 2
 
-EXAMPLE_Library = \
-''' Version 1
+EXAMPLE_LIBRARY = \
+'''format-version:1
 library_definition
     name: a
-    type:genomic
+    type: library type:genomic
     cvterms: SO:0001, SO:0002
-    props: SO:333, SO:asdaa
-/library_definition
+    properties: property type:strain:Oregon-R, property type:stage:adult male
 
 library_definition
     name:b
-    type: genomic B
+    type: library type:genomic B
     cvterms:SO:0003, SO:0004
-    props: SO:222, SO:3456
-/library_definition
+    properties: SO:222, SO:3456
 '''
 class AddLibraryToChado(unittest.TestCase):
     'It test that we can dump a library file'
     @staticmethod
     def test_add_libraries():
-        'It test that we can dum a library file to chado'
-        library_fhand = StringIO(EXAMPLE_Library)
-        engine = create_chado_example()
-        add_libraries(library_fhand, engine)
+        'It test that we can add a library file to chado'
+        #the parser
+        library_fhand = StringIO(EXAMPLE_LIBRARY)
+        expected_libs = [{'name':'a', 'type':'library type:genomic'},
+                         {'name':'b', 'type':'library type:genomic B'}]
+        for index, library in enumerate(libraries_in_file(library_fhand)):
+            assert library['name'] == expected_libs[index]['name']
+            assert library['type'] == expected_libs[index]['type']
+        
+        library_fhand = StringIO(EXAMPLE_LIBRARY)
+        #engine = create_chado_example()
+        #for library in libraries_in_file(library_fhand):
+            #add_library_to_chado(library, engine)
+        #    print library
 #        chado = Chado(engine)
 #        try:
 #            library_ins = chado.select_one('library', {'name':'a'})
@@ -195,7 +215,6 @@ class AddLibraryToChado(unittest.TestCase):
 #            assert library_ins.type == 'genomic'
 #        except orm_exc.NoResultFound:
 #            raise RuntimeError ('HAsta que no aniada nada no funcionara')
-        
         
         
 
