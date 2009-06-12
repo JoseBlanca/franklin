@@ -354,9 +354,6 @@ def _library_to_chado_figure(parsed_library, name_schema):
     return library_attrs
     
     
-     
-     
-     
 def _libraries_in_file(fhand):
     ''' It parses the file and yields a dictionary for each  library'''
     library = {}
