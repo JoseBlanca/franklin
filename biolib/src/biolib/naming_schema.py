@@ -2,7 +2,7 @@
 
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
 from biolib.contig_io import CafParser, AceParser
-import re
+import re, os
 
 def _create_naming_database(db_connection):
     'It creates a new empty database to hold the naming schema status'
@@ -322,4 +322,91 @@ def create_names_for_contigs(fhand, file_kind, naming):
     for read in contig_parser.read_names():
         names[read] = naming['read'][read]
     return names
+
+def _get_parser_for_file(fhand, file_kind):
+    'It returns a parser depending on the file kind'
+    if file_kind == 'ace':
+        return AceParser(fhand)
+    elif file_kind =='caf':
+        return CafParser(fhand)
+    else:
+        return _GeneralNameParser(fhand, file_kind)
+    
+
+
+NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
+            'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
+            'ace'    :{'contig_names':'',
+                       'read_names'  :''},
+            'caf'    :{'contig_names':'',
+                       'read_names'  :''}
+          }
+
+#pylint: disable-msg=R0903
+class _GeneralNameParser(object):
+    '''This class parses some kind of files looking for names '''
+    def __init__(self, fhand, kind):
+        '''Initiator'''
+        self.fhand  = fhand
+        self.kind   = kind
+        self.regexs = NAMES_RE[self.kind]
+        self._names = {}
+        self._parser()
+        self._setup_accesor_methods()
+    
+    def _parser(self):
+        '''The real parser '''
+        for obj_kind in self.regexs:
+            self._names[obj_kind] = []
+        for line in self.fhand:
+            for obj_kind, regex_list in self.regexs.items():
+                for regex in regex_list:
+                    match_obj = re.match(regex, line)
+                    try:
+                        name      = match_obj.groups()[0]
+                        self._names[obj_kind].append(name)
+                    except AttributeError:
+                        pass
+    def _setup_accesor_methods(self):
+        '''It creates classes for all kinds '''
+        for obj_kind in self.regexs:
+            def accessor():
+                'It creates a method for each kind'
+                return self._names[obj_kind]
+            setattr(self, obj_kind, accessor)
+    
+def generate_naming_file(fhand, naming_schemas, file_type):
+    '''It generates the naming file if it does not exists
+    Naming_schemas is a dict: key   = feture type
+                              value = NamingSchema for this feature type'''
+    fname_naming =  fhand.name + '.naming'
+    name_dict = {}
+    #  If the naming file exists it only appends new names found in the original
+    # file
+    if os.path.exists(fname_naming):
+        fhand_out = open(fname_naming, 'a+')
+        for line in fhand_out:
+            file_name  = line.split(':')[0].strip()
+            uniquename = line.split(':')[1].strip()
+            name_dict[file_name] = uniquename
+    else:
+        fhand_out = open(fname_naming, 'w')
+    
+    # Here we use a parser depending of the file type and we get the naming for
+    # each name type
+    parser = _get_parser_for_file(fhand, file_type)
+    name_warehouse = {}
+    for  naming_type in NAMES_RE[file_type]:
+        naming_method = getattr(parser, naming_type)
+        name_warehouse[naming_type] = naming_method()
+    # Once we have the names we have to write into the file, but looking if 
+    # the file already exists
+    for naming_type, names in name_warehouse.items():
+        for name in names:
+            if name not in name_dict:
+                uniquename = naming_schemas[naming_type].get_next_name()
+                fhand_out.write('%s:%s\n' % (name, uniquename))
+    fhand_out.close()
+
+    
 

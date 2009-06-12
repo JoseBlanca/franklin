@@ -1,0 +1,15 @@
+format-version:1
+library_definition
+    name: a
+    type: library type:genomic
+    organism:Cucumis melo
+    cvterms: SO:0001, SO:0002
+    properties: property type:strain:Oregon-R, property type:stage:adult male
+
+library_definition
+    name:b
+    type: library type:genomic
+    organism: Cucumis melo
+    cvterms:SO:0003, SO:0004
+    properties: SO:222, SO:3456
+'''
