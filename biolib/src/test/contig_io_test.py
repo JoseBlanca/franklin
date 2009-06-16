@@ -7,6 +7,7 @@ import unittest
 from biolib.contig_io import get_parser
 import biolib
 import os.path
+from test_utils import SeqWithQuality
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -161,6 +162,8 @@ class CigarTest(unittest.TestCase):
     seq2 = 'AAGCTCATCTTGG-CCACCGACTCTCGCTTGCGCCGCCGCGGGAGCCGG-TGGA-AACCT'
     seq2 = SeqWithQuality(seq2, name='hsnfg9.embl')
     seq2 = locate_sequence(seq2, location=25690)
+    contig = Contig([seq1, seq2])
+    print contig.format('cigar')
 
 
 if __name__ == "__main__":
