@@ -336,10 +336,10 @@ def _get_parser_for_file(fhand, file_kind):
 
 NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
             'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
-            'ace'    :{'contig_names':'',
-                       'read_names'  :''},
-            'caf'    :{'contig_names':'',
-                       'read_names'  :''}
+            'ace'    :{'contig_names':[],
+                       'read_names'  :[]},
+            'caf'    :{'contig_names':[],
+                       'read_names'  :[]}
           }
 
 #pylint: disable-msg=R0903
@@ -379,6 +379,14 @@ def generate_naming_file(fhand, naming_schemas, file_type):
     '''It generates the naming file if it does not exists
     Naming_schemas is a dict: key   = feture type
                               value = NamingSchema for this feature type'''
+    # Check if the naming schemas provided are the good ones
+    for naming_type in NAMES_RE[file_type]:
+        if naming_type not in naming_schemas.keys():
+            msg = "Provided naming_schema name should be one of this:%s" % \
+                                                str(NAMES_RE[file_type].keys())
+            raise ValueError(msg)
+                              
+    
     fname_naming =  fhand.name + '.naming'
     name_dict = {}
     #  If the naming file exists it only appends new names found in the original

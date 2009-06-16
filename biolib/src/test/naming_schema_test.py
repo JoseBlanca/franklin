@@ -163,22 +163,32 @@ class GeneratingNamingFileTest(unittest.TestCase):
         fpath = os.path.join(DATA_DIR, 'library.txt')
         fhand = open(fpath, 'r')
         generate_naming_file(fhand, naming_schemas, 'library' )
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    @staticmethod
+    def test_generate_naming_with_2():
+        '''It test the naming change with two naming schemas'''
+        contig_name_schema = NamingSchema('a_prohject', 'lib', 'a connection')
+        read_naming_schema = NamingSchema('a_prohject', 'lib', 'a connection')
+        naming_schemas = {}
+        naming_schemas['read_names']   = read_naming_schema
+        naming_schemas['contig_names'] = contig_name_schema
+        fpath = os.path.join(DATA_DIR, 'example.caf')
+        fhand = open(fpath, 'r')
+        generate_naming_file(fhand, naming_schemas, 'caf' )
+    def test_eror_generate_naming_file(self):
+        ''' It tests error detection of the generate_naming_file function'''
         
-
+        naming_schema  = NamingSchema('a_prohject', 'lib', 'a connection') 
+        naming_schemas = {}
+        naming_schemas['library_n'] = naming_schema
+        fpath = os.path.join(DATA_DIR, 'library.txt')
+        fhand = open(fpath, 'r')
+        try:
+            generate_naming_file(fhand, naming_schemas, 'library' )
+            self.fail()
+        except ValueError:
+            pass
+    
+    
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']
     unittest.main()
