@@ -421,9 +421,7 @@ class LocationTests(unittest.TestCase):
         loc2 = Location(start= 5, end = 7, forward = False, strand= -1)
         loc3 = loc1.intersection(loc2)
         assert loc3.start == 5 and loc3.end == 7
-        
-        
-        
+ 
 class NonStaticParentLocationTests(unittest.TestCase):
     '''It tests the slicing, reverse and complement when the parent is not
     static.'''
@@ -714,7 +712,7 @@ class LocatableSequenceTests(unittest.TestCase):
         def masker_x(item):
             '''It returns an x for any given item.'''
             # pylint: disable-msg=W0613
-            return 'x'
+            return 'x' * len(item)
         self.alignment['seq4'] = locate_sequence(sequence=seq4, location=(1, 5),
                                                  strand=-1, parent=ref,
                                                  mask=(2,3), masker=masker_x,
@@ -1091,20 +1089,12 @@ class LocatableSequenceTests(unittest.TestCase):
         #        0123
         #rev     TGAC
         #revcomp ACTG
-        #mutable sequence reverse
-        revseq = locate_sequence(Seqmut('CAGT'), forward=False)
-        assert revseq[0] == 'T'
-        assert revseq[3] == 'C'
         #mutable sequence reverse and complementary
         revseq = locate_sequence(Seqmut('CAGT'), strand=-1, forward=False)
         #it will raise a ValueError because we don't support complementing
         #of mutable sequences. We would be changing a sequence outside the
         #LocatableSequence
         self.assertRaises(ValueError, revseq.__getitem__, 0)
-        #non mutable sequence reverse
-        revseq = locate_sequence(Seq('CAGT'), forward=False)
-        assert revseq[0] == 'T'
-        assert revseq[3] == 'C'
         #non mutable sequence reverse and complementary
         revseq = locate_sequence(Seq('CAGT'), strand=-1, forward=False)
         assert revseq[0] == 'A'
@@ -1156,42 +1146,59 @@ class LocatableSequenceTests(unittest.TestCase):
         self.assertRaises(IndexError, revseq.__getitem__, slice(-6, -5))
 
     @staticmethod
-    def test_outside_limits_config():
-        '''It checks that we can configure what we get outside the seq limits'''
-        import biolib.contig as contig
-        locseq = contig.locate_sequence('ACTG', location=7, mask=(2, 3))
-        #we can configure what we get outside the sequence
-        contig.empty_region_seq_builder = lambda : ''
-        assert locseq[0] == ''
-        #now what we get in the masked region
-        contig.default_masker = lambda x: 'x'
-        assert locseq[8] == 'x'
-
-    @staticmethod
     def test_str():
         'It test the str writting of the LocatableSequence.'
         #with an start
         locseq = locate_sequence(sequence='ACTG', location=4)
-        assert locseq.__str__() == '    ACTG'
+        assert str(locseq) == '    ACTG'
         #with a parent
         locseq = locate_sequence(sequence='ACTG', location=4,
                                  parent='01234567890')
-        assert locseq.__str__() == '    ACTG   '
+        assert str(locseq) == '    ACTG   '
         #with a mask and a masker
         locseq = locate_sequence(sequence='ACTG', mask=(1, 2),
                                  masker=lambda x: x.lower())
-        assert locseq.__str__() == 'aCTg'
+        assert str(locseq) == 'aCTg'
         #with a mask and no masker
         locseq = locate_sequence(sequence='ACTG', mask=(1, 2))
-        assert locseq.__str__() == ' CT '
+        assert str(locseq) == ' CT '
         #with everything
         locseq = locate_sequence(sequence='ACTG', location=1, mask=(1, 2),
                                  masker=lambda x: x.lower(), parent='012345')
-        assert locseq.__str__() == ' aCTg '
-        
-                                 
-        
-        
+        assert str(locseq) == ' aCTg '
+
+    @staticmethod
+    def test_seq_attrs():
+        'It test that we can get the .sequence attributes'
+        seq = SeqWithQuality(name='hola', seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        loc_seq = locate_sequence(seq, location=1)
+        #both the seq and the loc_seq have the same properties
+        #we can access the seq properties through the locseq properties
+        assert seq.name is loc_seq.name
+
+        #we can access the seq and qual properties taking into account the
+        #different the indexings
+        assert seq.seq[1:3] == loc_seq.seq[2:4]
+        assert seq.qual[1] == loc_seq.qual[2]
+
+        #it should also work with a reverse complemented locseq
+        #    01234
+        #seq  AGAT
+        #qual 4321
+        seq = SeqWithQuality(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        loc_seq = locate_sequence(seq, location=1, strand=-1, forward=False)
+        assert loc_seq.seq[2:4] == 'GA'
+        assert seq.qual[3] == loc_seq.qual[1]
+
+        #reverse, but not complement
+        #    01234
+        #seq  TCTA
+        #qual 4321
+        seq = SeqWithQuality(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        loc_seq = locate_sequence(seq, location=1, forward=False)
+        assert loc_seq.seq[2:4] == 'CT'
+        assert seq.qual[3] == loc_seq.qual[1]
+
 class ContigTests(unittest.TestCase):
     '''It checks the Contig class behaviour.'''
     def test_basic_behaviour(self):
@@ -1376,7 +1383,7 @@ class ContigTests(unittest.TestCase):
         consensus = locate_sequence('AA', location=1)
         contig = Contig(sequences=['xAAx'], consensus = consensus)
         assert str(contig) == '0              ->xAAx\nconsensus      -> AA\n'
-   
+ 
 def main():
     '''It runs the tests'''
     unittest.main()

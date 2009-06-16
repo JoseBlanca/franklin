@@ -1,10 +1,13 @@
 '''This module provides the code to represent a sequence contig.'''
 from biolib.biolib_utils import get_start_end
+import StringIO
+#from biolib import contig_io
 
 #for configuration I like lowercase variables
 #pylint: disable-msg=C0103
 def default_masker_function(seq):
     '''It returns an index error to be used as default masker'''
+    #pylint: disable-msg=W0613
     raise IndexError('Index in masked sequence region')
 #by default when a sequence in a masked region is requested an IndexError is
 #raised
@@ -208,7 +211,6 @@ class Contig(object):
                 else:
                     raise                 
     
-
     def _getitem_slice_slice(self, row_index, col_index):
         '''It returns a new Contig with the sliced rows.'''
         #we create the new assembly that will be returned
@@ -237,6 +239,7 @@ class Contig(object):
                 pass
                 
         return new_assembly
+
     def _getitem_slice_int(self, row_index, col_index):
         '''It returns a column.'''
         #which row range are we requesting?
@@ -322,6 +325,11 @@ class Contig(object):
             return self._getitem_slice_int(row_index, col_index)
         elif row_type == slice and col_type == slice:
             return self._getitem_slice_slice(row_index, col_index)
+
+    def format(self, format):
+        'It returns an string with the contig formated with the given format'
+        result = StringIO.StringIO()
+        contig_io.write([self], format, result)
 
 def locate_sequence(sequence, location=None, mask=None, masker=None,
                     strand=None, forward=True, parent=None):
@@ -425,6 +433,8 @@ def _move_index(index, amount):
     '''
     if index is None:
         return None
+    elif isinstance(index, int):
+        return index + amount
     else:
         start = index.start
         stop = index.stop
@@ -437,6 +447,29 @@ def _move_index(index, amount):
         else:
             new_stop = stop + amount
         return slice(new_start, new_stop, index.step)
+
+class _SequenceAttribute(object):
+    '''This class is used to create the properties that return different
+    properties of the contained sequence (self.seq).
+    It's used to provided the syntactic sugar: locseq.seq[1] locseq.qual[1]
+    '''
+    #This is just syntax sugar, it should do very little
+    # pylint: disable-msg=R0903
+    def __init__(self, parent, req_attr):
+        '''The initialitation.
+        keyword arguments:
+        parent -- The parent object that owns the property (e.g. the locseq)
+        req_attr -- The property requested to the contained sequence.
+        '''
+        self._parent = parent
+        self._req_attr = req_attr
+    def __getitem__(self, index):
+        '''It returns an item or an slice of the requested property.'''
+        #_sequence_getitem is private, but this is not standard client code,
+        #it's almost internal to LocatableSequence
+        #pylint: disable-msg=W0212
+        return self._parent._sequence_getitem(index=index,
+                                             attr=self._req_attr)
 
 class LocatableSequence(object):
     '''It's a container for sequence like objects.
@@ -472,6 +505,12 @@ class LocatableSequence(object):
         self._mask = None
         self._set_mask(mask)
         self._masker = masker
+        #the special seq and qual properties
+        self.seq  = _SequenceAttribute(self, 'seq')
+        self.qual = _SequenceAttribute(self, 'qual')
+        #some caches
+        self._masked_comp_seq_dict_cache = None
+        self._masked_comp_seq_cache = None
 
     @staticmethod
     def _check_location(seq, location):
@@ -529,126 +568,236 @@ class LocatableSequence(object):
         return self._masker
     masker = property(_get_masker)
 
-    def _sequence_property(self, complement=False):
-        '''It returns the self.sequence or its complement.'''
-        # pylint: disable-msg=W0201
-        #is defined here, but is used only here
-        self._comp_cache = {}
-        def complement_cache(sequence):
-            '''It returns a complemented sequence.
-            
-            It keeps a cache of complemented sequences to speed up the int
-            slicing. It has no sense to complement the whole sequence every
-            time we ask for an item in the complemented sequence
-            '''
-            instance_id = id(sequence)
-            if not instance_id in self._comp_cache:
-                self._comp_cache[instance_id] = sequence.complement()
-            return self._comp_cache[instance_id]
-        sequence = self.sequence
-        #do we want the complementary?
-        if complement:
-            type_before_complement = type(sequence)
-            sequence = complement_cache(sequence)
+    def _masked_comp_seq_dict(self):
+        '''It complements, reverses and masks self.sequence.
+        
+        It stores the result in a dict with three dicts that correspond to the first
+        masked region, the non-masked sequence and the second masked region.
+        Every dict has three keys start, end and sequence. sequence can be
+        None in the case of the masked regions.
+        '''
+        if self._masked_comp_seq_dict_cache is not None:
+            return self._masked_comp_seq_dict_cache
+        #this fucntion does all the transformations to the sequence but the
+        #change in the coord system.
+        location = self.location
+        strand   = location.strand
+        forward  = location.forward
+        mask     = self.mask
+        seq      = self.sequence
+        end      = len(seq) - 1
+        #what do we need to calculate?
+        #  mask_1_region | sequence | mask_2_region
+        #  start     end  start  end  start     end
+        m1_start = None
+        m1_end   = None
+        m1_seq   = None
+        seq_start = 0
+        seq_end  = end
+        seq      = seq
+        m2_start = None
+        m2_end   = None
+        m2_seq   = None
+        #complement
+        if strand == -1:
+            #The complementary sequence
+            type_before_complement = type(seq)
+            seq = seq.complement()
             #maybe the sequence was mutable, in that case the sequence now
             #will be None. We raise an error in this case because we don't 
             #want to mess with sequences that could be being used outside
             #this class for other porpouses
-            if type(sequence) != type_before_complement:
+            if type(seq) != type_before_complement:
                 msg = 'The sequence seems mutable, we support only non-mutables'
                 raise ValueError(msg)
-        #Which property do we return? self.sequence or self.sequence.seq?
-        return sequence
+        #mask
+        if mask is not None:
+            m1_start  = 0
+            seq_start = mask.start
+            m1_end    = seq_start - 1
+            seq_end   = mask.end
+            m2_start  = seq_end + 1
+            m2_end    = len(seq) - 1
+            m1_seq    = seq[:seq_start]
+            m2_seq    = seq[m2_start:]
+            seq       = seq[seq_start:m2_start]
+        #reverse
+        if not forward:
+            #now the mask1 is mask2 and mask2 is mask1,
+            #and the indexes should be recalculated counting from the end
+            if m2_end:
+                length = m2_end + 1
+            else:
+                length = seq_end + 1
+            if m1_start is not None:
+                m2_start  = length - 1 - m1_start
+                m2_end    = length - 1 - m1_end
+            if m2_start is not None:
+                m1_start  = length - 1 - m2_start
+                m1_end    = length - 1 - m2_end
+            seq_start = length - 1 - seq_start
+            seq_end   = length - 1 - seq_end
+            seq       = seq[::-1]
+            old_m2_seq = m2_seq
+            if m1_seq:
+                m2_seq = m1_seq[::-1]
+            if m2_seq:
+                m1_seq = old_m2_seq[::-1]
+        #now we can return
+        res = {}
+        res['mask1'] = {}
+        res['seq']   = {}
+        res['mask2'] = {}
+        res['mask1']['start'] = m1_start
+        res['mask1']['end']   = m1_end
+        res['mask1']['seq']   = m1_seq
+        res['seq']['start']   = seq_start
+        res['seq']['end']     = seq_end
+        res['seq']['seq']     = seq
+        res['mask2']['start'] = m2_start
+        res['mask2']['end']   = m2_end
+        res['mask2']['seq']   = m2_seq
+        self._masked_comp_seq_dict_cache = res
+        return res
+
+    def _check_in_ok_region(self, index, error_in_out, error_in_mask):
+        '''It raises an error if we're in an inconvenient region.
         
-    def _masked_comp_seq_int(self, index):
+        The index is in the self coord system
+        '''
+        seq = self._masked_comp_seq_dict()
+        location = self.location
+        start = location.start
+        end   = location.end
+        if isinstance(index, slice):
+            index_start = index.start
+            index_end   = index.stop - 1
+        else:
+            index_start = index
+            index_end   = index
+        #we check if we're in a region that should raise an error
+        #are we outside the seq?
+        if (error_in_out and
+            (index_start, index_end) not in Location(start, end)):
+            raise IndexError('Sequence asked outside the region covered by seq')
+        #are we in the mask
+        if error_in_mask:
+            index_loc = Location(index_start, index_end)
+            #where does the umasked region starts and ends?
+            if seq['mask1']['start'] is not None:
+                mask_start = seq['mask1']['start'] + start
+                mask_end   = seq['mask1']['end']   + start
+                if index_loc.overlaps((mask_start, mask_end)):
+                    msg = 'The requested region covers the mask'
+                    raise IndexError(msg)
+            #where does the umasked region starts and ends?
+            if seq['mask2']['start'] is not None:
+                mask_start = seq['mask2']['start'] + start
+                mask_end   = seq['mask2']['end']   + start
+                if index_loc.overlaps((mask_start, mask_end)):
+                    msg = 'The requested region covers the mask'
+                    raise IndexError(msg)
+
+    def _masked_comp_seq(self):
+        '''It returns self.sequence masked and complemented'''
+        if self._masked_comp_seq_cache is not None:
+            return self._masked_comp_seq_cache
+        seq = self._masked_comp_seq_dict()
+
+        joined = None
+        #the mask
+        masker = self.masker
+        if seq['mask1']['start'] is not None:
+            if masker is None:
+                #the sequence unmasked
+                joined = seq['mask1']['seq'][:]
+            else:
+                joined = masker(seq['mask1']['seq'])
+        #the sequence
+        if joined is None:
+            joined = seq['seq']['seq']
+        else:
+            joined += seq['seq']['seq']
+        #the mask2
+        if seq['mask2']['start'] is not None:
+            if masker is None:
+                joined += seq['mask2']['seq']
+            else:
+                joined += masker(seq['mask2']['seq'])
+        self._masked_comp_seq_cache = joined
+        return joined
+
+    def _sequence_getitem(self, index, attr=None):
         '''A get item for int indexes function that takes into account the
         mask and the need to complement.
-        It requires an int index.
-        It takes into account if we need the complement or not.
-        '''
-        #This is the sequence that we should return, it can be
-        #self.sequence, self.sequence.seq, self.sequence.qual or whatever
-        complement = False
-        if self.location.strand == -1:
-            complement = True
-        sequence = self._sequence_property(complement)
-        #if there is no mask we just return using the seq getitem
-        if self._mask is None: 
-            return sequence.__getitem__(index)
-        #index is int
-        if index in self.mask:
-            return sequence.__getitem__(index)
-        else:
-            if self.masker is not None:
-                return self.masker(sequence.__getitem__(index))
-            else:
-                return default_masker(sequence.__getitem__(index))
-    
-    @staticmethod
-    def _masked_str(seq, unmask, masker):
-        '''It returns the LocatableSequence as a string'''
-        unmask_start = unmask.start
-        unmask_end   = unmask.end
-        tostring     = []
-        #from 0 to umask
-        if masker is not None:
-            tostring.append(masker(seq[:unmask_start]))
-        else:
-            tostring.append(' ' * unmask_start)
-        #the umasked region
-        tostring.append(seq[unmask_start:unmask_end + 1])
-        #the last masked part
-        if masker is not None:
-            tostring.append(masker(seq[unmask_end + 1:]))
-        else:
-            tostring.append(' ' * (len(seq) - unmask_end - 1))
-        return ''.join(tostring)
-    
-    def _masked_comp_seq(self):
-        '''It takes a locatable sequences and return another locatable sequence
-        but with the reverse complemented sequence'''
-        complement = False
-        if self.location.strand == -1:
-            complement = True
-            seq    = self._sequence_property(complement)
-#            seq    = str(seq)
-            seq    = seq[::-1]
-        else:
-            seq = self._sequence
-        seq = str(seq)
-        masker = self.masker
-        mask   = self.mask
-        if mask is not None:
-            if complement:
-                mask = mask[::-1]
-            return self._masked_str(seq, mask, masker)
-        else:
-            return seq
         
+        It requires an index in the coord system of self.
+        It takes into account if we need the complement or not.
+        The difference with __getitem__ is that this one returns an instance
+        like self.sequence, not a LocatableSequence
+        '''
+        #we take into account the space from 0 till the seq start
+        pseudo_seq_index = _move_index(index, -self.location.start)
+        seq = self._masked_comp_seq_dict()
+
+        if self.mask and not self.masker:
+            error_in_mask = True   #error if we're in the mask
+        else:
+            error_in_mask = False
+        error_in_out  = True    #error if we're outside the seq
+        self._check_in_ok_region(index, error_in_out, error_in_mask)
+
+        #we join the dict in one piece
+        seq =  self._masked_comp_seq()
+        #do we have to return directly from seq or from one of its attributes?
+        if attr is None:
+            seq_attr = seq
+        else:
+            seq_attr = getattr(seq, attr)
+        return seq_attr[pseudo_seq_index]
+
     def __str__(self):
         'It returns the LocatableSequence as a string'
+        #we ask for everything from o to the end of the parent
+        seq = self._masked_comp_seq_dict()
+
+        #now we get the complete sequence in str format
         location = self.location
-        seq      = self.sequence
         start    = location.start
-        end      = location.end
         parent   = location.parent
-        
+
+        tostring = []
         #the LocatableSequence has several sections
         #first part till the start
-        tostring = []
         if start > 0:
             tostring.append(' ' * start)
-        #the sequence (that could be masked in part)
-        sequence = self._masked_comp_seq()
-        #print sequence
-        tostring.append(sequence)
+        #the mask
+        masker = self.masker
+        if seq['mask1']['end'] is not None:
+            if masker is None:
+                tostring.append(' ' * len(seq['mask1']['seq']))
+            else:
+                tostring.append(str(masker(seq['mask1']['seq'])))
+        #the sequence
+        tostring.append(str(seq['seq']['seq']))
+        #the mask2
+        if seq['mask2']['start'] is not None:
+            if masker is None:
+                tostring.append(' ' * len(seq['mask2']['seq']))
+            else:
+                tostring.append(str(masker(seq['mask2']['seq'])))
         #the last part from sequence end till the parent end
         if parent is not None:
-            last_empty_spaces = len(parent) - len(seq) - start
+            if seq['mask2']['end'] is not None:
+                seq_end = seq['mask2']['end']
+            else:
+                seq_end = seq['seq']['end']
+            last_empty_spaces = len(parent) - seq_end - start - 1
             if last_empty_spaces:
                 tostring.append(' ' * last_empty_spaces)
-        
-        return ''.join(tostring)
+        seq_str = ''.join(tostring)
+
+        return seq_str
 
     def __repr__(self):
         ''' It writes'''
@@ -680,8 +829,8 @@ class LocatableSequence(object):
             #we're outside the sequence, by default we raise an IndexError
             return empty_region_seq_builder()
         #do we return an item?
-        if isinstance(seq_index, int):
-            return self._masked_comp_seq_int(seq_index)
+        if isinstance(index, int):
+            return self._sequence_getitem(index)
         #or we return a new LocatableSeq?
         else:
             #we do not support step slices different than None, 1 or -1
@@ -733,6 +882,16 @@ class LocatableSequence(object):
                               masker=self.masker)
 
     empty_region_seq_builder = raise_error_outside_limits
+
+    def __getattr__(self, attrname):
+        '''It returns the attrs of the located sequence.'''
+        #there are two kinds of attributes, the ones that should be returned
+        #straight from self.sequence like name and the ones that should take
+        #into account the different indexing between self and self.sequence and
+        #the reverse, complement and masking like seq and qual
+        #those attrs that have to change the index are not handle by this
+        #method
+        return getattr(self.sequence, attrname)
 
 def _reparent_location(location, parent):
     '''Given a Location it returns a new Location with the given parent.
@@ -1178,7 +1337,7 @@ class Location(object):
         
         if start1 < start2 and end1 < start2:
             return None
-        elif start1 > end2 and end1> end2:
+        elif start1 > end2 and end1 > end2:
             return None
         else:
             if start1 > start2:
@@ -1268,7 +1427,6 @@ class NonStaticParentLocation(Location):
         return self.__class__(start=self.start, end=self.end,
                               strand=new_strand, forward=self.forward)
 
-          
 def slice_to_range(index, length):
     '''Given a slice and the length of the sequence it returns a range.'''
     try:

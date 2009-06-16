@@ -50,8 +50,9 @@ class SeqWithQuality(object):
     '''A simple seq with Quality class to do some tests.'''
     # pylint: disable-msg=R0903
     #We know that there are too few public methods, we don't need more
-    def __init__(self, seq, qual):
+    def __init__(self, seq, qual, name=None):
         '''The init requieres a sequence and a quality.'''
+        self.name = name
         self.seq = seq
         if not isinstance(qual, list):
             self.qual = [qual]

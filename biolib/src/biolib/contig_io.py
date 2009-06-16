@@ -1,11 +1,4 @@
-'''
-Library to parse different alignmen container files:
-Caf parser
-ace parser
-
-It allow to parse these file format and put the information into
- our contig class
-'''
+'Module to write out and to read in Contigs (alignments)'
 
 from re import match
 from biolib.contig import Contig, locate_sequence
@@ -17,6 +10,16 @@ def get_parser(fhand, format):
     available_parsers = {'caf': CafParser, 'ace': AceParser}
     parser = available_parsers[format](fhand)
     return parser
+
+def write(alignments, fhand, format):
+    'It writes the given alignments in the given file with the given format'
+    available_writers = {'cigar': write_cigar}
+    return available_writers[format](alignments, fhand)
+
+def write_cigar(alignments, fhand):
+    'It writes the given aligmenments in cigar format in the given file'
+    for alignment in alignments:
+        fhand.write('cigar\n')
 
 def _build_contig_from_dict(reads):
     'Given a dict with the contig info it returns a Contig'

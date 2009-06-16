@@ -153,5 +153,15 @@ class AceTest(unittest.TestCase):
                 if read.sequence.name == 'E3MFGYR02JMR2C':
                     assert str(read[41:51]) == 'TTA-CGGCCG'
 
+class CigarTest(unittest.TestCase):
+    'Write and read cigar.'
+    seq1 = 'AAGCTCANCTTGGACCACCGACTCTCGANTGNNTCGCCGCGGGAGCCGGNTGGANAACCT'
+    seq1 = SeqWithQuality(seq1, name='hs989235.cds')
+    seq1 = locate_sequence(seq1, location=6)
+    seq2 = 'AAGCTCATCTTGG-CCACCGACTCTCGCTTGCGCCGCCGCGGGAGCCGG-TGGA-AACCT'
+    seq2 = SeqWithQuality(seq2, name='hsnfg9.embl')
+    seq2 = locate_sequence(seq2, location=25690)
+
+
 if __name__ == "__main__":
     unittest.main()
