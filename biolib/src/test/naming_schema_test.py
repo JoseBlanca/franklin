@@ -6,7 +6,6 @@ import os.path
 from StringIO import StringIO
 import biolib
 from biolib.naming_schema import (change_names_in_files,
-                                  create_names_for_contigs,
                                   create_naming_database, DbNamingSchema,
                                   FileNamingSchema,
                                   add_project_to_naming_database)
@@ -100,22 +99,6 @@ library_definition
     properties: SO:222, SO:3456
 ''')
 }
-
-class NamingSchema(object):
-    'A mock Naming schema class'
-    #pylint: disable-msg=W0613
-    #pylint: disable-msg=R0903
-    def __init__(self, **kwargs):
-        '''It won't matter what you pass it will always return 001, 002, etc.'''
-        self._current = '000'
-    def get_uniquename(self, name, kind):
-        '''An alias for get_next_name.'''
-        number =  str(int(self._current) + 1).rjust(3, '0')
-        self._current = number
-        return kind + number
-    def commit_last_name(self):
-        'The pega'
-        pass
 
 class DbNamingSchemaTest(unittest.TestCase):
     'We test the behaviour of a naming schema stored in a naming database'

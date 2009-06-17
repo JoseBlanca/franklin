@@ -138,7 +138,7 @@ class DbNamingSchema(object):
     def _get_type_code(kind):
         'It returns the two letter code for the feature kind.'
         type_code = {'SO:0000345': 'ES', 'transcribed_cluster':'TC',
-                     'EST':'ES'}
+                     'EST':'ES', 'library':'lc'}
         if kind not in type_code:
             raise ValueError('No code to the feature kind: ' + kind)
         return type_code[kind]
@@ -300,46 +300,6 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
         for regex in regex_list:
             line = re.sub(regex['re'], regex['function'], line)
         fhand_out.write(line)
-
-def create_names_for_contigs(fhand, file_kind, naming):
-    '''Given a file it creates the new names to substitute the names found
-    in the file.
-    
-    It can support several file kinds, like caf or ace.
-    It also requires a naming schema that gives new names for every old name.
-    The naming schema should be a dict with several naming_schemas as values and
-    the sequence types like contig and est as values.
-    '''
-    if file_kind == 'caf':
-        contig_parser = CafParser(fhand)
-    elif file_kind == 'ace':
-        contig_parser = AceParser(fhand)
-    else:
-        raise ValueError('Unsupported file type: ' + file_kind)
-
-    #the naming should be a dict with names for the contigs and ests.
-    if 'contig' not in naming or 'read' not in naming:
-        raise ValueError('Naming for the contig and read should be provided')
-
-    names = {}
-    for contig in contig_parser.contig_names():
-        names[contig] = naming['contig'][contig]
-    for read in contig_parser.read_names():
-        names[read] = naming['read'][read]
-    return names
-
-def _get_parser_for_file(fhand, file_kind):
-    'It returns a parser depending on the file kind'
-    if file_kind == 'ace':
-        return AceParser(fhand)
-    elif file_kind =='caf':
-        return CafParser(fhand)
-    else:
-        return _GeneralNameParser(fhand, file_kind)
-    
-
-
-
 
 #pylint: disable-msg=R0903
 class _GeneralNameParser(object):
