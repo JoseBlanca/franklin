@@ -1,13 +1,15 @@
 'It gives unique names for the features in the databases'
 
+import sqlalchemy, re
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
 from biolib.contig_io import CafParser, AceParser
-import re, os
+from biolib.chado import setup_mapping
 
-def _create_naming_database(db_connection):
+def create_naming_database(engine):
     'It creates a new empty database to hold the naming schema status'
     #the table definition
-    metadata = db_connection.metadata
+    metadata = sqlalchemy.MetaData()
+    metadata.bind = engine
     Table('last_names', metadata,
          Column('id', Integer, primary_key=True),
          Column('project_id', String(50), ForeignKey("projects.id"),
@@ -22,8 +24,33 @@ def _create_naming_database(db_connection):
          Column('code', String(2), unique=True, nullable=False),
          Column('description', String(300))
     )
-    engine = db_connection.engine
     metadata.create_all(engine)
+
+def _setup_naming_database_mapping(engine):
+    'It creates the orm mapping form the naming db'
+    mapping_definitions = [
+                    {'name':'projects'},
+                    {'name':'last_names',
+                     'relations':{'project_id':{'kind':'one2many',
+                                                'rel_attr':'project'}}},
+                    ]
+    return setup_mapping(engine, mapping_definitions)
+    
+
+def add_project_to_naming_database(engine, name, code, description=None):
+    'It adds a new project to the naming database'
+    #the mapping
+    #pylint: disable-msg=W0612
+    table_classes, row_classes = _setup_naming_database_mapping(engine)
+    session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
+    session = session_klass()
+    project = row_classes['projects']()
+    project.short_name = name
+    project.code       = code
+    if description is not None:
+        project.description = description
+    session.add(project)
+    session.commit()
 
 class _CodeGenerator(object):
     '''This class gives the next code, giving the last one'''
@@ -75,25 +102,28 @@ class _CodeGenerator(object):
         else:
             return letter[:-1] + self._next_letter(letter[-1])
 
-class NamingSchema(object):
+class DbNamingSchema(object):
     'This class gives unique names for the objects in the databases'
-    def __init__(self, project, feature_kind, db_connection):
+    def __init__(self, engine, project):
         '''It inits the NamingSchema.
 
+        engine is a sqlalchemy engine db.
         project is the name of the project. Independent names will be created
         for each project.
-        feature_kind is the type of object that we want to name,
-        like EST or Bacend. It should be one SO term.
-        db_connection is a DbConnection instance to the database in which the
-        naming schema is stored.
         '''
-        self._project = project
-        self._kind_so = self._get_so_term(feature_kind)
-        self._conn = db_connection
-        self._code_gen = None
-        self._type_code = None  #two letter feature type code
-        self._proj_code = None  #two letter project code
-        self._curr_code = None  #the last code given
+        #the session
+        session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
+        self._session = session_klass()
+        
+        self._code_generators = {}
+        self._curr_code = {}  #the last code given for every feature kind
+        #pylint: disable-msg=W0612
+        table_classes, self._row_classes = \
+                                    _setup_naming_database_mapping(engine)
+        #the project instance
+        project_klass = self._row_classes['projects']
+        self._project = \
+         self._session.query(project_klass).filter_by(short_name=project).one() 
 
     @staticmethod
     def _get_so_term(feature_kind):
@@ -104,146 +134,121 @@ class NamingSchema(object):
             raise ValueError('Unkown feature_kind, please use so')
         return so_terms[feature_kind]
 
-    def _get_type_code(self):
+    @staticmethod
+    def _get_type_code(kind):
         'It returns the two letter code for the feature kind.'
-        type_code = {'SO:0000345': 'ES', 'transcribed_cluster':'UN'}
-        kind = self._kind_so
-        if not kind in type_code:
+        type_code = {'SO:0000345': 'ES', 'transcribed_cluster':'TC',
+                     'EST':'ES'}
+        if kind not in type_code:
             raise ValueError('No code to the feature kind: ' + kind)
         return type_code[kind]
 
-    def _init_code_gen(self):
-        'It looks for the last name yielded and it starts the code generator'
-        if self._code_gen is not None:
-            #already initialized
-            return
-        #let's look in the database for the last name
-        #this is the first name asked we need the last name stored in the
-        #database
-        #if there is a name previous name in the database we have a seed
-        last_db_name = self._get_last_name_in_db()
-        #the kind and project codes from the database for this project and type
-        type_code = self._get_type_code()
-        proj_code = self._conn.get_id('projects', {'short_name':self._project},
-                                      'code')
-        #if there is a seed the project and type codes should match
-        if last_db_name is not None:
-            seed_proj_code = last_db_name[:2]
-            if seed_proj_code != proj_code:
-                msg = 'No match in project codes in database and script: '
-                msg += proj_code + ', ' + seed_proj_code
-                raise RuntimeError(msg)
-            seed_type_code = last_db_name[2:4]
-            if seed_type_code != type_code:
-                msg = 'No match in type codes in database and script: '
-                msg += type_code + ', ' + seed_type_code
-                raise RuntimeError(msg)
-        else:
-            #this is the first time ever, we start a new one
-            last_db_name = proj_code + type_code + '0' * 6
-        self._type_code = type_code
-        self._proj_code = proj_code
-        self._curr_code = last_db_name
-        self._code_gen = _CodeGenerator(last_db_name[4:])
+    def _get_code_generator(self, kind):
+        'It returns a code generator for the given object kind'
+        if kind in self._code_generators:
+            return self._code_generators[kind]
+        #which was the last name given for this kind of feature
+        names_klass = self._row_classes['last_names']
+        try:
+            last_name = \
+             self._session.query(names_klass).filter_by(project=self._project,
+                                                       feature_type=kind).one()
+            last_name = last_name.last_name
+        except sqlalchemy.orm.exc.NoResultFound:
+            #it's the first time we're using this type in this database
+            #we add one row to the last_name table
+            last_name = self._project.code + self._get_type_code(kind) +\
+                                                                       '000000'
+            self._session.add(names_klass(project=self._project,
+                                          feature_type=kind,
+                                          last_name=last_name))
+        code_gen = _CodeGenerator(last_name[4:])
+        self._code_generators[kind] = code_gen
+        return code_gen
 
-    def get_next_name(self):
+    def get_uniquename(self, kind, name=None):
         'It returns the valid name for the next feature in the project'
-        code_gen = self._code_gen
-        if code_gen is None:
-            #the first time we ask for a name we have to init the last current
-            #name
-            self._init_code_gen()
-            code_gen = self._code_gen
+        #pylint: disable-msg=W0613
+        code_gen = self._get_code_generator(kind)
 
         #now we want the next number
         num_next = code_gen.next()
-        next_code = self._proj_code + self._type_code + num_next
-        self._curr_code = next_code
+        next_code = self._project.code + self._get_type_code(kind) + num_next
+        self._curr_code[kind] = next_code
         return next_code
 
-    def __getitem__(self, name):
-        '''An alias for get_next_name.
-        
-        It returns the next name available. The given name won't be taken into
-        account. This method is here to do a compatible interface with the
-        CachedNamingSchema.
-        '''
-        return self.get_next_name()
-
-    def _get_last_name_in_db(self):
-        '''It returns the last name for the given feature'''
-        project_id = self._conn.get_id('projects', {'short_name':self._project})
-        #is there a previous name for the given feature_kind?
-        where = {'project_id': project_id, 'feature_type':self._kind_so}
-        try:
-            last_name = self._conn.get_id('last_names', where=where,
-                                                             column='last_name')
-        except ValueError:
-            last_name = None
-        return last_name
-
-    def insert_project(self, code, description=None):
-        'It creates a new project'
-        values = {'short_name':self._project, 'code':code}
-        if description is not None:
-            values['description'] = description
-        project_id = self._conn.insert('projects', values)
-        if not project_id:
-            raise ValueError('There was a problem inserting the project')
-
-    def commit_last_name(self):
+    def commit(self):
         '''It stores the current code in the database.
         
         The next time that someone ask for a code to the database, this one
         will be used as seed.
         '''
-        current = self._curr_code  #the last code given
-        project_id = self._conn.get_id('projects', {'short_name':self._project})
-        feature_type = self._kind_so
-        table = self._conn.get_table('last_names')
-        try:
-            #is there already a last name stored for this project and feature?
-            name_id = self._conn.get_id(table, where={'project_id':project_id,
-                                    'feature_type':feature_type})
-            #so we update it
-            update = table.update().where(table.c.id == name_id).values(
-                                                            last_name=current)
-            update = table.update().values(last_name=current)
-            res = self._conn.connection.execute(update)
-            res.close()
-        except ValueError:
-            #there is no name yet, so we insert one
-            self._conn.insert(table, {'project_id':project_id,
-                                      'feature_type':feature_type,
-                                      'last_name':current})
+        names_klass = self._row_classes['last_names']
+        for kind, last_name in self._curr_code.items():
+            last_name_row = \
+             self._session.query(names_klass).filter_by(project=self._project,
+                                                       feature_type=kind).one()
+            last_name_row.last_name = last_name
+        self._session.commit()
 
-class CachedNamingSchema(object):
-    '''Given a naming schema it creates a cache of already given names.
+NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
+            'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
+            'ace'    :{'contig_names':[],
+                       'read_names'  :[]},
+            'caf'    :{'contig_names':[],
+                       'read_names'  :[]}
+          }
+class FileNamingSchema(object):
+    '''It takes a naming file and it converts to a dict '''
+    def __init__(self, fhand, naming_schema=None):
+        '''The initiator '''
+        self._fhand           = fhand
+        self._naming_schema   = naming_schema
+        self._naming_dict     = {}
+        self._new_naming_dict = {}
+        self._naming_file_to_dict()
+
+    def get_uniquename(self, name=None, kind=None):
+        '''Given a name and a it returns a uniquename''' 
+        if name in self._naming_dict or name in self._new_naming_dict:
+            try:
+                uniquename = self._naming_dict[name]
+            except KeyError:
+                uniquename = self._new_naming_dict[name]
+        elif kind is None:
+            msg = 'You must provide feature type if the name is not added'
+            raise ValueError(msg)
+        else: 
+            if self._naming_schema is None:
+                msg = 'Uncached name and no naming schema'
+                raise ValueError(msg)
+            else:
+                uniquename = self._naming_schema.get_uniquename(kind)
+            self._new_naming_dict[name] = uniquename
+        return uniquename
     
-    The interface is dict-like. There's a __getitem__ that returns a new name
-    for every given name.
-    When a name is asked for the first time it is stored at the cache and
-    after that if it's asked again the cached copy will be returned.
-    '''
-    # pylint: disable-msg=R0903
-    #no need for more public methods
-    def __init__(self, naming_schema):
-        '''Given a naming schema it returns names.
+    def commit(self):
+        '''It commits the new  '''
+        self._naming_schema.commit()
+        self._write_dict_to_file()
         
-        It keeps a cache and it uses that cache before calling the naming
-        schema.
-        '''
-        self._cache = {}
-        self._naming = naming_schema
-
-    def __getitem__(self, name):
-        'Given a name it returns a new name using the cache or naming schema.'
-        if name in self._cache:
-            return self._cache
-        new_name = self._naming.get_next_name()
-        self._cache[name] = new_name
-        return new_name
-
+    def _write_dict_to_file(self):
+        '''It writes the new uniquenames to the fhand '''
+        for name, uniquename in self._new_naming_dict.items():
+            self._fhand.write('%s:%s\n' % (name, uniquename))
+            self._new_naming_dict = {}
+        self._fhand.flush()
+    
+    def _naming_file_to_dict(self):
+        '''Giving a a file with name: uniquename translation it returns a 
+        dictionary'''
+        for line in self._fhand:
+            if not line.isspace():
+                items      = line.split(':')
+                name       = items[0].strip()
+                uniquename = items[1].strip()
+                self._naming_dict[name] = uniquename
+        
 REPLACE_RE = {
     'fasta':[(r'^(>)([^ \n]+)(.*)$', 2)],
     'caf'  :[(r'^(DNA *: *)([^ \n]+)(.*)$', 2),
@@ -334,13 +339,7 @@ def _get_parser_for_file(fhand, file_kind):
     
 
 
-NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
-            'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
-            'ace'    :{'contig_names':[],
-                       'read_names'  :[]},
-            'caf'    :{'contig_names':[],
-                       'read_names'  :[]}
-          }
+
 
 #pylint: disable-msg=R0903
 class _GeneralNameParser(object):
@@ -365,6 +364,7 @@ class _GeneralNameParser(object):
                     try:
                         name      = match_obj.groups()[0]
                         self._names[obj_kind].append(name)
+                    #pylint: disable-msg=W0704
                     except AttributeError:
                         pass
     def _setup_accesor_methods(self):
@@ -374,47 +374,3 @@ class _GeneralNameParser(object):
                 'It creates a method for each kind'
                 return self._names[obj_kind]
             setattr(self, obj_kind, accessor)
-    
-def generate_naming_file(fhand, naming_schemas, file_type):
-    '''It generates the naming file if it does not exists
-    Naming_schemas is a dict: key   = feture type
-                              value = NamingSchema for this feature type'''
-    # Check if the naming schemas provided are the good ones
-    for naming_type in NAMES_RE[file_type]:
-        if naming_type not in naming_schemas.keys():
-            msg = "Provided naming_schema name should be one of this:%s" % \
-                                                str(NAMES_RE[file_type].keys())
-            raise ValueError(msg)
-                              
-    
-    fname_naming =  fhand.name + '.naming'
-    name_dict = {}
-    #  If the naming file exists it only appends new names found in the original
-    # file
-    if os.path.exists(fname_naming):
-        fhand_out = open(fname_naming, 'a+')
-        for line in fhand_out:
-            file_name  = line.split(':')[0].strip()
-            uniquename = line.split(':')[1].strip()
-            name_dict[file_name] = uniquename
-    else:
-        fhand_out = open(fname_naming, 'w')
-    
-    # Here we use a parser depending of the file type and we get the naming for
-    # each name type
-    parser = _get_parser_for_file(fhand, file_type)
-    name_warehouse = {}
-    for  naming_type in NAMES_RE[file_type]:
-        naming_method = getattr(parser, naming_type)
-        name_warehouse[naming_type] = naming_method()
-    # Once we have the names we have to write into the file, but looking if 
-    # the file already exists
-    for naming_type, names in name_warehouse.items():
-        for name in names:
-            if name not in name_dict:
-                uniquename = naming_schemas[naming_type].get_next_name()
-                fhand_out.write('%s:%s\n' % (name, uniquename))
-    fhand_out.close()
-
-    
-
