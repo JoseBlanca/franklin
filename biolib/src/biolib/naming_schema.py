@@ -2,7 +2,6 @@
 
 import sqlalchemy, re
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
-from biolib.contig_io import CafParser, AceParser
 from biolib.chado import setup_mapping
 
 def create_naming_database(engine):
