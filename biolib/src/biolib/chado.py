@@ -9,7 +9,6 @@ from sqlalchemy import create_engine, Table
 from sqlalchemy.orm import mapper, relation, sessionmaker
 from biolib.biolib_utils import call
 import csv, tempfile
-from biolib.naming_schema import NamingSchema
 
 def _get_foreign_key(table, column):
     '''It returns the table and column names pointed by the foreign key.
@@ -84,7 +83,7 @@ def _setup_table(table_name, relations, table_classes, row_classes, metadata):
         mapper(row, table,  properties=relation_schema)
     table_classes[table_name], row_classes[table_name] = table, row
 
-def setup_maping(engine, mapping_definitions):
+def setup_mapping(engine, mapping_definitions):
     '''It setups a sqlalchemy mapping for the tables we are interested.
 
     This function is a way to setup a mapping the the most standard options
@@ -151,13 +150,20 @@ class Chado(object):
                                  'type_id':{'kind':'one2many',
                                            'rel_attr':'type'}
                                 }
-                   }
+                   },
+                   {'name':'libraryprop',
+                    'relations':{'type_id':{'kind':'one2many',
+                                           'rel_attr':'type'},
+                                 'library_id':{'kind':'one2many',
+                                           'rel_attr':'library'}
+                                 }
+                    }
                    ]
     def __init__(self, engine):
         'The init requires an sqlalchemy engine.'
         self._foreign_cache = {} #a ache for the foreign_key function
         self._table_classes, self._row_classes = \
-                               setup_maping(engine, self._mapping_definitions)
+                               setup_mapping(engine, self._mapping_definitions)
         session_klass = sessionmaker(bind=engine)
         self._session = session_klass()
 
@@ -278,7 +284,9 @@ class Chado(object):
     def rollback(self):
         'It rollsback the sesssion'
         self._session.rollback()
-        
+################################################################################
+# Functions to add chado tables to a chado database   ##########################
+################################################################################
 def add_csv_to_chado(fhand, table, engine):
     '''It adds to chado rows about a given table.
 
@@ -295,7 +303,6 @@ def add_csv_to_chado(fhand, table, engine):
         raise RuntimeError('''There have been a error during inserts in table %s
          %s''' % (table, msg))
     chado.commit()
-
 def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     '''It adds a ontology to chado. 
     
@@ -316,7 +323,7 @@ def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     stdout, stderr, retcode = call(cmd)
     if retcode:
         raise RuntimeError('stag-storenode.pl: ' + stderr)
-def add_libraries(fhand, engine, project, name_schema):
+def add_libraries_to_chado(fhand, engine, naming):
     '''This function is used to add libraries to chado using a input file.
     The input file format is as follows:
         library_definition
@@ -326,34 +333,71 @@ def add_libraries(fhand, engine, project, name_schema):
             cvterms: cvname:cvtermname, cvname:cvtermname, ...
             props: cvname:cvtermname, cvname:cvtermname, ...
         /library_definition
+    The naming instance should be able to provide unique names for the
+    libraries
     '''
-    chado          = Chado(engine)
+    chado = Chado(engine)
     for parsed_library in _libraries_in_file(fhand):
         try:
-            library_attrs  = _library_to_chado_figure(parsed_library, 
-                                                      name_schema)
+            #how do we store the library?
+            library_attrs  = _library_to_chado_dict(parsed_library, naming)
+            #now we store it
             chado.get(kind = 'library', attributes=library_attrs)
+            #now for the library properties
+            libraryprops = _libraryprop_to_chado_dict(parsed_library, naming)
+            for libraryprops_attr in libraryprops:
+                chado.get(kind = 'libraryprop', attributes=libraryprops_attr)
+            #and now the cvterms 
             chado.commit()
-            name_schema.commit_last_name()
         except Exception:
             chado.rollback()
             raise     
-
-def _library_to_chado_figure(parsed_library, name_schema):
+def _library_to_chado_dict(parsed_library, naming):
     '''It converts the dictionary that returns the parser in a format that
-    our chado_insert_function understand'''
-    # First get genus, specie
-    genus, specie = parsed_library['organism'].split(' ')
-    # get Type
-    cvname, cvtermname = parsed_library['type'].split(':')
+    our chado_insert_function understand.
+    
+    The naming should provide unique names for the libraries.
+    '''
+    #Naming_schema
+    cvname     = parsed_library['cvname']
+    cvtermname = parsed_library['cvtermname']
+    genus      = parsed_library['genus']
+    specie     = parsed_library['specie']
+    uniquename = naming.get_uniquename(name=parsed_library['name'],
+                                       kind='library')
     library_attrs = {'organism_id':{'genus': genus, 'species':specie},
                      'type_id'    :{'cv_id'    :{'name':cvname},
                                     'name'     : cvtermname},
-                     'name'       : parsed_library['name'],
-                     'uniquename' : name_schema.get_next_name() }
+                     'name'       :parsed_library['name'],
+                     'uniquename' :uniquename}
+
     return library_attrs
+def _libraryprop_to_chado_dict(parsed_library, naming):
+    '''It returns the chado figure to insert lilbrary properties '''
+    cvname     = parsed_library['cvname']
+    cvtermname = parsed_library['cvtermname']
+    genus      = parsed_library['genus']
+    specie     = parsed_library['specie']
     
-    
+    for property_ in parsed_library['properties']:
+        items       = property_.split(':')
+
+        cvnamep     = items[0].strip()
+        cvtermnamep = items[1].strip()
+        value       = items[2].strip()
+        uniquename  = naming.get_uniquename(name=parsed_library['name'],
+                                       kind='library')
+        libraryprop_attrs = {'library_id':{
+                               'organism_id':{'genus': genus, 'species':specie},
+                               'uniquename':uniquename,
+                               'type_id':{'cv_id':{'name':cvname}, 
+                                          'name' : cvtermname}},
+                             'type_id':{'cv_id':{'name':cvnamep},
+                                        'name' : cvtermnamep},
+                             'value' : value,
+                             'rank'  : '0'
+                            }
+        yield libraryprop_attrs
 def _libraries_in_file(fhand):
     ''' It parses the file and yields a dictionary for each  library'''
     library = {}
@@ -374,9 +418,18 @@ def _libraries_in_file(fhand):
         key = key.strip()
         values = [value.strip() for value in values.split(',')]
         #some values should be scalars not lists
-        if key in ('name', 'type', 'organism'):
+        if key == 'name':
             values = values[0]
-        library[key] = values
+        if key == 'organism':
+            genus, specie = values[0].split(' ')
+            library['genus']  = genus.strip()
+            library['specie'] = specie.strip()
+        elif key == 'type':
+            cvname, cvtermname = values[0].split(':')
+            library['cvname']     = cvname.strip()
+            library['cvtermname'] = cvtermname.strip()
+        else:
+            library[key] = values
     else:
         #the last library
         yield library

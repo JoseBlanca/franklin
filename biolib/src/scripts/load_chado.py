@@ -4,12 +4,14 @@ Created on 2009 eka 9
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.chado import add_csv_to_chado, connect_database, load_ontology
+from biolib.chado import (add_csv_to_chado, connect_database, load_ontology,
+                          add_libraries_to_chado)
 from biolib.biolib_utils import call
+from biolib.naming_schema import DbNamingSchema, FileNamingSchema
 import os
-
-NO_RELATION_TABLES = 'db, organism, cv '
-TABLES     = NO_RELATION_TABLES + ''
+NO_RELATIONAL_TABLES = 'db, organism, cv '
+RELATIONAL_TABLES  = 'library'
+TABLES     = NO_RELATIONAL_TABLES + RELATIONAL_TABLES
 ONTOLOGIES = 'cmv_internal_go_lib'
 
 
@@ -44,7 +46,6 @@ def main():
                       default='chado_pass')
     parser.add_option('-H', '--dbhost', dest='dbhost', help='chado db host',
                       default='localhost')
-    
     parser.add_option('-r', '--reload', dest='reload', 
                       help='reload from scratch')
     (options, args) = parser.parse_args()
@@ -81,7 +82,7 @@ def main():
                                host=dbhost)
     
     # Let's add info to tables
-    for table_name in NO_RELATION_TABLES.split(','):
+    for table_name in NO_RELATIONAL_TABLES.split(','):
         table_name = table_name.strip()
         if  table_name in tables:
             print "Adding data to %s table" % table_name
@@ -95,8 +96,18 @@ def main():
 #        load_ontology(fhand_ontology, dbname, dbuser, dbpass, dbhost )
 #    
     
-     
- 
+    #stuff needed to add tables with uniquenames
+    naming_engine = connect_database(dbname, username=dbuser, password=dbpass,
+                                     host=dbhost)
+    naming = DbNamingSchema(naming_engine, project=dbname)
+    # It needs some love 
+    if 'library' in tables:
+        print "Adding Libraries to chado"
+        fhand_library = open(os.path.join(directory, 'library.txt'), 'rt')
+        fhand_naming  = open(fhand_library.name + '.naming', 'a+')
+        file_naming   = FileNamingSchema(fhand_naming, naming)
+        add_libraries_to_chado(fhand_library, engine, file_naming)
+         
  
  
  

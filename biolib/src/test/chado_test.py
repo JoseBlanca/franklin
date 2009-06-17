@@ -9,9 +9,16 @@ import sqlalchemy
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey, 
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import (setup_maping, Chado, add_csv_to_chado,
-                          add_libraries)
-from test.test_naming_schema import NamingSchema
+from biolib.chado import (setup_mapping, Chado, add_csv_to_chado,
+                          add_libraries_to_chado)
+import os, biolib
+from tempfile import NamedTemporaryFile
+from biolib.naming_schema import (create_naming_database,
+                                  add_project_to_naming_database,
+                                  DbNamingSchema, FileNamingSchema)
+
+
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def create_chado_example():
     '''It creates a chado mini schema with only two tables and one relaion 
@@ -61,7 +68,16 @@ def create_chado_example():
                         Column('type_id', Integer, 
                                ForeignKey('cvterm.cvterm_id'), nullable=False),
                        UniqueConstraint('organism_id', 'uniquename', 'type_id'))
-                   
+    libraryprop_table = Table('libraryprop', metadata,
+                            Column('libraryprop_id', Integer, primary_key=True),
+                            Column('library_id', Integer, 
+                                   ForeignKey('library.library_id'),
+                                   nullable=False),
+                            Column('type_id', Integer, 
+                               ForeignKey('cvterm.cvterm_id'), nullable=False),
+                            Column('value', String),
+                            Column('rank', Integer, nullable=False ),
+                            UniqueConstraint( 'library_id', 'type_id', 'rank'))
     metadata.create_all(engine)
     return engine
 
@@ -78,7 +94,7 @@ class ChadoOrmTest(unittest.TestCase):
                                     }
                        }]
         #pylint: disable-msg=W0612
-        table_classes, row_classes = setup_maping(engine, mapping_definitions)
+        table_classes, row_classes = setup_mapping(engine, mapping_definitions)
         #pylint: disable-msg=C0103
         Db       = row_classes['db']    
         Dbxref   = row_classes['dbxref']
@@ -155,6 +171,7 @@ class ChadoOrmTest(unittest.TestCase):
             chado.get(kind='dbxref', attributes={'accession':'666',
                                                 'db_id':{'name':'hola2_db'}})
             self.fail('ValueError expected')
+            #pylint: disable-msg=W0704
         except ValueError:
             pass
 
@@ -199,18 +216,24 @@ library_definition
     type: library type:genomic
     organism: Cucumis melo
     cvterms:SO:0003, SO:0004
-    properties: SO:222, SO:3456
+    properties: property type:strain:a_fly, property type:stage:pupa
 '''
 class AddLibraryToChado(unittest.TestCase):
     'It test that we can dump a library file'
     @staticmethod
     def test_add_libraries():
         'It test that we can add a library file to chado'
-        library_fhand = StringIO(EXAMPLE_LIBRARY)
+        library_fhand = NamedTemporaryFile()
+        library_fhand.write(EXAMPLE_LIBRARY)
+        library_fhand.flush()
+        library_fhand.seek(0)
+        
         engine = create_chado_example()
         chado = Chado(engine)
         # create data necesary to add library
         chado.get(kind='cv', attributes={'name':'library type',
+                                         'definition':'a fake cv'})
+        chado.get(kind='cv', attributes={'name':'property type',
                                          'definition':'a fake cv'})
         chado.get(kind='db', attributes={'name':'hola_db',
                                          'description':'a fake database'})
@@ -218,23 +241,46 @@ class AddLibraryToChado(unittest.TestCase):
                                                'species':'melo'})
         chado.get(kind='dbxref', attributes={'accession':'001',
                                              'db_id':{'name':'hola_db'}})
+        chado.get(kind='dbxref', attributes={'accession':'002',
+                                             'db_id':{'name':'hola_db'}})
+        chado.get(kind='dbxref', attributes={'accession':'003',
+                                             'db_id':{'name':'hola_db'}})
+        chado.get(kind='dbxref', attributes={'accession':'004',
+                                             'db_id':{'name':'hola_db'}})
         chado.get(kind='cvterm', attributes={'name':'genomic',
-                                             'cv_id':{'name':'library type'},
-                                             'dbxref_id':{'accession':'001',
-                                                   'db_id':{'name':'hola_db'}}})
-        
-        
-        cvterm = chado.select_one(kind='cvterm', 
-                                  attributes={'cv_id': {'name': 'library type'},
-                                              'name' : 'genomic'} )
-        
-        name_schema = NamingSchema('project', 'lb', 'a connection')
-        add_libraries(library_fhand, engine, 'lib_proj', name_schema)
-        
+                        'cv_id':{'name':'library type'},
+                        'dbxref_id':{'accession':'001',
+                                     'db_id':{'name':'hola_db'}}})
+        chado.get(kind='cvterm', attributes={'name':'strain',
+                        'cv_id':{'name':'property type'},
+                        'dbxref_id':{'accession':'002',
+                                     'db_id':{'name':'hola_db'}}})
+        chado.get(kind='cvterm', attributes={'name':'stage',
+                        'cv_id':{'name':'property type'},
+                        'dbxref_id':{'accession':'003',
+                                     'db_id':{'name':'hola_db'}}})
+
+        chado.select_one(kind='cvterm', 
+                         attributes={'cv_id': {'name': 'library type'},
+                                     'name' : 'genomic'})
+        #the naming stuff test set up
+        fhand = NamedTemporaryFile()
+        naming_engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_naming_database(naming_engine)
+        add_project_to_naming_database(naming_engine, name='my_project',
+                                       code='my', description='a test project')
+        #the real naming stuff
+        naming = DbNamingSchema(naming_engine, project='my_project')
+        naming = FileNamingSchema(fhand, naming)
+
+        #now we add the libraries to the file
+        add_libraries_to_chado(library_fhand, engine, naming)
+
         library_ins = chado.select_one('library', {'name':'a'})
         assert library_ins
         assert library_ins.type.name == 'genomic'
         assert library_ins.name == 'a'
+        
         
 if __name__ == '__main__':
     unittest.main()
