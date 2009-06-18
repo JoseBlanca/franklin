@@ -1,7 +1,7 @@
 '''This module provides the code to represent a sequence contig.'''
 from biolib.biolib_utils import get_start_end
 import StringIO
-#from biolib import contig_io
+import biolib.contig_io
 
 #for configuration I like lowercase variables
 #pylint: disable-msg=C0103
@@ -329,7 +329,8 @@ class Contig(object):
     def format(self, format):
         'It returns an string with the contig formated with the given format'
         result = StringIO.StringIO()
-        contig_io.write([self], format, result)
+        biolib.contig_io.write(contig=self, format=format, fhand=result)
+        return result.getvalue()
 
 def locate_sequence(sequence, location=None, mask=None, masker=None,
                     strand=None, forward=True, parent=None):

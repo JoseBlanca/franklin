@@ -7,13 +7,16 @@ import unittest
 from biolib.contig_io import get_parser
 import biolib
 import os.path
-from test_utils import SeqWithQuality
+from biolib.Seqs import SeqWithQuality
+from biolib.contig import locate_sequence, Contig
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 class CafTest(unittest.TestCase):
     ''' It tests '''
     
+    #pylint: disable-msg=R0904
+    #there's not too many public methods
     @staticmethod
     def test_reads():
         ''' we check if we can take the reads from the caf file'''
@@ -63,13 +66,6 @@ class CafTest(unittest.TestCase):
         for contig in caf_parser.contigs():
             assert str(contig.consensus.sequence.seq[:10]) == 'TTCAAGCGAT'
  
-    @staticmethod
-    def xtest_long_index():
-        ''' It checks if we can open a long test'''
-        long_caf_file_name = '/home/peio/eucalyptus_out.caf'
-        long_caf_file      = CafParser(long_caf_file_name)
-        assert long_caf_file
-    
     @staticmethod
     def test_alignement_seq():
         '''It checks if we locate the reads in good coordinates'''
@@ -153,17 +149,6 @@ class AceTest(unittest.TestCase):
                     assert str(read[46:56]) == 'GGCCGGG-GC'
                 if read.sequence.name == 'E3MFGYR02JMR2C':
                     assert str(read[41:51]) == 'TTA-CGGCCG'
-
-class CigarTest(unittest.TestCase):
-    'Write and read cigar.'
-    seq1 = 'AAGCTCANCTTGGACCACCGACTCTCGANTGNNTCGCCGCGGGAGCCGGNTGGANAACCT'
-    seq1 = SeqWithQuality(seq1, name='hs989235.cds')
-    seq1 = locate_sequence(seq1, location=6)
-    seq2 = 'AAGCTCATCTTGG-CCACCGACTCTCGCTTGCGCCGCCGCGGGAGCCGG-TGGA-AACCT'
-    seq2 = SeqWithQuality(seq2, name='hsnfg9.embl')
-    seq2 = locate_sequence(seq2, location=25690)
-    contig = Contig([seq1, seq2])
-    print contig.format('cigar')
 
 
 if __name__ == "__main__":
