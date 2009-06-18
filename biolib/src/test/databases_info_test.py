@@ -3,7 +3,7 @@ Created on 2009 eka 1
 
 @author: peio
 '''
-from biolib.databases_info import DatabasesInfo
+from biolib.db.databases_info import DatabasesInfo
 import unittest
 import os
 import biolib

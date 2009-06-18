@@ -4,7 +4,7 @@ Created on 2009 api 7
 @author: peio
 '''
 from biolib.SeqVariation import seqvariations_in_alignment
-from biolib.contig_parser import CafParser, AceParser
+from biolib.contig_io import CafParser, AceParser
 from biolib.contig_cleaner import contig_strip, water_alignment_strip
 #from sys import argv 
 

@@ -4,11 +4,14 @@ Created on 2009 eka 9
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.chado import (add_csv_to_chado, connect_database, load_ontology,
-                          add_libraries_to_chado)
+from biolib.db.chado import (add_csv_to_chado, load_ontology,
+                             add_libraries_to_chado)
+from biolib.db.db_utils import  connect_database
 from biolib.biolib_utils import call
-from biolib.naming_schema import DbNamingSchema, FileNamingSchema
+from biolib.db.naming import DbNamingSchema, FileNamingSchema
 import os
+
+
 NO_RELATIONAL_TABLES = 'db, organism, cv '
 RELATIONAL_TABLES  = 'library'
 TABLES     = NO_RELATIONAL_TABLES + RELATIONAL_TABLES

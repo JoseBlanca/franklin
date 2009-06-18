@@ -9,11 +9,11 @@ import sqlalchemy
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey, 
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
-from biolib.chado import (setup_mapping, Chado, add_csv_to_chado,
+from biolib.db.chado import (setup_mapping, Chado, add_csv_to_chado,
                           add_libraries_to_chado)
 import os, biolib
 from tempfile import NamedTemporaryFile
-from biolib.naming_schema import (create_naming_database,
+from biolib.db.naming import (create_naming_database,
                                   add_project_to_naming_database,
                                   DbNamingSchema, FileNamingSchema)
 

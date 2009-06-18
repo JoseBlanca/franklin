@@ -1,7 +1,7 @@
 'Module to write out and to read in Contigs (alignments)'
 
 from re import match
-from biolib.contig import Contig, locate_sequence
+from biolib.contig import Contig,  locate_sequence
 from biolib.Seqs import SeqWithQuality, Seq
 from Bio.Seq import Seq
 

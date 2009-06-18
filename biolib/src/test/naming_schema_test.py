@@ -5,10 +5,10 @@ import unittest
 import os.path
 from StringIO import StringIO
 import biolib
-from biolib.naming_schema import (change_names_in_files,
-                                  create_naming_database, DbNamingSchema,
-                                  FileNamingSchema,
-                                  add_project_to_naming_database)
+from biolib.db.naming import (change_names_in_files,
+                              create_naming_database, DbNamingSchema,
+                              FileNamingSchema,
+                              add_project_to_naming_database)
 from tempfile import NamedTemporaryFile
 import sqlalchemy
 

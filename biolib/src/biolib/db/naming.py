@@ -2,7 +2,7 @@
 
 import sqlalchemy, re
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
-from biolib.chado import setup_mapping
+from biolib.db.db_utils import setup_mapping
 
 def create_naming_database(engine):
     'It creates a new empty database to hold the naming schema status'
