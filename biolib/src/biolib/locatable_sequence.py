@@ -578,6 +578,29 @@ class LocatableSequence(object):
         #method
         return getattr(self.sequence, attrname)
 
+    def add_mask(self, mask, masker=None):
+        '''It returns a new masked LocatableSequence.
+        
+        The new mask applied to the sequence will be the intersection beteween
+        thre previous mask and the new one.
+        If a masker is given it will replace the one present in the Location.
+        '''
+        loc = self.location
+        if loc.start != 0 or not loc.forward or loc.strand == -1:
+            #for that to work the given mask should be converted to the
+            #coord system of the sequence
+            raise NotImplementedError('Remasking with location not ready yet')
+        if masker is None:
+            masker = self.masker
+        old_mask = self.mask
+        if old_mask is not None:
+            new_mask = old_mask.intersection(mask)
+        else:
+            new_mask = mask
+        return self.__class__(self.sequence, mask=new_mask, masker=masker,
+                             location=loc)
+
+
 def _reparent_location(location, parent):
     '''Given a Location it returns a new Location with the given parent.
     

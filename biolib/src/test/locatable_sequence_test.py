@@ -1196,6 +1196,16 @@ class LocatableSequenceTests(unittest.TestCase):
         assert loc_seq.seq[2:4] == 'CT'
         assert seq.qual[3] == loc_seq.qual[1]
 
+    def test_add_mask(self):
+        'It test that we can add a mask to the LocatableSequence'
+        low = lambda x: x.lower()
+        #masking a LocatableSequence without mask
+        seq = locate_sequence('ABCD').add_mask(Location(1, 2), masker=low)
+        assert str(seq) == 'aBCd'
+        #now with a previous mask
+        seq = seq.add_mask(Location(2, 2), masker=low)
+        assert str(seq) == 'abCd'
+
 def main():
     '''It runs the tests'''
     unittest.main()
