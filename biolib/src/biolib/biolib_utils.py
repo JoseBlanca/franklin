@@ -25,7 +25,6 @@ def call(cmd, env=None, stdin=None, ):
     retcode = process.returncode
     return stdout, stderr, retcode
 
-
 def fasta_str(seq, name):
     'Given a sequence it returns a string with the fasta'
     fasta_str_ = ['>']
@@ -61,7 +60,6 @@ def create_temp_fasta_files(seq1, seq2):
     fileh1 = temp_fasta_file(seq1, name1)
     fileh2 = temp_fasta_file(seq2, name2)
     return fileh1, fileh2
-
 
 def get_start_end(location):
     '''It accepts an int, Location or tuple and it returns the start, end,
@@ -209,9 +207,9 @@ def _get_xml_tail(fhand, tag):
             in_tag = False 
         
         fhand.seek(-2, 1)
-    
+ 
 def xml_itemize(fhand, tag):  
-    '''It takes a xnl file and it chunks it by the given key. It adds header if 
+    '''It takes a xml file and it chunks it by the given key. It adds header if 
     exists to each of the pieces. It is a generator'''
     fhand.seek(0, 2)
     end_file = fhand.tell()
@@ -246,3 +244,7 @@ def xml_itemize(fhand, tag):
                 in_section = False
             in_tag = False
             current_tag = []
+
+#xmap and xfilter a taken from
+#http://code.activestate.com/recipes/66448/
+
