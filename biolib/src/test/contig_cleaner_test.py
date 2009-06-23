@@ -4,7 +4,8 @@ Created on 2009 api 28
 @author: peio
 '''
 import unittest
-from biolib.contig import Contig, locate_sequence
+from biolib.contig import Contig
+from biolib.locatable_sequence import locate_sequence
 from biolib.contig_cleaner import contig_strip, water_alignment_strip
 from Bio.Seq import Seq
 class StripTest(unittest.TestCase):

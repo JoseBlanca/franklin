@@ -11,7 +11,8 @@ from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  seqvar_close_to_consensus_limit,
                                  calculate_pic,
                                  cap_enzime)
-from biolib.contig import Contig, locate_sequence, Location
+from biolib.locatable_sequence import locate_sequence, Location
+from biolib.contig import Contig
 from biolib.Seqs import SeqWithQuality
 from test.test_utils import SeqRecord
 

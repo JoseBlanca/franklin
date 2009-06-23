@@ -3,7 +3,8 @@ Created on 2009 api 27
 
 @author: peio
 '''
-from biolib.contig import  Contig, Location
+from biolib.contig import  Contig
+from biolib.locatable_sequence import Location
 from biolib.pairwise_alignment import water
 
 def contig_strip(contig, strip_number=None):

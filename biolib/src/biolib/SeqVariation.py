@@ -3,7 +3,8 @@ Created on 2009 mar 25
 
 @author: peio
 '''
-from biolib.contig import NonStaticParentLocation, Contig, slice_to_range
+from biolib.contig import Contig, slice_to_range
+from biolib.locatable_sequence import NonStaticParentLocation
 from biolib.biolib_utils import call, temp_fasta_file, get_start_end
 
 class _SeqVarConf(object):

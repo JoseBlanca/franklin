@@ -99,7 +99,7 @@ class BlastSummaries2gff3Tests(unittest.TestCase):
         fname = '/home/peio/work_in/blast2go/SGN-U576037-Alignment.xml'
         summaries = BlastSummaries(open(fname,'r'))
         for summarie in summaries:
-            print summarie_to_gff3(summarie, 'cluster', query_db="SGD", 
+            assert summarie_to_gff3(summarie, 'cluster', query_db="SGD", 
                                    query_regex="SGN-(\w+)", 
                                    subject_regex="gi\|(\w+)*", subject_db ="GB")
          
