@@ -7,10 +7,12 @@ can also return None if no sequence is left after the filtering process.
 '''
 
 from itertools import imap
+from StringIO  import StringIO
+import os, tempfile
+
 from biolib.biolib_utils import call, temp_fasta_file
 from biolib.blast_summary import BlastSummary
 from Bio.Blast import NCBIXML
-from StringIO import StringIO
 
 def ifiltering_map(func, *iterators):
     """Version of imap that only yield the True items."""
@@ -90,3 +92,110 @@ def create_blast_filter(expect, database, program, keep_better_hits=True,
             result = not result
         return result
     return blast_filter
+
+SSAHA2_OPTIONS = {'adaptors':{'builder': ['-kmer', '6'],
+                              'ssaha': ['-seeds', '2', '-score', '15',
+                                        '-sense', '1', '-cmatch', '10',
+                                        '-ckmer', '6', '-identity', '90',
+                                        '-depth', '5', '-cut', '999999999',
+                                        '-memory', '500']}
+                 }
+
+class SsahaRunner(object):
+    'It creates a ssaha2 runner.'
+
+    def __init__(self, subject, options=None):
+        '''The init
+
+        The subject can be a string or a file with fasta sequences, do not use
+        StringIO. It  will be hashed using ssaha2Build.
+        The options should be a dict with two list of parameters one the hash
+        table builder and other for ssaha itself.
+        Other way to give the options is a string with the name of a
+        precompiled option like 'adaptors'.
+        '''
+        #the options
+        if options is None:
+            options = {'builder':[], 'ssaha':[]}
+        if not isinstance(options, dict):
+            #it should be a string
+            if options in SSAHA2_OPTIONS:
+                options = SSAHA2_OPTIONS[options]
+            else:
+                raise ValueError('No precompiled options for options: ' +
+                                 options)
+        self._options = options
+        self._base_hash_file = None
+        self._create_hash_file(subject)
+
+    def _create_hash_file(self, subject):
+        '''It creates a hash file using ssaha2Build.
+        
+        It requires a subject with a fileh to a fasta file or a string with
+        the fasta sequences.
+        '''
+        if 'name' not in dir(subject):
+            #subject is not a file, we have to create one
+            tempf = tempfile.NamedTemporaryFile(prefix='subject_seq',
+                                                suffix='.fasta')
+            tempf.write(subject)
+            tempf.flush()
+            subject = tempf
+        #now we can create the hash table
+        hash_file = tempfile.NamedTemporaryFile()
+        cmd = ['ssaha2Build']
+        #the options
+        cmd.extend(self._options['builder'])
+        cmd.extend(['-save', hash_file.name, subject.name])
+        print ' '.join(cmd)
+        #pylint: disable-msg=W0612
+        stdout, stderr, retcode = call(cmd)
+        #we don't need the stdout
+        if retcode:
+            raise RuntimeError('Problem running ssaha2Build: ' + stderr)
+        self._base_hash_file = hash_file
+
+    def __del__(self):
+        'We have to remove some files associated with the hash'
+        base = self._base_hash_file
+        for extension in ('head', 'body', 'name', 'base', 'size'):
+            fpath = base.name + '.' + extension
+            if os.path.exists(fpath):
+                os.remove(fpath)
+
+    def get(self, sequence):
+        'Given a sequence it returns the ssaha2 output as a string'
+        #we create the fasta file
+        fastah = temp_fasta_file(sequence)
+        #we run the ssaha2
+        cmd = ['ssaha2']
+        #the options
+        cmd.extend(self._options['ssaha'])
+        #the hash table
+        cmd.append('-save')
+        cmd.append(self._base_hash_file.name)
+        #the query file
+        cmd.append(fastah.name)
+        stdout, stderr, retcode = call(cmd)
+        if retcode:
+            raise RuntimeError('Problem running ssaha2: ' + stderr + 
+                               '\ncommand was: ' + ' '.join(cmd))
+        fastah.close()
+        return stdout
+
+def create_ssaha_filter(subject, options=None):
+    '''This function factory returns a ssaha filter for sequences.
+
+    The subject can be a string or a file with fasta sequences, do not use
+    StringIO. It  will be hashed using ssaha2Build.
+    The options should be a list with parameters for ssaha or a string
+    with the name of a precompiled option like 'adaptor'.
+    '''
+    ssaha_source = SsahaRunner(subject=subject, options=options)
+
+    def ssaha_filter(sequence):
+        'Given a sequence it returns True or False depending on the ssaha'
+        #first we need the ssaha result
+        ssaha = ssaha_source.get(sequence)
+        print ssaha
+    return ssaha_filter

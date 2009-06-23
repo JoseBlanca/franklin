@@ -1,6 +1,7 @@
 'Tests for the filtering module'
 
-from biolib.seq_filters import ifiltering_map, create_blast_filter
+from biolib.seq_filters import (ifiltering_map, create_blast_filter,
+                                create_ssaha_filter)
 from biolib.Seqs import Seq
 
 from itertools import ifilter
@@ -17,8 +18,8 @@ class FilteringIteratorTest(unittest.TestCase):
 class BlastFilteringTest(unittest.TestCase):
     'It tests that we can filter out sequence using a blast result'
     @staticmethod
-    def test_ifiltering_map():
-        'It test both combined'
+    def test_blast_filtering():
+        'It test that we can filter using blast'
         #a random sequence
         seq1 = Seq('AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT')
         #an arabidopsis cdna sequence
@@ -34,6 +35,22 @@ class BlastFilteringTest(unittest.TestCase):
                                             database='tair7_cdna',
                                             program='blastn')
         assert list(ifilter(blast_filter2, [seq1, seq2])) == [seq1]
+
+adaptors = '''>adaptor1
+AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
+>adaptor2
+AAAAATACTCTGATCGATCGGATCTAGCATGCAAA
+'''
+
+class TooManyAdaptorsTest(unittest.TestCase):
+    'It tests that we can filter out sequences that have too many adaptors'
+    @staticmethod
+    def test_ssaha2_filtering():
+        'It test that we can filter the chimeric sequences using ssaha2'
+        ssaha2_filter = create_ssaha_filter(options='adaptors',
+                                            subject=adaptors)
+        ssaha2_filter = create_ssaha_filter(subject=adaptors)
+        ssaha2_filter(Seq('TACTCTGATCGATCGGATCTAGCATGC'))
 
 
 if __name__ == "__main__":
