@@ -14,7 +14,7 @@ class IprsacnTest(unittest.TestCase):
     @staticmethod
     def test_iprscan_parse():
         '''Tests iprscan parser '''
-        fname = os.path.join(DATA_DIR, 'example.xml')
+        fname = os.path.join(DATA_DIR, 'iprscan.xml')
         fhand = open(fname, 'r')
         protein_ids = ["PRRB_MYCTU", "Q9RHD9_PSEAE", "RS16_ECOLI"]
         cont = 0
