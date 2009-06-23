@@ -128,6 +128,7 @@ class DbNamingSchema(object):
     def _get_so_term(feature_kind):
         'It returns the Sequence Ontology term  for the given feature'
         so_terms = {'EST':'SO:0000345', 'transcribed_cluster':'SO:0001457',
+                    'sa':'SO:0001059'
              }
         if not feature_kind in so_terms:
             raise ValueError('Unkown feature_kind, please use so')
@@ -137,7 +138,7 @@ class DbNamingSchema(object):
     def _get_type_code(kind):
         'It returns the two letter code for the feature kind.'
         type_code = {'SO:0000345': 'ES', 'transcribed_cluster':'TC',
-                     'EST':'ES', 'library':'lc'}
+                     'EST':'ES', 'library':'lc', 'sa':'sa'}
         if kind not in type_code:
             raise ValueError('No code to the feature kind: ' + kind)
         return type_code[kind]

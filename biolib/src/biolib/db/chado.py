@@ -5,15 +5,12 @@ Created on 2009 eka 4
 '''
 import sqlalchemy
 from sqlalchemy.orm import exc as orm_exc
-from sqlalchemy.orm import  sessionmaker
 from biolib.biolib_utils import call
-from biolib.db.db_utils import setup_mapping, get_foreign_key 
 from biolib.file_parsers import library_parser
+from biolib.db.db_utils import DbMap
 import csv, tempfile   
 
-class Chado(object):
-    'A chado orm'
-    _mapping_definitions = [
+CHADO_MAPPING_DEFINITIONS = [
                     {'name' :'db'},
                     {'name':'cv'},
                     {'name':'organism'}, 
@@ -42,131 +39,7 @@ class Chado(object):
                                  }
                     }
                    ]
-    def __init__(self, engine):
-        'The init requires an sqlalchemy engine.'
-        self._foreign_cache = {} #a ache for the foreign_key function
-        self._table_classes, self._row_classes = \
-                               setup_mapping(engine, self._mapping_definitions)
-        session_klass = sessionmaker(bind=engine)
-        self._session = session_klass()
 
-    def create(self, kind, attributes):
-        '''It creates an object of the given kind and it adds it to the chado db
-
-        kind - The object kind (e.g. database, feature)
-        attributes - a dict with the column names as keys.
-        '''
-        #which row object?
-        row_klass = self._row_classes[kind]
-
-        #now we create the object
-        row_inst = row_klass()
-        for attr, value in attributes.items():
-            setattr(row_inst, attr, value)
-        self._session.add(row_inst)
-        return row_inst
-
-    def select(self, kind, attributes=None):
-        'It returns the query with the given kind with the given attributes'
-        if attributes is None:
-            attributes = {}
-        #do any of the attributes to get an instance from a foreign key?
-        attributes = self._resolve_foreign_keys(kind, attributes)
-        #which row object?
-        row_klass = self._row_classes[kind]
-
-        #pylint: disable-msg=W0142
-        #sqlalchemy likes magic
-        return self._session.query(row_klass).filter_by(**attributes)
-
-    def select_one(self, kind, attributes):
-        'It returns one instance the given kind with the given attributes'
-        #which row object?
-        return self.select(kind, attributes).one()
-
-    def _get_foreign_key(self, table, column):
-        '''It returns the table and column name pointed by the foreign key.
-        
-        The given column should be a foreign key in the given table.
-        '''
-        cache_key = table + '%' + column
-        if cache_key in self._foreign_cache:
-            return self._foreign_cache[cache_key]
-
-        referer_table    = self._table_classes[table]
-        referer_col      = referer_table.columns[column]
-        result = get_foreign_key(referer_table, referer_col)
-
-        self._foreign_cache[cache_key] = result
-        return result
-
-    def _table_index_in_mapping(self, table):
-        'It returns the index in the mapping definitions for the given table'
-        #we can't use a dict because we need to define the tables in order
-        #some tables depend in other
-        for index, mapping in enumerate(self._mapping_definitions):
-            if table == mapping['name']:
-                return index
-
-    def _resolve_foreign_keys(self, table, attributes):
-        '''Given a table an a dict with the colnames and values it fixes all
-        the foreign keys.
-        '''
-        new_attrs = {}
-        for column, this_col_attributes in attributes.items():
-            if isinstance(this_col_attributes, dict):
-                #we have to get the instance associated with this dict?
-                #we need to know the table and pointed by the foreign key
-                #pylint: disable-msg=W0612
-                referenced_table, col = self._get_foreign_key(table, column)
-                #if we really have a foreign key in this colum (key)
-                #we ask for the instance with the value as attributes
-                if referenced_table is None:
-                    msg  = 'A dict given for a column with no foreign key -> '
-                    msg += 'table:%s column:%s dict:%s ' % \
-                            (table, column, str(this_col_attributes))
-                    raise ValueError(msg)
-                try:
-                    row_instance = self.select_one(referenced_table,
-                                           attributes=this_col_attributes)
-                    #from sqlalchemy.orm import exc as orm_exc
-                except sqlalchemy.orm.exc.NoResultFound:
-                    msg = 'Failed to select a row instance for:\n'
-                    msg += '\ttable %s \n\tattributes: %s' % \
-                                    (referenced_table, str(this_col_attributes))
-                    raise ValueError(msg)
-                #where is the table for the current kind defined in the 
-                #mapping definitions list?
-                indx = self._table_index_in_mapping(table)
-                rel_attr = \
-                self._mapping_definitions[indx]['relations'][column]['rel_attr']
-                new_attrs[rel_attr] = row_instance
-            else:
-                new_attrs[column] = this_col_attributes
-        return new_attrs
-
-    def get(self, kind, attributes):
-        '''It returns one attribute with the given attributes and kind
-        
-        If more than one row match with the unique attributes from the given
-        ones an error will be raised.
-        If some of the attributes of the non unique ones are changed they will
-        be updated.
-        '''
-        #do any of the attributes to get an instance from a foreign key?
-        attributes = self._resolve_foreign_keys(kind, attributes)
-        try:
-            return self.select_one(kind, attributes)
-        except orm_exc.NoResultFound:
-            return self.create(kind, attributes)
-
-    def commit(self):
-        'It flushes the session and commits all the changes to the database'
-        self._session.commit()
-
-    def rollback(self):
-        'It rollsback the sesssion'
-        self._session.rollback()
 ################################################################################
 # Functions to add chado tables to a chado database   ##########################
 ################################################################################
@@ -176,7 +49,7 @@ def add_csv_to_chado(fhand, table, engine):
     It needs a csv file with the field names in the first row, a table name and
     a sqlalchemy engine.
     '''
-    chado = Chado(engine)
+    chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
     try:
         for row in csv.DictReader(fhand, delimiter=','):
             chado.get(kind=table, attributes=row)
@@ -219,7 +92,7 @@ def add_libraries_to_chado(fhand, engine, naming):
     The naming instance should be able to provide unique names for the
     libraries
     '''
-    chado = Chado(engine)
+    chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
     for parsed_library in library_parser(fhand):
         try:
             #how do we store the library?
@@ -241,7 +114,6 @@ def _library_to_chado_dict(parsed_library, naming):
     
     The naming should provide unique names for the libraries.
     '''
-    #Naming_schema
     cvname     = parsed_library['cvname']
     cvtermname = parsed_library['cvtermname']
     genus      = parsed_library['genus']
@@ -262,12 +134,7 @@ def _libraryprop_to_chado_dict(parsed_library, naming):
     genus      = parsed_library['genus']
     specie     = parsed_library['specie']
     
-    for property_ in parsed_library['properties']:
-        items       = property_.split(':')
-
-        cvnamep     = items[0].strip()
-        cvtermnamep = items[1].strip()
-        value       = items[2].strip()
+    for cvnamep, cvtermnamep, value  in parsed_library['properties']:
         uniquename  = naming.get_uniquename(name=parsed_library['name'],
                                        kind='library')
         libraryprop_attrs = {'library_id':{

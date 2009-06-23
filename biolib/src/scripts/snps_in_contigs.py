@@ -5,13 +5,13 @@ Created on 2009 mai 4
 '''
 
 
-from biolib.SeqVariation import seqvariations_in_alignment, calculate_pic, \
-                                cap_enzime,  _allele_count
-from biolib.contig_parser import CafParser, AceParser
+from biolib.SeqVariation import seqvariations_in_alignment, seqvar_summary
+from biolib.contig_io import CafParser, AceParser
 from biolib.contig_cleaner import contig_strip, water_alignment_strip
-from biolib.biolib_utils import get_start_end
+
 from optparse import OptionParser
 from os.path import basename
+
 
 
 def main():
@@ -60,7 +60,7 @@ def main():
     soutfileh.write('#Id\tLoc_start\tLoc_end\tType\tpic\tcap\n')
     
     coutfileh = open(coutfile, 'wt')
-    coutfileh.write('#Id\tsnps in contig\t%snps in contig\n')
+    coutfileh.write('format-version:1\n')
     for contig in parser.contigs():
         contig_name = contig.consensus.sequence.name
         if options.c_strip is not None:
@@ -68,26 +68,10 @@ def main():
         contig = water_alignment_strip(contig)
         print ".-Searching in contig: %s" % contig_name
         var_count = 0
+        
         for seqvar in seqvariations_in_alignment(contig):
-            sorted_alleles = seqvar.sorted_alleles()
-            second_alleles = _allele_count(sorted_alleles[1][1]) 
-            
-            kind      = seqvar.kind()
-            loc_start, loc_end = get_start_end(seqvar.location)
-            id_snp      = contig_name + '_' +  str(loc_start)
-            pik         = calculate_pic(seqvar)
-            enzymes     = cap_enzime(seqvar)
-            if enzymes is not None:
-                enzyme_list = ",".join(enzymes)
-            else:
-                enzyme_list = ''
-            toprint =  "%s\t%d\t%d\t%s\t%d\t%f\t%s\n" % (id_snp, loc_start,
-                                                            loc_end, kind, 
-                                                            second_alleles,
-                                                            pik, 
-                                                            enzyme_list)
-            print toprint.strip()
-            soutfileh.write(toprint)
+            snp_print = seqvar_summary(seqvar, contig_name)
+            soutfileh.write(snp_print)
             
             var_count += 1
         if var_count == 0:

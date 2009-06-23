@@ -169,7 +169,37 @@ class SeqVariation(object):
         #now we sort it
         return sorted(alleles,
                       lambda x, y:_allele_count(y[1]) - _allele_count(x[1]))
-
+        
+def seqvar_summary(seqvar, contig_name):
+    '''It takes a seqvar and summarizes, returning a library file like format
+     string'''
+    sorted_alleles = seqvar.sorted_alleles()
+    second_alleles = _allele_count(sorted_alleles[1][1]) 
+    
+    kind      = seqvar.kind()
+    loc_start, loc_end = get_start_end(seqvar.location)
+    id_snp      = contig_name + '_' +  str(loc_start)
+    pik         = calculate_pic(seqvar)
+#    enzymes     = cap_enzime(seqvar)
+#    if enzymes is not None:
+#        enzyme_list = ",".join(enzymes)
+#    else:
+#        enzyme_list = ''
+    
+    toprint  = "snp\n"
+    toprint += "\tname:%s\n" % id_snp
+    toprint += "\tcontig:%s\n" % contig_name
+    toprint += "\tstart:%d\n" % loc_start
+    toprint += "\tend:%d\n" % loc_end
+    toprint += "\tkind:%s\n" % kind
+    toprint += "\tannotations: pic:%f, second_allele:%d\n" % \
+                                                (pik, second_alleles)
+    alleles_toprint = ''
+    for allele, reads in seqvar.alleles.items():
+        alleles_toprint += "%s:%s" % (allele, ','.join(reads))
+    toprint += "\talleles:%s\n" % alleles_toprint
+    
+    return toprint   
 
 def _alleles_from_contig(contig):
     '''Given a contig it returns a dict with the alleles as keys and the

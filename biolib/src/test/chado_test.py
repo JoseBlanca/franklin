@@ -9,8 +9,9 @@ import sqlalchemy
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey, 
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
-from biolib.db.chado import (setup_mapping, Chado, add_csv_to_chado,
-                          add_libraries_to_chado)
+from biolib.db.chado import (add_csv_to_chado, add_libraries_to_chado,
+                             CHADO_MAPPING_DEFINITIONS)
+from biolib.db.db_utils import DbMap, setup_mapping
 import os, biolib
 from tempfile import NamedTemporaryFile
 from biolib.db.naming import (create_naming_database,
@@ -113,7 +114,7 @@ class ChadoOrmTest(unittest.TestCase):
     def test_chado_orm_helper_basic(self):
         'It test the create, select and get helper functions'
         engine = create_chado_example()
-        chado = Chado(engine)
+        chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         #######
         #create
         #######
@@ -150,7 +151,7 @@ class ChadoOrmTest(unittest.TestCase):
         the_db2 = chado.get(kind='db', attributes={'name':'hola_db'})
         assert the_db is the_db2
         chado.commit()
-        chado2 = Chado(engine)
+        chado2 = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         the_db3  = chado2.select_one(kind='db', attributes={'name':'hola_db'})
         assert the_db3.name == 'hola_db'
  
@@ -158,7 +159,7 @@ class ChadoOrmTest(unittest.TestCase):
         '''We can get instances from the session giving dicts inside the id
         columns'''
         engine = create_chado_example()
-        chado = Chado(engine)
+        chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         #one test with db and dbxref
         chado.get(kind='db', attributes={'name':'hola_db',
                                          'description':'a fake database'})
@@ -192,7 +193,7 @@ class AddCsvChadoTest(unittest.TestCase):
         add_csv_to_chado(db_fhand, table='db', engine=engine)
 
         #are they really there?
-        chado = Chado(engine)
+        chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         db_ins = chado.select_one('db', {'name':'my_db'})
         assert db_ins.description == 'some database'
 
@@ -229,7 +230,7 @@ class AddLibraryToChado(unittest.TestCase):
         library_fhand.seek(0)
         
         engine = create_chado_example()
-        chado = Chado(engine)
+        chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         # create data necesary to add library
         chado.get(kind='cv', attributes={'name':'library type',
                                          'definition':'a fake cv'})
