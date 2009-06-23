@@ -2,7 +2,7 @@
 
 from biolib.seq_filters import (ifiltering_map, create_blast_filter,
                                 create_ssaha_filter)
-from biolib.Seqs import Seq
+from biolib.seqs import Seq
 
 from itertools import ifilter
 

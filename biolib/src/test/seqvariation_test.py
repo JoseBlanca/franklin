@@ -4,7 +4,7 @@ Created on 2009 mar 25
 @author: peio
 '''
 import unittest
-from biolib.SeqVariation import (CONFIG, SeqVariation,
+from biolib.seqvariation import (CONFIG, SeqVariation,
                                  seqvariations_in_alignment,
                                  second_allele_read_times,
                                  remove_bad_quality_alleles,
@@ -13,7 +13,7 @@ from biolib.SeqVariation import (CONFIG, SeqVariation,
                                  cap_enzime)
 from biolib.locatable_sequence import locate_sequence, Location
 from biolib.contig import Contig
-from biolib.Seqs import SeqWithQuality
+from biolib.seqs import SeqWithQuality
 from test.test_utils import SeqRecord
 
 

@@ -2,7 +2,7 @@
 
 from re import match
 from biolib.contig import Contig,  locate_sequence
-from biolib.Seqs import SeqWithQuality, Seq
+from biolib.seqs import SeqWithQuality, Seq
 from Bio.Seq import Seq
 
 def get_parser(fhand, format):

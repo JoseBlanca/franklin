@@ -7,7 +7,7 @@ import unittest
 from biolib.contig_io import get_parser
 import biolib
 import os.path
-from biolib.Seqs import SeqWithQuality
+from biolib.seqs import SeqWithQuality
 from biolib.contig import locate_sequence, Contig
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

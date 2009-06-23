@@ -4,7 +4,7 @@ Created on 2009 mar 27
 @author: peio
 '''
 import unittest
-from biolib.Seqs import SeqWithQuality, Seq
+from biolib.seqs import SeqWithQuality, Seq
 
 class SeqsTest(unittest.TestCase):
     '''Tests the seq with quality class '''
