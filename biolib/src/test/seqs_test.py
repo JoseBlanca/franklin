@@ -8,6 +8,7 @@ from biolib.seqs import SeqWithQuality, Seq
 
 class SeqsTest(unittest.TestCase):
     '''Tests the seq with quality class '''
+    #pylint: disable-msg=R0904
 
     @staticmethod
     def test_seqs_string():
@@ -74,6 +75,32 @@ class SeqsTest(unittest.TestCase):
         assert seq3.qual == [2, 4 , 1, 4, 5, 6, 12, 34, 2, 4 , 1, 4, 5, \
                              6, 12, 34]
 
+    def test_empty_seq(self):
+        'EmptySeq basic behaviour'
+        seq = SeqWithQuality(length=300)
+        assert len(seq) == 300
+
+        #We can create an empty seq and add the sequence latter
+        seq = SeqWithQuality(length=4)
+        seq.seq = 'ACTG'
+
+        #we'll fail if we try to reassing
+        try:
+            seq.seq = 'ACTG'
+            self.fail('AttributeError expected')
+            #pylint: disable-msg=W0704
+        except AttributeError:
+            pass
+
+    @staticmethod
+    def test_description():
+        'A SeqWithQuality can have description and annotations'
+        desc = 'a short sequence'
+        annots = {'type':'region', 'go':['0001', '0002'], 'database':'my'}
+        seq = SeqWithQuality(seq='A', description=desc, annotations=annots)
+        assert seq.description is desc
+        assert seq.annotations is annots
+
 class SeqTest(unittest.TestCase):
     'It tests the Seq object.'
     @staticmethod
@@ -98,7 +125,6 @@ class SeqTest(unittest.TestCase):
         assert seq2 == 'AC'
         assert seq2.complement() #is still a Seq
         assert seq[::-1].complement() #is still a Seq
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

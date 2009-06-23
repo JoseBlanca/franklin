@@ -5,26 +5,32 @@ Created on 2009 mar 27
 '''
 
 class SeqWithQuality(object):
-    '''
-    This class is a container of a sequence with quality atribute
-    '''
+    'This class is a container of a sequence with quality atribute'
     #we don't need more public methods
     #pylint: disable-msg=R0903
 
-    def __init__(self, seq, qual= None, name=None):
-        '''
-        To initialice this class we need name and seq arguments.
+    def __init__(self, seq=None, qual= None, name=None, length=None,
+                description=None, annotations=None):
+        '''To initialice this class we need name and seq arguments.
+
         Arguments:
             name : Name of the secuence
             seq  : Sequence in a string, it accepts Biopython seq, 
                 that is used to complement the seq. 
             qual : Quality of the sequence, in a list object
+            length : The sequence length, useful for empty seq objects
+            annotations: A dict with the annotations that affect the sequence
+                         as a whole, not just a fragment of the sequence
+            description: an str with the sequence description
         '''
-        
+        self._length = length
         self.name = name
-        self._seq  = seq
+        self._seq = None
+        self.seq  = seq
         self._qual = None
-        self.qual  = self._set_qual(qual)
+        self.qual  = qual
+        self.description = description
+        self.annotations = annotations
      
     def __add__(self, seq2):
         '''It returns a new object with both seq and qual joined '''
@@ -46,10 +52,15 @@ class SeqWithQuality(object):
         return self.__class__(name = name, seq  = self._seq[index], \
                               qual = qual )
 
-    def __len__(self):       
+    def __len__(self):
         ''' It returns the length of the sequence'''
-        return len(self._seq)
-     
+        if self._length is not None:
+            return self._length
+        elif self._seq is not None:
+            return len(self._seq)
+        else:
+            return 0
+
     def __repr__(self):
         ''' It prints the seq in a readable'''
         sprint = 'Name : ' + self.name.__repr__() + '\n'
@@ -78,18 +89,29 @@ class SeqWithQuality(object):
     def _set_qual(self, qual):
         '''  It sets the quality of the sequence and it checks if 
         it is of the same lenght'''
-        if qual is not None:
-            if (len(qual) != len(self._seq)):
-                raise ValueError('Quality values must have the same \
-                lenght of sequence')
-            else:
-                self._qual = qual
+        if self._qual is not None:
+            raise AttributeError("Can't reset the qual attribute")
+        length = len(self)
+        if length and qual is not None and length != len(qual):
+            raise ValueError('qual should have the same length as this ' +
+                            self.__class__.__name__)
+        self._qual = qual
     qual = property(_get_qual, _set_qual)   
     
+    def _set_seq(self, seq):
+        'It sets the seq property'
+        if self._seq is not None:
+            raise AttributeError("Can't reset the seq attribute")
+        length = len(self)
+        if length and seq is not None and length != len(seq):
+            raise ValueError('seq should have the same length as this ' +
+                            self.__class__.__name__)
+        self._seq = seq
+
     def _get_seq(self):
         ''' It returns the seq of the sequence '''
         return self._seq
-    seq = property(_get_seq)
+    seq = property(_get_seq, _set_seq)
 
 class Seq(str):
     "It represents a sequence. It's basically an str with some extra methods"
