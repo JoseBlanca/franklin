@@ -5,7 +5,8 @@ import unittest
 import os, math
 import biolib
 from biolib.alignment_search_result import (BlastParser,
-                                            FilteredAlignmentResults)
+                                            FilteredAlignmentResults,
+                                            generate_score_distribution)
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -235,6 +236,42 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
+
+class AlignmentSearchSimilDistribTest(unittest.TestCase):
+    'It test that we can calculate the distribution of similarity'
+
+    @staticmethod
+    def test_scores_distribution():
+        'We can calculate scores distributions for the alinment search result'
+        #some faked test data
+        result1 = {'matches':
+                        [{'start':10, 'end':20,
+                          'scores':{'expect':0.01},
+                          'match_parts':[{'scores':{'similarity':90.0}}]
+                         },
+                         {'start':30, 'end':40,
+                          'scores':{'expect':0.01},
+                          'match_parts':[{'scores':{'similarity':80.0}}]
+                         }]}
+        result2 = {'matches':
+                        [{'start':10, 'end':20,
+                          'scores':{'expect':0.01},
+                          'match_parts':[{'scores':{'similarity':60.0}}]
+                         },
+                        {'start':10, 'end':20,
+                          'scores':{'expect':0.01},
+                          'match_parts':[{'scores':{'similarity':60.1}}]
+                         },
+                         {'start':30, 'end':40,
+                          'scores':{'expect':0.01},
+                          'match_parts':[{'scores':{'similarity':80.1}}]
+                         }]}
+        blasts = [result1, result2]
+        distrib = generate_score_distribution(results=blasts,
+                                              score_key='similarity',
+                                              nbins = 3)
+        assert distrib['distribution'] == [22, 22, 11]
+        assert distrib['bins'] == [60.0, 70.0, 80.0, 90.0]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

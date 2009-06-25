@@ -2,6 +2,8 @@
 from Bio.Blast import NCBIXML
 import re
 
+print '''This module is DEPRECATED, port the summary_to_gff3 to the new blast summary infrastructure'''
+
 class BlastSummary(object):
     '''It holds the most relevant information about a blast, query and subj ids,
     expects, similarities, etc.'''

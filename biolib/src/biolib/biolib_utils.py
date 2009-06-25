@@ -8,6 +8,7 @@ import tempfile
 from uuid import uuid4
 import os.path
 import StringIO
+import matplotlib.pyplot as plt
 
 def call(cmd, env=None, stdin=None, ):
     'It calls a command and it returns stdout, stderr and retcode'
@@ -248,3 +249,101 @@ def xml_itemize(fhand, tag):
 #xmap and xfilter a taken from
 #http://code.activestate.com/recipes/66448/
 
+def color_by_index(index, kind='str'):
+    'Given an int index it returns a color'
+    colors = [{'black'        :(0x00,0x00,0x00)},
+              {'green'        :(0x00,0x80,0x00)},
+              {'deep_sky_blue':(0x00,0xbf,0xff)},
+              {'indigo'       :(0x4b,0x00,0x82)},
+              {'maroon'       :(0x80,0x00,0x00)},
+              {'blue_violet'  :(0x8a,0x2b,0xe2)},
+              {'pale_green'   :(0x98,0xfb,0x98)},
+              {'sienna'       :(0xa0,0x52,0x22)},
+              {'medium_orchid':(0xba,0x55,0xd3)},
+              {'rosy_brown'   :(0xbc,0x8f,0x8f)},
+              {'chocolate'    :(0xd2,0x69,0x1e)},
+              {'crimson'      :(0xdc,0x14,0x3c)},
+              {'dark_salmon'  :(0xe9,0x96,0x7a)},
+              {'khaki'        :(0xf0,0xe6,0x8c)},
+              {'red'          :(0xff,0x00,0x00)},
+              {'blue'         :(0x00,0x00,0xff)},
+              {'lime'         :(0x00,0xff,0x00)},
+             ]
+    color = colors[index].values()[0]
+    #rgb str
+    if kind == 'str':
+        color = ' '.join([str(channel) for channel in list(color)])
+    elif kind == 'rgb_float':
+        color = [float(channel)/255.0 for channel in list(color)]
+    return color
+
+def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
+                 groups_for_shape=None):
+    '''It draws an scatter plot.
+    
+    x_axe and y_axe should be two lists of numbers. The names should be a list
+    of the same lenght and will be applied to every data point drawn. The
+    groups_for_shape and color should be list of the same length and will be
+    used to calculate the color. Every point that belongs to the same group
+    will be drawn with the same color.
+    '''
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+    #text labels
+    if names is not None:
+        max_x = max(x_axe)
+        min_x = min(x_axe)
+        x_text_offset = float(max_x - min_x) / 40.0
+        for name, x_value, y_value in zip(names, x_axe, y_axe):
+            axes.text(x_value + x_text_offset, y_value, name)
+
+    if names is None:
+        #all belong to the same group
+        names = (None,) * len(x_axe)
+    if groups_for_color is None:
+        #all belong to the same group
+        groups_for_color = (None,) * len(x_axe)
+    if groups_for_shape is None:
+        #all belong to the same group
+        groups_for_shape = (None,) * len(x_axe)
+    #now I want the x, y values divided by color and shape
+    scatters = {}
+    scat_indexes = []
+    for x_value, y_value, name, color, shape in zip(x_axe, y_axe, names,
+                                                    groups_for_color,
+                                                    groups_for_shape):
+        scat_index = str(color) + str(shape)
+        if scat_index not in scatters:
+            scat_indexes.append(scat_index)
+            scatters[scat_index] = {}
+            scatters[scat_index]['x'] = []
+            scatters[scat_index]['y'] = []
+            scatters[scat_index]['names'] = []
+            scatters[scat_index]['color'] = color
+            scatters[scat_index]['shape'] = shape
+        scatters[scat_index]['x'].append(x_value)
+        scatters[scat_index]['y'].append(y_value)
+        scatters[scat_index]['names'].append(name)
+    #which color every scatter should use?
+    colors = []
+    shapes = []
+    avail_shapes = ['o', 's', '^', 'd', 'p', '+', 'x', '<', '>', 'v', 'h']
+    for scat_index in scat_indexes:
+        color = scatters[scat_index]['color']
+        shape = scatters[scat_index]['shape']
+        if color not in colors:
+            colors.append(color)
+        if shape not in shapes:
+            shapes.append(shape)
+        color_index = colors.index(color)
+        shape_index = shapes.index(shape)
+        scatters[scat_index]['color'] = color_by_index(color_index,
+                                                       kind='rgb_float')
+        scatters[scat_index]['shape'] = avail_shapes[shape_index]
+
+    #now the drawing
+    for scat_index in scatters:
+        scat = scatters[scat_index]
+        axes.scatter(scat['x'], scat['y'], c=scat['color'],
+                     marker=scat['shape'], s=60)
+    plt.show()
