@@ -66,11 +66,15 @@ class SeqWithQuality(object):
         sprint = 'Name : ' + self.name.__repr__() + '\n'
         sprint += 'Seq  : ' + self._seq.__repr__()  + '\n'
         sprint += 'Quality : '
-        for qual in self._qual:
-            sprint += '%d ' % int(qual)
-        sprint += '\n'
+        quals = self._qual
+        if quals is not None:
+            for qual in quals:
+                sprint += '%d ' % int(qual)
+            sprint += '\n'
+        else:
+            sprint += 'None'
         return sprint 
-    
+
     def __str__(self):
         'It returns just the str of the seq property'
         return str(self.seq)
