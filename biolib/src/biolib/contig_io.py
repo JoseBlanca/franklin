@@ -11,6 +11,14 @@ def get_parser(fhand, format):
     parser = available_parsers[format](fhand)
     return parser
 
+def get_parser_by_name(fhand):
+    ''''Given a file returns suitable contig parser. Looking in file name'''
+    fname = fhand.name
+    if fname[-3:].lower() == 'ace':
+        return AceParser(fhand)
+    elif fname[-3:].lower() == 'caf':
+        return  CafParser(fhand)
+
 #def write(contig, fhand, format):
 #    'It writes the given alignments in the given file with the given format'
 #    available_writers = {'cigar': _write_cigar}
@@ -18,7 +26,7 @@ def get_parser(fhand, format):
 
 def _pairwise_alignments(contig):
     '''It yields all the pairwise alignments present in the contig
-    
+
     A contig is a multiple alignment.
     If there are only two sequences it will return the contig itself.
     '''
@@ -123,7 +131,7 @@ class CafParser(object):
                 yield name
 
     def _build_index(self):
-        '''It takes a caf file and after reading it it returns an index with 
+        '''It takes a caf file and after reading it it returns an index with
            section positions. We define section as the paragraph of text where
             each caf data type is represented . example:
                     DNA: name
@@ -136,11 +144,11 @@ class CafParser(object):
         sec_in = False
         fhandler = self._fhand
         while len(rawline) != 0:
-            
+
             prior_tell = fhandler.tell()
             rawline    = fhandler.readline()
             line       = rawline.strip()
-            
+
             #if match("\w*\s*:\s*\w*", line):
             mode = rawline.split(':', 1)[0].strip().lower()
             if mode in ('dna', 'basequality', 'sequence'):
@@ -151,30 +159,30 @@ class CafParser(object):
                     sec_in = True
                 else:
                     sec_in = False
-                
+
                 if mode == 'dna':
                     self._dna_index[name] = prior_tell
                 elif mode == 'basequality':
                     self._qual_index[name] = prior_tell
                 elif mode == 'sequence':
-                    self._seq_index[name] = prior_tell    
+                    self._seq_index[name] = prior_tell
 
             if sec_in:
                 if line == "Is_read":
                     self._type_index[name] = "Is_read"
-                elif line == "Is_contig": 
+                elif line == "Is_contig":
                     self._type_index[name] = "Is_contig"
-                    
+
     def contigs(self):
         '''It returns a generator that yields the contigs.'''
-        
+
         for name in self._seq_index:
             if self._type_index[name] == 'Is_contig':
                 yield self.contig(name)
-                
+
     def reads(self):
         '''It returns a generator with the reads'''
-        
+
         for seq_rec_name in self._seq_index:
             if self._type_index[seq_rec_name] == 'Is_read':
                 yield  self.read(seq_rec_name)
@@ -186,7 +194,7 @@ class CafParser(object):
         content = []
         fhandler = self._fhand
         fhandler.seek(position)
-        
+
         line = fhandler.readline()# To pass the header
         line = fhandler.readline()
         while True:
@@ -208,7 +216,7 @@ class CafParser(object):
         for line in dna_section:
             dna += line.strip()
         return dna
-  
+
     def _read_qual_section(self, sec_rec_name):
         ''' It returns the base quality list. It needs the sec_rec name.'''
         try:
@@ -216,7 +224,7 @@ class CafParser(object):
         except KeyError:
             raise ValueError('No quality for the given read')
         base_quality_section = self._return_section(base_quality_pos)
-        
+
         base_quality = []
         for line in base_quality_section:
             line          = line.strip()
@@ -233,7 +241,7 @@ class CafParser(object):
     @staticmethod
     def _get_assembled_from(line):
         ''' It reads Assembled_from line and returns 2 elements: The first is
-        the read name, and the second one is a dict with 4 keys: 
+        the read name, and the second one is a dict with 4 keys:
         c1, c2, r1, r2'''
         item         = line.split(" ")
         #pylint: disable-msg=C0103
@@ -262,10 +270,10 @@ class CafParser(object):
         mask = (r1 - 1, r2 - 1)
         forward = True
         if c1 < c2:
-            contig_start = c1 - r1 + 1  
+            contig_start = c1 - r1 + 1
         else:
             forward = False
-            contig_start = c2 - (read_length - r2) 
+            contig_start = c2 - (read_length - r2)
         #contig start
         read_info['start'] = contig_start
         read_info['mask'] = mask
@@ -275,7 +283,7 @@ class CafParser(object):
         ''' It return a dictionary with the content of the secuence section.
 
         It stores the key and the value, but there are  2 exceptions:
-        1) reads key's value is a dict with the reads. Where the key is 
+        1) reads key's value is a dict with the reads. Where the key is
         the read name and the value are a list of tuples where each tupla
         contains:
             (contig_start, contig_end, read_start,read_end)
@@ -285,7 +293,7 @@ class CafParser(object):
          tuples where each tupla contains:
             (scf_start, scf_end, read_start, read_end)
         '''
-       
+
         # variable type in this section. All of them are in array to easy use
         # of them
         seq_type = ('Is_read', 'Is_contig', 'Is_group', 'Is_assembly')
@@ -293,10 +301,10 @@ class CafParser(object):
         sec_info = {}
         reads    = {}
         scf_alignment = []
-        
+
         sequence_pos     = self._seq_index[sec_rec_name]
         sequence_section = self._return_section(sequence_pos)
-        
+
         for line in sequence_section:
             line = line.strip()
             if line in state:
@@ -313,7 +321,7 @@ class CafParser(object):
             else:
                 items = line.split(' ')
                 sec_info[items[0]] = " ".join(items[1:])
-        
+
         sec_info['name'] = sec_rec_name
         if reads:
             sec_info['reads'] = reads
@@ -323,27 +331,27 @@ class CafParser(object):
             scf_alignments[scf_file_name] = scf_alignment
             sec_info['scf_alignments'] = scf_alignments
         return sec_info
-    
+
     def read(self, name):
         '''Given a read name it returns a SeqWithQuality object'''
-        
+
         if self._type_index[name] == 'Is_read':
-            
+
             seq_info = self._read_seq_section(name)
             dna      = self._read_dna_section(name)
             quality  = self._read_qual_section(name)
-     
+
             seq_rec  = SeqWithQuality(seq=Seq(dna), name=name, qual=quality )
             seq_rec.annotations =  seq_info
             return seq_rec
         else:
             raise RuntimeError (name + 'does not corresponds to a read')
 
-    @staticmethod  
+    @staticmethod
     def _contig_start(reads):
         ''' It calculates which is the position in which the most left read
         start.
-        ''' 
+        '''
         contig_start = None
         for read in reads:
             contig_start_r = reads[read]['start']
@@ -358,7 +366,7 @@ class CafParser(object):
         'It moves the reads the given a amount of bp to the right.'
         for read in reads:
             reads[read]['start'] += amount_to_move
-    
+
     @staticmethod
     def _read_mask(read_lenght, annot_dict):
         ''' It returns the mask of the read. It gets the information using
@@ -374,7 +382,7 @@ class CafParser(object):
         mask_start = read[0]
         mask_end   = read[-1]
         return [mask_start, mask_end]
-         
+
     def contig(self, name):
         '''Given a name it returns a Contig'''
         #is the given name a contig?
@@ -440,7 +448,7 @@ class AceParser(object):
 
     def _build_index(self):
         '''It scans the ace file and it creates an index.
-        
+
         In the index the file position in which every contig starts is located.
         '''
         fileh = self._fileh
@@ -468,10 +476,10 @@ class AceParser(object):
         'It yields the read names.'
         for name in self._read_names:
             yield name
- 
+
     def _read_contig_from_file(self, position):
         '''Given a position in the file it reads the next contig.
-        
+
         The position should be the first line of a contig in the file
         It returns a dict with the sections as keys and the section contents
         as values.
@@ -527,7 +535,7 @@ class AceParser(object):
     def _fix_consensus_quality(sequence, quality):
         '''It adds a 0 to the quality list in the places where an * is found in
         the sequence.
-        
+
         If at the end quality an seq have a different length it will raise a
         RuntimeError'''
         quality = quality[:] #we copy to leave the original intact
@@ -610,7 +618,7 @@ class AceParser(object):
             #we have to replace the * with -
             dna = ''.join(items[5:])
             dna = dna.replace('*', '-')
-            reads[name]['dna'] = dna 
+            reads[name]['dna'] = dna
             #QA, quality clip
             #QA line contains two 1-based ranges. The second range represents
             #the clear range of the read, with respect to the read sequence
@@ -620,10 +628,10 @@ class AceParser(object):
             #we count from zero, so the seqs indexes are minus 1
             reads[name]['mask'] = int(items[3]) - 1, int(items[4]) - 1
 
-        #at this point the contig might start at a negative location, that's 
+        #at this point the contig might start at a negative location, that's
         #not supported by our Contig, so we move everything to the right
         self._move_contig_dict(reads, -contig_start)
-        return reads   
+        return reads
 
 
     def contig(self, name):
@@ -638,7 +646,7 @@ class AceParser(object):
         # Now we convert the info parsed to our standar dict of saving contigs
         contig_dict    = self._build_contig(contig_in_file)
         return _build_contig_from_dict(contig_dict)
-        
+
     def contigs(self):
         '''It yields all contigs.'''
         for name in self._contig_index:
