@@ -4,7 +4,7 @@ Created on 2009 mai 13
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.contig_io import get_parser_by_name
+from biolib.contig_io import contig_to_fasta
 from biolib.biolib_utils import fasta_str
 import sys
 
@@ -32,14 +32,13 @@ def main():
     else:
         contig_list = options.contig_list.split(',')
 
-    parser = get_parser_by_name(infile)
-    for contig in parser.contigs():
-        name = contig.consensus.sequence.name
-        if contig_list is  None or name in contig_list:
-            sequence = contig.consensus.sequence
-            outfile.write(fasta_str(sequence, name))
-
+    fasta = contig_to_fasta(infile, contig_list=contig_list)
+    outfile.write(fasta)
     outfile.close()
+
+
+
+
 
 if __name__ == '__main__':
     main()

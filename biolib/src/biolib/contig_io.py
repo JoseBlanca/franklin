@@ -3,7 +3,9 @@
 from re import match
 from biolib.contig import Contig,  locate_sequence
 from biolib.seqs import SeqWithQuality, Seq
+from biolib.biolib_utils import fasta_str
 from Bio.Seq import Seq
+
 
 def get_parser(fhand, format):
     'Given a file and a format it returns a suitable Contig parser'
@@ -17,6 +19,18 @@ def get_parser_by_name(fname):
         return AceParser(open(fname, 'r'))
     elif fname[-3:].lower() == 'caf':
         return  CafParser(open(fname, 'r'))
+
+def contig_to_fasta(infpath, contig_list=None):
+    '''It returns a fasta file content with the consensus sequences of a
+    caf or ace file   '''
+    fasta = ''
+    parser   = get_parser_by_name(infpath)
+    for contig in parser.contigs():
+        name = contig.consensus.sequence.name
+        if contig_list is  None or name in contig_list:
+            sequence = contig.consensus.sequence
+            fasta   += fasta_str(sequence, name)
+    return fasta
 
 #def write(contig, fhand, format):
 #    'It writes the given alignments in the given file with the given format'
