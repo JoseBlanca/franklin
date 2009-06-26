@@ -38,7 +38,6 @@ def main():
     os.chdir(directory)
     print ".-formatdb: formating blast database"
     cmd = ['formatdb', '-i', fasta_name, '-V', '-p', 'F', '-o']
-    print " ".join(cmd)
     stdout, stderr, retcode = call(cmd)
 
     print "Performing blast search"
