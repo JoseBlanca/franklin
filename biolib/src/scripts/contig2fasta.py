@@ -20,33 +20,25 @@ def main():
     if options.infile is None:
         parser.error('Script at least needs an input file (caf|ace)')
     else:
-        infile = options.infile
-
+        infile       = options.infile
     if options.outfile is None:
         outfile = sys.stdout
     else:
         outfile = options.outfile
         outfile = open(outfile, 'w')
 
-    parser = get_parser_by_name( infile)
-
     if options.contig_list is None:
         contig_list = None
     else:
         contig_list = options.contig_list.split(',')
 
+    parser = get_parser_by_name(infile)
     for contig in parser.contigs():
-        name       = contig.consensus.sequence.name
-        print_this = False
-        if contig_list is  None:
-            print_this = True
-        elif name in contig_list:
-            print_this = True
-
-        if print_this:
+        name = contig.consensus.sequence.name
+        if contig_list is  None or name in contig_list:
             sequence = contig.consensus.sequence
-            toprint  = fasta_str(sequence, name)
-            outfile.write(toprint)
+            outfile.write(fasta_str(sequence, name))
+
     outfile.close()
 
 if __name__ == '__main__':

@@ -11,13 +11,12 @@ def get_parser(fhand, format):
     parser = available_parsers[format](fhand)
     return parser
 
-def get_parser_by_name(fhand):
+def get_parser_by_name(fname):
     ''''Given a file returns suitable contig parser. Looking in file name'''
-    fname = fhand.name
     if fname[-3:].lower() == 'ace':
-        return AceParser(fhand)
+        return AceParser(open(fname, 'r'))
     elif fname[-3:].lower() == 'caf':
-        return  CafParser(fhand)
+        return  CafParser(open(fname, 'r'))
 
 #def write(contig, fhand, format):
 #    'It writes the given alignments in the given file with the given format'
