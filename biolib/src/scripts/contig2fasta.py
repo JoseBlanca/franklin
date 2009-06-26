@@ -4,7 +4,7 @@ Created on 2009 mai 13
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.contig_parser import CafParser, AceParser
+from biolib.contig_io import get_parser_by_name
 from biolib.biolib_utils import fasta_str
 import sys
 
@@ -16,27 +16,25 @@ def main():
     parser.add_option('-c', '--contigs', dest='contig_list', \
                       help='Contig list to print. Comma separated')
     options = parser.parse_args()[0]
-    
+
     if options.infile is None:
         parser.error('Script at least needs an input file (caf|ace)')
     else:
         infile = options.infile
-        
+
     if options.outfile is None:
         outfile = sys.stdout
     else:
         outfile = options.outfile
         outfile = open(outfile, 'w')
-    
-    if infile[-3:].lower() == 'ace':
-        parser = AceParser(infile)
-    elif infile[-3:].lower() == 'caf':
-        parser = CafParser(infile)
+
+    parser = get_parser_by_name( infile)
+
     if options.contig_list is None:
         contig_list = None
     else:
         contig_list = options.contig_list.split(',')
-    
+
     for contig in parser.contigs():
         name       = contig.consensus.sequence.name
         print_this = False
@@ -48,12 +46,8 @@ def main():
         if print_this:
             sequence = contig.consensus.sequence
             toprint  = fasta_str(sequence, name)
-            outfile.write(toprint) 
+            outfile.write(toprint)
     outfile.close()
-        
-    
-    
-
 
 if __name__ == '__main__':
     main()
