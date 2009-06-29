@@ -27,25 +27,27 @@ def main():
     if not os.path.exists(directory):
         os.mkdir(directory)
 
-    print "extracting consensus fastas from contig"
+    print "Extracting consensus fastas from contig"
     fasta   = contig_to_fasta(infile)
-    fasta_path = os.path.join(directory, os.path.basename(infile)[:-3] + 'fasta')
+    fasta_path = os.path.join(directory,
+                              os.path.basename(infile)[:-3] + 'fasta')
     fasta_name = os.path.basename(fasta_path)
     fasta_fhand = open(fasta_path, 'w')
     fasta_fhand.write(fasta)
     fasta_fhand.close()
 
     os.chdir(directory)
-    print ".-formatdb: formating blast database"
+    print "Formatdb: formating blast database"
     cmd = ['formatdb', '-i', fasta_name, '-V', '-p', 'F', '-o']
     stdout, stderr, retcode = call(cmd)
+    print retcode
 
     print "Performing blast search"
     cmd = ['blastall', '-p', 'blastn', '-d', fasta_name, '-i', fasta_name ,
            '-e' , '0.0001', '-n', '-b', '30', '-v', '30', '-m', '7', '-o',
            fasta_name[:-5] + 'blastout.xml' ]
     stdout, stderr, retcode = call(cmd)
-    print stdout
+    print retcode
 
 
 
