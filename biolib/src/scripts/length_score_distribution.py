@@ -1,4 +1,3 @@
-# -*- coding= UTF-8
 '''
 Created on 2009 eka 2
 

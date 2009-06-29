@@ -536,6 +536,55 @@ class FilteredAlignmentResults(object):
         #pylint: disable-msg=W0141
         result['matches'] = list(filter(filter_, result['matches']))
 
+'''
+A graphical overview of a blast result can be done counting the hits
+with a certain level of similarity. We can represent a distribution
+with similarity in the x axe and the number of hits for each
+similarity in the y axe. It would be something like.
+
+ n |
+ u |
+ m |
+   |       x
+ h |      x x
+ i |     x   x     x
+ t |    x      x  x x
+ s | xxx        xx   x
+    ----------------------
+         % similarity
+
+Looking at this distribution we get an idea about the amount of
+similarity found between the sequences used in the blast.
+
+Another posible measure between a query and a subject is the
+region that should be aligned, but it is not, the incompatible
+region.
+
+   query         -----------------
+                   XXXXX
+   subject   ----------------
+                 ++     +++++ <-incompabible regions
+
+For every query-subject pair we can calculate the similarity and the
+incompatible region. We can also draw a distribution with both
+measures. (a 3-d graph viewed from the top with different colors
+for the different amounts of hits).
+
+ % |
+ s |
+ i |       ..
+ m |
+ i |             ..
+ l |           ..
+ a |     x
+ r |      xx         ..
+ i |  
+ t | xx       xx
+ y | xx       xx
+   -----------------------
+    % incompatibility
+
+'''
 def generate_score_distribution(results, score_key, nbins=20,
                                 use_length=True,
                                 calc_incompatibility=False):
