@@ -165,7 +165,7 @@ def get_match_score(match, score_key):
         score = match['match_parts'][0]['scores'][score_key]
     return score
 
-def _merge_overlaping_match_parts(match_parts):
+def _merge_overlaping_match_parts(match_parts, min_similarity=None):
     '''Given a list of match_parts it merges the ones that overlaps
 
        hsp 1  -------        ----->    -----------
@@ -174,13 +174,62 @@ def _merge_overlaping_match_parts(match_parts):
        The modified hsps will be in hsp_mod not in hsp
        It returns the list of new match_parts
     '''
+    #DO NOT USE THIS FUNCTION, LOTS OF PATOLOGICAL CASES!!!!!!
+    #we don't use the merging of all match_parts because is very difficult
+    #to calculate the correct one
+    #what happens in a case like:
+    #    subj 1-----------78           478-------------534
+    #   query 1-----------78           31--------------78
     hsps = match_parts
-    def cmp_subj_location(hsp_limit1, hsp_limit2):
-        'It compares the subject locations'
-        return hsp_limit1['subj'] - hsp_limit2['subj']
-    
-    hsp_limits = [] #all hsp starts and ends
+    #hsp
+    hsp0 = hsps[0]
+    subject_strand = hsp0['subject_strand']
+    query_strand   = hsp0['query_strand']
+    hsp0_qe        = hsp0['query_end']
+    hsp0_se        = hsp0['subject_end']
+
+    #new hsps
+    filtered_hsps = [hsp0]
+    for hsp in hsps[1:]:
+        if min_similarity and hsp['scores']['similarity'] < min_similarity:
+            continue
+        if (hsp['subject_strand'] != subject_strand or 
+            hsp['query_strand']   != query_strand):
+            #we'll have into account only the matches with the same
+            #orientation as the first hsp
+            continue
+        #what happens in a case like:
+        #    subj 1-----------78           478-------------534
+        #   query 1-----------78           31--------------78
+        #so we only use the hsps that are in the same diagonal as the first
+        if query_strand == 1:
+            hsp_qs = hsp['query_start']
+            hsp_ss = hsp['subject_start']
+            if hsp_ss - hsp0_se != 0:
+                slope = float(hsp_qs - hsp0_qe) / float(hsp_ss - hsp0_se)
+            else:
+                slope = float(hsp['query_end'] - hsp0_qe) / \
+                        float(hsp['subject_end'] - hsp0_se)
+        else:
+            hsp_ss = hsp['subject_start']
+            if hsp0_se - hsp_ss != 0:
+                slope = float(hsp0['query_start'] - hsp['query_end']) / \
+                        float(hsp0_se - hsp_ss)
+            else:
+                slope = float(hsp0['query_start'] - hsp['query_start']) / \
+                        float(hsp['subject_end'] - hsp0_se)
+        #slope limits
+        slope_min = 0.95
+        slope_max = 1.05
+        if query_strand != subject_strand:
+            slope_min, slope_max = - slope_max, -slope_min
+        if slope >= slope_min and slope <= slope_max:
+            filtered_hsps.append(hsp)
+    hsps = filtered_hsps
+    #print 'hsps', len(hsps)
+
     #we collect all start and ends
+    hsp_limits = [] #all hsp starts and ends
     for hsp in hsps:
         hsp_limit_1 = {
             'type' : 'start',
@@ -194,8 +243,13 @@ def _merge_overlaping_match_parts(match_parts):
         }
         hsp_limits.append(hsp_limit_1)
         hsp_limits.append(hsp_limit_2)
-    #now we sort the hsp limits according their subj location
-    hsp_limits.sort(cmp_subj_location)
+
+    #now we sort the hsp limits according their query location
+    def cmp_query_location(hsp_limit1, hsp_limit2):
+        'It compares the query locations'
+        return hsp_limit1['query'] - hsp_limit2['query']
+    hsp_limits.sort(cmp_query_location)
+
     #now we creaet the merged hsps
     starts = 0
     merged_hsps = []
@@ -210,85 +264,67 @@ def _merge_overlaping_match_parts(match_parts):
             if starts == 0:
                 subj_end = hsp_limit['subj']
                 query_end = hsp_limit['query']
+                query_strand = None
                 merged_hsps.append({
                     'expect' : None,
                     'subject_start' : subj_start,
                     'subject_end' : subj_end,
+                    'subject_strand':hsp0['subject_strand'],
                     'query_start' : query_start,
                     'query_end' : query_end,
+                    'query_strand':hsp0['query_strand'],
                     'similarity' : None
                     }
                 )
     return merged_hsps
 
-def _incompatible_length(match_parts, query, subject):
-    '''It returns the incompatible length. The length of the region
-    that should be alignned but it is not.
-
-    It requires a list of match_parts, the query and the subject.
+def _compatible_incompatible_length(match, query, min_similarity=None):
+    '''It returns the compabible and incompatible length in a match
+    
+        xxxxxxx      xxxxxxxxxx      xxx incompatible
+    ------------------------------------
+               ||||||          ||||||
+        ------------------------------------------
+               ******          ******    compatible
     '''
-    first_hsp = match_parts[0]
-    #subject orientation
-    subj_orientation = first_hsp['subject_end'] - first_hsp['subject_start']
-    if subj_orientation < 1 :
-        #if sori is -1 we have a programming error. subject always is foward
-        raise ValueError('Orientation error, the query should be \
-            forward, but it not, this is a programming bug that should be \
-            fixed')
-        
-    #query orientation
-    query_orientation = first_hsp['query_end'] - first_hsp['query_start']
-    if query_orientation > 1 :
-        query_orientation = 1
-    else:
-        query_orientation = -1
-    query_len   = len(query)
-    subject_len = len(subject)
-
-    #First we add the first incompatible track
+    match_parts = _merge_overlaping_match_parts(match['match_parts'],
+                                                min_similarity)
+    #     first_incomp
+    #     xxxxxxx      xxxxxxxxxx      xxx incompatible
     #------------------------------------
     #           ||||||          ||||||
     #    ------------------------------------------
-    #    *******
-    if query_orientation == 1:
-        #ilen -> incompatible length
-        incompatible_len = first_hsp['query_start'] - 1
+    #           ******          ******    compatible
+    first_matchp = match_parts[0]
+    if first_matchp['query_strand'] == 1:
+        first_incomp = min(first_matchp['query_start'],
+                           first_matchp['subject_start'])
     else:
-        incompatible_len = query_len - first_hsp['query_start']
+        first_incomp = min(first_matchp['query_start'],
+                           len(match['subject']) - \
+                                             first_matchp['subject_end'] + 1)
 
-    last_hsp = match_parts[-1]
-    #Now we add the last incompatible track
-    #                                 --- subj_last
-    #------------------------------------
-    #           ||||||          ||||||
-    #    ------------------------------------------
-    #                                 ------------- query_last
-    #                                 *** to add
-    subj_last = subject_len - last_hsp['subject_end']
-    if query_orientation == 1:
-        query_last = query_len - last_hsp['query_end']
+    #print '1_match', first_matchp
+    last_matchp = match_parts[-1]
+    query_overlap = len(query) - last_matchp['query_end'] - 1
+    if first_matchp['query_strand'] == 1:
+        subject_overlap = len(match['subject']) - last_matchp['subject_end'] \
+                                                                           - 1
     else:
-        query_last = last_hsp['query_end'] - 1
-    if subj_last <= query_last:
-        to_add = subj_last
-    else:
-        to_add = query_last
-    incompatible_len += to_add
-    #Now we add the incompatible between hsps
-    #------------------------------------
-    #           ||||||          ||||||
-    #    ------------------------------------------
-    #                 **********  to add
-    if len(match_parts) == 1:
-        return incompatible_len  #if there is only one hsp we're done
-    to_add = 0
+        subject_overlap = last_matchp['subject_start'] 
+    last_incomp = min(query_overlap, subject_overlap)
+    
+    #the compatible length for all match_parts
+    comp_length = 0
+    for matchp in match_parts:
+        comp_length += matchp['query_end'] - matchp['query_start'] + 1
 
-    #pylint: disable-msg=W0612
-    for i, hsp in enumerate(match_parts[1:]):
-        to_add = to_add + match_parts[i+1]['subject_start'] - \
-                                        match_parts[i]['subject_end']
-    incompatible_len += to_add
-    return incompatible_len
+    #which is the incompatible regions between consecutive match parts?
+    match_incomp = last_matchp['query_end'] - first_matchp['query_start'] + \
+                                                               1 - comp_length
+    #print '1, last, match', first_incomp, last_incomp, match_incomp
+    incomp = first_incomp + last_incomp + match_incomp
+    return comp_length, incomp
 
 class FilteredAlignmentResults(object):
     '''An iterator that yield the search results with its matches filtered
@@ -458,20 +494,12 @@ class FilteredAlignmentResults(object):
                     match_parts.append(match_part)
             if not match_parts:
                 return False
-            #merge_overlaping_match_parts
-            match_parts = _merge_overlaping_match_parts(match_parts)
-
-            #are the remaining match_parts lengthier than the min?
-            length = 0
-            for match_part in match_parts:
-                length = length + match_part['subject_end'] - \
-                                          match_part['subject_start'] + 1
-            if length < min_compat:
+            #which spans are aligned and which not?
+            compat, incompat = _compatible_incompatible_length(match, query,
+                                                               min_simil)
+            if compat < min_compat:
                 return False
-            #filter matchs above incompatibility threshold
-            subject = match['subject']
-            length = _incompatible_length(match_parts, query, subject)
-            if length > max_incompat:
+            if incompat > max_incompat:
                 return False
             return True
         return filter_
@@ -509,7 +537,8 @@ class FilteredAlignmentResults(object):
         result['matches'] = list(filter(filter_, result['matches']))
 
 def generate_score_distribution(results, score_key, nbins=20,
-                                use_length=True):
+                                use_length=True,
+                                calc_incompatibility=False):
     '''Given some results it returns the cumulative match length/score
     distribution.
 
@@ -518,28 +547,54 @@ def generate_score_distribution(results, score_key, nbins=20,
         bins       -- number of steps in the distribution
         use_length -- The distributions sums hit lengths not hits
     '''
+    incompat = calc_incompatibility
     #we collect all the scores and lengths
-    scores, lengths = [], []
+    scores, lengths, incomps = [], [], []
     for result in results:
+        query = None
+        if incompat:
+            query = result['query']
         for match in result['matches']:
             score = get_match_score(match, score_key)
             length = match['end'] - match['start'] + 1
             scores.append(score)
             if use_length:
                 lengths.append(length)
+            #the incompatible region
+            if incompat:
+                subject = match['subject']
+                match_parts = \
+                           _merge_overlaping_match_parts(match['match_parts'])
+                compat, incomp = _compatible_incompatible_length(match, query)
+                #we calculate a percentage dividing by the shortest seq
+                #between query an subj
+                min_len = min(len(query), len(subject))
+                incomp_bak = incomp
+                incomp = float(incomp) / float(min_len) * 100.0
+                if incomp < 0 or incomp > 100:
+                    print 'incomp',incomp, 'match',match
+                    print 'min_len, incomp, %', min_len, incomp_bak, incomp
+                    msg = 'Bad calculation for incompatible region'
+                    raise RuntimeError(msg)
+                incomps.append(incomp)
 
     #min and max score
     min_score = min(scores)
     max_score = max(scores)
+    #min and max incomp
+    min_incomp, max_incomp = None, None
+    if incompat:
+        min_incomp = min(incomps)
+        max_incomp = max(incomps)
 
     #in which bin goes every score
-    bin_length = (max_score - min_score) / float(nbins)
-    def bin_index(score):
+    def bin_index(score, min_s, max_s, nbins):
         '''given an score, it returns the bin index to where it belogns,
         it can be None'''
-        if score < min_score or score > max_score:
+        bin_length = (max_s - min_s) / float(nbins)
+        if score < min_s or score > max_s:
             return None
-        score = score - min_score
+        score = score - min_s
         index = int(score / bin_length) - 1
         #this will happen for the min_score
         if index == -1:
@@ -549,23 +604,43 @@ def generate_score_distribution(results, score_key, nbins=20,
     #now we can calculate the score/length distribution
     #generate distribution structure
     distribution = [None] * nbins
+    for index, score_strip in enumerate(distribution):
+        distribution[index] = [None] * nbins
     for index, score in enumerate(scores):
-        score_index = bin_index(score)
-        if score_index is None:
+        score_index = bin_index(score, min_score, max_score, nbins)
+        if incompat:
+            incomp = incomps[index]
+            incompat_index = bin_index(incomp, min_incomp, max_incomp, nbins)
+        else:
+            incompat_index = 0
+        if score_index is None or incompat_index is None:
             continue
         #is this the first time in this bin?
         if use_length:
             value = lengths[index]
         else:
             value = 1
-        if distribution[score_index] is None:
-            distribution[score_index] = value
+        if distribution[score_index][incompat_index] is None:
+            distribution[score_index][incompat_index] = value
         else:
-            distribution[score_index] += value
+            distribution[score_index][incompat_index] += value
 
     #the bins where
     bins = [min_score]
+    bin_length = (max_score - min_score) / float(nbins)
     for index in range(0, nbins):
         bins.append(bins[-1] + bin_length)
-    return {'distribution':distribution, 'bins':bins}
+    if incompat:
+        bins_compat = [min_incomp]
+        bin_length = (max_incomp - min_incomp) / float(nbins)
+        for index in range(0, nbins):
+            bins_compat.append(bins_compat[-1] + bin_length)
+        return {'distribution':distribution, 'similarity_bins':bins,
+                'incompatibility_bins':bins_compat}
+    else:
+        #only one dimension is relevant
+        distrib = [None] * nbins
+        for index in range(nbins):
+            distrib[index] = distribution[index][0]
+        return {'distribution':distrib, 'bins':bins}
 
