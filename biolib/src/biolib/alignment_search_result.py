@@ -57,7 +57,7 @@ from biolib.seqs import SeqWithQuality
 from math import log10
 
 class BlastParser(object):
-    '''An iterator  blast parser that yields the blast results in a 
+    '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
     def __init__(self, fhand):
         'The init requires a file to be parser'
@@ -83,11 +83,11 @@ class BlastParser(object):
                 #name = query
                 #definition = None
         #length of query sequence
-        length     = bio_result.query_letters 
+        length     = bio_result.query_letters
         #now we can create the query sequence
         query = SeqWithQuality(name=name, description=definition,
                                length=length)
-        
+
         #now we go for the hits (matches)
         matches = []
         for alignment in bio_result.alignments:
@@ -100,7 +100,7 @@ class BlastParser(object):
                                      length=length)
             #the hsps (match parts)
             match_parts = []
-            match_start, match_end = None, None 
+            match_start, match_end = None, None
             for hsp in alignment.hsps:
                 expect         = hsp.expect
                 subject_start  = hsp.sbjct_start
@@ -147,11 +147,11 @@ class BlastParser(object):
                     match_start = query_start
                 if match_end is None or query_end > match_end:
                     match_end = query_end
-                
+
             matches.append({
                 'subject': subject,
-                'start'  : match_start,   
-                'end'    : match_end, 
+                'start'  : match_start,
+                'end'    : match_end,
                 'scores' : {'expect':match_parts[0]['scores']['expect']},
                 'match_parts' : match_parts})
         result = {'query'  : query,
@@ -165,10 +165,95 @@ class BlastParser(object):
         #structure
         our_result = self._create_result_structure(bio_result)
         return our_result
+class ExonerateParser(object):
+    'Exonerate parser'
+
+    def __init__(self, fhand):
+        'The init requires a file to be parser'
+        self._fhand = fhand
+        self._fhand.seek(0, 0)
+
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self
+
+    def _results_query_from_exonerate(self):
+        '''It takes the exonerate cigar output file and yields the result for
+        each query. The result is a list of match_parts '''
+        cigar_dict = {}
+        for line in  self._fhand:
+            if not line.startswith('cigar_like:'):
+                continue
+            items   = line.split(':', 1)[1].strip().split()
+            query_id  = items[0]
+            if query_id not in cigar_dict:
+                cigar_dict[query_id] = []
+            cigar_dict[query_id].append(items)
+        for query_id, values in cigar_dict.items():
+            print values
+            yield values
+
+    @staticmethod
+    def _create_structure_result(query_result):
+        '''It creates the result dictionary structure giving a list of
+        match_parts of a query_id '''
+        struct_dict  = {}
+        query_name   = query_result[0][0]
+        query_length = query_result[0][9]
+        query        = SeqWithQuality(name=query_name, length=query_length)
+        struct_dict['query']   = query
+        struct_dict['matches'] = []
+        for match_part_ in  query_result:
+            (query_name, query_start, query_end, query_strand, subject_name,
+            subject_start, subject_end, subject_strand, score, query_length,
+            subject_length)  = match_part_
+            # For each line , It creates a match part dict
+            match_part = {}
+            match_part['query_start']   = match_part_[1]
+            match_part['query_end']     = match_part_[2]
+            match_part['query_strand']  = match_part_[3]
+            match_part['subject_start']  = match_part_[5]
+            match_part['subject_end']    = match_part_[6]
+            match_part['subject_strand'] = match_part_[7]
+            match_part['score']         = match_part_[8]
+
+            # Chek if the match is already added to the struct. A match is
+            # defined by a list of part matches between a query and a subject
+            match = _match_exists_in_struc(subject_name, struct_dict)
+            if match:
+                if match['start'] > subject_start:
+                    match['start'] = subject_start
+                if match['end'] < subject_end:
+                    match['end']   = subject_end
+                if match['score'] < score:
+                    match['score'] = score
+                match['match_parts'].append(match_part)
+            else:
+                match = {}
+                match['subject'] = SeqWithQuality(name=subject_name,
+                                                  length=subject_length)
+                match['start']       = subject_start
+                match['end']         = subject_end
+                match['score']       = score
+                match['match_parts'] = []
+                match['match_parts'].append(match_part)
+                struct_dict['matches'].append(match)
+
+    def next(self):
+        '''It return the next exonerate hit'''
+        query_result = self._results_query_from_exonerate.next()
+        print query_result
+#        self._create_structure_result(query_result)
+
+def _match_exists_in_struc(subject_name, struct_dict):
+    for match in struct_dict['matches']:
+        if subject_name == match['subject'].name:
+            return match
+    return False
 
 def get_match_score(match, score_key):
     '''Given a match it returns its score.
-    
+
     It tries to get the score from the match, if it's not there it goes for
     the first match_part
     '''
@@ -209,7 +294,7 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
     for hsp in hsps[1:]:
         if min_similarity and hsp['scores']['similarity'] < min_similarity:
             continue
-        if (hsp['subject_strand'] != subject_strand or 
+        if (hsp['subject_strand'] != subject_strand or
             hsp['query_strand']   != query_strand):
             #we'll have into account only the matches with the same
             #orientation as the first hsp
@@ -296,7 +381,7 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
 
 def _compatible_incompatible_length(match, query, min_similarity=None):
     '''It returns the compabible and incompatible length in a match
-    
+
         xxxxxxx      xxxxxxxxxx      xxx incompatible
     ------------------------------------
                ||||||          ||||||
@@ -327,9 +412,9 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
         subject_overlap = len(match['subject']) - last_matchp['subject_end'] \
                                                                            - 1
     else:
-        subject_overlap = last_matchp['subject_start'] 
+        subject_overlap = last_matchp['subject_start']
     last_incomp = min(query_overlap, subject_overlap)
-    
+
     #the compatible length for all match_parts
     comp_length = 0
     for matchp in match_parts:
@@ -342,15 +427,17 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
     incomp = first_incomp + last_incomp + match_incomp
     return comp_length, incomp
 
+
+
 class FilteredAlignmentResults(object):
     '''An iterator that yield the search results with its matches filtered
-    
+
     It accepts a list of filters that will be applied to the alignment
     search results.
     '''
     def __init__(self, results, filters):
         '''It requires an alignment search result and a list of filters.
-        
+
         The alignment search result is a dict with the query, matches,
         etc.
         The filters list can have severel filters defined by dicts.
@@ -594,7 +681,7 @@ for the different amounts of hits).
  l |           ..
  a |     x
  r |      xx         ..
- i |  
+ i |
  t | xx       xx
  y | xx       xx
    -----------------------
