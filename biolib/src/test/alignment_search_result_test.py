@@ -525,8 +525,8 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
         #simil                 90%    
         #subject           <--------->
         #subject           ----------------------------------
-        query   = SeqWithQuality(length=21)
-        subject = SeqWithQuality(length=32)
+        query   = SeqWithQuality(length=21, name='query')
+        subject = SeqWithQuality(length=32, name='hola')
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 10,
                        'query_end'     : 20,
@@ -561,10 +561,10 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
         #simil                60%         60.1%     80.1%
         #subject           <---------><---------><--------->
         #subject  ------------------------------------------
-        query    = SeqWithQuality(length=43)
-        subject1 = SeqWithQuality(length=21)
-        subject2 = SeqWithQuality(length=32)
-        subject3 = SeqWithQuality(length=43)
+        query    = SeqWithQuality(length=43, name='query')
+        subject1 = SeqWithQuality(length=21, name='hola')
+        subject2 = SeqWithQuality(length=32, name='caracola')
+        subject3 = SeqWithQuality(length=43, name='hello')
         match_part1 = {'scores':{'similarity':60.0},
                        'query_start'   : 10,
                        'query_end'     : 20,

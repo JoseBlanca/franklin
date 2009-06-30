@@ -695,7 +695,8 @@ for the different amounts of hits).
 def generate_score_distribution(results, score_key, nbins=20,
                                 use_length=True,
                                 calc_incompatibility=False,
-                                compat_result_file = None):
+                                compat_result_file=None,
+                                filter_same_query_subject=True):
     '''Given some results it returns the cumulative match length/score
     distribution.
 
@@ -705,15 +706,21 @@ def generate_score_distribution(results, score_key, nbins=20,
         use_length -- The distributions sums hit lengths not hits
         compat_result_file -- It writes the query-subject similarity in the
                               file
+        filter_same_query_subject -- It does not take into account the
+                                     hits in which query.name and
+                                     subject.name are the same
     '''
     incompat = calc_incompatibility
     #we collect all the scores and lengths
     scores, lengths, incomps = [], [], []
     for result in results:
         query = None
-        if incompat:
-            query = result['query']
+        query = result['query']
         for match in result['matches']:
+            subject = match['subject']
+            if (filter_same_query_subject and query is not None and subject is
+                not None and query.name == subject.name):
+                continue
             score = get_match_score(match, score_key)
             length = match['end'] - match['start'] + 1
             scores.append(score)
@@ -722,7 +729,6 @@ def generate_score_distribution(results, score_key, nbins=20,
             #the incompatible region
             incomp = None
             if incompat:
-                subject = match['subject']
                 match_parts = \
                            _merge_overlaping_match_parts(match['match_parts'])
                 compat, incomp = _compatible_incompatible_length(match, query)
