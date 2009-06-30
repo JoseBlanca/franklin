@@ -27,11 +27,14 @@ def main():
     '''The main section'''
     parser = OptionParser('usage: %prog -i blast.xml', version='%prog 0.1')
     parser.add_option('-i', '--infile', dest='infile', help='blast xml')
-    msg = 'sum lengths in the distribution, not hits'
-    parser.add_option('-l', '--length', dest='use_length',
-                      action='store_false', default=True, help=msg)
+    msg = 'sum hits in the distribution, not lengths'
+    parser.add_option('-t', '--hits', dest='use_length',
+                      action='store_true', default=False, help=msg)
     parser.add_option('-c', '--incompat', dest='do_incompat',
                       action='store_true', default=False, help=msg)
+    parser.add_option('-o', '--outfile', dest='outfile', help='''query subject
+                      pairs with similarity and compatibility information''',
+                      default=None)
     (options, args) = parser.parse_args()
 
     if options.infile is None:
@@ -45,7 +48,8 @@ def main():
                                           score_key  = 'similarity',
                                           nbins      = 20,
                                           use_length = use_length,
-                                calc_incompatibility = options.do_incompat)
+                                       calc_incompatibility = options.do_incompat,
+                                 compat_result_file = open(options.outfile, 'w'))
     print('distribution -> ' + str(distrib))
     if options.do_incompat:
         #draw 3d distrib

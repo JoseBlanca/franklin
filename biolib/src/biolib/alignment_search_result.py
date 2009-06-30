@@ -603,7 +603,8 @@ for the different amounts of hits).
 '''
 def generate_score_distribution(results, score_key, nbins=20,
                                 use_length=True,
-                                calc_incompatibility=False):
+                                calc_incompatibility=False,
+                                compat_result_file = None):
     '''Given some results it returns the cumulative match length/score
     distribution.
 
@@ -611,6 +612,8 @@ def generate_score_distribution(results, score_key, nbins=20,
         score_key  -- the score kind to use (expect, similarity, etc)
         bins       -- number of steps in the distribution
         use_length -- The distributions sums hit lengths not hits
+        compat_result_file -- It writes the query-subject similarity in the
+                              file
     '''
     incompat = calc_incompatibility
     #we collect all the scores and lengths
@@ -626,6 +629,7 @@ def generate_score_distribution(results, score_key, nbins=20,
             if use_length:
                 lengths.append(length)
             #the incompatible region
+            incomp = None
             if incompat:
                 subject = match['subject']
                 match_parts = \
@@ -642,6 +646,13 @@ def generate_score_distribution(results, score_key, nbins=20,
                     msg = 'Bad calculation for incompatible region'
                     raise RuntimeError(msg)
                 incomps.append(incomp)
+            if compat_result_file is not None:
+                if incompat is not None:
+                    compat_result_file.write('%s\t%s\t%.2f\t%.2f\n' % (query.name,
+                                                subject.name, score, incomp))
+                else:
+                    compat_result_file.write('%s\t%s\t%.2f\n' % (query.name,
+                                                           subject.name, score))
 
     #min and max score
     min_score = min(scores)
