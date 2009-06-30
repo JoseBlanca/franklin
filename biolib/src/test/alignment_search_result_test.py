@@ -84,7 +84,7 @@ class BlastParserTest(unittest.TestCase):
         parser = BlastParser(fhand=blast_file)
 
         expected_results = [
-            {'query':{'name':'lcl|2_0', 'description':'cCL1Contig2',
+            {'query':{'name':'cCL1Contig2', 'description':None,
                       'length':1924},
              'matches':[
                  {'subject':{'name':'chr18',
@@ -103,7 +103,7 @@ class BlastParserTest(unittest.TestCase):
                  }
              ]
             },
-            {'query':{'name':'lcl|3_0', 'description':'cCL1Contig3',
+            {'query':{'name':'cCL1Contig3', 'description':None,
                       'length':629},
             },
             {}, {}
@@ -113,6 +113,15 @@ class BlastParserTest(unittest.TestCase):
             _check_blast(blast, expected_results[index])
             n_blasts += 1
         assert n_blasts == 4
+
+        #with the subject id given in the xml blast
+        expected_results = [
+            {'query':{'name':'lcl|2_0', 'description':'cCL1Contig2',
+                      'length':1924}},{}, {}, {}]
+        parser = BlastParser(fhand=blast_file,
+                             use_query_def_as_accession=False)
+        for index, blast in enumerate(parser):
+            _check_blast(blast, expected_results[index])
 
 def _summarize_matches(parser):
     '''Given a alignment result parser it returns a dict with the matches for
@@ -143,8 +152,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         #lcl|3_0 cCL1Contig3
         #lcl|4_0 cCL1Contig4
         #lcl|5_0 cCL1Contig5
-        expected  = {'lcl|2_0':3, 'lcl|3_0':1, 'lcl|4_0':5,
-                     'lcl|5_0':8}
+        expected  = {'cCL1Contig2':3, 'cCL1Contig3':1,
+                     'cCL1Contig4':5, 'cCL1Contig5':8}
         _check_match_summary(match_summary, expected)
 
     @staticmethod
@@ -156,8 +165,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                     'max_score_value': 1e-4,
                     'score_tolerance': 10
                    }]
-        expected  = {'lcl|2_0':2, 'lcl|3_0':1, 'lcl|4_0':1,
-                     'lcl|5_0':2}
+        expected  = {'cCL1Contig2':2, 'cCL1Contig3':1,
+                     'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -174,8 +183,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                     'score_key'      : 'expect',
                     'max_score_value': 1e-34,
                    }]
-        expected  = {'lcl|2_0':2, 'lcl|3_0':0, 'lcl|4_0':2,
-                     'lcl|5_0':2}
+        expected  = {'cCL1Contig2':2, 'cCL1Contig3':0,
+                     'cCL1Contig4':2, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -187,8 +196,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                     'score_key'      : 'similarity',
                     'min_score_value': 90,
                    }]
-        expected  = {'lcl|2_0':0, 'lcl|3_0':0, 'lcl|4_0':1,
-                     'lcl|5_0':2}
+        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
+                     'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -204,8 +213,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         filters = [{'kind'          : 'min_length',
                     'min_length_bp' : 500,
                    }]
-        expected  = {'lcl|2_0':3, 'lcl|3_0':0, 'lcl|4_0':1,
-                     'lcl|5_0':2}
+        expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
+                     'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -216,8 +225,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         filters = [{'kind'               : 'min_length',
                     'min_length_query_%' : 70,
                    }]
-        expected  = {'lcl|2_0':0, 'lcl|3_0':0, 'lcl|4_0':2,
-                     'lcl|5_0':0}
+        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
+                     'cCL1Contig4':2, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -228,8 +237,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         filters = [{'kind'                 : 'min_length',
                     'min_length_subject_%' : 0.002,
                    }]
-        expected  = {'lcl|2_0':3, 'lcl|3_0':0, 'lcl|4_0':1,
-                     'lcl|5_0':2}
+        expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
+                     'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)
@@ -246,8 +255,8 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                     'max_incompatibility' : 50,
                     'min_similarity'      : 60
                    }]
-        expected  = {'lcl|2_0':0, 'lcl|3_0':0, 'lcl|4_0':1,
-                     'lcl|5_0':0}
+        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
+                     'cCL1Contig4':1, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = FilteredAlignmentResults(filters=filters,
                                                    results=blasts)

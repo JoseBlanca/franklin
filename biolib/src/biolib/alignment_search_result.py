@@ -59,29 +59,32 @@ from math import log10
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
-    def __init__(self, fhand):
+    def __init__(self, fhand, use_query_def_as_accession=True):
         'The init requires a file to be parser'
         fhand.seek(0, 0)
         self._blast_file  = fhand
         #we use the biopython parser
         self._blast_parse = NCBIXML.parse(fhand)
+        self.use_query_def_as_accession = use_query_def_as_accession
 
     def __iter__(self):
         'Part of the iterator protocol'
         return self
 
-    @staticmethod
-    def _create_result_structure(bio_result):
+    def _create_result_structure(self, bio_result):
         'Given a BioPython blast result it returns our result structure'
         #the query name and definition
-        #query = bio_result.query
-        name  = bio_result.query_id
         definition = bio_result.query
-        #try:
-            #    name, definition = query.split(' ', 1)
-            #except ValueError:
-                #name = query
-                #definition = None
+        if self.use_query_def_as_accession:
+            items = definition.split(' ', 1)
+            name = items[0]
+            if len(items) > 1:
+                definition = items[1]
+            else:
+                definition = None
+        else:
+            name  = bio_result.query_id
+            definition = definition
         #length of query sequence
         length     = bio_result.query_letters
         #now we can create the query sequence
@@ -165,6 +168,7 @@ class BlastParser(object):
         #structure
         our_result = self._create_result_structure(bio_result)
         return our_result
+
 class ExonerateParser(object):
     'Exonerate parser'
 
