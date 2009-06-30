@@ -44,12 +44,16 @@ def main():
     use_length = options.use_length
  
     blasts = BlastParser(fhand=open(infile, 'r'))
+    if options.outfile is not None:
+        compat_result_file = open(options.outfile, 'w')
+    else:
+        compat_result_file = None
     distrib = generate_score_distribution(results=blasts,
                                           score_key  = 'similarity',
                                           nbins      = 20,
                                           use_length = use_length,
-                                       calc_incompatibility = options.do_incompat,
-                                 compat_result_file = open(options.outfile, 'w'))
+                                          calc_incompatibility = options.do_incompat,
+                                          compat_result_file = compat_result_file)
     print('distribution -> ' + str(distrib))
     if options.do_incompat:
         #draw 3d distrib
