@@ -16,12 +16,12 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.seq_filters import (ifiltering_map, create_blast_filter,
-                                create_ssaha_filter)
+                                create_filter)
 from biolib.seqs import Seq
 
 from itertools import ifilter
-
 import unittest
+from tempfile import NamedTemporaryFile
 
 class FilteringIteratorTest(unittest.TestCase):
     '''It test the ifiltering_map function'''
@@ -40,18 +40,19 @@ class BlastFilteringTest(unittest.TestCase):
         #an arabidopsis cdna sequence
         seq2 = Seq('ATGGTGGGTGGCAAGAAGAAAACCAAGATATGTGACAAAGTGTCACATGAGAAGATAG')
         #we keep the sequences with a good hit in the blast
-        blast_filter1 = create_blast_filter(expect=1e-10, keep_better_hits=True,
-                                            database='tair7_cdna',
-                                            program='blastn')
-        assert list(ifilter(blast_filter1, [seq1, seq2])) == [seq2]
-        #we can also keep the sequences with a bad blast result
-        blast_filter2 = create_blast_filter(expect=1e-10,
-                                            keep_better_hits=False,
-                                            database='tair7_cdna',
-                                            program='blastn')
-        assert list(ifilter(blast_filter2, [seq1, seq2])) == [seq1]
+        parameters = {'expect':1e-10, 'database':'tair7_cdna',
+                      'program':'blastn'}
+        match_filters = [{'kind'           : 'min_scores',
+                          'score_key'      : 'expect',
+                          'max_score_value': 0.001}]
 
-adaptors = '''>adaptor1
+        blast_filter = create_filter(aligner_cmd='blast',
+                                     cmd_parameters=parameters,
+                                     match_filters=match_filters )
+        assert  blast_filter(seq1) == False
+        assert  blast_filter(seq2) == True
+
+ADAPTORS = '''>adaptor1
 AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
 >adaptor2
 AAAAATACTCTGATCGATCGGATCTAGCATGCAAA
@@ -60,12 +61,56 @@ AAAAATACTCTGATCGATCGGATCTAGCATGCAAA
 class TooManyAdaptorsTest(unittest.TestCase):
     'It tests that we can filter out sequences that have too many adaptors'
     @staticmethod
-    def test_ssaha2_filtering():
-        'It test that we can filter the chimeric sequences using ssaha2'
-        ssaha2_filter = create_ssaha_filter(options='adaptors',
-                                            subject=adaptors)
-        ssaha2_filter = create_ssaha_filter(subject=adaptors)
-        ssaha2_filter(Seq('TACTCTGATCGATCGGATCTAGCATGC'))
+    def test_too_many_adaptors_filtering():
+        'It test that we can filter the chimeric sequences using exonerate'
+        fhand = NamedTemporaryFile()
+        fhand.write(ADAPTORS)
+        fhand.flush()
+        parameters = {'target': fhand.name}
+        result_filters = [{'kind' :'num_matches','value':2}]
+        match_filter = create_filter(aligner_cmd='exonerate',
+                                      cmd_parameters=parameters,
+                                      match_filters={},
+                                      result_filters=result_filters )
+        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == False
+        result_filters = [{'kind' :'num_matches', 'value':1}]
+        match_filter = create_filter(aligner_cmd='exonerate',
+                                      cmd_parameters=parameters,
+                                      match_filters={},
+                                      result_filters=result_filters )
+        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == True
+
+class ExonerateRunnerTest(unittest.TestCase):
+    'It test exonerate runner'
+    @staticmethod
+    def test_exonerate():
+        'test exonerate runner'
+        fhand = NamedTemporaryFile()
+        fhand.write(ADAPTORS)
+        fhand.flush()
+        parameters = {'target': fhand.name}
+        match_filters = [{'kind'           : 'min_scores',
+                          'score_key'      : 'score',
+                          'min_score_value': 130}]
+        result_filters = [{'kind' :'num_matches', 'value':2}]
+        match_filter = create_filter(aligner_cmd='exonerate',
+                                      cmd_parameters=parameters,
+                                      match_filters=match_filters,
+                                      result_filters=result_filters )
+        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == False
+        result_filters = [{'kind' :'num_matches',
+                           'value':1}]
+        match_filter = create_filter(aligner_cmd='exonerate',
+                                     cmd_parameters=parameters,
+                                     match_filters=match_filters,
+                                     result_filters=result_filters )
+        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == True
+
+
+#        exon_run = ExonerateRunner(parameters)
+
+
+
 
 
 if __name__ == "__main__":

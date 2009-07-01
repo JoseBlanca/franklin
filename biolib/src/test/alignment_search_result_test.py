@@ -22,15 +22,17 @@ import biolib
 from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults,
                                             generate_score_distribution,
-                                            _compatible_incompatible_length)
+                                            _compatible_incompatible_length,
+                                             ExonerateParser)
 from biolib.seqs import SeqWithQuality
+from StringIO import StringIO
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def _floats_are_equal(num1, num2):
     'Given two numbers it returns True if they are similar'
-    log1 = math.log(num1)
-    log2 = math.log(num2)
+    log1 = math.log(float(num1))
+    log2 = math.log(float(num2))
     return abs(log1 - log2) < 0.01
 
 def _check_sequence(sequence, expected):
@@ -139,6 +141,55 @@ def _check_match_summary(match_summary, expected):
     for query_name in expected:
         assert len(match_summary[query_name]) == expected[query_name]
 
+EXONERATE_OUTPUT ='''
+" (peio@oiz: ~/work_in/tmp/exonerate)Command line: [exonerate --model affine:local query.fasta adaptators.fasta --showalignment False --showvulgar False --ryo cigar_like:%S %ql %tl\n]
+Hostname: [oiz]
+cigar_like:prueb2 7 31 + adaptor1 5 29 + 120 55 34
+cigar_like:prueba 0 29 + adaptor2 5 34 + 135 54 35
+cigar_like:prueba 27 54 + adaptor2 5 32 + 136 54 35
+cigar_like:prueba 0 28 + adaptor3 5 32 + 126 54 35
+cigar_like:prueba 27 54 + adaptor3 5 33 + 131 54 35
+-- completed exonerate analysis
+ '''
+
+class ExonerateParserTest(unittest.TestCase):
+    '''It tests the exonertae parser output - Cigar output '''
+    @staticmethod
+    def test_exonerate_parser():
+        'It tests exonerate parser'
+        parser = ExonerateParser(fhand=StringIO(EXONERATE_OUTPUT))
+
+        expected_results = [
+            {'query':{'name':'prueba', 'description':None,
+                      'length':54},
+             'matches':[
+                 {'subject':{'name':'adaptor2','length':35},
+                  'scores':{'score':136},
+                  'start':5,
+                  'end':34,
+                  'match_parts':[{'query_start':0, 'query_end':29,
+                                  'query_strand':1,
+                                  'subject_start':5,
+                                  'subject_end':34,
+                                  'subject_strand':1,
+                                  'scores':{'score':135}},
+                                  {'query_start':27, 'query_end':54,
+                                  'query_strand':1,
+                                  'subject_start':5,
+                                  'subject_end':32,
+                                  'subject_strand':1,
+                                  'scores':{'score':136}},
+                                  ]}],
+                 },
+            {},{}]
+
+        n_exonerates = 0
+        for index, exonerate in enumerate(parser):
+            _check_blast(exonerate, expected_results[index])
+            n_exonerates += 1
+        assert n_exonerates == 2
+
+
 class AlignmentSearchResultFilterTest(unittest.TestCase):
     'It test that we can filter out matches from the blast or ssaha2 results'
 
@@ -172,7 +223,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
- 
+
     @staticmethod
     def test_min_scores_filter():
         'We can keep the hits scores above the given one'
@@ -269,7 +320,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         #        012345678901234567890
         #query   ---------------------
         #query             <--> <---->
-        #simil                 90%    
+        #simil                 90%
         #subject           <--> <---->
         #subject           ----------------------------------
         query   = SeqWithQuality(length=21)
@@ -317,7 +368,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         #        0123456789012345678901
         #query            ---------------------
         #query             <-->  <--->
-        #simil                 90%    
+        #simil                 90%
         #subject           <-->  <--->
         #subject ----------------------
         query   = SeqWithQuality(length=21)
@@ -366,7 +417,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         #        0123456789012345678901
         #query            ---------------------
         #query             <--<-->--->
-        #simil                 90%    
+        #simil                 90%
         #subject           <--<-->--->
         #subject ---------------------
         query   = SeqWithQuality(length=21)
@@ -522,7 +573,7 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
         #        012345678901234567890
         #query   ---------------------
         #query             <--------->
-        #simil                 90%    
+        #simil                 90%
         #subject           <--------->
         #subject           ----------------------------------
         query   = SeqWithQuality(length=21, name='query')
