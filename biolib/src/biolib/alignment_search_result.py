@@ -258,6 +258,7 @@ def _strand_transform(strand):
         return 1
 
 def _match_num_if_exists_in_struc(subject_name, struct_dict):
+    'It returns the match number of the list of matches that is about subject'
     for i, match in enumerate(struct_dict['matches']):
         if subject_name == match['subject'].name:
             return i
@@ -737,8 +738,8 @@ def generate_score_distribution(results, score_key, nbins=20,
             #the incompatible region
             incomp = None
             if incompat:
-                match_parts = \
-                           _merge_overlaping_match_parts(match['match_parts'])
+#                match_parts = \
+#                           _merge_overlaping_match_parts(match['match_parts'])
                 compat, incomp = _compatible_incompatible_length(match, query)
                 #we calculate a percentage dividing by the shortest seq
                 #between query an subj
@@ -746,15 +747,16 @@ def generate_score_distribution(results, score_key, nbins=20,
                 incomp_bak = incomp
                 incomp = float(incomp) / float(min_len) * 100.0
                 if incomp < 0 or incomp > 100:
-                    print 'incomp',incomp, 'match',match
-                    print 'min_len, incomp, %', min_len, incomp_bak, incomp
+                    #print 'incomp',incomp, 'match',match
+                    #print 'min_len, incomp, %', min_len, incomp_bak, incomp
                     msg = 'Bad calculation for incompatible region'
                     raise RuntimeError(msg)
                 incomps.append(incomp)
             if compat_result_file is not None:
                 if incompat is not None:
-                    compat_result_file.write('%s\t%s\t%.2f\t%.2f\n' % (query.name,
-                                                subject.name, score, incomp))
+                    compat_result_file.write('%s\t%s\t%.2f\t%.2f\n' % \
+                                             (query.name, subject.name, score,
+                                              incomp))
                 else:
                     compat_result_file.write('%s\t%s\t%.2f\n' % (query.name,
                                                            subject.name, score))
