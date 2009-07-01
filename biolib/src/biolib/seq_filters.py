@@ -27,7 +27,7 @@ import os, tempfile
 
 from biolib.biolib_utils import call, temp_fasta_file
 from biolib.blast_summary import BlastSummary
-from biolib.alignment_search_result import (ExonerateParser,
+from biolib.alignment_search_result import (ExonerateParser, BlastParser,
                                             FilteredAlignmentResults)
 from Bio.Blast import NCBIXML
 
@@ -167,7 +167,7 @@ class ExonerateRunner():
         return stdout
 
 
-def create_exonerate_filter(parameters, match_filters=None,
+def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
                             result_filters=None):
     '''A function factory factory that creates exonerate filters.
 
@@ -176,12 +176,17 @@ def create_exonerate_filter(parameters, match_filters=None,
     parameters is a dictionary and key are defined in ExonerateRunner.
     Required is only the target fasta file
     '''
-    exonerate_source = ExonerateRunner(parameters)
-    def exonerate_filter(sequence):
+    runners = {'blast':BlastRunner, 'exonerate':ExonerateRunner}
+    parsers = {'blast':BlastParser, 'exonerate':ExonerateParser}
+    runner, parser = runners[aligner_cmd], parsers[aligner_cmd]
+
+    source = runner(cmd_parameters)
+
+    def _filter(sequence):
         'Giving a sequence it returns true or False depending on the exonerate'
 
-        exonerate_result = StringIO(exonerate_source.get_result(sequence))
-        results          = ExonerateParser(exonerate_result)
+        source_result    = StringIO(source.get_result(sequence))
+        results          = parser(source_result)
         filtered_results = FilteredAlignmentResults(filters=match_filters,
                                                    results=results)
         try:
@@ -195,7 +200,7 @@ def create_exonerate_filter(parameters, match_filters=None,
                                                 result=result)
         return filter_result
 
-    return exonerate_filter
+    return _filter
 
 
 def _filtered_match_results(filters, result):
@@ -205,20 +210,12 @@ def _filtered_match_results(filters, result):
         return True
     num_matches = len(result['matches'])
     for filter_ in filters:
-        if filter_['kind']== 'num_matches':
+        if filter_['kind'] == 'num_matches':
             min_num_matches = filter_['value']
     if num_matches < min_num_matches:
         return False
     else:
         return True
-
-
-
-
-
-
-
-
 
 SSAHA2_OPTIONS = {'adaptors':{'builder': ['-kmer', '4'],
                               'ssaha': ['-seeds', '2', '-score', '10',
@@ -227,16 +224,12 @@ SSAHA2_OPTIONS = {'adaptors':{'builder': ['-kmer', '4'],
                                         '-depth', '5', '-cut', '999999999',
                                         '-memory', '500', ]}
                  }
-
-
-
-
-
-
 class SsahaRunner(object):
     'It creates a ssaha2 runner.'
 
     def __init__(self, subject, options=None):
+        ## We have to change this to the new model with parameters instead
+        # subject/options
         '''The init
 
         The subject can be a string or a file with fasta sequences, do not use
@@ -299,7 +292,7 @@ class SsahaRunner(object):
             if os.path.exists(fpath):
                 os.remove(fpath)
 
-    def get(self, sequence):
+    def get_result(self, sequence):
         'Given a sequence it returns the ssaha2 output as a string'
         #we create the fasta file
         fastah = temp_fasta_file(sequence)
@@ -321,20 +314,3 @@ class SsahaRunner(object):
                                '\ncommand was: ' + ' '.join(cmd))
         fastah.close()
         return stdout
-
-def create_ssaha_filter(subject, options=None):
-    '''This function factory returns a ssaha filter for sequences.
-
-    The subject can be a string or a file with fasta sequences, do not use
-    StringIO. It  will be hashed using ssaha2Build.
-    The options should be a list with parameters for ssaha or a string
-    with the name of a precompiled option like 'adaptor'.
-    '''
-    ssaha_source = SsahaRunner(subject=subject, options=options)
-
-    def ssaha_filter(sequence):
-        'Given a sequence it returns True or False depending on the ssaha'
-        #first we need the ssaha result
-        ssaha = ssaha_source.get(sequence)
-        print ssaha
-    return ssaha_filter
