@@ -170,13 +170,13 @@ class BlastParser(object):
         return our_result
 
 class ExonerateParser(object):
-    'Exonerate parser'
+    '''Exonerate parser, it is a iterator that yields the result for each
+    query separated'''
 
     def __init__(self, fhand):
         'The init requires a file to be parser'
         self._fhand = fhand
-        self._fhand.seek(0, 0)
-
+        self._exonerate_results = self._results_query_from_exonerate()
     def __iter__(self):
         'Part of the iterator protocol'
         return self
@@ -184,6 +184,7 @@ class ExonerateParser(object):
     def _results_query_from_exonerate(self):
         '''It takes the exonerate cigar output file and yields the result for
         each query. The result is a list of match_parts '''
+        self._fhand.seek(0, 0)
         cigar_dict = {}
         for line in  self._fhand:
             if not line.startswith('cigar_like:'):
@@ -194,7 +195,6 @@ class ExonerateParser(object):
                 cigar_dict[query_id] = []
             cigar_dict[query_id].append(items)
         for query_id, values in cigar_dict.items():
-            print values
             yield values
 
     @staticmethod
@@ -203,7 +203,7 @@ class ExonerateParser(object):
         match_parts of a query_id '''
         struct_dict  = {}
         query_name   = query_result[0][0]
-        query_length = query_result[0][9]
+        query_length = int(query_result[0][9])
         query        = SeqWithQuality(name=query_name, length=query_length)
         struct_dict['query']   = query
         struct_dict['matches'] = []
@@ -211,49 +211,57 @@ class ExonerateParser(object):
             (query_name, query_start, query_end, query_strand, subject_name,
             subject_start, subject_end, subject_strand, score, query_length,
             subject_length)  = match_part_
+
             # For each line , It creates a match part dict
             match_part = {}
-            match_part['query_start']   = match_part_[1]
-            match_part['query_end']     = match_part_[2]
-            match_part['query_strand']  = match_part_[3]
-            match_part['subject_start']  = match_part_[5]
-            match_part['subject_end']    = match_part_[6]
-            match_part['subject_strand'] = match_part_[7]
-            match_part['score']         = match_part_[8]
+            match_part['query_start']    = int(query_start)
+            match_part['query_end']      = int(query_end)
+            match_part['query_strand']   = _strand_transform(query_strand)
+            match_part['subject_start']  = int(subject_start)
+            match_part['subject_end']    = int(subject_end)
+            match_part['subject_strand'] = _strand_transform(subject_strand)
+            match_part['scores']          = {'score':int(score)}
 
-            # Chek if the match is already added to the struct. A match is
+            # Check if the match is already added to the struct. A match is
             # defined by a list of part matches between a query and a subject
-            match = _match_exists_in_struc(subject_name, struct_dict)
-            if match:
+            match_num = _match_num_if_exists_in_struc(subject_name, struct_dict)
+            if match_num is not None:
+                match = struct_dict['matches'][match_num]
                 if match['start'] > subject_start:
                     match['start'] = subject_start
                 if match['end'] < subject_end:
                     match['end']   = subject_end
-                if match['score'] < score:
-                    match['score'] = score
+                if match['scores']['score'] < score:
+                    match['scores']['score'] = score
                 match['match_parts'].append(match_part)
             else:
                 match = {}
                 match['subject'] = SeqWithQuality(name=subject_name,
-                                                  length=subject_length)
-                match['start']       = subject_start
-                match['end']         = subject_end
-                match['score']       = score
+                                                  length=int(subject_length))
+                match['start']       = int(subject_start)
+                match['end']         = int(subject_end)
+                match['scores']       = {'score':int(score)}
                 match['match_parts'] = []
                 match['match_parts'].append(match_part)
                 struct_dict['matches'].append(match)
-
+        return struct_dict
     def next(self):
         '''It return the next exonerate hit'''
-        query_result = self._results_query_from_exonerate.next()
-        print query_result
-#        self._create_structure_result(query_result)
+        query_result = self._exonerate_results.next()
+        return self._create_structure_result(query_result)
 
-def _match_exists_in_struc(subject_name, struct_dict):
-    for match in struct_dict['matches']:
+def _strand_transform(strand):
+    '''It transfrom the +/- strand simbols in our user case 1/-1 caracteres '''
+    if strand == '-':
+        return -1
+    elif strand == '+':
+        return 1
+
+def _match_num_if_exists_in_struc(subject_name, struct_dict):
+    for i, match in enumerate(struct_dict['matches']):
         if subject_name == match['subject'].name:
-            return match
-    return False
+            return i
+    return None
 
 def get_match_score(match, score_key):
     '''Given a match it returns its score.

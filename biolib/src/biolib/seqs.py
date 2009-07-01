@@ -30,8 +30,8 @@ class SeqWithQuality(object):
 
         Arguments:
             name : Name of the secuence
-            seq  : Sequence in a string, it accepts Biopython seq, 
-                that is used to complement the seq. 
+            seq  : Sequence in a string, it accepts Biopython seq,
+                that is used to complement the seq.
             qual : Quality of the sequence, in a list object
             length : The sequence length, useful for empty seq objects
             annotations: A dict with the annotations that affect the sequence
@@ -46,13 +46,13 @@ class SeqWithQuality(object):
         self.qual  = qual
         self.description = description
         self.annotations = annotations
-     
+
     def __add__(self, seq2):
         '''It returns a new object with both seq and qual joined '''
         return self.__class__(name = self.name, \
                               seq  = self._seq + seq2.seq, \
                               qual = self._qual + seq2.qual)
-        
+
     def __getitem__(self, index):
         ''' It returns another object but only with the sclice chosed'''
         qual = self.qual
@@ -88,7 +88,7 @@ class SeqWithQuality(object):
             sprint += '\n'
         else:
             sprint += 'None'
-        return sprint 
+        return sprint
 
     def __str__(self):
         'It returns just the str of the seq property'
@@ -96,17 +96,17 @@ class SeqWithQuality(object):
 
     def complement(self):
         ''' it returns a new object with the complementary strand of the seq '''
-        
+
         return self.__class__(name = self.name + '_complemented', \
                               seq  = self._seq.complement(), \
-                              qual = self._qual) 
+                              qual = self._qual)
 
     def _get_qual(self):
         ''' It returns the quality of the sequence'''
         return self._qual
-    
+
     def _set_qual(self, qual):
-        '''  It sets the quality of the sequence and it checks if 
+        '''  It sets the quality of the sequence and it checks if
         it is of the same lenght'''
         if self._qual is not None:
             raise AttributeError("Can't reset the qual attribute")
@@ -115,8 +115,8 @@ class SeqWithQuality(object):
             raise ValueError('qual should have the same length as this ' +
                             self.__class__.__name__)
         self._qual = qual
-    qual = property(_get_qual, _set_qual)   
-    
+    qual = property(_get_qual, _set_qual)
+
     def _set_seq(self, seq):
         'It sets the seq property'
         if self._seq is not None:

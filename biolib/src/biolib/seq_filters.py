@@ -27,6 +27,8 @@ import os, tempfile
 
 from biolib.biolib_utils import call, temp_fasta_file
 from biolib.blast_summary import BlastSummary
+from biolib.alignment_search_result import (ExonerateParser,
+                                            FilteredAlignmentResults)
 from Bio.Blast import NCBIXML
 
 def ifiltering_map(func, *iterators):
@@ -37,30 +39,45 @@ def ifiltering_map(func, *iterators):
 
 class BlastRunner(object):
     'A blast runner for sequence objects'
-    def __init__(self, database, program, expect, nhits=20,
-                 use_megablast=False):
+    def __init__(self, parameters ):
         '''The init.
-        
-        keyword arguments
+
+        Those are the parameters that are required by blast
         database -- The blast database name
         program  -- The blast program (e.g blastn or blastp)
+
+        These parameters are required by us, so we need to fill them
         expect   -- The expect to filter the result
         nhits    -- number of results to keep (default 20)
         use_megablast -- default(False)
         '''
-        #pylint: disable-msg=R0913
-        #blast requires this arguments, and maybe some more
-
         #why don't we just use a run_blast function?
-        #because this interface would also work with if we already have a 
+        #because this interface would also work with if we already have a
         #multiblast result file and we want to access it in a random way.
-        self._database = database
-        self._program  = program
-        self._expect   = expect
-        self._nhits    = nhits
-        self._use_megablast = use_megablast
 
-    def get_blast(self, sequence):
+        if 'database' not in parameters or parameters['database'] == '':
+            raise RuntimeError('database parameter is required')
+        else:
+            self._database = parameters['database']
+        if 'program' not in  parameters or parameters['program'] == '':
+            raise RuntimeError('blast program is required')
+        else:
+            self._program  = parameters['program']
+        if 'expect' not in parameters or parameters['expect'] == '':
+            raise RuntimeError('expect parameter is requiredto create filters')
+        else:
+            self._expect  = parameters['expect']
+        if 'nhits' not in  parameters or parameters['nhits'] == '':
+            self._nhits = 20
+        else:
+            self._nhits = parameters['nhits']
+        if 'use_megablast' not in  parameters or \
+                                            parameters['use_megablast'] == '':
+            self._use_megablast = False
+        else:
+            self._use_megablast = True
+
+    def get_result(self, sequence):
         'Given a sequence it returns the xml blast result as a string'
         #we create the fasta file
         fastah = temp_fasta_file(sequence)
@@ -78,25 +95,24 @@ class BlastRunner(object):
         fastah.close()
         return stdout
 
-def create_blast_filter(expect, database, program, keep_better_hits=True,
-                        use_megablast=True):
+def create_blast_filter(parameters , keep_better_hits=True):
     '''A function factory factory that creates blast filters.
-    
+
     It returns a function that will accept a sequence and it will return
     True or False depending on the blast outcome.
     database is the blast database name.
     program is the blast program (e.g. blastn or blastp)
     '''
-    xml_blast_source = BlastRunner(database=database, program=program,
-                                    expect=expect, use_megablast=use_megablast)
+    xml_blast_source = BlastRunner(parameters)
     def blast_filter(sequence):
         'Given a sequence it returns True or False depending on the blast'
         #first we need the xml blast result
-        xml_blast = StringIO(xml_blast_source.get_blast(sequence))
+        xml_blast = StringIO(xml_blast_source.get_result(sequence))
         #now we want a summary
         biopython_blast = NCBIXML.parse(xml_blast)
         summary = BlastSummary(biopython_blast.next())
         #we filter it
+        expect = parameters['expect']
         summary.filter_expect_threshold(expect)
         #is the filter positive or not?
         if len(summary.hits):
@@ -108,13 +124,114 @@ def create_blast_filter(expect, database, program, keep_better_hits=True,
         return result
     return blast_filter
 
-SSAHA2_OPTIONS = {'adaptors':{'builder': ['-kmer', '6'],
-                              'ssaha': ['-seeds', '2', '-score', '15',
+class ExonerateRunner():
+    '''A exonerate runner for sequences'''
+    def __init__(self, parameters):#target, model=None, show_options=None):
+        ''' Initiator. Here you defines how is going to run your exonerate
+         instance
+
+         By default we are going to use an gaped alignment model. We will use
+          affine:local , similar to the Smith-Waterman-Gotoh algorithm.
+         Show options, parameter is optional as well. By default we will use
+         a format easy to arse for us
+         '''
+        if 'target' not in parameters or parameters['target'] == '':
+            raise RuntimeError('target parameter is required')
+        else:
+            self._target = ['--target', parameters['target']]
+        if 'model' not in parameters or parameters['model'] == '':
+            self._model = [ '--model', 'affine:local']
+        else:
+            self._model = ['--model', parameters['model']]
+        if 'show_option' not in parameters or parameters['show_options'] == '':
+            self._show_options = ['--showalignment', 'False', '--showvulgar',
+                                'False', '--ryo', "cigar_like:%S %ql %tl\n"]
+        else:
+            self._show_options = parameters['show_options']
+
+    def get_result(self, sequence):
+        '''Giving a sequence in returns the exonerate result with the show
+        option you have decide'''
+        fastah = temp_fasta_file(sequence)
+        query = ['--query', fastah.name]
+
+        cmd = ['exonerate']
+        cmd.extend(self._model)
+        cmd.extend(self._show_options)
+        cmd.extend(self._target)
+        cmd.extend(query)
+        stdout, stderr, retcode = call(cmd)
+        if retcode:
+            raise RuntimeError('Problem running exonerate: ' + stderr)
+        fastah.close()
+        return stdout
+
+
+def create_exonerate_filter(parameters, match_filters=None,
+                            result_filters=None):
+    '''A function factory factory that creates exonerate filters.
+
+    It returns a function that will accept a sequence and it will return
+    True or False depending on the exonerate outcome.
+    parameters is a dictionary and key are defined in ExonerateRunner.
+    Required is only the target fasta file
+    '''
+    exonerate_source = ExonerateRunner(parameters)
+    def exonerate_filter(sequence):
+        'Giving a sequence it returns true or False depending on the exonerate'
+
+        exonerate_result = StringIO(exonerate_source.get_result(sequence))
+        results          = ExonerateParser(exonerate_result)
+        filtered_results = FilteredAlignmentResults(filters=match_filters,
+                                                   results=results)
+        try:
+            result = filtered_results.next()
+            if not len(result['matches']):
+                return False
+        except StopIteration:
+            return False
+
+        filter_result = _filtered_match_results(filters=result_filters,
+                                                result=result)
+        return filter_result
+
+    return exonerate_filter
+
+
+def _filtered_match_results(filters, result):
+    '''It returns True or False depending if the result pass the filter or
+    not'''
+    if filters is None:
+        return True
+    num_matches = len(result['matches'])
+    for filter_ in filters:
+        if filter_['kind']== 'num_matches':
+            min_num_matches = filter_['value']
+    if num_matches < min_num_matches:
+        return False
+    else:
+        return True
+
+
+
+
+
+
+
+
+
+SSAHA2_OPTIONS = {'adaptors':{'builder': ['-kmer', '4'],
+                              'ssaha': ['-seeds', '2', '-score', '10',
                                         '-sense', '1', '-cmatch', '10',
                                         '-ckmer', '6', '-identity', '90',
                                         '-depth', '5', '-cut', '999999999',
-                                        '-memory', '500']}
+                                        '-memory', '500', ]}
                  }
+
+
+
+
+
 
 class SsahaRunner(object):
     'It creates a ssaha2 runner.'
@@ -145,7 +262,7 @@ class SsahaRunner(object):
 
     def _create_hash_file(self, subject):
         '''It creates a hash file using ssaha2Build.
-        
+
         It requires a subject with a fileh to a fasta file or a string with
         the fasta sequences.
         '''
@@ -164,11 +281,15 @@ class SsahaRunner(object):
         cmd.extend(['-save', hash_file.name, subject.name])
         print ' '.join(cmd)
         #pylint: disable-msg=W0612
-        stdout, stderr, retcode = call(cmd)
+        try:
+            stdout, stderr, retcode = call(cmd)
+        except OSError:
+            raise OSError('You have not properly instaled ssaha2Build')
         #we don't need the stdout
         if retcode:
             raise RuntimeError('Problem running ssaha2Build: ' + stderr)
         self._base_hash_file = hash_file
+        print "hl"
 
     def __del__(self):
         'We have to remove some files associated with the hash'
@@ -191,9 +312,12 @@ class SsahaRunner(object):
         cmd.append(self._base_hash_file.name)
         #the query file
         cmd.append(fastah.name)
-        stdout, stderr, retcode = call(cmd)
+        try:
+            stdout, stderr, retcode = call(cmd)
+        except OSError:
+            raise OSError('You have not properly instaled ssaha2')
         if retcode:
-            raise RuntimeError('Problem running ssaha2: ' + stderr + 
+            raise RuntimeError('Problem running ssaha2: ' + stderr +
                                '\ncommand was: ' + ' '.join(cmd))
         fastah.close()
         return stdout
