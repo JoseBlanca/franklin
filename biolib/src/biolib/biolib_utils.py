@@ -19,8 +19,8 @@ Created on 2009 api 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
-import tempfile
+import subprocess, signal
+import tempfile, shutil
 from uuid import uuid4
 import os.path
 import StringIO
@@ -28,19 +28,46 @@ import matplotlib.pyplot as plt
 
 def call(cmd, env=None, stdin=None, ):
     'It calls a command and it returns stdout, stderr and retcode'
+    def subprocess_setup():
+        ''' Python installs a SIGPIPE handler by default. This is usually not
+        what non-Python subprocesses expect.  Taken from this url:
+        http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
+        2009-07-02-python-sigpipe'''
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     if stdin is None:
         pstdin = None
     else:
         pstdin = stdin
-        
+
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=env, stdin=pstdin)
+                               stderr=subprocess.PIPE, env=env, stdin=pstdin,
+                               preexec_fn=subprocess_setup)
     if stdin is None:
         stdout, stderr = process.communicate()
     else:
         stdout, stderr = process.communicate(stdin)
     retcode = process.returncode
     return stdout, stderr, retcode
+
+class NamedTemporaryDir(object):
+    '''This class creates temporary directories '''
+    def __init__(self):
+        '''It initiates the class.'''
+        self._name = tempfile.mkdtemp()
+
+    def name(self):
+        'Returns path to the dict'
+        return self._name
+    def close(self):
+        '''It removes the temp dir'''
+        if os.path.exists(self._name):
+            shutil.rmtree(self._name)
+
+    def __del__(self):
+        '''It removes de temp dir when instance is removed and the garbaje
+        colector decides it'''
+        self.close()
 
 def fasta_str(seq, name):
     'Given a sequence it returns a string with the fasta'
@@ -56,7 +83,7 @@ def _get_seq_name(seq, name):
     try:
         return seq.name
     except AttributeError:
-        return name 
+        return name
 
 def temp_fasta_file(seq, name=None):
     '''Given a Seq and its default name it returns a fasta file in a
@@ -113,20 +140,20 @@ def parse_fasta(fhand):
 
 def get_best_orf(seq, matrix_path=None):
     '''It returns a new seq with the orf '''
-    
+
     if matrix_path is None:
         raise ValueError('ESTscan need a matrix to be able to work')
     elif not os.path.exists(matrix_path):
         raise OSError('Matrix file not found: ' + matrix_path)
-       
+
     estscan_binary = '/usr/local/bin/ESTScan'
     fasta_fileh = temp_fasta_file(seq)
     file_orfh = tempfile.NamedTemporaryFile(suffix='.orf')
-    
-    cmd = [estscan_binary, '-M', matrix_path, fasta_fileh.name, 
+
+    cmd = [estscan_binary, '-M', matrix_path, fasta_fileh.name,
            '-t', file_orfh.name]
     stdout, stderr, retcode = call(cmd)
-    
+
     if retcode :
         raise RuntimeError(stderr)
 
@@ -146,13 +173,13 @@ def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
             dna.append(orf_dna[pos:pos + 3])
         pos += 3
     return "".join(dna), "".join(prot)
-    
+
 def translate(seq):
-    '''It translates the dna sequence to protein. It uses emboss binary 
+    '''It translates the dna sequence to protein. It uses emboss binary
     transeq'''
-    
+
     translation_binary = 'transeq'
-    
+
     fasta_fileh = temp_fasta_file(seq)
     cmd = [translation_binary, fasta_fileh.name, '-stdout', '-auto']
     stdout, stderr, retcode = call(cmd)
@@ -179,7 +206,7 @@ def _get_xml_header(fhand, tag):
     while True:
         if end_file <= fhand.tell():
             raise ValueError('End Of File. Tag Not found')
-            
+
         letter = fhand.read(1)
         if letter == '<':
             in_tag = True
@@ -213,7 +240,7 @@ def _get_xml_tail(fhand, tag):
             current_tag.append(letter)
         else:
             tail.append(letter)
-        
+
         if letter == '<':
             if current_tag == listed_tag:
                 tail.reverse()
@@ -221,16 +248,16 @@ def _get_xml_tail(fhand, tag):
             else:
                 tail.extend(current_tag)
                 current_tag = []
-            in_tag = False 
-        
+            in_tag = False
+
         fhand.seek(-2, 1)
- 
-def xml_itemize(fhand, tag):  
-    '''It takes a xml file and it chunks it by the given key. It adds header if 
+
+def xml_itemize(fhand, tag):
+    '''It takes a xml file and it chunks it by the given key. It adds header if
     exists to each of the pieces. It is a generator'''
     fhand.seek(0, 2)
     end_file = fhand.tell()
-    
+
     header = _get_xml_header(fhand, tag)
     tail   = _get_xml_tail(fhand, tag)
     section      = []
@@ -238,9 +265,9 @@ def xml_itemize(fhand, tag):
     listed_tag_s = '<' + tag + '>'
     listed_tag_e = '</' + tag + '>'
     in_tag, in_section = False, False
-    
+
     fhand.seek(0, 0)
-    
+
     while True:
         if end_file <= fhand.tell():
             break
@@ -250,7 +277,7 @@ def xml_itemize(fhand, tag):
         if in_tag:
             current_tag.append(letter)
         if in_section:
-            section.append(letter)            
+            section.append(letter)
         if letter == '>':
             if listed_tag_s == _remove_atributes_to_tag(current_tag):
                 in_section = True
@@ -296,7 +323,7 @@ def color_by_index(index, kind='str'):
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                  groups_for_shape=None):
     '''It draws an scatter plot.
-    
+
     x_axe and y_axe should be two lists of numbers. The names should be a list
     of the same lenght and will be applied to every data point drawn. The
     groups_for_shape and color should be list of the same length and will be

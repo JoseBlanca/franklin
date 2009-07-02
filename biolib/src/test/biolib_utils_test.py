@@ -19,9 +19,10 @@ Created on 2009 mai 22
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
+import unittest, os
 import StringIO
-from biolib.biolib_utils import xml_itemize, _get_xml_tail, _get_xml_header
+from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
+                                NamedTemporaryDir)
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
 
@@ -36,7 +37,7 @@ class XMLTest(unittest.TestCase):
             cont += 1
         assert cont == 2
     def test_no_good_xml_start_end(self):
-        '''Tests if the raise an error with a bad xml file. from begining to 
+        '''Tests if the raise an error with a bad xml file. from begining to
         end '''
         xml = StringIO.StringIO('<header><conten></content></header>')
         self.failUnlessRaises(ValueError, _get_xml_header, xml, 'content')
@@ -44,7 +45,26 @@ class XMLTest(unittest.TestCase):
         '''Tests if the raise an error with a bad xml file. From end to start'''
         xml = StringIO.StringIO('<header><content><content></header>')
         self.failUnlessRaises(ValueError, _get_xml_tail , xml, 'content')
-        
+
+class NamedTemporariDirTest(unittest.TestCase):
+    'It test temporay named dir'
+    @staticmethod
+    def test_simple_named_temporary_dir():
+        'It test temporay named dir'
+        temp_dir = NamedTemporaryDir()
+        dir_name = temp_dir.name()
+        assert os.path.exists(dir_name) == True
+        temp_dir.close()
+        assert os.path.exists(dir_name) == False
+
+        temp_dir = NamedTemporaryDir()
+        dir_name = temp_dir.name()
+        fhand = open(os.path.join(dir_name, 'peio'), 'w')
+        assert os.path.exists(fhand.name) == True
+        assert os.path.exists(dir_name)   == True
+        del(temp_dir)
+        assert os.path.exists(dir_name) == False
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
