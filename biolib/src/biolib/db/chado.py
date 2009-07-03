@@ -5,21 +5,21 @@ Created on 2009 eka 4
 '''
 import sqlalchemy
 from sqlalchemy.orm import exc as orm_exc
-from biolib.biolib_utils import call
+from biolib.biolib_cmd_utils import call
 from biolib.file_parsers import library_parser
 from biolib.db.db_utils import DbMap
-import csv, tempfile   
+import csv, tempfile
 
 CHADO_MAPPING_DEFINITIONS = [
                     {'name' :'db'},
                     {'name':'cv'},
-                    {'name':'organism'}, 
+                    {'name':'organism'},
                     {'name':'dbxref',
                      'relations' :{'db_id':{'kind':'one2many', 'rel_attr':'db'}}
                     },
                     {'name':'cvterm',
                      'relations' :{'cv_id':{'kind':'one2many',
-                                            'rel_attr':'cv'}, 
+                                            'rel_attr':'cv'},
                                    'dbxref_id':{'kind':'one2many',
                                              'rel_attr':'dbxref'}
                                   }
@@ -53,15 +53,15 @@ def add_csv_to_chado(fhand, table, engine):
     try:
         for row in csv.DictReader(fhand, delimiter=','):
             chado.get(kind=table, attributes=row)
-            
+
     except (orm_exc.NoResultFound, sqlalchemy.exc.IntegrityError), msg:
         chado.rollback()
         raise RuntimeError('''There have been a error during inserts in table %s
          %s''' % (table, msg))
     chado.commit()
 def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
-    '''It adds a ontology to chado. 
-    
+    '''It adds a ontology to chado.
+
     It Uses chado-xml and depends on a gmod instalation. You need gmod installed
      locally. It is very important that the obo file is weel formed
     '''
@@ -73,7 +73,7 @@ def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     else:
         fileh.write(stdout)
     fileh.flush()
-    cmd = ['stag-storenode.pl', '-d', 
+    cmd = ['stag-storenode.pl', '-d',
         'dbi:Pg:dbname=%s;host=%s;port=5432' % (dbname, dbhost),
         '--user', dbuser, '--password', dbpass, fileh.name]
     stdout, stderr, retcode = call(cmd)
@@ -103,15 +103,15 @@ def add_libraries_to_chado(fhand, engine, naming):
             libraryprops = _libraryprop_to_chado_dict(parsed_library, naming)
             for libraryprops_attr in libraryprops:
                 chado.get(kind = 'libraryprop', attributes=libraryprops_attr)
-            #and now the cvterms 
+            #and now the cvterms
             chado.commit()
         except Exception:
             chado.rollback()
-            raise     
+            raise
 def _library_to_chado_dict(parsed_library, naming):
     '''It converts the dictionary that returns the parser in a format that
     our chado_insert_function understand.
-    
+
     The naming should provide unique names for the libraries.
     '''
     cvname     = parsed_library['cvname']
@@ -133,14 +133,14 @@ def _libraryprop_to_chado_dict(parsed_library, naming):
     cvtermname = parsed_library['cvtermname']
     genus      = parsed_library['genus']
     specie     = parsed_library['specie']
-    
+
     for cvnamep, cvtermnamep, value  in parsed_library['properties']:
         uniquename  = naming.get_uniquename(name=parsed_library['name'],
                                        kind='library')
         libraryprop_attrs = {'library_id':{
                                'organism_id':{'genus': genus, 'species':specie},
                                'uniquename':uniquename,
-                               'type_id':{'cv_id':{'name':cvname}, 
+                               'type_id':{'cv_id':{'name':cvname},
                                           'name' : cvtermname}},
                              'type_id':{'cv_id':{'name':cvnamep},
                                         'name' : cvtermnamep},

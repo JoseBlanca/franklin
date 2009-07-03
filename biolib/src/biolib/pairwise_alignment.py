@@ -1,5 +1,6 @@
 'Blast utilities'
-from biolib.biolib_utils import call, create_temp_fasta_files
+from biolib.biolib_utils import create_temp_fasta_files
+from biolib.biolib_cmd_utils import call
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
@@ -34,7 +35,7 @@ def _parse_tabular_bl2seq(output):
         hsp['alignment'][name1]['start'] = int(items[6]) - 1
         hsp['alignment'][name1]['end'] = int(items[7]) - 1
         hsp['alignment'][name2]['start'] = int(items[8]) - 1
-        hsp['alignment'][name2]['end'] = int(items[9]) - 1 
+        hsp['alignment'][name2]['end'] = int(items[9]) - 1
         hsps.append(hsp)
     return hsps
 
@@ -111,4 +112,4 @@ def water(seq1, seq2, gapopen=20):
     fileh1.close()
     fileh2.close()
     result = _parse_water(stdout)
-    return result 
+    return result

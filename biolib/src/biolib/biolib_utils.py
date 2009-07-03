@@ -19,36 +19,11 @@ Created on 2009 api 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, signal
+
 import tempfile, shutil
 from uuid import uuid4
 import os.path
-import StringIO
 import matplotlib.pyplot as plt
-
-def call(cmd, env=None, stdin=None, ):
-    'It calls a command and it returns stdout, stderr and retcode'
-    def subprocess_setup():
-        ''' Python installs a SIGPIPE handler by default. This is usually not
-        what non-Python subprocesses expect.  Taken from this url:
-        http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
-        2009-07-02-python-sigpipe'''
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-    if stdin is None:
-        pstdin = None
-    else:
-        pstdin = stdin
-
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=env, stdin=pstdin,
-                               preexec_fn=subprocess_setup)
-    if stdin is None:
-        stdout, stderr = process.communicate()
-    else:
-        stdout, stderr = process.communicate(stdin)
-    retcode = process.returncode
-    return stdout, stderr, retcode
 
 class NamedTemporaryDir(object):
     '''This class creates temporary directories '''
@@ -138,29 +113,7 @@ def parse_fasta(fhand):
         seq.append(line)
     return "".join(seq), name, description
 
-def get_best_orf(seq, matrix_path=None):
-    '''It returns a new seq with the orf '''
 
-    if matrix_path is None:
-        raise ValueError('ESTscan need a matrix to be able to work')
-    elif not os.path.exists(matrix_path):
-        raise OSError('Matrix file not found: ' + matrix_path)
-
-    estscan_binary = '/usr/local/bin/ESTScan'
-    fasta_fileh = temp_fasta_file(seq)
-    file_orfh = tempfile.NamedTemporaryFile(suffix='.orf')
-
-    cmd = [estscan_binary, '-M', matrix_path, fasta_fileh.name,
-           '-t', file_orfh.name]
-    stdout, stderr, retcode = call(cmd)
-
-    if retcode :
-        raise RuntimeError(stderr)
-
-    stdout    = StringIO.StringIO(stdout)
-    orf_dna  = parse_fasta(stdout)[0]
-    orf_prot = parse_fasta(file_orfh)[0]
-    return orf_dna, orf_prot
 
 def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
     ''' It removes an aminoaacid from dna and protein seq'''
@@ -174,18 +127,7 @@ def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
         pos += 3
     return "".join(dna), "".join(prot)
 
-def translate(seq):
-    '''It translates the dna sequence to protein. It uses emboss binary
-    transeq'''
 
-    translation_binary = 'transeq'
-
-    fasta_fileh = temp_fasta_file(seq)
-    cmd = [translation_binary, fasta_fileh.name, '-stdout', '-auto']
-    stdout, stderr, retcode = call(cmd)
-    if retcode != 0:
-        raise RuntimeError(stderr)
-    return parse_fasta(stdout)
 def _remove_atributes_to_tag(tag):
     '''It removees atributes to a xml tag '''
     mod_tag = "".join(tag).split(' ')

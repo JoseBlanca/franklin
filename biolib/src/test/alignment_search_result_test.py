@@ -141,7 +141,7 @@ def _check_match_summary(match_summary, expected):
     for query_name in expected:
         assert len(match_summary[query_name]) == expected[query_name]
 
-EXONERATE_OUTPUT ='''
+EXONERATE_OUTPUT = '''
 " (peio@oiz: ~/work_in/tmp/exonerate)Command line: [exonerate --model affine:local query.fasta adaptators.fasta --showalignment False --showvulgar False --ryo cigar_like:%S %ql %tl\n]
 Hostname: [oiz]
 cigar_like:prueb2 7 31 + adaptor1 5 29 + 120 55 34
