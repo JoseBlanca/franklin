@@ -287,7 +287,7 @@ def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
     parser  = parsers[aligner_cmd]
     binary  = {'blast':'blast2', 'exonerate':'exonerate'}
 
-    Runner = create_runner(kind=aligner_cmd, bin_=binary)
+    Runner = create_runner(kind=aligner_cmd, bin_=binary[aligner_cmd])
     source = Runner(parameters=cmd_parameters)
 
     def _filter(sequence):
