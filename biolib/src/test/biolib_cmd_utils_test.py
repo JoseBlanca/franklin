@@ -68,20 +68,19 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_blast_runner():
         'We can create a runner class for blast'
-        Runner = create_runner(bin_='blast2', kind='blast')
+        run_blast_for_seq = create_runner(bin_='blast2', kind='blast',
+                                          parameters={'database':'tair7_cdna',
+                                                      'program':'blastn'})
         seq1 = Seq('AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT')
-        runner = Runner(parameters={'database':'tair7_cdna',
-                                    'program':'blastn'})
-        result = runner.get_result(seq1)
-        assert result[0] == '<'
+        result = run_blast_for_seq(seq1)[0]
+        assert result.read()[0] == '<'
     @staticmethod
     def test_create_mdust_runner():
         'We can create a runner class for seqclean'
-        Runner = create_runner(kind='mdust')
+        run_mdust__for_seq = create_runner(kind='mdust')
         seq1 = Seq('AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-        runner = Runner()
-        result = runner.get_result(seq1)
-        assert result[-10:-1] == 'aaaaaaaaa'
+        result = run_mdust__for_seq(seq1)[0]
+        assert result.read()[-10:-1] == 'aaaaaaaaa'
 
 
 

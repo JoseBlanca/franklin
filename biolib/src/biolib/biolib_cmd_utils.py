@@ -62,7 +62,7 @@ RUNNER_DEFINITIONS = {
                              'megablast':{'default':'T',  'option':'-n'},
                              'alig_format': {'default':7, 'option':'-m'}
                             },
-              'output':STDOUT,
+              'output':[STDOUT],
               'input':{'option':'-i', 'process':temp_fasta_file}
               },
     'seqclean_vect':{'parameters':{'vector_db':{'required':True,'option':'-v'},
@@ -71,12 +71,12 @@ RUNNER_DEFINITIONS = {
                                    'no_trim_A':{'default':None, 'option':'-A'},
                                      'no_dust':{'default':None, 'option':'-L'},
                                  'min_seq_len':{'required':True}},
-                     'output':'-o',
+                     'output':['-o'],
                      'input':{'option':ARGUMENT,'process':temp_fasta_file,
                             'arg_before_params':True}
                     },
     'mdust':{'parameters':{'mask_letter':{'default':'L', 'option': '-m'}},
-             'output':STDOUT,
+             'output':[STDOUT],
              'input':{'option':ARGUMENT, 'process':temp_fasta_file,
                       'arg_before_params':True}
             },
@@ -85,7 +85,7 @@ RUNNER_DEFINITIONS = {
         'show_vulgar':{'default':'False', 'option':'--showvulgar'},
         'show_alignment':{'default':'False', 'option':'--showalignment'},
         'show_options':{'default':"cigar_like:%S %ql %tl\n", 'option':'--ryo'}},
-                 'output':STDOUT,
+                 'output':[STDOUT],
                  'input' :{'option':'--query', 'process':temp_fasta_file}
                  }
               }
@@ -116,7 +116,7 @@ def _process_parameters(parameters, parameters_def):
         bin_.extend((param_opt, value))
     return bin_
 
-def create_runner(kind, bin_=None):
+def create_runner(kind, bin_=None, parameters=None):
     ''''It creates a runner class.
 
     The runner will be able to run a binary program for different sequences.
@@ -125,14 +125,11 @@ def create_runner(kind, bin_=None):
     runner_def = RUNNER_DEFINITIONS[kind]
     if bin_ is None:
         bin_ = kind
-    def init(self, parameters=None):
-        'The init method'
-        if parameters == None:
-            parameters = {}
-        self._cmd_param = _process_parameters(parameters,
-                                              runner_def['parameters'])
+    if parameters == None:
+        parameters = {}
+    cmd_param = _process_parameters(parameters, runner_def['parameters'])
 
-    def get_result(self, sequence):
+    def run_cmd_for_sequence(sequence):
         'It returns a result for the given sequence'
         #do we have to process the sequence?
         if 'process' in runner_def['input']:
@@ -153,21 +150,21 @@ def create_runner(kind, bin_=None):
             input_cmd = [runner_def['input']['option'], seq_param]
         if 'arg_before_params' in runner_def['input']:
             cmd.extend(input_cmd)
-            cmd.extend(self._cmd_param)
+            cmd.extend(cmd_param)
         else:
-            cmd.extend(self._cmd_param)
+            cmd.extend(cmd_param)
             cmd.extend(input_cmd)
         #the output that we have to collect
         stdout, stderr, retcode = call(cmd)
         if retcode:
             raise RuntimeError('Problem running ' + bin_ + ': ' + stderr)
 
-        if runner_def['output'] == STDOUT:
-            return stdout
-    class_name = kind + 'Runner'
-    class_dict = {'__init__':init, 'get_result':get_result}
-    klass = type(class_name, (object,), class_dict)
-    return klass
+        outputs = []
+        for output in runner_def['output']:
+            if output == STDOUT:
+                outputs.append(StringIO.StringIO(stdout))
+        return outputs
+    return run_cmd_for_sequence
 
 class SeqcleanRunner(object):
     '''Class to run seqclean '''
