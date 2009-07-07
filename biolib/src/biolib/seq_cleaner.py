@@ -145,7 +145,7 @@ def mask_low_complexity(sequence):
     '''
 
     mask_low_complex_by_seq = create_runner(kind='mdust')
-    fhand = mask_low_complex_by_seq(SeqWithQuality(seq=sequence))[0]
+    fhand = mask_low_complex_by_seq(sequence)[0]
     return  parse_fasta(fhand)
 
 def mask_polya(sequence):
@@ -156,8 +156,8 @@ def mask_polya(sequence):
     parameters = {'min_score':'10', 'end':'x', 'incremental_dist':'20',
                   'fixed_dist':None}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
-    fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
-    masked_sequence = _sequence_from_trimpoly(fhand, sequence.seq, trim=False)
+    fhand = mask_polya_by_seq(sequence)[0]
+    masked_sequence = _sequence_from_trimpoly(fhand, sequence, trim=False)
 
     return SeqWithQuality(seq=masked_sequence)
 
@@ -168,13 +168,13 @@ def strip_seq_by_quality_trimpoly(sequence):
     This program does not work well with short sequences, and it only can
     look at the last 30 nucleotides max
     '''
-    if len(sequence) < 70:
+    if len(sequence) < 80:
         msg = 'Sequence must be at least of 70 nucleotides to be used by this'
-        raise RuntimeError(msg)
+        raise ValueError(msg)
     parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
     fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
-    masked_sequence = _sequence_from_trimpoly(fhand, sequence.seq, trim=True)
+    masked_sequence = _sequence_from_trimpoly(fhand, sequence, trim=True)
 
     return SeqWithQuality(seq=masked_sequence)
 
@@ -186,12 +186,18 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     end3 = int(trimp_data[2]) - 1
     end5 = int(trimp_data[3])
     new_sequence = ''
+    str_seq = sequence.seq
     if not trim:
-        new_sequence  += sequence[:end3].lower()
-    new_sequence += sequence[end3:end5]
+        new_sequence  += str_seq[:end3].lower()
+    new_sequence += str_seq[end3:end5]
     if not trim:
-        new_sequence += sequence[end5:].lower()
-    return new_sequence
+        new_sequence += str_seq[end5:].lower()
+    new_seqrec = SeqWithQuality(name=sequence.name,
+                                description=sequence.description,
+                                annotations=sequence.annotations,
+                                seq=new_sequence,
+                                qual=sequence.qual)
+    return new_seqrec
 
 def strip_seq_by_quality_lucy(sequence):
     '''It trims from the sequence  bad quality sections.

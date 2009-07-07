@@ -49,18 +49,26 @@ class SeqCleanerTest(unittest.TestCase):
         seq1 = SeqWithQuality(seq=seq)
         masked_seq = mask_polya(seq1)
         exp_seq = 'TCGCATCGATCATCGCAGATCGACTGATCGATCGATCaaaaaaaaaaaaaaaaaaaaaaa'
-        assert masked_seq.seq == exp_seq
+        assert str(masked_seq.seq) == exp_seq
 
-    @staticmethod
-    def test_strip_seq_by_qual_trimpoly():
+    def test_trim_seq_by_qual_trimpoly(self):
         'It test trimpoly  but with trim low quality paramters'
-        seq = '''TCGCATCGATCATCGCAGATCGACTGATCGATCGATCNNNNNNNNNNNNNNNNNNNNN
-                NNNNNNNNNNNNNNNNNNNNNNNNN'''
+        seq  = 'ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATG'
+        seq += 'TCATGTCATGTCGATGTCTAGTCTAGTCTAGTGAGTCACTGACTAGATCATGACATCGANNN'
+        seq += 'NNNNNNNNNNNNNNNNNNTACTAGTC'
         seq1 = SeqWithQuality(seq=seq)
-        masked_seq = strip_seq_by_quality_trimpoly(seq1)
+        trimmed_seq = strip_seq_by_quality_trimpoly(seq1)
         # It does not mask anything with this example, but it check that
         # if works
-        assert masked_seq.seq[-10:-1] == '  NNNNNNN'
+        assert str(trimmed_seq.seq).endswith('ATGACATCGA')
+
+        try:
+            seq1 = SeqWithQuality(seq='ATCTATCATATCAT')
+            strip_seq_by_quality_trimpoly(seq1)
+            self.fail('ValueError expected')
+            #pylint: disable-msg=W0704
+        except ValueError:
+            pass
 
     def test_strip_seq_by_qual_lucy(self):
         'It tests lucy with a ga runner class for lucy'
