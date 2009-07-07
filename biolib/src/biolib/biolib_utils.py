@@ -25,6 +25,8 @@ from uuid import uuid4
 import os.path
 import matplotlib.pyplot as plt
 
+from biolib.seqs import SeqWithQuality
+
 class NamedTemporaryDir(object):
     '''This class creates temporary directories '''
     def __init__(self):
@@ -53,31 +55,48 @@ def fasta_str(seq, name):
     fasta_str_.append('\n')
     return ''.join(fasta_str_)
 
-def _get_seq_name(seq, name):
+def _get_seq_name(seq):
     'Given a sequence and its default name it returns its name'
     try:
-        return seq.name
+        name = seq.name
     except AttributeError:
-        return name
+        name = None
 
-def temp_fasta_file(seq, name=None):
-    '''Given a Seq and its default name it returns a fasta file in a
-    temporary file'''
-    fileh = tempfile.NamedTemporaryFile(suffix='.fasta')
     if name is None:
-        name  = _get_seq_name(seq, str(uuid4()))
-    fileh.write(fasta_str(seq, name))
+        name  = str(uuid4())
+    return name
+
+def temp_fasta_file(seq, write_qual=False):
+    '''Given a Seq and its default name it returns a fasta file in a
+    temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
+    file'''
+    fileh = tempfile.NamedTemporaryFile(suffix='.fasta')
+    name = _get_seq_name(seq)
+
+    if write_qual:
+        try:
+            quality = seq.qual
+        except AttributeError:
+            raise AttributeError('Sequence must be a SeqWithQuality instance')
+        if quality is not None:
+            quality = [str(qual) for qual in quality]
+            fileh.write(fasta_str(' '.join(quality), name))
+        else:
+            raise AttributeError('Quality can not be empty')
+    else:
+        fileh.write(fasta_str(seq, name))
     fileh.flush()
+    fileh.seek(0)
     return fileh
+
+
+
 
 def create_temp_fasta_files(seq1, seq2):
     'It returns two temporal fasta files.'
-    #if the seqs have a name we use it, otherwise we create one
-    name1 = _get_seq_name(seq1, 'seq1')
-    name2 = _get_seq_name(seq2, 'seq2')
     #we create two temp files
-    fileh1 = temp_fasta_file(seq1, name1)
-    fileh2 = temp_fasta_file(seq2, name2)
+    fileh1 = temp_fasta_file(seq1)
+    fileh2 = temp_fasta_file(seq2)
     return fileh1, fileh2
 
 def get_start_end(location):
@@ -111,7 +130,7 @@ def parse_fasta(fhand):
                 description = None
             continue
         seq.append(line)
-    return "".join(seq), name, description
+    return SeqWithQuality(seq=''.join(seq), name=name, description=description)
 
 
 
