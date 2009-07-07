@@ -673,7 +673,7 @@ def _remap_run(seq, all_enzymes):
     '''this command runs remap EMBOSS binary and returns ...'''
     # Minimun length of the restriction enzyme recognition site
     sitelen = 4
-    seq_file = temp_fasta_file(seq, name=None)
+    seq_file = temp_fasta_file(seq)
     seq_filename = seq_file.name
 
     if all_enzymes:

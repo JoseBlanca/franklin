@@ -15,19 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seq_filters import  create_filter, strip_seq_by_quality
-from biolib.biolib_cmd_utils import create_runner
-from biolib.seqs import Seq, SeqWithQuality
+from biolib.seq_filters import  create_filter
+from biolib.seqs import Seq
 
 import unittest
 from tempfile import NamedTemporaryFile
-
-#class FilteringIteratorTest(unittest.TestCase):
-#    '''It test the ifiltering_map function'''
-#    @staticmethod
-#    def test_ifiltering_map():
-#        'It test both combined'
-#        assert list(ifiltering_map(lambda x: x%2, [1, 2, 3])) == [1, 1]
 
 class BlastFilteringTest(unittest.TestCase):
     'It tests that we can filter out sequence using a blast result'
@@ -81,33 +73,6 @@ class TooManyAdaptorsTest(unittest.TestCase):
                                       match_filters=match_filters,
                                       result_filters=result_filters )
         assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == True
-
-
-
-class StripSeqByQualitytest(unittest.TestCase):
-    'test trim_seq_by_quality '
-    @staticmethod
-    def test_strip_seq_by_quality():
-        'test trim_seq_by_quality '
-        qual = [20, 20, 20, 60, 60, 60, 60, 60, 20, 20, 20, 20]
-        seq  = 'ataataataata'
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq),
-                                       quality_treshold=40, min_seq_length=2,
-                                       min_quality_bases=3)
-        assert new_seq.seq == 'ataat'
-        qual = [60, 60, 60, 60, 60, 60, 60]
-        seq  = 'ataataa'
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq),
-                                       quality_treshold=40, min_seq_length=2,
-                                       min_quality_bases=3)
-        assert  new_seq.seq == 'ataataa'
-        qual = [60, 60, 60, 60, 60, 60, 0]
-        seq  = 'ataataa'
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq),
-                                       quality_treshold=40, min_seq_length=2,
-                                       min_quality_bases=3)
-        assert new_seq.seq == 'ataata'
-
 
 
 if __name__ == "__main__":

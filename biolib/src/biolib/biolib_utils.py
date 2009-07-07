@@ -113,21 +113,47 @@ def get_start_end(location):
         end = location.end
     return start, end
 
-def parse_fasta(fhand):
+def parse_fasta(seq_fhand, qual_fhand=None):
     '''It returns the fasta file content giving a file hanler'''
-    seq = []
+    seq  = []
+    qual = None
+    name, description, seq = get_content_from_fasta(seq_fhand)
+    if qual_fhand is not None:
+        #pylint: disable-msg=W0612
+        name_, descrip, qual = get_content_from_fasta(qual_fhand, kind='qual')
+    if not seq and not qual:
+        return None
+    else:
+        return SeqWithQuality(seq=seq, qual=qual, name=name,
+                          description=description)
+
+def get_content_from_fasta(fhand, kind='seq'):
+    '''It returns the seq/qual from a fasta file, it need a fhand'''
+    seq         = []
+    name        = None
+    description = None
     for line in fhand:
         line = line.strip()
+        if not line:
+            continue
         if line.startswith('>'):
-            items = line.split()
+            items = line.split(' ', 1)
             name  = items[0][1:]
             try:
                 description = items[1]
             except IndexError:
                 description = None
-            continue
-        seq.append(line)
-    return SeqWithQuality(seq=''.join(seq), name=name, description=description)
+        else:
+            seq.append(line)
+    if kind == 'seq':
+        seq = ''.join(seq)
+    else:
+        qual = []
+        for item in seq:
+            qual.extend(item.split())
+        qual = [int(qitem) for qitem in qual]
+        seq = qual
+    return name, description, seq
 
 def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
     ''' It removes an aminoaacid from dna and protein seq'''

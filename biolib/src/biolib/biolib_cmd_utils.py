@@ -24,7 +24,7 @@ from biolib.biolib_utils import temp_fasta_file, NamedTemporaryDir, parse_fasta
 import subprocess, signal, tempfile, os
 import StringIO
 
-def call(cmd, env=None, stdin=None, ):
+def call(cmd, env=None, stdin=None):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -36,7 +36,7 @@ def call(cmd, env=None, stdin=None, ):
     if stdin is None:
         pstdin = None
     else:
-        pstdin = stdin
+        pstdin = subprocess.PIPE
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, env=env, stdin=pstdin,
@@ -44,6 +44,10 @@ def call(cmd, env=None, stdin=None, ):
     if stdin is None:
         stdout, stderr = process.communicate()
     else:
+#        a = stdin.read()
+#        print a
+#        stdout, stderr = subprocess.Popen.stdin = stdin
+#        print stdin.read()
         stdout, stderr = process.communicate(stdin)
     retcode = process.returncode
     return stdout, stderr, retcode
@@ -51,8 +55,9 @@ def call(cmd, env=None, stdin=None, ):
 
 # Runner definitions, Define here the parameters of the prgrams you want to
 # use with this class
-STDOUT   = True
-ARGUMENT = True
+STDOUT   = 'stdout'
+ARGUMENT = 'argument'
+STDIN    = 'stdin'
 RUNNER_DEFINITIONS = {
     'blast': {'parameters': {'database' :{'required':True,  'option': '-d'},
                              'program'  :{'required':True,  'option':'-p'},
@@ -62,8 +67,8 @@ RUNNER_DEFINITIONS = {
                              'megablast':{'default':'T',  'option':'-n'},
                              'alig_format': {'default':7, 'option':'-m'}
                             },
-              'output':[STDOUT],
-              'input':{'option':'-i', 'process':temp_fasta_file}
+              'output':[{'option':STDOUT}],
+              'input':{'option':'-i'}
               },
     'seqclean_vect':{'parameters':{'vector_db':{'required':True,'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},
@@ -71,25 +76,41 @@ RUNNER_DEFINITIONS = {
                                    'no_trim_A':{'default':None, 'option':'-A'},
                                      'no_dust':{'default':None, 'option':'-L'},
                                  'min_seq_len':{'required':True}},
-                     'output':['-o'],
-                     'input':{'option':ARGUMENT,'process':temp_fasta_file,
-                            'arg_before_params':True}
+                     'output':[{'option':'-o', 'files':['seq']}],
+                     'input':{'option':ARGUMENT, 'arg_before_params':True}
                     },
     'mdust':{'parameters':{'mask_letter':{'default':'L', 'option': '-m'}},
-             'output':[STDOUT],
-             'input':{'option':ARGUMENT, 'process':temp_fasta_file,
-                      'arg_before_params':True}
+             'output':[{'option':STDOUT}],
+             'input':{'option':ARGUMENT, 'arg_before_params':True}
             },
+    'trimpoly':{'parameters':{'min_score':{'option':'-s'},
+                              'end':{'option':'-e'},
+                              'incremental_dist':{'option':'-l'},
+                              'fixed_dist':{'option':'-L'},
+                              'only_n_trim':{'option':'-N'},
+                              'ntrim_above_percent':{'option':'-n'}
+                              },
+             'output':[{'option':STDOUT}],
+             'input':{'option':STDIN}
+                },
     'exonerate':{'parameters':{'target':{'required':True, 'option':'--target'},
          'model' :{'default':'affine:local', 'option': '--model'},
         'show_vulgar':{'default':'False', 'option':'--showvulgar'},
         'show_alignment':{'default':'False', 'option':'--showalignment'},
         'show_options':{'default':"cigar_like:%S %ql %tl\n", 'option':'--ryo'}},
-                 'output':[STDOUT],
-                 'input' :{'option':'--query', 'process':temp_fasta_file}
-                 }
-              }
-
+                 'output':[{'option':STDOUT}],
+                 'input' :{'option':'--query'}
+                 },
+    'lucy':{'parameters':{
+                      'cdna'   :{'option':'-c', 'default':None},
+                      'keep'   :{'option':'-k', 'default':None},
+                      'bracket':{'option':'-b', 'default':[10, 0.02]},
+                      'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]}},
+            'input':{'option': ARGUMENT,  'arg_before_params':True,
+                     'files':['seq', 'qual']},
+            'output':[{'option': '-output', 'files':['seq', 'qual']}]
+            }
+    }
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
     It returns the parameters need by programa'''
@@ -108,12 +129,18 @@ def _process_parameters(parameters, parameters_def):
     if 'bin' in parameters:
         bin_ = parameters['bin']
 
-    for param in parameters:
+    for param, value in parameters.items():
         if param == 'bin':
             continue
         param_opt = parameters_def[param]['option']
-        value     = str(parameters[param])
-        bin_.extend((param_opt, value))
+        bin_.append(param_opt)
+        # Values can be a list of parameters
+        if isinstance(value, list):
+            bin_.extend([str(value_) for value_ in value])
+        else:
+            if value is not None:
+                bin_.append(str(value))
+
     return bin_
 
 def create_runner(kind, bin_=None, parameters=None):
@@ -128,42 +155,80 @@ def create_runner(kind, bin_=None, parameters=None):
     if parameters == None:
         parameters = {}
     cmd_param = _process_parameters(parameters, runner_def['parameters'])
-
     def run_cmd_for_sequence(sequence):
         'It returns a result for the given sequence'
+        # Do we nedd quality for the input??
+        input_ = runner_def['input']
+        if 'files' in input_ and 'qual' in input_['files']:
+            qual_fhand = temp_fasta_file(sequence, write_qual=True)
+            qual_fname = qual_fhand.name
         #do we have to process the sequence?
-        if 'process' in runner_def['input']:
-            sequence = runner_def['input']['process'](sequence)
+        seq_fhand = temp_fasta_file(sequence)
         cmd = [bin_]
 
-        #we add the input parameter to the cmd
-        seq_param = sequence
-
         #is the sequence a file-like object?
-        seq_attrs = dir(sequence)
-        if 'name' in seq_attrs and 'close' in seq_attrs:
-            seq_param = seq_param.name
+        seq_fname = seq_fhand.name
+
         #we add the parameter that informs the program where is the input seq
-        if runner_def['input']['option'] == ARGUMENT:
-            input_cmd = [seq_param]
-        else:
-            input_cmd = [runner_def['input']['option'], seq_param]
-        if 'arg_before_params' in runner_def['input']:
-            cmd.extend(input_cmd)
+        if input_['option'] == ARGUMENT:
+            if 'files' in input_ and 'qual' in  input_['files']:
+                input_cmd = [seq_fname, qual_fname]
+            else:
+                input_cmd = [seq_fname]
+
+        else: # option
+            input_cmd = [input_['option'], seq_fname]
+
+        if input_['option'] == STDIN:
+            stdin = seq_fhand.read()
             cmd.extend(cmd_param)
         else:
-            cmd.extend(cmd_param)
-            cmd.extend(input_cmd)
-        #the output that we have to collect
-        stdout, stderr, retcode = call(cmd)
+            if 'arg_before_params' in input_:
+                cmd.extend(input_cmd)
+                cmd.extend(cmd_param)
+            else:
+                cmd.extend(cmd_param)
+                cmd.extend(input_cmd)
+        # check if output is passed as a
+            stdin = None
+
+        outputs = runner_def['output']
+        # Now we are going to construct the output parameters section
+        # We have to check if we have different output options, Output is a list
+        # of dict with the different output options
+        output_cmd    = []
+        #Which are the fhands that will be populated by the external cmd?
+        output_fhands = []
+        for output in outputs:
+            option = output['option']
+            if 'files' not in output:
+                files = ['seq']
+            else:
+                files = output['files']
+            if option != STDOUT:
+                output_cmd.append(option)
+            for file_ in files:
+                if option == STDOUT:
+                    output_fhands.append(STDOUT)
+                else:
+                    fhand = tempfile.NamedTemporaryFile()
+                    output_fhands.append(fhand)
+                    output_cmd.append(fhand.name)
+        cmd.extend(output_cmd)
+
+        #print ' '.join(cmd)
+        stdout, stderr, retcode = call(cmd, stdin=stdin)
         if retcode:
             raise RuntimeError('Problem running ' + bin_ + ': ' + stderr)
 
-        outputs = []
-        for output in runner_def['output']:
-            if output == STDOUT:
-                outputs.append(StringIO.StringIO(stdout))
-        return outputs
+        # Now we are going to make this list with the files we are going to
+        # return
+        returns = []
+        for fhand in output_fhands:
+            if fhand == STDOUT:
+                fhand = StringIO.StringIO(stdout)
+            returns.append(fhand)
+        return returns
     return run_cmd_for_sequence
 
 class SeqcleanRunner(object):

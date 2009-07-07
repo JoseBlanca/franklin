@@ -82,15 +82,15 @@ class SeqVariationTest(unittest.TestCase):
         CONFIG.min_num_of_reads = 2
         snp = SeqVariation(alleles={'A':[1, 2], 'T':['seq1', 'seq2'], '-':[1]})
         assert len(snp.alleles) == 2
-        
+
     @staticmethod
     def test_kind():
         '''it checks that we can get the kind of variation.'''
         inchar = CONFIG.indel_char
-        
+
         seq_var = SeqVariation(alleles={'A':3, inchar:3})
         assert seq_var.is_indel()
- 
+
         seq_var = SeqVariation(alleles={'A':[1, 2, 3], inchar:[4, 5, 6]})
         assert seq_var.is_indel()
 
@@ -101,13 +101,13 @@ class SeqVariationTest(unittest.TestCase):
 
         seq_var = SeqVariation(alleles={'AA' + inchar :3, inchar * 3:3})
         assert seq_var.is_complex()
-        
+
         seq_var = SeqVariation(alleles={'A':3, 'T':4})
         assert seq_var.is_snp()
-        
+
         seq_var = SeqVariation(alleles={'A':3, 'T':4, inchar:3})
         assert seq_var.is_complex()
-        
+
         seq_var = SeqVariation(alleles={'A' + inchar + 'A':3,
                                         'A' + inchar * 2 :4})
         assert seq_var.is_complex()
@@ -145,8 +145,8 @@ class VariationGeneratorTest(unittest.TestCase):
     '''It test if we can get the variations'''
     @staticmethod
     def test_seq_variation_generator():
-        '''It checks if we can get the variations.''' 
-            
+        '''It checks if we can get the variations.'''
+
         CONFIG.min_num_of_reads = 2
         #can we find snp?
         allele1 = 'AtA'
@@ -165,7 +165,7 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('-','C'), ('-','T'))
         check_alleles(expected_alleles, contig)
-        
+
         #can we find indels with length 1?
         allele1 = '-tn'
         allele2 = 'CtT'
@@ -174,7 +174,7 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('-','C'),)
         check_alleles(expected_alleles, contig)
-        
+
         allele1 = SeqRecord('--')
         allele2 = SeqRecord('-a')
         allele3 = SeqRecord('aa')
@@ -182,8 +182,8 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = ()
         check_alleles(expected_alleles, contig)
-        
-        
+
+
         allele1 = SeqRecord('AAA')
         allele2 = SeqRecord('--A')
         allele3 = SeqRecord('A--')
@@ -191,7 +191,7 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('AAA', '--A', 'A--'), )
         check_alleles(expected_alleles, contig)
-        
+
         allele1 = SeqRecord('AAA')
         allele2 = SeqRecord('A--')
         allele3 = SeqRecord('--A')
@@ -200,17 +200,17 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('AA','--'), )
         check_alleles(expected_alleles, contig)
-        
+
         allele1 = SeqRecord('AAA')
         seqs = [allele1, allele1, allele1]
         contig = Contig(sequences = seqs)
         expected_alleles = (() )
         check_alleles(expected_alleles, contig)
-        
+
     @staticmethod
     def test_seq_variation_with_locseq():
-        '''It checks if we can get the variations using LocatableSequence.''' 
-        # here we check if it works when the seqs in the contigs are 
+        '''It checks if we can get the variations using LocatableSequence.'''
+        # here we check if it works when the seqs in the contigs are
         # locatable sequences
         allele1 = locate_sequence(sequence=SeqRecord('AA'), location=0)
         allele2 = locate_sequence(sequence=SeqRecord('TA'), location=1)
@@ -218,20 +218,20 @@ class VariationGeneratorTest(unittest.TestCase):
         contig = Contig(sequences = seqs)
         expected_alleles = (('AT'), )
         check_alleles(expected_alleles, contig)
-        
+
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
     @staticmethod
     def test_filter_by_number_reads():
         'It checks that filter the reads with not much reads.'
-        #It checks the number of times that the second most abundant allele 
+        #It checks the number of times that the second most abundant allele
         #has been read
         snp = SeqVariation(alleles={'A':2, 'T':3, 'C':4})
         assert second_allele_read_times(snp, times=3) == True
         assert second_allele_read_times(snp, times=4) == False
 
-    
+
     def test_remove_bad_quality_alleles(self):
         'It test it we can remove the alleles with bad qualities'
         #the good reads in 454 are around a quality of 25 to 40
@@ -269,7 +269,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
 
-        
+
         #The same test but with locatable sequences. One of the sequences does
         # not have quality, We provide default quelity
         seq1 = locate_sequence(sequence=SeqWithQuality(seq='AATAA', \
@@ -285,8 +285,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25, \
                                           default_quality=25)
         assert len(snp2.alleles) == 3
-        
-        # One of the sequences does not have quality, We do not provide 
+
+        # One of the sequences does not have quality, We do not provide
         # default quelity. It have to give and error
         seq1 = locate_sequence(sequence=SeqWithQuality(seq='AATAA', \
                                                      qual=[30, 30, 30, 30, 30]),
@@ -300,9 +300,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
                            alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
         self.failUnlessRaises(ValueError, remove_bad_quality_alleles, \
                               snp, qual_threshold=25)
-        
+
         # The  gaps does not hace quality , so we ignore the quelity but we use
-        # them 
+        # them
         seq1 = SeqWithQuality(seq='AA-AA', qual=[30, 30, 0, 30, 30])
         seq2 = SeqWithQuality(seq='AACAA', qual=[30, 30, 30, 30, 30])
         seq3 = SeqWithQuality(seq='AAGAA', qual=[30, 30, 15, 30, 30])
@@ -312,7 +312,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
         #if there is no quality we get an error
-        
+
         # Now we have to check if it return a seqvar with only one allele after
         # the quality testing
         seq1 = SeqWithQuality(seq='AATAA', qual=[30, 30, 15, 30, 30])
@@ -322,42 +322,42 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp = SeqVariation(location=2, alignment=contig,
                            alleles={'T':[0, 1], 'C':[2, 3], 'G':[4, 5]})
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
-        assert snp2 is None        
-        
+        assert snp2 is None
+
         # It checks indels with more than one column
         seq1 = SeqWithQuality(seq='AA--AA', qual=[30, 30, 0, 0, 30, 30])
         seq2 = SeqWithQuality(seq='AACCAA', qual=[30, 30, 30, 30, 30, 30])
         seq3 = SeqWithQuality(seq='AAGGAA', qual=[30, 30, 15, 15, 30, 30])
         contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
-        
+
         snp = SeqVariation(location=Location(start=2, end=3), alignment=contig,
                            alleles={'--':[0, 1], 'CC':[2, 3], 'GG':[4, 5]})
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
-        
+
         #It check a complex SeqVar
         seq1 = SeqWithQuality(seq='AA--AA', qual=[30, 30, 0, 0, 30, 30])
         seq2 = SeqWithQuality(seq='AAC-AA', qual=[30, 30, 30, 0, 30, 30])
         seq3 = SeqWithQuality(seq='AAGGAA', qual=[30, 30, 15, 15, 30, 30])
         contig = Contig([seq1, seq1, seq2, seq2, seq3, seq3])
-        
+
         snp = SeqVariation(location=Location(start=2, end=3), alignment=contig,
                            alleles={'--':[0, 1], 'C-':[2, 3], 'GG':[4, 5]})
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
-        
+
         #It check a complex SeqVar
         seq1 = SeqWithQuality(seq='AA---AA', qual=[30, 30, 0, 0, 0, 30, 30])
         seq2 = SeqWithQuality(seq='AAC--AA', qual=[30, 30, 30, 0, 0, 30, 30])
         seq3 = SeqWithQuality(seq='AAGGGAA', qual=[30, 30, 15, 15, 15, 30, 30])
         seq4 = SeqWithQuality(seq='AAGGGAA', qual=[30, 30, 15, 30, 30, 30, 30])
         contig = Contig([seq1, seq1, seq2, seq2, seq3, seq4])
-        
+
         snp = SeqVariation(location=Location(start=2, end=4), alignment=contig,
                            alleles={'---':[0, 1], 'C--':[2, 3], 'GGG':[4, 5]})
         snp2 = remove_bad_quality_alleles(snp, qual_threshold=25)
         assert len(snp2.alleles) == 2
-        
+
     def test_close_to_consensus_end(self):
         'It checks the filtering out of the seqvars close to the end.'
         con = 'ATCTGACTT'
@@ -409,10 +409,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
         pic_1 = calculate_pic(snp1)
         pic_2 = calculate_pic(snp2)
         assert pic_1 > pic_2
-        
+
 class SeqVariationrEnzime(unittest.TestCase):
     ''' It checks if we have problems with remaps and it functions'''
-    
+
     @staticmethod
     def test_remap():
         '''It test if the remap external program works '''
@@ -421,10 +421,10 @@ class SeqVariationrEnzime(unittest.TestCase):
         consensus = locate_sequence(con, location=0)
         cont = Contig([seq, seq], consensus=consensus)
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=7, alignment=cont)
-            
+
         enzymes = cap_enzime(snp, True)
         assert ['HinfI', 'TscAI'] == enzymes
-        
+
         # We need to test it with locations
         con       = 'Actgactgactgtca'
         seq       = 'Actgacttactgtca'
@@ -432,30 +432,30 @@ class SeqVariationrEnzime(unittest.TestCase):
         contig    = Contig(consensus=consensus)
         contig.append_to_location(seq, 0)
         contig.append_to_location(seq, 0)
-        snp = SeqVariation(alleles={'C':2, 'T':3}, location=(7, 8), 
+        snp = SeqVariation(alleles={'C':2, 'T':3}, location=(7, 8),
                            alignment=cont)
         enzymes = cap_enzime(snp, True)
         assert ['HinfI', 'TscAI'] == enzymes
-               
-        
+
+
     @staticmethod
     def test_ecori():
         '''It test a know enzyme reaction ecori '''
-        
+
         seq_eco   = 'gaattc'
         seq_noeco = 'gaatcc'
-        
+
         con  ='ATGATGATG' + seq_eco + 'ATGATGATGTGGGAT'
         seq1 = 'ATGATGATG' + seq_eco + 'ATGATGATGTGGGAT'
         seq2 = 'ATGATGATG' + seq_noeco + 'ATGATGATGTGGGAT'
         cont = Contig([seq1, seq2], consensus=con)
-        
+
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=13, alignment=cont)
-        
+
         enzymes = cap_enzime(snp)
         assert 'EcoRI' in enzymes
 
-    
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

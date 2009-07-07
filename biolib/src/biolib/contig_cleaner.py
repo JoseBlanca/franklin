@@ -20,6 +20,7 @@ Created on 2009 api 27
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.contig import  Contig
+from biolib.seqs import SeqWithQuality
 from biolib.locatable_sequence import Location
 from biolib.pairwise_alignment import water
 
@@ -49,27 +50,27 @@ def water_alignment_strip(contig):
      an intersection between them'''
     consensus = contig.consensus
     new_contig = Contig(consensus=consensus)
-    for i,read in enumerate(contig):
+    for read in contig:
         read_loc     = read.location
         #with str we get the complemented/reverse sequence if is needed
         seq          = str(read).strip()
-        # Alignment of the read with the consensus. The read is only 
+        # Alignment of the read with the consensus. The read is only
         # the unmasked region
-        align_result = water(consensus, seq)
+        align_result = water(consensus, SeqWithQuality(seq, name='seq2'))
         seq_start    = align_result['alignment']['seq2']['start']
         seq_end      = align_result['alignment']['seq2']['end']
         #Now we need to translate the aligned read start and end to the unmasked
         # read coordenates.
         alignment_start_read = read.mask.start + seq_start
         alignment_end_read   = read.mask.start + seq_end
-        
+
         loc = Location(start=alignment_start_read, end=alignment_end_read, \
                        strand=read.mask.strand, forward=read.mask.forward)
-        
-        # Now we have to check with read area are inside the mask and are 
+
+        # Now we have to check with read area are inside the mask and are
         #aligned to the consensus. For that we perform an intersection.
         new_mask = read.mask.intersection(loc)
-        #if the intersection doesn't fit, this read is not good for us 
+        #if the intersection doesn't fit, this read is not good for us
         #and we don't use it. If it does fit. we  put inside the contig  giving
         # a new mask to the read
         if new_mask is not None:
@@ -81,5 +82,5 @@ def water_alignment_strip(contig):
                                           mask=mask, \
                                           masker=read.masker)
     return new_contig
-            
-            
+
+
