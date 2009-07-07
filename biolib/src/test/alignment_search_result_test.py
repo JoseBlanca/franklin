@@ -21,7 +21,7 @@ import os, math
 import biolib
 from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults,
-                                            generate_score_distribution,
+                                            alignment_results_scores,
                                             _compatible_incompatible_length,
                                              ExonerateParser)
 from biolib.seqs import SeqWithQuality
@@ -567,17 +567,11 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
     'It test that we can calculate the distribution of similarity'
 
     @staticmethod
-    def test_scores_distribution():
-        'We can calculate scores distributions for the alinment search result'
-        #some faked test data
-        #        012345678901234567890
-        #query   ---------------------
-        #query             <--------->
-        #simil                 90%
-        #subject           <--------->
-        #subject           ----------------------------------
-        query   = SeqWithQuality(length=21, name='query')
-        subject = SeqWithQuality(length=32, name='hola')
+    def test_alignment_results_scores():
+        'It tests that we can get all the scores from a result'
+        query    = SeqWithQuality(length=25, name='query')
+        subject1 = SeqWithQuality(length=32, name='hola')
+        subject2 = SeqWithQuality(length=32, name='query')
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 10,
                        'query_end'     : 20,
@@ -596,81 +590,35 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
                       }
         result1 = {'query':query,
                    'matches':
-                        [{'subject':subject,
-                          'start':10, 'end':20,
-                          'scores':{'expect':0.01},
-                          'match_parts':[match_part1]
-                         },
-                         {'subject':subject,
-                          'start':10, 'end':20,
-                          'scores':{'expect':0.01},
-                          'match_parts':[match_part2]
-                         }]}
-        #         123456789012345678901234567890123456789012
-        #query    ------------------------------------------
-        #query             <---------><---------><--------->
-        #simil                60%         60.1%     80.1%
-        #subject           <---------><---------><--------->
-        #subject  ------------------------------------------
-        query    = SeqWithQuality(length=43, name='query')
-        subject1 = SeqWithQuality(length=21, name='hola')
-        subject2 = SeqWithQuality(length=32, name='caracola')
-        subject3 = SeqWithQuality(length=43, name='hello')
-        match_part1 = {'scores':{'similarity':60.0},
-                       'query_start'   : 10,
-                       'query_end'     : 20,
-                       'query_strand'  : 1,
-                       'subject_start' : 10,
-                       'subject_end'   : 20,
-                       'subject_strand': 1
-                      }
-        match_part2 = {'scores':{'similarity':60.1},
-                       'query_start'   : 21,
-                       'query_end'     : 31,
-                       'query_strand'  : 1,
-                       'subject_start' : 21,
-                       'subject_end'   : 31,
-                       'subject_strand': 1
-                      }
-        match_part3 = {'scores':{'similarity':80.1},
-                       'query_start'   : 32,
-                       'query_end'     : 42,
-                       'query_strand'  : 1,
-                       'subject_start' : 32,
-                       'subject_end'   : 42,
-                       'subject_strand': 1
-                      }
-        result2 = {'query':query,
-                   'matches':
-                       [{'subject':subject1,
+                        [{'subject':subject1,
                           'start':10, 'end':20,
                           'scores':{'expect':0.01},
                           'match_parts':[match_part1]
                          },
                          {'subject':subject2,
-                          'start':21, 'end':31,
+                          'start':10, 'end':20,
                           'scores':{'expect':0.01},
                           'match_parts':[match_part2]
-                         },
-                         {'subject':subject3,
-                          'start':32, 'end':42,
-                          'scores':{'expect':0.01},
-                          'match_parts':[match_part3]
                          }]}
-        blasts = [result1, result2]
-        distrib = generate_score_distribution(results=blasts,
-                                              score_key='similarity',
-                                              nbins = 3)
-        assert distrib['distribution'] == [22, 22, 11]
-        assert distrib['bins'] == [60.0, 70.0, 80.0, 90.0]
-        distrib = generate_score_distribution(results=blasts,
-                                              score_key='similarity',
-                                              nbins = 3,
-                                              calc_incompatibility=True)
-        assert distrib['distribution'][0] == [11, 11, None]
-        assert distrib['distribution'][1] == [11, None, 11]
-        assert distrib['distribution'][2] == [11, None, None]
-        assert distrib['similarity_bins'] == [60.0, 70.0, 80.0, 90.0]
+        results = [result1]
+        #filtering the query-subj with the same names
+        scores = alignment_results_scores(results, ['similarity'])
+        assert scores == [90.0]
+        #without the filtering
+        scores = alignment_results_scores(results, ['similarity'],
+                                               filter_same_query_subject=False)
+        assert scores == [90.0, 80.0]
+
+        #we can ask for several scores at once
+        scores = alignment_results_scores(results, ['similarity', 'similarity'],
+                                                filter_same_query_subject=False)
+        assert scores == [[90.0, 80.0], [90.0, 80.0]]
+
+        #we can also ask for a derived score
+        scores = alignment_results_scores(results, ['similarity',
+                                                    'd_incompatibility'],
+                                                filter_same_query_subject=False)
+        assert scores == [[90.0, 80.0], [16.0, 16.0]]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

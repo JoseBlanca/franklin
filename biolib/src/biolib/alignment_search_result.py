@@ -264,16 +264,48 @@ def _match_num_if_exists_in_struc(subject_name, struct_dict):
             return i
     return None
 
-def get_match_score(match, score_key):
+def incompatibility_score(match, query, subject):
+    '''It calculates and returns the incompatibility score
+
+    The incompatible region is the region that should be aligned, but it is
+    not.
+
+       query     -----------------
+                   |||||
+       subject   ----------------
+                 ++     +++++ <-incompabible regions
+    The score is given as a percentage relative to the shortest sequence
+    beteween the query and the subject.
+    '''
+    match_parts = _merge_overlaping_match_parts(match['match_parts'])
+    compat, incomp = _compatible_incompatible_length(match, query)
+    #we calculate a percentage dividing by the shortest seq
+    #between query an subj
+    min_len = min(len(query), len(subject))
+    incomp_bak = incomp
+    incomp = float(incomp) / float(min_len) * 100.0
+    if incomp < 0 or incomp > 100:
+        print 'incomp',incomp, 'match',match
+        print 'min_len, incomp, %', min_len, incomp_bak, incomp
+        msg = 'Bad calculation for incompatible region'
+        raise RuntimeError(msg)
+    return incomp
+
+def get_match_score(match, score_key, query=None, subject=None):
     '''Given a match it returns its score.
 
     It tries to get the score from the match, if it's not there it goes for
-    the first match_part
+    the first match_part.
+    It can also be a derived score like the incompatibility. All derived scores
+    begin with d_
     '''
+    derived_scores = {'d_incompatibility': incompatibility_score}
     #the score can be in the match itself or in the first
     #match_part
     if score_key in match['scores']:
         score = match['scores'][score_key]
+    elif score_key in derived_scores:
+        score =derived_scores[score_key](match, query, subject)
     else:
         #the score is taken from the best hsp (the first one)
         score = match['match_parts'][0]['scores'][score_key]
@@ -439,8 +471,6 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
     #print '1, last, match', first_incomp, last_incomp, match_incomp
     incomp = first_incomp + last_incomp + match_incomp
     return comp_length, incomp
-
-
 
 class FilteredAlignmentResults(object):
     '''An iterator that yield the search results with its matches filtered
@@ -652,6 +682,46 @@ class FilteredAlignmentResults(object):
         #pylint: disable-msg=W0141
         result['matches'] = list(filter(filter_, result['matches']))
 
+def get_match_scores(match, score_keys, query, subject):
+    '''It returns the scores for one match.
+    
+    scores should be a list and it will return a list of scores.
+    '''
+    scores_res = []
+    for score_key in score_keys:
+        score = get_match_score(match, score_key, query, subject)
+        scores_res.append(score)
+    return scores_res
+
+def alignment_results_scores(results, scores, filter_same_query_subject=True):
+    '''It returns the list of scores for all results.
+    
+    For instance, for a blast a generator with all e-values can be generated.
+    By default, the results with the same query and subject will be filtered
+    out.
+    The scores can be a single one or a list of them.
+    '''
+    #for each score we want a list to gather the results
+    score_res = []
+    for score in scores:
+        score_res.append([])
+    for result in results:
+        query = result['query']
+        for match in result['matches']:
+            subject = match['subject']
+            if (filter_same_query_subject and query is not None and subject is
+                not None and query.name == subject.name):
+                continue
+            #all the scores for this match
+            score_values = get_match_scores(match, scores, query, subject)
+            #we append each score to the corresponding result list
+            for index, value in enumerate(score_values):
+                score_res[index].append(value)
+    if len(score_res) == 1:
+        return score_res[0]
+    else:
+        return score_res
+
 '''
 A graphical overview of a blast result can be done counting the hits
 with a certain level of similarity. We can represent a distribution
@@ -677,7 +747,7 @@ region that should be aligned, but it is not, the incompatible
 region.
 
    query         -----------------
-                   XXXXX
+                   |||||
    subject   ----------------
                  ++     +++++ <-incompabible regions
 
@@ -701,129 +771,3 @@ for the different amounts of hits).
     % incompatibility
 
 '''
-def generate_score_distribution(results, score_key, nbins=20,
-                                use_length=True,
-                                calc_incompatibility=False,
-                                compat_result_file=None,
-                                filter_same_query_subject=True):
-    '''Given some results it returns the cumulative match length/score
-    distribution.
-
-    keyword arguments:
-        score_key  -- the score kind to use (expect, similarity, etc)
-        bins       -- number of steps in the distribution
-        use_length -- The distributions sums hit lengths not hits
-        compat_result_file -- It writes the query-subject similarity in the
-                              file
-        filter_same_query_subject -- It does not take into account the
-                                     hits in which query.name and
-                                     subject.name are the same
-    '''
-    incompat = calc_incompatibility
-    #we collect all the scores and lengths
-    scores, lengths, incomps = [], [], []
-    for result in results:
-        query = None
-        query = result['query']
-        for match in result['matches']:
-            subject = match['subject']
-            if (filter_same_query_subject and query is not None and subject is
-                not None and query.name == subject.name):
-                continue
-            score = get_match_score(match, score_key)
-            length = match['end'] - match['start'] + 1
-            scores.append(score)
-            if use_length:
-                lengths.append(length)
-            #the incompatible region
-            incomp = None
-            if incompat:
-#                match_parts = \
-#                           _merge_overlaping_match_parts(match['match_parts'])
-                compat, incomp = _compatible_incompatible_length(match, query)
-                #we calculate a percentage dividing by the shortest seq
-                #between query an subj
-                min_len = min(len(query), len(subject))
-                incomp_bak = incomp
-                incomp = float(incomp) / float(min_len) * 100.0
-                if incomp < 0 or incomp > 100:
-                    #print 'incomp',incomp, 'match',match
-                    #print 'min_len, incomp, %', min_len, incomp_bak, incomp
-                    msg = 'Bad calculation for incompatible region'
-                    raise RuntimeError(msg)
-                incomps.append(incomp)
-            if compat_result_file is not None:
-                if incompat is not None:
-                    compat_result_file.write('%s\t%s\t%.2f\t%.2f\n' % \
-                                             (query.name, subject.name, score,
-                                              incomp))
-                else:
-                    compat_result_file.write('%s\t%s\t%.2f\n' % (query.name,
-                                                           subject.name, score))
-
-    #min and max score
-    min_score = min(scores)
-    max_score = max(scores)
-    #min and max incomp
-    min_incomp, max_incomp = None, None
-    if incompat:
-        min_incomp = min(incomps)
-        max_incomp = max(incomps)
-
-    #in which bin goes every score
-    def bin_index(score, min_s, max_s, nbins):
-        '''given an score, it returns the bin index to where it belogns,
-        it can be None'''
-        bin_length = (max_s - min_s) / float(nbins)
-        if score < min_s or score > max_s:
-            return None
-        score = score - min_s
-        index = int(score / bin_length) - 1
-        #this will happen for the min_score
-        if index == -1:
-            index = 0
-        return index
-
-    #now we can calculate the score/length distribution
-    #generate distribution structure
-    distribution = [None] * nbins
-    for index, score_strip in enumerate(distribution):
-        distribution[index] = [None] * nbins
-    for index, score in enumerate(scores):
-        score_index = bin_index(score, min_score, max_score, nbins)
-        if incompat:
-            incomp = incomps[index]
-            incompat_index = bin_index(incomp, min_incomp, max_incomp, nbins)
-        else:
-            incompat_index = 0
-        if score_index is None or incompat_index is None:
-            continue
-        #is this the first time in this bin?
-        if use_length:
-            value = lengths[index]
-        else:
-            value = 1
-        if distribution[score_index][incompat_index] is None:
-            distribution[score_index][incompat_index] = value
-        else:
-            distribution[score_index][incompat_index] += value
-
-    #the bins where
-    bins = [min_score]
-    bin_length = (max_score - min_score) / float(nbins)
-    for index in range(0, nbins):
-        bins.append(bins[-1] + bin_length)
-    if incompat:
-        bins_compat = [min_incomp]
-        bin_length = (max_incomp - min_incomp) / float(nbins)
-        for index in range(0, nbins):
-            bins_compat.append(bins_compat[-1] + bin_length)
-        return {'distribution':distribution, 'similarity_bins':bins,
-                'incompatibility_bins':bins_compat}
-    else:
-        #only one dimension is relevant
-        distrib = [None] * nbins
-        for index in range(nbins):
-            distrib[index] = distribution[index][0]
-        return {'distribution':distrib, 'bins':bins}
-

@@ -21,7 +21,9 @@ Created on 2009 eka 2
 from optparse import OptionParser
 from biolib.biolib_utils import draw_scatter
 from biolib.alignment_search_result import (BlastParser,
-                                            generate_score_distribution)
+                                            alignment_results_scores)
+import numpy
+import pylab
 
 def main():
     '''The main section'''
@@ -32,9 +34,6 @@ def main():
                       action='store_true', default=False, help=msg)
     parser.add_option('-c', '--incompat', dest='do_incompat',
                       action='store_true', default=False, help=msg)
-    parser.add_option('-o', '--outfile', dest='outfile', help='''query subject
-                      pairs with similarity and compatibility information''',
-                      default=None)
     (options, args) = parser.parse_args()
 
     if options.infile is None:
@@ -43,41 +42,32 @@ def main():
         infile = options.infile
     use_length = options.use_length
  
+    bins = 20
+
     blasts = BlastParser(fhand=open(infile, 'r'))
-    if options.outfile is not None:
-        compat_result_file = open(options.outfile, 'w')
-    else:
-        compat_result_file = None
-    distrib = generate_score_distribution(results=blasts,
-                                          score_key  = 'similarity',
-                                          nbins      = 20,
-                                          use_length = use_length,
-                                          calc_incompatibility = options.do_incompat,
-                                          compat_result_file = compat_result_file)
-    print('distribution -> ' + str(distrib))
+    #the values for the distribution
+    score_keys = ['similarity']
     if options.do_incompat:
-        #draw 3d distrib
-        dis   = distrib['distribution']
-        x_axe = distrib['similarity_bins']
-        y_axe = distrib['incompatibility_bins']
-        z_values = []
-        for x_index, score_list in enumerate(dis):
-            x_value = x_axe[x_index]
-            x_values = []
-            for y_index, z_value in enumerate(score_list):
-                y_value = y_axe[y_index]
-                if z_value is None:
-                    z_value = 0
-                x_values.append(z_value)
-            z_values.append(x_values)
-        #the drawing
-        import pylab
+        score_keys.append('d_incompatibility')
+    scores = alignment_results_scores(blasts, score_keys)
+    #the distribution
+    if options.do_incompat:
+        distrib, x_edges, y_edges = numpy.histogram2d(scores[0], scores[1],
+                                                      bins=bins)
+    else:
+        distrib, bin_edges = numpy.histogram(scores, bins=bins)
+    #the drawing
+    if options.do_incompat:
+        fig = pylab.figure()
+        #axes = Axes3D(fig)
+        #axes.plot_surface(x_edges[:-1], y_edges[:-1], distrib)
         axes = pylab.subplot(111)
-        image = pylab.imshow(z_values)
+        image = pylab.imshow(distrib)
         image.set_interpolation('bilinear')
         pylab.show()
     else:
-        draw_scatter(x_axe=distrib['bins'][:-1], y_axe=distrib['distribution'])
+        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib)
+    return
 
 if __name__ == '__main__':
     main()
