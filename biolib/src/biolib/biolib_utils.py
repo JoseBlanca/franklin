@@ -89,9 +89,6 @@ def temp_fasta_file(seq, write_qual=False):
     fileh.seek(0)
     return fileh
 
-
-
-
 def create_temp_fasta_files(seq1, seq2):
     'It returns two temporal fasta files.'
     #we create two temp files
@@ -132,8 +129,6 @@ def parse_fasta(fhand):
         seq.append(line)
     return SeqWithQuality(seq=''.join(seq), name=name, description=description)
 
-
-
 def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
     ''' It removes an aminoaacid from dna and protein seq'''
     dna  = []
@@ -145,7 +140,6 @@ def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
             dna.append(orf_dna[pos:pos + 3])
         pos += 3
     return "".join(dna), "".join(prot)
-
 
 def _remove_atributes_to_tag(tag):
     '''It removees atributes to a xml tag '''
@@ -255,23 +249,23 @@ def xml_itemize(fhand, tag):
 
 def color_by_index(index, kind='str'):
     'Given an int index it returns a color'
-    colors = [{'black'        :(0x00,0x00,0x00)},
-              {'green'        :(0x00,0x80,0x00)},
-              {'deep_sky_blue':(0x00,0xbf,0xff)},
-              {'indigo'       :(0x4b,0x00,0x82)},
-              {'maroon'       :(0x80,0x00,0x00)},
-              {'blue_violet'  :(0x8a,0x2b,0xe2)},
-              {'pale_green'   :(0x98,0xfb,0x98)},
-              {'sienna'       :(0xa0,0x52,0x22)},
-              {'medium_orchid':(0xba,0x55,0xd3)},
-              {'rosy_brown'   :(0xbc,0x8f,0x8f)},
-              {'chocolate'    :(0xd2,0x69,0x1e)},
-              {'crimson'      :(0xdc,0x14,0x3c)},
-              {'dark_salmon'  :(0xe9,0x96,0x7a)},
-              {'khaki'        :(0xf0,0xe6,0x8c)},
-              {'red'          :(0xff,0x00,0x00)},
-              {'blue'         :(0x00,0x00,0xff)},
-              {'lime'         :(0x00,0xff,0x00)},
+    colors = [{'black'        :(0x00, 0x00, 0x00)},
+              {'green'        :(0x00, 0x80, 0x00)},
+              {'deep_sky_blue':(0x00, 0xbf, 0xff)},
+              {'indigo'       :(0x4b, 0x00, 0x82)},
+              {'maroon'       :(0x80, 0x00, 0x00)},
+              {'blue_violet'  :(0x8a, 0x2b, 0xe2)},
+              {'pale_green'   :(0x98, 0xfb, 0x98)},
+              {'sienna'       :(0xa0, 0x52, 0x22)},
+              {'medium_orchid':(0xba, 0x55, 0xd3)},
+              {'rosy_brown'   :(0xbc, 0x8f, 0x8f)},
+              {'chocolate'    :(0xd2, 0x69, 0x1e)},
+              {'crimson'      :(0xdc, 0x14, 0x3c)},
+              {'dark_salmon'  :(0xe9, 0x96, 0x7a)},
+              {'khaki'        :(0xf0, 0xe6, 0x8c)},
+              {'red'          :(0xff, 0x00, 0x00)},
+              {'blue'         :(0x00, 0x00, 0xff)},
+              {'lime'         :(0x00, 0xff, 0x00)},
              ]
     color = colors[index].values()[0]
     #rgb str
@@ -351,3 +345,16 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
                      marker=scat['shape'], s=60)
     plt.show()
+
+def guess_seq_file_format(fhand):
+    'Given a sequence file it returns its format'
+    fhand.seek(0)
+    line = fhand.readline()
+    if line[0] == '>':
+        format = 'fasta'
+    elif line.split()[0] == 'LOCUS':
+        format = 'genbank'
+    else:
+        raise ValueError('Unknown sequence file format for : ' + fhand.name)
+    fhand.seek(0)
+    return format

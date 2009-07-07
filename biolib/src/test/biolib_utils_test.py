@@ -22,7 +22,7 @@ Created on 2009 mai 22
 import unittest, os
 import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
-                                NamedTemporaryDir)
+                                NamedTemporaryDir, guess_seq_file_format)
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
 
@@ -64,6 +64,17 @@ class NamedTemporariDirTest(unittest.TestCase):
         assert os.path.exists(dir_name)   == True
         del(temp_dir)
         assert os.path.exists(dir_name) == False
+
+class GuessFormatSeqFileTest(unittest.TestCase):
+    'It tests that we can guess the format of a sequence file'
+    @staticmethod
+    def test_guess_format():
+        'It test that we can guess the format for the sequence files'
+        fhand = StringIO.StringIO('>fasta\n')
+        assert guess_seq_file_format(fhand) == 'fasta'
+
+        fhand = StringIO.StringIO('LOCUS AX0809\n')
+        assert guess_seq_file_format(fhand) == 'genbank'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
