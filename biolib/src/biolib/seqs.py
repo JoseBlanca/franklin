@@ -137,6 +137,19 @@ class SeqWithQuality(object):
         return self._seq
     seq = property(_get_seq, _set_seq)
 
+    def copy(self, seq=None, qual=None):
+        '''Given a seqrecord it returns a new seqrecord with seq or qual changed.
+
+        This is necessary because our SeqWithQuality is inmutable
+        '''
+        if seq is None:
+            seq = self.seq
+        if qual is None:
+            qual = self.qual
+        return self.__class__(name=self.name, seq=seq, qual=qual,
+                              annotations=self.annotations,
+                              description=self.description)
+
 class Seq(str):
     "It represents a sequence. It's basically an str with some extra methods"
     # too many public method is str's fault

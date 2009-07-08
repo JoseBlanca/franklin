@@ -33,9 +33,10 @@ class NamedTemporaryDir(object):
         '''It initiates the class.'''
         self._name = tempfile.mkdtemp()
 
-    def name(self):
+    def get_name(self):
         'Returns path to the dict'
         return self._name
+    name = property(get_name)
     def close(self):
         '''It removes the temp dir'''
         if os.path.exists(self._name):

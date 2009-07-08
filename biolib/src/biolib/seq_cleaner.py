@@ -25,8 +25,8 @@ As bad we undertand low quality section, low complexity section, poliA section,
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from biolib.biolib_cmd_utils import create_runner
-from biolib.biolib_utils import parse_fasta, get_content_from_fasta
+from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
+from biolib.biolib_utils import get_content_from_fasta
 from biolib.seqs import  SeqWithQuality
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
@@ -73,6 +73,7 @@ def strip_seq_by_quality(seq, quality_treshold, min_quality_bases=None,
         return None
     else:
         return new_seq
+
 def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
     '''It returns start and and of the new sequence. Givig the 0/1 string.'''
     start = re.search('0*(1{%d})' % min_quality_bases, bool_seq).start(1)
@@ -82,6 +83,7 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
     end = re.match('0*(1{%d})' % min_quality_bases , bool_seq).start(1)
     end = len(bool_seq) - end
     return start, end
+
 def _calculate_sliding_window_qual(quality, quality_window_width):
     '''It takes into account the neighbour qualities to calculate the new
     quality. The window size is variable '''
@@ -145,10 +147,10 @@ def mask_low_complexity(sequence):
 
     It uses mdust from the seqclean package
     '''
-
     mask_low_complex_by_seq = create_runner(kind='mdust')
     fhand = mask_low_complex_by_seq(sequence)[0]
-    return  parse_fasta(fhand)
+    name, desc, seq = get_content_from_fasta(fhand)
+    return sequence.copy(seq=seq)
 
 def mask_polya(sequence):
     '''It adds a mask to the sequence where poly A are found
@@ -159,9 +161,7 @@ def mask_polya(sequence):
                   'fixed_dist':None}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
     fhand = mask_polya_by_seq(sequence)[0]
-    masked_sequence = _sequence_from_trimpoly(fhand, sequence, trim=False)
-
-    return SeqWithQuality(seq=masked_sequence)
+    return _sequence_from_trimpoly(fhand, sequence, trim=False)
 
 def strip_seq_by_quality_trimpoly(sequence):
     '''It strip the sequence where low quality is found
@@ -176,9 +176,7 @@ def strip_seq_by_quality_trimpoly(sequence):
     parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
     fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
-    masked_sequence = _sequence_from_trimpoly(fhand, sequence, trim=True)
-
-    return SeqWithQuality(seq=masked_sequence)
+    return _sequence_from_trimpoly(fhand, sequence, trim=True)
 
 def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     '''It return new sequence giving tha trimpoly output and the old sequence
@@ -194,12 +192,11 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     new_sequence += str_seq[end3:end5]
     if not trim:
         new_sequence += str_seq[end5:].lower()
-    new_seqrec = SeqWithQuality(name=sequence.name,
-                                description=sequence.description,
-                                annotations=sequence.annotations,
-                                seq=new_sequence,
-                                qual=sequence.qual)
-    return new_seqrec
+    if trim:
+        return sequence[end3:end5]
+    else:
+        seq_class = sequence.seq.__class__
+        return sequence.copy(seq=seq_class(new_sequence))
 
 def strip_seq_by_quality_lucy(sequence):
     '''It trims from the sequence  bad quality sections.
@@ -235,9 +232,24 @@ def strip_vector_by_alignment(sequence, vectors, aligner):
     It can work with  blast or exonerate. And takes vector information from
     a database or a fasta file
     '''
+    #depending on the aligner program we neeed diferent parameters and filters
+    parameters = {'exonerate': {'target':vectors},
+                  'blast'    : {'database': vectors, 'program':'blastn'}}
+
+    filters = {'exonerate': [{'kind'          : 'min_scores',
+                             'score_key'      : 'similarity',
+                             'min_score_value': 96},
+                             {'kind'          : 'min_length',
+                              'min_length_bp' : 15}],
+
+               'blast':      [{'kind'         : 'min_scores',
+                             'score_key'      : 'similarity',
+                             'min_score_value': 96},
+                             {'kind'          : 'min_length',
+                              'min_length_bp' : 15}]}
+
     # first we are going to align he sequence with the vectors
-    parameters = {'target':vectors}
-    aligner_ = create_runner(kind=aligner, parameters=parameters)
+    aligner_ = create_runner(kind=aligner, parameters=parameters[aligner])
     alignment_fhand = aligner_(sequence)[0]
 
     # We need to parse the result
@@ -245,13 +257,9 @@ def strip_vector_by_alignment(sequence, vectors, aligner):
     alignment_result = parser(alignment_fhand)
 
     # We filter the results with appropiate  filters
-    filters = [{'kind'          : 'min_scores',
-               'score_key'      : 'similarity',
-               'min_score_value': 95},
-               {'kind'          : 'min_length',
-                'min_length_bp' : 15}]
 
-    alignments = FilteredAlignmentResults(filters=filters,
+
+    alignments = FilteredAlignmentResults(filters=filters[aligner],
                                           results=alignment_result)
 
     start_end = _get_longest_non_matched_fragment(alignments, sequence)
@@ -361,4 +369,11 @@ def _get_longest_non_matched_fragment(alignments, query):
         if dist > longest_dist:
             longest_location = (start, end)
     return longest_location
+
+def mask_repeats_by_repeatmasker(sequence, species='eudicotyledons'):
+    'It returns a sequence with the repetitive and low complex elements masked'
+    seq_fhand = run_repeatmasker_for_sequence(sequence, species)
+    name, definition, masked_seq = get_content_from_fasta(seq_fhand)
+    seq_class = sequence.seq.__class__
+    return sequence.copy(seq=seq_class(masked_seq))
 

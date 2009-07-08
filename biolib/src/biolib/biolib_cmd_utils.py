@@ -94,10 +94,10 @@ RUNNER_DEFINITIONS = {
              'input':{'option':STDIN}
                 },
     'exonerate':{'parameters':{'target':{'required':True, 'option':'--target'},
-         'model' :{'default':'affine:local', 'option': '--model'},
-        'show_vulgar':{'default':'False', 'option':'--showvulgar'},
-        'show_alignment':{'default':'False', 'option':'--showalignment'},
-        'show_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
+        'model' :{'default':'affine:local', 'option': '--model'},
+       'show_vulgar':{'default':'False', 'option':'--showvulgar'},
+       'show_alignment':{'default':'False', 'option':'--showalignment'},
+     'how_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
                  'output':[{'option':STDOUT}],
                  'input' :{'option':'--query'}
                  },
@@ -109,7 +109,7 @@ RUNNER_DEFINITIONS = {
             'input':{'option': ARGUMENT,  'arg_before_params':True,
                      'files':['seq', 'qual']},
             'output':[{'option': '-output', 'files':['seq', 'qual']}]
-            }
+            },
     }
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
@@ -160,11 +160,11 @@ def create_runner(kind, bin_=None, parameters=None):
     kind is the type of runner (blast, seqclean, etc)
     '''
     runner_def = RUNNER_DEFINITIONS[kind]
-    if bin_ is None:
-        bin_ = kind
+    bin_ = _get_aligner_binary(kind)
     if parameters == None:
         parameters = {}
     cmd_param = _process_parameters(parameters, runner_def['parameters'])
+
     def run_cmd_for_sequence(sequence):
         'It returns a result for the given sequence'
         # Do we nedd quality for the input??
@@ -240,6 +240,48 @@ def create_runner(kind, bin_=None, parameters=None):
             returns.append(fhand)
         return returns
     return run_cmd_for_sequence
+
+def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
+    '''It returns masked sequence (StrinIO) for the given sequence.
+    '''
+
+    #we run repeat masker in a temp dir
+    temp_dir = NamedTemporaryDir()
+    old_pwd = os.getcwd()
+    os.chdir(temp_dir.name)
+
+    #input sequence and output file
+    in_seq_fhand = temp_fasta_file(sequence)
+    out_seq_fname = in_seq_fhand.name + '.masked'
+
+    #parameters used
+    # q         fast search (qq is even faster and less sensitive)
+    # species   the species to use (e.g. arabidopsis, eudicotyledons)
+    # no_is     do not look for bacterial insertions
+    # no_cut    do not excise the repeats found
+    # xsmall    repeats lower cased
+    cmd = ['RepeatMasker', '-q', '-species', species, '-no_is',
+           'no_cut', '-xsmall', in_seq_fhand.name]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError('Problem running RepeatMasker: ' + stderr)
+
+    #we store the output file in a StringIO because the temp dir is going to
+    #disapear
+    #raw_input()
+    result = StringIO.StringIO(open(out_seq_fname).read())
+
+    #we go to the old pwd and we close the temp dir
+    os.chdir(old_pwd)
+    temp_dir.close()
+    return result
+
+def _get_aligner_binary(kind):
+    'it returns the binary to run the given aligner'
+    if kind == 'blast':
+        return 'blast2'
+    else:
+        return kind
 
 class SeqcleanRunner(object):
     '''Class to run seqclean '''
