@@ -97,7 +97,7 @@ RUNNER_DEFINITIONS = {
          'model' :{'default':'affine:local', 'option': '--model'},
         'show_vulgar':{'default':'False', 'option':'--showvulgar'},
         'show_alignment':{'default':'False', 'option':'--showalignment'},
-        'show_options':{'default':"cigar_like:%S %ql %tl\n", 'option':'--ryo'}},
+        'show_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
                  'output':[{'option':STDOUT}],
                  'input' :{'option':'--query'}
                  },
@@ -136,12 +136,22 @@ def _process_parameters(parameters, parameters_def):
         bin_.append(param_opt)
         # Values can be a list of parameters
         if isinstance(value, list):
-            bin_.extend([str(value_) for value_ in value])
+            bin_.extend([ _param_to_str(value_) for value_ in value])
         else:
             if value is not None:
-                bin_.append(str(value))
+                bin_.append( _param_to_str(value))
 
     return bin_
+
+def _param_to_str(param):
+    'given a parameter It returns an str, that can be used by an CLI program'
+    try:
+        # If it is a file...
+        param = param.name
+    except AttributeError:
+        pass
+    return str(param)
+
 
 def create_runner(kind, bin_=None, parameters=None):
     ''''It creates a runner class.

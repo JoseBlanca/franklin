@@ -88,6 +88,15 @@ def temp_fasta_file(seq, write_qual=False):
     fileh.flush()
     fileh.seek(0)
     return fileh
+def temp_multi_fasta_file(seqs):
+    '''It creates a temporari fasta file using a list of sequences'''
+    fileh = tempfile.NamedTemporaryFile(suffix='.fasta')
+    for seq in seqs:
+        name = _get_seq_name(seq)
+        fileh.write(fasta_str(seq, name))
+    fileh.flush()
+    fileh.seek(0)
+    return fileh
 
 def create_temp_fasta_files(seq1, seq2):
     'It returns two temporal fasta files.'

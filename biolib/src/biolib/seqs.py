@@ -49,9 +49,14 @@ class SeqWithQuality(object):
 
     def __add__(self, seq2):
         '''It returns a new object with both seq and qual joined '''
+        if self._qual is  None or seq2.qual is None:
+            qual = None
+        else:
+            qual = self._qual + seq2.qual
+
         return self.__class__(name = self.name, \
                               seq  = self._seq + seq2.seq, \
-                              qual = self._qual + seq2.qual)
+                              qual = qual)
 
     def __getitem__(self, index):
         ''' It returns another object but only with the sclice chosed'''

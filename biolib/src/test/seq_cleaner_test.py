@@ -6,8 +6,10 @@ Created on 2009 uzt 6
 import unittest
 from biolib.seq_cleaner import (mask_low_complexity, mask_polya,
                                 strip_seq_by_quality_trimpoly,
-                                strip_seq_by_quality, strip_seq_by_quality_lucy)
+                                strip_seq_by_quality, strip_seq_by_quality_lucy,
+                                strip_vector_by_alignment)
 from biolib.seqs import SeqWithQuality
+from biolib.biolib_utils import temp_multi_fasta_file
 
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
@@ -110,7 +112,54 @@ class SeqCleanerTest(unittest.TestCase):
             #pylint: disable-msg=W0704
         except ValueError:
             pass
+    @staticmethod
+    def test_strip_vector_by_alignment():
+        'It tests strip_vector_by_alignment'
 
+        seq  = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq2 = SeqWithQuality(name='seq', seq=seq)
+        vec1 = SeqWithQuality(name='vec1', seq='atcgatcgatagcatacgat')
+        vec2 = SeqWithQuality(name='vec2', seq='atgcatcagatcgataaaga')
+        fhand_vectors = temp_multi_fasta_file([vec1, vec2])
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1+seq2+vec2 )
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
+
+
+        fhand_vectors.seek(0)
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1+vec2+seq2 )
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
+
+        # overlaping vectors
+        fhand_vectors.seek(0)
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1[:-2]+vec2+seq2+vec2)
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
+
+        # Now only vectors
+        fhand_vectors.seek(0)
+        seq1 = SeqWithQuality(name=seq2.name, seq=vec1+vec2+vec2)
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert seq3 is None
+
+        # with some extra seq at the begining and end
+        fhand_vectors.seek(0)
+        seq1 = SeqWithQuality(name=seq2.name,
+                              seq=seq2[:20]+vec1+seq2+vec2+seq2[:20] )
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
+
+        # Now without vectors
+        fhand_vectors.seek(0)
+        seq1 = seq2
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
+
+        fhand_vectors.seek(0)
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1[::-1]+vec2+seq2 )
+        seq3 = strip_vector_by_alignment(seq1, fhand_vectors, 'exonerate')
+        assert str(seq2.seq) == str(seq3.seq)
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

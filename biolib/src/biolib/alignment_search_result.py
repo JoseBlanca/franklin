@@ -210,27 +210,35 @@ class ExonerateParser(object):
         for match_part_ in  query_result:
             (query_name, query_start, query_end, query_strand, subject_name,
             subject_start, subject_end, subject_strand, score, query_length,
-            subject_length)  = match_part_
-
+            subject_length, similarity) = match_part_
+            query_start    = int(query_start)
+            query_end      = int(query_end)
+            subject_start  = int(subject_start)
+            subject_end    = int(subject_end)
+            query_strand   = _strand_transform(query_strand)
+            subject_strand = _strand_transform(subject_strand)
+            score           = int(score)
+            similarity      = float(similarity)
             # For each line , It creates a match part dict
             match_part = {}
-            match_part['query_start']    = int(query_start)
-            match_part['query_end']      = int(query_end)
-            match_part['query_strand']   = _strand_transform(query_strand)
-            match_part['subject_start']  = int(subject_start)
-            match_part['subject_end']    = int(subject_end)
-            match_part['subject_strand'] = _strand_transform(subject_strand)
-            match_part['scores']          = {'score':int(score)}
+            match_part['query_start']    = query_start
+            match_part['query_end']      = query_end
+            match_part['query_strand']   = query_strand
+            match_part['subject_start']  = subject_start
+            match_part['subject_end']    = subject_end
+            match_part['subject_strand'] = subject_strand
+            match_part['scores']         = {'score':score,
+                                           'similarity':similarity}
 
             # Check if the match is already added to the struct. A match is
             # defined by a list of part matches between a query and a subject
             match_num = _match_num_if_exists_in_struc(subject_name, struct_dict)
             if match_num is not None:
                 match = struct_dict['matches'][match_num]
-                if match['start'] > subject_start:
-                    match['start'] = subject_start
-                if match['end'] < subject_end:
-                    match['end']   = subject_end
+                if match['start'] > query_start:
+                    match['start'] = query_start
+                if match['end'] < query_end:
+                    match['end']   = query_end
                 if match['scores']['score'] < score:
                     match['scores']['score'] = score
                 match['match_parts'].append(match_part)
@@ -238,13 +246,14 @@ class ExonerateParser(object):
                 match = {}
                 match['subject'] = SeqWithQuality(name=subject_name,
                                                   length=int(subject_length))
-                match['start']       = int(subject_start)
-                match['end']         = int(subject_end)
-                match['scores']       = {'score':int(score)}
+                match['start']       = query_start
+                match['end']         = query_end
+                match['scores']       = {'score':score}
                 match['match_parts'] = []
                 match['match_parts'].append(match_part)
                 struct_dict['matches'].append(match)
         return struct_dict
+
     def next(self):
         '''It return the next exonerate hit'''
         query_result = self._exonerate_results.next()
@@ -472,6 +481,12 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
     incomp = first_incomp + last_incomp + match_incomp
     return comp_length, incomp
 
+def get_alignment_parser(kind):
+    '''It returns a parser depending of the aligner kind '''
+    parsers = {'blast':BlastParser, 'exonerate':ExonerateParser}
+    parser  = parsers[kind]
+    return parser
+
 class FilteredAlignmentResults(object):
     '''An iterator that yield the search results with its matches filtered
 
@@ -684,7 +699,7 @@ class FilteredAlignmentResults(object):
 
 def get_match_scores(match, score_keys, query, subject):
     '''It returns the scores for one match.
-    
+
     scores should be a list and it will return a list of scores.
     '''
     scores_res = []
@@ -695,7 +710,7 @@ def get_match_scores(match, score_keys, query, subject):
 
 def alignment_results_scores(results, scores, filter_same_query_subject=True):
     '''It returns the list of scores for all results.
-    
+
     For instance, for a blast a generator with all e-values can be generated.
     By default, the results with the same query and subject will be filtered
     out.

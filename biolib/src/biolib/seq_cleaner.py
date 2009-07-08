@@ -28,6 +28,8 @@ import re
 from biolib.biolib_cmd_utils import create_runner
 from biolib.biolib_utils import parse_fasta, get_content_from_fasta
 from biolib.seqs import  SeqWithQuality
+from biolib.alignment_search_result import  (FilteredAlignmentResults,
+                                             get_alignment_parser)
 
 def strip_seq_by_quality(seq, quality_treshold, min_quality_bases=None,
                        min_seq_length=None, quality_window_width=None):
@@ -212,18 +214,151 @@ def strip_seq_by_quality_lucy(sequence):
     run_lucy_for_seq = create_runner(kind='lucy')
     #pylint: disable-msg=W0612
     seq_out_fhand, qual_out_fhand = run_lucy_for_seq(sequence)
+
     #from the output we know where to strip the seq
     name, description, seq = get_content_from_fasta(seq_out_fhand)
+
     #lucy can consider that the seq is low qual and return an empty file
     if description is None:
         return None
     start, end = description.split()[-2:]
+
     #we count from zero
     start, end = int(start) - 1, int(end)
     striped_seq = sequence[start:end]
     return striped_seq
 
+def strip_vector_by_alignment(sequence, vectors, aligner):
+    '''It strips the vector from a sequence
 
+    It returns a striped sequence with the longest segment without vector.
+    It can work with  blast or exonerate. And takes vector information from
+    a database or a fasta file
+    '''
+    # first we are going to align he sequence with the vectors
+    parameters = {'target':vectors}
+    aligner_ = create_runner(kind=aligner, parameters=parameters)
+    alignment_fhand = aligner_(sequence)[0]
 
+    # We need to parse the result
+    parser           = get_alignment_parser(aligner)
+    alignment_result = parser(alignment_fhand)
 
+    # We filter the results with appropiate  filters
+    filters = [{'kind'          : 'min_scores',
+               'score_key'      : 'similarity',
+               'min_score_value': 95},
+               {'kind'          : 'min_length',
+                'min_length_bp' : 15}]
+
+    alignments = FilteredAlignmentResults(filters=filters,
+                                          results=alignment_result)
+
+    start_end = _get_longest_non_matched_fragment(alignments, sequence)
+    if start_end is None:
+        return None
+    else:
+        start, end = start_end
+        return sequence[start:end]
+
+def _merge_overlaping_locations(locations):
+    '''It merges overlaping locations
+
+    It accept a list of (start, end) tuplas.
+     '''
+    #we collect all start and ends in a list marking if they are start or end
+    limits = [] #all starts and ends
+    for location in locations:
+        limit_1 = {
+            'type' : 'start',
+            'location' : location[0]
+        }
+        limit_2 = {
+            'type' : 'end',
+            'location' : location[1]
+        }
+        limits.append(limit_1)
+        limits.append(limit_2)
+
+    def cmp_limits(limit1, limit2):
+        'It returns -1, 0 or 1 depending on the limit order'
+        loc1 = limit1['location']
+        loc2 = limit2['location']
+        #we sort using its locations
+        if loc1 != loc2:
+            return loc1 -loc2
+        #unless they're in the same location.
+        type1 = limit1['type']
+        type2 = limit2['type']
+        if type1 == type2:
+            return 0
+        elif type1 == 'start' and type2 == 'end':
+            return -1
+        else:
+            return 1
+
+    #we sort the start and ends by the start position
+    limits = sorted(limits, cmp_limits)
+
+    #now we create the merged locations
+    starts = 0
+    merged_locations = []
+    for limit in limits:
+        if limit['type'] == 'start':
+            starts += 1
+            if starts == 1:
+                start = limit['location']
+        elif limit['type'] == 'end':
+            starts -= 1
+            if starts == 0:
+                end = limit['location']
+                merged_locations.append((start, end))
+    return merged_locations
+
+#pylint:disable-msg=C0103
+def _get_longest_non_matched_fragment(alignments, query):
+    '''It get the longest non matched fragment from matches result
+
+    It use salignment result dict and after merging overlaping matches, it looks
+    for the longest non matched sequence
+     '''
+    # we need the matches sorted by its start and merged when two overlap
+    # we collect all match starts and ends in tuples
+    locations = []
+    for alignment in alignments:
+        for match in alignment['matches']:
+            for match_part in match['match_parts']:
+                locations.append((match_part['query_start'],
+                                  match_part['query_end']))
+    # If no hsps, we return the complete sequence location
+    if not locations:
+        return (None, None)
+
+    # Once we collect all the start and ends in a list of tuples, we are going
+    # to merge overlapings
+    locations = _merge_overlaping_locations(locations)
+
+    # Now, we search for the longest non overlaping zone
+    longest_location  = None
+    longest_dist      = 0
+    for i in range(len(locations)):
+        if i == 0:
+            start = 0
+            end   = locations[i][0]
+        else:
+            start = locations[i-1][1]
+            end   = locations[i][0]
+        # Once we now the star and end of each non matching section we search
+        # for the longest
+        dist = end - start
+        if dist > longest_dist:
+            longest_dist = dist
+            longest_location = (start, end)
+    else:
+        start  = locations[-1][1]
+        end    = len(query)
+        dist = end - start
+        if dist > longest_dist:
+            longest_location = (start, end)
+    return longest_location
 

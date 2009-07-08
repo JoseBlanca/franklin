@@ -144,11 +144,11 @@ def _check_match_summary(match_summary, expected):
 EXONERATE_OUTPUT = '''
 " (peio@oiz: ~/work_in/tmp/exonerate)Command line: [exonerate --model affine:local query.fasta adaptators.fasta --showalignment False --showvulgar False --ryo cigar_like:%S %ql %tl\n]
 Hostname: [oiz]
-cigar_like:prueb2 7 31 + adaptor1 5 29 + 120 55 34
-cigar_like:prueba 0 29 + adaptor2 5 34 + 135 54 35
-cigar_like:prueba 27 54 + adaptor2 5 32 + 136 54 35
-cigar_like:prueba 0 28 + adaptor3 5 32 + 126 54 35
-cigar_like:prueba 27 54 + adaptor3 5 33 + 131 54 35
+cigar_like:prueb2 7 31 + adaptor1 5 29 + 120 55 34 95
+cigar_like:prueba 0 29 + adaptor2 5 34 + 135 54 35 95
+cigar_like:prueba 27 54 + adaptor2 5 32 + 136 54 35 95
+cigar_like:prueba 0 28 + adaptor3 5 32 + 126 54 35 95
+cigar_like:prueba 27 54 + adaptor3 5 33 + 131 54 35 95
 -- completed exonerate analysis
  '''
 
@@ -165,20 +165,20 @@ class ExonerateParserTest(unittest.TestCase):
              'matches':[
                  {'subject':{'name':'adaptor2','length':35},
                   'scores':{'score':136},
-                  'start':5,
-                  'end':34,
+                  'start':0,
+                  'end':29,
                   'match_parts':[{'query_start':0, 'query_end':29,
                                   'query_strand':1,
                                   'subject_start':5,
                                   'subject_end':34,
                                   'subject_strand':1,
-                                  'scores':{'score':135}},
+                                  'scores':{'score':135, 'similarity':95}},
                                   {'query_start':27, 'query_end':54,
                                   'query_strand':1,
                                   'subject_start':5,
                                   'subject_end':32,
                                   'subject_strand':1,
-                                  'scores':{'score':136}},
+                                  'scores':{'score':136, 'similarity':95}},
                                   ]}],
                  },
             {},{}]

@@ -22,8 +22,8 @@ can also return None if no sequence is left after the filtering process.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.biolib_cmd_utils import  create_runner
-from biolib.alignment_search_result import (ExonerateParser, BlastParser,
-                                            FilteredAlignmentResults)
+from biolib.alignment_search_result import (FilteredAlignmentResults,
+                                            get_alignment_parser)
 
 
 def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
@@ -37,8 +37,7 @@ def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
     '''
     #runners = {'blast':BlastRunner, 'exonerate':ExonerateRunner}
 
-    parsers = {'blast':BlastParser, 'exonerate':ExonerateParser}
-    parser  = parsers[aligner_cmd]
+    parser = get_alignment_parser(aligner_cmd)
     binary  = {'blast':'blast2'}
     if aligner_cmd in binary:
         bin_cmd = binary[aligner_cmd]
