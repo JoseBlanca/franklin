@@ -24,8 +24,10 @@ import tempfile, shutil
 from uuid import uuid4
 import os.path
 import matplotlib.pyplot as plt
-
+from itertools import izip
 from biolib.seqs import SeqWithQuality
+
+from Bio import  SeqIO
 
 class NamedTemporaryDir(object):
     '''This class creates temporary directories '''
@@ -387,10 +389,45 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     line = fhand.readline()
     if line[0] == '>':
-        format = 'fasta'
+        item = fhand.readline().strip()[0]
+        if item.isdigit():
+            format_= 'phred_quality'
+        else:
+            format_ = 'fasta'
     elif line.split()[0] == 'LOCUS':
-        format = 'genbank'
+        format_ = 'genbank'
+
     else:
         raise ValueError('Unknown sequence file format for : ' + fhand.name)
     fhand.seek(0)
-    return format
+    return format_
+
+def seqs_in_file(seq_fhand, qual_fhand=None):
+    'It yields a seqrecord for each of the secuences found in the seq file'
+    seq_file_format = guess_seq_file_format(seq_fhand)
+
+    seq_iter    = SeqIO.parse(seq_fhand, seq_file_format)
+    if qual_fhand is None:
+        qual_iter = None
+    else:
+        qual_file_format = guess_seq_file_format(qual_fhand)
+        qual_iter = SeqIO.parse(qual_fhand, qual_file_format)
+
+    for seq in seq_iter:
+        if qual_iter is None:
+            qual = None
+        else:
+            qual_sec_record = qual_iter.next()
+            qual = qual_sec_record.letter_annotations["phred_quality"]
+        seq         = seq.seq
+        name        = seq.name
+        description = seq.description
+        annotations = seq.annotations
+        yield SeqWithQuality(seq=seq, qual=qual, name=name,
+                            desciption=description, annotations=annotations)
+
+
+
+
+
+

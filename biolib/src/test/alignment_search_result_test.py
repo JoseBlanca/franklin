@@ -16,8 +16,6 @@ ssaha2, etc. that align one sequence against a database.'''
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-import os, math
 import biolib
 from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults,
@@ -25,6 +23,9 @@ from biolib.alignment_search_result import (BlastParser,
                                             _compatible_incompatible_length,
                                              ExonerateParser)
 from biolib.seqs import SeqWithQuality
+
+import unittest
+import os, math
 from StringIO import StringIO
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -139,7 +140,10 @@ def _check_match_summary(match_summary, expected):
     '''Given a match summary it checks that the correct number of hits
     remain after a match filtering'''
     for query_name in expected:
-        assert len(match_summary[query_name]) == expected[query_name]
+        if expected[query_name] == 0:
+            assert query_name not in match_summary
+        else:
+            assert len(match_summary[query_name]) == expected[query_name]
 
 EXONERATE_OUTPUT = '''
 " (peio@oiz: ~/work_in/tmp/exonerate)Command line: [exonerate --model affine:local query.fasta adaptators.fasta --showalignment False --showvulgar False --ryo cigar_like:%S %ql %tl\n]
@@ -190,6 +194,8 @@ class ExonerateParserTest(unittest.TestCase):
         assert n_exonerates == 2
 
 
+
+
 class AlignmentSearchResultFilterTest(unittest.TestCase):
     'It test that we can filter out matches from the blast or ssaha2 results'
 
@@ -219,7 +225,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':1,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -237,7 +243,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -250,7 +256,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -267,7 +273,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -279,7 +285,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -291,7 +297,7 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
@@ -309,11 +315,48 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(filters=filters,
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
+class ResultFilterTests(unittest.TestCase):
+    'It tests results filters . It tests that we can filter some results'
+    @staticmethod
+    def test_min_matches_number_filter():
+        'It tests that we can filter some results with too many matches'
+        result1 = {'query':'query',
+                   'matches': [{},{}]}
+        result2 = {'query':None,
+                   'matches': [{},{},{}]}
+        results = iter([result1, result2])
+        filter_ = {'kind': 'max_num_matches',
+                   'value': 2}
+        filtered_results = FilteredAlignmentResults(result_filters=[filter_],
+                                                    results=results)
+        assert list(filtered_results)[0] is result1
+
+    @staticmethod
+    def test_at_least_one_match():
+        'A result with no matches left should be removed'
+        match = {'subject':None,
+                 'start':10, 'end':20,
+                 'scores':{'expect':0.01},
+                 'match_parts':[]}
+        result1 = {'query':'query',
+                   'matches': [match]}
+        filters = [{'kind'           : 'min_scores',
+                    'score_key'      : 'expect',
+                    'max_score_value': 1e-34,
+                   }]
+        blasts = iter([result1])
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
+                                                   results=blasts)
+        assert len(list(filtered_blasts)) == 0
+
+
+class IncompatibleLengthTest(unittest.TestCase):
+    'It checks that we calculate the incompatible length ok'
     @staticmethod
     def test_incompatible_length():
         'It checks that we calculate the incompatible length ok'
@@ -619,6 +662,8 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
                                                     'd_incompatibility'],
                                                 filter_same_query_subject=False)
         assert scores == [[90.0, 80.0], [16.0, 16.0]]
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

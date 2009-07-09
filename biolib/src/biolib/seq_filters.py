@@ -22,13 +22,15 @@ can also return None if no sequence is left after the filtering process.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.biolib_cmd_utils import  create_runner
+from biolib.biolib_utils import temp_multi_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 
 
+
 def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
                             result_filters=None):
-    '''A function factory factory that creates exonerate filters.
+    '''A function factory factory that creates aligner filters.
 
     It returns a function that will accept a sequence and it will return
     True or False depending on the exonerate outcome.
@@ -52,36 +54,101 @@ def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
 
         source_result    = run_align_for_seq(sequence)[0]
         results          = parser(source_result)
-        filtered_results = FilteredAlignmentResults(filters=match_filters,
+        filtered_results = FilteredAlignmentResults(match_filters=match_filters,
+                                                  result_filters=result_filters,
                                                    results=results)
         try:
-            result = filtered_results.next()
-            if not len(result['matches']):
-                return False
+            #only one sequence -> only one result
+            filtered_results.next()
         except StopIteration:
+            #there was no result for this sequence
             return False
-
-        filter_result = _filtered_match_results(filters=result_filters,
-                                                result=result)
-        return filter_result
-
+        return True
     return _filter
 
+def create_length_filter(length, count_masked=True):
+    '''It return a function that can check if the sequence is long enough '''
 
-def _filtered_match_results(filters, result):
-    '''It returns True or False depending if the result pass the filter or
-    not'''
-    if filters is None:
-        return True
-    num_matches = len(result['matches'])
-    for filter_ in filters:
-        if filter_['kind'] == 'num_matches':
-            min_num_matches = filter_['value']
-    if num_matches < min_num_matches:
-        return False
+    def filter_by_length(sequence):
+        'It returns true if the sequence is longer than the length'
+        if count_masked:
+            sequence_len = len(sequence)
+        else:
+            sequence_len = _count_non_masked(sequence)
+
+        if sequence_len > length:
+            return True
+        else:
+            return False
+    return filter_by_length
+
+def _count_non_masked(sequence):
+    'It returns the unmasked seq'
+    sequence_length = 0
+    for letter in sequence:
+        if str(letter) in  ('A', 'T', 'C', 'G'):
+            sequence_length += 1
+    return sequence_length
+
+def create_adaptor_matches_filter(adaptors, number=3):
+    '''It creates a filter that return Fase if the sequence have more than
+    number or equal tiems.
+
+    Adaptors can be a fasta file or a list of sequences
+    '''
+    # The adaptators is a file or is just a list of sequences?
+    properties = dir(adaptors)
+    if 'name' in properties and 'close' in properties:
+        fhand = adaptors
     else:
-        return True
+        fhand = temp_multi_fasta_file(adaptors)
+    fname = fhand.name
+
+    parameters     =  {'target': fname}
+    match_filters  = [{'kind'          : 'min_scores',
+                      'score_key'      : 'similarity',
+                      'min_score_value': 96},
+                      {'kind'          : 'min_length',
+                       'min_length_subject_%' :90 }]
+    #the adaptors should be found 3 or more times
+    result_filters = [{'kind': 'max_num_match_parts', 'value': 2}]
+
+    match_filter = create_filter(aligner_cmd='exonerate',
+                                    cmd_parameters=parameters,
+                                    match_filters=match_filters,
+                                    result_filters=result_filters )
+
+    def filter_by_adaptor_matches(sequence):
+        'It return Fase if the sequence have more than number or equal tiems'
+        fhand
+        return match_filter(sequence)
+    return filter_by_adaptor_matches
 
 
 
-####
+def create_comtaminant_filter(contaminant_db):
+    '''It creates a filter that return False if the sequence has a strong match
+     with the database
+    '''
+    # This filter are bases in seqclean defaults
+    parameters     =  {'database':contaminant_db, 'program':'blastn' }
+    match_filters  = [{'kind'          : 'min_scores',
+                      'score_key'      : 'similarity',
+                      'min_score_value': 96},
+                      {'kind'          : 'min_length',
+                       'min_length_query_%' :60 }]
+    result_filters = [{'kind': 'max_num_matches', 'value':0}]
+    match_filter = create_filter(aligner_cmd='blast',
+                                    cmd_parameters=parameters,
+                                    match_filters=match_filters,
+                                    result_filters=result_filters )
+
+    def filter_(sequence):
+        'It return Fase if the sequence have more than number or equal tiems'
+        return match_filter(sequence)
+    return filter_
+
+
+
+
+

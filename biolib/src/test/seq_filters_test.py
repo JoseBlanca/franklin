@@ -15,11 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seq_filters import  create_filter
-from biolib.seqs import Seq
+from biolib.seq_filters import  (create_filter, create_length_filter,
+                                 create_adaptor_matches_filter,
+                                 create_comtaminant_filter)
+from biolib.seqs import Seq, SeqWithQuality
 
 import unittest
 from tempfile import NamedTemporaryFile
+from itertools import ifilter
 
 class BlastFilteringTest(unittest.TestCase):
     'It tests that we can filter out sequence using a blast result'
@@ -54,25 +57,48 @@ class TooManyAdaptorsTest(unittest.TestCase):
     @staticmethod
     def test_too_many_adaptors_filtering():
         'It test that we can filter the chimeric sequences using exonerate'
-        fhand = NamedTemporaryFile()
-        fhand.write(ADAPTORS)
-        fhand.flush()
-        parameters = {'target': fhand.name}
-        match_filters = [{'kind'           : 'min_scores',
-                          'score_key'      : 'score',
-                          'min_score_value': 130}]
-        result_filters = [{'kind' :'num_matches','value':2}]
-        match_filter = create_filter(aligner_cmd='exonerate',
-                                      cmd_parameters=parameters,
-                                      match_filters=match_filters,
-                                      result_filters=result_filters )
-        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == False
-        result_filters = [{'kind' :'num_matches', 'value':1}]
-        match_filter = create_filter(aligner_cmd='exonerate',
-                                      cmd_parameters=parameters,
-                                      match_filters=match_filters,
-                                      result_filters=result_filters )
-        assert match_filter('TACTCTGATCGATCGGATCTAGCATGC') == True
+        adapt1 = 'AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA'
+        adapt2 = 'AAAAATACTCTGATCGATCGGATCTAGCATGCAA'
+        adaptators = [adapt1, adapt2]
+        seq2 = 'ATCGACTACGACATCGACTACGATACGATCAGATCAGATCGATCGACTACTA'
+
+        seq = adapt1 + seq2 + adapt2
+        seq1    = SeqWithQuality(seq=seq)
+        filter_ = create_adaptor_matches_filter(adaptators)
+        assert filter_(seq1)
+
+        seq = adapt1 + seq2 + adapt2 +  seq2 + adapt1
+        seq1    = SeqWithQuality(seq=seq)
+        filter_ = create_adaptor_matches_filter(adaptators)
+        assert not filter_(seq1)
+
+class LengthFilterTest(unittest.TestCase):
+    'It checks the length filtering'
+    @staticmethod
+    def test_length_filter():
+        'It test the standard sequence length filter'
+        seqs = [SeqWithQuality(length=300), SeqWithQuality(length=100)]
+        filter_ = create_length_filter(200)
+        filtered_seqs = ifilter(filter_, seqs)
+        assert len(list(filtered_seqs)[0]) == 300
+
+        seq1 = 'atataAGATAGATA'
+        seq2 = 'atgatgatgAAAAA'
+
+        seqs = [SeqWithQuality(seq=seq1), SeqWithQuality(seq=seq2)]
+        filter_ = create_length_filter(6, count_masked=False)
+        filtered_seqs = ifilter(filter_, seqs)
+        assert list(filtered_seqs)[0].seq == seq1
+
+class ContaminantFilterTest(unittest.TestCase):
+    'It test contaminant filter'
+    @staticmethod
+    def test_contaminant_filter():
+        'It tests if the sequence has a contaminant'
+        seq1 = 'TTGGCAATCGGTTCCTGGATTGGACTTAGACCCCTACGCATCCTCAAATACCAATACAATTGT'
+        seq  = SeqWithQuality(seq=seq1)
+        filter_by_contaminant = create_comtaminant_filter('tair7_cdna')
+        assert not filter_by_contaminant(seq)
 
 
 if __name__ == "__main__":

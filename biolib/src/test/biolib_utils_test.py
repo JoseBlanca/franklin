@@ -76,6 +76,14 @@ class GuessFormatSeqFileTest(unittest.TestCase):
         fhand = StringIO.StringIO('LOCUS AX0809\n')
         assert guess_seq_file_format(fhand) == 'genbank'
 
+class FastaTests(unittest.TestCase):
+    'It test function related to fasta.'
+    @staticmethod
+    def test_seqs_in_file():
+        'It test seq in file function'
+        
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

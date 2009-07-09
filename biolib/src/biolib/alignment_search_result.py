@@ -286,7 +286,6 @@ def incompatibility_score(match, query, subject):
     The score is given as a percentage relative to the shortest sequence
     beteween the query and the subject.
     '''
-    match_parts = _merge_overlaping_match_parts(match['match_parts'])
     compat, incomp = _compatible_incompatible_length(match, query)
     #we calculate a percentage dividing by the shortest seq
     #between query an subj
@@ -294,7 +293,7 @@ def incompatibility_score(match, query, subject):
     incomp_bak = incomp
     incomp = float(incomp) / float(min_len) * 100.0
     if incomp < 0 or incomp > 100:
-        print 'incomp',incomp, 'match',match
+        print 'incomp', incomp, 'match', match
         print 'min_len, incomp, %', min_len, incomp_bak, incomp
         msg = 'Bad calculation for incompatible region'
         raise RuntimeError(msg)
@@ -314,7 +313,7 @@ def get_match_score(match, score_key, query=None, subject=None):
     if score_key in match['scores']:
         score = match['scores'][score_key]
     elif score_key in derived_scores:
-        score =derived_scores[score_key](match, query, subject)
+        score = derived_scores[score_key](match, query, subject)
     else:
         #the score is taken from the best hsp (the first one)
         score = match['match_parts'][0]['scores'][score_key]
@@ -493,15 +492,15 @@ class FilteredAlignmentResults(object):
     It accepts a list of filters that will be applied to the alignment
     search results.
     '''
-    def __init__(self, results, filters):
+    def __init__(self, results, match_filters=None, result_filters=None):
         '''It requires an alignment search result and a list of filters.
 
         The alignment search result is a dict with the query, matches,
         etc.
-        The filters list can have severel filters defined by dicts.
+        The match_filters list can have several filters defined by dicts.
         Each filter definition dict should have the key 'kind' as well
         as other keys that depend on the kind of filter.
-        Allowed filters are:
+        Allowed match_filters are:
             - best scores filters.
                 It filters keeps the best match and the other matches
                 equally good. Which is considered equally good is
@@ -513,9 +512,21 @@ class FilteredAlignmentResults(object):
                      'score_key'      : 'expect',
                      'min_score_value': 1e-4,
                      'score_tolerance': 10}
+
+        The results filters list is a list of filters that can filter the
+        results not the matches.
+            Example:It can filter results by number of matches
         '''
         self._results = results
-        self._filters = filters
+        if match_filters is None:
+            match_filters = []
+        self._match_filters = match_filters
+        if result_filters is None:
+            result_filters = []
+        #for the results we create a default filter, we don't want results with
+        #no matches
+        result_filters.append({'kind': 'min_num_matches', 'value': 1})
+        self._result_filters = result_filters
 
     def __iter__(self):
         'Part of the iteration protocol'
@@ -523,13 +534,57 @@ class FilteredAlignmentResults(object):
 
     def next(self):
         'It returns the next result filtered.'
-        result = self._results.next()
-        for filter_ in self._filters:
-            self._filter_matches(result, filter_)
-        return result
+        while True:
+            result = self._results.next()
+            #apply the match filters to the results
+            for filter_ in self._match_filters:
+                self._filter_matches(result, filter_)
+
+            #is the result worth? we apply the result filters to find out.
+            result_filters = {
+                'max_num_matches':     self._max_num_matches_result_filter,
+                'min_num_matches':     self._min_num_matches_result_filter,
+                'max_num_match_parts': self._max_num_match_parts_result_filter}
+
+            for result_filter in self._result_filters:
+                filter_funct = result_filters[result_filter['kind']]
+                if not filter_funct(result, result_filter):
+                    result = None
+                    break
+
+            #is there a result to return or it has been filtered out?
+            if result is not None:
+                return result
 
     @staticmethod
-    def create_filter_best_score(parameters):
+    def _max_num_matches_result_filter(result, parameters):
+        'It returns true if the given result less or equal matches'
+        if len(result['matches']) <= parameters['value']:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _max_num_match_parts_result_filter(result, parameters):
+        'It returns true if the given result less or equal matches'
+        num_match_parts = 0
+        for match in result['matches']:
+            num_match_parts += len(match['match_parts'])
+        if num_match_parts <= parameters['value']:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _min_num_matches_result_filter(result, parameters):
+        'It returns true if the given result less or equal matches'
+        if len(result['matches']) >= parameters['value']:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _create_filter_best_score(parameters):
         'It returns a function that will filter matches'
 
         log_best_score = parameters['log_best_score']
@@ -559,7 +614,7 @@ class FilteredAlignmentResults(object):
         return filter_
 
     @staticmethod
-    def create_filter_min_score(parameters):
+    def _create_filter_min_score(parameters):
         'It returns a function that will filter matches'
         score_key      = parameters['score_key']
         if 'min_score_value' in parameters:
@@ -582,7 +637,7 @@ class FilteredAlignmentResults(object):
         return filter_
 
     @staticmethod
-    def create_filter_min_length(parameters):
+    def _create_filter_min_length(parameters):
         'It returns a function that will filter matches'
         #the min length can be given in base pairs or as a percentage
         #of the query or the subject
@@ -623,7 +678,7 @@ class FilteredAlignmentResults(object):
         return filter_
 
     @staticmethod
-    def create_filter_compatibility(parameters):
+    def _create_filter_compatibility(parameters):
         '''It returns a function that will filter matches
         It select only the ones that are compatible in more than
         min_compatibility. Compatible is the fragment that is aligned in
@@ -668,10 +723,10 @@ class FilteredAlignmentResults(object):
     def _filter_matches(self, result, filter_):
         'Given a filter dict and a result it filters the matches'
         filter_functions_factories = {
-            'best_scores'  : self.create_filter_best_score,
-            'min_scores'   : self.create_filter_min_score,
-            'min_length'   : self.create_filter_min_length,
-            'compatibility': self.create_filter_compatibility,
+            'best_scores'  : self._create_filter_best_score,
+            'min_scores'   : self._create_filter_min_score,
+            'min_length'   : self._create_filter_min_length,
+            'compatibility': self._create_filter_compatibility,
         }
 
         kind = filter_['kind']
