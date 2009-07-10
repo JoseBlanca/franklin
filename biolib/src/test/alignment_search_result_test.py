@@ -23,18 +23,13 @@ from biolib.alignment_search_result import (BlastParser,
                                             _compatible_incompatible_length,
                                              ExonerateParser)
 from biolib.seqs import SeqWithQuality
+from biolib.biolib_utils import floats_are_equal
 
 import unittest
-import os, math
+import os
 from StringIO import StringIO
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
-
-def _floats_are_equal(num1, num2):
-    'Given two numbers it returns True if they are similar'
-    log1 = math.log(float(num1))
-    log2 = math.log(float(num2))
-    return abs(log1 - log2) < 0.01
 
 def _check_sequence(sequence, expected):
     'It matches a sequence against an expected result'
@@ -54,7 +49,7 @@ def _check_match_part(match_part, expected):
     assert match_part['subject_end']    == expected['subject_end']
     assert match_part['subject_strand'] == expected['subject_strand']
     for key in expected['scores']:
-        assert _floats_are_equal(match_part['scores'][key],
+        assert floats_are_equal(match_part['scores'][key],
                                  expected['scores'][key])
 
 def _check_blast(blast, expected):
@@ -74,7 +69,7 @@ def _check_blast(blast, expected):
                     _check_match_part(bl_match_part, expt_match_part)
             if 'scores' in expt_match:
                 for key in expt_match['scores']:
-                    assert _floats_are_equal(bl_match['scores'][key],
+                    assert floats_are_equal(bl_match['scores'][key],
                                              expt_match['scores'][key])
 
 class BlastParserTest(unittest.TestCase):

@@ -23,11 +23,27 @@ Created on 2009 api 30
 import tempfile, shutil
 from uuid import uuid4
 import os.path
+import math
 import matplotlib.pyplot as plt
-from itertools import izip
 from biolib.seqs import SeqWithQuality
 
 from Bio import  SeqIO
+
+def float_lists_are_equal(list1, list2):
+    'Given two lists it checks that all floats are equal'
+    for num1, num2 in zip(list1, list2):
+        assert floats_are_equal(num1, num2)
+
+def floats_are_equal(num1, num2):
+    'Given two numbers it returns True if they are similar'
+    if num1 == 0.0:
+        if num2 == 0.0:
+            return True
+        else:
+            return False
+    log1 = math.log(float(num1))
+    log2 = math.log(float(num2))
+    return abs(log1 - log2) < 0.01
 
 class NamedTemporaryDir(object):
     '''This class creates temporary directories '''
@@ -314,7 +330,8 @@ def color_by_index(index, kind='str'):
     return color
 
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
-                 groups_for_shape=None):
+                 groups_for_shape=None, title=None, xlabel= None,
+                 ylabel=None, fhand=None):
     '''It draws an scatter plot.
 
     x_axe and y_axe should be two lists of numbers. The names should be a list
@@ -322,9 +339,16 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     groups_for_shape and color should be list of the same length and will be
     used to calculate the color. Every point that belongs to the same group
     will be drawn with the same color.
+    If an fhand is given the scatter plot will be saved.
     '''
     fig = plt.figure()
     axes = fig.add_subplot(111)
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
     #text labels
     if names is not None:
         max_x = max(x_axe)
@@ -382,7 +406,10 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         scat = scatters[scat_index]
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
                      marker=scat['shape'], s=60)
-    plt.show()
+    if fhand is None:
+        plt.show()
+    else:
+        fig.savefig(fhand)
 
 def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
