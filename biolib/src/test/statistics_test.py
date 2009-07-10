@@ -23,7 +23,8 @@ import os
 from tempfile import NamedTemporaryFile
 
 from biolib.biolib_utils import (seqs_in_file, float_lists_are_equal)
-from biolib.statistics import seq_length_distrib, masked_seq_length_distrib
+from biolib.statistics import (seq_length_distrib, masked_seq_length_distrib,
+                               seq_qual_distrib)
 
 
 def read_distrib_file(fhand):
@@ -69,17 +70,33 @@ class StatisticsTest(unittest.TestCase):
     @staticmethod
     def test_masked_seq_length_distrib():
         'It tests that we get the correct sequence length distribution'
-        fhand = StringIO('>h\nATCTcat\n>o\nactagg\n>l\AGctagcgtAGT\n>a\nGTAT\n')
+        fhand = StringIO('>h\nATCTcat\n>o\nactagg\n>l\nActagcgtAGT\n>a\nGTAT\n')
         distrib_fhand = NamedTemporaryFile(suffix='.txt')
         fig_fhand = NamedTemporaryFile(suffix='.png')
         seqs = seqs_in_file(fhand)
         masked_seq_length_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
                                   plot_fhand=fig_fhand)
         #now we check the results
-        distrib = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]
-        bin_edges = [ 0. ,  0.3,  0.6,  0.9,  1.2,  1.5,  1.8,  2.1,  2.4,  2.7,
-                      3. , 3.3,  3.6,  3.9,  4.2,  4.5,  4.8,  5.1,  5.4,  5.7,
-                      6. ]
+        distrib = [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]
+        bin_edges = [0., 0.35, 0.7, 1.05, 1.4, 1.75, 2.1, 2.45, 2.8, 3.15, 3.5,
+                     3.85, 4.2, 4.55, 4.9, 5.25, 5.6, 5.95, 6.3, 6.65, 7.]
+        _check_distrib_file(distrib_fhand, distrib, bin_edges)
+        assert _file_length(fig_fhand) > 100
+
+    @staticmethod
+    def test_seq_quality_distrib():
+        'It tests that we get the correct sequence quality distribution'
+        fhand_seq = StringIO('>h\nACTG\n>o\nACTG\n>l\nACTG\n>a\nACG\n')
+        fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
+        distrib_fhand = NamedTemporaryFile(suffix='.txt')
+        fig_fhand = NamedTemporaryFile(suffix='.png')
+        seqs = seqs_in_file(fhand_seq, fhand)
+        seq_qual_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
+                         plot_fhand=fig_fhand)
+        #now we check the results
+        distrib = [5, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]
+        bin_edges = [1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5,
+                     3.75, 4., 4.25, 4.5, 4.75, 5., 5.25, 5.5, 5.75, 6.]
         _check_distrib_file(distrib_fhand, distrib, bin_edges)
         assert _file_length(fig_fhand) > 100
 

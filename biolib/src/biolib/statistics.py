@@ -81,3 +81,18 @@ def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     lengths = [len(seq) for seq in sequences]
 
     return _create_distribution(lengths, distrib_fhand, plot_fhand)
+
+def seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None):
+    '''It calculates the qualities distribution for the given sequences.
+
+    The results will be written in the given distrib_fhand.
+    If plot_fhand is given a graphic with the distribution will be plotted.
+    It returns the distribution and the bin_edges.
+    '''
+    #first we gather the lengths
+    qualities = []
+    for seq in sequences:
+        for value in seq.qual:
+            qualities.append(value)
+
+    return _create_distribution(qualities, distrib_fhand, plot_fhand)

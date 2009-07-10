@@ -21,7 +21,6 @@ from biolib.seq_filters import (create_aligner_filter, create_length_filter,
 from biolib.seqs import Seq, SeqWithQuality
 
 import unittest
-from tempfile import NamedTemporaryFile
 from itertools import ifilter
 
 class BlastFilteringTest(unittest.TestCase):

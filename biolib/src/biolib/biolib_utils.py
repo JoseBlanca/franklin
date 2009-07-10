@@ -451,7 +451,9 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
         seq         = seqrec.seq
         name        = seqrec.name
         if qual_name and qual_name != name:
-            raise RuntimeError('Seqs and quals not in the same order')
+            msg = 'Seqs and quals not in the same order: %s, %s' % (name ,
+                                                                    qual_name)
+            raise RuntimeError(msg)
         description = seqrec.description
         annotations = seqrec.annotations
         yield SeqWithQuality(seq=seq, qual=qual, name=name,
