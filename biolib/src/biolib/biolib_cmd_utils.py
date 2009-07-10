@@ -94,7 +94,6 @@ RUNNER_DEFINITIONS = {
              'input':{'option':STDIN}
                 },
     'exonerate':{'parameters':{'target':{'required':True, 'option':'--target'},
-        'model' :{'default':'affine:local', 'option': '--model'},
        'show_vulgar':{'default':'False', 'option':'--showvulgar'},
        'show_alignment':{'default':'False', 'option':'--showalignment'},
      'how_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
@@ -226,10 +225,11 @@ def create_runner(kind, bin_=None, parameters=None):
                     output_cmd.append(fhand.name)
         cmd.extend(output_cmd)
 
-        #print ' '.join(cmd)
+        print ' '.join(cmd)
         stdout, stderr, retcode = call(cmd, stdin=stdin)
         if retcode:
-            raise RuntimeError('Problem running ' + bin_ + ': ' + stderr)
+            raise RuntimeError('Problem running ' + bin_ + ': ' + stdout +
+                               stderr)
 
         # Now we are going to make this list with the files we are going to
         # return

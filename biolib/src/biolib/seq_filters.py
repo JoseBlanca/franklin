@@ -28,7 +28,7 @@ from biolib.alignment_search_result import (FilteredAlignmentResults,
 
 
 
-def create_filter(aligner_cmd, cmd_parameters, match_filters=None,
+def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
                             result_filters=None):
     '''A function factory factory that creates aligner filters.
 
@@ -113,7 +113,7 @@ def create_adaptor_matches_filter(adaptors, number=3):
     #the adaptors should be found 3 or more times
     result_filters = [{'kind': 'max_num_match_parts', 'value': 2}]
 
-    match_filter = create_filter(aligner_cmd='exonerate',
+    match_filter = create_aligner_filter(aligner_cmd='exonerate',
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
                                     result_filters=result_filters )
@@ -138,7 +138,7 @@ def create_comtaminant_filter(contaminant_db):
                       {'kind'          : 'min_length',
                        'min_length_query_%' :60 }]
     result_filters = [{'kind': 'max_num_matches', 'value':0}]
-    match_filter = create_filter(aligner_cmd='blast',
+    match_filter = create_aligner_filter(aligner_cmd='blast',
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
                                     result_filters=result_filters )
