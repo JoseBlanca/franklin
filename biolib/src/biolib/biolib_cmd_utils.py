@@ -225,7 +225,7 @@ def create_runner(kind, bin_=None, parameters=None):
                     output_cmd.append(fhand.name)
         cmd.extend(output_cmd)
 
-        print ' '.join(cmd)
+        #print ' '.join(cmd)
         stdout, stderr, retcode = call(cmd, stdin=stdin)
         if retcode:
             raise RuntimeError('Problem running ' + bin_ + ': ' + stdout +
