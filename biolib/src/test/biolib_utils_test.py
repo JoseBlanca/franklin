@@ -22,7 +22,10 @@ Created on 2009 mai 22
 import unittest, os
 import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
-                                NamedTemporaryDir, guess_seq_file_format)
+                                 NamedTemporaryDir,
+                                 guess_seq_file_format,
+                                 seqs_in_file
+                                )
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
 
@@ -52,13 +55,13 @@ class NamedTemporariDirTest(unittest.TestCase):
     def test_simple_named_temporary_dir():
         'It test temporay named dir'
         temp_dir = NamedTemporaryDir()
-        dir_name = temp_dir.name()
+        dir_name = temp_dir.name
         assert os.path.exists(dir_name) == True
         temp_dir.close()
         assert os.path.exists(dir_name) == False
 
         temp_dir = NamedTemporaryDir()
-        dir_name = temp_dir.name()
+        dir_name = temp_dir.name
         fhand = open(os.path.join(dir_name, 'peio'), 'w')
         assert os.path.exists(fhand.name) == True
         assert os.path.exists(dir_name)   == True
@@ -70,18 +73,50 @@ class GuessFormatSeqFileTest(unittest.TestCase):
     @staticmethod
     def test_guess_format():
         'It test that we can guess the format for the sequence files'
-        fhand = StringIO.StringIO('>fasta\n')
+        fhand = StringIO.StringIO('>fasta\nACTAG\n')
         assert guess_seq_file_format(fhand) == 'fasta'
 
         fhand = StringIO.StringIO('LOCUS AX0809\n')
         assert guess_seq_file_format(fhand) == 'genbank'
 
-class FastaTests(unittest.TestCase):
-    'It test function related to fasta.'
+class SeqsInFileTests(unittest.TestCase):
+    'It test that we can get seqrecords out of a seq file.'
     @staticmethod
     def test_seqs_in_file():
-        'It test seq in file function'
-        
+        'It test that we get seqs without quality from a sequence file'
+        fcontent = '>hola\nACGATCTAGTCATCA\n>caracola\nATCGTAGCTGATGT'
+        fhand = StringIO.StringIO(fcontent)
+        expected = [('hola', 'ACGATCTAGTCATCA'), ('caracola', 'ATCGTAGCTGATGT')]
+        for index, seq in enumerate(seqs_in_file(fhand)):
+            assert seq.name == expected[index][0]
+            assert str(seq.seq) == expected[index][1]
+
+    def test_seqquals_in_file(self):
+        'It test that we get seqs with quality from two sequence files'
+        fcontent = '>hola\nACGA\n>caracola\nATCG'
+        fhand = StringIO.StringIO(fcontent)
+        fcontent_qual = '>hola\n1 2 3 4\n>caracola\n5 6 7 8'
+        fhand_qual = StringIO.StringIO(fcontent_qual)
+        expected = [('hola', 'ACGA', [1, 2, 3, 4]),
+                    ('caracola', 'ATCG', [5, 6, 7, 8])]
+        for index, seq in enumerate(seqs_in_file(fhand, fhand_qual)):
+            assert seq.name == expected[index][0]
+            assert str(seq.seq) == expected[index][1]
+            assert seq.qual == expected[index][2]
+
+        #when the seq and qual names do not match we get an error
+        fcontent = '>hola\nACGA\n>caracola\nATCG'
+        fhand = StringIO.StringIO(fcontent)
+        fcontent_qual = '>caracola\n1 2 3 4\n>hola\n5 6 7 8'
+        fhand_qual = StringIO.StringIO(fcontent_qual)
+        try:
+            for seq in seqs_in_file(fhand, fhand_qual):
+               #pylint: disable-msg=W0104
+                seq.name
+            self.fail()
+            #pylint: disable-msg=W0704
+        except RuntimeError:
+            pass
 
 
 if __name__ == "__main__":

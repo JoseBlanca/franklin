@@ -391,7 +391,7 @@ def guess_seq_file_format(fhand):
     if line[0] == '>':
         item = fhand.readline().strip()[0]
         if item.isdigit():
-            format_= 'phred_quality'
+            format_= 'qual'
         else:
             format_ = 'fasta'
     elif line.split()[0] == 'LOCUS':
@@ -413,18 +413,22 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
         qual_file_format = guess_seq_file_format(qual_fhand)
         qual_iter = SeqIO.parse(qual_fhand, qual_file_format)
 
-    for seq in seq_iter:
+    for seqrec in seq_iter:
         if qual_iter is None:
             qual = None
+            qual_name = None
         else:
             qual_sec_record = qual_iter.next()
             qual = qual_sec_record.letter_annotations["phred_quality"]
-        seq         = seq.seq
-        name        = seq.name
-        description = seq.description
-        annotations = seq.annotations
+            qual_name = qual_sec_record.name
+        seq         = seqrec.seq
+        name        = seqrec.name
+        if qual_name and qual_name != name:
+            raise RuntimeError('Seqs and quals not in the same order')
+        description = seqrec.description
+        annotations = seqrec.annotations
         yield SeqWithQuality(seq=seq, qual=qual, name=name,
-                            desciption=description, annotations=annotations)
+                            description=description, annotations=annotations)
 
 
 
