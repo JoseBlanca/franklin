@@ -20,8 +20,6 @@ Created on 10/07/2009
 
 import numpy
 
-import os.path
-
 from biolib.biolib_utils import draw_scatter
 
 def _write_distribution(fhand, distribution, bin_edges):
@@ -36,19 +34,12 @@ def _write_distribution(fhand, distribution, bin_edges):
         fhand.write('\n')
     fhand.flush()
 
-
-def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
-    '''It calculates the length distribution for the given sequences.
-
-    The results will be written in the given distrib_fhand.
-    If plot_fhand is given a graphic with the distribution will be plotted.
-    It returns the distribution and the bin_edges.
-    '''
+def _create_distribution(numbers, distrib_fhand=None, plot_fhand=None):
+    ''''Given a list of numbers it returns the distribution and it plots the
+    histogram'''
     bins = 20
-    #first we gather the lengths
-    lengths = [len(seq) for seq in sequences]
     #we do the distribution
-    distrib, bin_edges = numpy.histogram(lengths, bins=bins, new=True)
+    distrib, bin_edges = numpy.histogram(numbers, bins=bins, new=True)
     #we write the output
     if distrib_fhand is not None:
         _write_distribution(distrib_fhand, distrib, bin_edges)
@@ -59,3 +50,34 @@ def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
                      xlabel='length', ylabel='number of sequences',
                      fhand=plot_fhand)
     return {'distrib':distrib, 'bin_edges':bin_edges}
+
+
+def masked_seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
+    '''It calculates the masked length distribution for the given sequences.
+
+    The results will be written in the given distrib_fhand.
+    If plot_fhand is given a graphic with the distribution will be plotted.
+    It returns the distribution and the bin_edges.
+    '''
+    #first we gather the lengths
+    lengths = []
+    for seq in sequences:
+        length = 0
+        for letter in str(seq):
+            if letter.islower():
+                length += 1
+        lengths.append(length)
+
+    return _create_distribution(lengths, distrib_fhand, plot_fhand)
+
+def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
+    '''It calculates the length distribution for the given sequences.
+
+    The results will be written in the given distrib_fhand.
+    If plot_fhand is given a graphic with the distribution will be plotted.
+    It returns the distribution and the bin_edges.
+    '''
+    #first we gather the lengths
+    lengths = [len(seq) for seq in sequences]
+
+    return _create_distribution(lengths, distrib_fhand, plot_fhand)
