@@ -21,11 +21,12 @@ Created on 2009 mai 22
 
 import unittest, os
 import StringIO
+from tempfile import NamedTemporaryFile
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
-                                 NamedTemporaryDir,
-                                 guess_seq_file_format,
-                                 seqs_in_file
-                                )
+                                 NamedTemporaryDir, checkpoint, seqs_in_file,
+                                 guess_seq_file_format)
+from biolib.seqs import SeqWithQuality
+
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
 
@@ -117,6 +118,29 @@ class SeqsInFileTests(unittest.TestCase):
             #pylint: disable-msg=W0704
         except RuntimeError:
             pass
+
+class CheckPointTest(unittest.TestCase):
+    'It checks checkpoint function'
+    @staticmethod
+    def test_checkpoint():
+        'It checks checkpoint function'
+        seq  = 'atgatgatgt'
+        qual = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        seq1 = SeqWithQuality(seq=seq, qual=qual, name='seq1')
+        seq2 = SeqWithQuality(seq=seq, qual=qual, name='seq2')
+        seqs_iter = iter([seq1, seq2])
+        fhand_seqs = NamedTemporaryFile()
+        fhand_qual = NamedTemporaryFile()
+
+        seq_iter2 = checkpoint(seqs_iter, fhand_seqs, fhand_qual)
+        assert str(seq_iter2.next().seq) == seq
+
+        fhand_seqs.seek(0)
+        fhand_qual.seek(0)
+        assert fhand_seqs.readline()[0] == '>'
+        assert fhand_seqs.readline()[0] == 'a'
+        assert fhand_qual.readline()[0] == '>'
+        assert fhand_qual.readline()[0] == '0'
 
 
 if __name__ == "__main__":

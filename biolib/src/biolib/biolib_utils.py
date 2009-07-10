@@ -418,7 +418,7 @@ def guess_seq_file_format(fhand):
     if line[0] == '>':
         item = fhand.readline().strip()[0]
         if item.isdigit():
-            format_= 'qual'
+            format_ = 'qual'
         else:
             format_ = 'fasta'
     elif line.split()[0] == 'LOCUS':
@@ -458,7 +458,20 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
                             description=description, annotations=annotations)
 
 
+def checkpoint(seqs, fhand_seqs, fhand_qual=None):
+    '''It creates a checkpoint in the script in order to stop it and make some
+    statistics'''
 
+    for seq in seqs:
+        name     = seq.name
+        sequence = seq.seq
+        quality  = ' '.join([str(qual) for qual in seq.qual])
+
+        # copy the seq to the fhand
+        fhand_seqs.write(fasta_str(sequence, name))
+        if fhand_qual:
+            fhand_qual.write(fasta_str(quality, name))
+    return seqs_in_file(fhand_seqs, fhand_qual)
 
 
 

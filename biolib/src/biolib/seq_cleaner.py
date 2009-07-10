@@ -31,48 +31,55 @@ from biolib.seqs import  SeqWithQuality
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
 
-def strip_seq_by_quality(seq, quality_treshold, min_quality_bases=None,
-                       min_seq_length=None, quality_window_width=None):
-    '''It trims from the sequence  bad quality extremes.
+def create_striper_by_quality(quality_treshold, min_quality_bases=None,
+                              min_seq_length=None, quality_window_width=None):
+    'It creates a stripper that trims from the sequence  bad quality extremes.'
+    def strip_seq_by_quality(sequence):
+        '''It trims from the sequence  bad quality extremes.
 
-    This function uses our algorithm based in the average of the neighbours
-    qualities. It calculates the average quality of each position taking into
-    account the qualities of the neighbours.
-    Arguments:
-        .- quality_threshold. Minimun quality needed to pass the check. For
-        phred qualities a number of 20 is a good threshold
-        .- quality_window_width: The number of nucleotide qualities of each side
-         to calculate the average.
-        .- min_quality_bases: How many nucleotides we need to define the start
-        of a good quality zone. example:
-                0 0 0 1 1 0 1 1 1
-                      + +   > > >
-                I the min_quality_bases is 2, the start end of the bad quality
-                zone start with +. if it is 3, it starts with >
-        .- min_seq_length: Minimun seq length of the new sequence to mark as
-        valid. Otherwise we dismiss the sequence
-    '''
-    quality = seq.qual
-    seq_len = len(quality)
-    # Define defaults
-    (min_quality_bases, min_seq_length, quality_window_width) = \
-    _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
-                                  quality_window_width)
-    #calculate the sliding window qual
-    qual_average_array = _calculate_sliding_window_qual(quality,
-                                                        quality_window_width)
-    # Now we convert the quality average array in a boolean string. 1 if the
-    # quality is good, and 0 if it is bad. Depending on the treshold
-    boolean_quality_treshold = _quality_to_boolean(quality_treshold,
-                                                   qual_average_array)
+        This function uses our algorithm based in the average of the neighbours
+        qualities. It calculates the average quality of each position taking
+        into account the qualities of the neighbours.
+        Arguments:
+            .- quality_threshold. Minimun quality needed to pass the check. For
+            phred qualities a number of 20 is a good threshold
+            .- quality_window_width: The number of nucleotide qualities of each
+             side to calculate the average.
+            .- min_quality_bases: How many nucleotides we need to define the
+            start of a good quality zone. example:
+                    0 0 0 1 1 0 1 1 1
+                          + +   > > >
+                    I the min_quality_bases is 2, the start end of the bad
+                    quality zone start with +. if it is 3, it starts with >
+            .- min_seq_length: Minimun seq length of the new sequence to mark as
+            valid. Otherwise we dismiss the sequence
+        '''
+        if sequence is None:
+            return None
 
-    start, end = _trim_bad_qual_extremes(boolean_quality_treshold,
-                                         min_quality_bases)
-    new_seq = seq[start:end]
-    if len(new_seq.qual) < min_seq_length:
-        return None
-    else:
-        return new_seq
+        quality = sequence.qual
+        seq_len = len(quality)
+        # Define defaults
+        min_quality_bases_, min_seq_length_, quality_window_width_ = \
+                       _trim_seq_by_quality_defaults(seq_len, min_quality_bases,
+                                                     min_seq_length,
+                                                     quality_window_width)
+        #calculate the sliding window qual
+        qual_average_array = _calculate_sliding_window_qual(quality,
+                                                          quality_window_width_)
+        # Now we convert the quality average array in a boolean string. 1 if the
+        # quality is good, and 0 if it is bad. Depending on the treshold
+        boolean_quality_treshold = _quality_to_boolean(quality_treshold,
+                                                       qual_average_array)
+
+        start, end = _trim_bad_qual_extremes(boolean_quality_treshold,
+                                             min_quality_bases_)
+        new_seq = sequence[start:end]
+        if len(new_seq.qual) < min_seq_length_:
+            return None
+        else:
+            return new_seq
+    return strip_seq_by_quality
 
 def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
     '''It returns start and and of the new sequence. Givig the 0/1 string.'''
@@ -142,41 +149,61 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
             min_seq_length = fiftypercent
     return (min_quality_bases, min_seq_length, quality_window_width)
 
-def mask_low_complexity(sequence):
-    '''It adds a mask to the sequence where low clomplexity is found
 
-    It uses mdust from the seqclean package
-    '''
+def create_masker_for_low_complexity():
+    'It creates a masker function for low complexity sections'
     mask_low_complex_by_seq = create_runner(kind='mdust')
-    fhand = mask_low_complex_by_seq(sequence)[0]
-    name, desc, seq = get_content_from_fasta(fhand)
-    return sequence.copy(seq=seq)
 
-def mask_polya(sequence):
-    '''It adds a mask to the sequence where poly A are found
+    def mask_low_complexity(sequence):
+        '''It adds a mask to the sequence where low clomplexity is found
 
-    It uses trimpoly from seqclean package
-    '''
+        It uses mdust from the seqclean package
+        '''
+        if sequence is None:
+            return None
+        fhand = mask_low_complex_by_seq(sequence)[0]
+        #pylint:disable-msg=W0612
+        name, desc, seq = get_content_from_fasta(fhand)
+        return sequence.copy(seq=seq)
+    return mask_low_complexity
+
+def create_masker_for_polia():
+    'It creates a masker function for polia slices'
     parameters = {'min_score':'10', 'end':'x', 'incremental_dist':'20',
-                  'fixed_dist':None}
+                      'fixed_dist':None}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
-    fhand = mask_polya_by_seq(sequence)[0]
-    return _sequence_from_trimpoly(fhand, sequence, trim=False)
+    def mask_polya(sequence):
+        '''It adds a mask to the sequence where poly A are found
 
-def strip_seq_by_quality_trimpoly(sequence):
-    '''It strip the sequence where low quality is found
+        It uses trimpoly from seqclean package
+        '''
+        if sequence is None:
+            return None
 
-    It uses trimpoly from seqclean package.
-    This program does not work well with short sequences, and it only can
-    look at the last 30 nucleotides max
-    '''
-    if len(sequence) < 80:
-        msg = 'Sequence must be at least of 70 nucleotides to be used by this'
-        raise ValueError(msg)
-    parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
-    mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
-    fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
-    return _sequence_from_trimpoly(fhand, sequence, trim=True)
+        fhand = mask_polya_by_seq(sequence)[0]
+        return _sequence_from_trimpoly(fhand, sequence, trim=False)
+    return mask_polya
+
+def create_striper_by_quality_trimpoly():
+    'It creates a function hat stripes seq using trimpoly\'s quality checks '
+    def strip_seq_by_quality_trimpoly(sequence):
+        '''It strip the sequence where low quality is found
+
+        It uses trimpoly from seqclean package.
+        This program does not work well with short sequences, and it only can
+        look at the last 30 nucleotides max
+        '''
+        if sequence is None:
+            return None
+
+        if len(sequence) < 80:
+            msg = 'Sequence must be at least of 70 nucleotides to be used by this'
+            raise ValueError(msg)
+        parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
+        mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
+        fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
+        return _sequence_from_trimpoly(fhand, sequence, trim=True)
+    return strip_seq_by_quality_trimpoly
 
 def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     '''It return new sequence giving tha trimpoly output and the old sequence
@@ -198,40 +225,42 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
         seq_class = sequence.seq.__class__
         return sequence.copy(seq=seq_class(new_sequence))
 
-def strip_seq_by_quality_lucy(sequence):
-    '''It trims from the sequence  bad quality sections.
+def create_striper_by_quality_lucy():
+    'It creates a function hat stripes seq using lucys quality checks '
+    def strip_seq_by_quality_lucy(sequence):
+        '''It trims from the sequence  bad quality sections.
 
-    It uses lucy external program
-    '''
-    if sequence.name is None:
-        raise ValueError('lucy requires that the sequence has a name')
-    elif len(sequence) < 130:
-        raise ValueError('lucy requires a minimun sequence length of 130')
-    #we run lucy
-    run_lucy_for_seq = create_runner(kind='lucy')
-    #pylint: disable-msg=W0612
-    seq_out_fhand, qual_out_fhand = run_lucy_for_seq(sequence)
+        It uses lucy external program
+        '''
+        if sequence is None:
+            return None
 
-    #from the output we know where to strip the seq
-    name, description, seq = get_content_from_fasta(seq_out_fhand)
+        if sequence.name is None:
+            raise ValueError('lucy requires that the sequence has a name')
+        elif len(sequence) < 130:
+            raise ValueError('lucy requires a minimun sequence length of 130')
+        #we run lucy
+        run_lucy_for_seq = create_runner(kind='lucy')
+        #pylint: disable-msg=W0612
+        seq_out_fhand, qual_out_fhand = run_lucy_for_seq(sequence)
 
-    #lucy can consider that the seq is low qual and return an empty file
-    if description is None:
-        return None
-    start, end = description.split()[-2:]
+        #from the output we know where to strip the seq
+        name, description, seq = get_content_from_fasta(seq_out_fhand)
 
-    #we count from zero
-    start, end = int(start) - 1, int(end)
-    striped_seq = sequence[start:end]
-    return striped_seq
+        #lucy can consider that the seq is low qual and return an empty file
+        if description is None:
+            return None
+        start, end = description.split()[-2:]
 
-def strip_vector_by_alignment(sequence, vectors, aligner):
-    '''It strips the vector from a sequence
+        #we count from zero
+        start, end = int(start) - 1, int(end)
+        striped_seq = sequence[start:end]
+        return striped_seq
+    return strip_seq_by_quality_lucy
 
-    It returns a striped sequence with the longest segment without vector.
-    It can work with  blast or exonerate. And takes vector information from
-    a database or a fasta file
-    '''
+#pylint:disable-msg=C0103
+def create_vector_striper_by_alignment(vectors, aligner):
+    'It creates a function witch we can pass a sequence to search form vectors'
     #depending on the aligner program we neeed diferent parameters and filters
     parameters = {'exonerate': {'target':vectors},
                   'blast'    : {'database': vectors, 'program':'blastn'}}
@@ -247,27 +276,36 @@ def strip_vector_by_alignment(sequence, vectors, aligner):
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
                               'min_length_bp' : 15}]}
-
-    # first we are going to align he sequence with the vectors
     aligner_ = create_runner(kind=aligner, parameters=parameters[aligner])
-    alignment_fhand = aligner_(sequence)[0]
+    parser   = get_alignment_parser(aligner)
 
-    # We need to parse the result
-    parser           = get_alignment_parser(aligner)
-    alignment_result = parser(alignment_fhand)
+    def strip_vector_by_alignment(sequence):
+        '''It strips the vector from a sequence
 
-    # We filter the results with appropiate  filters
+        It returns a striped sequence with the longest segment without vector.
+        It can work with  blast or exonerate. And takes vector information from
+        a database or a fasta file
+        '''
+        if sequence is None:
+            return None
+        #
+        # first we are going to align he sequence with the vectors
+        alignment_fhand = aligner_(sequence)[0]
 
+        # We need to parse the result
+        alignment_result = parser(alignment_fhand)
 
-    alignments = FilteredAlignmentResults(filters=filters[aligner],
-                                          results=alignment_result)
+        # We filter the results with appropiate  filters
+        alignments = FilteredAlignmentResults(match_filters=filters[aligner],
+                                              results=alignment_result)
 
-    start_end = _get_longest_non_matched_fragment(alignments, sequence)
-    if start_end is None:
-        return None
-    else:
-        start, end = start_end
-        return sequence[start:end]
+        start_end = _get_longest_non_matched_fragment(alignments, sequence)
+        if start_end is None:
+            return None
+        else:
+            start, end = start_end
+            return sequence[start:end]
+    return strip_vector_by_alignment
 
 def _merge_overlaping_locations(locations):
     '''It merges overlaping locations
@@ -370,10 +408,19 @@ def _get_longest_non_matched_fragment(alignments, query):
             longest_location = (start, end)
     return longest_location
 
-def mask_repeats_by_repeatmasker(sequence, species='eudicotyledons'):
-    'It returns a sequence with the repetitive and low complex elements masked'
-    seq_fhand = run_repeatmasker_for_sequence(sequence, species)
-    name, definition, masked_seq = get_content_from_fasta(seq_fhand)
-    seq_class = sequence.seq.__class__
-    return sequence.copy(seq=seq_class(masked_seq))
+def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
+    '''it creates a function that mask repeats giving only the seq, not the
+    parameters'''
 
+    def mask_repeats_by_repeatmasker(sequence):
+        '''It returns a sequence with the repetitive and low complex elements
+         masked'''
+        if sequence is None:
+            return None
+
+        seq_fhand = run_repeatmasker_for_sequence(sequence, species)
+        #pylint: disable-msg=W0612
+        name, definition, masked_seq = get_content_from_fasta(seq_fhand)
+        seq_class = sequence.seq.__class__
+        return sequence.copy(seq=seq_class(masked_seq))
+    return mask_repeats_by_repeatmasker
