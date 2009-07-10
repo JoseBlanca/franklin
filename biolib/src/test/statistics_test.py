@@ -23,7 +23,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 from biolib.biolib_utils import (seqs_in_file, float_lists_are_equal)
-from biolib.statistics import seq_length_distrib
+from biolib.statistics import seq_length_distrib, masked_seq_length_distrib
 
 
 def read_distrib_file(fhand):
@@ -65,6 +65,24 @@ class StatisticsTest(unittest.TestCase):
                      3.5, 3.85, 4.2, 4.55, 4.9, 5.25, 5.6, 5.95, 6.3, 6.65, 7.0]
         _check_distrib_file(distrib_fhand, distrib, bin_edges)
         assert _file_length(fig_fhand) > 100
+
+    @staticmethod
+    def test_masked_seq_length_distrib():
+        'It tests that we get the correct sequence length distribution'
+        fhand = StringIO('>h\nATCTcat\n>o\nactagg\n>l\AGctagcgtAGT\n>a\nGTAT\n')
+        distrib_fhand = NamedTemporaryFile(suffix='.txt')
+        fig_fhand = NamedTemporaryFile(suffix='.png')
+        seqs = seqs_in_file(fhand)
+        masked_seq_length_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
+                                  plot_fhand=fig_fhand)
+        #now we check the results
+        distrib = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+        bin_edges = [ 0. ,  0.3,  0.6,  0.9,  1.2,  1.5,  1.8,  2.1,  2.4,  2.7,
+                      3. , 3.3,  3.6,  3.9,  4.2,  4.5,  4.8,  5.1,  5.4,  5.7,
+                      6. ]
+        _check_distrib_file(distrib_fhand, distrib, bin_edges)
+        assert _file_length(fig_fhand) > 100
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']
