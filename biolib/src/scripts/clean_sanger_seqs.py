@@ -2,109 +2,107 @@
 This script clean(mask and strip) and filter sequence depending in a lot of
 variables in sanger sequences.
 '''
+import logging, os
 from optparse import OptionParser
-from itertools import imap, ifilter
-import re
-from biolib.biolib_utils import checkpoint, seqs_in_file
-from biolib.seq_cleaner import (create_vector_striper_by_alignment,
-                                create_striper_by_quality_trimpoly,
-                                create_striper_by_quality_lucy,
-                                create_masker_repeats_by_repeatmasker )
-from biolib.seq_filters import create_length_filter
+from biolib.seq_cleaner import cleaner_step_runner
+
+def parse_options():
+    'It parses the command line arguments'
+    parser = OptionParser('usage: %prog -f fastafile [-q quality_file]')
+    parser.add_option('-s', '--fastafile', dest='fastafile',
+                      help='Sanger input fasta')
+    parser.add_option('-q', '--qualfile', dest='qualfile',
+                      help='Quality fasta file')
+    parser.add_option('-d', '--directory', dest='directory',
+                      help='Working diretory')
+    parser.add_option('-v', '--vecdb', dest='vecdb',
+                      help='vector database')
+    parser.add_option('-a', '--adaptors', dest='adaptors',
+                      help='adaptors fasta file')
+    parser.add_option('-o', '--seqoutput', dest='out_seq',
+                      help='sequence output file')
+    parser.add_option('-p', '--qualoutput', dest='out_qual',
+                      help='quality output file')
+    parser.add_option('-l', '--logfile', dest='logfile',
+                      help='Log file')
+    parser.add_option('-t', '--seqtype', dest='seq_type',
+                      help='Seqtype [solesa, sanger, 454]' )
+    return parser.parse_args()
+
+def set_parameters(options):
+    '''It set the parameters for this scripts. From de options or from the
+     default values'''
+
+     # kind
+    if options.seq_type is None:
+        raise RuntimeError('Seq type is mandatory, use -t seqtype')
+    else:
+        kind = options.seq_type
+
+    ############### input output parameters ################
+    io_fhands     = {}
+
+    if options.fastafile is None:
+        raise RuntimeError('Script at least needs an input file (fasta)')
+    else:
+        io_fhands['in_seq'] = open(options.fastafile, 'r')
+
+    if options.qualfile is None:
+        io_fhands['in_qual'] = None
+    else:
+        io_fhands['in_qual'] = open(options.qualfile, 'r')
+
+    if options.out_seq is None:
+        io_fhands['out_seq'] = open('result.seq.fasta', 'w')
+    else:
+        io_fhands['out_seq'] = open(options.out_seq, 'w')
+
+    if options.out_qual is None:
+        if  io_fhands['in_qual'] is None:
+            io_fhands['out_qual'] = None
+        else:
+            io_fhands['out_qual'] = open('result.qual.fasta', 'w')
+    else:
+        io_fhands['out_qual'] = open(options.out_qual, 'w')
+    ##########################################################
+    if options.directory is None:
+        os.mkdir('clean_sanger_tmp')
+        work_dir = 'clean_sanger_tmp'
+    else:
+        work_dir = options.directory
+
+    if options.logfile is None:
+        log_fhand = open('sanger_clean.log', 'w')
+    else:
+        log_fhand = open(options.logfile, 'w')
+
+    ########### step configuration  ###########################
+    configuration = {}
+    if options.vecdb is not None:
+        configuration['remove_vectors'] = {}
+        configuration['remove_vectors']['vectors'] = options.vecdb
+    if options.adaptors is not None:
+        configuration['remove_adaptors'] = {}
+        configuration['remove_adaptors']['vectors'] = options.adaptors
+
+    return io_fhands, work_dir, log_fhand, kind, configuration
+
 
 def main():
     'The main function'
-    parser = OptionParser('usage: %prog -f fastafile [-q quality_file]')
-    parser.add_option('-f', '--fastafile', dest='fastafile',
-                      help='Sanger input fasta')
-    parser.add_option('-f', '--qualfile', dest='qualfile',
-                      help='Quality fasta file')
-    options = parser.parse_args()[0]
 
-    # Input checks and file preparations
-    if options.fastafile is None:
-        parser.error('Script at least needs an input file (fasta)')
-    else:
-        fhand_seqs = open(options.fastafile, 'r')
-    if options.qualfile is None:
-        fhand_qual = None
-    else:
-        fhand_qual = open(options.qualfile, 'r')
+    # Parse arguments/ioptions
+    options = parse_options()[0]
 
+    # Set parameters
+    io_fhands, work_dir, log_fhand, kind, config = set_parameters(options)
 
-    analisis_steps = [{'function':create_vector_striper_by_alignment,
-                       'arguments':{'vectors':'UniVec', 'aligner':'blast'},
-                       'type': 'cleaner', 'statistics': None,
-                       'name': 'Remove sanger vectors'},
+    #Loggin facilities
+    logging.basicConfig(filename=log_fhand.name, level=logging.INFO,
+                        format='%(asctime)s %(message)s')
 
-                      {'function':create_vector_striper_by_alignment,
-                       'arguments':{'vectors':'XXXXX', 'aligner':'exonerate'},
-                       'type': 'cleaner','statistics': None,
-                       'name': 'Remove our adaptors'},
-
-                      {'function': create_striper_by_quality_lucy,
-                        'type':'cleaner', 'statistics': None,
-                       'name':'Strip low quality with lucy'},
-
-                      {'function': create_striper_by_quality_trimpoly,
-                       'type':'cleaner', 'statistics': None,
-                       'name':'Strip low quality with trimpoly'},
-
-                      {'function':create_masker_repeats_by_repeatmasker ,
-                       'arguments':{'species':'eudicotyledons'},
-                       'type': 'cleaner', 'statistics':None ,
-                       'name': 'Mask repeats'},
-
-
-                      {'function': create_length_filter,
-                       'arguments':{'lenght':100, 'count_masked': False},
-                       'type':'filter' ,
-                       'statistics': None ,
-                       'name':'Remove seqs shorter than 100 nt' }
-                    ]
-
-    seq_iter = seqs_in_file(fhand_seqs, fhand_qual)
-
-    for analisis_step in analisis_steps:
-        function  = analisis_step['function']
-        if 'arguments' in analisis_step:
-            arguments = analisis_step['arguments']
-        else:
-            analisis_step = None
-        type_     = analisis_step['type']
-        name      = analisis_step['name']
-        ungapped_name = re.sub(' ', '_', name)
-
-        if type_ == 'cleaner':
-            # here we prepare the cleaner with iterator that are going to be
-            # executed when the checkpoint is arrived
-            if arguments is None:
-                cleaner_function = function()
-            else:
-                cleaner_function = function(**arguments)
-            filtered_seqs = imap(seq_iter, cleaner_function)
-
-        if type_ == 'filter':
-            filter_function = function(**arguments)
-            filtered_seqs = ifilter(seq_iter, filter_function)
-        # Now we need to create again the iterator. And this is going to be
-        # useful to actually run the previous filter. Unitil now everithing is
-        # an iterator mega structure and noting is executed
-
-        # First we create the new seq and quality files
-        fhand_seqs_new = open('%s_seq_file.fasta' % ungapped_name, 'wt')
-        if fhand_qual is not None:
-            fhand_qual_new = open('%s_qual_file.fasta' % ungapped_name, 'wt')
-        else:
-            fhand_qual_new = None
-
-        seq_iter = checkpoint(filtered_seqs, fhand_seqs_new, fhand_qual_new)
-        fhand_seqs = fhand_seqs_new
-        fhand_qual = fhand_qual_new
-
-
-
-
+    # Run the analisis step by step
+    cleaner_step_runner(kind, config, io_fhands, work_dir)
 
 
 if __name__ == '__main__':

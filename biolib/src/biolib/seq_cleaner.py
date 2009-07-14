@@ -23,11 +23,13 @@ As bad we undertand low quality section, low complexity section, poliA section,
 
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
-
-import re
+from itertools import imap, ifilter
+import re, logging
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
-from biolib.biolib_utils import get_content_from_fasta
+from biolib.biolib_utils import (get_content_from_fasta, seqs_in_file,
+                                 get_safe_fname, fasta_str)
 from biolib.seqs import  SeqWithQuality
+from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
 
@@ -197,10 +199,12 @@ def create_striper_by_quality_trimpoly():
             return None
 
         if len(sequence) < 80:
-            msg = 'Sequence must be at least of 70 nucleotides to be used by this'
+            msg  = 'Sequence must be at least of 70 nucleotides to be used '
+            msg += 'by this'
             raise ValueError(msg)
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
-        mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
+        mask_polya_by_seq = create_runner(kind='trimpoly',
+                                          parameters=parameters)
         fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
         return _sequence_from_trimpoly(fhand, sequence, trim=True)
     return strip_seq_by_quality_trimpoly
@@ -424,3 +428,179 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
         seq_class = sequence.seq.__class__
         return sequence.copy(seq=seq_class(masked_seq))
     return mask_repeats_by_repeatmasker
+
+################################################################################
+###  cleaner steps and specifications
+#####################################
+
+PIPELINES = {'sanger_clean':
+                [{'function':create_vector_striper_by_alignment,
+                  'arguments':{'vectors':None, 'aligner':'blast'},
+                  'type': 'cleaner', 'statistics': None,
+                  'name': 'remove_vectors',
+                  'comment': 'Remove vector using vector db'},
+
+                 {'function':create_vector_striper_by_alignment,
+                  'arguments':{'vectors':None, 'aligner':'exonerate'},
+                  'type': 'cleaner','statistics': None,
+                  'name': 'remove_adaptors',
+                  'comment': 'Remove our adaptors'},
+
+                 {'function': create_striper_by_quality_lucy,
+                  'arguments':{},
+                  'type':'cleaner', 'statistics': None,
+                  'name':'strip_lucy',
+                  'comment':'Strip low quality with lucy'},
+
+                 {'function': create_striper_by_quality_trimpoly,
+                  'arguments': {},
+                  'type':'cleaner', 'statistics': None,
+                  'name':'strip_trimpoly',
+                  'comment':'Strip low quality with trimpoly'},
+
+                 {'function':create_masker_repeats_by_repeatmasker ,
+                  'arguments':{'species':'eudicotyledons'},
+                  'type': 'cleaner', 'statistics':None ,
+                  'name': 'mask_repeats',
+                  'comment':'Mask repeats with repeatmasker'},
+
+                 {'function': create_length_filter,
+                  'arguments':{'length':100, 'count_masked': False},
+                  'type':'filter' ,
+                  'statistics': None , 'name':'remove_short',
+                  'comment': 'Remove seq shorter than 100 nt'}]
+            }
+
+
+def configure_pipeline(kind, configuration):
+    '''It chooses the proper pipeline and configures it depending on the
+    sequence kind and configuration parameters '''
+    pipeline_type = kind + '_clean'
+    seq_pipeline  = PIPELINES[pipeline_type]
+
+    # run accors the steps
+    for step in seq_pipeline:
+        #look at the configuration steps
+        for step_name in configuration:
+            # it both names are the same
+            if step_name == step['name']:
+                # put the configuration in the dict
+                for key, value in configuration[step_name].items():
+                    step['arguments'][key] = value
+
+    # Here I check that none of the arguments have a none value
+    for step in seq_pipeline:
+        for key, value in step['arguments'].items():
+            if value is None:
+                msg = 'Parameter %s in step %s from pipeline %s must be set' % \
+                            (key, step['name'], pipeline_type)
+                raise RuntimeError(msg)
+    return seq_pipeline
+
+
+def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
+    '''It runs all the analisis in the analisis_step especification dictionary
+
+    This specidications depend on the type of the sequences'''
+
+    # Here we extract our input/output files
+    in_fhand_seqs  = io_fhands['in_seq']
+    in_fhand_qual  = io_fhands['in_qual']
+    out_fhand_seq  = io_fhands['out_seq']
+    out_fhand_qual = io_fhands['out_qual']
+
+    # We configure the pipeline depending on the sequences type and
+    # configuratiom parameters
+    pipeline_steps = configure_pipeline(kind, configuration)
+
+    # Here starts the analisis
+    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual)
+
+    for analisis_step in pipeline_steps:
+        function  = analisis_step['function']
+        type_     = analisis_step['type']
+        step_name = analisis_step['name']
+        if analisis_step['arguments']:
+            arguments = analisis_step['arguments']
+        else:
+            arguments = None
+
+        logging.info("Performing: %s" % analisis_step['comment'])
+        #print ("Performing: %s" % analisis_step['comment'])
+
+        if type_ == 'cleaner':
+            # here we prepare the cleaner with iterator that are going to be
+            # executed when the checkpoint is arrived
+            if arguments is None:
+                cleaner_function = function()
+            else:
+                # pylint:disable-msg=W0142
+                cleaner_function = function(**arguments)
+            filtered_seqs = imap(cleaner_function, seq_iter)
+
+        elif type_ == 'filter':
+            # pylint:disable-msg=W0142
+            filter_function = function(**arguments)
+            filtered_seqs   = ifilter(filter_function, seq_iter)
+        # Now we need to create again the iterator. And this is going to be
+        # useful to actually run the previous filter. Until now everything is
+        # an iterator mega structure and nothing is executed
+        seq_step_name  = get_safe_fname(work_dir, step_name, '.seq.fasta')
+        fhand_seq  = open(seq_step_name, 'w')
+        if in_fhand_qual is not None:
+            qual_step_name = get_safe_fname(work_dir, step_name,'qual.fasta')
+            fhand_qual = open(qual_step_name, 'w')
+
+        seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
+        fhand_seq.close()
+        fhand_qual.close()
+        #TODO statistics
+        #    text_fhand, plot_fhand in work_dir
+    else:
+        seq_iter = checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, False)
+        #TODO final statistics
+    logging.info('Done!')
+
+def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
+    ''' This function is used to consume the previous iterators writing the
+    output files. It generates another seq iterator that can be used for
+    statistics or for the nerxt step.
+    '''
+
+    first      = True
+    write_qual = None
+    for seq in seqs:
+        name     = seq.name
+        sequence = seq.seq
+        # check if we have quality and generate the fhand
+        if first:
+            first = False
+            if seq.qual is None:
+                write_qual = False
+            else:
+                write_qual = True
+        # copy the seq to the fhand
+        out_fhand_seq.write(fasta_str(sequence, name))
+        if write_qual:
+            quality  = ' '.join([str(qual) for qual in seq.qual])
+            out_fhand_qual.write(fasta_str(quality, name))
+
+    if return_iter:
+        # files neew to be flushed
+        out_fhand_seq.flush()
+        if write_qual:
+            out_fhand_qual.flush()
+        # In order to be able t reas the generated file, It needs to be opened for
+        # reading.
+        seq_fname = out_fhand_seq.name
+        fhand_seq_new = open(seq_fname, 'rt')
+
+        if write_qual:
+            qual_fname = out_fhand_qual.name
+            fhand_qual_new = open(qual_fname, 'rt')
+        else:
+            fhand_qual = None
+
+        return seqs_in_file(fhand_seq_new, fhand_qual_new)
+
+

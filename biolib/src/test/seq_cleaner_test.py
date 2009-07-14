@@ -3,16 +3,25 @@ Created on 2009 uzt 6
 
 @author: peio
 '''
-import unittest
+import unittest, os
+import biolib
+from tempfile import NamedTemporaryFile
+
+from biolib.seqs import SeqWithQuality
+from biolib.biolib_utils import (temp_multi_fasta_file, NamedTemporaryDir,
+                                 seqs_in_file)
 from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
                                 create_striper_by_quality_trimpoly,
                                 create_striper_by_quality,
                                 create_striper_by_quality_lucy,
-                                create_masker_repeats_by_repeatmasker)
-from biolib.seqs import SeqWithQuality
-from biolib.biolib_utils import temp_multi_fasta_file
+                                create_masker_repeats_by_repeatmasker,
+                                configure_pipeline, cleaner_step_runner)
+
+
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+
 
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
@@ -136,14 +145,14 @@ class SeqCleanerTest(unittest.TestCase):
 
         seq  = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq2 = SeqWithQuality(name='seq', seq=seq)
-        seq1  = SeqWithQuality(name=seq2.name, seq=vec1+seq2+vec2 )
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+seq2.seq+vec2.seq)
 
         seq3 = strip_vector_by_alignment(seq1)
         assert str(seq2.seq) == str(seq3.seq)
 
 
         fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name, seq=vec1+vec2+seq2 )
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq )
         seq3 = strip_vector_by_alignment(seq1)
         assert str(seq2.seq) == str(seq3.seq)
 
@@ -197,7 +206,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def test_repeatmasking():
+    def xtest_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         seq  = 'GGTGATGCTGCCAACTTACTGATTTAGTGTATGATGGTGTTTTTGAGGTGCTCCAGTGGCT'
         seq += 'TCTGTTTCTATCAGCTGTCCCTCCTGTTCAGCTACTGACGGGGTGGTGCGTAACGGCAAAA'
@@ -217,6 +226,83 @@ class SeqCleanerTest(unittest.TestCase):
         assert 'tggcctcaacacgat' in masked_str
         assert 'CGTTTGACTT'      in masked_str
 
+
+        #This test with no repetitive regions
+        seq  = 'ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGA'
+        seq += 'TGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGA'
+        seq += 'TCTAGTCTAGTCTATGATGCATCAGCTACGATGATCATGTCATGTCGATGTCTAGTCTAGTCT'
+        seq += 'AGTGAGTCACTGACTAGATCATGACATCGATACTAGTC'
+        seqrec  = SeqWithQuality(name='seq', seq=seq)
+        mask_repeats_by_repeatmasker = \
+                 create_masker_repeats_by_repeatmasker(species='eudicotyledons')
+        masked_seq = mask_repeats_by_repeatmasker(seqrec)
+
+        masked_str = str(masked_seq.seq)
+        assert  masked_str == seq
+
+ADAPTORS = '''>adaptor1
+atcgatcgatagcatacgat
+>adaptor2
+atgcatcagatcgataaaga'''
+
+EXPECTED = '''>seq1
+ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAATCGCATCGATCATCGCAGATCGACTGATCGATATGCATCAGATCGCGATCgggggggggggggggggggggggggggggAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAA
+>seq2
+ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCAGCATGACTCATCGCATCGATCATCGCAGATCGACTGATCGATCGATCaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+>seq3
+ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGCTACGATGATCATGTCATGTCGATGTCTAGTCTAGTCTAGTGAGTCACTGACTAGATCATGACATCGA
+>seq4
+ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACTTCAGCatcgatcgactaacgatcgatcgatcgacagatcatcgatcatcgacgactagacgatcatcgatACGCAGACTCCGACTACGACTACGATAAGCAGACTACGAGATCAGCAGCATCAGCAGCA
+>seq6
+AACCGTTTGACTTACGATATTTGCCCATTGTGATTCTAGTCGATTTGCATAACGTGTACGTATCGGTATTGTGACTGATTCGATGCTATTGCAAACAGTTTTGATTGTGTGATCGTGATGCATGCTAGTCTGATCGAGTCTGATCGTAGTCTAGTCGTAGTCGATGTCGATTTATCAGTAGTCGATGctagtctagtctagtctactagtctagtcATGCTAGTCGAGTCGAT
+'''
+
+
+class PipelineTests(unittest.TestCase):
+    'It test pipeline related functions'
+
+    def test_configure_pipeline(self):
+        'It tests configure pipeline'
+        kind          = 'sanger'
+        configuration = {'remove_vectors': {'vectors':'Univec'},
+                         'remove_adaptors':{'vectors':'hola'}}
+        pipeline      = configure_pipeline(kind, configuration)
+
+        assert pipeline[0]['arguments']['vectors'] == 'Univec'
+
+        # Now it should fail because one of the arguments is Not set
+        configuration = {'remove_vectors': {'vectors':'Univec'}}
+        try:
+            pipeline = configure_pipeline(kind, configuration)
+            self.fail
+        except Exception:
+            pass
+
+    @staticmethod
+    def test_cleaner_step_runner():
+        'It test cleaner_step_runner'
+        kind = 'sanger'
+
+        fhand_adaptors = NamedTemporaryFile()
+        fhand_adaptors.write(ADAPTORS)
+        fhand_adaptors.flush()
+
+        configuration = {'remove_vectors': {'vectors':'UniVec'},
+                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+
+        io_fhands = {}
+        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        io_fhands['out_seq']  = NamedTemporaryFile()
+        io_fhands['out_qual'] = NamedTemporaryFile()
+
+        dir_ = NamedTemporaryDir()
+        work_dir = dir_.get_name()
+
+        cleaner_step_runner(kind, configuration, io_fhands, work_dir)
+        io_fhands['out_seq'].seek(0)
+        result_seq = io_fhands['out_seq'].read()
+        assert result_seq == EXPECTED
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

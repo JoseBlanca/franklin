@@ -129,14 +129,15 @@ class CheckPointTest(unittest.TestCase):
         seq1 = SeqWithQuality(seq=seq, qual=qual, name='seq1')
         seq2 = SeqWithQuality(seq=seq, qual=qual, name='seq2')
         seqs_iter = iter([seq1, seq2])
-        fhand_seqs = NamedTemporaryFile()
-        fhand_qual = NamedTemporaryFile()
 
-        seq_iter2 = checkpoint(seqs_iter, fhand_seqs, fhand_qual)
+        basename = 'prueba'
+        temp_dir =  NamedTemporaryDir()
+        temp_dir_name = temp_dir.get_name()
+        seq_iter2 = checkpoint(seqs_iter, basename, temp_dir_name)
         assert str(seq_iter2.next().seq) == seq
 
-        fhand_seqs.seek(0)
-        fhand_qual.seek(0)
+        fhand_seqs = open('%s/%s.seq.fasta' % (temp_dir_name, basename ))
+        fhand_qual = open('%s/%s.qual.fasta' % (temp_dir_name, basename ))
         assert fhand_seqs.readline()[0] == '>'
         assert fhand_seqs.readline()[0] == 'a'
         assert fhand_qual.readline()[0] == '>'

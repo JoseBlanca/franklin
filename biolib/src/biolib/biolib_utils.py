@@ -450,6 +450,7 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
             qual_name = qual_sec_record.name
         seq         = seqrec.seq
         name        = seqrec.name
+
         if qual_name and qual_name != name:
             msg = 'Seqs and quals not in the same order: %s, %s' % (name ,
                                                                     qual_name)
@@ -459,21 +460,21 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
         yield SeqWithQuality(seq=seq, qual=qual, name=name,
                             description=description, annotations=annotations)
 
+def get_safe_fname(directory, prefix, suffix):
+    '''It looks if the name exits in this directory and adds a number to the end
+    to be a threath same name'''
 
-def checkpoint(seqs, fhand_seqs, fhand_qual=None):
-    '''It creates a checkpoint in the script in order to stop it and make some
-    statistics'''
+    if not os.path.exists('%s/%s.%s' % (directory, prefix, suffix)):
+        return '%s/%s.%s' % (directory, prefix, suffix)
+    for i in range(10000):
+        if not os.path.exists('%s/%s.%d.%s' %(directory, prefix, i,
+                                                     suffix)):
+            return '%s/%s.%d.%s' % (directory, prefix, i, suffix)
 
-    for seq in seqs:
-        name     = seq.name
-        sequence = seq.seq
-        quality  = ' '.join([str(qual) for qual in seq.qual])
+    msg  = 'There are more than 100000 outputs of this kind is this directory'
+    raise ValueError(msg)
 
-        # copy the seq to the fhand
-        fhand_seqs.write(fasta_str(sequence, name))
-        if fhand_qual:
-            fhand_qual.write(fasta_str(quality, name))
-    return seqs_in_file(fhand_seqs, fhand_qual)
+
 
 
 

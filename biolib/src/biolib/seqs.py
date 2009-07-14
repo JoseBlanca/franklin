@@ -68,8 +68,7 @@ class SeqWithQuality(object):
                 qual = qual[index]
         else:
             qual = None
-        name = '%s_%s' % (self.name, str(index))
-        return self.__class__(name = name, seq  = self._seq[index], \
+        return self.__class__(name = self.name, seq  = self._seq[index], \
                               qual = qual )
 
     def __len__(self):

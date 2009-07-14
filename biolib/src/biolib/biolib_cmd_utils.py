@@ -266,6 +266,12 @@ def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     if retcode:
         raise RuntimeError('Problem running RepeatMasker: ' + stderr)
 
+    # If there are no repetitive sequences, repreatmasker does not return any
+    # file
+    if 'No repetitive sequences' in stderr:
+        out_seq_fname =  in_seq_fhand.name
+
+
     #we store the output file in a StringIO because the temp dir is going to
     #disapear
     #raw_input()
