@@ -300,7 +300,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
         # We need to parse the result
         alignment_result = parser(alignment_fhand)
-        
+
         # We filter the results with appropiate  filters
         alignments = FilteredAlignmentResults(match_filters=filters[aligner],
                                               results=alignment_result)
@@ -491,14 +491,11 @@ def configure_pipeline(pipeline, configuration):
 
     seq_pipeline  = PIPELINES[pipeline]
 
-    # run accors the steps
+    # set the configuration in the pipeline
     for step in seq_pipeline:
-        #look at the configuration steps
-        for step_name in configuration:
-            # it both names are the same
-            if step_name == step['name']:
-                # put the configuration in the dict
-                for key, value in configuration[step_name].items():
+        step_name = step['name']
+        if step_name in configuration:
+            for key, value in configuration[step_name].items():
                     step['arguments'][key] = value
 
     # Here I check that none of the arguments have a none value
