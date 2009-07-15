@@ -117,7 +117,7 @@ class SeqWithQuality(object):
         length = len(self)
         if length and qual is not None and length != len(qual):
             raise ValueError('qual should have the same length as this ' +
-                            self.__class__.__name__)
+                            self.__class__.__name__ + ' in ' + self.name)
         self._qual = qual
     qual = property(_get_qual, _set_qual)
 

@@ -258,7 +258,6 @@ def create_striper_by_quality_lucy():
         if description is None:
             return None
         start, end = description.split()[-2:]
-
         #we count from zero
         start, end = int(start) - 1, int(end)
         striped_seq = sequence[start:end]
@@ -301,7 +300,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
         # We need to parse the result
         alignment_result = parser(alignment_fhand)
-
+        
         # We filter the results with appropiate  filters
         alignments = FilteredAlignmentResults(match_filters=filters[aligner],
                                               results=alignment_result)
