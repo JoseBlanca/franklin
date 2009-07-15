@@ -116,8 +116,12 @@ class SeqWithQuality(object):
             raise AttributeError("Can't reset the qual attribute")
         length = len(self)
         if length and qual is not None and length != len(qual):
+            if self.name is None:
+                print_name = ''
+            else:
+                print_name = ' in ' + self.name
             raise ValueError('qual should have the same length as this ' +
-                            self.__class__.__name__ + ' in ' + self.name)
+                            self.__class__.__name__  + print_name)
         self._qual = qual
     qual = property(_get_qual, _set_qual)
 

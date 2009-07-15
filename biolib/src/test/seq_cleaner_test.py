@@ -8,8 +8,7 @@ import biolib
 from tempfile import NamedTemporaryFile
 
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_utils import (temp_multi_fasta_file, NamedTemporaryDir,
-                                 seqs_in_file)
+from biolib.biolib_utils import (temp_multi_fasta_file, NamedTemporaryDir)
 from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
@@ -17,7 +16,7 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality,
                                 create_striper_by_quality_lucy,
                                 create_masker_repeats_by_repeatmasker,
-                                configure_pipeline, cleaner_step_runner)
+                                configure_pipeline, pipeline_runner)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -132,6 +131,30 @@ class SeqCleanerTest(unittest.TestCase):
             #pylint: disable-msg=W0704
         except ValueError:
             pass
+
+        # this is to tune the lucy configuration, It should cut until the
+        # quality starts to
+        qual  = '40 40 40 37 40 40 37 37 37 37 37 37 37 37 40 42 42 42 44 44 '
+        qual += '56 56 42 40 40 40 40 36 36 28 35 32 35 35 40 42 37 37 35 37 '
+        qual += '32 35 35 35 35 35 35 38 33 33 24 33 33 42 33 35 35 35 35 33 '
+        qual += '36 30 30 24 29 29 35 35 35 35 29 29 29 35 38 38 38 37 35 33 '
+        qual += '29 35 35 34 30 30 30 33 29 31 31 29 29 29 28 28 24 21 16 16 '
+        qual += '21 24 29 29 32 40 27 27 25 25 21 30 27 28 28 32 23 23 21 24 '
+        qual += '24 17 18 19 21 15 19 11 9 9 11 23 17 15 10 10 10 20 27 25 23 '
+        qual += '18 22 23 24 18 10 10 13 13 18 19 10 12 12 18 16 14 10 10 11 '
+        qual += '16 13 21 19 31 19 27 27 28 26 29 25 25 20 19 23 28 28 19 20 '
+        qual += '13 9 9 9 9 9 17 15 21 17 14 12 21 17 19 24 28 24 23 '
+        quality = qual.split()
+        seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
+        seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
+        seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
+        seq += 'ATTACGATGAT'
+        seq1 = SeqWithQuality(seq=seq, qual=quality, name='seq1')
+        striped_seq = strip_seq_by_quality_lucy(seq1)
+        assert len(striped_seq.qual) > 170
+        assert len(striped_seq.qual) < 185
+
+
     @staticmethod
     def test_strip_vector_align_exonera():
         'It tests strip_vector_by_alignment'
@@ -206,7 +229,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def xtest_repeatmasking():
+    def test_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         seq  = 'GGTGATGCTGCCAACTTACTGATTTAGTGTATGATGGTGTTTTTGAGGTGCTCCAGTGGCT'
         seq += 'TCTGTTTCTATCAGCTGTCCCTCCTGTTCAGCTACTGACGGGGTGGTGCGTAACGGCAAAA'
@@ -263,17 +286,17 @@ class PipelineTests(unittest.TestCase):
 
     def test_configure_pipeline(self):
         'It tests configure pipeline'
-        kind          = 'sanger'
-        configuration = {'remove_vectors': {'vectors':'Univec'},
-                         'remove_adaptors':{'vectors':'hola'}}
-        pipeline      = configure_pipeline(kind, configuration)
+        pipeline      = 'sanger_with_quality_clean'
+        configuration = {'1_remove_vectors': {'vectors':'Univec'},
+                         '1_remove_adaptors':{'vectors':'hola'}}
+        pipeline      = configure_pipeline(pipeline, configuration)
 
         assert pipeline[0]['arguments']['vectors'] == 'Univec'
 
         # Now it should fail because one of the arguments is Not set
         configuration = {'remove_vectors': {'vectors':'Univec'}}
         try:
-            pipeline = configure_pipeline(kind, configuration)
+            pipeline = configure_pipeline(pipeline, configuration)
             self.fail
         except Exception:
             pass
@@ -281,14 +304,14 @@ class PipelineTests(unittest.TestCase):
     @staticmethod
     def test_cleaner_step_runner():
         'It test cleaner_step_runner'
-        kind = 'sanger'
+        pipeline = 'sanger_with_quality_clean'
 
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
 
-        configuration = {'remove_vectors': {'vectors':'UniVec'},
-                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+        configuration = {'1_remove_vectors': {'vectors':'UniVec'},
+                         '1_remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
         io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
@@ -299,10 +322,11 @@ class PipelineTests(unittest.TestCase):
         dir_ = NamedTemporaryDir()
         work_dir = dir_.get_name()
 
-        cleaner_step_runner(kind, configuration, io_fhands, work_dir)
+        pipeline_runner(pipeline, configuration, io_fhands, work_dir)
         io_fhands['out_seq'].seek(0)
         result_seq = io_fhands['out_seq'].read()
         assert result_seq == EXPECTED
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -104,7 +104,9 @@ RUNNER_DEFINITIONS = {
                       'cdna'   :{'option':'-c', 'default':None},
                       'keep'   :{'option':'-k', 'default':None},
                       'bracket':{'option':'-b', 'default':[10, 0.02]},
-                      'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]}},
+                      'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]},
+                      'error'  :{'option':'-e', 'default':[0.015, 0.015]}},
+
             'input':{'option': ARGUMENT,  'arg_before_params':True,
                      'files':['seq', 'qual']},
             'output':[{'option': '-output', 'files':['seq', 'qual']}]
