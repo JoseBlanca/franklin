@@ -4,7 +4,7 @@ variables in sanger sequences.
 '''
 import logging, os
 from optparse import OptionParser
-from biolib.seq_cleaner import cleaner_step_runner
+from biolib.seq_cleaner import pipeline_runner
 
 def parse_options():
     'It parses the command line arguments'
@@ -21,12 +21,12 @@ def parse_options():
                       help='adaptors fasta file')
     parser.add_option('-o', '--seqoutput', dest='out_seq',
                       help='sequence output file')
-    parser.add_option('-p', '--qualoutput', dest='out_qual',
+    parser.add_option('-u', '--qualoutput', dest='out_qual',
                       help='quality output file')
     parser.add_option('-l', '--logfile', dest='logfile',
                       help='Log file')
-    parser.add_option('-t', '--seqtype', dest='seq_type',
-                      help='Seqtype [solesa, sanger, 454]' )
+    parser.add_option('-p', '--pipeline', dest='pipeline',
+                      help='Pipeline type. Look at the source' )
     return parser.parse_args()
 
 def set_parameters(options):
@@ -34,10 +34,10 @@ def set_parameters(options):
      default values'''
 
      # kind
-    if options.seq_type is None:
-        raise RuntimeError('Seq type is mandatory, use -t seqtype')
+    if options.pipeline is None:
+        raise RuntimeError('Pipeline is mandatory, use -p pipeline')
     else:
-        kind = options.seq_type
+        pipeline = options.pipeline
 
     ############### input output parameters ################
     io_fhands     = {}
@@ -79,13 +79,13 @@ def set_parameters(options):
     ########### step configuration  ###########################
     configuration = {}
     if options.vecdb is not None:
-        configuration['remove_vectors'] = {}
-        configuration['remove_vectors']['vectors'] = options.vecdb
+        configuration['1_remove_vectors'] = {}
+        configuration['1_remove_vectors']['vectors'] = options.vecdb
     if options.adaptors is not None:
-        configuration['remove_adaptors'] = {}
-        configuration['remove_adaptors']['vectors'] = options.adaptors
+        configuration['2_remove_adaptors'] = {}
+        configuration['2_remove_adaptors']['vectors'] = options.adaptors
 
-    return io_fhands, work_dir, log_fhand, kind, configuration
+    return io_fhands, work_dir, log_fhand, pipeline, configuration
 
 
 def main():
@@ -95,14 +95,14 @@ def main():
     options = parse_options()[0]
 
     # Set parameters
-    io_fhands, work_dir, log_fhand, kind, config = set_parameters(options)
+    io_fhands, work_dir, log_fhand, pipeline, config = set_parameters(options)
 
     #Loggin facilities
     logging.basicConfig(filename=log_fhand.name, level=logging.INFO,
                         format='%(asctime)s %(message)s')
 
     # Run the analisis step by step
-    cleaner_step_runner(kind, config, io_fhands, work_dir)
+    pipeline_runner(pipeline, config, io_fhands, work_dir)
 
 
 if __name__ == '__main__':

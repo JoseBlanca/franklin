@@ -23,7 +23,7 @@ As bad we undertand low quality section, low complexity section, poliA section,
 
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
-from itertools import imap, ifilter
+from itertools import imap, ifilter, tee
 import re, logging
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.biolib_utils import (get_content_from_fasta, seqs_in_file,
@@ -32,6 +32,9 @@ from biolib.seqs import  SeqWithQuality
 from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
+from biolib.statistics import (seq_length_distrib, seq_qual_distrib,
+                               masked_seq_length_distrib)
+
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
                               min_seq_length=None, quality_window_width=None):
@@ -433,50 +436,61 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
 ###  cleaner steps and specifications
 #####################################
 
-PIPELINES = {'sanger_clean':
-                [{'function':create_vector_striper_by_alignment,
+remove_vectors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'blast'},
-                  'type': 'cleaner', 'statistics': None,
-                  'name': 'remove_vectors',
-                  'comment': 'Remove vector using vector db'},
+                  'type': 'cleaner',
+                  'statistics': [seq_length_distrib, seq_qual_distrib],
+                  'name': '1_remove_vectors',
+                  'comment': 'Remove vector using vector db'}
 
-                 {'function':create_vector_striper_by_alignment,
+remove_adaptors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'exonerate'},
-                  'type': 'cleaner','statistics': None,
-                  'name': 'remove_adaptors',
-                  'comment': 'Remove our adaptors'},
+                  'type': 'cleaner',
+                  'statistics': [seq_length_distrib, seq_qual_distrib],
+                  'name': '2_remove_adaptors',
+                  'comment': 'Remove our adaptors'}
 
-                 {'function': create_striper_by_quality_lucy,
-                  'arguments':{},
-                  'type':'cleaner', 'statistics': None,
-                  'name':'strip_lucy',
-                  'comment':'Strip low quality with lucy'},
+strip_quality_lucy = {'function': create_striper_by_quality_lucy,
+                      'arguments':{},
+                      'type':'cleaner',
+                      'statistics': [seq_qual_distrib],
+                      'name':'3_strip_lucy',
+                      'comment':'Strip low quality with lucy'}
 
-                 {'function': create_striper_by_quality_trimpoly,
-                  'arguments': {},
-                  'type':'cleaner', 'statistics': None,
-                  'name':'strip_trimpoly',
-                  'comment':'Strip low quality with trimpoly'},
+strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
+                          'arguments': {},
+                          'type':'cleaner',
+                          'statistics': [seq_length_distrib],
+                          'name':'4_strip_trimpoly',
+                          'comment':'Strip low quality with trimpoly'},
 
-                 {'function':create_masker_repeats_by_repeatmasker ,
-                  'arguments':{'species':'eudicotyledons'},
-                  'type': 'cleaner', 'statistics':None ,
-                  'name': 'mask_repeats',
-                  'comment':'Mask repeats with repeatmasker'},
+mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
+                'arguments':{'species':'eudicotyledons'},
+                'type': 'cleaner',
+                'statistics':[masked_seq_length_distrib] ,
+                'name': '5_mask_repeats',
+                'comment':'Mask repeats with repeatmasker'}
 
-                 {'function': create_length_filter,
-                  'arguments':{'length':100, 'count_masked': False},
-                  'type':'filter' ,
-                  'statistics': None , 'name':'remove_short',
-                  'comment': 'Remove seq shorter than 100 nt'}]
-            }
+filter_short_seqs = {'function': create_length_filter,
+                     'arguments':{'length':100, 'count_masked': False},
+                     'type':'filter' ,
+                     'statistics': [seq_length_distrib],
+                     'name':'6_remove_short',
+                     'comment': 'Remove seq shorter than 100 nt'}
 
 
-def configure_pipeline(kind, configuration):
+
+PIPELINES = {'sanger_with_quality_clean': [remove_vectors, strip_quality_lucy,
+                                           mask_repeats, filter_short_seqs ],
+            'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
+                                             mask_repeats, filter_short_seqs ]
+             }
+
+def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it depending on the
     sequence kind and configuration parameters '''
-    pipeline_type = kind + '_clean'
-    seq_pipeline  = PIPELINES[pipeline_type]
+
+    seq_pipeline  = PIPELINES[pipeline]
 
     # run accors the steps
     for step in seq_pipeline:
@@ -493,12 +507,12 @@ def configure_pipeline(kind, configuration):
         for key, value in step['arguments'].items():
             if value is None:
                 msg = 'Parameter %s in step %s from pipeline %s must be set' % \
-                            (key, step['name'], pipeline_type)
+                            (key, step['name'], pipeline)
                 raise RuntimeError(msg)
     return seq_pipeline
 
 
-def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
+def pipeline_runner(pipeline, configuration, io_fhands, work_dir):
     '''It runs all the analisis in the analisis_step especification dictionary
 
     This specidications depend on the type of the sequences'''
@@ -511,7 +525,7 @@ def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
 
     # We configure the pipeline depending on the sequences type and
     # configuratiom parameters
-    pipeline_steps = configure_pipeline(kind, configuration)
+    pipeline_steps = configure_pipeline(pipeline, configuration)
 
     # Here starts the analisis
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual)
@@ -525,8 +539,9 @@ def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
         else:
             arguments = None
 
-        logging.info("Performing: %s" % analisis_step['comment'])
-        #print ("Performing: %s" % analisis_step['comment'])
+        msg = "Performing: %s" % analisis_step['comment']
+        logging.info(msg)
+        print (msg)
 
         if type_ == 'cleaner':
             # here we prepare the cleaner with iterator that are going to be
@@ -542,10 +557,11 @@ def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
             # pylint:disable-msg=W0142
             filter_function = function(**arguments)
             filtered_seqs   = ifilter(filter_function, seq_iter)
+
         # Now we need to create again the iterator. And this is going to be
         # useful to actually run the previous filter. Until now everything is
         # an iterator mega structure and nothing is executed
-        seq_step_name  = get_safe_fname(work_dir, step_name, '.seq.fasta')
+        seq_step_name  = get_safe_fname(work_dir, step_name, 'seq.fasta')
         fhand_seq  = open(seq_step_name, 'w')
         if in_fhand_qual is not None:
             qual_step_name = get_safe_fname(work_dir, step_name,'qual.fasta')
@@ -554,12 +570,45 @@ def cleaner_step_runner(kind, configuration, io_fhands, work_dir):
         seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
         fhand_seq.close()
         fhand_qual.close()
-        #TODO statistics
-        #    text_fhand, plot_fhand in work_dir
+
+        #more logging
+        msg = "Finished: %s" % analisis_step['comment']
+        logging.info(msg)
+
+        # I need an iterator to use with for the stats, so y generate another
+        # one with tee
+        seq_iter, seq_iter_stats = tee(seq_iter, 2)
+
+        #stats
+        run_stats(seq_iter_stats, analisis_step['statistics'], work_dir,
+                  step_name )
+
     else:
         seq_iter = checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, False)
-        #TODO final statistics
+
     logging.info('Done!')
+
+def run_stats(sequences, statistics, work_dir, step_name):
+    '''It runs the statistics for the given sequences (iterator). Statistics is
+    a list of stats to run'''
+    if statistics is None:
+        return
+    msg = 'Running stats for %s' % step_name
+    logging.info(msg)
+
+    for statistic_func in statistics:
+        sequences, new_sequences = tee(sequences, 2)
+        stat_name = step_name + '.' + statistic_func.__name__
+
+        distrib_fname = get_safe_fname(work_dir, stat_name, 'stat')
+        plot_fname = get_safe_fname(work_dir, stat_name, 'png')
+
+        statargs = {'sequences'     : sequences,
+                    'distrib_fhand': open(distrib_fname, 'w'),
+                    'plot_fhand'   : open(plot_fname, 'w')}
+        # pylint:disable-msg=W0142
+        statistic_func(**statargs)
+        sequences = new_sequences
 
 def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
     ''' This function is used to consume the previous iterators writing the
@@ -590,8 +639,8 @@ def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
         out_fhand_seq.flush()
         if write_qual:
             out_fhand_qual.flush()
-        # In order to be able t reas the generated file, It needs to be opened for
-        # reading.
+        # In order to be able t reas the generated file, It needs to be opened
+        # for reading.
         seq_fname = out_fhand_seq.name
         fhand_seq_new = open(seq_fname, 'rt')
 
@@ -599,7 +648,7 @@ def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
             qual_fname = out_fhand_qual.name
             fhand_qual_new = open(qual_fname, 'rt')
         else:
-            fhand_qual = None
+            fhand_qual_new = None
 
         return seqs_in_file(fhand_seq_new, fhand_qual_new)
 

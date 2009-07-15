@@ -34,7 +34,7 @@ def _write_distribution(fhand, distribution, bin_edges):
         fhand.write('\n')
     fhand.flush()
 
-def _create_distribution(numbers, distrib_fhand=None, plot_fhand=None):
+def _create_distribution(numbers, labels, distrib_fhand=None, plot_fhand=None):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     bins = 20
@@ -45,9 +45,9 @@ def _create_distribution(numbers, distrib_fhand=None, plot_fhand=None):
         _write_distribution(distrib_fhand, distrib, bin_edges)
     #do we have to plot it?
     if plot_fhand is not None:
-        title = 'length distribution'
-        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib, title=title,
-                     xlabel='length', ylabel='number of sequences',
+        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib,
+                     title=labels['title'], xlabel=labels['xlabel'],
+                     ylabel=labels['ylabel'],
                      fhand=plot_fhand)
     return {'distrib':distrib, 'bin_edges':bin_edges}
 
@@ -67,8 +67,9 @@ def masked_seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
             if letter.islower():
                 length += 1
         lengths.append(length)
-
-    return _create_distribution(lengths, distrib_fhand, plot_fhand)
+    labels = {'title': 'Masked sequence length distribution',
+              'xlabel':'Masked length', 'ylabel':'Number of sequences'}
+    return _create_distribution(lengths, labels, distrib_fhand, plot_fhand)
 
 def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     '''It calculates the length distribution for the given sequences.
@@ -79,8 +80,9 @@ def seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     '''
     #first we gather the lengths
     lengths = [len(seq) for seq in sequences]
-
-    return _create_distribution(lengths, distrib_fhand, plot_fhand)
+    labels = {'title':'Sequence length distribution',
+              'xlabel':'Sequence length', 'ylabel': 'Number of sequences'}
+    return _create_distribution(lengths, labels, distrib_fhand, plot_fhand)
 
 def seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     '''It calculates the qualities distribution for the given sequences.
@@ -94,5 +96,6 @@ def seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     for seq in sequences:
         for value in seq.qual:
             qualities.append(value)
-
-    return _create_distribution(qualities, distrib_fhand, plot_fhand)
+    labels = {'title':'Sequence quality distribution', 'xlabel':'quality',
+              'ylabel':'Number of bp'}
+    return _create_distribution(qualities, labels, distrib_fhand, plot_fhand)
