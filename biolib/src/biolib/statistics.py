@@ -92,8 +92,14 @@ def seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None):
     It returns the distribution and the bin_edges.
     '''
     #first we gather the lengths
+    
     qualities = []
     for seq in sequences:
+        # This statistic can be run when there is no quality. In this cases it
+        # should exit without warnings
+        if seq.qual is None:
+            return
+
         for value in seq.qual:
             qualities.append(value)
     labels = {'title':'Sequence quality distribution', 'xlabel':'quality',

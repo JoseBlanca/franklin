@@ -202,9 +202,15 @@ def create_striper_by_quality_trimpoly():
             return None
 
         if len(sequence) < 80:
-            msg  = 'Sequence must be at least of 70 nucleotides to be used '
-            msg += 'by this'
-            raise ValueError(msg)
+            if sequence.name is None:
+                print_name = ''
+            else:
+                print_name = sequence.name
+            msg = 'trimpoly: Sequence %s shorter than 80 nt removed' % \
+                                                                    print_name
+            logging.info(msg)
+            return None
+
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
         mask_polya_by_seq = create_runner(kind='trimpoly',
                                           parameters=parameters)
@@ -461,7 +467,7 @@ strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'type':'cleaner',
                           'statistics': [seq_length_distrib],
                           'name':'4_strip_trimpoly',
-                          'comment':'Strip low quality with trimpoly'},
+                          'comment':'Strip low quality with trimpoly'}
 
 mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'arguments':{'species':'eudicotyledons'},
@@ -562,10 +568,13 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir):
         if in_fhand_qual is not None:
             qual_step_name = get_safe_fname(work_dir, step_name,'qual.fasta')
             fhand_qual = open(qual_step_name, 'w')
+        else:
+            fhand_qual = None
 
         seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
         fhand_seq.close()
-        fhand_qual.close()
+        if in_fhand_qual is not None:
+            fhand_qual.close()
 
         #more logging
         msg = "Finished: %s" % analisis_step['comment']
