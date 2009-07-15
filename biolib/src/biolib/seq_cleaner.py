@@ -624,6 +624,8 @@ def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
     first      = True
     write_qual = None
     for seq in seqs:
+        if seq is None:
+            continue
         name     = seq.name
         sequence = seq.seq
         # check if we have quality and generate the fhand
