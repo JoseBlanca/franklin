@@ -24,6 +24,8 @@ import tempfile, shutil
 from uuid import uuid4
 import os.path
 import math
+import matplotlib
+matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 from biolib.seqs import SeqWithQuality
 
