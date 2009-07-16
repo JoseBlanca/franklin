@@ -23,11 +23,10 @@ import os
 from tempfile import NamedTemporaryFile
 
 from biolib.biolib_utils import (seqs_in_file, float_lists_are_equal)
-from biolib.statistics import (seq_length_distrib, masked_seq_length_distrib,
-                               seq_qual_distrib)
+from biolib.statistics import (seq_distrib, length_statistics, seq_distrib_diff)
 
 
-def read_distrib_file(fhand):
+def _read_distrib_file(fhand):
     '''Given an fhand with a distribution/histogram in it it returns the
     distrib and the bin_edges'''
     val_line = fhand.readline()
@@ -39,7 +38,7 @@ def read_distrib_file(fhand):
 def _check_distrib_file(fhand, distrib, bin_edges):
     'Given an fhand, a distrib list and the bin_edges, it checks they match'
     fhand.seek(0)
-    fdistrib, fbin_edges = read_distrib_file(fhand)
+    fdistrib, fbin_edges = _read_distrib_file(fhand)
     assert distrib == fdistrib
     float_lists_are_equal(fbin_edges, bin_edges)
 
@@ -55,10 +54,10 @@ class StatisticsTest(unittest.TestCase):
         'It tests that we get the correct sequence length distribution'
         fhand = StringIO('>h\nATCTCAT\n>o\nACTAGG\n>l\AGCTAGCGTAGT\n>a\nGTAT\n')
         distrib_fhand = NamedTemporaryFile(suffix='.txt')
-        fig_fhand = NamedTemporaryFile(suffix='.png')
+        fig_fhand     = NamedTemporaryFile(suffix='.png')
         seqs = seqs_in_file(fhand)
-        seq_length_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
-                           plot_fhand=fig_fhand)
+        seq_distrib('seq_length_distrib', sequences=seqs,
+                    distrib_fhand=distrib_fhand, plot_fhand=fig_fhand)
         #now we check the results
         distrib = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0]
@@ -74,8 +73,8 @@ class StatisticsTest(unittest.TestCase):
         distrib_fhand = NamedTemporaryFile(suffix='.txt')
         fig_fhand = NamedTemporaryFile(suffix='.png')
         seqs = seqs_in_file(fhand)
-        masked_seq_length_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
-                                  plot_fhand=fig_fhand)
+        seq_distrib('masked_seq_distrib', sequences=seqs,
+                    distrib_fhand=distrib_fhand, plot_fhand=fig_fhand)
         #now we check the results
         distrib = [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]
         bin_edges = [0., 0.35, 0.7, 1.05, 1.4, 1.75, 2.1, 2.45, 2.8, 3.15, 3.5,
@@ -91,8 +90,8 @@ class StatisticsTest(unittest.TestCase):
         distrib_fhand = NamedTemporaryFile(suffix='.txt')
         fig_fhand = NamedTemporaryFile(suffix='.png')
         seqs = seqs_in_file(fhand_seq, fhand)
-        seq_qual_distrib(sequences=seqs, distrib_fhand=distrib_fhand,
-                         plot_fhand=fig_fhand)
+        seq_distrib('qual_distrib', sequences=seqs, distrib_fhand=distrib_fhand,
+                    plot_fhand=fig_fhand)
         #now we check the results
         distrib = [5, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]
         bin_edges = [1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5,
@@ -100,6 +99,34 @@ class StatisticsTest(unittest.TestCase):
         _check_distrib_file(distrib_fhand, distrib, bin_edges)
         assert _file_length(fig_fhand) > 100
 
+
+    @staticmethod
+    def test_length_stats():
+        "it test length_statistics"
+        fhand_seq = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
+        fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
+        seqs  = seqs_in_file(fhand_seq, fhand)
+        stats = length_statistics(seqs)
+
+        assert stats['seq_length']       == 15
+        assert stats['seq_length_average']     == 3.75
+        assert stats['masked_length'] == 3
+        assert stats['qual_average'] == 2.3333333333333335
+        assert stats['num_sequences']      == 4
+
+    @staticmethod
+    def test_seq_distrib_diff():
+        'It test seq_distrib_diff'
+        fhand_seq1 = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
+        fhand1 = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
+        fhand_seq2 = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
+        fhand2 = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
+        seqs1 = seqs_in_file(fhand_seq1, fhand1)
+        seqs2 = seqs_in_file(fhand_seq2, fhand2)
+
+        distri = seq_distrib_diff(seqs1, seqs2, 'qual_distrib')
+        for num in distri['distrib']:
+            assert num == 0
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']
