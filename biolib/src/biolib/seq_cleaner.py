@@ -207,7 +207,7 @@ def create_striper_by_quality_trimpoly():
                 print_name = sequence.name
             msg = 'trimpoly: Sequence %s shorter than 80 nt removed' % \
                                                                     print_name
-            logging.info(msg)
+            logging.warning(msg)
             return None
 
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
@@ -250,7 +250,13 @@ def create_striper_by_quality_lucy():
         if sequence.name is None:
             raise ValueError('lucy requires that the sequence has a name')
         elif len(sequence) < 130:
-            raise ValueError('lucy requires a minimun sequence length of 130')
+            if sequence.name is None:
+                print_name = ''
+            else:
+                print_name = sequence.name
+            msg = 'lucy: %s is shorter than 130. lucy min seq length 130' % \
+                                                                    print_name
+            logging.warning(msg)
         #we run lucy
         run_lucy_for_seq = create_runner(kind='lucy')
         #pylint: disable-msg=W0612
