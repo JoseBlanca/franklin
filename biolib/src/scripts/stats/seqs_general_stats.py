@@ -51,7 +51,7 @@ def set_parameters():
     if options.resultfile is None:
         result_file = None
     else:
-        result_file = open(options.result_file, 'w')
+        result_file = open(options.resultfile, 'w')
 
     return fhand_seq, fhand_qual, result_file
 
