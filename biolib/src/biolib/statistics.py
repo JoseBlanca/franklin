@@ -109,7 +109,7 @@ def _seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None,
     It returns the distribution and the bin_edges.
     '''
     #first we gather the lengths
-    
+
     qualities = []
     for seq in sequences:
         # This statistic can be run when there is no quality. In this cases it
@@ -194,7 +194,7 @@ def _get_combined_distrib_range(distrib1, distrib2):
         max_ = max2
     return (min_, max_)
 
-def length_statistics(sequences, distrib_fhand=None, plot_fhand=None):
+def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
     'It counts the total length of the sum of all sequences'
     stats   = {}
     stats['seq_length']        = 0

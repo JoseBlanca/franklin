@@ -23,7 +23,8 @@ import os
 from tempfile import NamedTemporaryFile
 
 from biolib.biolib_utils import (seqs_in_file, float_lists_are_equal)
-from biolib.statistics import (seq_distrib, length_statistics, seq_distrib_diff)
+from biolib.statistics import (seq_distrib, general_seq_statistics,
+                               seq_distrib_diff)
 
 
 def _read_distrib_file(fhand):
@@ -101,12 +102,12 @@ class StatisticsTest(unittest.TestCase):
 
 
     @staticmethod
-    def test_length_stats():
+    def test_genral_seq_stats():
         "it test length_statistics"
         fhand_seq = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
         fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
         seqs  = seqs_in_file(fhand_seq, fhand)
-        stats = length_statistics(seqs)
+        stats = general_seq_statistics(seqs)
 
         assert stats['seq_length']       == 15
         assert stats['seq_length_average']     == 3.75
