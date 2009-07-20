@@ -219,7 +219,10 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
             first = False
             try:
                 qual = seq.qual
-                has_qual = True
+                if qual is not None:
+                    has_qual = True
+                else:
+                    has_qual = False
             except AttributeError:
                 has_qual = False
 
