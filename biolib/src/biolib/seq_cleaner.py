@@ -257,6 +257,7 @@ def create_striper_by_quality_lucy():
             msg = 'lucy: %s is shorter than 130. lucy min seq length 130' % \
                                                                     print_name
             logging.warning(msg)
+            return None
         #we run lucy
         run_lucy_for_seq = create_runner(kind='lucy')
         #pylint: disable-msg=W0612
