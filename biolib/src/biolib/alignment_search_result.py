@@ -64,7 +64,12 @@ class BlastParser(object):
         fhand.seek(0, 0)
         self._blast_file  = fhand
         #we use the biopython parser
-        self._blast_parse = NCBIXML.parse(fhand)
+        #if there are no results we put None in our blast_parse results
+        self._blast_parse = None
+        if fhand.read(1) == '<':
+            fhand.seek(0)
+            self._blast_parse = NCBIXML.parse(fhand)
+
         self.use_query_def_as_accession = use_query_def_as_accession
 
     def __iter__(self):
@@ -163,11 +168,14 @@ class BlastParser(object):
 
     def next(self):
         'It returns the next blast result'
-        bio_result = self._blast_parse.next()
-        #now we have to change this biopython blast_result in our
-        #structure
-        our_result = self._create_result_structure(bio_result)
-        return our_result
+        if self._blast_parse is None:
+            raise StopIteration
+        else:
+            bio_result = self._blast_parse.next()
+            #now we have to change this biopython blast_result in our
+            #structure
+            our_result = self._create_result_structure(bio_result)
+            return our_result
 
 class ExonerateParser(object):
     '''Exonerate parser, it is a iterator that yields the result for each
@@ -286,7 +294,7 @@ def incompatibility_score(match, query, subject):
     The score is given as a percentage relative to the shortest sequence
     beteween the query and the subject.
     '''
-    compat, incomp = _compatible_incompatible_length(match, query)
+    incomp = _compatible_incompatible_length(match, query)[1]
     #we calculate a percentage dividing by the shortest seq
     #between query an subj
     min_len = min(len(query), len(subject))

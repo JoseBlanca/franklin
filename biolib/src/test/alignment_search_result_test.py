@@ -28,6 +28,7 @@ from biolib.biolib_utils import floats_are_equal
 import unittest
 import os
 from StringIO import StringIO
+from tempfile import NamedTemporaryFile
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -120,6 +121,28 @@ class BlastParserTest(unittest.TestCase):
                              use_query_def_as_accession=False)
         for index, blast in enumerate(parser):
             _check_blast(blast, expected_results[index])
+
+    def test_blast_no_result(self):
+        'It test that the xml output can be and empty string'
+        blast_file = NamedTemporaryFile()
+        blasts = BlastParser(fhand=blast_file)
+
+        filters = [{'kind'           : 'best_scores',
+                    'score_key'      : 'expect',
+                    'max_score_value': 1e-4,
+                    'score_tolerance': 10
+                   }]
+        filt_b = FilteredAlignmentResults(match_filters=filters, results=blasts)
+        try:
+            filt_b.next()
+            self.fail
+        except StopIteration:
+            pass
+        #match_summary = _summarize_matches(filt_b)
+        #_check_match_summary(match_summary, expected)
+#        match_summary = _summarize_matches(parser)
+#        print match_summary
+
 
 def _summarize_matches(parser):
     '''Given a alignment result parser it returns a dict with the matches for
