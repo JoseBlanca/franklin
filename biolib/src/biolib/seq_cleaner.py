@@ -594,7 +594,7 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
 #                  step_name )
 
     else:
-        seq_iter = checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, False)
+        checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false')
 
     logging.info('Done!')
 
