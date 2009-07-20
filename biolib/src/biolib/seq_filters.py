@@ -51,7 +51,8 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
 
     def _filter(sequence):
         'Giving a sequence it returns true or False depending on the exonerate'
-
+        if sequence is None:
+            return False
         source_result    = run_align_for_seq(sequence)[0]
         results          = parser(source_result)
         filtered_results = FilteredAlignmentResults(match_filters=match_filters,
@@ -71,6 +72,8 @@ def create_length_filter(length, count_masked=True):
 
     def filter_by_length(sequence):
         'It returns true if the sequence is longer than the length'
+        if sequence is None:
+            return False
         if count_masked:
             sequence_len = len(sequence)
         else:
@@ -119,7 +122,7 @@ def create_adaptor_matches_filter(adaptors, number=3):
                                     result_filters=result_filters )
 
     def filter_by_adaptor_matches(sequence):
-        'It return Fase if the sequence have more than number or equal tiems'
+        'It return False if the sequence have more than number or equal tiems'
         fhand
         return match_filter(sequence)
     return filter_by_adaptor_matches
