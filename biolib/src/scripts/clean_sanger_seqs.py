@@ -97,7 +97,8 @@ def set_parameters():
     else:
         checkpoint = options.checkpoint
         if options.directory is None:
-            os.mkdir('clean_sanger_tmp')
+            if not os.path.exists('clean_sanger_tmp'):
+                os.mkdir('clean_sanger_tmp')
             work_dir = 'clean_sanger_tmp'
         else:
             work_dir = options.directory
