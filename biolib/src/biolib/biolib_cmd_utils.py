@@ -22,7 +22,7 @@ This module provides utilities to run external commands into biolib
 
 from biolib.biolib_utils import temp_fasta_file, NamedTemporaryDir, parse_fasta
 import subprocess, signal, tempfile, os
-import StringIO
+import StringIO, logging
 
 def call(cmd, env=None, stdin=None):
     'It calls a command and it returns stdout, stderr and retcode'
@@ -68,7 +68,8 @@ RUNNER_DEFINITIONS = {
                              'alig_format': {'default':7, 'option':'-m'}
                             },
               'output':[{'option':STDOUT}],
-              'input':{'option':'-i'}
+              'input':{'option':'-i'},
+              'ignore_stderrs': ['Karlin-Altschul']
               },
     'seqclean_vect':{'parameters':{'vector_db':{'required':True,'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},
@@ -229,8 +230,23 @@ def create_runner(kind, bin_=None, parameters=None):
 
         #print ' '.join(cmd)
         stdout, stderr, retcode = call(cmd, stdin=stdin)
+
+        # there is a error
         if retcode:
-            raise RuntimeError('Problem running ' + bin_ + ': ' + stdout +
+            ignore_error = False
+            if 'ignore_stderrs' in runner_def:
+                for error in runner_def['ignore_stderrs']:
+                    if error in stderr:
+                        ignore_error = True
+            if ignore_error:
+                try:
+                    print_name = sequence.name
+                except AttributeError:
+                    print_name = ''
+
+                logging.warning(print_name + ':' + stderr)
+            else:
+                raise RuntimeError('Problem running ' + bin_ + ': ' + stdout +
                                stderr)
 
         # Now we are going to make this list with the files we are going to
