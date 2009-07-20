@@ -65,7 +65,7 @@ def set_parameters():
             raise RuntimeError('Need first qual file to calculate %s analisis'\
                                 % kind)
         else:
-            io_fhands['qualfile1'] = open(options.qualfile1, 'r')
+            io_fhands['qualfile1'] = None
     else:
         io_fhands['qualfile1'] = open(options.qualfile1, 'r')
 
@@ -79,7 +79,7 @@ def set_parameters():
             raise RuntimeError('Need second qual file to calculate %s analisis'\
                                 % kind)
         else:
-            io_fhands['qualfile2'] = open(options.qualfile2, 'r')
+            io_fhands['qualfile2'] = None
     else:
         io_fhands['qualfile2'] = open(options.qualfile2, 'r')
 
