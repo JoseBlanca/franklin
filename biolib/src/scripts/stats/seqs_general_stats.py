@@ -32,6 +32,8 @@ def parse_options():
     parser.add_option('-w', '--resultfile', dest='resultfile',
                       help='result output file')
 
+    return parser.parse_args()
+
 def set_parameters():
     '''It set the parameters for this scripts. From de options or from the
      default values'''
