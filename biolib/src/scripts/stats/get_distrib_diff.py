@@ -102,9 +102,8 @@ def main():
     seqs1 = seqs_in_file( io_fhands['seqfile1'],  io_fhands['qualfile1'])
     seqs2 = seqs_in_file( io_fhands['seqfile2'],  io_fhands['qualfile2'])
 
-    dist = seq_distrib_diff(seqs1, seqs2, kind,
-                            distrib_fhand=io_fhands['distrib'],
-                            plot_fhand=io_fhands['plot'])
+    seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=io_fhands['distrib'],
+                     plot_fhand=io_fhands['plot'])
 
 if __name__ == '__main__':
     main()

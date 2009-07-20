@@ -43,17 +43,26 @@ def parse_options():
                       help='Log file')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                       help='Pipeline type. Look at the source' )
+    parser.add_option('-c', '--checkpoint', action="store_true",
+                      dest='checkpoint', help='Do we need checkpoints?' )
+
     return parser.parse_args()
 
-def set_parameters(options):
+def set_parameters():
     '''It set the parameters for this scripts. From de options or from the
      default values'''
+    options = parse_options()[0]
 
      # kind
     if options.pipeline is None:
         raise RuntimeError('Pipeline is mandatory, use -p pipeline')
     else:
         pipeline = options.pipeline
+    # do heckpoints?
+    if options.checkpoint is None:
+        checkpoint = None
+    else:
+        checkpoint = options.checkpoint
 
     ############### input output parameters ################
     io_fhands     = {}
@@ -81,12 +90,20 @@ def set_parameters(options):
     else:
         io_fhands['out_qual'] = open(options.out_qual, 'w')
     ##########################################################
-    if options.directory is None:
-        os.mkdir('clean_sanger_tmp')
-        work_dir = 'clean_sanger_tmp'
+    # do checkpoints?
+    if options.checkpoint is None:
+        checkpoint = False
+        work_dir   = None
     else:
-        work_dir = options.directory
-
+        checkpoint = options.checkpoint
+        if options.directory is None:
+            os.mkdir('clean_sanger_tmp')
+            work_dir = 'clean_sanger_tmp'
+        else:
+            work_dir = options.directory
+            if not os.path.exists(work_dir):
+                os.mkdir(work_dir)
+    # logs?
     if options.logfile is None:
         log_fhand = open('sanger_clean.log', 'w')
     else:
@@ -95,30 +112,28 @@ def set_parameters(options):
     ########### step configuration  ###########################
     configuration = {}
     if options.vecdb is not None:
-        configuration['1_remove_vectors'] = {}
-        configuration['1_remove_vectors']['vectors'] = options.vecdb
+        configuration['remove_vectors'] = {}
+        configuration['remove_vectors']['vectors'] = options.vecdb
     if options.adaptors is not None:
-        configuration['2_remove_adaptors'] = {}
-        configuration['2_remove_adaptors']['vectors'] = options.adaptors
+        configuration['remove_adaptors'] = {}
+        configuration['remove_adaptors']['vectors'] = options.adaptors
 
-    return io_fhands, work_dir, log_fhand, pipeline, configuration
+    return io_fhands, work_dir, log_fhand, pipeline, configuration, checkpoint
 
 
 def main():
     'The main function'
 
-    # Parse arguments/ioptions
-    options = parse_options()[0]
-
     # Set parameters
-    io_fhands, work_dir, log_fhand, pipeline, config = set_parameters(options)
+    (io_fhands, work_dir, log_fhand, pipeline, config, checkpoint) =\
+                                                        set_parameters()
 
     #Loggin facilities
     logging.basicConfig(filename=log_fhand.name, level=logging.INFO,
                         format='%(asctime)s %(message)s')
 
     # Run the analisis step by step
-    pipeline_runner(pipeline, config, io_fhands, work_dir)
+    pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint)
 
 
 if __name__ == '__main__':

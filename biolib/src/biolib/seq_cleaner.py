@@ -32,8 +32,7 @@ from biolib.seqs import  SeqWithQuality
 from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
-from biolib.statistics import (seq_length_distrib, seq_qual_distrib,
-                               masked_seq_length_distrib)
+
 
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
@@ -444,53 +443,47 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
 remove_vectors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'blast'},
                   'type': 'cleaner',
-                  'statistics': [seq_length_distrib, seq_qual_distrib],
-                  'name': '1_remove_vectors',
+                  'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
 
 remove_adaptors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'exonerate'},
                   'type': 'cleaner',
-                  'statistics': [seq_length_distrib, seq_qual_distrib],
-                  'name': '2_remove_adaptors',
+                  'name': 'remove_adaptors',
                   'comment': 'Remove our adaptors'}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
                       'arguments':{},
                       'type':'cleaner',
-                      'statistics': [seq_qual_distrib],
-                      'name':'3_strip_lucy',
+                      'name':'strip_lucy',
                       'comment':'Strip low quality with lucy'}
 
 strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'arguments': {},
                           'type':'cleaner',
-                          'statistics': [seq_length_distrib],
-                          'name':'4_strip_trimpoly',
+                          'name':'strip_trimpoly',
                           'comment':'Strip low quality with trimpoly'}
 
 mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'arguments':{'species':'eudicotyledons'},
                 'type': 'cleaner',
-                'statistics':[masked_seq_length_distrib] ,
-                'name': '5_mask_repeats',
+                'name': 'mask_repeats',
                 'comment':'Mask repeats with repeatmasker'}
 
 filter_short_seqs = {'function': create_length_filter,
                      'arguments':{'length':100, 'count_masked': False},
                      'type':'filter' ,
-                     'statistics': [seq_length_distrib],
-                     'name':'6_remove_short',
+                     'name':'remove_short',
                      'comment': 'Remove seq shorter than 100 nt'}
 
 
 
-PIPELINES = {'sanger_with_quality_clean': [remove_vectors, strip_quality_lucy,
-                                           mask_repeats, filter_short_seqs ],
+PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy,
+                                             filter_short_seqs ],
             'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
-                                             mask_repeats, filter_short_seqs ]
-             }
-
+                                             filter_short_seqs ],
+            'repeatmasker'                :[mask_repeats]
+            }
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it depending on the
     sequence kind and configuration parameters '''
@@ -502,7 +495,7 @@ def configure_pipeline(pipeline, configuration):
         step_name = step['name']
         if step_name in configuration:
             for key, value in configuration[step_name].items():
-                    step['arguments'][key] = value
+                step['arguments'][key] = value
 
     # Here I check that none of the arguments have a none value
     for step in seq_pipeline:
@@ -514,7 +507,8 @@ def configure_pipeline(pipeline, configuration):
     return seq_pipeline
 
 
-def pipeline_runner(pipeline, configuration, io_fhands, work_dir):
+def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
+                    checkpoint_every_step=False):
     '''It runs all the analisis in the analisis_step especification dictionary
 
     This specidications depend on the type of the sequences'''
@@ -543,7 +537,7 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir):
 
         msg = "Performing: %s" % analisis_step['comment']
         logging.info(msg)
-        print (msg)
+        #print (msg)
 
         if type_ == 'cleaner':
             # here we prepare the cleaner with iterator that are going to be
@@ -563,30 +557,34 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir):
         # Now we need to create again the iterator. And this is going to be
         # useful to actually run the previous filter. Until now everything is
         # an iterator mega structure and nothing is executed
-        seq_step_name  = get_safe_fname(work_dir, step_name, 'seq.fasta')
-        fhand_seq  = open(seq_step_name, 'w')
-        if in_fhand_qual is not None:
-            qual_step_name = get_safe_fname(work_dir, step_name,'qual.fasta')
-            fhand_qual = open(qual_step_name, 'w')
-        else:
-            fhand_qual = None
+        if checkpoint_every_step:
+            seq_step_name  = get_safe_fname(work_dir, step_name, 'seq.fasta')
+            fhand_seq      = open(seq_step_name, 'w')
+            if in_fhand_qual is not None:
+                qual_step_name = get_safe_fname(work_dir, step_name,
+                                                'qual.fasta')
+                fhand_qual = open(qual_step_name, 'w')
+            else:
+                fhand_qual = None
 
-        seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
-        fhand_seq.close()
-        if in_fhand_qual is not None:
-            fhand_qual.close()
+            seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
+            fhand_seq.close()
+            if in_fhand_qual is not None:
+                fhand_qual.close()
+        else:
+            seq_iter = filtered_seqs
 
         #more logging
         msg = "Finished: %s" % analisis_step['comment']
         logging.info(msg)
 
-        # I need an iterator to use with for the stats, so y generate another
-        # one with tee
-        seq_iter, seq_iter_stats = tee(seq_iter, 2)
-
-        #stats
-        run_stats(seq_iter_stats, analisis_step['statistics'], work_dir,
-                  step_name )
+#        # I need an iterator to use with for the stats, so y generate another
+#        # one with tee
+#        seq_iter, seq_iter_stats = tee(seq_iter, 2)
+#
+#        #stats
+#        run_stats(seq_iter_stats, analisis_step['statistics'], work_dir,
+#                  step_name )
 
     else:
         seq_iter = checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, False)

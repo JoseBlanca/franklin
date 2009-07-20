@@ -287,8 +287,8 @@ class PipelineTests(unittest.TestCase):
     def test_configure_pipeline(self):
         'It tests configure pipeline'
         pipeline      = 'sanger_with_quality_clean'
-        configuration = {'1_remove_vectors': {'vectors':'Univec'},
-                         '1_remove_adaptors':{'vectors':'hola'}}
+        configuration = {'remove_vectors': {'vectors':'Univec'},
+                         'remove_adaptors':{'vectors':'hola'}}
         pipeline      = configure_pipeline(pipeline, configuration)
 
         assert pipeline[0]['arguments']['vectors'] == 'Univec'
@@ -310,8 +310,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
 
-        configuration = {'1_remove_vectors': {'vectors':'UniVec'},
-                         '1_remove_adaptors':{'vectors':fhand_adaptors.name}}
+        configuration = {'remove_vectors': {'vectors':'UniVec'},
+                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
         io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
