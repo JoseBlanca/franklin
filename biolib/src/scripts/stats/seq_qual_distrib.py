@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 'Given a qual file it generates an histogram with the qualities distribution.'
 
 from optparse import OptionParser
@@ -20,11 +22,11 @@ def qualities(seqs):
 
 def main():
     'the main sub'
-    options, args = parse_options()
-    fhand = open(options.infile, 'r')
-    seqs = SeqIO.parse(fhand, 'qual')
-    quals = qualities(seqs)
-    
+    options = parse_options()[0]
+    fhand   = open(options.infile, 'r')
+    seqs    = SeqIO.parse(fhand, 'qual')
+    quals   = qualities(seqs)
+
     #ploting the figure
     fig = plt.figure()
     axes = fig.add_subplot(111)

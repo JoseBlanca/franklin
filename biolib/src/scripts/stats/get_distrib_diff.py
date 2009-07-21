@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 '''
 This script calculates the distribution difference between two seqs applying to
-it the different distribution calculation method that we have. It can plot
+it the different distribution calculation method that we have. It plots the
+differene
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia

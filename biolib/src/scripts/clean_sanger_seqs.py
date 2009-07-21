@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 This script clean(mask and strip) and filter sequence depending in a lot of
 variables in sanger sequences.

@@ -1,8 +1,9 @@
+#!/usr/bin/env python
 '''
 It returns a matrix with the codon frecuency, giving a caf file with est
 '''
 from optparse import OptionParser
-from biolib.contig_parser import CafParser, AceParser
+from biolib.contig_io import get_parser
 from biolib.biolib_utils import get_best_orf
 
 def main():
@@ -12,8 +13,8 @@ def main():
                       help='codon frecuency matrix')
     parser.add_option('-o', '--outfile', dest='outfile', help='Output file')
     parser.add_option('-i', '--infile', dest='infile', help='Maximun limit')
-    (options, args) = parser.parse_args()
-    
+    options = parser.parse_args()[0]
+
     if options.infile is None:
         parser.error('Script at least needs an input file (caf|ace)')
     else:
@@ -22,14 +23,9 @@ def main():
         parser.error('ESTScan need a codon frecuency matrix')
     else:
         matrix = options.matrix
-        
-    print "Starting file indexing"  
-    if infile[-3:].lower() == 'ace':
-        print "File type: ace"
-        parser = AceParser(infile)
-    elif infile[-3:].lower() == 'caf':
-        print "File type: caf"
-        parser = CafParser(infile)
+
+    print "Starting file indexing"
+    parser = get_parser(infile, infile[-3:].lower())
     print "File indexing finished"
 
     codons = {}
@@ -37,7 +33,7 @@ def main():
         sequence = contig.consensus.sequence
         orf_dna = get_best_orf(sequence, matrix_path=matrix)[0]
         cont = 0
-        
+
         while True:
             codon = orf_dna[cont:cont + 3]
             codon = codon.upper()
@@ -48,9 +44,9 @@ def main():
                     codons[codon] = 1
                 else:
                     codons[codon] += 1
-            cont += 3     
-                
+            cont += 3
+
     print codons
-    
+
 if __name__ == '__main__':
     main()

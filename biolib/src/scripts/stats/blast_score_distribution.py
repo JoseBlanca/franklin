@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 '''
+
 Created on 2009 eka 2
 
 @author: peio
@@ -34,14 +36,14 @@ def main():
                       action='store_true', default=False, help=msg)
     parser.add_option('-c', '--incompat', dest='do_incompat',
                       action='store_true', default=False, help=msg)
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()[0]
 
     if options.infile is None:
-        parser.error('Script at least needs an input file (caf|ace)')
+        parser.error('Script at least needs an input file (blast xml output)')
     else:
         infile = options.infile
-    use_length = options.use_length
- 
+    #use_length = options.use_length
+
     bins = 20
 
     blasts = BlastParser(fhand=open(infile, 'r'))
@@ -52,16 +54,19 @@ def main():
     scores = alignment_results_scores(blasts, score_keys)
     #the distribution
     if options.do_incompat:
-        distrib, x_edges, y_edges = numpy.histogram2d(scores[0], scores[1],
-                                                      bins=bins)
+        #distrib, x_edges, y_edges = numpy.histogram2d(scores[0], scores[1],
+        #                                              bins=bins)
+        distrib = numpy.histogram2d(scores[0], scores[1], bins=bins)[0]
     else:
         distrib, bin_edges = numpy.histogram(scores, bins=bins)
     #the drawing
     if options.do_incompat:
-        fig = pylab.figure()
+        #fig = pylab.figure()
+        pylab.figure()
         #axes = Axes3D(fig)
         #axes.plot_surface(x_edges[:-1], y_edges[:-1], distrib)
-        axes = pylab.subplot(111)
+        #axes = pylab.subplot(111)
+        pylab.subplot(111)
         image = pylab.imshow(distrib)
         image.set_interpolation('bilinear')
         pylab.show()

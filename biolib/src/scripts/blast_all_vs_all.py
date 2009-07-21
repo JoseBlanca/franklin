@@ -1,19 +1,19 @@
+#!/usr/bin/env python
 '''
-Created on 2009 eka 26
-
-@author: peio
+This script giving a fasta file with sequences perform and all against all blast
+alignment. It preprares the sequences, format them and do the actual alignment
 '''
 from optparse import OptionParser
 import os
 from biolib.contig_io import contig_to_fasta
-from biolib.biolib_utils import call
+from biolib.biolib_cmd_utils import call
 
 def main():
     '''main section '''
     parser = OptionParser('usage: %prog -i infile [-t]...', version='%prog 1.0')
     parser.add_option('-i', '--infile', dest='infile', help='Input file')
     parser.add_option('-d', '--directory', dest='directory', help='directory')
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()[0]
 
     if options.infile is None:
         parser.error('Script at least needs an input file (caf|ace)')

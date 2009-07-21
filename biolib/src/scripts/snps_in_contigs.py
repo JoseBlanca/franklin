@@ -1,6 +1,9 @@
+#!/usr/bin/env python
 '''
-Created on 2009 mai 4
+This script search snps in an assembly. The assembly could be in ace or caf
+format
 
+Created on 2009 mai 4
 @author: peio
 '''
 from biolib.seqvariation import seqvariations_in_alignment, seqvar_summary
@@ -20,7 +23,7 @@ def main():
                       help='Input file')
     parser.add_option('-t', '--contig_strip', dest = 'c_strip',
                      action='store_true', help = 'Strip contig?'  )
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()[0]
 
 
     if options.infile is None:

@@ -1,11 +1,13 @@
+#!/ur/bin/env python
 '''
-Created on 2009 mai 13
+With this script ypu can extract the consensus from a caf/ace file and write
+them to a fasta
 
+Created on 2009 mai 13
 @author: peio
 '''
 from optparse import OptionParser
 from biolib.contig_io import contig_to_fasta
-from biolib.biolib_utils import fasta_str
 import sys
 
 def main():

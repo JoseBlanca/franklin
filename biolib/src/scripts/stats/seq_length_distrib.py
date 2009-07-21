@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''Given a sequence file it generates an histogram with the sequence length
 distribution.'''
 
@@ -16,12 +18,13 @@ def parse_options():
 
 def main():
     'the main sub'
-    options, args = parse_options()
-    fhand = open(options.infile, 'r')
-    format = guess_seq_file_format(fhand)
-    seqs = SeqIO.parse(fhand, format)
+    options = parse_options()[0]
+
+    fhand   = open(options.infile, 'r')
+    format_ = guess_seq_file_format(fhand)
+    seqs    = SeqIO.parse(fhand, format_)
     lengths = [len(seq) for seq in seqs]
-    
+
     #ploting the figure
     fig = plt.figure()
     axes = fig.add_subplot(111)
