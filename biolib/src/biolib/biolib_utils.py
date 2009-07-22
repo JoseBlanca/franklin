@@ -22,11 +22,21 @@ Created on 2009 api 30
 
 import tempfile, shutil
 from uuid import uuid4
-import os.path
+import os
 import math
-import matplotlib
+
+try:
+    import matplotlib
+except RuntimeError, msg:
+    #matplotlib could fail trying to write .matplotlibrc under apache or condor
+    if 'MPLCONFIGDIR' in msg:
+        TMPDIR = tempfile.gettempdir()
+        os.putenv('MPLCONFIGDIR', TMPDIR)
+        import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
+
+
 from biolib.seqs import SeqWithQuality
 
 from Bio import  SeqIO

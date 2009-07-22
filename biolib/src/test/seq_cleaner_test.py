@@ -16,7 +16,8 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality,
                                 create_striper_by_quality_lucy,
                                 create_masker_repeats_by_repeatmasker,
-                                configure_pipeline, pipeline_runner)
+                                configure_pipeline, pipeline_runner,
+                                checkpoint)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -326,6 +327,31 @@ class PipelineTests(unittest.TestCase):
         io_fhands['out_seq'].seek(0)
         result_seq = io_fhands['out_seq'].read()
         assert result_seq == EXPECTED
+
+
+class CheckPointTest(unittest.TestCase):
+    'It checks checkpoint function'
+    @staticmethod
+    def test_checkpoint():
+        'It checks checkpoint function'
+        seq  = 'atgatgatgt'
+        qual = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        seq1 = SeqWithQuality(seq=seq, qual=qual, name='seq1')
+        seq2 = SeqWithQuality(seq=seq, qual=qual, name='seq2')
+        seqs_iter = iter([seq1, seq2])
+
+        basename = 'prueba'
+        temp_dir =  NamedTemporaryDir()
+        temp_dir_name = temp_dir.get_name()
+        seq_iter2 = checkpoint(seqs_iter, basename, temp_dir_name)
+        assert str(seq_iter2.next().seq) == seq
+
+        fhand_seqs = open('%s/%s.seq.fasta' % (temp_dir_name, basename ))
+        fhand_qual = open('%s/%s.qual.fasta' % (temp_dir_name, basename ))
+        assert fhand_seqs.readline()[0] == '>'
+        assert fhand_seqs.readline()[0] == 'a'
+        assert fhand_qual.readline()[0] == '>'
+        assert fhand_qual.readline()[0] == '0'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
