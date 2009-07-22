@@ -64,7 +64,7 @@ RUNNER_DEFINITIONS = {
                              'expect'   :{'default': 0.0001,'option': '-e'},
                              'nhitsv'   :{'default': 20,    'option':'-v'},
                              'nhitsb'   :{'default': 20,    'option':'-b'},
-                             'megablast':{'default':'T',  'option':'-n'},
+                             #'megablast':{'default':'T',  'option':'-n'},
                              'alig_format': {'default':7, 'option':'-m'}
                             },
               'output':[{'option':STDOUT}],
