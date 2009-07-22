@@ -471,6 +471,12 @@ strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'name':'strip_trimpoly',
                           'comment':'Strip low quality with trimpoly'}
 
+mask_low_complexity = {'function': create_masker_for_low_complexity,
+                       'arguments': {},
+                       'type':'cleaner',
+                       'name':'mask_low_complex',
+                       'comment':'Mask low complexity regions'}
+
 mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'arguments':{'species':'eudicotyledons'},
                 'type': 'cleaner',
@@ -486,10 +492,12 @@ filter_short_seqs = {'function': create_length_filter,
 
 
 PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy,
-                                             filter_short_seqs ],
+                                       mask_low_complexity, filter_short_seqs ],
+
             'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
-                                             filter_short_seqs ],
-            'repeatmasker'                :[mask_repeats]
+                                       mask_low_complexity, filter_short_seqs ],
+
+            'repeatmasker'                :[mask_repeats, filter_short_seqs]
             }
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it depending on the

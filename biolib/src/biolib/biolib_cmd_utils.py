@@ -80,7 +80,8 @@ RUNNER_DEFINITIONS = {
                      'output':[{'option':'-o', 'files':['seq']}],
                      'input':{'option':ARGUMENT, 'arg_before_params':True}
                     },
-    'mdust':{'parameters':{'mask_letter':{'default':'L', 'option': '-m'}},
+    'mdust':{'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
+                          'cut_off'    :{'default':'25', 'option':'-v' }},
              'output':[{'option':STDOUT}],
              'input':{'option':ARGUMENT, 'arg_before_params':True}
             },
