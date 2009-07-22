@@ -27,15 +27,17 @@ import math
 
 try:
     import matplotlib
-except RuntimeError, msg:
-    #matplotlib could fail trying to write .matplotlibrc under apache or condor
-    if 'MPLCONFIGDIR' in msg:
-        TMPDIR = tempfile.gettempdir()
-        os.putenv('MPLCONFIGDIR', TMPDIR)
-        import matplotlib
-matplotlib.use('AGG')
-import matplotlib.pyplot as plt
-
+    matplotlib.use('AGG')
+    import matplotlib.pyplot as plt
+except RuntimeError:
+    #in some circunstances matplot lib could generate this error
+    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
+    #writable directory for matplotlib configuration data
+    #in that case we don't know how to use matplotlib, it would require
+    #to set the MPLCONFIGDIR variable, but we can't do that in the 
+    #current shell, so the matplotlib greatness wouldn't be available
+    #in those ocasions
+    pass
 
 from biolib.seqs import SeqWithQuality
 
