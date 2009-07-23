@@ -25,6 +25,8 @@ As bad we undertand low quality section, low complexity section, poliA section,
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 from itertools import imap, ifilter, tee
 import re, logging
+from tempfile import NamedTemporaryFile
+
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.biolib_utils import (get_content_from_fasta, seqs_in_file,
                                  get_safe_fname, fasta_str)
@@ -190,6 +192,8 @@ def create_masker_for_polia():
 
 def create_striper_by_quality_trimpoly():
     'It creates a function hat stripes seq using trimpoly\'s quality checks '
+
+
     def strip_seq_by_quality_trimpoly(sequence):
         '''It strip the sequence where low quality is found
 
@@ -239,6 +243,9 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
 
 def create_striper_by_quality_lucy():
     'It creates a function hat stripes seq using lucys quality checks '
+    msg  = "DEPECRATED, This function is deprecated. "
+    msg += "Use create_striper_by_quality_lucy2"
+    print msg
     def strip_seq_by_quality_lucy(sequence):
         '''It trims from the sequence  bad quality sections.
 
@@ -276,10 +283,50 @@ def create_striper_by_quality_lucy():
         return striped_seq
     return strip_seq_by_quality_lucy
 
+def create_striper_by_quality_lucy2():
+    'It creates a function hat stripes seq using lucys quality checks '
+    def strip_seq_by_quality_lucy(sequences):
+        '''It trims from the sequences  bad quality sections.
+
+        It uses lucy external program. It return a sequence iterator and a,
+        list of output files. (A seq file and a qual file). We return the files
+        because the iterator use them and as they are temporal files, we need
+        to return them in order to be usefull for the iterator
+        '''
+        #we prepare the function that will run lucy
+        run_lucy_for_seqs = create_runner(kind='lucy')
+        #pylint: disable-msg=W0612
+        #now we run lucy
+        seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)
+
+        #now we have to clean all sequences with the description found on the
+        #output seq file
+        seq_iter = seqs_in_file(seq_out_fhand, qual_out_fhand)
+        striped_seq_fhand = NamedTemporaryFile(suffix='.seq.fasta')
+        striped_qual_fhand = NamedTemporaryFile(suffix='.qual.fasta')
+        for seq in seq_iter:
+            description = seq.description
+            #lucy can consider that the seq is low qual and return an empty file
+            if description is None:
+                striped_seq = None
+            start, end = description.split()[-2:]
+            #we count from zero
+            start, end = int(start) - 1, int(end)
+            striped_seq = seq[start:end]
+            seq_str = fasta_str(striped_seq.seq, striped_seq.name)
+            striped_seq_fhand.write(seq_str)
+            stripped_qual = ' '.join([str(q_val) for q_val in striped_seq.qual])
+            qual_str = fasta_str(stripped_qual, striped_seq.name)
+            striped_qual_fhand.write(qual_str)
+        seq_iter = seqs_in_file(striped_seq_fhand, striped_qual_fhand)
+        return seq_iter, [striped_seq_fhand, striped_qual_fhand]
+    return strip_seq_by_quality_lucy
+
+
 #pylint:disable-msg=C0103
 def create_vector_striper_by_alignment(vectors, aligner):
-    'It creates a function witch we can pass a sequence to search form vectors'
-    #depending on the aligner program we neeed diferent parameters and filters
+    'It creates a function witch we can pass a sequence to search from vectors'
+    #depending on the aligner program we need different parameters and filters
     parameters = {'exonerate': {'target':vectors},
                   'blast'    : {'database': vectors, 'program':'blastn'}}
 
@@ -465,6 +512,12 @@ strip_quality_lucy = {'function': create_striper_by_quality_lucy,
                       'name':'strip_lucy',
                       'comment':'Strip low quality with lucy'}
 
+strip_quality_lucy2 = {'function': create_striper_by_quality_lucy2,
+                      'arguments':{},
+                      'type':'bulk_processor',
+                      'name':'strip_lucy',
+                      'comment':'Strip low quality with lucy'}
+
 strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'arguments': {},
                           'type':'cleaner',
@@ -491,7 +544,7 @@ filter_short_seqs = {'function': create_length_filter,
 
 
 
-PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy,
+PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy2,
                                        mask_low_complexity, filter_short_seqs ],
 
             'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
@@ -541,8 +594,13 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
     # Here starts the analisis
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual)
 
+    # List of temporary files created by the bulk processors.
+    # we need to keep them until the analysis is done because some seq_iters
+    # may depend on them
+    temp_bulk_files = []
+
     for analisis_step in pipeline_steps:
-        function  = analisis_step['function']
+        function_factory  = analisis_step['function']
         type_     = analisis_step['type']
         step_name = analisis_step['name']
         if analisis_step['arguments']:
@@ -554,20 +612,20 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
         logging.info(msg)
         #print (msg)
 
-        if type_ == 'cleaner':
-            # here we prepare the cleaner with iterator that are going to be
-            # executed when the checkpoint is arrived
-            if arguments is None:
-                cleaner_function = function()
-            else:
-                # pylint:disable-msg=W0142
-                cleaner_function = function(**arguments)
-            filtered_seqs = imap(cleaner_function, seq_iter)
-
-        elif type_ == 'filter':
+        # Crete function adding parameters if they need them
+        if arguments is None:
+            cleaner_function = function_factory()
+        else:
             # pylint:disable-msg=W0142
-            filter_function = function(**arguments)
-            filtered_seqs   = ifilter(filter_function, seq_iter)
+            cleaner_function = function_factory(**arguments)
+
+        if type_ == 'cleaner':
+            filtered_seqs = imap(cleaner_function, seq_iter)
+        elif type_ == 'filter':
+            filtered_seqs   = ifilter(cleaner_function, seq_iter)
+        elif type_ == 'bulk_processor':
+            filtered_seqs, fhand_outs = cleaner_function(seq_iter)
+            temp_bulk_files.append(fhand_outs)
 
         # Now we need to create again the iterator. And this is going to be
         # useful to actually run the previous filter. Until now everything is
@@ -604,6 +662,8 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
     else:
         checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false')
 
+    # Cleaning saved temp files
+    temp_bulk_files = None
     logging.info('Done!')
 
 def run_stats(sequences, statistics, work_dir, step_name):

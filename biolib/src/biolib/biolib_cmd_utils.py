@@ -172,11 +172,18 @@ def create_runner(kind, bin_=None, parameters=None):
         'It returns a result for the given sequence'
         # Do we nedd quality for the input??
         input_ = runner_def['input']
+#        if 'files' in input_ and 'qual' in input_['files']:
+#            qual_fhand = temp_fasta_file(sequence, write_qual=True)
+#            qual_fname = qual_fhand.name
+#        #do we have to process the sequence?
+#        seq_fhand = temp_fasta_file(sequence)
+
         if 'files' in input_ and 'qual' in input_['files']:
-            qual_fhand = temp_fasta_file(sequence, write_qual=True)
+            seq_fhand, qual_fhand = temp_fasta_file(sequence, write_qual=True)
             qual_fname = qual_fhand.name
-        #do we have to process the sequence?
-        seq_fhand = temp_fasta_file(sequence)
+        else:
+            seq_fhand = temp_fasta_file(sequence)
+
         cmd = [bin_]
 
         #is the sequence a file-like object?

@@ -15,6 +15,7 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality_trimpoly,
                                 create_striper_by_quality,
                                 create_striper_by_quality_lucy,
+                                create_striper_by_quality_lucy2,
                                 create_masker_repeats_by_repeatmasker,
                                 configure_pipeline, pipeline_runner,
                                 checkpoint)
@@ -99,7 +100,7 @@ class SeqCleanerTest(unittest.TestCase):
 
 
 
-    def test_strip_seq_by_qual_lucy(self):
+    def xtest_strip_seq_by_qual_lucy(self):
         'It tests lucy with a ga runner class for lucy'
 
         seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
@@ -154,6 +155,48 @@ class SeqCleanerTest(unittest.TestCase):
         assert len(striped_seq.qual) > 170
         assert len(striped_seq.qual) < 185
 
+    @staticmethod
+    def test_strip_seq_by_quality_lucy2():
+        'It tests strip_seq_by_quality_liucy2'
+        seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
+        seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
+        seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCA'
+        qual =  '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        qual += '00 00 00 00 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
+        qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 00 00 00 00'
+        qual = qual.split()
+        seqrec1 = SeqWithQuality(name='seq1', seq=seq, qual=qual)
+
+        qual  = '40 40 40 37 40 40 37 37 37 37 37 37 37 37 40 42 42 42 44 44 '
+        qual += '56 56 42 40 40 40 40 36 36 28 35 32 35 35 40 42 37 37 35 37 '
+        qual += '32 35 35 35 35 35 35 38 33 33 24 33 33 42 33 35 35 35 35 33 '
+        qual += '36 30 30 24 29 29 35 35 35 35 29 29 29 35 38 38 38 37 35 33 '
+        qual += '29 35 35 34 30 30 30 33 29 31 31 29 29 29 28 28 24 21 16 16 '
+        qual += '21 24 29 29 32 40 27 27 25 25 21 30 27 28 28 32 23 23 21 24 '
+        qual += '24 17 18 19 21 15 19 11 9 9 11 23 17 15 10 10 10 20 27 25 23 '
+        qual += '18 22 23 24 18 10 10 13 13 18 19 10 12 12 18 16 14 10 10 11 '
+        qual += '16 13 21 19 31 19 27 27 28 26 29 25 25 20 19 23 28 28 19 20 '
+        qual += '13 9 9 9 9 9 17 15 21 17 14 12 21 17 19 24 28 24 23 '
+        quality = qual.split()
+        seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
+        seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
+        seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
+        seq += 'ATTACGATGAT'
+        seqrec2 = SeqWithQuality(seq=seq, qual=quality, name='seq2')
+        seq_iter = iter([seqrec1, seqrec2])
+        lucy_striper = create_striper_by_quality_lucy2()
+        #pylint:disable-msg=W0612
+        seq_iter, output_files = lucy_striper(seq_iter)
+        seqs = list(seq_iter)
+        seq = seqs[0].seq
+        assert seq.startswith('CAGATCAGATCAGCATCAGCAT')
+        assert seq.endswith('CGAGATCAGCAGCATCAGC')
+        assert len(seqs) == 2
 
     @staticmethod
     def test_strip_vector_align_exonera():
@@ -262,11 +305,6 @@ class SeqCleanerTest(unittest.TestCase):
         masked_str = str(masked_seq.seq)
         assert  masked_str == seq
 
-
-
-
-
-
 ADAPTORS = '''>adaptor1
 atcgatcgatagcatacgat
 >adaptor2
@@ -308,8 +346,8 @@ class PipelineTests(unittest.TestCase):
             pass
 
     @staticmethod
-    def test_cleaner_step_runner():
-        'It test cleaner_step_runner'
+    def test_pipeline_run():
+        'It tests that the pipeline runs ok'
         pipeline = 'sanger_with_quality_clean'
 
         fhand_adaptors = NamedTemporaryFile()

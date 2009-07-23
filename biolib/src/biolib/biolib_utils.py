@@ -34,7 +34,7 @@ except RuntimeError:
     #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
     #writable directory for matplotlib configuration data
     #in that case we don't know how to use matplotlib, it would require
-    #to set the MPLCONFIGDIR variable, but we can't do that in the 
+    #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
     #in those ocasions
     pass
@@ -99,28 +99,50 @@ def _get_seq_name(seq):
         name  = str(uuid4())
     return name
 
-def temp_fasta_file(seq, write_qual=False):
+def temp_fasta_file(seqs, write_qual=False):
     '''Given a Seq and its default name it returns a fasta file in a
     temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
     file'''
-    fileh = tempfile.NamedTemporaryFile(suffix='.fasta')
-    name = _get_seq_name(seq)
 
+
+    try:
+        # Is seqs an seq or an iter??
+        #pylint:disable-msg=W0104
+        seqs.name
+        seqs = [seqs]
+        #pylint:disable-msg=W0704
+    except AttributeError:
+        pass
+
+    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
     if write_qual:
-        try:
-            quality = seq.qual
-        except AttributeError:
-            raise AttributeError('Sequence must be a SeqWithQuality instance')
-        if quality is not None:
-            quality = [str(qual) for qual in quality]
-            fileh.write(fasta_str(' '.join(quality), name))
-        else:
-            raise AttributeError('Quality can not be empty')
+        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
+
+    for seq in seqs:
+        name = _get_seq_name(seq)
+
+        if write_qual:
+            try:
+                quality = seq.qual
+            except AttributeError:
+                msg = 'Sequence must be a SeqWithQuality instance'
+                raise AttributeError(msg)
+            if quality is not None:
+                quality = [str(qual) for qual in quality]
+                fhand_qual.write(fasta_str(' '.join(quality), name))
+            else:
+                raise AttributeError('Quality can not be empty')
+        fhand_seq.write(fasta_str(seq, name))
+
+    fhand_seq.flush()
+    fhand_seq.seek(0)
+    if write_qual:
+        fhand_qual.flush()
+        fhand_qual.seek(0)
+        return fhand_seq, fhand_qual
     else:
-        fileh.write(fasta_str(seq, name))
-    fileh.flush()
-    fileh.seek(0)
-    return fileh
+        return fhand_seq
+
 def temp_multi_fasta_file(seqs):
     '''It creates a temporari fasta file using a list of sequences'''
     fileh = tempfile.NamedTemporaryFile(suffix='.fasta')

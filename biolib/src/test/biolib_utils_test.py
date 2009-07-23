@@ -23,7 +23,8 @@ import unittest, os
 import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
                                  NamedTemporaryDir, seqs_in_file,
-                                 guess_seq_file_format)
+                                 guess_seq_file_format, temp_fasta_file)
+from biolib.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
@@ -116,6 +117,27 @@ class SeqsInFileTests(unittest.TestCase):
             #pylint: disable-msg=W0704
         except RuntimeError:
             pass
+
+class TestFastaFileUtils(unittest.TestCase):
+    'here we test our utils related to fast format'
+
+    @staticmethod
+    def test_temp_fasta_file_one_seq():
+        'It test temp_fasta_file'
+        seqrec1 = SeqWithQuality(seq='ATGATAGATAGATGF', name='seq1')
+        fhand = temp_fasta_file(seqrec1)
+        content = open(fhand.name).read()
+        assert content == ">seq1\nATGATAGATAGATGF\n"
+
+    @staticmethod
+    def test_temp_fasta_file_seq_iter():
+        'It test temp_fasta_file'
+        seqrec1 = SeqWithQuality(seq='ATGATAGATAGATGF', name='seq1')
+        seqrec2 = SeqWithQuality(seq='ATGATAGATAGA', name='seq2')
+        seq_iter = iter([seqrec1, seqrec2])
+        fhand = temp_fasta_file(seq_iter)
+        content = open(fhand.name).read()
+        assert content == ">seq1\nATGATAGATAGATGF\n>seq2\nATGATAGATAGA\n"
 
 
 if __name__ == "__main__":

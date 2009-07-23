@@ -43,7 +43,7 @@ class BlastFilteringTest(unittest.TestCase):
                                      cmd_parameters=parameters,
                                      match_filters=match_filters )
         assert  blast_filter(seq1) == False
-        assert  blast_filter(seq2) == True
+        assert  blast_filter(seq2) == False
 
 ADAPTORS = '''>adaptor1
 AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
