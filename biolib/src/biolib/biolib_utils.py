@@ -25,20 +25,6 @@ from uuid import uuid4
 import os
 import math
 
-try:
-    import matplotlib
-    matplotlib.use('AGG')
-    import matplotlib.pyplot as plt
-except RuntimeError:
-    #in some circunstances matplot lib could generate this error
-    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
-    #writable directory for matplotlib configuration data
-    #in that case we don't know how to use matplotlib, it would require
-    #to set the MPLCONFIGDIR variable, but we can't do that in the
-    #current shell, so the matplotlib greatness wouldn't be available
-    #in those ocasions
-    pass
-
 from biolib.seqs import SeqWithQuality
 
 from Bio import  SeqIO
@@ -377,6 +363,18 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     will be drawn with the same color.
     If an fhand is given the scatter plot will be saved.
     '''
+    #in some circunstances matplot lib could generate this error
+    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
+    #writable directory for matplotlib configuration data
+    #in that case we don't know how to use matplotlib, it would require
+    #to set the MPLCONFIGDIR variable, but we can't do that in the
+    #current shell, so the matplotlib greatness wouldn't be available
+    #in those ocasions
+    import matplotlib
+    matplotlib.use('AGG')
+    import matplotlib.pyplot as plt
+
+
     fig = plt.figure()
     axes = fig.add_subplot(111)
     if xlabel:
