@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-# -*- coding= UTF-8
-'''
-It calculates statistics for contigs:
-    .- consensus_length
-    .- reads_length
-    .- coverage_frec
+'''It calculates some statistics for a contig file:
 
-Created on 2009 eka 2
-@author: peio
+    - consensus_length
+    - reads_length
+    - coverage_frec
 '''
 
 from optparse import OptionParser
@@ -35,7 +31,7 @@ def contig_stats(contig, data_dict):
     return  data_dict
 
 def longest_read(alignment):
-    ''' It returns the longest string lenght in the list'''
+    ''' It returns the longest string length in the list'''
     longest = 0
     for read in alignment:
         len_read = len(read)

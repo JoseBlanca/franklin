@@ -1,8 +1,18 @@
 #!/usr/bin/env python
-'''
-This script calculates the distribution difference between two seqs applying to
-it the different distribution calculation method that we have. It plots the
-differene
+'''It calculates the difference between two distributions.
+
+It requires to sequence files (optionally with qualities). It calculates the
+distribution of some property in the sequence files (like the sequence length)
+and it creates a new distribution subtracting the one obtained for the first
+sequence file with the one obtained with the second sequence file.
+
+The distribution types available are:
+    - sequence length:        seq_length_distrib
+    - quality:                qual_distrib
+    - masked sequence length: masked_seq_distrib
+
+The script can generate a plot with the distribution and/or a text file with the
+distribution values.
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -40,7 +50,7 @@ def parse_options():
     parser.add_option('-w', '--distrib', dest='distrib',
                       help='distribution text output file')
     parser.add_option('-t', '--type', dest='kind',
-                      help='type of analisis')
+                      help='type of distribution')
 
     return parser.parse_args()
 
@@ -53,7 +63,7 @@ def set_parameters():
 
     io_fhands = {}
     if options.kind is None:
-        raise RuntimeError('Stat analisis type is mandatory, use -t stat_type')
+        raise RuntimeError('Distribution type is mandatory (-t distrib_type)')
     else:
         kind = options.kind
 
@@ -64,7 +74,7 @@ def set_parameters():
 
     if options.qualfile1 is None:
         if kind in ['qual_distrib']:
-            raise RuntimeError('Need first qual file to calculate %s analisis'\
+            raise RuntimeError('Need first qual file to calculate %s analysis'\
                                 % kind)
         else:
             io_fhands['qualfile1'] = None

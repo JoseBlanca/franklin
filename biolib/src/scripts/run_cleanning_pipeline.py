@@ -1,7 +1,26 @@
 #!/usr/bin/env python
-'''
-This script clean(mask and strip) and filter sequence depending in a lot of
-variables in sanger sequences.
+'''This script runs cleaning pipelines for sequence reads.
+
+There are several pipelines to chose depending on the type of read (sanger, 454,
+solexa) and on the availability of the quality data.
+It takes a sequence fasta file (and optionally a quality fasta file) and it
+returns the cleaned reads in a new fasta file.
+The cleaning done depends on the pipeline chosen. Within the different pipelines
+there are modules for:
+- quality trimming based on the quality information (based on lucy or in a
+  custom function),
+- quality trimming based on the presence of intederminations (with trimpoly),
+- low quality masking (with trimpoly),
+- poly-A masking (with trimpoly)
+- vector trimming using blast and a vector database like Univec,
+- adaptor trimming using exonerate and a adaptor multifasta file,
+- repeat masking using RepeatMasker.
+
+The pipelines use a working directory in which several temporal files are
+written. The user can specify a which working directory should be used.
+If the user request it an intermediate file for every pipeline step can be
+created in the given working directory. To do that the checkpoint option should
+be requested.
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -50,8 +69,10 @@ def parse_options():
     return parser.parse_args()
 
 def set_parameters():
-    '''It set the parameters for this scripts. From de options or from the
-     default values'''
+    '''It sets the parameters for the script.
+
+    For some options there are some default values that will be applied here.
+    '''
     options = parse_options()[0]
 
      # kind

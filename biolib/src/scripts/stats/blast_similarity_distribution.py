@@ -1,10 +1,22 @@
 #!/usr/bin/env python
+'''It creates scores distributions for the blast files.
+
+Given a blast file this script is capable of creating two types of scoring
+distributions. In the most simple one we get a plot of the number of blast
+hits against the similarity. For every similarity percentage we get how many
+blast hits are in the file.
+
+For the hits besides the similarity we can calculate how many bases that should
+be aligned between the query and the subject are not aligned. E.g.
+query    ---------------->
+         |||||||
+subject  ---------------->
+                <--------> Not aligned region
+We can plot the distribution of hits taking into account the similarity
+percentage and the percentage of the not aligned region. In that case we would
+get a 3-D distribution plot. To get that you should chose the --incompat option.
 '''
 
-Created on 2009 eka 2
-
-@author: peio
-'''
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
 # biolib is free software: you can redistribute it and/or modify

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 '''Given a sequence file it generates an histogram with the sequence length
 distribution.'''
 

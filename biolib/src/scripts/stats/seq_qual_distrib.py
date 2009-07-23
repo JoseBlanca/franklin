@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-'Given a qual file it generates an histogram with the qualities distribution.'
+'''Given a quality file it generates an histogram with the qualities
+distribution.'''
 
 from optparse import OptionParser
 

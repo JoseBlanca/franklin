@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-'''
-This script calculates general stats for seqs, It calculates:
-    .- Total sequence length
-    .- Masked sequence length
-    .- Number of sequences
-    .- Quality Average
-    .- Sequence average length
+'''This script calculates some general statistics for a sequence file.
+
+It calculates:
+    - Total sequence length
+    - Average sequence length
+    - Masked sequence length
+    - Number of sequences
+    - Quality Average
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
