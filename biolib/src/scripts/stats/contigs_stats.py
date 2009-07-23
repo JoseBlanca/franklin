@@ -12,7 +12,7 @@ from biolib.contig_io import get_parser
 import matplotlib.pyplot as plt
 
 def contig_stats(contig, data_dict):
-    '''It takes the contig and calculate teh stats '''
+    '''It takes the contig and calculate the stats '''
     if  data_dict is None:
         data_dict = {}
         data_dict['consensus_length'] = 0
@@ -103,11 +103,6 @@ def main():
     print data_dict['reads_length']
     print data_dict['coverage_frec']
     plot_frec(data_dict['coverage_frec'])
-
-    # Si ya tienes el print de  tu diccionario calculado, commenta todo lo
-    # demás y pon el dict aquí para visualizarlo
-    #data_dict=
-    #plot_frec(data_dict)
 
 if __name__ == '__main__':
     main()
