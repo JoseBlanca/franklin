@@ -35,7 +35,8 @@ modify the sequences.
 
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
-from itertools import imap, ifilter, tee
+
+from itertools import imap, ifilter
 import re, logging
 from tempfile import NamedTemporaryFile
 

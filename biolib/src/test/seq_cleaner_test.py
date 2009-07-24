@@ -342,6 +342,7 @@ class PipelineTests(unittest.TestCase):
         try:
             pipeline = configure_pipeline(pipeline, configuration)
             self.fail()
+            #pylint: disable-msg=W0704
         except Exception:
             pass
 
@@ -358,7 +359,7 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
-        io_fhands['in_seq']   = open(os.path.join(DAT_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
         io_fhands['out_seq']  = NamedTemporaryFile()
         io_fhands['out_qual'] = NamedTemporaryFile()
