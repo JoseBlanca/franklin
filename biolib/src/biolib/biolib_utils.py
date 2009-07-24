@@ -22,8 +22,7 @@ Created on 2009 api 30
 
 import tempfile, shutil
 from uuid import uuid4
-import os
-import math
+import os, re, math
 
 from biolib.seqs import SeqWithQuality
 
@@ -65,79 +64,14 @@ class NamedTemporaryDir(object):
         colector decides it'''
         self.close()
 
-def fasta_str(seq, name, description=None):
+def fasta_str(seq, name):
     'Given a sequence it returns a string with the fasta'
     fasta_str_ = ['>']
     fasta_str_.append(name)
-    if description is not None:
-        fasta_str_.append('  ', description)
     fasta_str_.append('\n')
     fasta_str_.append(str(seq))
     fasta_str_.append('\n')
     return ''.join(fasta_str_)
-
-def append_to_fasta(seq, seq_fhand, qual_fhand=None):
-    'It appends a SeqWithQuality to a fasta file. fhands must be in w mode'
-    name        = seq.name
-    sequence    = seq.seq
-    description = seq.description
-    #write seq fasta
-    seq_fasta = fasta_str(sequence, name, description)
-    seq_fhand.write(seq_fasta)
-    #write qual fasta
-    if qual_fhand is not None:
-        qual = [str(q) for q in seq.qual]
-        qual_fasta = fasta_str(" ".join(qual), name, description)
-        qual_fhand.write(qual_fasta)
-
-
-def split_long_sequences(seq_iter, max_length):
-    'It splits thequences in this iterator taht excedes the max_length permited'
-    for seq in seq_iter:
-        seq_len = len(seq)
-        if seq_len > max_length:
-            seqs = _split_seq(seq, max_length)
-            for seq in seqs:
-                yield seq
-        else:
-            yield seq
-
-def _split_seq(seq, maxlength):
-    'It split sequences in a '
-    seq_len       = len(seq)
-    num_sequences = seq_len / maxlength
-
-    # Calculate start and end of the new sequences with the original sequence
-    # coordinates
-    start_ends = _calculate_divisions(seq_len, num_sequences)
-    for start, end in start_ends:
-        yield seq[start:end]
-
-def _calculate_divisions(length, splits):
-    '''It calculates the length of each new seq.
-    It returns the start and end of the new sequences. giving the coordinates
-    of the original sequence.
-    '''
-    num_fragments1 = length % splits
-    num_fragments2 = splits - num_fragments1
-    new_length2 = length // splits
-    new_length1 = new_length2 + 1
-    res = ((num_fragments1, new_length1), (num_fragments2, new_length2))
-
-    lengths = []
-    for num_fragments, length in res:
-        for i in range(num_fragments):
-            lengths.append(length)
-    # Now I calculate the start and end of each sequence
-    r_length   = 0
-    start_ends = []
-    for i, length in enumerate(lengths):
-        if i == 0:
-            start_ends.append((0, length))
-        else:
-            start_ends.append((r_length, r_length + length))
-        r_length += length
-    return start_ends
 
 def _get_seq_name(seq):
     'Given a sequence and its default name it returns its name'
@@ -150,10 +84,12 @@ def _get_seq_name(seq):
         name  = str(uuid4())
     return name
 
-def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
+def temp_fasta_file(seqs, write_qual=False):
     '''Given a Seq and its default name it returns a fasta file in a
     temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
     file'''
+
+
     try:
         # Is seqs an seq or an iter??
         #pylint:disable-msg=W0104
@@ -163,10 +99,14 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
     except AttributeError:
         pass
 
+    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
+    if write_qual:
+        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
+
     for seq in seqs:
         name = _get_seq_name(seq)
 
-        if fhand_qual is not None:
+        if write_qual:
             try:
                 quality = seq.qual
             except AttributeError:
@@ -181,26 +121,9 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
 
     fhand_seq.flush()
     fhand_seq.seek(0)
-
-    if fhand_qual is not None:
+    if write_qual:
         fhand_qual.flush()
         fhand_qual.seek(0)
-        return fhand_seq, fhand_qual
-    else:
-        return fhand_seq
-
-def temp_fasta_file(seqs, write_qual=False):
-    '''Given a Seq and its default name it returns a fasta file in a
-    temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
-    file'''
-    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
-    if write_qual:
-        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
-    else:
-        fhand_qual = None
-    write_fasta_file(seqs, fhand_seq, fhand_qual)
-
-    if write_qual:
         return fhand_seq, fhand_qual
     else:
         return fhand_seq
@@ -584,7 +507,194 @@ def get_safe_fname(directory, prefix, suffix):
     msg  = 'There are more than 100000 outputs of this kind is this directory'
     raise ValueError(msg)
 
+class _FileItemGetter(object):
+    '''Syntax sugar for the File index.
 
+    It clarifies the use of the FileIndex for every item type.
+    '''
+    def __init__(self, fhand, items):
+        '''It requires an fhand and a dict of items.
 
+        In each item it should be the item start in the file and the
+        length in bytes
+        '''
+        self.fhand = fhand
+        self.items = items
 
+    def __getitem__(self, key):
+        'It returns one item from the file'
+        start, length = self.items[key]
+        self.fhand.seek(start)
+        return self.fhand.read(length)
 
+class FileIndex(object):
+    '''This class is used to index the items present in a file.
+
+    We can consider a file as a stream of items separated by certain patterns.
+    This class assigns a key and a kind to each of these items and it creates
+    an interface to get these items in a convenient way. It works like:
+    index = FileIndex(fhand, item_start_patterns=['pattern1', 'pattern2'])
+    index['default_type'][key]
+    '''
+    def __init__(self, fhand, item_start_patterns, key_patterns,
+                 type_patterns=None):
+        '''It indexes the given fhand.
+
+        The items in the file are separated by one of the patterns given in the
+        item_start_patterns list.
+        The key for each pattern is found with the regex present in the
+        key_patterns list. Optionally a dict with type and patterns for each
+        type can be given. If these types are not given all the items will have
+        the type 'item'.
+        The subitems patterns can't be regex, they're just chars
+        '''
+        self._fhand = fhand
+        self._item_start_patterns = item_start_patterns
+        self._key_patterns = key_patterns
+        self._type_patterns = type_patterns
+        self._subitem_patterns = ['\n']
+        self._patterns_to_regex()
+        self._index = None
+        self._create_index()
+        self._getters = None
+        self._create_properties()
+
+    def _patterns_to_regex(self):
+        '''It transforms all patterns in regular expressions.
+
+        They could be either str or regex.
+        '''
+        def patterns_to_regex(patterns):
+            'Given a list of patterns (str or regex) it returns a list of regex'
+            new_patterns = []
+            for pattern in patterns:
+                if 'match' not in dir(pattern): #if it isn't a regex
+                    pattern = re.compile(pattern)
+                new_patterns.append(pattern)
+            return new_patterns
+
+        self._item_start_patterns = patterns_to_regex(self._item_start_patterns)
+        self._key_patterns = patterns_to_regex(self._key_patterns)
+        #the subitem patterns a not transformed because they're just chars
+
+        #the type patterns can be a dict or None
+        type_patterns = self._type_patterns
+        if type_patterns is not None:
+            for type_ in type_patterns:
+                type_patterns[type_] = patterns_to_regex(type_patterns[type_])
+
+    def _items_in_fhand(self):
+        '''It yields all the items in the fhand.
+
+        It yields tuples with (key, type, start, end)
+        '''
+        #a file is composed by items, each item is composed by sub items.
+        #for instance a fasta file is build by sequence items, each of them is
+        #build by lines. An xml file is build by items and each of them is
+        #composed by <subitems>
+        fhand = self._fhand
+        subitem_patterns = self._subitem_patterns
+        item_start_patterns = self._item_start_patterns
+        key_patterns = self._key_patterns
+        type_patterns = self._type_patterns
+
+        def is_item_start(string):
+            '''It returns True if a match is found in the string for any of the
+            item start patterns'''
+            for pattern in item_start_patterns:
+                if pattern.match(string):
+                    return True
+            return False
+
+        def update_key(key, string):
+            '''If the string match in any of the key_patterns it returns the key
+
+            If the key was not None it raises an error because two keys have
+            been found in the same item.
+            '''
+            for pattern in key_patterns:
+                match = pattern.match(string)
+                if match:
+                    new_key = match.group(1)
+                    if key is None:
+                        return new_key
+                    else:
+                        raise RuntimeError('Two keys found in an item: %s,%s' %
+                                           (key, new_key))
+            return key
+
+        def update_type(type_, string):
+            '''If the string match in any of the type_patterns it returns the
+            type
+
+            If the type_ was not None it raises an error because two types have
+            been found in the same item.
+            '''
+            if type_patterns is None:
+                return 'item'
+            for known_type, patterns in type_patterns.items():
+                for pattern in patterns:
+                    match = pattern.match(string)
+                    if match:
+                        new_type = known_type
+                        if type_ is None:
+                            return new_type
+                        else:
+                            msg = 'Two types found in an item: %s,%s' % \
+                                  (type_, new_type)
+                            raise RuntimeError(msg)
+            return type_
+
+        def _subitems_in_file(fhand):
+            'It yields all subitems in a file'
+            current_subitem = ''
+            while True:
+                char = fhand.read(1)
+                if not char:
+                    #file done
+                    yield current_subitem
+                    break
+                current_subitem += char
+                if char in subitem_patterns:
+                    yield current_subitem
+                    current_subitem = ''
+
+        fhand.seek(0)
+        current_item_start = 0
+        previous_position = 0
+        current_key = None
+        current_type = None
+        for subitem in _subitems_in_file(fhand):
+            if previous_position and is_item_start(subitem):
+                length = previous_position - 1 - current_item_start
+                yield current_item_start, length, current_type, current_key
+                current_item_start = previous_position
+                current_key = None
+                current_type = None
+            current_key = update_key(current_key, subitem)
+            current_type = update_type(current_type, subitem)
+            previous_position = fhand.tell()
+        else:
+            length = previous_position - 1 - current_item_start
+            yield current_item_start, length, current_type, current_key
+
+    def _create_index(self):
+        'It creates the index for the file'
+        index = {}
+        for item in self._items_in_fhand():
+            start, length, type_, key = item
+            if type_ not in index:
+                index[type_] = {}
+            index[type_][key] = (start, length)
+        self._index = index
+
+    def _create_properties(self):
+        'It creates a property for every type found in the file'
+        getters = {}
+        for type_, items in self._index.items():
+            getters[type_] = _FileItemGetter(self._fhand, items)
+        self._getters = getters
+
+    def __getitem__(self, type_):
+        'It returns file items'
+        return self._getters[type_]
