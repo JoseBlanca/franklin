@@ -1,7 +1,4 @@
-'''Some functions to do statistics on the sequences
-
-Created on 10/07/2009
-'''
+'''Some functions to do statistics on sequences.'''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of project.
@@ -177,7 +174,7 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
 
 
 def _get_combined_distrib_range(distrib1, distrib2):
-    'Giving two distribution return the range that intersecst both'
+    'Giving two distributions it returns the range that combines them'
 
     min1 = min(distrib1['bin_edges'])
     max1 = max(distrib1['bin_edges'])
@@ -195,12 +192,18 @@ def _get_combined_distrib_range(distrib1, distrib2):
     return (min_, max_)
 
 def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
-    'It counts the total length of the sum of all sequences'
+    '''Given a sequence iterator it calculates some general statistics.
+
+    The statistics will be written into the given distrib_fhand (if given) and
+    a dict with them will be returned.
+    It calculates the total sequence length, the average sequence length, the
+    total masked sequence length, and the number of sequences.
+    '''
     stats   = {}
-    stats['seq_length']        = 0
-    stats['num_sequences']       = 0
-    stats['masked_length']  = 0
-    seq_quality_average          = []
+    stats['seq_length']    = 0
+    stats['num_sequences'] = 0
+    stats['masked_length'] = 0
+    seq_quality_average    = []
 
     first = True
     for seq in sequences:
@@ -248,7 +251,3 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
         for stat in stats:
             distrib_fhand.write('%s:%f\n' % (stat, float(stats[stat])))
     return stats
-
-
-
-

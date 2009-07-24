@@ -1,12 +1,24 @@
-'''
-Functions to clean sequences.
+'''This module holds some utilities to build sequence cleaning pipelines.
 
-All functions here have the same interface. You pass a SeqWithQuality to the
-fucntion and it returns another SeqWithQuality.
-Depending on the algorith used it mask or it trim the bad seq/quality section.
-
-As bad we undertand low quality section, low complexity section, poliA section,
-...
+Several pipelines are defined and they can be run using the function
+pipeline_runner. A pipeline consists of a list of several steps that a run
+sequentially by the pipeline_runner. It is very easy to create new pipeline
+because they're just a list of dicts that include the name of a function. For
+instance there are pipelines defined to clean short and long sequences, to
+mask them using repeat masker, etc.
+In this module there is also a collection of cleaning steps predefined. There
+are steps that trim and mask the sequences. Every one of this step is a function
+factory that will create the function that will do the actual job.
+The pipeline can hold three step types: filter, mapper and bulk_processor. They
+differ in the interface of the function that process the sequences:
+    - mapper: These functions take a sequence and return a new processed
+    sequence.
+    - filter: These functions take a sequence and return True or False according
+    to the match of some criteria by the sequence.
+    - bulk_processor: These functions take a sequence iterator and return a new
+    sequence iterator will the processed sequence.
+The pipeline runner knows how to use these three kinds of steps to filter and
+modify the sequences.
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -39,26 +51,33 @@ from biolib.alignment_search_result import  (FilteredAlignmentResults,
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
                               min_seq_length=None, quality_window_width=None):
-    'It creates a stripper that trims from the sequence  bad quality extremes.'
-    def strip_seq_by_quality(sequence):
-        '''It trims from the sequence  bad quality extremes.
+    '''It returns a function that given a sequence it returns a trimmed sequence
+    without the bad quality region located at the extremes.
 
-        This function uses our algorithm based in the average of the neighbours
-        qualities. It calculates the average quality of each position taking
-        into account the qualities of the neighbours.
-        Arguments:
-            .- quality_threshold. Minimun quality needed to pass the check. For
-            phred qualities a number of 20 is a good threshold
-            .- quality_window_width: The number of nucleotide qualities of each
-             side to calculate the average.
-            .- min_quality_bases: How many nucleotides we need to define the
-            start of a good quality zone. example:
-                    0 0 0 1 1 0 1 1 1
-                          + +   > > >
-                    I the min_quality_bases is 2, the start end of the bad
-                    quality zone start with +. if it is 3, it starts with >
-            .- min_seq_length: Minimun seq length of the new sequence to mark as
-            valid. Otherwise we dismiss the sequence
+    This function calculates using an sliding window an average quality for
+    every position. After that every position is classified, if its mean quality
+    is above the given threshold is considered good, otherwise is bad. The
+    regions to be trimmed are located looking for a contiguous number of bases
+    with good quality.
+    Arguments:
+        - quality_threshold: Minimum quality to consider a position as good
+        quality.
+        - quality_window_width: The number of residues to use by the sliding
+        window.
+        - min_quality_bases: How many residues are necessary to define the
+        start of a good quality zone. example:
+                0 0 0 1 1 0 1 1 1
+                      + +   > > >
+                If the min_quality_bases is 2, the start end of the bad
+                quality zone start with +. if it is 3, it starts with >
+        - min_seq_length: Minimun sequence length of the trimmed sequence.
+        If the length is less than that no sequence will be returned.
+    '''
+    def strip_seq_by_quality(sequence):
+        '''Given a sequence it returns a trimmed sequence without the bad
+        quality extremes.
+
+        It could return None if the trimmed sequence is too short.
         '''
         if sequence is None:
             return None
@@ -157,11 +176,11 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
 
 
 def create_masker_for_low_complexity():
-    'It creates a masker function for low complexity sections'
+    'It creates a masker function for low complexity sections that uses mdust'
     mask_low_complex_by_seq = create_runner(kind='mdust')
 
     def mask_low_complexity(sequence):
-        '''It adds a mask to the sequence where low clomplexity is found
+        '''It adds a mask to the sequence where low complexity is found
 
         It uses mdust from the seqclean package
         '''
@@ -174,12 +193,12 @@ def create_masker_for_low_complexity():
     return mask_low_complexity
 
 def create_masker_for_polia():
-    'It creates a masker function for polia slices'
+    'It creates a masker function that will mask poly-A tracks'
     parameters = {'min_score':'10', 'end':'x', 'incremental_dist':'20',
                       'fixed_dist':None}
     mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
     def mask_polya(sequence):
-        '''It adds a mask to the sequence where poly A are found
+        '''It adds a mask to the sequence where the poly-A is found.
 
         It uses trimpoly from seqclean package
         '''
@@ -191,15 +210,16 @@ def create_masker_for_polia():
     return mask_polya
 
 def create_striper_by_quality_trimpoly():
-    'It creates a function hat stripes seq using trimpoly\'s quality checks '
+    '''It creates a function that removes bad quality regions.
+
+     It uses trimpoly's quality checks.'''
 
 
     def strip_seq_by_quality_trimpoly(sequence):
-        '''It strip the sequence where low quality is found
+        '''It strips the sequence where low quality is found
 
         It uses trimpoly from seqclean package.
-        This program does not work well with short sequences, and it only can
-        look at the last 30 nucleotides max
+        This program does not work well with short sequences.
         '''
         if sequence is None:
             return None
@@ -222,7 +242,7 @@ def create_striper_by_quality_trimpoly():
     return strip_seq_by_quality_trimpoly
 
 def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
-    '''It return new sequence giving tha trimpoly output and the old sequence
+    '''It return new sequence giving that trimpoly output and the old sequence
      trim option is used to trim os mask the low quality sequence '''
 
     trimp_data = fhand_trimpoly_out.readline().split()
@@ -242,8 +262,15 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
         return sequence.copy(seq=seq_class(new_sequence))
 
 def create_striper_by_quality_lucy():
-    'It creates a function hat stripes seq using lucys quality checks '
-    msg  = "DEPECRATED, This function is deprecated. "
+    'It creates a function that removes bad quality regions using lucy'
+    #This function has been deprecated because when running using condor lucy
+    #tends to get stuck without apparent reason. We think that it might be due
+    #to the fact that lucy was created to analyze big fasta files with a lot
+    #of sequences in them. In this case we were using lucy to analyze individual
+    #sequences.
+    #To workaround this problem we have created a new function that analyze
+    #all the sequences at ones.
+    msg  = "DEPECRATED, Lucy might get stuck when using this function."
     msg += "Use create_striper_by_quality_lucy2"
     print msg
     def strip_seq_by_quality_lucy(sequence):
@@ -284,14 +311,17 @@ def create_striper_by_quality_lucy():
     return strip_seq_by_quality_lucy
 
 def create_striper_by_quality_lucy2():
-    'It creates a function hat stripes seq using lucys quality checks '
-    def strip_seq_by_quality_lucy(sequences):
-        '''It trims from the sequences  bad quality sections.
+    '''It creates a function that removes bad quality regions using lucy.
 
-        It uses lucy external program. It return a sequence iterator and a,
+    The function will take a sequence iterator and it will return a new sequence
+    iterator with the processed sequences in it.'''
+    def strip_seq_by_quality_lucy(sequences):
+        '''It trims the bad quality regions from the given sequences.
+
+        It uses lucy external program. It returns a sequence iterator and a,
         list of output files. (A seq file and a qual file). We return the files
-        because the iterator use them and as they are temporal files, we need
-        to return them in order to be usefull for the iterator
+        because the iterator feeds from them and they are temporary files that
+        will be removed as soon as they get out of scope.
         '''
         #we prepare the function that will run lucy
         run_lucy_for_seqs = create_runner(kind='lucy')
@@ -325,7 +355,12 @@ def create_striper_by_quality_lucy2():
 
 #pylint:disable-msg=C0103
 def create_vector_striper_by_alignment(vectors, aligner):
-    'It creates a function witch we can pass a sequence to search from vectors'
+    '''It creates a function which will remove vectors from the given sequence.
+
+    It looks for the vectors comparing the sequence with a vector database. To
+    do these alignments two programs can be used, exonerate and blast. Exonerate
+    requires a fasta file with the vectors and blast and indexed blast database.
+    '''
     #depending on the aligner program we need different parameters and filters
     parameters = {'exonerate': {'target':vectors},
                   'blast'    : {'database': vectors, 'program':'blastn'}}
@@ -345,11 +380,9 @@ def create_vector_striper_by_alignment(vectors, aligner):
     parser   = get_alignment_parser(aligner)
 
     def strip_vector_by_alignment(sequence):
-        '''It strips the vector from a sequence
+        '''It strips the vector from a sequence.
 
         It returns a striped sequence with the longest segment without vector.
-        It can work with  blast or exonerate. And takes vector information from
-        a database or a fasta file
         '''
         if sequence is None:
             return None
@@ -474,8 +507,7 @@ def _get_longest_non_matched_fragment(alignments, query):
     return longest_location
 
 def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
-    '''it creates a function that mask repeats giving only the seq, not the
-    parameters'''
+    '''It creates a function that mask repeats from a sequence'''
 
     def mask_repeats_by_repeatmasker(sequence):
         '''It returns a sequence with the repetitive and low complex elements
@@ -491,24 +523,24 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
     return mask_repeats_by_repeatmasker
 
 ################################################################################
-###  cleaner steps and specifications
-#####################################
+# PIPELINE CLEANING STEPS
+################################################################################
 
 remove_vectors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'blast'},
-                  'type': 'cleaner',
+                  'type': 'mapper',
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
 
 remove_adaptors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'exonerate'},
-                  'type': 'cleaner',
+                  'type': 'mapper',
                   'name': 'remove_adaptors',
                   'comment': 'Remove our adaptors'}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
                       'arguments':{},
-                      'type':'cleaner',
+                      'type':'mapper',
                       'name':'strip_lucy',
                       'comment':'Strip low quality with lucy'}
 
@@ -520,19 +552,19 @@ strip_quality_lucy2 = {'function': create_striper_by_quality_lucy2,
 
 strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'arguments': {},
-                          'type':'cleaner',
+                          'type':'mapper',
                           'name':'strip_trimpoly',
                           'comment':'Strip low quality with trimpoly'}
 
 mask_low_complexity = {'function': create_masker_for_low_complexity,
                        'arguments': {},
-                       'type':'cleaner',
+                       'type':'mapper',
                        'name':'mask_low_complex',
                        'comment':'Mask low complexity regions'}
 
 mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'arguments':{'species':'eudicotyledons'},
-                'type': 'cleaner',
+                'type': 'mapper',
                 'name': 'mask_repeats',
                 'comment':'Mask repeats with repeatmasker'}
 
@@ -542,9 +574,11 @@ filter_short_seqs = {'function': create_length_filter,
                      'name':'remove_short',
                      'comment': 'Remove seq shorter than 100 nt'}
 
+################################################################################
+# PIPELINES
+################################################################################
 
-
-PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy2,
+PIPELINES = {'sanger_with_quality_clean' : [remove_vectors, strip_quality_lucy2,
                                        mask_low_complexity, filter_short_seqs ],
 
             'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
@@ -552,9 +586,9 @@ PIPELINES = {'sanger_with_quality_clean'  : [remove_vectors, strip_quality_lucy2
 
             'repeatmasker'                :[mask_repeats, filter_short_seqs]
             }
+
 def configure_pipeline(pipeline, configuration):
-    '''It chooses the proper pipeline and configures it depending on the
-    sequence kind and configuration parameters '''
+    '''It chooses the proper pipeline and configures it.'''
 
     seq_pipeline  = PIPELINES[pipeline]
 
@@ -574,12 +608,18 @@ def configure_pipeline(pipeline, configuration):
                 raise RuntimeError(msg)
     return seq_pipeline
 
-
 def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
                     checkpoint_every_step=False):
-    '''It runs all the analisis in the analisis_step especification dictionary
+    '''It runs all the analysis for the given pipeline.
 
-    This specidications depend on the type of the sequences'''
+    It takes one or two input files and one or two output files. (Fasta files
+    with the sequence and quality).
+    A working directory can be given in which the analysis intermediate files
+    will be created. If not given a temporary directory will be created that
+    will be removed once the analysis is completed.
+    If the checkpoints are requested an intermediate file for every step will be
+    created.
+    '''
 
     # Here we extract our input/output files
     in_fhand_seqs  = io_fhands['in_seq']
@@ -619,7 +659,7 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
             # pylint:disable-msg=W0142
             cleaner_function = function_factory(**arguments)
 
-        if type_ == 'cleaner':
+        if type_ == 'mapper':
             filtered_seqs = imap(cleaner_function, seq_iter)
         elif type_ == 'filter':
             filtered_seqs   = ifilter(cleaner_function, seq_iter)
@@ -650,43 +690,12 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
         #more logging
         msg = "Finished: %s" % analisis_step['comment']
         logging.info(msg)
-
-#        # I need an iterator to use with for the stats, so y generate another
-#        # one with tee
-#        seq_iter, seq_iter_stats = tee(seq_iter, 2)
-#
-#        #stats
-#        run_stats(seq_iter_stats, analisis_step['statistics'], work_dir,
-#                  step_name )
-
     else:
         checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false')
 
-    # Cleaning saved temp files
+    # Cleaning temp files from the bulk_processors
     temp_bulk_files = None
     logging.info('Done!')
-
-def run_stats(sequences, statistics, work_dir, step_name):
-    '''It runs the statistics for the given sequences (iterator). Statistics is
-    a list of stats to run'''
-    if statistics is None:
-        return
-    msg = 'Running stats for %s' % step_name
-    logging.info(msg)
-
-    for statistic_func in statistics:
-        sequences, new_sequences = tee(sequences, 2)
-        stat_name = step_name + '.' + statistic_func.__name__
-
-        distrib_fname = get_safe_fname(work_dir, stat_name, 'stat')
-        plot_fname = get_safe_fname(work_dir, stat_name, 'png')
-
-        statargs = {'sequences'     : sequences,
-                    'distrib_fhand': open(distrib_fname, 'w'),
-                    'plot_fhand'   : open(plot_fname, 'w')}
-        # pylint:disable-msg=W0142
-        statistic_func(**statargs)
-        sequences = new_sequences
 
 def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
     ''' This function is used to consume the previous iterators writing the
@@ -731,5 +740,3 @@ def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
             fhand_qual_new = None
 
         return seqs_in_file(fhand_seq_new, fhand_qual_new)
-
-
