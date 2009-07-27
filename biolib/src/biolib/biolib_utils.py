@@ -725,7 +725,7 @@ class FileIndex(object):
             been found in the same item.
             '''
             for pattern in key_patterns:
-                match = pattern.match(string)
+                match = pattern.search(string)
                 if match:
                     new_key = match.group(1)
                     if key is None:
@@ -749,13 +749,13 @@ class FileIndex(object):
             elif isinstance(type_patterns, dict):
                 for known_type, patterns in type_patterns.items():
                     for pattern in patterns:
-                        match = pattern.match(string)
+                        match = pattern.search(string)
                         if match:
                             new_type = known_type
                             break
             elif isinstance(type_patterns, list):
                 for pattern in type_patterns:
-                    match = pattern.match(string)
+                    match = pattern.search(string)
                     if match:
                         new_type = match.group(1)
             if new_type is None and type_ is not None:

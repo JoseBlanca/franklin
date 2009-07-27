@@ -3,7 +3,7 @@
 from re import match
 from biolib.contig import Contig,  locate_sequence
 from biolib.seqs import SeqWithQuality, Seq
-from biolib.biolib_utils import fasta_str
+from biolib.biolib_utils import fasta_str, FileIndex
 from Bio.Seq import Seq
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -643,4 +643,15 @@ class BowtieParser(object):
     def __init__(self, fhand):
         'It requires a bowtie.map file to create the contigs'
         self._fhand = fhand
-        
+        type_pattern = '[^\t]+\t[+|-]\t([^\t]+)'
+        type_pattern = '[+|-]\t([^ \t]+)'
+        self._index = FileIndex(fhand,
+                          item_start_patterns=['^'],
+                          key_patterns=['^([^\t]+)\t'],
+                          type_patterns=[type_pattern])
+
+    def contig(self, name):
+        'Given a contig name it returns the contig'
+        for read in self._index[name]:
+            print read
+
