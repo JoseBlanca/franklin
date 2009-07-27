@@ -64,14 +64,79 @@ class NamedTemporaryDir(object):
         colector decides it'''
         self.close()
 
-def fasta_str(seq, name):
+def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
     fasta_str_ = ['>']
     fasta_str_.append(name)
+    if description is not None:
+        fasta_str_.append('  ', description)
     fasta_str_.append('\n')
     fasta_str_.append(str(seq))
     fasta_str_.append('\n')
     return ''.join(fasta_str_)
+
+def append_to_fasta(seq, seq_fhand, qual_fhand=None):
+    'It appends a SeqWithQuality to a fasta file. fhands must be in w mode'
+    name        = seq.name
+    sequence    = seq.seq
+    description = seq.description
+    #write seq fasta
+    seq_fasta = fasta_str(sequence, name, description)
+    seq_fhand.write(seq_fasta)
+    #write qual fasta
+    if qual_fhand is not None:
+        qual = [str(q) for q in seq.qual]
+        qual_fasta = fasta_str(" ".join(qual), name, description)
+        qual_fhand.write(qual_fasta)
+
+
+def split_long_sequences(seq_iter, max_length):
+    'It splits thequences in this iterator taht excedes the max_length permited'
+    for seq in seq_iter:
+        seq_len = len(seq)
+        if seq_len > max_length:
+            seqs = _split_seq(seq, max_length)
+            for seq in seqs:
+                yield seq
+        else:
+            yield seq
+
+def _split_seq(seq, maxlength):
+    'It split sequences in a '
+    seq_len       = len(seq)
+    num_sequences = seq_len / maxlength
+
+    # Calculate start and end of the new sequences with the original sequence
+    # coordinates
+    start_ends = _calculate_divisions(seq_len, num_sequences)
+    for start, end in start_ends:
+        yield seq[start:end]
+
+def _calculate_divisions(length, splits):
+    '''It calculates the length of each new seq.
+    It returns the start and end of the new sequences. giving the coordinates
+    of the original sequence.
+    '''
+    num_fragments1 = length % splits
+    num_fragments2 = splits - num_fragments1
+    new_length2 = length // splits
+    new_length1 = new_length2 + 1
+    res = ((num_fragments1, new_length1), (num_fragments2, new_length2))
+
+    lengths = []
+    for num_fragments, length in res:
+        for i in range(num_fragments):
+            lengths.append(length)
+    # Now I calculate the start and end of each sequence
+    r_length   = 0
+    start_ends = []
+    for i, length in enumerate(lengths):
+        if i == 0:
+            start_ends.append((0, length))
+        else:
+            start_ends.append((r_length, r_length + length))
+        r_length += length
+    return start_ends
 
 def _get_seq_name(seq):
     'Given a sequence and its default name it returns its name'
@@ -84,12 +149,10 @@ def _get_seq_name(seq):
         name  = str(uuid4())
     return name
 
-def temp_fasta_file(seqs, write_qual=False):
+def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
     '''Given a Seq and its default name it returns a fasta file in a
     temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
     file'''
-
-
     try:
         # Is seqs an seq or an iter??
         #pylint:disable-msg=W0104
@@ -99,14 +162,10 @@ def temp_fasta_file(seqs, write_qual=False):
     except AttributeError:
         pass
 
-    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
-    if write_qual:
-        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
-
     for seq in seqs:
         name = _get_seq_name(seq)
 
-        if write_qual:
+        if fhand_qual is not None:
             try:
                 quality = seq.qual
             except AttributeError:
@@ -121,9 +180,26 @@ def temp_fasta_file(seqs, write_qual=False):
 
     fhand_seq.flush()
     fhand_seq.seek(0)
-    if write_qual:
+
+    if fhand_qual is not None:
         fhand_qual.flush()
         fhand_qual.seek(0)
+        return fhand_seq, fhand_qual
+    else:
+        return fhand_seq
+
+def temp_fasta_file(seqs, write_qual=False):
+    '''Given a Seq and its default name it returns a fasta file in a
+    temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
+    file'''
+    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
+    if write_qual:
+        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
+    else:
+        fhand_qual = None
+    write_fasta_file(seqs, fhand_seq, fhand_qual)
+
+    if write_qual:
         return fhand_seq, fhand_qual
     else:
         return fhand_seq
@@ -552,29 +628,27 @@ class FileIndex(object):
         self._item_start_patterns = item_start_patterns
         self._key_patterns = key_patterns
         self._type_patterns = type_patterns
-        self._subitem_patterns = [os.linesep]
-        self._all_patterns_to_regex()
+        self._subitem_patterns = ['\n']
+        self._patterns_to_regex()
         self._index = None
         self._create_index()
         self._getters = None
         self._create_properties()
 
-    @staticmethod
-    def _patterns_to_regex(patterns):
-        'Given a list of patterns (str or regex) it returns a list of regex'
-        new_patterns = []
-        for pattern in patterns:
-            if 'match' not in dir(pattern): #if it isn't a regex
-                pattern = re.compile(pattern)
-            new_patterns.append(pattern)
-        return new_patterns
-
-    def _all_patterns_to_regex(self):
+    def _patterns_to_regex(self):
         '''It transforms all patterns in regular expressions.
 
         They could be either str or regex.
         '''
-        patterns_to_regex = self._patterns_to_regex
+        def patterns_to_regex(patterns):
+            'Given a list of patterns (str or regex) it returns a list of regex'
+            new_patterns = []
+            for pattern in patterns:
+                if 'match' not in dir(pattern): #if it isn't a regex
+                    pattern = re.compile(pattern)
+                new_patterns.append(pattern)
+            return new_patterns
+
         self._item_start_patterns = patterns_to_regex(self._item_start_patterns)
         self._key_patterns = patterns_to_regex(self._key_patterns)
         #the subitem patterns a not transformed because they're just chars
@@ -584,15 +658,6 @@ class FileIndex(object):
         if type_patterns is not None:
             for type_ in type_patterns:
                 type_patterns[type_] = patterns_to_regex(type_patterns[type_])
-
-    @staticmethod
-    def _match_in_string(patterns, string):
-        '''It returns True if a match is found in the string for any of the
-        given patterns'''
-        for pattern in patterns:
-            if pattern.match(string):
-                return True
-        return False
 
     def _items_in_fhand(self):
         '''It yields all the items in the fhand.
@@ -677,7 +742,7 @@ class FileIndex(object):
         current_type = None
         for subitem in _subitems_in_file(fhand):
             if previous_position and is_item_start(subitem):
-                length = previous_position - current_item_start
+                length = previous_position - 1 - current_item_start
                 yield current_item_start, length, current_type, current_key
                 current_item_start = previous_position
                 current_key = None
@@ -686,7 +751,7 @@ class FileIndex(object):
             current_type = update_type(current_type, subitem)
             previous_position = fhand.tell()
         else:
-            length = previous_position - current_item_start
+            length = previous_position - 1 - current_item_start
             yield current_item_start, length, current_type, current_key
 
     def _create_index(self):
