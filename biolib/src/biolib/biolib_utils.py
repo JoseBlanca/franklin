@@ -28,7 +28,7 @@ from biolib.seqs import SeqWithQuality
 
 from Bio import  SeqIO
 
-MATPLOTLIB_IMPORTED = False
+IMPORTED_MATPLOTLIB = None
 
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
@@ -446,14 +446,14 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     #in that case we don't know how to use matplotlib, it would require
     #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
-    #in those ocasions
-    global MATPLOTLIB_IMPORTED
-    if not MATPLOTLIB_IMPORTED:
+    #in those occasions
+    global IMPORTED_MATPLOTLIB
+    if IMPORTED_MATPLOTLIB is None:
         import matplotlib
         matplotlib.use('AGG')
-        import matplotlib.pyplot as plt
-        MATPLOTLIB_IMPORTED = True
+        IMPORTED_MATPLOTLIB = matplotlib
 
+    import matplotlib.pyplot as plt
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -537,7 +537,6 @@ def guess_seq_file_format(fhand):
             format_ = 'fasta'
     elif line.split()[0] == 'LOCUS':
         format_ = 'genbank'
-
     else:
         raise ValueError('Unknown sequence file format for : ' + fhand.name)
     fhand.seek(0)
