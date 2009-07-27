@@ -628,27 +628,29 @@ class FileIndex(object):
         self._item_start_patterns = item_start_patterns
         self._key_patterns = key_patterns
         self._type_patterns = type_patterns
-        self._subitem_patterns = ['\n']
-        self._patterns_to_regex()
+        self._subitem_patterns = [os.linesep]
+        self._all_patterns_to_regex()
         self._index = None
         self._create_index()
         self._getters = None
         self._create_properties()
 
-    def _patterns_to_regex(self):
+    @staticmethod
+    def _patterns_to_regex(patterns):
+        'Given a list of patterns (str or regex) it returns a list of regex'
+        new_patterns = []
+        for pattern in patterns:
+            if 'match' not in dir(pattern): #if it isn't a regex
+                pattern = re.compile(pattern)
+            new_patterns.append(pattern)
+        return new_patterns
+
+    def _all_patterns_to_regex(self):
         '''It transforms all patterns in regular expressions.
 
         They could be either str or regex.
         '''
-        def patterns_to_regex(patterns):
-            'Given a list of patterns (str or regex) it returns a list of regex'
-            new_patterns = []
-            for pattern in patterns:
-                if 'match' not in dir(pattern): #if it isn't a regex
-                    pattern = re.compile(pattern)
-                new_patterns.append(pattern)
-            return new_patterns
-
+        patterns_to_regex = self._patterns_to_regex
         self._item_start_patterns = patterns_to_regex(self._item_start_patterns)
         self._key_patterns = patterns_to_regex(self._key_patterns)
         #the subitem patterns a not transformed because they're just chars
@@ -658,6 +660,33 @@ class FileIndex(object):
         if type_patterns is not None:
             for type_ in type_patterns:
                 type_patterns[type_] = patterns_to_regex(type_patterns[type_])
+
+    @staticmethod
+    def _patterns_match_in_string(string, patterns):
+        '''It returns True if a match is found in the string for any of the
+        given patterns'''
+        for pattern in patterns:
+            if pattern.match(string):
+                return True
+        return False
+
+    @staticmethod
+    def _subitems_in_file(fhand, patterns):
+        '''It yields all subitems in a file.
+
+        The subitems will be divided by the given patterns.
+        '''
+        current_subitem = ''
+        while True:
+            char = fhand.read(1)
+            if not char:
+                #file done
+                yield current_subitem
+                break
+            current_subitem += char
+            if char in patterns:
+                yield current_subitem
+                current_subitem = ''
 
     def _items_in_fhand(self):
         '''It yields all the items in the fhand.
@@ -673,14 +702,8 @@ class FileIndex(object):
         item_start_patterns = self._item_start_patterns
         key_patterns = self._key_patterns
         type_patterns = self._type_patterns
-
-        def is_item_start(string):
-            '''It returns True if a match is found in the string for any of the
-            item start patterns'''
-            for pattern in item_start_patterns:
-                if pattern.match(string):
-                    return True
-            return False
+        patterns_match_in_string = self._patterns_match_in_string
+        subitems_in_file = self._subitems_in_file
 
         def update_key(key, string):
             '''If the string match in any of the key_patterns it returns the key
@@ -721,27 +744,14 @@ class FileIndex(object):
                             raise RuntimeError(msg)
             return type_
 
-        def _subitems_in_file(fhand):
-            'It yields all subitems in a file'
-            current_subitem = ''
-            while True:
-                char = fhand.read(1)
-                if not char:
-                    #file done
-                    yield current_subitem
-                    break
-                current_subitem += char
-                if char in subitem_patterns:
-                    yield current_subitem
-                    current_subitem = ''
-
         fhand.seek(0)
         current_item_start = 0
         previous_position = 0
         current_key = None
         current_type = None
-        for subitem in _subitems_in_file(fhand):
-            if previous_position and is_item_start(subitem):
+        for subitem in subitems_in_file(fhand, subitem_patterns):
+            if previous_position and patterns_match_in_string(subitem,
+                                                           item_start_patterns):
                 length = previous_position - current_item_start
                 yield current_item_start, length, current_type, current_key
                 current_item_start = previous_position
