@@ -28,7 +28,7 @@ DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 class CafTest(unittest.TestCase):
     ''' It tests '''
-    
+
     #pylint: disable-msg=R0904
     #there's not too many public methods
     @staticmethod
@@ -42,7 +42,7 @@ class CafTest(unittest.TestCase):
             assert read
         # We check if our read method finds all reads
         # in caf example file (21)
-        assert num_reads ==   21  
+        assert num_reads ==   21
 
     @staticmethod
     def test_contigs():
@@ -54,9 +54,9 @@ class CafTest(unittest.TestCase):
             num_contig += 1
             assert contig
         # We check if our contig method finds all contigs in
-        # caf example file  (1) 
-        assert num_contig == 1 
-   
+        # caf example file  (1)
+        assert num_contig == 1
+
     @staticmethod
     def test_contigs2():
         ''' It checks if the contig method returns contigs, '''
@@ -67,19 +67,19 @@ class CafTest(unittest.TestCase):
             num_contig += 1
             assert contig
         # We check if our contig method finds all contigs in
-        # caf example file  (1) 
+        # caf example file  (1)
         assert num_contig == 1
-         
-    @staticmethod   
+
+    @staticmethod
     def test_check_consensus_seq():
-        ''' It checks if we get the consensus seq. It only checks the first 10 
+        ''' It checks if we get the consensus seq. It only checks the first 10
         nucleotides TTCAAGCGAT and the quality '''
-        
+
         fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
         caf_parser = get_parser(fhand, format='caf')
         for contig in caf_parser.contigs():
             assert str(contig.consensus.sequence.seq[:10]) == 'TTCAAGCGAT'
- 
+
     @staticmethod
     def test_alignement_seq():
         '''It checks if we locate the reads in good coordinates'''
@@ -109,10 +109,10 @@ class CafTest(unittest.TestCase):
             assert str(read) == 'ATCCACTTTT'
             read = contig[198][8:18]
             assert str(read) == 'CTCCCTGTGN'
- 
+
 class AceTest(unittest.TestCase):
     ''' It tests the ace alignment parser'''
-    
+
     def test_contig(self):
         '''It tests that we can get a read by its name.'''
         fhand = open(os.path.join(DATA_DIR, 'example3.ace'), 'r')
@@ -127,12 +127,12 @@ class AceTest(unittest.TestCase):
         #now for a real contig
         contig = ace_parser.contig('eucalyptus_lrc1')
         assert contig
- 
-    @staticmethod   
+
+    @staticmethod
     def test_check_consensus_seq():
-        ''' It checks if we get the consensus seq. It only checks the first 10 
+        ''' It checks if we get the consensus seq. It only checks the first 10
         nucleotides TTCAAGCGAT and the quality '''
- 
+
         fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
         ace_parser = get_parser(fhand, format='ace')
         for contig in ace_parser.contigs():
@@ -148,7 +148,7 @@ class AceTest(unittest.TestCase):
             num_contig += 1
             assert contig
         # We check if our contig method finds all contigs in
-        # caf example file  (1) 
+        # caf example file  (1)
         assert num_contig == 8
 
     @staticmethod
@@ -163,6 +163,19 @@ class AceTest(unittest.TestCase):
                     assert str(read[46:56]) == 'GGCCGGG-GC'
                 if read.sequence.name == 'E3MFGYR02JMR2C':
                     assert str(read[41:51]) == 'TTA-CGGCCG'
+
+class BowtieTest(unittest.TestCase):
+    ''' It tests the bowtie alignment parser'''
+
+    @staticmethod
+    def test_contig():
+        '''It tests that we can get a contig its name.'''
+        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
+        parser = get_parser(fhand, format='bowtie')
+
+        contig = parser.contig('SGN-U581169')
+        print contig.name
+        assert contig
 
 
 if __name__ == "__main__":

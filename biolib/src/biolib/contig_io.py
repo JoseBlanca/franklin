@@ -23,7 +23,8 @@ from Bio.Seq import Seq
 
 def get_parser(fhand, format):
     'Given a file and a format it returns a suitable Contig parser'
-    available_parsers = {'caf': CafParser, 'ace': AceParser}
+    available_parsers = {'caf': CafParser, 'ace': AceParser,
+                         'bowtie': BowtieParser}
     parser = available_parsers[format](fhand)
     return parser
 
@@ -46,11 +47,6 @@ def contig_to_fasta(infpath, contig_list=None):
             fasta   += fasta_str(sequence, name)
     return fasta
 
-#def write(contig, fhand, format):
-#    'It writes the given alignments in the given file with the given format'
-#    available_writers = {'cigar': _write_cigar}
-#    return available_writers[format](contig, fhand)
-
 def _pairwise_alignments(contig):
     '''It yields all the pairwise alignments present in the contig
 
@@ -59,43 +55,6 @@ def _pairwise_alignments(contig):
     '''
     if len(contig) == 2:
         yield contig
-
-#def _write_cigar(contig, fhand):
-#    'It writes the given aligmenments in cigar format in the given file'
-    #cigar coordinates are in-between coordinate system is used, where the
-    #positions are counted between the symbols, rather than on the symbols. This
-    #numbering scheme starts from zero
-    # A C G T
-    #0 1 2 3 4
-#    for pair in _pairwise_alignments(contig):
-#        seq0 = contig[0]
-#        seq1 = contig[1]
-        #trim overhangs
-        #both sequences can have overhangs, like:
-        #seq0    -----------
-        #seq1       ------------
-        #alignment  xxxxxxxx
-        #where does the alignmed part starts and ends?
-#        loc_seq0 = seq0.location
-#        loc_seq1 = seq1.location
-#        loc_ali  = loc_seq0.intersection(loc_seq1)
-
-#        fhand.write('cigar: ')
-#        for seq in (seq0, seq1):
-#            fhand.write(seq.name + ' ')
-#            loc = seq.location
-            #minus 1 because of the in-between coordinates
-#            fhand.write(str(loc.start - 1) + ' ')
-#            fhand.write(str(loc.end) + ' ')
-#            strand = '+' if loc.forward else '-'
-#            fhand.write(strand + ' ')
-        #we don't know the score
-#        fhand.write('0 ')
-        #now the cigar part
-        #seq0 = str(seq0[seq0_start:seq0_end])
-        #seq1 = str(seq1[seq1_start:seq1_end])
-        #print seq0
-        #print seq1
 
 def _build_contig_from_dict(reads):
     'Given a dict with the contig info it returns a Contig'
@@ -679,4 +638,9 @@ class AceParser(object):
         for name in self._contig_index:
             yield self.contig(name)
 
-
+class BowtieParser(object):
+    'It parsers a bowtie map file and it prepares the contigs from it'
+    def __init__(self, fhand):
+        'It requires a bowtie.map file to create the contigs'
+        self._fhand = fhand
+        

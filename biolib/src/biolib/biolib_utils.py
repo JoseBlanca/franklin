@@ -660,11 +660,16 @@ class FileIndex(object):
         self._key_patterns = patterns_to_regex(self._key_patterns)
         #the subitem patterns a not transformed because they're just chars
 
-        #the type patterns can be a dict or None
+        #the type patterns can be a list, dict or None
         type_patterns = self._type_patterns
-        if type_patterns is not None:
-            for type_ in type_patterns:
-                type_patterns[type_] = patterns_to_regex(type_patterns[type_])
+        if isinstance(type_patterns, dict):
+            if type_patterns is not None:
+                for type_ in type_patterns:
+                    type_patterns[type_] = \
+                                         patterns_to_regex(type_patterns[type_])
+        elif isinstance(type_patterns, list):
+            type_patterns = patterns_to_regex(type_patterns)
+        self._type_patterns = type_patterns
 
     @staticmethod
     def _patterns_match_in_string(string, patterns):
@@ -734,19 +739,29 @@ class FileIndex(object):
             If the type_ was not None it raises an error because two types have
             been found in the same item.
             '''
+            #type_patterns can be None, dict or list
+            new_type = None
             if type_patterns is None:
                 return self._default_item
-            for known_type, patterns in type_patterns.items():
-                for pattern in patterns:
+            elif isinstance(type_patterns, dict):
+                for known_type, patterns in type_patterns.items():
+                    for pattern in patterns:
+                        match = pattern.match(string)
+                        if match:
+                            new_type = known_type
+                            break
+            elif isinstance(type_patterns, list):
+                for pattern in type_patterns:
                     match = pattern.match(string)
                     if match:
-                        new_type = known_type
-                        if type_ is None:
-                            return new_type
-                        else:
-                            msg = 'Two types found in an item: %s,%s' % \
-                                  (type_, new_type)
-                            raise RuntimeError(msg)
+                        new_type = match.group(1)
+            if new_type is None and type_ is not None:
+                return type_
+            elif new_type is not None and type_ is None:
+                return new_type
+            elif new_type is not None and type_ is not None:
+                msg = 'Two types found in an item: %s,%s' % (type_, new_type)
+                raise RuntimeError(msg)
             return type_
 
         fhand.seek(0)

@@ -163,6 +163,17 @@ class TestFileIndexer(unittest.TestCase):
         assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
         assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
 
+    @staticmethod
+    def test_item_types_from_file():
+        'It test the file index class basic functionality'
+        content = '>\n%key1%\ntype1\nhola\n>\n%key2%\ncaracola\ntype2\n'
+        fhand = StringIO.StringIO(content)
+        index = FileIndex(fhand, item_start_patterns=['>'],
+                          key_patterns=['%([^%]+)%'],
+                          type_patterns=['(type[0-9])'])
+        assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
+        assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
+
 
 class SplitLongSequencestest(unittest.TestCase):
     'It tests sequence spliting functions'
