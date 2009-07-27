@@ -173,9 +173,7 @@ class BowtieTest(unittest.TestCase):
         fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
         parser = get_parser(fhand, format='bowtie')
 
-        contig = parser.contig('SGN-U581169')
-        #print contig.name
-        #assert contig
+        assert len(list(parser.contigs())) == 4
 
 
 if __name__ == "__main__":

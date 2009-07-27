@@ -643,15 +643,34 @@ class BowtieParser(object):
     def __init__(self, fhand):
         'It requires a bowtie.map file to create the contigs'
         self._fhand = fhand
-        type_pattern = '[^\t]+\t[+|-]\t([^\t]+)'
-        type_pattern = '[+|-]\t([^ \t]+)'
         self._index = FileIndex(fhand,
-                          item_start_patterns=['^'],
-                          key_patterns=['^([^\t]+)\t'],
-                          type_patterns=[type_pattern])
+                                item_start_patterns=['^'],
+                                key_patterns=['^([^\t]+)\t'],
+                                type_patterns=['\t[+|-]\t([^ \t]+)'])
+
+    @staticmethod
+    def _parse_read(read_line):
+        '''Given a bowtie line it returns a read and its contig location'''
+        #pylint: disable-msg=W0612
+        (read_name, orientation, contig_name, read_location, sequence,
+                    qualities) = read_line.split('\t')[:6]
+        read_location = int(read_location)
+        # The encoded quality values are on the Phred scale and the encoding is
+        #ASCII-offset by 33 (ASCII char !
+        qualities = [ord(qual) - 33 for qual in qualities]
+        read = SeqWithQuality(name=read_name, seq=sequence, qual=qualities)
+        return read, read_location
 
     def contig(self, name):
         'Given a contig name it returns the contig'
-        for read in self._index[name]:
-            print read
+        contig = Contig()
+        for read in self._index[name].items():
+            read_content = self._index[name][read]
+            read, location = self._parse_read(read_content)
+            contig.append_to_location(sequence=read, start=location)
+        return contig
 
+    def contigs(self):
+        'It yields all contigs'
+        for name in self._index.types():
+            yield self.contig(name)

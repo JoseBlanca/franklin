@@ -606,14 +606,19 @@ class _FileItemGetter(object):
         In each item it should be the item start in the file and the
         length in bytes
         '''
-        self.fhand = fhand
-        self.items = items
+        self._fhand = fhand
+        self._items = items
 
     def __getitem__(self, key):
         'It returns one item from the file'
-        start, length = self.items[key]
-        self.fhand.seek(start)
-        return self.fhand.read(length)
+        start, length = self._items[key]
+        self._fhand.seek(start)
+        return self._fhand.read(length)
+
+    def items(self):
+        'it yields the item keys'
+        for item in self._items:
+            yield item
 
 class FileIndex(object):
     '''This class is used to index the items present in a file.
@@ -815,3 +820,8 @@ class FileIndex(object):
             return self._getters[self._default_item][type_]
         else:
             return self._getters[type_]
+
+    def types(self):
+        'It yields all the type names'
+        for type_ in self._index:
+            yield type_
