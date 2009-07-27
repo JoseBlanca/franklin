@@ -109,11 +109,14 @@ class StatisticsTest(unittest.TestCase):
         seqs  = seqs_in_file(fhand_seq, fhand)
         stats = general_seq_statistics(seqs)
 
-        assert stats['seq_length']       == 15
-        assert stats['seq_length_average']     == 3.75
-        assert stats['masked_length'] == 3
-        assert stats['qual_average'] == 2.3333333333333335
+        assert stats['seq_length']         == 15
+        assert stats['seq_length_average'] == 3.75
+        assert stats['masked_length']      == 3
+        assert stats['qual_average']       == 2.3333333333333335
         assert stats['num_sequences']      == 4
+        assert stats['max_length']         == 4
+        assert stats['min_length']         == 3
+        assert stats['length_variance']    == 0.1875
 
     @staticmethod
     def test_seq_distrib_diff():

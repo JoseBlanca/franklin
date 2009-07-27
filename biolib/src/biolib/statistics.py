@@ -19,6 +19,7 @@ import numpy
 from itertools import tee
 from biolib.biolib_utils import draw_scatter
 
+
 PLOT_LABELS = {'masked_seq_distrib' :{
                                  'title': 'Masked sequence length distribution',
                                  'xlabel':'Masked length',
@@ -200,21 +201,30 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
     total masked sequence length, and the number of sequences.
     '''
     stats   = {}
-    stats['seq_length']    = 0
-    stats['num_sequences'] = 0
-    stats['masked_length'] = 0
-    seq_quality_average    = []
+    stats['seq_length']      = 0
+    stats['num_sequences']   = 0
+    stats['masked_length']   = 0
+    stats['max_length']      = None
+    stats['min_length']      = None
+    stats['length_variance'] = None
+    seq_quality_average      = []
 
-    first = True
+    seq_len_list = []
+    first        = True
     for seq in sequences:
         seq_len = len(seq)
         stats['num_sequences'] += 1
-        stats['seq_length']  += seq_len
+        stats['seq_length']    += seq_len
+
+        # variance, to calculate the variance of the sequences I need a list of
+        # the sequences. I wild use it o calculate the max and min
+        seq_len_list.append(seq_len)
 
         # masked seq length calcule
         for nucleotide in seq.seq:
             if nucleotide.islower():
                 stats['masked_length'] += 1
+        
         # quality average calcule, I save seq length and quality average to
         # calculate more accurate toral average. need to check if seqs have
         # quality
@@ -234,9 +244,11 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
             qual_average = sum(qual)/float(seq_len)
             seq_quality_average.append((seq_len, qual_average))
 
-    # length Average calcule
-    stats['seq_length_average'] = stats['seq_length']/ \
-                                                   float(stats['num_sequences'])
+    # variance, max and min, average
+    stats['length_variance']    = numpy.var(seq_len_list)
+    stats['max_length']         = max(seq_len_list)
+    stats['min_length']         = min(seq_len_list)
+    stats['seq_length_average'] = numpy.average(seq_len_list)
 
     if has_qual:
         total_qual = 0
