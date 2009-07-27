@@ -28,6 +28,8 @@ from biolib.seqs import SeqWithQuality
 
 from Bio import  SeqIO
 
+MATPLOTLIB_IMPORTED = False
+
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
     for num1, num2 in zip(list1, list2):
@@ -445,9 +447,12 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
     #in those ocasions
-    import matplotlib
-    matplotlib.use('AGG')
-    import matplotlib.pyplot as plt
+    global MATPLOTLIB_IMPORTED
+    if not MATPLOTLIB_IMPORTED:
+        import matplotlib
+        matplotlib.use('AGG')
+        import matplotlib.pyplot as plt
+        MATPLOTLIB_IMPORTED = True
 
 
     fig = plt.figure()
