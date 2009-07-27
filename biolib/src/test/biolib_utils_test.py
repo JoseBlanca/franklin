@@ -156,6 +156,32 @@ class TestFileIndexer(unittest.TestCase):
         assert index['item']['key1'] == '>key1\nhola\n'
         assert index['item']['key2'] == '>key2\ncaracola\n'
 
+class SplitLongSequencestest(unittest.TestCase):
+    'It tests sequence spliting functions'
+    @staticmethod
+    def test_split_long_sequences():
+        '''It test the function that splits sequences of an iterator with long
+        sequences into  smaller sequences'''
+        seq = 'atatatatatg'
+        qual = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        seq_rec = SeqWithQuality(seq=seq, qual=qual)
+        seq_iter = iter([seq_rec])
+        splited_seq_iter = split_long_sequences(seq_iter, 5)
+        seq1 = splited_seq_iter.next()
+        seq2 = splited_seq_iter.next()
+        assert len(seq1) == 6
+        assert len(seq2) == 5
+
+        seq_iter = iter([seq_rec])
+        splited_seq_iter = split_long_sequences(seq_iter, 3)
+        seq1 = splited_seq_iter.next()
+        seq2 = splited_seq_iter.next()
+        seq3 = splited_seq_iter.next()
+        assert len(seq1) == 4
+        assert len(seq2) == 4
+        assert len(seq3) == 3
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
