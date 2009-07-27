@@ -1,6 +1,6 @@
 '''
 This script takes sequences from a fasta file and split them in a length minor
- of N. being N a ength you can configure. default = 1024
+ of N. being N a length you can configure. default = 1024
 
 Created on 2009 uzt 24
 
@@ -85,7 +85,7 @@ def main():
     #Get sequences from input files
     seq_iter     = seqs_in_file(io_fhands['in_seq'], io_fhands['in_qual'])
 
-    # Cut long seqs
+    # Cut long seqs    
     new_seq_iter = split_long_sequences(seq_iter, maxlength)
 
     # Write cutted seqs to a new fasta

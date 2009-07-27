@@ -68,7 +68,10 @@ def main():
     fhand_seq, fhand_qual, result_file = set_parameters()
     seqs = seqs_in_file(fhand_seq, fhand_qual)
 
-    general_seq_statistics(seqs, distrib_fhand=result_file)
+    stats = general_seq_statistics(seqs, distrib_fhand=result_file)
+
+    for key, value in stats.items():
+        print '%-19s : %d' % (key, value)
 
 
 if __name__ == '__main__':

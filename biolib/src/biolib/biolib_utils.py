@@ -108,11 +108,14 @@ def _split_seq(seq, maxlength):
     seq_len       = len(seq)
     num_sequences = seq_len / maxlength
 
+    if  seq_len % maxlength != 0:
+        num_sequences += 1
+
     # Calculate start and end of the new sequences with the original sequence
     # coordinates
     start_ends = _calculate_divisions(seq_len, num_sequences)
-    for start, end in start_ends:
-        yield seq[start:end]
+    for i, (start, end) in enumerate(start_ends):
+        yield seq.copy(seq=seq[start:end], name='%s_%d' % (seq.name, i+1))
 
 def _calculate_divisions(length, splits):
     '''It calculates the length of each new seq.

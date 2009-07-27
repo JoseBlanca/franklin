@@ -224,7 +224,7 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
         for nucleotide in seq.seq:
             if nucleotide.islower():
                 stats['masked_length'] += 1
-        
+
         # quality average calcule, I save seq length and quality average to
         # calculate more accurate toral average. need to check if seqs have
         # quality
