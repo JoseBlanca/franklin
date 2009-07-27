@@ -612,6 +612,7 @@ class FileIndex(object):
     index = FileIndex(fhand, item_start_patterns=['pattern1', 'pattern2'])
     index['default_type'][key]
     '''
+    _default_item = 'item'
     def __init__(self, fhand, item_start_patterns, key_patterns,
                  type_patterns=None):
         '''It indexes the given fhand.
@@ -730,7 +731,7 @@ class FileIndex(object):
             been found in the same item.
             '''
             if type_patterns is None:
-                return 'item'
+                return self._default_item
             for known_type, patterns in type_patterns.items():
                 for pattern in patterns:
                     match = pattern.match(string)
@@ -782,5 +783,8 @@ class FileIndex(object):
         self._getters = getters
 
     def __getitem__(self, type_):
-        'It returns file items'
-        return self._getters[type_]
+        '''It returns file items'''
+        if self._type_patterns is None:
+            return self._getters[self._default_item][type_]
+        else:
+            return self._getters[type_]
