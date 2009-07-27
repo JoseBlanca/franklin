@@ -742,7 +742,7 @@ class FileIndex(object):
         current_type = None
         for subitem in _subitems_in_file(fhand):
             if previous_position and is_item_start(subitem):
-                length = previous_position - 1 - current_item_start
+                length = previous_position - current_item_start
                 yield current_item_start, length, current_type, current_key
                 current_item_start = previous_position
                 current_key = None
@@ -751,7 +751,7 @@ class FileIndex(object):
             current_type = update_type(current_type, subitem)
             previous_position = fhand.tell()
         else:
-            length = previous_position - 1 - current_item_start
+            length = previous_position - current_item_start
             yield current_item_start, length, current_type, current_key
 
     def _create_index(self):

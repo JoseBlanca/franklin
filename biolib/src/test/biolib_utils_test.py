@@ -149,10 +149,6 @@ class TestFileIndexer(unittest.TestCase):
         fhand = StringIO.StringIO('>key1\nhola\n>key2\ncaracola\n')
         index = FileIndex(fhand, item_start_patterns=['>'],
                           key_patterns=['>([^ \t\n]+)'])
-
-        print index['item']['key1']
-        print '*'
-        print index['item']['key2']
         assert index['item']['key1'] == '>key1\nhola\n'
         assert index['item']['key2'] == '>key2\ncaracola\n'
 
