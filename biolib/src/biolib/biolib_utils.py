@@ -552,27 +552,29 @@ class FileIndex(object):
         self._item_start_patterns = item_start_patterns
         self._key_patterns = key_patterns
         self._type_patterns = type_patterns
-        self._subitem_patterns = ['\n']
-        self._patterns_to_regex()
+        self._subitem_patterns = [os.linesep]
+        self._all_patterns_to_regex()
         self._index = None
         self._create_index()
         self._getters = None
         self._create_properties()
 
-    def _patterns_to_regex(self):
+    @staticmethod
+    def _patterns_to_regex(patterns):
+        'Given a list of patterns (str or regex) it returns a list of regex'
+        new_patterns = []
+        for pattern in patterns:
+            if 'match' not in dir(pattern): #if it isn't a regex
+                pattern = re.compile(pattern)
+            new_patterns.append(pattern)
+        return new_patterns
+
+    def _all_patterns_to_regex(self):
         '''It transforms all patterns in regular expressions.
 
         They could be either str or regex.
         '''
-        def patterns_to_regex(patterns):
-            'Given a list of patterns (str or regex) it returns a list of regex'
-            new_patterns = []
-            for pattern in patterns:
-                if 'match' not in dir(pattern): #if it isn't a regex
-                    pattern = re.compile(pattern)
-                new_patterns.append(pattern)
-            return new_patterns
-
+        patterns_to_regex = self._patterns_to_regex
         self._item_start_patterns = patterns_to_regex(self._item_start_patterns)
         self._key_patterns = patterns_to_regex(self._key_patterns)
         #the subitem patterns a not transformed because they're just chars
@@ -582,6 +584,15 @@ class FileIndex(object):
         if type_patterns is not None:
             for type_ in type_patterns:
                 type_patterns[type_] = patterns_to_regex(type_patterns[type_])
+
+    @staticmethod
+    def _match_in_string(patterns, string):
+        '''It returns True if a match is found in the string for any of the
+        given patterns'''
+        for pattern in patterns:
+            if pattern.match(string):
+                return True
+        return False
 
     def _items_in_fhand(self):
         '''It yields all the items in the fhand.
@@ -666,7 +677,7 @@ class FileIndex(object):
         current_type = None
         for subitem in _subitems_in_file(fhand):
             if previous_position and is_item_start(subitem):
-                length = previous_position - 1 - current_item_start
+                length = previous_position - current_item_start
                 yield current_item_start, length, current_type, current_key
                 current_item_start = previous_position
                 current_key = None
@@ -675,7 +686,7 @@ class FileIndex(object):
             current_type = update_type(current_type, subitem)
             previous_position = fhand.tell()
         else:
-            length = previous_position - 1 - current_item_start
+            length = previous_position - current_item_start
             yield current_item_start, length, current_type, current_key
 
     def _create_index(self):

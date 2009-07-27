@@ -24,7 +24,7 @@ import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
                                  NamedTemporaryDir, seqs_in_file,
                                  guess_seq_file_format, temp_fasta_file,
-                                 split_long_sequences)
+                                 FileIndex, split_long_sequences)
 from biolib.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
@@ -140,33 +140,21 @@ class TestFastaFileUtils(unittest.TestCase):
         content = open(fhand.name).read()
         assert content == ">seq1\nATGATAGATAGATGF\n>seq2\nATGATAGATAGA\n"
 
+class TestFileIndexer(unittest.TestCase):
+    'It test the FileIndex class'
 
-class SplitLongSequencestest(unittest.TestCase):
-    'It tests sequence spliting functions'
     @staticmethod
-    def test_split_long_sequences():
-        '''It test the function that splits sequences of an iterator with long
-        sequences into  smaller sequences'''
-        seq = 'atatatatatg'
-        qual = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        seq_rec = SeqWithQuality(seq=seq, qual=qual)
-        seq_iter = iter([seq_rec])
-        splited_seq_iter = split_long_sequences(seq_iter, 5)
-        seq1 = splited_seq_iter.next()
-        seq2 = splited_seq_iter.next()
-        assert len(seq1) == 6
-        assert len(seq2) == 5
+    def test_file_index():
+        'It test the file index class'
+        fhand = StringIO.StringIO('>key1\nhola\n>key2\ncaracola\n')
+        index = FileIndex(fhand, item_start_patterns=['>'],
+                          key_patterns=['>([^ \t\n]+)'])
 
-        seq_iter = iter([seq_rec])
-        splited_seq_iter = split_long_sequences(seq_iter, 3)
-        seq1 = splited_seq_iter.next()
-        seq2 = splited_seq_iter.next()
-        seq3 = splited_seq_iter.next()
-        assert len(seq1) == 4
-        assert len(seq2) == 4
-        assert len(seq3) == 3
-
-
+        print index['item']['key1']
+        print '*'
+        print index['item']['key2']
+        assert index['item']['key1'] == '>key1\nhola\n'
+        assert index['item']['key2'] == '>key2\ncaracola\n'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
