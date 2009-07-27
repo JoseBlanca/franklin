@@ -24,7 +24,8 @@ import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
                                  NamedTemporaryDir, seqs_in_file,
                                  guess_seq_file_format, temp_fasta_file,
-                                 FileIndex, split_long_sequences)
+                                 FileIndex, split_long_sequences,
+                                 FileSequenceIndex)
 from biolib.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
@@ -173,6 +174,32 @@ class TestFileIndexer(unittest.TestCase):
                           type_patterns=['(type[0-9])'])
         assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
         assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
+
+class TestSequenceFileIndexer(unittest.TestCase):
+    'It test the FileSequenceIndex class'
+
+    @staticmethod
+    def test_sequence_fasta_index():
+        'It test the file index class basic functionality'
+        fhand = StringIO.StringIO('>seq1 una seq\nACTG\n>seq2 otra seq\nGTAC\n')
+        index = FileSequenceIndex(fhand)
+        seqrec1 = index['seq1']
+        seqrec2 = index['seq2']
+        assert seqrec1.name == 'seq1'
+        assert seqrec1.description == 'una seq'
+        assert seqrec2.seq == 'GTAC'
+
+    @staticmethod
+    def test_sequence_fasta_qual_index():
+        'It test the file index class basic functionality'
+        fhand = StringIO.StringIO('>seq1 una seq\n1 2 3\n>seq2 otra seq\n10\n')
+        index = FileSequenceIndex(fhand)
+        seqrec1 = index['seq1']
+        seqrec2 = index['seq2']
+        assert seqrec1.name == 'seq1'
+        assert seqrec1.description == 'una seq'
+        assert seqrec1.qual == [1, 2, 3]
+        assert seqrec2.qual == [10]
 
 
 class SplitLongSequencestest(unittest.TestCase):

@@ -21,11 +21,15 @@ from Bio.Seq import Seq
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-def get_parser(fhand, format):
+def get_parser(fhand, format, consensus_seqs=None):
     'Given a file and a format it returns a suitable Contig parser'
     available_parsers = {'caf': CafParser, 'ace': AceParser,
                          'bowtie': BowtieParser}
-    parser = available_parsers[format](fhand)
+    if consensus_seqs is None:
+        parser = available_parsers[format](fhand)
+    else:
+        parser = available_parsers[format](fhand,
+                                           consensus_seqs=consensus_seqs)
     return parser
 
 def get_parser_by_name(fname):
@@ -640,13 +644,18 @@ class AceParser(object):
 
 class BowtieParser(object):
     'It parsers a bowtie map file and it prepares the contigs from it'
-    def __init__(self, fhand):
-        'It requires a bowtie.map file to create the contigs'
+    def __init__(self, fhand, consensus_seqs=None):
+        '''It requires a bowtie.map file to create the contigs.
+
+        Optionally an dict-like object with the consensus sequences can be
+        given.
+        '''
         self._fhand = fhand
         self._index = FileIndex(fhand,
                                 item_start_patterns=['^'],
                                 key_patterns=['^([^\t]+)\t'],
                                 type_patterns=['\t[+|-]\t([^ \t]+)'])
+        self._consensus_seqs = consensus_seqs
 
     @staticmethod
     def _parse_read(read_line):
@@ -663,7 +672,11 @@ class BowtieParser(object):
 
     def contig(self, name):
         'Given a contig name it returns the contig'
-        contig = Contig()
+        if self._consensus_seqs is not None:
+            consensus = self._consensus_seqs[name]
+            contig = Contig(consensus=consensus)
+        else:
+            contig = Contig()
         for read in self._index[name].items():
             read_content = self._index[name][read]
             read, location = self._parse_read(read_content)

@@ -22,7 +22,7 @@ Created on 2009 api 30
 
 import tempfile, shutil
 from uuid import uuid4
-import os, re, math
+import os, re, math, StringIO
 
 from biolib.seqs import SeqWithQuality
 
@@ -825,3 +825,37 @@ class FileIndex(object):
         'It yields all the type names'
         for type_ in self._index:
             yield type_
+
+class FileSequenceIndex(object):
+    'It indexes sequence files and it returns seq records'
+    def __init__(self, fhand, format=None):
+        '''It creates the index.
+
+        If the format is not given it will be guessed
+        '''
+        if format is None:
+            format = guess_seq_file_format(fhand)
+        self._format = format
+        patterns = {
+                    'fasta': {'item_start_patterns':['^>'],
+                              'key_patterns':['^>([^ \t\n]+)']},
+                    'qual': {'item_start_patterns':['^>'],
+                              'key_patterns':['^>([^ \t\n]+)']},
+                    }
+        item_start_patterns = patterns[format]['item_start_patterns']
+        key_patterns        = patterns[format]['key_patterns']
+        self._index = FileIndex(fhand, item_start_patterns=item_start_patterns,
+                                key_patterns=key_patterns)
+    def __getitem__(self, name):
+        'It returns a sequence record'
+        seq_content = StringIO.StringIO(self._index[name])
+        if self._format in ('fasta', 'qual'):
+            if self._format == 'fasta':
+                name, description, seq = get_content_from_fasta(seq_content)
+                return SeqWithQuality(name=name, description=description,
+                                      seq=seq)
+            else:
+                name, description, seq = get_content_from_fasta(seq_content,
+                                                                kind='qual')
+                return SeqWithQuality(name=name, description=description,
+                                      qual=seq)

@@ -21,6 +21,7 @@ Created on 2009 mar 11
 
 import unittest
 from biolib.contig_io import get_parser
+from biolib.biolib_utils import FileSequenceIndex
 import biolib
 import os.path
 
@@ -175,6 +176,20 @@ class BowtieTest(unittest.TestCase):
 
         assert len(list(parser.contigs())) == 4
 
+    @staticmethod
+    def test_contig_with_consensus():
+        '''It tests that we can get a contig its name.'''
+        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
+        consensus_fhand = open(os.path.join(DATA_DIR, 'bowtie.reference.fasta'))
+        consensus_seqs = FileSequenceIndex(consensus_fhand)
+        parser = get_parser(fhand, format='bowtie',
+                            consensus_seqs=consensus_seqs)
+        assert len(list(parser.contigs())) == 4
+        contig = parser.contig('SGN-U581169')
+        assert contig.consensus.name == 'SGN-U581169'
+        assert str(contig.consensus[593:599]) == 'TTTCGT'
+        assert str(contig[0][593:599]) == 'TTTCGT'
+        assert str(contig[1][593:599]) == 'TTTCGT'
 
 if __name__ == "__main__":
     unittest.main()
