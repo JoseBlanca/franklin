@@ -108,7 +108,7 @@ def _split_seq(seq, maxlength):
     seq_len       = len(seq)
     num_sequences = seq_len / maxlength
 
-    if  seq_len % maxlength != 0:
+    if  seq_len % maxlength != 0 and num_sequences == 1:
         num_sequences += 1
 
     # Calculate start and end of the new sequences with the original sequence
