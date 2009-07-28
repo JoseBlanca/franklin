@@ -399,12 +399,9 @@ def create_vector_striper_by_alignment(vectors, aligner):
         alignments = FilteredAlignmentResults(match_filters=filters[aligner],
                                               results=alignment_result)
 
-        start_end = _get_longest_non_matched_fragment(alignments, sequence)
-        if start_end is None:
-            return None
-        else:
-            start, end = start_end
-            return sequence[start:end]
+        alignment_matches = _get_non_matched_locations(alignments)
+        return _get_longest_non_matched_seq_region(sequence, alignment_matches)
+
     return strip_vector_by_alignment
 
 def _merge_overlaping_locations(locations):
@@ -461,12 +458,10 @@ def _merge_overlaping_locations(locations):
                 merged_locations.append((start, end))
     return merged_locations
 
-#pylint:disable-msg=C0103
-def _get_longest_non_matched_fragment(alignments, query):
-    '''It get the longest non matched fragment from matches result
+def _get_non_matched_locations(alignments):
+    '''It detects query's non matched fragments in and alignement
 
-    It use salignment result dict and after merging overlaping matches, it looks
-    for the longest non matched sequence
+    It returns a list of  (start, end) tuples
      '''
     # we need the matches sorted by its start and merged when two overlap
     # we collect all match starts and ends in tuples
@@ -476,9 +471,38 @@ def _get_longest_non_matched_fragment(alignments, query):
             for match_part in match['match_parts']:
                 locations.append((match_part['query_start'],
                                   match_part['query_end']))
-    # If no hsps, we return the complete sequence location
+    return locations
+
+def _get_unmasked_locations(seq):
+    '''It detects the unmasked regions of a sequence
+
+    It returns a list of (start, end) tuples'''
+
+    locations = []
+    in_masked_section = True
+    for i, letter in enumerate(seq):
+        unmasked =  str(letter).isupper()
+        if unmasked and in_masked_section:
+            start = i
+            in_masked_section = False
+        elif not unmasked and not in_masked_section:
+            end = i - 1
+            locations.append((start, end))
+            in_masked_section = True
+    else:
+        if unmasked and not in_masked_section:
+            end = i
+            locations.append((start, end))
+
+    return locations
+
+#pylint:disable-msg=C0103
+def _get_longest_non_matched_seq_region(seq, locations):
+    'Given a seq and the locations it returns the longest region'
+
+    # If no locations we return the complete sequence location
     if not locations:
-        return (None, None)
+        return seq
 
     # Once we collect all the start and ends in a list of tuples, we are going
     # to merge overlapings
@@ -502,11 +526,51 @@ def _get_longest_non_matched_fragment(alignments, query):
             longest_location = (start, end)
     else:
         start  = locations[-1][1]
-        end    = len(query)
+        end    = len(seq)
         dist = end - start
         if dist > longest_dist:
             longest_location = (start, end)
-    return longest_location
+
+    if longest_location is None:
+        return None
+    else:
+        start, end = longest_location
+        return seq[start:end]
+
+def _get_matched_locations(seq, locations, min_length):
+    'It returns a seq iterator from a seq. To split the seq it uses the'
+
+    for i, (start, end) in enumerate(locations):
+        seq1 = seq.seq[start:end+1]
+        if len(seq1) < min_length:
+            continue
+        if seq.qual is not None:
+            qual = seq.qual[start:end+1]
+        else:
+            qual = None
+        if seq.name is not None:
+            name = '%s_%d' % (seq.name, i + 1)
+        yield seq.copy(seq=seq1, qual=qual, name=name)
+
+def split_seq_by_masked_regions(seq_iter, min_length):
+    '''It takes a sequence iterator and return another iterator of sequences.
+    The masked section of the sequences have been removed from these sequences
+    and the resulting seqs are returned as new seqs.
+        example:  AATTAATTGGagatagatAATTGATGAATGAtaaaaaaaaGATAGATAGAGAGT
+            newseq1 = AATTAATTGG
+            newseq2 = AATTGATGAATGA
+            newseq3 = GATAGATAGAGAGT
+    '''
+    for seq in seq_iter:
+        locations = _get_unmasked_locations(seq)
+        # if there are no masked sections, we return the whole sequence
+        if not locations:
+            yield seq
+            continue
+        seqs = _get_matched_locations(seq, locations, min_length)
+        for new_seq in seqs:
+            yield new_seq
+
 
 def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
     '''It creates a function that mask repeats from a sequence'''

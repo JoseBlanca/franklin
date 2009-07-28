@@ -1,7 +1,8 @@
+#!/usr/bin/env python
 '''
-This script takes sequences from a fasta file and split them in a length minor
- of N. being N a length you can configure. default = 1024
-
+This script takes sequences from a fasta file. Takes each sequence and removes
+the masked section. The resulting sequence sections are returned as new
+sequences
 
 Created on 2009 uzt 24
 
@@ -24,7 +25,7 @@ Created on 2009 uzt 24
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.biolib_utils import  split_long_sequences
+from biolib.seq_cleaner import  split_seq_by_masked_regions
 from biolib.biolib_seqio_utils import seqs_in_file, write_fasta_file
 
 def parse_options():
@@ -38,8 +39,8 @@ def parse_options():
                       help='sequence output file')
     parser.add_option('-u', '--qualoutput', dest='out_qual',
                       help='quality output file')
-    parser.add_option('-m', '--max_length', dest='maxlength', default=1024,
-                      type="int", help='Maximun sequence length permited')
+    parser.add_option('-m', '--min_length', dest='minlength',
+                      type="int", help='Minimun sequence length for new seqs')
     return parser.parse_args()
 
 def set_parameters():
@@ -75,21 +76,29 @@ def set_parameters():
     else:
         io_fhands['out_qual'] = open(options.out_qual, 'w')
     ##########################################################
+    if options.minlength is not None:
+        minlength = options.minlength
+    else:
+        raise RuntimeError('Minimun resulting length seq needed')
 
-    return io_fhands, options.maxlength
+    return io_fhands,  minlength
+
+
 
 def main():
     'The main part of the script'
-    io_fhands, maxlength = set_parameters()
+    io_fhands, minlength = set_parameters()
 
     #Get sequences from input files
     seq_iter     = seqs_in_file(io_fhands['in_seq'], io_fhands['in_qual'])
 
-    # Cut long seqs
-    new_seq_iter = split_long_sequences(seq_iter, maxlength)
+    # split new long seqs
+
+    new_seq_iter = split_seq_by_masked_regions(seq_iter, minlength)
 
     # Write cutted seqs to a new fasta
     write_fasta_file(new_seq_iter, io_fhands['out_seq'], io_fhands['out_qual'])
 
 if __name__ == '__main__':
     main()
+

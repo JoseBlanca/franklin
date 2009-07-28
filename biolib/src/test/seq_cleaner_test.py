@@ -19,8 +19,12 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality_lucy2,
                                 create_masker_repeats_by_repeatmasker,
                                 configure_pipeline, pipeline_runner,
-                                checkpoint)
-
+                                checkpoint,
+                                _get_non_matched_locations,
+                                _get_unmasked_locations,
+                                _get_longest_non_matched_seq_region,
+                                _get_matched_locations,
+                                split_seq_by_masked_regions)
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -101,7 +105,7 @@ class SeqCleanerTest(unittest.TestCase):
 
 
 
-    def xtest_strip_seq_by_qual_lucy(self):
+    def test_strip_seq_by_qual_lucy(self):
         'It tests lucy with a ga runner class for lucy'
 
         seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
@@ -273,7 +277,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def xtest_repeatmasking():
+    def test_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         mask_repeats_by_repeatmasker = \
                  create_masker_repeats_by_repeatmasker(species='eudicotyledons')
@@ -398,6 +402,83 @@ class CheckPointTest(unittest.TestCase):
         assert fhand_seqs_out.readline()[0] == 'a'
         assert fhand_qual_out.readline()[0] == '>'
         assert fhand_qual_out.readline()[0] == '0'
+
+class SeqSplitterTests(unittest.TestCase):
+    'Here we test seq splitter functions'
+    @staticmethod
+    def test_non_matches_fragment_detector():
+        'it test  that the functions detects all the fragments of an alignments'
+        alignments = [{'matches':[
+                             {'match_parts':[{'query_start':1, 'query_end':10},
+                                             {'query_start':6, 'query_end':17},
+                                             {'query_start':3, 'query_end':18}]
+                              }]}]
+
+        locations = _get_non_matched_locations(alignments)
+        assert locations[0] == (1, 10)
+        assert locations[1] == (6, 17)
+        assert locations[2] == (3, 18)
+
+    @staticmethod
+    def test_unmasked_seq_location_detector():
+        'it detects the location of the unmasked seq regions'
+        seq = SeqWithQuality(seq='AATTaaTTaaTTT', name='seq')
+        locations = _get_unmasked_locations(seq)
+        assert locations[0] == (0, 3)
+        assert locations[1] == (6, 7)
+        assert locations[2] == (10, 12)
+
+        seq = SeqWithQuality(seq='AATT', name='seq')
+        locations = _get_unmasked_locations(seq)
+        assert locations[0] == (0, 3)
+
+        seq = SeqWithQuality(seq='aatt', name='seq')
+        locations = _get_unmasked_locations(seq)
+        assert not locations
+
+    @staticmethod
+    def test_get_longest_section_detector():
+        'it test if we get the longest not matched section'
+        seq = SeqWithQuality(seq='AATTAATTAATTTCGCGCGCGCGCCC', name='seq')
+        matches = ((0, 3), (6, 7), (6, 19))
+        longest = _get_longest_non_matched_seq_region(seq, matches)
+        assert str(longest) == 'CGCGCCC'
+
+
+    @staticmethod
+    def test_get_matched_regions():
+        'it tests get_matched_region function'
+        seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
+        seq = SeqWithQuality(seq=seq1, name='seq')
+        locations =  _get_unmasked_locations(seq)
+
+        seq_iter = _get_matched_locations(seq, locations, 3)
+        assert str(seq_iter.next().seq) == 'AATT'
+        assert str(seq_iter.next().seq) == 'AATTAAT'
+        assert str(seq_iter.next().seq) == 'TTC'
+        assert str(seq_iter.next().seq) == 'GCGCGCGCGCCC'
+
+
+        seq_iter = _get_matched_locations(seq, locations, 5)
+        assert str(seq_iter.next().seq) == 'AATTAAT'
+        assert str(seq_iter.next().seq) == 'GCGCGCGCGCCC'
+
+    @staticmethod
+    def test_strip_masked_section():
+        'It tests the strip_masked_functions'
+        seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
+        seq = SeqWithQuality(seq=seq1, name='seq1')
+        seq2 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
+        seq_ = SeqWithQuality(seq=seq2, name='seq2')
+
+        seq_iter = iter([seq, seq_])
+
+        new_seq_iter = split_seq_by_masked_regions(seq_iter, 5)
+        assert str(new_seq_iter.next().seq) == 'AATTAAT'
+        assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
+        assert str(new_seq_iter.next().seq) == 'AATTAAT'
+        assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
