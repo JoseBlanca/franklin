@@ -416,8 +416,8 @@ class SeqVariationrEnzime(unittest.TestCase):
     @staticmethod
     def test_remap():
         '''It test if the remap external program works '''
-        con  = 'Actgactgactgtca'
-        seq  = 'Actgacttactgtca'
+        con  = SeqWithQuality(seq='Actgactgactgtca', name='consensus')
+        seq  = SeqWithQuality(seq='Actgacttactgtca', name='seq')
         consensus = locate_sequence(con, location=0)
         cont = Contig([seq, seq], consensus=consensus)
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=7, alignment=cont)
@@ -426,14 +426,14 @@ class SeqVariationrEnzime(unittest.TestCase):
         assert ['HinfI', 'TscAI'] == enzymes
 
         # We need to test it with locations
-        con       = 'Actgactgactgtca'
-        seq       = 'Actgacttactgtca'
+        con       = SeqWithQuality(seq='Actgactgactgtca', name='consensus')
+        seq       = SeqWithQuality(seq='Actgacttactgtca', name='seq')
         consensus = locate_sequence(con, location=0)
         contig    = Contig(consensus=consensus)
         contig.append_to_location(seq, 0)
         contig.append_to_location(seq, 0)
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=(7, 8),
-                           alignment=cont)
+                           alignment=contig)
         enzymes = cap_enzime(snp, True)
         assert ['HinfI', 'TscAI'] == enzymes
 

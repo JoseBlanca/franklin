@@ -41,8 +41,9 @@ import re, logging
 from tempfile import NamedTemporaryFile
 
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
-from biolib.biolib_utils import (get_content_from_fasta, seqs_in_file,
-                                 get_safe_fname, fasta_str)
+from biolib.biolib_seqio_utils import (get_content_from_fasta, seqs_in_file,
+                                 fasta_str)
+from biolib.biolib_utils import get_safe_fname
 from biolib.seqs import  SeqWithQuality
 from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,

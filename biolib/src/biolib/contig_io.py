@@ -3,7 +3,8 @@
 from re import match
 from biolib.contig import Contig,  locate_sequence
 from biolib.seqs import SeqWithQuality, Seq
-from biolib.biolib_utils import fasta_str, FileIndex
+from biolib.biolib_seqio_utils import fasta_str
+from biolib.biolib_utils import  FileIndex
 from Bio.Seq import Seq
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia

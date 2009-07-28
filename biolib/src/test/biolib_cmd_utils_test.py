@@ -22,7 +22,7 @@ This module provides utilities to run external commands into biolib
 import unittest
 
 from biolib.biolib_cmd_utils import _process_parameters, create_runner
-from biolib.biolib_utils import parse_fasta
+from biolib.biolib_seqio_utils import parse_fasta
 from biolib.seqs import SeqWithQuality
 
 

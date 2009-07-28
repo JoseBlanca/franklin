@@ -7,7 +7,7 @@ from optparse import OptionParser
 from Bio import SeqIO
 import matplotlib.pyplot as plt
 
-from biolib.biolib_utils import guess_seq_file_format
+from biolib.biolib_seqio_utils import guess_seq_file_format
 
 def parse_options():
     'It parses the command line arguments'

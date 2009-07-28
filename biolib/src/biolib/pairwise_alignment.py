@@ -1,5 +1,5 @@
 'Blast utilities'
-from biolib.biolib_utils import create_temp_fasta_files
+from biolib.biolib_seqio_utils import create_temp_fasta_files, temp_fasta_file
 from biolib.biolib_cmd_utils import call
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -100,12 +100,15 @@ def _parse_water(output):
 
 def water(seq1, seq2, gapopen=20):
     'It does a water alignment an it returns the result.'
-    fileh1, fileh2 = create_temp_fasta_files(seq1, seq2)
+    fileh1 = temp_fasta_file(seq1, write_qual=False)
+    fileh2 = temp_fasta_file(seq2, write_qual=False)
     filen1 = fileh1.name
     filen2 = fileh2.name
+
     #we run the blast
     cmd = ['water', filen1, filen2, '-stdout', '-auto', '-snucleotide1',
            '-snucleotide2', '-gapopen', str(gapopen)]
+
     stdout, stderr, retcode = call(cmd)
     if retcode:
         raise RuntimeError('Problem running water: '+ stderr)

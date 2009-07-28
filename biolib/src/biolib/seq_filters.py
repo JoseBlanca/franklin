@@ -22,7 +22,7 @@ can also return None if no sequence is left after the filtering process.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.biolib_cmd_utils import  create_runner
-from biolib.biolib_utils import temp_multi_fasta_file
+from biolib.biolib_seqio_utils import temp_multi_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 

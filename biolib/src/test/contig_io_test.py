@@ -21,7 +21,7 @@ Created on 2009 mar 11
 
 import unittest
 from biolib.contig_io import get_parser
-from biolib.biolib_utils import FileSequenceIndex
+from biolib.biolib_seqio_utils import FileSequenceIndex
 import biolib
 import os.path
 

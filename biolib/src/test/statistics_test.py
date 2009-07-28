@@ -22,7 +22,9 @@ from StringIO import StringIO
 import os
 from tempfile import NamedTemporaryFile
 
-from biolib.biolib_utils import (seqs_in_file, float_lists_are_equal)
+from biolib.biolib_utils import float_lists_are_equal
+
+from biolib.biolib_seqio_utils import seqs_in_file
 from biolib.statistics import (seq_distrib, general_seq_statistics,
                                seq_distrib_diff)
 

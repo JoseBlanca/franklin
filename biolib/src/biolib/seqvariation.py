@@ -21,8 +21,10 @@ Created on 2009 mar 25
 
 from biolib.contig import Contig, slice_to_range
 from biolib.locatable_sequence import NonStaticParentLocation
-from biolib.biolib_utils import temp_fasta_file, get_start_end
+from biolib.biolib_seqio_utils import temp_fasta_file
+from biolib.biolib_utils import get_start_end
 from biolib.biolib_cmd_utils import call
+from biolib.seqs import SeqWithQuality
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -652,7 +654,6 @@ def cap_enzime(snp, all_enzymes=False):
     consensus = str(snp.alignment.consensus)
     #the base sequence
     seq1      = consensus[piece_start: piece_end + 1]
-    seq2      = seq1[:]
     #the allele1 and 2 sequences
     al_start = loc_start - piece_start
     al_stop  = al_start + len(allele1)
@@ -661,6 +662,8 @@ def cap_enzime(snp, all_enzymes=False):
     if len(seq1.strip()) < (piece_from_location * 2 + 1):
         return None
         #raise ValueError('The snp is in the end of the consensus')
+    seq1 = SeqWithQuality(name='seq1', seq=seq1)
+    seq2 = SeqWithQuality(name='seq2', seq=seq2)
 
     enzymes1 = _remap_run(seq1, all_enzymes)
     enzymes2 = _remap_run(seq2, all_enzymes)
@@ -690,8 +693,7 @@ def _remap_run(seq, all_enzymes):
         raise OSError('remap binary does not exits or it is not in path')
 
     if retcode:
-
-        raise RuntimeError('remap err: '+ stderr)
+        raise RuntimeError('remap error: '+ stderr)
 
     return  _parse_remap_output(stdout)
 

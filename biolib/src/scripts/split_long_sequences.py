@@ -23,9 +23,8 @@ Created on 2009 uzt 24
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.biolib_utils import (seqs_in_file, split_long_sequences,
-                                 write_fasta_file)
-
+from biolib.biolib_utils import  split_long_sequences
+from biolib.biolib_seqio_utils import seqs_in_file, write_fasta_file
 
 def parse_options():
     'It parses the command line arguments'
@@ -85,7 +84,7 @@ def main():
     #Get sequences from input files
     seq_iter     = seqs_in_file(io_fhands['in_seq'], io_fhands['in_qual'])
 
-    # Cut long seqs    
+    # Cut long seqs
     new_seq_iter = split_long_sequences(seq_iter, maxlength)
 
     # Write cutted seqs to a new fasta
