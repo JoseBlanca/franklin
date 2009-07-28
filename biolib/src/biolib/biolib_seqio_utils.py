@@ -4,13 +4,13 @@ Created on 2009 uzt 28
 @author: peio
 '''
 
-import tempfile, StringIO
+import tempfile, StringIO, math
 from uuid import uuid4
 
 from biolib.seqs import SeqWithQuality
 from biolib.biolib_utils import FileIndex
 
-from Bio import  SeqIO
+from Bio import SeqIO
 
 def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
@@ -177,11 +177,14 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
-def seqs_in_file(seq_fhand, qual_fhand=None):
-    'It yields a seqrecord for each of the secuences found in the seq file'
-    seq_file_format = guess_seq_file_format(seq_fhand)
+def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
+    'It yields a seqrecord for each of the sequences found in the seq file'
+    if format is None:
+        seq_file_format = guess_seq_file_format(seq_fhand)
+    else:
+        seq_file_format = format
 
-    seq_iter    = SeqIO.parse(seq_fhand, seq_file_format)
+    seq_iter = SeqIO.parse(seq_fhand, seq_file_format)
     if qual_fhand is None:
         qual_iter = None
     else:
@@ -189,15 +192,24 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
         qual_iter = SeqIO.parse(qual_fhand, qual_file_format)
 
     for seqrec in seq_iter:
-        if qual_iter is None:
-            qual = None
-            qual_name = None
-        else:
+        #do we have quality?
+        letter_annotations = seqrec.letter_annotations
+        qual_name = None
+        if qual_iter is not None:
             qual_sec_record = qual_iter.next()
-            qual = qual_sec_record.letter_annotations["phred_quality"]
+            qual = qual_sec_record.letter_annotations['phred_quality']
             qual_name = qual_sec_record.name
-        seq         = seqrec.seq
-        name        = seqrec.name
+        elif 'phred_quality' in letter_annotations:
+            qual = letter_annotations['phred_quality']
+        elif 'solexa_quality' in letter_annotations:
+            qual = letter_annotations['solexa_quality']
+            phred = lambda qual: int(10 * math.log(10**(qual/10.0) + 1, 10))
+            qual = [phred(value) for value in qual]
+        else:
+            qual = None
+
+        seq  = seqrec.seq
+        name = seqrec.name
 
         if qual_name and qual_name != name:
             msg = 'Seqs and quals not in the same order: %s, %s' % (name ,
@@ -207,7 +219,6 @@ def seqs_in_file(seq_fhand, qual_fhand=None):
         annotations = seqrec.annotations
         yield SeqWithQuality(seq=seq, qual=qual, name=name,
                             description=description, annotations=annotations)
-
 
 class FileSequenceIndex(object):
     'It indexes sequence files and it returns seq records'

@@ -76,6 +76,67 @@ class SeqsInFileTests(unittest.TestCase):
         except RuntimeError:
             pass
 
+    @staticmethod
+    def test_fasq():
+        'It test that we can get a seq iter from a fasq file'
+
+        #fasq
+        fcontent  = '@seq1\n'
+        fcontent += 'CCCT\n'
+        fcontent += '+\n'
+        fcontent += ';;3;\n'
+        fcontent += '@SRR001666.1 071112_SLXA-EAS1_s_7:5:1:817:345 length=36\n'
+        fcontent += 'GTTGC\n'
+        fcontent += '+\n'
+        fcontent += ';;;;;\n'
+        fhand = StringIO.StringIO(fcontent)
+
+        expected = [('seq1', 'CCCT', [26, 26, 18, 26]),
+                    ('SRR001666.1', 'GTTGC', [26, 26, 26, 26, 26])]
+        for index, seq in enumerate(seqs_in_file(fhand, format='fastq')):
+            assert seq.name == expected[index][0]
+            assert str(seq.seq) == expected[index][1]
+            assert seq.qual == expected[index][2]
+
+        #fastq-illumina
+        fcontent  = '@seq1\n'
+        fcontent += 'CCCT\n'
+        fcontent += '+\n'
+        fcontent += 'ZZZZ\n'
+        fcontent += '@seq2\n'
+        fcontent += 'GTTGC\n'
+        fcontent += '+\n'
+        fcontent += 'ZZZZZ\n'
+        fhand = StringIO.StringIO(fcontent)
+
+        expected = [('seq1', 'CCCT', [26, 26, 26, 26]),
+                    ('seq2', 'GTTGC', [26, 26, 26, 26, 26])]
+        for index, seq in enumerate(seqs_in_file(fhand,
+                                                 format='fastq-illumina')):
+            assert seq.name == expected[index][0]
+            assert str(seq.seq) == expected[index][1]
+            assert seq.qual == expected[index][2]
+
+        #fastq-solexa
+        fcontent  = '@seq1\n'
+        fcontent += 'CCCT\n'
+        fcontent += '+\n'
+        fcontent += ':>@Z\n'
+        fcontent += '@seq2\n'
+        fcontent += 'GTTGC\n'
+        fcontent += '+\n'
+        fcontent += ':>@BZ\n'
+        fhand = StringIO.StringIO(fcontent)
+
+        expected = [('seq1', 'CCCT', [0, 2, 3, 26]),
+                    ('seq2', 'GTTGC', [0, 2, 3, 4, 26])]
+        for index, seq in enumerate(seqs_in_file(fhand,
+                                                 format='fastq-solexa')):
+            assert seq.name == expected[index][0]
+            assert str(seq.seq) == expected[index][1]
+            assert seq.qual == expected[index][2]
+
+
 class TestFastaFileUtils(unittest.TestCase):
     'here we test our utils related to fast format'
 
@@ -122,3 +183,7 @@ class TestSequenceFileIndexer(unittest.TestCase):
         assert seqrec1.description == 'una seq'
         assert seqrec1.qual == [1, 2, 3]
         assert seqrec2.qual == [10]
+
+if __name__ == "__main__":
+    #import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()
