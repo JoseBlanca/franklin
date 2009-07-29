@@ -139,13 +139,13 @@ class FileCachedListTest(unittest.TestCase):
         clist = FileCachedList(type_=int)
         clist.append(0)
         clist.append(1)
-        for index, item in enumerate(clist):
+        for index, item in enumerate(clist.items()):
             assert item == index
         #with floats
         clist = FileCachedList(type_=float)
         clist.append(0)
         clist.append(1)
-        for index, item in enumerate(clist):
+        for index, item in enumerate(clist.items()):
             assert item == float(index)
 
 if __name__ == "__main__":

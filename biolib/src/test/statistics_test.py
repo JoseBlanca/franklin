@@ -22,11 +22,12 @@ from StringIO import StringIO
 import os
 from tempfile import NamedTemporaryFile
 
-from biolib.biolib_utils import float_lists_are_equal
+import numpy
 
+from biolib.biolib_utils import float_lists_are_equal
 from biolib.biolib_seqio_utils import seqs_in_file
 from biolib.statistics import (seq_distrib, general_seq_statistics,
-                               seq_distrib_diff)
+                               seq_distrib_diff, histogram)
 
 
 def _read_distrib_file(fhand):
@@ -133,6 +134,22 @@ class StatisticsTest(unittest.TestCase):
         distri = seq_distrib_diff(seqs1, seqs2, 'qual_distrib')
         for num in distri['distrib']:
             assert num == 0
+
+class HistogramTest(unittest.TestCase):
+    'It checks our histogram/distribution implementation'
+    @staticmethod
+    def test_histogram():
+        'It test our histogram implementation'
+        numbers = [0, 1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9, 10]
+        bins    = 5
+        numpy_distrib = numpy.histogram(numbers, bins=bins, new=True)
+        our_distrib = histogram(numbers, bins=bins)
+
+        for num1, num2 in zip(numpy_distrib[0], our_distrib[0]):
+            assert num1 == num2
+        for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
+            assert num1 == num2
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']

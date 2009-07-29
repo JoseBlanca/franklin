@@ -17,7 +17,7 @@
 
 import numpy
 from itertools import tee
-from biolib.biolib_utils import draw_scatter
+from biolib.biolib_utils import draw_scatter, FileCachedList
 
 
 PLOT_LABELS = {'masked_seq_distrib' :{
@@ -44,13 +44,18 @@ def _write_distribution(fhand, distribution, bin_edges):
         fhand.write('\n')
     fhand.flush()
 
-def _create_distribution(numbers, labels, distrib_fhand=None, plot_fhand=None,
-                         range_=None):
+def _create_distribution(numbers, labels=None, distrib_fhand=None,
+                         plot_fhand=None, range_=None, low_memory=True):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     bins = 20
+    if labels is None:
+        labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count'}
     #we do the distribution
-    distrib, bin_edges = numpy.histogram(numbers, bins=bins, new=True,
+    if low_memory:
+        distrib, bin_edges = histogram(numbers, bins=bins, range_=range_)
+    else:
+        distrib, bin_edges = numpy.histogram(numbers, bins=bins, new=True,
                                          range=range_)
     #we write the output
     if distrib_fhand is not None:
@@ -63,9 +68,47 @@ def _create_distribution(numbers, labels, distrib_fhand=None, plot_fhand=None,
                      fhand=plot_fhand)
     return {'distrib':distrib, 'bin_edges':bin_edges}
 
+def _masked_sequence_lengths(sequences, low_memory):
+    'It returns a list with the sequences lengths'
+    if low_memory:
+        lengths = FileCachedList(float)
+    else:
+        lengths = []
+    for seq in sequences:
+        length = 0
+        for letter in str(seq):
+            if letter.islower():
+                length += 1
+        lengths.append(length)
+    return lengths
+
+def _sequence_lengths(sequences, low_memory):
+    'It returns a list with the sequences lengths'
+    if low_memory:
+        lengths = FileCachedList(float)
+    else:
+        lengths = []
+    for seq in sequences:
+        lengths.append(len(seq))
+    return lengths
+
+def _sequence_qualitities(sequences, low_memory):
+    'It returns a list with the sequence qualities'
+    if low_memory:
+        qualities = FileCachedList(float)
+    else:
+        qualities = []
+    for seq in sequences:
+        # This statistic can be run when there is no quality. In this cases it
+        # should exit without warnings
+        if seq.qual is None:
+            continue
+        for value in seq.qual:
+            qualities.append(value)
+    return qualities
 
 def _masked_seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                              range_=None):
+                              range_=None, low_memory=True):
     '''It calculates the masked length distribution for the given sequences.
 
     The results will be written in the given distrib_fhand.
@@ -73,19 +116,13 @@ def _masked_seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
     It returns the distribution and the bin_edges.
     '''
     #first we gather the lengths
-    lengths = []
-    for seq in sequences:
-        length = 0
-        for letter in str(seq):
-            if letter.islower():
-                length += 1
-        lengths.append(length)
+    lengths = _masked_sequence_lengths(sequences, low_memory)
     labels = PLOT_LABELS['masked_seq_distrib']
     return _create_distribution(lengths, labels, distrib_fhand, plot_fhand,
-                                 range_=range_)
+                                 range_=range_, low_memory=low_memory)
 
 def _seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                       range_=None):
+                       range_=None, low_memory=True):
     '''It calculates the length distribution for the given sequences.
 
     The results will be written in the given distrib_fhand.
@@ -93,33 +130,23 @@ def _seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
     It returns the distribution and the bin_edges.
     '''
     #first we gather the lengths
-    lengths = [len(seq) for seq in sequences]
+    lengths = _sequence_lengths(sequences, low_memory)
     labels = PLOT_LABELS['seq_length_distrib']
     return _create_distribution(lengths, labels, distrib_fhand, plot_fhand,
-                                range_=range_)
+                                range_=range_, low_memory=low_memory)
 
 def _seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                     range_=None):
+                     range_=None, low_memory=True):
     '''It calculates the qualities distribution for the given sequences.
 
     The results will be written in the given distrib_fhand.
     If plot_fhand is given a graphic with the distribution will be plotted.
     It returns the distribution and the bin_edges.
     '''
-    #first we gather the lengths
-
-    qualities = []
-    for seq in sequences:
-        # This statistic can be run when there is no quality. In this cases it
-        # should exit without warnings
-        if seq.qual is None:
-            return
-
-        for value in seq.qual:
-            qualities.append(value)
+    qualities = _sequence_qualitities(sequences, low_memory)
     labels = PLOT_LABELS['qual_distrib']
     return _create_distribution(qualities, labels, distrib_fhand, plot_fhand,
-                                range_=range_)
+                                range_=range_, low_memory=low_memory)
 
 #pylint:disable-msg=W0613
 def seq_distrib(kind, sequences, distrib_fhand=None, plot_fhand=None,
@@ -131,27 +158,47 @@ def seq_distrib(kind, sequences, distrib_fhand=None, plot_fhand=None,
     return stats[kind](sequences, distrib_fhand=distrib_fhand,
                        plot_fhand=plot_fhand, range_=range_)
 
-def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
+def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None,
+                     low_memory=True):
     'It return the difference between different distributions of the given type'
 
     #get labesl depending on the stat type
     labels = PLOT_LABELS[kind]
 
-    # I need two iterators for each ditribution calcule
-    seqs1, seqs1_ = tee(seqs1, 2)
-    seqs2, seqs2_ = tee(seqs2, 2)
+    #the values for boths sequences
+    values_functs = {
+             'masked_seq_distrib': _masked_sequence_lengths,
+             'seq_length_distrib': _sequence_lengths,
+             'qual_distrib'      : _sequence_qualitities}
+    values1 = values_functs[kind](seqs1, low_memory=low_memory)
+    values2 = values_functs[kind](seqs2, low_memory=low_memory)
 
-    # first I need to calculate the distribution to calculate the combinen range
-    distrib1 = seq_distrib(kind, seqs1)
-    distrib2 = seq_distrib(kind, seqs2)
+    #the range
+    if low_memory:
+        num_iters1, num_iters2 = values1.items(), values2.items()
+    else:
+        num_iters1, num_iters2 = iter(values1), iter(values2)
 
-    range_ = _get_combined_distrib_range(distrib1, distrib2)
+    min_, max_ = None, None
+    for values in (num_iters1, num_iters2):
+        for number in values:
+            if min_ is None or min_ > number:
+                min_ = number
+            if max_ is None or max_ < number:
+                max_ = number
+    range_ = (min_, max_)
 
     #Now I calculate the distibution with the same range, in order to be able
     # to get the difference
-    distrib1 = seq_distrib(kind, seqs1_, range_=range_)
-    distrib2 = seq_distrib(kind, seqs2_, range_=range_)
+    if low_memory:
+        num_iters1, num_iters2 = values1.items(), values2.items()
+    else:
+        num_iters1, num_iters2 = iter(values1), iter(values2)
 
+    distrib1 = _create_distribution(num_iters1,  range_=range_,
+                                    low_memory=low_memory)
+    distrib2 = _create_distribution(num_iters2,  range_=range_,
+                                    low_memory=low_memory)
 
     diff_distrib   = []
     diff_bin_edges = distrib1['bin_edges']
@@ -171,26 +218,6 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
                      fhand=plot_fhand)
 
     return {'distrib':diff_distrib, 'bin_edges':diff_bin_edges}
-
-
-
-def _get_combined_distrib_range(distrib1, distrib2):
-    'Giving two distributions it returns the range that combines them'
-
-    min1 = min(distrib1['bin_edges'])
-    max1 = max(distrib1['bin_edges'])
-    min2 = min(distrib2['bin_edges'])
-    max2 = max(distrib2['bin_edges'])
-
-    if min1 > min2:
-        min_ = min2
-    else:
-        min_ = min1
-    if max1 > max2:
-        max_ = max1
-    else:
-        max_ = max2
-    return (min_, max_)
 
 def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
     '''Given a sequence iterator it calculates some general statistics.
@@ -263,3 +290,53 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
         for stat in stats:
             distrib_fhand.write('%s:%f\n' % (stat, float(stats[stat])))
     return stats
+
+def histogram(numbers, bins, range_=None):
+    '''An alternative implemetation to the numpy.histogram.
+
+    The main difference is that this implementation can use a CachedFileList to
+    save memory
+    '''
+    #pylint: disable-msg=W0622
+    #is this a FileCachedList?
+    cached = False
+    if 'items' in dir(numbers):
+        cached = True
+    #an iterator for the numbers
+    if cached:
+        num_iter = numbers.items()
+    else:
+        num_iter = iter(numbers)
+    if range_ is None:
+        #i'm not using the min and max functions to save one pass through the
+        #data
+        min_, max_ = None, None
+        for number in num_iter:
+            if min_ is None or min_ > number:
+                min_ = number
+            if max_ is None or max_ < number:
+                max_ = number
+    else:
+        min_, max_ = range_[0], range_[1]
+
+    #now we can calculate the bin egdes
+    distrib_span = max_ - min_
+    bin_span     = distrib_span / float(bins)
+    bin_edges = [min_ + bin * bin_span for bin in range(bins + 1)]
+
+    #now we calculate the distribution
+    distrib = [0] * bins
+    #an iterator for the numbers
+    if cached:
+        num_iter = numbers.items()
+    else:
+        num_iter = iter(numbers)
+    for number in num_iter:
+        if number == max_:
+            #the last value go into the last bin
+            bin = bins - 1
+        else:
+            bin = int(float(number - min_) / bin_span)
+        distrib[bin] += 1
+
+    return (distrib, bin_edges)
