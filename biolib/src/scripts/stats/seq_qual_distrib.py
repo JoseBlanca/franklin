@@ -11,6 +11,8 @@ def parse_options():
     'It parses the command line arguments'
     parser = OptionParser(version='0.1')
     parser.add_option('-i', '--infile', dest='infile', help='sequence file')
+    parser.add_option('-f', '--fileformat', dest='fileformat',
+                      help='file format', default='qual')
     return parser.parse_args()
 
 def qualities(seqs):
@@ -24,7 +26,7 @@ def main():
     'the main sub'
     options = parse_options()[0]
     fhand   = open(options.infile, 'r')
-    seqs    = SeqIO.parse(fhand, 'qual')
+    seqs    = SeqIO.parse(fhand, options.fileformat)
     quals   = qualities(seqs)
 
     #ploting the figure

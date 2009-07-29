@@ -188,7 +188,10 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     if qual_fhand is None:
         qual_iter = None
     else:
-        qual_file_format = guess_seq_file_format(qual_fhand)
+        if format is None:
+            qual_file_format = guess_seq_file_format(qual_fhand)
+        else:
+            qual_file_format = format
         qual_iter = SeqIO.parse(qual_fhand, qual_file_format)
 
     for seqrec in seq_iter:

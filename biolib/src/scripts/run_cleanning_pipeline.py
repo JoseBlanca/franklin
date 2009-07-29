@@ -44,7 +44,7 @@ from biolib.seq_cleaner import pipeline_runner
 
 def parse_options():
     'It parses the command line arguments'
-    parser = OptionParser('usage: %prog -f fastafile [-q quality_file]')
+    parser = OptionParser('usage: %prog -s fastafile [-q quality_file]')
     parser.add_option('-s', '--fastafile', dest='fastafile',
                       help='Sanger input fasta')
     parser.add_option('-q', '--qualfile', dest='qualfile',
@@ -64,7 +64,10 @@ def parse_options():
     parser.add_option('-p', '--pipeline', dest='pipeline',
                       help='Pipeline type. Look at the source' )
     parser.add_option('-c', '--checkpoint', action="store_true",
-                      dest='checkpoint', help='Do we need checkpoints?' )
+                      dest='checkpoint', help='Do we need checkpoints?')
+
+    parser.add_option('-f', '--inputformat', dest="file_format",
+     help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
 
     return parser.parse_args()
 
@@ -86,6 +89,11 @@ def set_parameters():
     else:
         checkpoint = options.checkpoint
 
+    ########### file format ###############################
+    if options.file_format is None:
+        file_format = None
+    else:
+        file_format = options.file_format
     ############### input output parameters ################
     io_fhands     = {}
 
@@ -119,16 +127,16 @@ def set_parameters():
     else:
         checkpoint = options.checkpoint
         if options.directory is None:
-            if not os.path.exists('clean_sanger_tmp'):
-                os.mkdir('clean_sanger_tmp')
-            work_dir = 'clean_sanger_tmp'
+            if not os.path.exists('cleaning_pipeline'):
+                os.mkdir('cleaning_pipeline')
+            work_dir = 'cleaning_pipeline'
         else:
             work_dir = options.directory
             if not os.path.exists(work_dir):
                 os.mkdir(work_dir)
     # logs?
     if options.logfile is None:
-        log_fhand = open('sanger_clean.log', 'w')
+        log_fhand = open('clean_pipeline.log', 'w')
     else:
         log_fhand = open(options.logfile, 'w')
 
@@ -141,22 +149,24 @@ def set_parameters():
         configuration['remove_adaptors'] = {}
         configuration['remove_adaptors']['vectors'] = options.adaptors
 
-    return io_fhands, work_dir, log_fhand, pipeline, configuration, checkpoint
+    return (io_fhands, work_dir, log_fhand, pipeline, configuration, checkpoint,
+            file_format)
 
 
 def main():
     'The main function'
 
     # Set parameters
-    (io_fhands, work_dir, log_fhand, pipeline, config, checkpoint) =\
-                                                        set_parameters()
+    (io_fhands, work_dir, log_fhand, pipeline, config, checkpoint,
+     file_format) = set_parameters()
 
     #Loggin facilities
     logging.basicConfig(filename=log_fhand.name, level=logging.INFO,
                         format='%(asctime)s %(message)s')
 
     # Run the analisis step by step
-    pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint)
+    pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint,
+                    file_format)
 
 
 if __name__ == '__main__':

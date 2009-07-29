@@ -37,9 +37,10 @@ modify the sequences.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from itertools import imap, ifilter
-import re, logging
+import re, logging, os
 from tempfile import NamedTemporaryFile
 
+import biolib
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.biolib_seqio_utils import (get_content_from_fasta, seqs_in_file,
                                  fasta_str)
@@ -49,6 +50,8 @@ from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
 
+
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
@@ -110,12 +113,33 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
 
 def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
     '''It returns start and and of the new sequence. Givig the 0/1 string.'''
-    start = re.search('0*(1{%d})' % min_quality_bases, bool_seq).start(1)
 
-    #First I reverse de quality string
-    bool_seq = bool_seq[::-1]
-    end = re.match('0*(1{%d})' % min_quality_bases , bool_seq).start(1)
-    end = len(bool_seq) - end
+    def _get_good_qual_extreme_loc(bool_seq, min_quality_bases, extreme=None):
+        'It look qood quality extreme start. Good quality is min_qual_bases'
+        extreme_pos     = 0
+        good_count      = 0
+        in_good_section = True
+        if extreme == 'end':
+            bool_seq = bool_seq[::-1]
+
+        for i, bool in enumerate(bool_seq):
+            if bool == '1' and in_good_section:
+                good_count += 1
+            elif bool == '1' and not in_good_section:
+                extreme_pos = i
+                in_good_section = True
+            elif bool == '0':
+                in_good_section = False
+            if good_count == min_quality_bases:
+                break
+
+        if extreme == 'end':
+            extreme_pos = len(bool_seq) - extreme_pos
+
+        return extreme_pos
+
+    start = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'start')
+    end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end')
     return start, end
 
 def _calculate_sliding_window_qual(quality, quality_window_width):
@@ -153,7 +177,9 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
 
      '''
     if min_quality_bases is None:
-        if seq_len < 70:
+        if seq_len < 30:
+            min_quality_bases = 3
+        elif seq_len < 70:
             min_quality_bases = 6
         elif seq_len < 300:
             min_quality_bases = 15
@@ -161,6 +187,8 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
             min_quality_bases = 25
 
     if quality_window_width is None:
+        if seq_len < 30:
+            quality_window_width = 1
         if seq_len < 70:
             quality_window_width = 2
         elif seq_len < 300:
@@ -598,11 +626,22 @@ remove_vectors = {'function':create_vector_striper_by_alignment,
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
 
-remove_adaptors = {'function':create_vector_striper_by_alignment,
-                  'arguments':{'vectors':None, 'aligner':'exonerate'},
-                  'type': 'mapper',
-                  'name': 'remove_adaptors',
-                  'comment': 'Remove our adaptors'}
+
+
+remove_adaptors_solexa = {'function':create_vector_striper_by_alignment,
+       'arguments':{'vectors':os.path.join(DATA_DIR, 'standar_solexa_adaptors'),
+                     'aligner':'exonerate'},
+       'type': 'mapper',
+       'name': 'remove_adaptors',
+       'comment': 'Remove our adaptors'}
+
+strip_quality = {'function': create_striper_by_quality,
+                      'arguments':{'quality_treshold':20,
+                                   'quality_window_width':1},
+#min_quality_bases=None, min_seq_length=None, quality_window_width=None },
+                      'type':'mapper',
+                      'name':'strip_quality',
+                      'comment':'Strip low quality with our algorithm'}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
                       'arguments':{},
@@ -622,6 +661,13 @@ strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
                           'name':'strip_trimpoly',
                           'comment':'Strip low quality with trimpoly'}
 
+mask_polia         = {'function': create_masker_for_polia,
+                       'arguments': {},
+                       'type':'mapper',
+                       'name':'mask_polia',
+                       'comment':'Mask poli A regions'}
+
+
 mask_low_complexity = {'function': create_masker_for_low_complexity,
                        'arguments': {},
                        'type':'mapper',
@@ -634,24 +680,34 @@ mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'name': 'mask_repeats',
                 'comment':'Mask repeats with repeatmasker'}
 
-filter_short_seqs = {'function': create_length_filter,
+filter_short_seqs_sanger = {'function': create_length_filter,
                      'arguments':{'length':100, 'count_masked': False},
                      'type':'filter' ,
                      'name':'remove_short',
                      'comment': 'Remove seq shorter than 100 nt'}
+
+filter_short_seqs_solexa = {'function': create_length_filter,
+                            'arguments':{'length':22, 'count_masked': False},
+                            'type':'filter' ,
+                            'name':'remove_short',
+                            'comment': 'Remove seq shorter than 22 nt'}
 
 ################################################################################
 # PIPELINES
 ################################################################################
 
 PIPELINES = {'sanger_with_quality_clean' : [remove_vectors, strip_quality_lucy2,
-                                       mask_low_complexity, filter_short_seqs ],
+                                mask_low_complexity, filter_short_seqs_sanger ],
 
             'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
-                                       mask_low_complexity, filter_short_seqs ],
+                               mask_low_complexity, filter_short_seqs_sanger ],
 
-            'repeatmasker'                :[mask_repeats, filter_short_seqs]
+            'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
+
+            'solexa'       : [remove_adaptors_solexa, mask_low_complexity,
+                           mask_polia, strip_quality, filter_short_seqs_solexa]
             }
+################################################################################
 
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
@@ -675,7 +731,7 @@ def configure_pipeline(pipeline, configuration):
     return seq_pipeline
 
 def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
-                    checkpoint_every_step=False):
+                    checkpoint_every_step=False, file_format=None):
     '''It runs all the analysis for the given pipeline.
 
     It takes one or two input files and one or two output files. (Fasta files
@@ -698,7 +754,7 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
     pipeline_steps = configure_pipeline(pipeline, configuration)
 
     # Here starts the analisis
-    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual)
+    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     # List of temporary files created by the bulk processors.
     # we need to keep them until the analysis is done because some seq_iters
@@ -757,13 +813,15 @@ def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
         msg = "Finished: %s" % analisis_step['comment']
         logging.info(msg)
     else:
-        checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false')
+        checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false',\
+                   file_format)
 
     # Cleaning temp files from the bulk_processors
     temp_bulk_files = None
     logging.info('Done!')
 
-def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
+def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True,
+               file_format=None):
     ''' This function is used to consume the previous iterators writing the
     output files. It generates another seq iterator that can be used for
     statistics or for the nerxt step.
@@ -805,4 +863,4 @@ def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True):
         else:
             fhand_qual_new = None
 
-        return seqs_in_file(fhand_seq_new, fhand_qual_new)
+        return seqs_in_file(fhand_seq_new, fhand_qual_new, file_format)

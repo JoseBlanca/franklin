@@ -49,8 +49,16 @@ def parse_options():
                       help='plot output file')
     parser.add_option('-w', '--distrib', dest='distrib',
                       help='distribution text output file')
-    parser.add_option('-t', '--type', dest='kind',
-                      help='type of distribution')
+    help1  = 'type of distribution:masked_seq_distrib,seq_length_distrib,'
+    help1 += 'qual_distrib'
+
+    parser.add_option('-t', '--type', dest='kind', help=help1)
+
+    parser.add_option('-f', '--inputformat1', dest="file_format1",
+     help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
+
+    parser.add_option('-g', '--inputformat2', dest="file_format2",
+     help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
 
     return parser.parse_args()
 
@@ -60,6 +68,18 @@ def set_parameters():
      default values'''
 
     options = parse_options()[0]
+    ########### file format ###############################
+    if options.file_format1 is None:
+        input_file_format1 = None
+    else:
+        input_file_format1 = options.file_format1
+
+    if options.file_format2 is None:
+        input_file_format2 = None
+    else:
+        input_file_format2 = options.file_format2
+    ##########################################################
+
 
     io_fhands = {}
     if options.kind is None:
@@ -73,11 +93,7 @@ def set_parameters():
         io_fhands['seqfile1'] = open(options.seqfile1, 'r')
 
     if options.qualfile1 is None:
-        if kind in ['qual_distrib']:
-            raise RuntimeError('Need first qual file to calculate %s analysis'\
-                                % kind)
-        else:
-            io_fhands['qualfile1'] = None
+        io_fhands['qualfile1'] = None
     else:
         io_fhands['qualfile1'] = open(options.qualfile1, 'r')
 
@@ -87,11 +103,7 @@ def set_parameters():
         io_fhands['seqfile2'] = open(options.seqfile2, 'r')
 
     if options.qualfile2 is None:
-        if kind in ['qual_distrib']:
-            raise RuntimeError('Need second qual file to calculate %s analisis'\
-                                % kind)
-        else:
-            io_fhands['qualfile2'] = None
+        io_fhands['qualfile2'] = None
     else:
         io_fhands['qualfile2'] = open(options.qualfile2, 'r')
 
@@ -105,14 +117,18 @@ def set_parameters():
     else:
         io_fhands['distrib'] = open(options.distrib, 'w')
 
-    return kind, io_fhands
+
+
+    return kind, io_fhands, input_file_format1, input_file_format2
 
 def main():
     'The main function'
-    kind, io_fhands = set_parameters()
+    kind, io_fhands, input_file_format1, input_file_format2 = set_parameters()
 
-    seqs1 = seqs_in_file( io_fhands['seqfile1'],  io_fhands['qualfile1'])
-    seqs2 = seqs_in_file( io_fhands['seqfile2'],  io_fhands['qualfile2'])
+    seqs1 = seqs_in_file( io_fhands['seqfile1'],  io_fhands['qualfile1'],
+                          input_file_format1)
+    seqs2 = seqs_in_file( io_fhands['seqfile2'],  io_fhands['qualfile2'],
+                          input_file_format2)
 
     seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=io_fhands['distrib'],
                      plot_fhand=io_fhands['plot'])

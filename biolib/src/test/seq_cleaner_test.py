@@ -55,6 +55,31 @@ class SeqCleanerTest(unittest.TestCase):
         assert new_seq.seq == 'ataata'
         assert new_seq.qual == [60, 60, 60, 60, 60, 60]
 
+        qual = [40, 18, 10, 40, 40, 5, 8, 30, 14, 3, 40, 40, 40, 11, 6, 5, 3,
+               20, 10, 12, 8, 5, 4, 7, 1]
+        seq = 'atatatatagatagatagatagatg'
+        strip_seq_by_quality = create_striper_by_quality(quality_treshold=20,
+                                                         min_seq_length=2,
+                                                         min_quality_bases=3,
+                                                         quality_window_width=2)
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        assert new_seq.qual == [40, 18, 10, 40, 40, 5, 8, 30, 14, 3, 40, 40, 40,
+                                11]
+
+
+        qual = [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40, 4, 11, 40, 40, 10, 10,
+                21, 3, 40, 9, 9, 12, 10, 9]
+        seq  = 'atatatatatatatatatatatata'
+        strip_seq_by_quality = create_striper_by_quality(quality_treshold=20,
+                                                         min_seq_length=2,
+                                                         min_quality_bases=3,
+                                                         quality_window_width=1)
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        assert new_seq.qual == [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40]
+
+
+
+
     @staticmethod
     def test_mask_low_complexity():
         'It test mask_low_complexity function'
@@ -277,7 +302,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def test_repeatmasking():
+    def xtest_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         mask_repeats_by_repeatmasker = \
                  create_masker_repeats_by_repeatmasker(species='eudicotyledons')

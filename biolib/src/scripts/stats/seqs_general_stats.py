@@ -38,7 +38,8 @@ def parse_options():
                       help='Quality fasta file')
     parser.add_option('-w', '--resultfile', dest='resultfile',
                       help='result output file')
-
+    parser.add_option('-f', '--inputformat', dest="file_format",
+     help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
     return parser.parse_args()
 
 def set_parameters():
@@ -53,20 +54,22 @@ def set_parameters():
     if options.qualfile is None:
         fhand_qual = None
     else:
-        fhand_qual = options.qualfile
+        fhand_qual = open(options.qualfile)
 
     if options.resultfile is None:
         result_file = None
     else:
         result_file = open(options.resultfile, 'w')
 
-    return fhand_seq, fhand_qual, result_file
+
+    return fhand_seq, fhand_qual, result_file, options.file_format
 
 
 def main():
     'Main section'
-    fhand_seq, fhand_qual, result_file = set_parameters()
-    seqs = seqs_in_file(fhand_seq, fhand_qual)
+    fhand_seq, fhand_qual, result_file, file_format = set_parameters()
+
+    seqs = seqs_in_file(fhand_seq, fhand_qual, file_format)
 
     stats = general_seq_statistics(seqs, distrib_fhand=result_file)
 
