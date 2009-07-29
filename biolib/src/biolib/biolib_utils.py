@@ -631,3 +631,37 @@ class FileIndex(object):
         for type_ in self._index:
             yield type_
 
+class FileCachedList(object):
+    '''A file-like interface cached in a file.
+
+    The main aim is to store really big lists in files with an iterator
+    interface.
+    '''
+    def __init__(self, type_):
+        '''It creates a FileCachedList.
+
+        It requires the type of objects that will be stored.
+        '''
+        self._type = type_
+        #the file to store the data
+        self._wfhand = tempfile.NamedTemporaryFile()
+        #the file to read the data
+        self._rfhand = None
+
+    def append(self, item):
+        'It writes one element at the file end'
+        self._wfhand.write('%s\n' % str(item))
+
+    def __iter__(self):
+        'Part of the iter protocol'
+        return self
+
+    def next(self):
+        'It returns the next item'
+        if self._rfhand is None:
+            self._wfhand.flush()
+            self._rfhand = open(self._wfhand.name)
+        line = self._rfhand.readline()
+        if len(line) == 0:
+            raise StopIteration
+        return self._type(line.strip())

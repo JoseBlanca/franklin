@@ -23,7 +23,7 @@ import unittest, os
 import StringIO
 from biolib.biolib_utils import (xml_itemize, _get_xml_tail, _get_xml_header,
                                  NamedTemporaryDir, FileIndex,
-                                  split_long_sequences)
+                                 split_long_sequences, FileCachedList)
 from biolib.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
@@ -130,6 +130,23 @@ class SplitLongSequencestest(unittest.TestCase):
         assert len(seq2) == 4
         assert len(seq3) == 3
 
+class FileCachedListTest(unittest.TestCase):
+    'It tests a list like class cached on a file'
+    @staticmethod
+    def test_filecachedlist():
+        'It test the functionality of this list like class'
+        #with ints
+        clist = FileCachedList(type_=int)
+        clist.append(0)
+        clist.append(1)
+        for index, item in enumerate(clist):
+            assert item == index
+        #with floats
+        clist = FileCachedList(type_=float)
+        clist.append(0)
+        clist.append(1)
+        for index, item in enumerate(clist):
+            assert item == float(index)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
