@@ -122,6 +122,14 @@ def _contig_reads(contigs, low_memory):
         values.append(len(contig))
     return values
 
+def _contig_to_read_list(contig):
+    ''' It takes a contig class object and it fill a list with the reads.
+    All the reads are '''
+    reads = []
+    for read in contig:
+        reads.append(str(read))
+    return reads
+
 def _contig_coverages(contigs, low_memory):
     'It returns a list with the number of reads per position in the contigs'
     if low_memory:
@@ -129,10 +137,19 @@ def _contig_coverages(contigs, low_memory):
     else:
         values = []
     for contig in contigs:
-        for col in range(contig.ncols):
-            bases = contig[None, col]
-            if bases is not None:
-                values.append(len(bases))
+        contig = _contig_to_read_list(contig)
+        ncols  = len(contig[0])
+        for col in range(ncols):
+            coverage = 0
+            for read in contig:
+                try:
+                    base = read[col]
+                    if base and not base.isspace():
+                        coverage += 1
+                    #pylint: disable-msg=W0704
+                except IndexError:
+                    pass
+            values.append(coverage)
     return values
 
 #pylint:disable-msg=W0613

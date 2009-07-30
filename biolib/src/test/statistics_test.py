@@ -171,12 +171,16 @@ class ContigStatisticsTest(unittest.TestCase):
     @staticmethod
     def test_coverage_distribution():
         'It tests the contig coverage distribution'
+        contig = ('ACTGA', ' CTG ', ' CTG ', ' CTG ', '  TG ', '   G ')
+        distrib = seq_distrib('contig_coverage_distrib', [contig])
+        assert distrib['distrib'] == [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                                      0, 0, 1, 0, 0, 1]
         fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
         caf_parser = get_parser(fhand, format='caf')
         contigs = caf_parser.contigs()
         distrib = seq_distrib('contig_coverage_distrib', contigs)
-        assert distrib['distrib'] == [135, 0, 149, 0, 250, 0, 344, 0, 28, 0,
-                                      191, 0, 59, 0, 93, 0, 293, 0, 78, 54]
+        assert distrib['distrib'] == [38, 0, 1, 0, 160, 0, 248, 0, 367, 0, 0,
+                                      135, 0, 159, 0, 295, 0, 121, 0, 54]
 
     @staticmethod
     def test_general_contig_stats():
@@ -187,8 +191,8 @@ class ContigStatisticsTest(unittest.TestCase):
         stats = general_contig_statistics(contigs, low_memory=False)
         assert stats['number_contigs']        == 4
         assert stats['number_reads_variance'] == 0.1875
-        assert stats['coverage_variance']     == 0.090059740501673105
-        assert stats['mean_coverage']         == 1.1000746825989545
+        assert abs(stats['coverage_variance'] - 0.237503077574) < 0.001
+        assert abs(stats['mean_coverage'] - 0.925251256281) < 0.001
         assert stats['mean_number_reads']     == 1.25
 
 if __name__ == "__main__":
