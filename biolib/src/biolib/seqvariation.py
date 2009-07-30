@@ -86,14 +86,14 @@ class SeqVariation(object):
         filter in the module configuration to use only SNPs in this class.
         To initialize the only required information is the alleles.
         Keyword arguments:
-            alleles - . The aleles contains a dict with the alleles and the
+            alleles - . The alleles contains a dict with the alleles and the
                         number of times that it has been read.
                         example:
                             alleles= {'A':1, 'T':4}
             name     - Name of the variation (default None)
             location - Location of the SeqVariation. Location class object or
                        int (default None).
-            alignemt - Alignment where it procedes. It can be a Contig class
+            alignment - Alignment where it procedes. It can be a Contig class
                        object (default None).
         '''
         self.name         = name
@@ -274,7 +274,7 @@ def _alleles_dict_to_set(alleles):
     return indel_reads, all_reads
 
 def _build_location_from_index(index):
-    ''' It returns alocation or a int depending on the length between
+    ''' It returns a location or a int depending on the length between
     start and end.
     The index can be an int or a Location.
     '''

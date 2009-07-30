@@ -5,10 +5,8 @@ Created on 2009 uzt 6
 '''
 import unittest, os
 import biolib
-from tempfile import NamedTemporaryFile
 
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_utils import NamedTemporaryDir
 from biolib.biolib_seqio_utils import temp_multi_fasta_file
 from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
@@ -18,8 +16,6 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality_lucy,
                                 create_striper_by_quality_lucy2,
                                 create_masker_repeats_by_repeatmasker,
-                                configure_pipeline, pipeline_runner,
-                                checkpoint,
                                 _get_non_matched_locations,
                                 _get_unmasked_locations,
                                 _get_longest_non_matched_seq_region,
@@ -334,99 +330,6 @@ class SeqCleanerTest(unittest.TestCase):
 
         masked_str = str(masked_seq.seq)
         assert  masked_str == seq
-
-ADAPTORS = '''>adaptor1
-atcgatcgatagcatacgat
->adaptor2
-atgcatcagatcgataaaga'''
-
-EXPECTED = '''>seq1
-ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAATCGCATCGATCATCGCAGATCGACTGATCGATATGCATCAGATCGCGATCGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAA
->seq2
-ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCAGCATGACTCATCGCATCGATCATCGCAGATCGACTGATCGATCGATCAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
->seq3
-ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATGATGCATCAGCTACGATGATCATGTCATGTCGATGTCTAGTCTAGTCTAGTGAGTCACTGACTAGATCATGACATCGANNNNNNNNNNNNNNNNNNNNNNTACTAGTC
->seq4
-ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACTTCAGCATCGATCGACTAACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTCCGACTACGACTACGATAAGCAGACTACGAGATCAGCAGCATCAGCAGCANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
->seq5
-ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATCATCGACTGCATCGATGAATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACTTCAGCATCGATCGACTAATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACTTCAGCATCGATCGACTA
->seq6
-AACCGTTTGACTTACGATATTTGCCCATTGTGATTCTAGTCGATTTGCATAACGTGTACGTATCGGTATTGTGACTGATTCGATGCTATTGCAAACAGTTTTGATTGTGTGATCGTGATGCATGCTAGTCTGATCGAGTCTGATCGTAGTCTAGTCGTAGTCGATGTCGATTTATCAGTAGTCGATGCTAGTCTAGTCTAGTCTACTAGTCTAGTCATGCTAGTCGAGTCGAT
-'''
-
-
-class PipelineTests(unittest.TestCase):
-    'It test pipeline related functions'
-
-    def test_configure_pipeline(self):
-        'It tests configure pipeline'
-        pipeline      = 'sanger_with_quality_clean'
-        configuration = {'remove_vectors': {'vectors':'Univec'},
-                         'remove_adaptors':{'vectors':'hola'}}
-        pipeline      = configure_pipeline(pipeline, configuration)
-
-        assert pipeline[0]['arguments']['vectors'] == 'Univec'
-
-        # Now it should fail because one of the arguments is Not set
-        configuration = {'remove_vectors': {'vectors':'Univec'}}
-        try:
-            pipeline = configure_pipeline(pipeline, configuration)
-            self.fail()
-            #pylint: disable-msg=W0704
-        except Exception:
-            pass
-
-    @staticmethod
-    def test_pipeline_run():
-        'It tests that the pipeline runs ok'
-        pipeline = 'sanger_with_quality_clean'
-
-        fhand_adaptors = NamedTemporaryFile()
-        fhand_adaptors.write(ADAPTORS)
-        fhand_adaptors.flush()
-
-        configuration = {'remove_vectors': {'vectors':'UniVec'},
-                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
-
-        io_fhands = {}
-        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
-        io_fhands['out_seq']  = NamedTemporaryFile()
-        io_fhands['out_qual'] = NamedTemporaryFile()
-
-        dir_ = NamedTemporaryDir()
-        work_dir = dir_.get_name()
-
-        pipeline_runner(pipeline, configuration, io_fhands, work_dir)
-        io_fhands['out_seq'].seek(0)
-        result_seq = io_fhands['out_seq'].read()
-        assert result_seq.count('>') == 6
-
-
-class CheckPointTest(unittest.TestCase):
-    'It checks checkpoint function'
-    @staticmethod
-    def test_checkpoint():
-        'It checks checkpoint function'
-        seq  = 'atgatgatgt'
-        qual = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        seq1 = SeqWithQuality(seq=seq, qual=qual, name='seq1')
-        seq2 = SeqWithQuality(seq=seq, qual=qual, name='seq2')
-        seqs_iter = iter([seq1, seq2])
-
-
-        fhand_seq  = NamedTemporaryFile()
-        fhand_qual = NamedTemporaryFile()
-        seq_iter2 = checkpoint(seqs_iter, fhand_seq, fhand_qual)
-        assert str(seq_iter2.next().seq) == seq
-
-        fhand_seqs_out = open(fhand_seq.name)
-        fhand_qual_out = open(fhand_qual.name)
-
-        assert fhand_seqs_out.readline()[0] == '>'
-        assert fhand_seqs_out.readline()[0] == 'a'
-        assert fhand_qual_out.readline()[0] == '>'
-        assert fhand_qual_out.readline()[0] == '0'
 
 class SeqSplitterTests(unittest.TestCase):
     'Here we test seq splitter functions'

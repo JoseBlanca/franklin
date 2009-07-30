@@ -1,24 +1,9 @@
 '''This module holds some utilities to build sequence cleaning pipelines.
 
-Several pipelines are defined and they can be run using the function
-pipeline_runner. A pipeline consists of a list of several steps that a run
-sequentially by the pipeline_runner. It is very easy to create new pipeline
-because they're just a list of dicts that include the name of a function. For
-instance there are pipelines defined to clean short and long sequences, to
-mask them using repeat masker, etc.
-In this module there is also a collection of cleaning steps predefined. There
+In this module there is a collection of cleaning steps predefined. There
 are steps that trim and mask the sequences. Every one of this step is a function
 factory that will create the function that will do the actual job.
-The pipeline can hold three step types: filter, mapper and bulk_processor. They
-differ in the interface of the function that process the sequences:
-    - mapper: These functions take a sequence and return a new processed
-    sequence.
-    - filter: These functions take a sequence and return True or False according
-    to the match of some criteria by the sequence.
-    - bulk_processor: These functions take a sequence iterator and return a new
-    sequence iterator will the processed sequence.
-The pipeline runner knows how to use these three kinds of steps to filter and
-modify the sequences.
+
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
@@ -36,17 +21,14 @@ modify the sequences.
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from itertools import imap, ifilter
-import re, logging, os
+import logging, os
 from tempfile import NamedTemporaryFile
 
 import biolib
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.biolib_seqio_utils import (get_content_from_fasta, seqs_in_file,
                                  fasta_str)
-from biolib.biolib_utils import get_safe_fname
 from biolib.seqs import  SeqWithQuality
-from biolib.seq_filters import create_length_filter
 from biolib.alignment_search_result import  (FilteredAlignmentResults,
                                              get_alignment_parser)
 
@@ -122,13 +104,13 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
         if extreme == 'end':
             bool_seq = bool_seq[::-1]
 
-        for i, bool in enumerate(bool_seq):
-            if bool == '1' and in_good_section:
+        for i, bool_ in enumerate(bool_seq):
+            if bool_ == '1' and in_good_section:
                 good_count += 1
-            elif bool == '1' and not in_good_section:
+            elif bool_ == '1' and not in_good_section:
                 extreme_pos = i
                 in_good_section = True
-            elif bool == '0':
+            elif bool_ == '0':
                 in_good_section = False
             if good_count == min_quality_bases:
                 break
@@ -616,251 +598,3 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
         return sequence.copy(seq=seq_class(masked_seq))
     return mask_repeats_by_repeatmasker
 
-################################################################################
-# PIPELINE CLEANING STEPS
-################################################################################
-
-remove_vectors = {'function':create_vector_striper_by_alignment,
-                  'arguments':{'vectors':None, 'aligner':'blast'},
-                  'type': 'mapper',
-                  'name': 'remove_vectors',
-                  'comment': 'Remove vector using vector db'}
-
-
-
-remove_adaptors_solexa = {'function':create_vector_striper_by_alignment,
-       'arguments':{'vectors':os.path.join(DATA_DIR, 'standar_solexa_adaptors'),
-                     'aligner':'exonerate'},
-       'type': 'mapper',
-       'name': 'remove_adaptors',
-       'comment': 'Remove our adaptors'}
-
-strip_quality = {'function': create_striper_by_quality,
-                      'arguments':{'quality_treshold':20,
-                                   'quality_window_width':1},
-#min_quality_bases=None, min_seq_length=None, quality_window_width=None },
-                      'type':'mapper',
-                      'name':'strip_quality',
-                      'comment':'Strip low quality with our algorithm'}
-
-strip_quality_lucy = {'function': create_striper_by_quality_lucy,
-                      'arguments':{},
-                      'type':'mapper',
-                      'name':'strip_lucy',
-                      'comment':'Strip low quality with lucy'}
-
-strip_quality_lucy2 = {'function': create_striper_by_quality_lucy2,
-                      'arguments':{},
-                      'type':'bulk_processor',
-                      'name':'strip_lucy',
-                      'comment':'Strip low quality with lucy'}
-
-strip_quality_by_n = {'function': create_striper_by_quality_trimpoly,
-                          'arguments': {},
-                          'type':'mapper',
-                          'name':'strip_trimpoly',
-                          'comment':'Strip low quality with trimpoly'}
-
-mask_polia         = {'function': create_masker_for_polia,
-                       'arguments': {},
-                       'type':'mapper',
-                       'name':'mask_polia',
-                       'comment':'Mask poli A regions'}
-
-
-mask_low_complexity = {'function': create_masker_for_low_complexity,
-                       'arguments': {},
-                       'type':'mapper',
-                       'name':'mask_low_complex',
-                       'comment':'Mask low complexity regions'}
-
-mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
-                'arguments':{'species':'eudicotyledons'},
-                'type': 'mapper',
-                'name': 'mask_repeats',
-                'comment':'Mask repeats with repeatmasker'}
-
-filter_short_seqs_sanger = {'function': create_length_filter,
-                     'arguments':{'length':100, 'count_masked': False},
-                     'type':'filter' ,
-                     'name':'remove_short',
-                     'comment': 'Remove seq shorter than 100 nt'}
-
-filter_short_seqs_solexa = {'function': create_length_filter,
-                            'arguments':{'length':22, 'count_masked': False},
-                            'type':'filter' ,
-                            'name':'remove_short',
-                            'comment': 'Remove seq shorter than 22 nt'}
-
-################################################################################
-# PIPELINES
-################################################################################
-
-PIPELINES = {'sanger_with_quality_clean' : [remove_vectors, strip_quality_lucy2,
-                                mask_low_complexity, filter_short_seqs_sanger ],
-
-            'sanger_without_quality_clean': [remove_vectors, strip_quality_by_n,
-                               mask_low_complexity, filter_short_seqs_sanger ],
-
-            'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
-
-            'solexa'       : [remove_adaptors_solexa, mask_low_complexity,
-                           mask_polia, strip_quality, filter_short_seqs_solexa]
-            }
-################################################################################
-
-def configure_pipeline(pipeline, configuration):
-    '''It chooses the proper pipeline and configures it.'''
-
-    seq_pipeline  = PIPELINES[pipeline]
-
-    # set the configuration in the pipeline
-    for step in seq_pipeline:
-        step_name = step['name']
-        if step_name in configuration:
-            for key, value in configuration[step_name].items():
-                step['arguments'][key] = value
-
-    # Here I check that none of the arguments have a none value
-    for step in seq_pipeline:
-        for key, value in step['arguments'].items():
-            if value is None:
-                msg = 'Parameter %s in step %s from pipeline %s must be set' % \
-                            (key, step['name'], pipeline)
-                raise RuntimeError(msg)
-    return seq_pipeline
-
-def pipeline_runner(pipeline, configuration, io_fhands, work_dir=None,
-                    checkpoint_every_step=False, file_format=None):
-    '''It runs all the analysis for the given pipeline.
-
-    It takes one or two input files and one or two output files. (Fasta files
-    with the sequence and quality).
-    A working directory can be given in which the analysis intermediate files
-    will be created. If not given a temporary directory will be created that
-    will be removed once the analysis is completed.
-    If the checkpoints are requested an intermediate file for every step will be
-    created.
-    '''
-
-    # Here we extract our input/output files
-    in_fhand_seqs  = io_fhands['in_seq']
-    in_fhand_qual  = io_fhands['in_qual']
-    out_fhand_seq  = io_fhands['out_seq']
-    out_fhand_qual = io_fhands['out_qual']
-
-    # We configure the pipeline depending on the sequences type and
-    # configuratiom parameters
-    pipeline_steps = configure_pipeline(pipeline, configuration)
-
-    # Here starts the analisis
-    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
-
-    # List of temporary files created by the bulk processors.
-    # we need to keep them until the analysis is done because some seq_iters
-    # may depend on them
-    temp_bulk_files = []
-
-    for analisis_step in pipeline_steps:
-        function_factory  = analisis_step['function']
-        type_     = analisis_step['type']
-        step_name = analisis_step['name']
-        if analisis_step['arguments']:
-            arguments = analisis_step['arguments']
-        else:
-            arguments = None
-
-        msg = "Performing: %s" % analisis_step['comment']
-        logging.info(msg)
-        #print (msg)
-
-        # Crete function adding parameters if they need them
-        if arguments is None:
-            cleaner_function = function_factory()
-        else:
-            # pylint:disable-msg=W0142
-            cleaner_function = function_factory(**arguments)
-
-        if type_ == 'mapper':
-            filtered_seqs = imap(cleaner_function, seq_iter)
-        elif type_ == 'filter':
-            filtered_seqs   = ifilter(cleaner_function, seq_iter)
-        elif type_ == 'bulk_processor':
-            filtered_seqs, fhand_outs = cleaner_function(seq_iter)
-            temp_bulk_files.append(fhand_outs)
-
-        # Now we need to create again the iterator. And this is going to be
-        # useful to actually run the previous filter. Until now everything is
-        # an iterator mega structure and nothing is executed
-        if checkpoint_every_step:
-            seq_step_name  = get_safe_fname(work_dir, step_name, 'seq.fasta')
-            fhand_seq      = open(seq_step_name, 'w')
-            if in_fhand_qual is not None:
-                qual_step_name = get_safe_fname(work_dir, step_name,
-                                                'qual.fasta')
-                fhand_qual = open(qual_step_name, 'w')
-            else:
-                fhand_qual = None
-
-            seq_iter = checkpoint(filtered_seqs, fhand_seq, fhand_qual)
-            fhand_seq.close()
-            if in_fhand_qual is not None:
-                fhand_qual.close()
-        else:
-            seq_iter = filtered_seqs
-
-        #more logging
-        msg = "Finished: %s" % analisis_step['comment']
-        logging.info(msg)
-    else:
-        checkpoint(seq_iter, out_fhand_seq, out_fhand_qual, 'false',\
-                   file_format)
-
-    # Cleaning temp files from the bulk_processors
-    temp_bulk_files = None
-    logging.info('Done!')
-
-def checkpoint(seqs, out_fhand_seq, out_fhand_qual, return_iter=True,
-               file_format=None):
-    ''' This function is used to consume the previous iterators writing the
-    output files. It generates another seq iterator that can be used for
-    statistics or for the nerxt step.
-    '''
-
-    first      = True
-    write_qual = None
-    for seq in seqs:
-        if seq is None:
-            continue
-        name     = seq.name
-        sequence = seq.seq
-        # check if we have quality and generate the fhand
-        if first:
-            first = False
-            if seq.qual is None:
-                write_qual = False
-            else:
-                write_qual = True
-        # copy the seq to the fhand
-        out_fhand_seq.write(fasta_str(sequence, name))
-        if write_qual:
-            quality  = ' '.join([str(qual) for qual in seq.qual])
-            out_fhand_qual.write(fasta_str(quality, name))
-
-    if return_iter:
-        # files neew to be flushed
-        out_fhand_seq.flush()
-        if write_qual:
-            out_fhand_qual.flush()
-        # In order to be able t reas the generated file, It needs to be opened
-        # for reading.
-        seq_fname = out_fhand_seq.name
-        fhand_seq_new = open(seq_fname, 'rt')
-
-        if write_qual:
-            qual_fname = out_fhand_qual.name
-            fhand_qual_new = open(qual_fname, 'rt')
-        else:
-            fhand_qual_new = None
-
-        return seqs_in_file(fhand_seq_new, fhand_qual_new, file_format)

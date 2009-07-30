@@ -40,7 +40,7 @@ be requested.
 
 import logging, os
 from optparse import OptionParser
-from biolib.seq_cleaner import pipeline_runner
+from biolib.pipelines import seq_pipeline_runner
 
 def parse_options():
     'It parses the command line arguments'
@@ -165,7 +165,7 @@ def main():
                         format='%(asctime)s %(message)s')
 
     # Run the analisis step by step
-    pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint,
+    seq_pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint,
                     file_format)
 
 

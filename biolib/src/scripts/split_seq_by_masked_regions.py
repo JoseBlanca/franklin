@@ -100,5 +100,7 @@ def main():
     write_fasta_file(new_seq_iter, io_fhands['out_seq'], io_fhands['out_qual'])
 
 if __name__ == '__main__':
-    main()
+    #main()
+    import cProfile
+    cProfile.run('main()')
 
