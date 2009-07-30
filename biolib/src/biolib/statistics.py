@@ -16,7 +16,6 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
-from itertools import tee
 from biolib.biolib_utils import draw_scatter, FileCachedList
 
 
@@ -29,8 +28,15 @@ PLOT_LABELS = {'masked_seq_distrib' :{
                                       'ylabel': 'Number of sequences'},
                 'qual_distrib'      :{'title':'Sequence quality distribution',
                                       'xlabel':'quality',
-                                      'ylabel':'Number of bp'}}
-
+                                      'ylabel':'Number of bp'},
+                'contig_read_distrib':{'title':'Contig reads distribution',
+                                      'xlabel':'number of reads',
+                                      'ylabel':'number of contigs'},
+                'contig_coverage_distrib':{
+                                      'title':'Contig coverage distribution',
+                                      'xlabel':'coverage',
+                                      'ylabel':'number of positions'},
+                }
 
 def _write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -66,7 +72,7 @@ def _create_distribution(numbers, labels=None, distrib_fhand=None,
                      title=labels['title'], xlabel=labels['xlabel'],
                      ylabel=labels['ylabel'],
                      fhand=plot_fhand)
-    return {'distrib':distrib, 'bin_edges':bin_edges}
+    return {'distrib':list(distrib), 'bin_edges':list(bin_edges)}
 
 def _masked_sequence_lengths(sequences, low_memory):
     'It returns a list with the sequences lengths'
@@ -107,56 +113,44 @@ def _sequence_qualitities(sequences, low_memory):
             qualities.append(value)
     return qualities
 
-def _masked_seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                              range_=None, low_memory=True):
-    '''It calculates the masked length distribution for the given sequences.
+def _contig_reads(contigs, low_memory):
+    'It returns a list with the number of reads per contig'
+    if low_memory:
+        values = FileCachedList(float)
+    else:
+        values = []
+    for contig in contigs:
+        values.append(len(contig))
+    return values
 
-    The results will be written in the given distrib_fhand.
-    If plot_fhand is given a graphic with the distribution will be plotted.
-    It returns the distribution and the bin_edges.
-    '''
-    #first we gather the lengths
-    lengths = _masked_sequence_lengths(sequences, low_memory)
-    labels = PLOT_LABELS['masked_seq_distrib']
-    return _create_distribution(lengths, labels, distrib_fhand, plot_fhand,
-                                 range_=range_, low_memory=low_memory)
-
-def _seq_length_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                       range_=None, low_memory=True):
-    '''It calculates the length distribution for the given sequences.
-
-    The results will be written in the given distrib_fhand.
-    If plot_fhand is given a graphic with the distribution will be plotted.
-    It returns the distribution and the bin_edges.
-    '''
-    #first we gather the lengths
-    lengths = _sequence_lengths(sequences, low_memory)
-    labels = PLOT_LABELS['seq_length_distrib']
-    return _create_distribution(lengths, labels, distrib_fhand, plot_fhand,
-                                range_=range_, low_memory=low_memory)
-
-def _seq_qual_distrib(sequences, distrib_fhand=None, plot_fhand=None,
-                     range_=None, low_memory=True):
-    '''It calculates the qualities distribution for the given sequences.
-
-    The results will be written in the given distrib_fhand.
-    If plot_fhand is given a graphic with the distribution will be plotted.
-    It returns the distribution and the bin_edges.
-    '''
-    qualities = _sequence_qualitities(sequences, low_memory)
-    labels = PLOT_LABELS['qual_distrib']
-    return _create_distribution(qualities, labels, distrib_fhand, plot_fhand,
-                                range_=range_, low_memory=low_memory)
+def _contig_coverages(contigs, low_memory):
+    'It returns a list with the number of reads per position in the contigs'
+    if low_memory:
+        values = FileCachedList(float)
+    else:
+        values = []
+    for contig in contigs:
+        for col in range(contig.ncols):
+            bases = contig[None, col]
+            if bases is not None:
+                values.append(len(bases))
+    return values
 
 #pylint:disable-msg=W0613
 def seq_distrib(kind, sequences, distrib_fhand=None, plot_fhand=None,
-                range_=None):
+                range_=None, low_memory=False):
     'It returns the stat function depending on the stat it calculates(type)'
-    stats = {'masked_seq_distrib'  :_masked_seq_length_distrib,
-             'seq_length_distrib'  :_seq_length_distrib,
-             'qual_distrib'        :_seq_qual_distrib }
-    return stats[kind](sequences, distrib_fhand=distrib_fhand,
-                       plot_fhand=plot_fhand, range_=range_)
+    stats = {'masked_seq_distrib'     : _masked_sequence_lengths,
+             'seq_length_distrib'     : _sequence_lengths,
+             'qual_distrib'           : _sequence_qualitities,
+             'contig_read_distrib'    : _contig_reads,
+             'contig_coverage_distrib': _contig_coverages,
+             }
+    values = stats[kind](sequences, low_memory)
+    labels = PLOT_LABELS[kind]
+    return _create_distribution(values, labels, distrib_fhand=distrib_fhand,
+                                plot_fhand=plot_fhand, range_=range_,
+                                low_memory=low_memory)
 
 def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None,
                      low_memory=True):
@@ -219,7 +213,17 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None,
 
     return {'distrib':diff_distrib, 'bin_edges':diff_bin_edges}
 
-def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
+def _range(numbers):
+    'Given an iterator with numbers it returns the min and max'
+    min_, max_ = None, None
+    for number in numbers:
+        if min_ is None or min_ > number:
+            min_ = number
+        if max_ is None or max_ < number:
+            max_ = number
+    return min_, max_
+
+def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
     '''Given a sequence iterator it calculates some general statistics.
 
     The statistics will be written into the given distrib_fhand (if given) and
@@ -227,68 +231,116 @@ def general_seq_statistics(sequences, distrib_fhand=None, plot_fhand=None):
     It calculates the total sequence length, the average sequence length, the
     total masked sequence length, and the number of sequences.
     '''
-    stats   = {}
-    stats['seq_length']      = 0
-    stats['num_sequences']   = 0
-    stats['masked_length']   = 0
-    stats['max_length']      = None
-    stats['min_length']      = None
-    stats['length_variance'] = None
-    seq_quality_average      = []
+    if low_memory:
+        lengths        = FileCachedList(float)
+        masked_lengths = FileCachedList(float)
+        qualities      = FileCachedList(float)
+    else:
+        lengths        = []
+        masked_lengths = []
+        qualities      = []
 
-    seq_len_list = []
-    first        = True
+    n_seqs = 0
+    total_len = 0
+    total_masked_len = 0
     for seq in sequences:
-        seq_len = len(seq)
-        stats['num_sequences'] += 1
-        stats['seq_length']    += seq_len
+        n_seqs += 1
+        length = len(seq)
+        lengths.append(length)
+        total_len += length
+        #low_memory False, is just one sequence
+        masked_length = _masked_sequence_lengths([seq], low_memory=False)[0]
+        total_masked_len += masked_length
+        masked_lengths.append(masked_length)
+        if seq.qual:
+            qualities.extend(seq.qual)
 
-        # variance, to calculate the variance of the sequences I need a list of
-        # the sequences. I wild use it o calculate the max and min
-        seq_len_list.append(seq_len)
+    stats = {}
+    stats['num_sequences']     = n_seqs
+    stats['seq_length']        = total_len
+    stats['masked_seq_length'] = total_masked_len
+    mean_quality     = None
+    quality_variance = None
+    min_quality      = None
+    max_quality      = None
+    if low_memory:
+        stats['seq_length_average']         = _average(lengths.items())
+        stats['seq_length_variance']        = _variance(lengths.items(),
+                                                 stats['seq_length_average'])
+        stats['min_seq_length'], stats['max_seq_length'] = \
+                                                         _range(lengths.items())
+        stats['masked_seq_length_average']  = _average(masked_lengths.items())
+        stats['masked_seq_length_variance'] = _variance(masked_lengths.items(),
+                                            stats['masked_seq_length_average'])
+        if qualities:
+            mean_quality     = _average(qualities.items())
+            quality_variance = _variance(qualities.items(), mean_quality)
+            min_quality, max_quality = _range(qualities.items())
+    else:
+        stats['seq_length_average']         = numpy.average(lengths)
+        stats['seq_length_variance']        = numpy.var(lengths)
+        stats['min_seq_length'], stats['max_seq_length'] = _range(lengths)
+        stats['masked_seq_length_average']  = numpy.average(masked_lengths)
+        stats['masked_seq_length_variance'] = numpy.var(masked_lengths)
+        if qualities:
+            mean_quality     = _average(qualities)
+            quality_variance = _variance(qualities, mean_quality)
+            min_quality, max_quality = _range(qualities)
+    stats['mean_quality']     = mean_quality
+    stats['quality_variance'] = quality_variance
+    stats['min_quality']      = min_quality
+    stats['max_quality']      = max_quality
+    return stats
 
-        # masked seq length calcule
-        for nucleotide in seq.seq:
-            if nucleotide.islower():
-                stats['masked_length'] += 1
+def _average(numbers):
+    'Given an iterator with numbers it calculates the average'
+    sum_ = 0
+    count = 0
+    for number in numbers:
+        sum_ += number
+        count += 1
+    return sum_ / float(count)
 
-        # quality average calcule, I save seq length and quality average to
-        # calculate more accurate toral average. need to check if seqs have
-        # quality
-        if first:
-            first = False
-            try:
-                qual = seq.qual
-                if qual is not None:
-                    has_qual = True
-                else:
-                    has_qual = False
-            except AttributeError:
-                has_qual = False
+def _variance(numbers, mean):
+    'Given an iterator with numbers it calculates the variance'
+    sum_ = 0
+    count = 0
+    for number in numbers:
+        sum_ += (number - mean) ** 2
+        count += 1
+    return (sum_ / float(count))
 
-        if has_qual:
-            qual = seq.qual
-            qual_average = sum(qual)/float(seq_len)
-            seq_quality_average.append((seq_len, qual_average))
+def general_contig_statistics(contigs, distrib_fhand=None, low_memory=True):
+    'It calculates some contigs statistics'
+    if low_memory:
+        coverages = FileCachedList(float)
+        reads     = FileCachedList(float)
+    else:
+        coverages = []
+        reads     = []
 
-    # variance, max and min, average
-    stats['length_variance']    = numpy.var(seq_len_list)
-    stats['max_length']         = max(seq_len_list)
-    stats['min_length']         = min(seq_len_list)
-    stats['seq_length_average'] = numpy.average(seq_len_list)
+    n_contigs = 0
+    for contig in contigs:
+        n_contigs += 1
+        #low_memory False becasue is just one contig
+        coverages.extend(_contig_coverages([contig], low_memory=False))
+        reads.extend(_contig_reads([contig], low_memory=False))
 
-    if has_qual:
-        total_qual = 0
-        for seq_len, average in seq_quality_average:
-            total_qual += seq_len * average
-        stats['qual_average'] = total_qual / float(stats['seq_length'])
+    stats = {}
+    stats['number_contigs'] = n_contigs
+    if low_memory:
+        stats['mean_number_reads']     = _average(reads.items())
+        stats['number_reads_variance'] = _variance(reads.items(),
+                                                   stats['mean_number_reads'])
+        stats['mean_coverage']         = _average(coverages.items())
+        stats['coverage_variance']     = _variance(coverages.items(),
+                                                   stats['mean_coverage'])
+    else:
+        stats['mean_number_reads']     = numpy.average(reads)
+        stats['number_reads_variance'] = numpy.var(reads)
+        stats['mean_coverage']         = numpy.average(coverages)
+        stats['coverage_variance']     = numpy.var(coverages)
 
-
-    # Write results to file if a file has been passed
-    if distrib_fhand is not None:
-        distrib_fhand.write('## Stats\n')
-        for stat in stats:
-            distrib_fhand.write('%s:%f\n' % (stat, float(stats[stat])))
     return stats
 
 def histogram(numbers, bins, range_=None):
@@ -308,14 +360,7 @@ def histogram(numbers, bins, range_=None):
     else:
         num_iter = iter(numbers)
     if range_ is None:
-        #i'm not using the min and max functions to save one pass through the
-        #data
-        min_, max_ = None, None
-        for number in num_iter:
-            if min_ is None or min_ > number:
-                min_ = number
-            if max_ is None or max_ < number:
-                max_ = number
+        min_, max_ = _range(numbers)
     else:
         min_, max_ = range_[0], range_[1]
 

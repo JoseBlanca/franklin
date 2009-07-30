@@ -652,6 +652,13 @@ class FileCachedList(object):
         'It writes one element at the file end'
         self._wfhand.write('%s\n' % str(item))
 
+    def extend(self, items):
+        'It adds a bunch of items from a list or from a FileCachedList'
+        if 'items' in dir(items):
+            items = items.items()
+        for item in items:
+            self.append(item)
+
     def items(self):
         'It yields all items'
         self._wfhand.flush()

@@ -1,4 +1,4 @@
-'''Some tests for the sequence iters statistics calculations.
+'''Some tests for the sequence and contig statistics calculations.
 Created on 10/07/2009
 '''
 
@@ -27,8 +27,12 @@ import numpy
 from biolib.biolib_utils import float_lists_are_equal
 from biolib.biolib_seqio_utils import seqs_in_file
 from biolib.statistics import (seq_distrib, general_seq_statistics,
-                               seq_distrib_diff, histogram)
+                               seq_distrib_diff, histogram,
+                               general_contig_statistics)
+from biolib.contig_io import get_parser
+import biolib
 
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def _read_distrib_file(fhand):
     '''Given an fhand with a distribution/histogram in it it returns the
@@ -112,14 +116,14 @@ class StatisticsTest(unittest.TestCase):
         seqs  = seqs_in_file(fhand_seq, fhand)
         stats = general_seq_statistics(seqs)
 
-        assert stats['seq_length']         == 15
-        assert stats['seq_length_average'] == 3.75
-        assert stats['masked_length']      == 3
-        assert stats['qual_average']       == 2.3333333333333335
-        assert stats['num_sequences']      == 4
-        assert stats['max_length']         == 4
-        assert stats['min_length']         == 3
-        assert stats['length_variance']    == 0.1875
+        assert stats['seq_length']          == 15
+        assert stats['seq_length_average']  == 3.75
+        assert stats['masked_seq_length']   == 3
+        assert stats['mean_quality']        == 2.3333333333333335
+        assert stats['num_sequences']       == 4
+        assert stats['max_seq_length']      == 4
+        assert stats['min_seq_length']      == 3
+        assert stats['seq_length_variance'] == 0.1875
 
     @staticmethod
     def test_seq_distrib_diff():
@@ -150,6 +154,42 @@ class HistogramTest(unittest.TestCase):
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
 
+class ContigStatisticsTest(unittest.TestCase):
+    'It tests the contig statistics'
+    @staticmethod
+    def test_read_distribution():
+        'It test the distribution of number of reads for every contig'
+        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
+        caf_parser = get_parser(fhand, format='bowtie')
+        contigs = caf_parser.contigs()
+        distrib = seq_distrib('contig_read_distrib', contigs)
+        assert distrib['distrib'] == [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                      0, 0, 0, 0, 0, 1]
+        assert distrib['bin_edges'][0] == 1.0
+        assert distrib['bin_edges'][-1] == 2.0
+
+    @staticmethod
+    def test_coverage_distribution():
+        'It tests the contig coverage distribution'
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
+        contigs = caf_parser.contigs()
+        distrib = seq_distrib('contig_coverage_distrib', contigs)
+        assert distrib['distrib'] == [135, 0, 149, 0, 250, 0, 344, 0, 28, 0,
+                                      191, 0, 59, 0, 93, 0, 293, 0, 78, 54]
+
+    @staticmethod
+    def test_general_contig_stats():
+        "it test that we can get some contig statistics"
+        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
+        caf_parser = get_parser(fhand, format='bowtie')
+        contigs = caf_parser.contigs()
+        stats = general_contig_statistics(contigs, low_memory=False)
+        assert stats['number_contigs']        == 4
+        assert stats['number_reads_variance'] == 0.1875
+        assert stats['coverage_variance']     == 0.090059740501673105
+        assert stats['mean_coverage']         == 1.1000746825989545
+        assert stats['mean_number_reads']     == 1.25
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']
