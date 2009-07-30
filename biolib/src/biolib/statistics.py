@@ -16,8 +16,7 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
-from biolib.biolib_utils import draw_scatter, FileCachedList
-
+from biolib.biolib_utils import FileCachedList
 
 PLOT_LABELS = {'masked_seq_distrib' :{
                                  'title': 'Masked sequence length distribution',
@@ -68,7 +67,7 @@ def _create_distribution(numbers, labels=None, distrib_fhand=None,
         _write_distribution(distrib_fhand, distrib, bin_edges)
     #do we have to plot it?
     if plot_fhand is not None:
-        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib,
+        draw_histogram(distrib, bin_edges,
                      title=labels['title'], xlabel=labels['xlabel'],
                      ylabel=labels['ylabel'],
                      fhand=plot_fhand)
@@ -206,11 +205,10 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None,
         _write_distribution(distrib_fhand, diff_distrib, diff_bin_edges)
     #do we have to plot it?
     if plot_fhand is not None:
-        draw_scatter(x_axe=diff_bin_edges[:-1], y_axe=diff_distrib,
+        draw_histogram(diff_distrib, diff_bin_edges,
                      title=labels['title'], xlabel=labels['xlabel'],
                      ylabel=labels['ylabel'],
                      fhand=plot_fhand)
-
     return {'distrib':diff_distrib, 'bin_edges':diff_bin_edges}
 
 def _range(numbers):
@@ -344,7 +342,7 @@ def general_contig_statistics(contigs, distrib_fhand=None, low_memory=True):
     return stats
 
 def histogram(numbers, bins, range_=None):
-    '''An alternative implemetation to the numpy.histogram.
+    '''An alternative implementation to the numpy.histogram.
 
     The main difference is that this implementation can use a CachedFileList to
     save memory
@@ -385,3 +383,53 @@ def histogram(numbers, bins, range_=None):
         distrib[bin] += 1
 
     return (distrib, bin_edges)
+
+IMPORTED_MATPLOTLIB = None
+
+def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
+                   fhand=None):
+    'It draws an histogram and if the fhand is given it saves it'
+    global IMPORTED_MATPLOTLIB
+    if IMPORTED_MATPLOTLIB is None:
+        import matplotlib
+        matplotlib.use('AGG')
+        IMPORTED_MATPLOTLIB = matplotlib
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+
+    xvalues = range(len(values))
+
+    axes.bar(xvalues, values)
+
+    #the x axis label
+    xticks_pos = [value + 0.5 for value in xvalues]
+
+    left_val = None
+    right_val = None
+    xticks_labels = []
+    for value in bin_edges:
+        right_val = value
+        if left_val:
+            xticks_label = (left_val + right_val) / 2.0
+            xticks_label = '%.1f' % xticks_label
+            xticks_labels.append(xticks_label)
+        left_val = right_val
+
+    #we don't want to clutter the plot
+    xticks_pos = xticks_pos[::2]
+    xticks_labels = xticks_labels[::2]
+    plt.xticks(xticks_pos, xticks_labels)
+
+    if fhand is None:
+        plt.show()
+    else:
+        plt.savefig(fhand)
