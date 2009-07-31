@@ -167,30 +167,30 @@ snp_remove_baq_quality_alleles = {'function':create_bad_quality_allele_remover,
                                   'arguments':{'qual_threshold':20},
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
-                                  'comments': 'It removes bad quality alleles'}
+                                  'comment': 'It removes bad quality alleles'}
 snp_second_allele_filter = {'function':create_second_allele_number_filter,
                             'arguments':{'number_2allele':2},
                             'type':'filter',
                             'name':'second_allele_num',
-                            'comments': 'It filters by second allele number'}
+                            'comment': 'It filters by second allele number'}
 
 snp_limit_filter = {'function':create_seqvar_close_to_limit_filter,
                     'arguments':{'max_distance':12},
                     'type':'filter',
                     'name':'limit_distance',
-                    'comments': 'It filters by the distancie to the limit'}
+                    'comment': 'It filters by the distancie to the limit'}
 
 pic_filter = {'function':create_pic_filter,
               'arguments':{'min_pic': 0.3},
               'type':'filter',
               'name':'pic_filter',
-              'comments': 'It filters the snp by its pic calcule'}
+              'comment': 'It filters the snp by its pic calcule'}
 
 cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'arguments': {'all_enzymes':True},
                       'type':      'filter',
                       'name':      'enzyme_filter',
-                      'comments':  'It filters by enzyme'}
+                      'comment':  'It filters by enzyme'}
 
 
 
