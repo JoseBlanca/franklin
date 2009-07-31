@@ -7,7 +7,7 @@ Created on 2009 mai 4
 @author: peio
 '''
 from biolib.seqvariation import (seqvars_in_contigs, seqvar_summary)
-from biolib.contig_io import get_parser_by_name
+from biolib.contig_io import get_parser
 from biolib.pipelines import pipeline_runner
 
 from optparse import OptionParser
@@ -60,14 +60,15 @@ def main():
 #    contig_fhand = io_fhands['contig_outfile']
 
     # Get the porper parser for input file format
-    parser = get_parser_by_name(infhand.name)
+    parser = get_parser(infhand)
 
     #clean and filter non valid contigs/read regions
-    contigs_iter = pipeline_runner('contig_clean', [], parser.contigs())
+    contigs = parser.contigs()
+    contigs = pipeline_runner('contig_clean', contigs)
 
     # perform the search and snp filtering
-    seq_var_iter = seqvars_in_contigs(contigs_iter)
-    seq_var_iter = pipeline_runner('snp_clean', [], seq_var_iter)
+    seq_var_iter = seqvars_in_contigs(contigs)
+    seq_var_iter = pipeline_runner('snp_clean', seq_var_iter)
 
     for seq_var in seq_var_iter:
         print seqvar_summary(seq_var)
