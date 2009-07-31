@@ -19,7 +19,7 @@ Created on 2009 mar 25
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.contig import Contig, slice_to_range
+from biolib.contig import Contig
 from biolib.locatable_sequence import NonStaticParentLocation
 from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_utils import get_start_end
@@ -65,13 +65,13 @@ class _SeqVarConf(object):
                                'hinfi', 'drai', 'apai', 'asp718']
 CONFIG = _SeqVarConf()
 
-def _allele_count(allele):
+def allele_count(allele):
     'It returns how many times an allele has been read.'
     if isinstance(allele, int):
-        allele_count = allele
+        allele_count_ = allele
     else:
-        allele_count = len(allele)
-    return allele_count
+        allele_count_ = len(allele)
+    return allele_count_
 
 class SeqVariation(object):
     '''
@@ -122,8 +122,8 @@ class SeqVariation(object):
         '''
         for allele in alleles.keys():
             #we remove the alleles with not enough reads
-            allele_count = _allele_count(alleles[allele])
-            if allele_count < CONFIG.min_num_of_reads:
+            allele_count_ = allele_count(alleles[allele])
+            if allele_count_ < CONFIG.min_num_of_reads:
                 del alleles[allele]
                 continue
             #we remove the indels if we don't want them
@@ -188,13 +188,13 @@ class SeqVariation(object):
             alleles.append((name, times))
         #now we sort it
         return sorted(alleles,
-                      lambda x, y:_allele_count(y[1]) - _allele_count(x[1]))
+                      lambda x, y:allele_count(y[1]) - allele_count(x[1]))
 
 def seqvar_summary(seqvar, contig_name):
     '''It takes a seqvar and summarizes, returning a library file like format
      string'''
     sorted_alleles = seqvar.sorted_alleles()
-    second_alleles = _allele_count(sorted_alleles[1][1])
+    second_alleles = allele_count(sorted_alleles[1][1])
 
     kind      = seqvar.kind()
     loc_start, loc_end = get_start_end(seqvar.location)
@@ -330,78 +330,6 @@ def longest_read(alignment):
             longest = len_read
     return longest
 
-def remove_bad_quality_alleles(seqvar, qual_threshold=None, \
-                               default_quality=None):
-    ''' It removes bad quality alleles given a seqvar'''
-    if  qual_threshold is None:
-        raise ValueError('Quality threshold must be implicit')
-
-    alleles  = seqvar.alleles
-    contig   = seqvar.alignment
-    location = seqvar.location
-
-    bad_alleles = [] # Alleles we are not going to use
-    for allele in alleles:
-        # Gaps does not have quality, and it is OK
-        if CONFIG.indel_char in allele:
-            continue
-        quality_allele = _allele_quality(contig, alleles[allele], location,
-                                          default_quality)
-
-        # We check it the quality is enought to use
-        if quality_allele < qual_threshold:
-            bad_alleles.append(allele)
-    for allele in bad_alleles:
-        del alleles[allele]
-
-    if len(alleles) >1:
-        return SeqVariation(alleles=alleles, location=seqvar.location, \
-                            alignment=seqvar.alignment)
-    else:
-        return None
-def _allele_quality(contig, reads, location, default_quality):
-    ''' It returns the quality of a allele'''
-    quality_allele = 0
-    for read_num in reads:
-        read = contig[read_num]
-        # If the location is more than one column we need to obtain de media
-        # of all columns involved
-        try:
-            columns = slice_to_range(location, None)
-        except AttributeError:
-            start = location.start
-            end = location.end
-            columns = slice_to_range(slice(start, end + 1), None)
-
-
-        # We sum all qualities of the allele
-        read_allele_quality = _read_allele_quality(columns, read,
-                                                   default_quality)
-        quality_allele += read_allele_quality
-    # this is the media of the qualities
-    return quality_allele / len(reads)
-
-
-def _read_allele_quality(columns, read, default_quality):
-    '''it returns of the cuality of the alelle in one read '''
-    quality_row = 0
-    for column_location in columns:
-        #It checks if the read have quality, and if we are giving a
-        #default quality for the reads that haven't
-        try:
-            #The easiest way to get simple columns is using this.
-            # Because it complements and reverses if is needed
-            nucleotide_quality = read[column_location].qual[0]
-        except TypeError:
-            if default_quality is None:
-                msg = "No Quality in read and no default provided"
-                raise ValueError(msg)
-            else:
-                nucleotide_quality = default_quality
-        quality_row += nucleotide_quality
-
-    return quality_row / (len(columns))
-
 def seqvariations_in_alignment(alignment):
     ''' We use this method to yield the SequenceVariation found in an alignment.
 
@@ -519,6 +447,12 @@ def seqvariations_in_alignment(alignment):
                     # We strech it one more column
                     col_indel_end += 1
 
+def seqvars_in_contigs(contigs_iter):
+    'It returns seqvars found in an contig iterator'
+    for contig in contigs_iter:
+        for seqvar in seqvariations_in_alignment(contig):
+            yield seqvar
+
 def contig_to_read_list(contig):
     ''' It takes a contig class object and it fill a list with the reads.
     All the reads are '''
@@ -529,55 +463,6 @@ def contig_to_read_list(contig):
 
 
 #functions to characterize the sequence variations
-
-def second_allele_read_times(seq_variation, times=2):
-    '''It returns True if the second most abundant allele has been read at least
-    the given times'''
-    alleles = seq_variation.sorted_alleles()
-    if _allele_count(alleles[1][1]) >= times:
-        return True
-    return False
-
-def seqvar_close_to_consensus_limit(seq_variation, max_distance):
-    '''True if the sequence variation is close to the contig limits.
-
-    It checks if the seq_variation is not within the range covered by the
-    consensus and if it's close to one of its limits. In both cases it will
-    return True.
-    '''
-    #where does the sequence variation starts and ends?
-    seq_var_loc = seq_variation.location
-    try:
-        #it's a location
-        seq_var_start = seq_var_loc.start
-        seq_var_end   = seq_var_loc.end
-    except AttributeError:
-        #it's an int
-        seq_var_start = seq_var_loc
-        seq_var_end   = seq_var_loc
-
-    #where does the consensus starts and ends?
-    contig = seq_variation.alignment
-    if contig is None:
-        raise ValueError('SeqVariation is not associated with an alignment')
-    consensus = contig.consensus
-    if consensus is None:
-        raise ValueError('The alignment has no consensus')
-    #the consensus might be a LocatableSequence or an standard sequence
-    try:
-        con_loc = consensus.location
-        con_start = con_loc.start
-        con_end   = con_loc.end
-    except AttributeError:
-        con_start = 0
-        con_end   = len(consensus) - 1
-
-    #Now we can check the limits
-    if (seq_var_start < con_start + max_distance or
-        seq_var_end   > con_end - max_distance):
-        return True
-    return False
-
 def calculate_pic(seq_variation):
     '''It calculates and returns the Polymorphic Information Content.
 
@@ -612,7 +497,7 @@ def calculate_pic(seq_variation):
     alleles = seq_variation.alleles
     #the alleles can have the count or a list with the alleles, we make sure
     #that all have a count, and we convert the dict to a list
-    alleles = [float(_allele_count(allele)) for allele in alleles.values()]
+    alleles = [float(allele_count(allele)) for allele in alleles.values()]
     #how many reads are in total?
     num_reads = float(sum(alleles))
     #how many alleles are in total

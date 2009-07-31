@@ -46,6 +46,15 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
                                 create_masker_repeats_by_repeatmasker)
+from biolib.contig_cleaner import (create_contig_read_stripper,
+                                   create_read_number_contig_filter,
+                                   create_non_matched_region_stripper)
+from biolib.snp_cleaner import (create_bad_quality_allele_remover,
+                                create_cap_enzyme_filter,
+                                create_pic_filter,
+                                create_second_allele_number_filter,
+                                create_seqvar_close_to_limit_filter)
+
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import seqs_in_file, write_fasta_file
 
@@ -55,6 +64,9 @@ DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 ################################################################################
 # PIPELINE CLEANING STEPS
 ################################################################################
+
+####  Seqs cleaning #################
+
 #pylint:disable-msg=C0103
 remove_vectors = {'function':create_vector_striper_by_alignment,
                   'arguments':{'vectors':None, 'aligner':'blast'},
@@ -128,6 +140,60 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'name':'remove_short',
                             'comment': 'Remove seq shorter than 22 nt'}
 
+## Contig cleaning   ####
+
+contig_extreme_stripper = {'function':create_contig_read_stripper,
+                        'arguments':{'length_to_strip':12},
+                        'type': 'mapper',
+                        'name': 'Contig_stripper',
+                        'comment':'It strips reads extremes in contig extremes'}
+
+contig_non_matched_stripper = {'function':create_non_matched_region_stripper,
+                        'arguments':{},
+                        'type': 'mapper',
+                        'name': '',
+                        'comment':''}
+
+contig_read_num_filter = {'function':create_read_number_contig_filter,
+                        'arguments':{'min_read_number':8 },
+                        'type': 'mapper',
+                        'name': 'filter_by_read_number',
+                        'comment':'It filters by read number in contig'}
+
+
+# Snp cleaning /filtering ####
+
+snp_remove_baq_quality_alleles = {'function':create_bad_quality_allele_remover,
+                                  'arguments':{'qual_threshold':20},
+                                  'type':'mapper',
+                                  'name':'bad_quality_allele_striper',
+                                  'comments': 'It removes bad quality alleles'}
+snp_second_allele_filter = {'function':create_second_allele_number_filter,
+                            'arguments':{'number_2allele':2},
+                            'type':'filter',
+                            'name':'second_allele_num',
+                            'comments': 'It filters by second allele number'}
+
+snp_limit_filter = {'function':create_seqvar_close_to_limit_filter,
+                    'arguments':{'max_distance':12},
+                    'type':'filter',
+                    'name':'limit_distance',
+                    'comments': 'It filters by the distancie to the limit'}
+
+pic_filter = {'function':create_pic_filter,
+              'arguments':{'min_pic': 0.3},
+              'type':'filter',
+              'name':'pic_filter',
+              'comments': 'It filters the snp by its pic calcule'}
+
+cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
+                      'arguments': {'all_enzymes':True},
+                      'type':      'filter',
+                      'name':      'enzyme_filter',
+                      'comments':  'It filters by enzyme'}
+
+
+
 ################################################################################
 # PIPELINES
 ################################################################################
@@ -141,7 +207,12 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
             'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
 
             'solexa'       : [remove_adaptors_solexa, mask_low_complexity,
-                           mask_polia, strip_quality, filter_short_seqs_solexa]
+                           mask_polia, strip_quality, filter_short_seqs_solexa],
+            'contig_clean' : [contig_extreme_stripper,
+                              contig_non_matched_stripper,
+                              contig_read_num_filter],
+         'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
+                      snp_limit_filter, pic_filter, cap_enzyme_filter]
             }
 ################################################################################
 
