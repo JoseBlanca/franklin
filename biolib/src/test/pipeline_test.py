@@ -25,6 +25,7 @@ from tempfile import NamedTemporaryFile
 from biolib.pipelines import  (configure_pipeline, seq_pipeline_runner,
                                pipeline_runner)
 from biolib.biolib_seqio_utils import seqs_in_file
+from biolib.contig_io import get_parser
 
 
 
@@ -89,7 +90,7 @@ class PipelineTests(unittest.TestCase):
 
         seq_iter = seqs_in_file(seq_fhand, qual_fhand)
 
-        filtered_seq_iter = pipeline_runner(pipeline, configuration, seq_iter)
+        filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
 
         seq_list = list(filtered_seq_iter)
         assert 'ATCGCGAtcgggggg' in str(seq_list[0].seq)
@@ -117,6 +118,22 @@ class PipelineTests(unittest.TestCase):
         io_fhands['out_seq'].seek(0)
         result_seq = io_fhands['out_seq'].read()
         assert result_seq.count('>') == 6
+
+    @staticmethod
+    def test_contig_pipeline_run():
+        'It test the contig clean pipeline'
+        pipeline = 'contig_clean'
+        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+        caf_parser = get_parser(fhand, format='caf')
+        contigs = caf_parser.contigs()
+        contigs = pipeline_runner(pipeline, items=contigs)
+        assert  contigs.next().consensus.name == 'Contig1'
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -82,14 +82,16 @@ def _allele_quality(contig, reads, location, default_quality):
         # We sum all qualities of the allele
         read_allele_quality = _read_allele_quality(columns, read,
                                                    default_quality)
-        quality_allele += read_allele_quality
+        if read_allele_quality is not None:
+            quality_allele += read_allele_quality
     # this is the media of the qualities
     return quality_allele / len(reads)
 
 
 def _read_allele_quality(columns, read, default_quality):
-    '''it returns of the cuality of the alelle in one read '''
+    '''it returns of the quality of the allele in one read '''
     quality_row = 0
+    cols_with_quality = 0
     for column_location in columns:
         #It checks if the read have quality, and if we are giving a
         #default quality for the reads that haven't
@@ -97,6 +99,9 @@ def _read_allele_quality(columns, read, default_quality):
             #The easiest way to get simple columns is using this.
             # Because it complements and reverses if is needed
             nucleotide_quality = read[column_location].qual[0]
+        except IndexError:
+            #No quality for this read in this position
+            continue
         except TypeError:
             if default_quality is None:
                 msg = "No Quality in read and no default provided"
@@ -104,8 +109,12 @@ def _read_allele_quality(columns, read, default_quality):
             else:
                 nucleotide_quality = default_quality
         quality_row += nucleotide_quality
+        cols_with_quality += 1
 
-    return quality_row / (len(columns))
+    if cols_with_quality:
+        return quality_row / cols_with_quality
+    else:
+        return None
 
 
 def create_second_allele_number_filter(number_2allele):
@@ -116,6 +125,8 @@ def create_second_allele_number_filter(number_2allele):
     def second_allele_read_times(seq_var):
         '''It returns True if the second most abundant allele has been read at
         least the given times'''
+        if seq_var is None:
+            return None
         alleles = seq_var.sorted_alleles()
         if allele_count(alleles[1][1]) >= number_2allele:
             return True
@@ -133,6 +144,8 @@ def create_seqvar_close_to_limit_filter(max_distance):
         consensus and if it's close to one of its limits. In both cases it will
         return True.
         '''
+        if seq_variation is None:
+            return None
         #where does the sequence variation starts and ends?
         seq_var_loc = seq_variation.location
         try:
@@ -163,8 +176,8 @@ def create_seqvar_close_to_limit_filter(max_distance):
         #Now we can check the limits
         if (seq_var_start < con_start + max_distance or
             seq_var_end   > con_end - max_distance):
-            return True
-        return False
+            return False
+        return True
     return seqvar_close_to_consensus_limit
 
 def create_pic_filter(min_pic):
@@ -174,6 +187,8 @@ def create_pic_filter(min_pic):
 
     def pic_filter(seq_var):
         'The pic filter'
+        if seq_var is None:
+            return None
         if calculate_pic(seq_var) < min_pic:
             return False
         else:
@@ -185,6 +200,8 @@ def create_cap_enzyme_filter(all_enzymes):
     if the seqvar is differently afected by some enzymes'''
     def enzymes_filter(seq_var):
         'The real filter'
+        if seq_var is None:
+            return None
         enzymes = cap_enzime(seq_var, all_enzymes)
         if len(enzymes) != 0:
             return True

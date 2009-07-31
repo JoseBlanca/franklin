@@ -155,8 +155,8 @@ contig_non_matched_stripper = {'function':create_non_matched_region_stripper,
                         'comment':''}
 
 contig_read_num_filter = {'function':create_read_number_contig_filter,
-                        'arguments':{'min_read_number':8 },
-                        'type': 'mapper',
+                        'arguments':{'min_read_number':4 },
+                        'type': 'filter',
                         'name': 'filter_by_read_number',
                         'comment':'It filters by read number in contig'}
 
@@ -181,7 +181,7 @@ snp_limit_filter = {'function':create_seqvar_close_to_limit_filter,
                     'comment': 'It filters by the distancie to the limit'}
 
 pic_filter = {'function':create_pic_filter,
-              'arguments':{'min_pic': 0.3},
+              'arguments':{'min_pic': 0.05},
               'type':'filter',
               'name':'pic_filter',
               'comment': 'It filters the snp by its pic calcule'}
@@ -212,7 +212,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
                               contig_non_matched_stripper,
                               contig_read_num_filter],
          'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
-                      snp_limit_filter, pic_filter, cap_enzyme_filter]
+                      snp_limit_filter], #cap_enzyme_filter, pic_filter]
             }
 ################################################################################
 
@@ -237,7 +237,7 @@ def configure_pipeline(pipeline, configuration):
                 raise RuntimeError(msg)
     return seq_pipeline
 
-def pipeline_runner(pipeline, configuration, items):
+def pipeline_runner(pipeline, items, configuration=None):
     '''It runs all the analysis for the given pipeline.
 
     It takes one or two input files and one or two output files. (Fasta files
@@ -248,6 +248,8 @@ def pipeline_runner(pipeline, configuration, items):
     If the checkpoints are requested an intermediate file for every step will be
     created.
     '''
+    if configuration is None:
+        configuration = {}
     # We configure the pipeline depending on the sequences type and
     # configuratiom parameters
     pipeline_steps = configure_pipeline(pipeline, configuration)
@@ -318,7 +320,7 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     #run the pipeline
-    filtered_seq_iter = pipeline_runner(pipeline, configuration, seq_iter)
+    filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
 
 
     # write result

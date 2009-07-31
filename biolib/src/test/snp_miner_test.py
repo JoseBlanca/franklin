@@ -20,9 +20,9 @@ Created on 2009 eka 19
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.db.snp_miner import (SNPMINER_MAP_DEF, create_snp_miner_database, 
-                                 add_contig_to_db, add_snp_to_db, 
-                                 add_contig_annot) 
+from biolib.db.snp_miner import (SNPMINER_MAP_DEF, create_snp_miner_database,
+                                 add_contig_to_db, add_snp_to_db,
+                                 add_contig_annot)
 from biolib.db.db_utils import DbMap
 import os, biolib, sqlalchemy
 from StringIO import StringIO
@@ -42,7 +42,7 @@ snp
     end:3
     kind:snp
     alleles: A:read1,read2 ; T:read3, read4
-    annotations: pik:0.2 
+    annotations: pik:0.2
 snp
     name:snp2
     contig:Contig1
@@ -50,7 +50,7 @@ snp
     end:3
     kind:snp
     alleles: A:read1,read2 ; T:read3, read4
-    annotations: pik:0.2     
+    annotations: pik:0.2
 '''
 LIBRARY_FILE = '''format-version:1
 library_definition
@@ -86,7 +86,7 @@ class SnpMinerTest(unittest.TestCase):
         snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
         snp_inst = snp_miner.select_one('contig', {'name':'Contig1'})
         assert snp_inst.name == 'Contig1'
-   
+
     @staticmethod
     def test_add_snp_to_db():
         '''It test the simple case - add snp'''
@@ -104,23 +104,23 @@ class SnpMinerTest(unittest.TestCase):
         assert snp_inst.name ==  'snp1'
         assert snp_inst.contig.name == 'Contig1'
         snp_inst  = snp_miner.select_one('snpprop', {'snp_id':{'name':'snp1'},
-                                                'type':'pik'})
+                                                'type':'pic'})
         assert  snp_inst.value == '0.2'
     @staticmethod
     def test_add_contig_annot():
         '''It test the simple case - add contig_annot'''
         annotation_dict = {'name': 'Contig1', 'type':'blast', 'value':'GO:0022'}
-        
+
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
         fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
         add_contig_to_db(engine, fhand)
-        add_contig_annot(engine, [annotation_dict])   
-        
-        
-        
-        
-        
-        
-        
-        
+        add_contig_annot(engine, [annotation_dict])
+
+
+
+
+
+
+
+

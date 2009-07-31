@@ -22,8 +22,27 @@ from Bio.Seq import Seq
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-def get_parser(fhand, format, consensus_seqs=None):
+def _guess_contig_file_format(fhand):
+    'It returns the format of the given file'
+    fhand = open(fhand.name)
+    #first non empty line
+    line = None
+    for line in fhand:
+        line = line.strip().lower()
+        if line:
+            break
+    if (line.startswith('dna') or line.startswith('basequality') or
+         line.startswith('sequence')):
+        return 'caf'
+    elif line.startswith('co'):
+        return 'ace'
+    elif line.split('\t')[1] in ('+', '-'):
+        return 'bowtie'
+
+def get_parser(fhand, format=None, consensus_seqs=None):
     'Given a file and a format it returns a suitable Contig parser'
+    if format is None:
+        format = _guess_contig_file_format(fhand)
     available_parsers = {'caf': CafParser, 'ace': AceParser,
                          'bowtie': BowtieParser}
     if consensus_seqs is None:
@@ -220,6 +239,7 @@ class CafParser(object):
         for line in base_quality_section:
             line          = line.strip()
             base_quality += line.split(' ')
+        base_quality = [int(qual) for qual in base_quality]
         return base_quality
 
     @staticmethod
@@ -680,6 +700,8 @@ class BowtieParser(object):
             contig = Contig()
         for read in self._index[name].items():
             read_content = self._index[name][read]
+            if not read_content or read_content.isspace():
+                continue
             read, location = self._parse_read(read_content)
             contig.append_to_location(sequence=read, start=location)
         return contig

@@ -101,6 +101,7 @@ class SeqVariation(object):
         self._set_alleles(alleles)
         self.location     = location
         self.alignment    = alignment
+        self.annotations  = {}
 
     def __repr__(self):
         ''' It prints a readable SeqVariation information '''
@@ -190,21 +191,22 @@ class SeqVariation(object):
         return sorted(alleles,
                       lambda x, y:allele_count(y[1]) - allele_count(x[1]))
 
-def seqvar_summary(seqvar, contig_name):
+def seqvar_summary(seqvar):
     '''It takes a seqvar and summarizes, returning a library file like format
      string'''
+    contig_name = seqvar.alignment.consensus.name
     sorted_alleles = seqvar.sorted_alleles()
     second_alleles = allele_count(sorted_alleles[1][1])
 
-    kind      = seqvar.kind()
+    kind               = seqvar.kind()
     loc_start, loc_end = get_start_end(seqvar.location)
-    id_snp      = contig_name + '_' +  str(loc_start)
-    pik         = calculate_pic(seqvar)
-#    enzymes     = cap_enzime(seqvar)
-#    if enzymes is not None:
-#        enzyme_list = ",".join(enzymes)
-#    else:
-#        enzyme_list = ''
+    id_snp             = contig_name + '_' +  str(loc_start)
+    if 'pic' not in seqvar.annotations:
+        calculate_pic(seqvar)
+    if 'enzyme' not in seqvar.annotations:
+        cap_enzime(seqvar)
+    pic                = seqvar.annotations['pic']
+    enzymes            = seqvar.annotations['enzymes']
 
     toprint  = "snp\n"
     toprint += "\tname:%s\n" % id_snp
@@ -212,10 +214,11 @@ def seqvar_summary(seqvar, contig_name):
     toprint += "\tstart:%d\n" % loc_start
     toprint += "\tend:%d\n" % loc_end
     toprint += "\tkind:%s\n" % kind
-    toprint += "\tannotations: pic:%f, second_allele:%d\n" % \
-                                                (pik, second_alleles)
+    toprint += "\tannotations: pic:%f\nsecond_allele:%d\nenzymes:%s\n" % \
+                                                (pic, second_alleles, enzymes)
     alleles_toprint = ''
     for allele, reads in seqvar.alleles.items():
+        reads = [seqvar.alignment[read].name for read in reads]
         alleles_toprint += "%s:%s" % (allele, ','.join(reads))
     toprint += "\talleles:%s\n" % alleles_toprint
 
@@ -472,6 +475,9 @@ def calculate_pic(seq_variation):
     The calculation is done following Shete et al. 2000 Theoretical Population
     Biology 57, 265 271.
     '''
+    # If it is already calculated it returns it
+    if 'pic' in seq_variation.annotations:
+        return seq_variation.annotations['pic']
 
     #pylint: disable-msg=C0103
     def _pic_sum_1(alleles, num_reads, num_alleles):
@@ -507,11 +513,18 @@ def calculate_pic(seq_variation):
 
 
     pic = 1.0 - sum_1 - ( 2 * sum_2)
+    # We add the pik to the snp annotations
+    seq_variation.annotations['pic'] = pic
     return pic
 
 def cap_enzime(snp, all_enzymes=False):
     ''' It looks in the 2 most frecuent alleles if there is each of the enzimes
     cut diferently'''
+    # If it is already calculated we return them
+    if 'enzymes' in snp.annotations:
+        return snp.annotations['enzymes']
+
+
     location = snp.location
     loc_start, loc_end = get_start_end(location)
     # It takes the two most frecuent alleles
@@ -554,6 +567,9 @@ def cap_enzime(snp, all_enzymes=False):
     enzymes2 = _remap_run(seq2, all_enzymes)
 
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
+
+    # We add the enzymes to the snp annotations
+    snp.annotations['enzymes'] = enzymes
     return list(enzymes)
 
 

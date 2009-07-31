@@ -21,7 +21,7 @@ Created on 2009 mar 25
 
 import unittest
 from biolib.seqvariation import (CONFIG, SeqVariation,
-                                 seqvariations_in_alignment,
+                                 seqvars_in_contigs,
                                  calculate_pic,
                                  cap_enzime)
 from biolib.locatable_sequence import locate_sequence
@@ -130,7 +130,10 @@ class SeqVariationTest(unittest.TestCase):
 def check_alleles(expected_alleles, contig):
     '''It checks that all the alleles for all variations are found'''
     detected_vars = 0
-    for seqvar in seqvariations_in_alignment(contig):
+#    for seqvar in seqvariations_in_alignment(contig):
+
+
+    for seqvar in seqvars_in_contigs([contig]):
         expected = expected_alleles[detected_vars]
         found = seqvar.alleles.keys()
         diff = set(expected).difference(found)
