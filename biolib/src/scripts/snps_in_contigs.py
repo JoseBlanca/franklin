@@ -6,9 +6,10 @@ format
 Created on 2009 mai 4
 @author: peio
 '''
-from biolib.seqvariation import seqvariations_in_alignment, seqvar_summary
+from biolib.seqvariation import (seqvars_in_contigs, seqvar_summary)
 from biolib.contig_io import get_parser_by_name
-from biolib.contig_cleaner import contig_strip, water_alignment_strip
+from biolib.pipelines import pipeline_runner
+
 from optparse import OptionParser
 from os.path import basename
 
@@ -48,49 +49,29 @@ def set_parameters():
         io_fhands['contig_outfile'] = open(basename(coutfile), 'w')
     else:
         io_fhands['contig_outfile'] = open(options.coutfile, 'w')
-    if options.c_strip is None:
-        c_strip = False
-    else:
-        c_strip = True
 
-    return io_fhands, c_strip
+    return io_fhands
 
 def main():
     ''' Main function where we find snps'''
-    io_fhands, c_strip = set_parameters()
-    infhand            = io_fhands['infile']
-    snp_fhand          = io_fhands['snp_outfile']
-    contig_fhand       = io_fhands['contig_outfile']
+    io_fhands    = set_parameters()
+    infhand      = io_fhands['infile']
+#    snp_fhand    = io_fhands['snp_outfile']
+#    contig_fhand = io_fhands['contig_outfile']
 
     # Get the porper parser for input file format
     parser = get_parser_by_name(infhand.name)
 
-    # write ouput file headers
-    snp_fhand.write('#Id\tLoc_start\tLoc_end\tType\tpic\tcap\n')
-    contig_fhand.write('format-version:1\n')
+    #clean and filter non valid contigs/read regions
+    contigs_iter = pipeline_runner('contig_clean', [], parser.contigs())
 
-    for contig in parser.contigs():
-        contig_name = contig.consensus.sequence.name
-        if c_strip:
-            contig = contig_strip(contig, 13) # este numero es aproximado
-        contig = water_alignment_strip(contig)
-        print ".-Searching in contig: %s" % contig_name
-        var_count = 0
+    # perform the search and snp filtering
+    seq_var_iter = seqvars_in_contigs(contigs_iter)
+    seq_var_iter = pipeline_runner('snp_clean', [], seq_var_iter)
 
-        for seqvar in seqvariations_in_alignment(contig):
-            snp_print = seqvar_summary(seqvar, contig_name)
-            snp_fhand.write(snp_print)
+    for seq_var in seq_var_iter:
+        print seqvar_summary(seq_var)
 
-            var_count += 1
-        if var_count == 0:
-            percentaje_snp = 0
-        else:
-            percentaje_snp = (var_count/float(len(contig.consensus))) * 100
-
-        toprint = '%s\t%d\t%f\n' % (contig_name, var_count, percentaje_snp)
-        contig_fhand.write(toprint)
-
-    print "Finished"
 
 
 if __name__ == '__main__':
