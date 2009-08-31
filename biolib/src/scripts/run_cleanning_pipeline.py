@@ -165,8 +165,8 @@ def main():
                         format='%(asctime)s %(message)s')
 
     # Run the analisis step by step
-    seq_pipeline_runner(pipeline, config, io_fhands, work_dir, checkpoint,
-                    file_format)
+    seq_pipeline_runner(pipeline=pipeline, configuration=config,
+                        io_fhands=io_fhands, file_format=file_format)
 
 
 if __name__ == '__main__':

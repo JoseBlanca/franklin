@@ -375,7 +375,7 @@ def histogram(numbers, bins, range_=None):
     else:
         num_iter = iter(numbers)
     if range_ is None:
-        min_, max_ = _range(numbers)
+        min_, max_ = _range(num_iter)
     else:
         min_, max_ = range_[0], range_[1]
 

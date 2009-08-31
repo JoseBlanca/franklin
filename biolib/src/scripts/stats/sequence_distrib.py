@@ -96,7 +96,7 @@ def main():
         seqs1 = seqs_in_file(io_fhands['seqfile1'], format=format)
 
     seq_distrib(sequences=seqs1, kind=kind, distrib_fhand=io_fhands['distrib'],
-                plot_fhand=io_fhands['plot'])
+                plot_fhand=io_fhands['plot'], low_memory=True)
 
 if __name__ == '__main__':
     main()
