@@ -206,14 +206,15 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
 
-            'solexa'       : [remove_adaptors_solexa, mask_low_complexity,
-                           mask_polia, strip_quality, filter_short_seqs_solexa],
+            'solexa'       : [remove_adaptors_solexa, strip_quality,
+                              filter_short_seqs_solexa],
             'contig_clean' : [contig_extreme_stripper,
                               contig_non_matched_stripper,
                               contig_read_num_filter],
          'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
                       snp_limit_filter], #cap_enzyme_filter, pic_filter]
-            }
+
+         'solexa_test' :[strip_quality, filter_short_seqs_solexa]}
 ################################################################################
 
 def configure_pipeline(pipeline, configuration):
