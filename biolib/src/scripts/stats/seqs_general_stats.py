@@ -74,7 +74,8 @@ def main():
     stats = general_seq_statistics(seqs, distrib_fhand=result_file)
 
     for key, value in stats.items():
-        print '%-19s : %d' % (key, value)
+        if value is not None:
+            print '%-19s : %d' % (key, value)
 
 
 if __name__ == '__main__':

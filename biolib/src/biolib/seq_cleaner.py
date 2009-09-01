@@ -161,6 +161,8 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
     if min_quality_bases is None:
         if seq_len < 30:
             min_quality_bases = 3
+        elif seq_len < 45:
+            min_quality_bases = 3
         elif seq_len < 70:
             min_quality_bases = 6
         elif seq_len < 300:

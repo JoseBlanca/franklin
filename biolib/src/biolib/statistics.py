@@ -246,6 +246,7 @@ def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
     It calculates the total sequence length, the average sequence length, the
     total masked sequence length, and the number of sequences.
     '''
+    has_qual = False
     if low_memory:
         lengths        = FileCachedList(float)
         masked_lengths = FileCachedList(float)
@@ -268,6 +269,7 @@ def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
         total_masked_len += masked_length
         masked_lengths.append(masked_length)
         if seq.qual:
+            has_qual = True
             qualities.extend(seq.qual)
 
     stats = {}
@@ -287,7 +289,7 @@ def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
         stats['masked_seq_length_average']  = _average(masked_lengths.items())
         stats['masked_seq_length_variance'] = _variance(masked_lengths.items(),
                                             stats['masked_seq_length_average'])
-        if qualities:
+        if has_qual:
             mean_quality     = _average(qualities.items())
             quality_variance = _variance(qualities.items(), mean_quality)
             min_quality, max_quality = _range(qualities.items())
@@ -297,7 +299,7 @@ def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
         stats['min_seq_length'], stats['max_seq_length'] = _range(lengths)
         stats['masked_seq_length_average']  = numpy.average(masked_lengths)
         stats['masked_seq_length_variance'] = numpy.var(masked_lengths)
-        if qualities:
+        if has_qual:
             mean_quality     = _average(qualities)
             quality_variance = _variance(qualities, mean_quality)
             min_quality, max_quality = _range(qualities)
