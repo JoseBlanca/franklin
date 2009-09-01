@@ -316,23 +316,11 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     out_fhand_seq  = io_fhands['out_seq']
     out_fhand_qual = io_fhands['out_qual']
 
-    # Here starts the analisis
+    # Here starts the analysis
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     #run the pipeline
     filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
 
-
     # write result
-    write_fasta_file(filtered_seq_iter, out_fhand_seq,  out_fhand_qual)
-
-
-
-
-
-
-
-
-
-
-
+    write_fasta_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual)
