@@ -272,13 +272,16 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     SeqWithQualities'''
     for seq in seqs:
         #if the seq is a SeqWithQuality we have to transform it into a SeqRecord
-        if 'qual' in dir(seq):
+        if 'id' not in dir(seq):
             seq = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq.seq)),
                                           id=seq.name,
                                           description=seq.description,
                                           annotations=seq.annotations,
                                           letter_annotations={'phred_quality':
                                                               seq.qual})
+        if 'phred_quality' not in seq.letter_annotations:
+            qual = [30] * len(seq.seq)
+            seq.letter_annotations['phred_quality'] = qual
         SeqIO.write([seq], seq_fhand, format)
         if qual_fhand and format == 'fasta':
             SeqIO.write([seq], qual_fhand, 'qual')
