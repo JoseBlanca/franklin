@@ -279,7 +279,8 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
                                           annotations=seq.annotations,
                                           letter_annotations={'phred_quality':
                                                               seq.qual})
-        if 'phred_quality' not in seq.letter_annotations:
+        if ('phred_quality' not in seq.letter_annotations or
+            not seq.letter_annotations['phred_quality']):
             qual = [30] * len(seq.seq)
             seq.letter_annotations['phred_quality'] = qual
         SeqIO.write([seq], seq_fhand, format)
