@@ -38,17 +38,17 @@ def set_parameters():
     else:
         io_fhands['infile'] = open(options.infile, 'r')
 
-    if options.soutfile is None:
-        soutfile = "".join(options.infile.split('.')[:-1]) + '.snp_info'
-        io_fhands['snp_outfile'] = open(basename(soutfile), 'w')
-    else:
-        io_fhands['snp_outfile'] = open(options.soutfile, 'w')
-
-    if options.coutfile is None:
-        coutfile = "".join(options.infile.split('.')[:-1]) + '.contig_info'
-        io_fhands['contig_outfile'] = open(basename(coutfile), 'w')
-    else:
-        io_fhands['contig_outfile'] = open(options.coutfile, 'w')
+#    if options.soutfile is None:
+#        soutfile = "".join(options.infile.split('.')[:-1]) + '.snp_info'
+#        io_fhands['snp_outfile'] = open(basename(soutfile), 'w')
+#    else:
+#        io_fhands['snp_outfile'] = open(options.soutfile, 'w')
+#
+#    if options.coutfile is None:
+#        coutfile = "".join(options.infile.split('.')[:-1]) + '.contig_info'
+#        io_fhands['contig_outfile'] = open(basename(coutfile), 'w')
+#    else:
+#        io_fhands['contig_outfile'] = open(options.coutfile, 'w')
 
     return io_fhands
 
