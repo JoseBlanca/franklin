@@ -10,6 +10,7 @@ from uuid import uuid4
 from biolib.seqs import SeqWithQuality
 from biolib.biolib_utils import FileIndex
 
+import Bio
 from Bio import SeqIO
 
 def fasta_str(seq, name, description=None):
@@ -177,7 +178,8 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
-def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
+def seqs_in_file(seq_fhand, qual_fhand=None, format=None,
+                 create_seqrecord=False):
     'It yields a seqrecord for each of the sequences found in the seq file'
     if format is None:
         seq_file_format = guess_seq_file_format(seq_fhand)
@@ -220,8 +222,14 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
             raise RuntimeError(msg)
         description = seqrec.description
         annotations = seqrec.annotations
-        yield SeqWithQuality(seq=seq, qual=qual, name=name,
+        if create_seqrecord:
+            seqrec = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq)), id=name,
+                               description=description, annotations=annotations,
+                               letter_annotations={'phred_quality':qual})
+        else:
+            seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,
                             description=description, annotations=annotations)
+        yield seqrec
 
 class FileSequenceIndex(object):
     'It indexes sequence files and it returns seq records'
@@ -256,3 +264,22 @@ class FileSequenceIndex(object):
                                                                 kind='qual')
                 return SeqWithQuality(name=name, description=description,
                                       qual=seq)
+
+def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
+    '''It writes the given sequences in the given files.
+
+    The seqs can be an iterartor or a list of Biopython SeqRecords or
+    SeqWithQualities'''
+    for seq in seqs:
+        #if the seq is a SeqWithQuality we have to transform it into a SeqRecord
+        if 'qual' in dir(seq):
+            seq = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq.seq)),
+                                          id=seq.name,
+                                          description=seq.description,
+                                          annotations=seq.annotations,
+                                          letter_annotations={'phred_quality':
+                                                              seq.qual})
+        SeqIO.write([seq], seq_fhand, format)
+        if qual_fhand and format == 'fasta':
+            SeqIO.write([seq], qual_fhand, 'qual')
+

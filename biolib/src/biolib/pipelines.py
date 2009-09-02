@@ -56,7 +56,8 @@ from biolib.snp_cleaner import (create_bad_quality_allele_remover,
                                 create_seqvar_close_to_limit_filter)
 
 from biolib.seq_filters        import create_length_filter
-from biolib.biolib_seqio_utils import seqs_in_file, write_fasta_file
+from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
+                                       write_seqs_in_file)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -314,8 +315,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     in_fhand_seqs  = io_fhands['in_seq']
     in_fhand_qual  = io_fhands['in_qual']
     out_fhand_seq  = io_fhands['out_seq']
-    out_fhand_qual = io_fhands['out_qual']
-
+    if 'out_qual' in io_fhands:
+        out_fhand_qual = io_fhands['out_qual']
+    else:
+        out_fhand_qual = None
     # Here starts the analysis
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
@@ -323,4 +326,8 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
 
     # write result
-    write_fasta_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual)
+    if file_format == 'fasta':
+        write_fasta_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual)
+    else:
+        write_seqs_in_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual,
+                           file_format)
