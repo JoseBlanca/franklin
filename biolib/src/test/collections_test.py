@@ -30,10 +30,12 @@ class SparseVectorTests(unittest.TestCase):
     @staticmethod
     def test_store_non_int():
         'sparse vectors can hold non int values'
-        spv = SparseVector(nelements=100, store_non_int=True)
-        spv[50] = [30]
-        assert spv[50] == [30]
-
+        spv = SparseVector(nelements=3, store_non_int=True)
+        spv[2] = [30]
+        assert spv[2] == [30]
+        result = [[30]]
+        for index, item in enumerate(spv):
+            assert item == result[index]
 
 if __name__ == "__main__":
     unittest.main()
