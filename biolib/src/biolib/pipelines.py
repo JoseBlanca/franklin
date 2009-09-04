@@ -45,7 +45,8 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality_trimpoly,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
-                                create_masker_repeats_by_repeatmasker)
+                                create_masker_repeats_by_repeatmasker,
+                                create_masker_for_words)
 from biolib.contig_cleaner import (create_contig_read_stripper,
                                    create_read_number_contig_filter,
                                    create_non_matched_region_stripper)
@@ -193,6 +194,12 @@ cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'name':      'enzyme_filter',
                       'comment':  'It filters by enzyme'}
 
+mask_words = {'function'  : create_masker_for_words,
+              'arguments' : {'words':None},
+              'type'      : 'masker',
+              'name'      : 'word_masker',
+              'comment'   : 'It mask the given words in a sequence'
+              }
 
 
 ################################################################################
@@ -213,7 +220,9 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
                               contig_non_matched_stripper,
                               contig_read_num_filter],
          'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
-                      snp_limit_filter]} #cap_enzyme_filter, pic_filter]
+                      snp_limit_filter],
+         'mask_dust' : [mask_polia, mask_low_complexity],
+         'word_masker' : [mask_words]}
 
 ################################################################################
 
