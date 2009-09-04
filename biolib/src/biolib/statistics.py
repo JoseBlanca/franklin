@@ -49,7 +49,7 @@ def _write_distribution(fhand, distribution, bin_edges):
         fhand.write('\n')
     fhand.flush()
 
-def _create_distribution(numbers, labels=None, distrib_fhand=None,
+def create_distribution(numbers, labels=None, distrib_fhand=None,
                          plot_fhand=None, range_=None, low_memory=True):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
@@ -164,7 +164,7 @@ def seq_distrib(kind, sequences, distrib_fhand=None, plot_fhand=None,
              }
     values = stats[kind](sequences, low_memory)
     labels = PLOT_LABELS[kind]
-    return _create_distribution(values, labels, distrib_fhand=distrib_fhand,
+    return create_distribution(values, labels, distrib_fhand=distrib_fhand,
                                 plot_fhand=plot_fhand, range_=range_,
                                 low_memory=low_memory)
 
@@ -205,9 +205,9 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None,
     else:
         num_iters1, num_iters2 = iter(values1), iter(values2)
 
-    distrib1 = _create_distribution(num_iters1,  range_=range_,
+    distrib1 = create_distribution(num_iters1,  range_=range_,
                                     low_memory=low_memory)
-    distrib2 = _create_distribution(num_iters2,  range_=range_,
+    distrib2 = create_distribution(num_iters2,  range_=range_,
                                     low_memory=low_memory)
 
     diff_distrib   = []
@@ -380,6 +380,10 @@ def histogram(numbers, bins, range_=None):
         min_, max_ = _range(num_iter)
     else:
         min_, max_ = range_[0], range_[1]
+    if min_ is None:
+        min_ = _range(num_iter)[0]
+    if max_ is None:
+        max_ = _range(num_iter)[1]
 
     #now we can calculate the bin egdes
     distrib_span = max_ - min_
@@ -399,7 +403,8 @@ def histogram(numbers, bins, range_=None):
             bin = bins - 1
         else:
             bin = int(float(number - min_) / bin_span)
-        distrib[bin] += 1
+        if bin >= 0:
+            distrib[bin] += 1
 
     return (distrib, bin_edges)
 
