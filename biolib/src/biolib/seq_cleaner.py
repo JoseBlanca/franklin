@@ -21,7 +21,7 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os
+import logging, os, re
 from tempfile import NamedTemporaryFile
 
 import biolib
@@ -223,6 +223,19 @@ def create_masker_for_polia():
         return _sequence_from_trimpoly(fhand, sequence, trim=False)
     return mask_polya
 
+def create_masker_for_words(words):
+    '''It creates a masker function that mask the given words that appear in the
+     sequences'''
+    def word_masker(sequence):
+        'It performs the masker for each sequence'
+        if sequence is None:
+            return None
+        seq = sequence.seq
+        for word in words:
+            seq = re.sub(word, word.lower(), seq)
+        return sequence.copy(seq=seq)
+    return word_masker
+
 def create_striper_by_quality_trimpoly():
     '''It creates a function that removes bad quality regions.
 
@@ -263,7 +276,7 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     end3 = int(trimp_data[2]) - 1
     end5 = int(trimp_data[3])
     new_sequence = ''
-    str_seq = sequence.seq
+    str_seq = str(sequence.seq)
     if not trim:
         new_sequence  += str_seq[:end3].lower()
     new_sequence += str_seq[end3:end5]

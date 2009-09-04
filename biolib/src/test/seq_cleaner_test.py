@@ -20,7 +20,8 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_unmasked_locations,
                                 _get_longest_non_matched_seq_region,
                                 _get_matched_locations,
-                                split_seq_by_masked_regions)
+                                split_seq_by_masked_regions,
+                                create_masker_for_words)
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -330,6 +331,18 @@ class SeqCleanerTest(unittest.TestCase):
 
         masked_str = str(masked_seq.seq)
         assert  masked_str == seq
+
+    @staticmethod
+    def test_word_masking():
+        'It test the word masking'
+        words = ['AA', 'AT', 'CG']
+        seq1 = SeqWithQuality(seq='AACTGTA')
+        seq2 = SeqWithQuality(seq='ATCGTTTT')
+        word_masker = create_masker_for_words(words)
+        seq1_masked = word_masker(seq1)
+        assert str(seq1_masked.seq) == 'aaCTGTA'
+        seq2_masked = word_masker(seq2)
+        assert str(seq2_masked.seq) == 'atcgTTTT'
 
 class SeqSplitterTests(unittest.TestCase):
     'Here we test seq splitter functions'
