@@ -17,15 +17,17 @@
 
 import unittest
 from biolib.collections import SparseVector
+from biolib.rbtree import RBDict
 
 class SparseVectorTests(unittest.TestCase):
     '''It tests the sparse vector collection'''
     @staticmethod
     def test_sparse_vector():
         'It tests the sparse vector collection'
-        spv = SparseVector(nelements=100)
+        spv = RBDict()
         spv[50] = 30
-        assert spv[50] == 30
+        spv[40] = 30
+        assert [(40, 30), (50, 30)] == list((spv.items()))
 
     @staticmethod
     def test_store_non_int():
