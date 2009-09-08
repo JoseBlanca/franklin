@@ -16,7 +16,7 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.collections import SparseVector
+from biolib.collections_ import SparseVector
 from biolib.rbtree import RBDict
 
 class SparseVectorTests(unittest.TestCase):
@@ -32,12 +32,17 @@ class SparseVectorTests(unittest.TestCase):
     @staticmethod
     def test_store_non_int():
         'sparse vectors can hold non int values'
-        spv = SparseVector(nelements=3, store_non_int=True)
+        spv = SparseVector(nelements=4, store_non_int=True)
+        spv[0] = 30
         spv[2] = [30]
         assert spv[2] == [30]
-        result = [[30]]
+        assert spv[0] == 30
+        result = [30, None, [30], None]
         for index, item in enumerate(spv):
             assert item == result[index]
+        spv[1] = 'a'
+        assert list(spv.non_empty_items()) == [(0, 30), (1, 'a'), (2, [30])]
+        assert list(spv.non_empty_values()) == [30, 'a', [30]]
 
 if __name__ == "__main__":
     unittest.main()
