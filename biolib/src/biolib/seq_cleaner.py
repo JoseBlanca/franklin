@@ -21,7 +21,7 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os, re
+import logging, os
 from tempfile import NamedTemporaryFile
 
 import biolib
@@ -230,9 +230,11 @@ def create_masker_for_words(words):
         'It performs the masker for each sequence'
         if sequence is None:
             return None
-        seq = sequence.seq
+        seq = str(sequence.seq)
+        seq_class = seq.__class__
         for word in words:
-            seq = re.sub(word, word.lower(), seq)
+            seq = seq.replace(word, word.lower())
+            seq = seq_class(seq)
         return sequence.copy(seq=seq)
     return word_masker
 

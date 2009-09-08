@@ -196,7 +196,7 @@ cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
 
 mask_words = {'function'  : create_masker_for_words,
               'arguments' : {'words':None},
-              'type'      : 'masker',
+              'type'      : 'mapper',
               'name'      : 'word_masker',
               'comment'   : 'It mask the given words in a sequence'
               }
@@ -222,7 +222,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
          'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
                       snp_limit_filter],
          'mask_dust' : [mask_polia, mask_low_complexity],
-         'word_masker' : [mask_words]}
+         'word_masker' : [mask_words, filter_short_seqs_solexa]}
 
 ################################################################################
 
