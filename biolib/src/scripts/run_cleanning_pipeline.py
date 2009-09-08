@@ -65,6 +65,8 @@ def parse_options():
                       help='Pipeline type. Look at the source' )
     parser.add_option('-c', '--checkpoint', action="store_true",
                       dest='checkpoint', help='Do we need checkpoints?')
+    parser.add_option('-w', '--words', dest='words',
+                      help='file containing words in the first column')
 
     parser.add_option('-f', '--inputformat', dest="file_format",
      help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
@@ -148,7 +150,10 @@ def set_parameters():
     if options.adaptors is not None:
         configuration['remove_adaptors'] = {}
         configuration['remove_adaptors']['vectors'] = options.adaptors
-
+    if options.words is not None:
+        configuration['word_masker'] = {}
+        configuration['word_masker']['words'] = \
+                       [line.strip().split()[0]for line in open(options.words)]
     return (io_fhands, work_dir, log_fhand, pipeline, configuration, checkpoint,
             file_format)
 

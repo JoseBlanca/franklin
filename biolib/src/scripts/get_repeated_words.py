@@ -18,11 +18,9 @@ Created on 04/09/2009
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.biolib_seqio_utils import seqs_in_file, write_seqs_in_file
+from biolib.biolib_seqio_utils import seqs_in_file
 from biolib.statistics import create_distribution
 from biolib.words import cluster_seqs_by_words, filter_low_abundant_words
-from biolib.pipelines import pipeline_runner
-from biolib.collections import FileCachedList
 
 def parse_options():
     'It parses the command line arguments'
@@ -99,7 +97,7 @@ def main():
     # Stats: only if it is asked
     if distrib_fhand is not None or plot_fhand is not None:
         #we cache the result in disk
-        create_distribution(cluster_seqs, plot_fhand=plot_fhand,
+        create_distribution(cluster_seqs.non_empty_values(), plot_fhand=plot_fhand,
                             distrib_fhand=distrib_fhand, range_= (1, None),
                             labels={'title':'word distribution',
                                     'xlabel':'times found',
@@ -112,6 +110,6 @@ def main():
         word, abundance = word_abundance
         out_fhand.write('%s: %i\n' % (word, abundance))
 
-
+        
 if __name__ == '__main__':
     main()
