@@ -16,7 +16,8 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
-from biolib.biolib_utils import FileCachedList
+from biolib.collections_ import FileCachedList
+import itertools
 
 PLOT_LABELS = {'masked_seq_distrib' :{
                                  'title': 'Masked sequence length distribution',
@@ -373,9 +374,10 @@ def histogram(numbers, bins, range_=None):
         cached = True
     #an iterator for the numbers
     if cached:
-        num_iter = numbers.items()
+        num_iter  = numbers.items()
+        num_iter2 = numbers.items()
     else:
-        num_iter = iter(numbers)
+        num_iter, num_iter2 = itertools.tee(iter(numbers), 2)
     if range_ is None:
         min_, max_ = _range(num_iter)
     else:
@@ -393,11 +395,7 @@ def histogram(numbers, bins, range_=None):
     #now we calculate the distribution
     distrib = [0] * bins
     #an iterator for the numbers
-    if cached:
-        num_iter = numbers.items()
-    else:
-        num_iter = iter(numbers)
-    for number in num_iter:
+    for number in num_iter2:
         if number == max_:
             #the last value go into the last bin
             bin = bins - 1
@@ -405,7 +403,6 @@ def histogram(numbers, bins, range_=None):
             bin = int(float(number - min_) / bin_span)
         if bin >= 0:
             distrib[bin] += 1
-
     return (distrib, bin_edges)
 
 IMPORTED_MATPLOTLIB = None
