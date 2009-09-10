@@ -710,3 +710,50 @@ class BowtieParser(object):
         'It yields all contigs'
         for name in self._index.types():
             yield self.contig(name)
+
+
+#class SAMParser(object):
+#    'It parsers a sam map file and it prepares the contigs from it'
+#    def __init__(self, fhand, consensus_seqs=None):
+#        '''It requires a sam formated file to create the contigs.
+#
+#        Optionally an dict-like object with the consensus sequences can be
+#        given.
+#        '''
+#
+#        self._fhand = fhand
+#        self._index = FileIndex(fhand, item_start_patterns=['^[^@]'])
+#        self._consensus_seqs = consensus_seqs
+#
+#    @staticmethod
+#    def _parse_read(read_line):
+#        '''Given a sam line it returns a read and its contig location'''
+#        #pylint: disable-msg=W0612
+#        (read_name, orientation, contig_name, read_location, sequence,
+#                    qualities) = read_line.split('\t')[:6]
+#        read_location = int(read_location)
+#        # The encoded quality values are on the Phred scale and the encoding is
+#        #ASCII-offset by 33 (ASCII char !
+#        qualities = [ord(qual) - 33 for qual in qualities]
+#        read = SeqWithQuality(name=read_name, seq=sequence, qual=qualities)
+#        return read, read_location
+#
+#    def contig(self, name):
+#        'Given a contig name it returns the contig'
+#        if self._consensus_seqs is not None:
+#            consensus = self._consensus_seqs[name]
+#            contig = Contig(consensus=consensus)
+#        else:
+#            contig = Contig()
+#        for read in self._index[name].items():
+#            read_content = self._index[name][read]
+#            if not read_content or read_content.isspace():
+#                continue
+#            read, location = self._parse_read(read_content)
+#            contig.append_to_location(sequence=read, start=location)
+#        return contig
+#
+#    def contigs(self):
+#        'It yields all contigs'
+#        for name in self._index.types():
+#            yield self.contig(name)
