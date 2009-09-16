@@ -24,7 +24,8 @@ import StringIO
 
 from biolib.seqs import SeqWithQuality
 from biolib.biolib_seqio_utils import (seqs_in_file, guess_seq_file_format,
-                                       temp_fasta_file, FileSequenceIndex)
+                                       temp_fasta_file, FileSequenceIndex,
+                                       quess_seq_type)
 
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
@@ -36,6 +37,19 @@ class GuessFormatSeqFileTest(unittest.TestCase):
 
         fhand = StringIO.StringIO('LOCUS AX0809\n')
         assert guess_seq_file_format(fhand) == 'genbank'
+
+class GuessSeqFileTypeTest(unittest.TestCase):
+    'It tests that we can guess the type of a sequence file(short|long)'
+    @staticmethod
+    def test_guess_format():
+        'It test that we can guess the format for the sequence files'
+        seqs = '>fasta\nACTAG\n>fasta\nACTAG\n>fasta\nACTAG\n>fasta\nACTAG\n'
+        fhand = StringIO.StringIO(seqs)
+        assert quess_seq_type(fhand, 'fasta', 6) == 'short_seqs'
+        fhand = StringIO.StringIO(seqs)
+        assert quess_seq_type(fhand, 'fasta', 3) == 'long_seqs'
+
+
 
 class SeqsInFileTests(unittest.TestCase):
     'It test that we can get seqrecords out of a seq file.'

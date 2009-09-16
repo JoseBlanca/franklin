@@ -161,6 +161,18 @@ def get_content_from_fasta(fhand, kind='seq'):
         seq = qual
     return name, description, seq
 
+def quess_seq_type(fhand, format, limit):
+    'It guess seq type: short|long'
+    short = 0
+    seqs = seqs_in_file(fhand, format=format)
+    for i in range(3):
+        if len(seqs.next().seq) < limit:
+            short += 1
+    if short == 3:
+        return 'short_seqs'
+    else:
+        return 'long_seqs'
+
 def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
     fhand.seek(0)
@@ -286,4 +298,16 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
         SeqIO.write([seq], seq_fhand, format)
         if qual_fhand and format == 'fasta':
             SeqIO.write([seq], qual_fhand, 'qual')
+
+def seqio(in_seq_fhand, in_qual_fhand, in_format, out_seq_fhand, out_qual_fhand,
+          out_format):
+    'It converts format of the files'
+    seqs = seqs_in_file(seq_fhand=in_seq_fhand,
+                        qual_fhand=in_qual_fhand,
+                        format=in_format,
+                        create_seqrecord=True)
+    write_seqs_in_file(seqs, seq_fhand=out_seq_fhand,
+                       qual_fhand=out_qual_fhand,
+                       format=out_format)
+
 
