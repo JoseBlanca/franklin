@@ -6,7 +6,7 @@ Created on 15/09/2009
 import unittest
 from StringIO import StringIO
 from tempfile import NamedTemporaryFile
-from biolib.libassemble import check_cfile, get_files_to_load_in_bank
+from biolib.libassemble import check_and_fix_config, get_files_to_load_in_bank
 from biolib.biolib_utils import NamedTemporaryDir
 import biolib
 import os.path
@@ -17,8 +17,8 @@ class AssembleToReferenceTest(unittest.TestCase):
     'This class tests functions in assemble to reference'
 
     def test_check_cfile(self):
-        'It test check_cfile'
-        cfhand = StringIO( """{'work_dir'  : 'working_dir',
+        'It test the config checker'
+        config = {'work_dir'  : 'working_dir',
                  'reference' : [{'name'      : 'reference',
                                   'seq_fpath' : 'reference.fasta',
                                   'format':'fasta'}],
@@ -28,32 +28,31 @@ class AssembleToReferenceTest(unittest.TestCase):
                                  'format'     : 'format1',
                                  'seq_type'   : 'solexa',
                                  'aligner'    : 'nucmer',
-                                 'aligner_parameters' : '-l 20 -c 20'}]}""")
-        configuration = check_cfile(cfhand)
-        assert configuration['reads'][0]['name'] == 'solexa1'
-        assert configuration['reference'][0]['qual_fpath'] == None
+                                 'aligner_parameters' : '-l 20 -c 20'}]}
+        check_and_fix_config(config)
+        assert config['reads'][0]['name'] == 'solexa1'
+        assert config['reference'][0]['qual_fpath'] == None
 
         ## Without requiered fields
-        cfhand = StringIO( """{}""")
+        cfhand = {}
         try:
-            configuration = check_cfile(cfhand)
+            check_and_fix_config(cfhand)
             self.fail()
             #pylint: disable-msg=W0704
-        except RuntimeError:
+        except ValueError:
             pass
         ###
         ref_fhand  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         read_fhand = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        dict_to_eval =  """{'work_dir'  : 'working_dir',
-                             'reference' : [{'name'      : 'reference',
-                             'seq_fpath' : '""" + ref_fhand.name+ """'}],
-                              'reads'     : [{'name'       :'sanger',
-                              'seq_fpath'  : '""" + read_fhand.name +"""'}]}"""
-        cfhand = StringIO(dict_to_eval)
-        configuration = check_cfile(cfhand)
-        assert configuration['reads'][0]['aligner'] == 'nucmer'
-        assert configuration['reads'][0]['format']  == 'fasta'
-        assert configuration['reference'][0]['format']  == 'fasta'
+        config =  {'work_dir'  : 'working_dir',
+                   'reference' : [{'name'     : 'reference',
+                                   'seq_fpath': ref_fhand.name}],
+                   'reads'     : [{'name'     :'sanger',
+                                   'seq_fpath': read_fhand.name}]}
+        check_and_fix_config(config)
+        assert config['reads'][0]['aligner'] == 'nucmer'
+        assert config['reads'][0]['format']  == 'fasta'
+        assert config['reference'][0]['format']  == 'fasta'
 
     @staticmethod
     def test_get_files_to_load_in_bank():
@@ -74,18 +73,16 @@ AGGTCGAGGCATGAGGCTGGAGCAC
 +SRR019165.3 :5:1:941:116 length=25
 IIIIIIIIIIIIII*IAIIIII.II''')
         read_fhand.flush()
-        dict_to_eval =  """{'work_dir'  : '"""+temp_dir.get_name()+"""',
-                            'reference' : [{'name'      : 'reference',
-                            'seq_fpath' : '""" + ref_fhand.name+ """'}],
-                            'reads'     : [{'name'       :'sanger',
-                            'seq_fpath'  : '""" + read_fhand.name +"""',
-                            'format':'fastq'}]}"""
-        cfhand = StringIO(dict_to_eval)
-        configuration = check_cfile(cfhand)
-        files = get_files_to_load_in_bank(configuration)
+        config =  {'work_dir' : temp_dir.get_name(),
+                   'reference': [{'name'     : 'reference',
+                                  'seq_fpath': ref_fhand.name}],
+                    'reads'   : [{'name'     : 'sanger',
+                                  'seq_fpath': read_fhand.name,
+                                  'format'   :'fastq'}]}
+        check_and_fix_config(config)
+        files = get_files_to_load_in_bank(config)
         assert len(files) == 2
         assert files[0] == os.path.join(DATA_DIR, 'seq.fasta')
-
 
 
 if __name__ == "__main__":

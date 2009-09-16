@@ -7,72 +7,69 @@ import os
 from biolib.biolib_seqio_utils import (guess_seq_file_format,
                                        quess_seq_type, seqio)
 from biolib.biolib_cmd_utils import call
-def check_cfile(fhand):
-    'It checks and prepares the configurations looking to the cfile'
+
+def check_and_fix_config(config):
+    'It checks and prepares the configurations'
     errors = []
-    fhand.seek(0)
-    conf = eval(fhand.read())
     # check_working_dir
-    if 'work_dir' not in conf:
+    if 'work_dir' not in config:
         errors.append('Working dir not configured')
-    elif not os.path.exists(conf['work_dir']):
-        os.mkdir(os.path.abspath(conf['work_dir']))
+    elif not os.path.exists(config['work_dir']):
+        os.mkdir(os.path.abspath(config['work_dir']))
 
     # reference
-    conf, errors = _check_seq_definitions(conf, errors, 'reference')
+    _check_and_fix_seq_definitions(config, errors, 'reference')
     # reads
-    conf, errors = _check_seq_definitions(conf, errors, 'reads')
+    _check_and_fix_seq_definitions(config, errors, 'reads')
 
     # Is the cfile OK?
     if errors:
         error_msg = ["Please correct this errors in your config file:\n"]
         for error in errors:
             error_msg.append('\t.-%s\n' % error)
-        raise RuntimeError("".join(error_msg))
-    return conf
+        raise ValueError("".join(error_msg))
+    return config
 
-def _check_seq_definitions(conf, errors, kind):
+def _check_and_fix_seq_definitions(config, errors, kind):
     'It checks seq definition'
-    if kind not in conf:
+    if kind not in config:
         errors.append('%s not in config file' % kind)
     else:
-        for i, dict_def in enumerate(conf[kind]):
-            conf[kind][i], errors = _check_seq_definition(dict_def, errors, kind)
-    return conf, errors
+        for seq_config in config[kind]:
+            _check_and_fix_seq_definition(seq_config, errors, kind)
 
-def _check_seq_definition(dictionary, errors, kind):
-    'It checks if the seq definitions dictionary is correct'
+def _check_and_fix_seq_definition(seq_config, errors, kind):
+    'It checks if the seq definitions seq_config is correct'
     #defaults aligners:
     aligners = {'short_seqs':{'binary':'nucmer' , 'parameters': '-l 20 -c 20'},
                 'long_seqs' :{'binary':'nucmer' , 'parameters': ''}}
 
     #check required fields
     for field in ['name', 'seq_fpath']:
-        if field not in dictionary:
+        if field not in seq_config:
             errors.append('%s : required %s field' % (kind, field))
 
     #qual file
-    if 'qual_fpath' not in dictionary:
-        dictionary['qual_fpath'] = None
+    if 'qual_fpath' not in seq_config:
+        seq_config['qual_fpath'] = None
 
     #check optional
     # check if we can guess file format
-    if 'format' not in dictionary and not errors:
+    if 'format' not in seq_config and not errors:
         try:
-            format = guess_seq_file_format(open(dictionary['seq_fpath']))
-            dictionary['format'] = format
+            format = guess_seq_file_format(open(seq_config['seq_fpath']))
+            seq_config['format'] = format
         except ValueError:
             errors.append('File Format not defined and not recognizable')
 
     # check the seq type and use the apropiated alignments
-    if kind == 'reads' and 'seq_type' not in dictionary and not errors:
-        seq_type = quess_seq_type(open(dictionary['seq_fpath']), dictionary['format'], 40)
-        dictionary['seq_type'] = seq_type
-        if 'aliger' not in dictionary:
-            dictionary['aligner'] = aligners[seq_type]['binary']
-            dictionary['aligner_parameters'] = aligners[seq_type]['parameters']
-
-    return dictionary, errors
+    if kind == 'reads' and 'seq_type' not in seq_config and not errors:
+        seq_type = quess_seq_type(open(seq_config['seq_fpath']),
+                                  seq_config['format'], 40)
+        seq_config['seq_type'] = seq_type
+        if 'aliger' not in seq_config:
+            seq_config['aligner'] = aligners[seq_type]['binary']
+            seq_config['aligner_parameters'] = aligners[seq_type]['parameters']
 
 def load_seqs_in_bank(configuration):
     '''This function loads the data in AMOS bank directory/format. It takes
