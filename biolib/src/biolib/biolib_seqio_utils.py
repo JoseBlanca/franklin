@@ -285,9 +285,12 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     for seq in seqs:
         #if the seq is a SeqWithQuality we have to transform it into a SeqRecord
         if 'id' not in dir(seq):
+            description = seq.description
+            if description is None:
+                description = ''
             seq = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq.seq)),
                                           id=seq.name,
-                                          description=seq.description,
+                                          description=description,
                                           annotations=seq.annotations,
                                           letter_annotations={'phred_quality':
                                                               seq.qual})

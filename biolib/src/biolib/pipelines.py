@@ -58,7 +58,8 @@ from biolib.snp_cleaner import (create_bad_quality_allele_remover,
 
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
-                                       write_seqs_in_file)
+                                       write_seqs_in_file,
+                                       guess_seq_file_format)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
@@ -328,6 +329,9 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
         out_fhand_qual = io_fhands['out_qual']
     else:
         out_fhand_qual = None
+    #which is the file format?
+    if file_format is None:
+        file_format = guess_seq_file_format(in_fhand_seqs)
     # Here starts the analysis
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
