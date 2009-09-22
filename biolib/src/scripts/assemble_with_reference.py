@@ -17,7 +17,7 @@ It needs a configuration file.There is a configuration file in data directory
 '''
 
 from optparse import OptionParser
-from biolib.libassemble import check_cfile
+from biolib.libassemble import (check_and_fix_config, load_seqs_in_bank)
 
 def parse_options():
     'It parses the command line arguments'
@@ -42,19 +42,35 @@ def set_parameters():
     else:
         steps = [int(step) for step in options.steps.split(',')]
     return cfile, steps
+def prepare_env():
+    from biolib.biolib_utils import NamedTemporaryDir
+    import os
+    import biolib
+    data_dir = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+
+    temp_dir = NamedTemporaryDir()
+    ref_fhand  = open(os.path.join(data_dir, 'seq.fasta'), 'r')
+    read_fhand = open(os.path.join(data_dir, 'solexa.fastq'), 'r')
+    config =  {'work_dir' : temp_dir.get_name(),
+               'reference': [{'name'     : 'reference',
+                              'seq_fpath': ref_fhand.name}],
+                'reads'   : [{'name'     : 'solexa',
+                              'seq_fpath': read_fhand.name,
+                              'format'   :'fastq'}]}
+    return config, temp_dir
 
 def main():
     'The main function'
-
     #configuration
     cfile, steps  = set_parameters()
-    configuration = check_cfile(open(cfile))
+    configuration = check_and_fix_config(eval(open(cfile).read()))
+
+
+    #configuration, temp_dir  = prepare_env()
 
     # load seqs in AMOS bank
     if 1 in steps:
         load_seqs_in_bank(configuration)
-
-
 
 
 

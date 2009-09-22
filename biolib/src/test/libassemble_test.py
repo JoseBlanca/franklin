@@ -4,9 +4,8 @@ Created on 15/09/2009
 @author: peio
 '''
 import unittest
-from StringIO import StringIO
-from tempfile import NamedTemporaryFile
-from biolib.libassemble import check_and_fix_config, get_files_to_load_in_bank
+from biolib.libassemble import (check_and_fix_config,
+                                prepare_files_to_load_in_bank)
 from biolib.biolib_utils import NamedTemporaryDir
 import biolib
 import os.path
@@ -16,9 +15,10 @@ DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 class AssembleToReferenceTest(unittest.TestCase):
     'This class tests functions in assemble to reference'
 
-    def test_check_cfile(self):
+    def test_check_and_fix_config(self):
         'It test the config checker'
-        config = {'work_dir'  : 'working_dir',
+        temp_dir = NamedTemporaryDir()
+        config = {'work_dir'  : temp_dir.get_name(),
                  'reference' : [{'name'      : 'reference',
                                   'seq_fpath' : 'reference.fasta',
                                   'format':'fasta'}],
@@ -41,10 +41,10 @@ class AssembleToReferenceTest(unittest.TestCase):
             #pylint: disable-msg=W0704
         except ValueError:
             pass
-        ###
+        ### Only with required fields
         ref_fhand  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         read_fhand = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        config =  {'work_dir'  : 'working_dir',
+        config =  {'work_dir'  : temp_dir.get_name(),
                    'reference' : [{'name'     : 'reference',
                                    'seq_fpath': ref_fhand.name}],
                    'reads'     : [{'name'     :'sanger',
@@ -55,24 +55,11 @@ class AssembleToReferenceTest(unittest.TestCase):
         assert config['reference'][0]['format']  == 'fasta'
 
     @staticmethod
-    def test_get_files_to_load_in_bank():
+    def test_prepare_files_to_load_in_bank():
         'It tests get_files_to_load_in_bank'
         temp_dir = NamedTemporaryDir()
         ref_fhand  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        read_fhand = NamedTemporaryFile(suffix='.fastq')
-        read_fhand.write('''@SRR019165.1 :5:1:898:110 length=25
-TGTAAGGGAGCAGCGGAGTGGGCAA
-+SRR019165.1 :5:1:898:110 length=25
-IIIIIIIIIIIII+*IIIII.II5I
-@SRR019165.2 :5:1:902:102 length=25
-TAGTACCTCATTCTGGTTTTAATTG
-+SRR019165.2 :5:1:902:102 length=25
-IIIIIIHIIIIIIIIIIIIIIIIII
-@SRR019165.3 :5:1:941:116 length=25
-AGGTCGAGGCATGAGGCTGGAGCAC
-+SRR019165.3 :5:1:941:116 length=25
-IIIIIIIIIIIIII*IAIIIII.II''')
-        read_fhand.flush()
+        read_fhand = open(os.path.join(DATA_DIR, 'solexa.fastq'), 'r')
         config =  {'work_dir' : temp_dir.get_name(),
                    'reference': [{'name'     : 'reference',
                                   'seq_fpath': ref_fhand.name}],
@@ -80,9 +67,9 @@ IIIIIIIIIIIIII*IAIIIII.II''')
                                   'seq_fpath': read_fhand.name,
                                   'format'   :'fastq'}]}
         check_and_fix_config(config)
-        files = get_files_to_load_in_bank(config)
+        files = prepare_files_to_load_in_bank(config)
         assert len(files) == 2
-        assert files[0] == os.path.join(DATA_DIR, 'seq.fasta')
+        assert files[0] == '%s/seq.fasta.seq' % temp_dir.get_name()
 
 
 if __name__ == "__main__":

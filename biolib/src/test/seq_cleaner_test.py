@@ -197,7 +197,8 @@ class SeqCleanerTest(unittest.TestCase):
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 00 00 00 00'
         qual = qual.split()
-        seqrec1 = SeqWithQuality(name='seq1', seq=seq, qual=qual)
+        seqrec1 = SeqWithQuality(name='seq1', seq=seq, qual=qual,
+                                  description ='desc1')
 
         qual  = '40 40 40 37 40 40 37 37 37 37 37 37 37 37 40 42 42 42 44 44 '
         qual += '56 56 42 40 40 40 40 36 36 28 35 32 35 35 40 42 37 37 35 37 '
@@ -214,13 +215,15 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
         seq += 'ATTACGATGAT'
-        seqrec2 = SeqWithQuality(seq=seq, qual=quality, name='seq2')
+        seqrec2 = SeqWithQuality(seq=seq, qual=quality, name='seq2',
+                                 description ='desc2')
         seq_iter = iter([seqrec1, seqrec2])
         lucy_striper = create_striper_by_quality_lucy2()
         #pylint:disable-msg=W0612
         seq_iter, output_files = lucy_striper(seq_iter)
         seqs = list(seq_iter)
         seq = seqs[0].seq
+        assert seqrec1.description == seqs[0].description
         assert seq.startswith('CAGATCAGATCAGCATCAGCAT')
         assert seq.endswith('CGAGATCAGCAGCATCAGC')
         assert len(seqs) == 2
@@ -282,7 +285,7 @@ class SeqCleanerTest(unittest.TestCase):
     @staticmethod
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
-        vector = 'UniVec'
+        vector = '/srv/databases/blast/UniVec'
         vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'

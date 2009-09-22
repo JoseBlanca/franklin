@@ -5,6 +5,7 @@ are steps that trim and mask the sequences. Every one of this step is a function
 factory that will create the function that will do the actual job.
 
 '''
+from django.utils.itercompat import tee
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
@@ -23,6 +24,7 @@ factory that will create the function that will do the actual job.
 
 import logging, os
 from tempfile import NamedTemporaryFile
+from itertools import tee
 
 import biolib
 from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
@@ -339,6 +341,20 @@ def create_striper_by_quality_lucy():
         return striped_seq
     return strip_seq_by_quality_lucy
 
+def _extract_name_description(seq_iter):
+    '''using a sequence iterator, it creates a dictionary with name as key an
+    description as value.'''
+    name_description = {}
+    for seq in seq_iter:
+        try:
+            name        = seq.name
+            description = seq.description
+        except AttributeError:
+            pass
+        name_description[name] = description
+
+    return name_description
+
 def create_striper_by_quality_lucy2():
     '''It creates a function that removes bad quality regions using lucy.
 
@@ -356,7 +372,12 @@ def create_striper_by_quality_lucy2():
         run_lucy_for_seqs = create_runner(kind='lucy')
         #pylint: disable-msg=W0612
         #now we run lucy
+        sequences, seq_description = tee(sequences, 2)
         seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)
+
+        # we need to preserve the original desription fiel. So, we need to safe
+        # before deleting it with lucy
+        name_description_dict = _extract_name_description(seq_description)
 
         #now we have to clean all sequences with the description found on the
         #output seq file
@@ -372,12 +393,18 @@ def create_striper_by_quality_lucy2():
             #we count from zero
             start, end = int(start) - 1, int(end)
             striped_seq = seq[start:end]
-            seq_str = fasta_str(striped_seq.seq, striped_seq.name)
+            # recover orignal description
+            desc_orig = name_description_dict[seq.name]
+            seq_str = fasta_str(striped_seq.seq, striped_seq.name, desc_orig)
             striped_seq_fhand.write(seq_str)
             stripped_qual = ' '.join([str(q_val) for q_val in striped_seq.qual])
-            qual_str = fasta_str(stripped_qual, striped_seq.name)
+            qual_str = fasta_str(stripped_qual, striped_seq.name, desc_orig)
             striped_qual_fhand.write(qual_str)
+#        striped_seq_fhand.flush()
+#        striped_seq_fhand.seek(0)
+#        print striped_seq_fhand.read()
         seq_iter = seqs_in_file(striped_seq_fhand, striped_qual_fhand)
+        #print "otra:", seq_iter.next().description
         return seq_iter, [striped_seq_fhand, striped_qual_fhand]
     return strip_seq_by_quality_lucy
 

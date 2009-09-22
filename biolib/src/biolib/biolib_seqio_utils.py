@@ -18,7 +18,7 @@ def fasta_str(seq, name, description=None):
     fasta_str_ = ['>']
     fasta_str_.append(name)
     if description is not None:
-        fasta_str_.append('  ', description)
+        fasta_str_.append(' %s' % description)
     fasta_str_.append('\n')
     fasta_str_.append(str(seq).strip())
     fasta_str_.append('\n')
@@ -232,7 +232,7 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None,
             msg = 'Seqs and quals not in the same order: %s, %s' % (name ,
                                                                     qual_name)
             raise RuntimeError(msg)
-        description = seqrec.description
+        description = " ".join(seqrec.description.split(' ')[1:])
         annotations = seqrec.annotations
         if create_seqrecord:
             seqrec = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq)), id=name,

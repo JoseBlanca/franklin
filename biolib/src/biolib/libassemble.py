@@ -74,34 +74,50 @@ def _check_and_fix_seq_definition(seq_config, errors, kind):
 def load_seqs_in_bank(configuration):
     '''This function loads the data in AMOS bank directory/format. It takes
      the input files from configuration'''
-    seqs_to_load = get_files_to_load_in_bank(configuration)
-    work_dir     = configuration['work_dir']
+
+    seqs = prepare_files_to_load_in_bank(configuration)
+
+    work_dir = configuration['work_dir']
     os.chdir(work_dir)
 
-    cmd = ['tarchive2amos', '-o', 'message_file' ]
-    cmd.extend(seqs_to_load)
-    stdout, stderr, retcode = call(cmd)
-
+    # Create message_file from seq files
+    cmd = ['tarchive2amos', '-o', '%s/message_file' % work_dir ]
+    cmd.extend(seqs)
+    retcode = call(cmd)[2]
     if retcode:
-        raise RuntimeError
+        msg = open(os.path.join(work_dir, 'tarchive2amos.log')).read()
+        raise RuntimeError(msg)
 
+    # Load message file in bank
+    cmd = ['bank-transact', '-c', '-z', '-b', os.path.join(work_dir, 'bank'),
+           '-m', os.path.join(work_dir, 'message_file.afg')]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError(stdout, stderr)
 
-def get_files_to_load_in_bank(configuration):
-    '''This functions get files to load in bank from configuration.
+def prepare_files_to_load_in_bank(configuration):
+    '''This functions prepare files to load in bank from configuration. It also
+    saves a list of the original seq files
 
     If it is needed it converts the files to fasta'''
-    seqs_to_load = []
-    work_dir     = configuration['work_dir']
+    seqs_to_bank      = []
+    work_dir          = configuration['work_dir']
+
     for seqs_file in configuration['reference'] + configuration['reads'] :
         seq_fpath  = seqs_file['seq_fpath']
-        qual_fpath = seqs_file['qual_fpath']
+        if 'qual_fpath' in seqs_file:
+            qual_fpath = seqs_file['qual_fpath']
+        else:
+            qual_fpath = None
 
         if 'format' not in seqs_file:
             format = guess_seq_file_format(open(seq_fpath))
         else:
             format     = seqs_file['format']
         if format == 'fasta':
-            seqs_to_load.append(seq_fpath)
+            dst = os.path.join(work_dir, os.path.basename(seq_fpath)) + '.seq'
+            os.symlink(seq_fpath, dst)
+            seqs_to_bank.append(dst)
         else:
             in_seq_fhand = open(seq_fpath)
 
@@ -111,19 +127,19 @@ def get_files_to_load_in_bank(configuration):
                 in_qual_fhand = open(qual_fpath)
 
             basename = '.'.join(os.path.basename(seq_fpath).split('.')[:-1])
-            out_seq_fpath = os.path.join(work_dir, basename + '.fasta')
+            out_seq_fpath = os.path.join(work_dir, basename + '.seq')
             out_seq_fhand = open(out_seq_fpath, 'w')
             if format == 'fasta' and qual_fpath == None:
                 out_qual_fhand = None
             else:
-                out_qual_fpath = os.path.join(work_dir, basename+'.qual.fasta')
+                out_qual_fpath = os.path.join(work_dir, basename+'.qual')
                 out_qual_fhand = open(out_qual_fpath, 'w')
 
             seqio(in_seq_fhand, in_qual_fhand, format,
                   out_seq_fhand, out_qual_fhand, 'fasta')
-            seqs_to_load.append(out_seq_fhand.name)
+            seqs_to_bank.append(out_seq_fhand.name)
 
-    return seqs_to_load
+    return seqs_to_bank
 
 
 
