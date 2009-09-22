@@ -204,6 +204,8 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None,
     else:
         if format is None:
             qual_file_format = guess_seq_file_format(qual_fhand)
+        elif format == 'fasta':
+            qual_file_format = 'qual'
         else:
             qual_file_format = format
         qual_iter = SeqIO.parse(qual_fhand, qual_file_format)

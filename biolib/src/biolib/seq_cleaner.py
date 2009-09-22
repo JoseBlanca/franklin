@@ -372,12 +372,11 @@ def create_striper_by_quality_lucy2():
         run_lucy_for_seqs = create_runner(kind='lucy')
         #pylint: disable-msg=W0612
         #now we run lucy
-        sequences, seq_description = tee(sequences, 2)
+        sequences, sequences_copy = tee(sequences, 2)
         seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)
 
-        # we need to preserve the original desription fiel. So, we need to safe
-        # before deleting it with lucy
-        name_description_dict = _extract_name_description(seq_description)
+        # we need to preserve the original description field.
+        descriptions = _extract_name_description(sequences_copy)
 
         #now we have to clean all sequences with the description found on the
         #output seq file
@@ -393,18 +392,16 @@ def create_striper_by_quality_lucy2():
             #we count from zero
             start, end = int(start) - 1, int(end)
             striped_seq = seq[start:end]
-            # recover orignal description
-            desc_orig = name_description_dict[seq.name]
+            # recover original description
+            desc_orig = descriptions[seq.name]
             seq_str = fasta_str(striped_seq.seq, striped_seq.name, desc_orig)
             striped_seq_fhand.write(seq_str)
             stripped_qual = ' '.join([str(q_val) for q_val in striped_seq.qual])
             qual_str = fasta_str(stripped_qual, striped_seq.name, desc_orig)
             striped_qual_fhand.write(qual_str)
-#        striped_seq_fhand.flush()
-#        striped_seq_fhand.seek(0)
-#        print striped_seq_fhand.read()
+        striped_seq_fhand.flush()
+        striped_qual_fhand.flush()
         seq_iter = seqs_in_file(striped_seq_fhand, striped_qual_fhand)
-        #print "otra:", seq_iter.next().description
         return seq_iter, [striped_seq_fhand, striped_qual_fhand]
     return strip_seq_by_quality_lucy
 
