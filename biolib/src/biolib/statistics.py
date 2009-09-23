@@ -398,7 +398,7 @@ def histogram(numbers, bins, range_=None):
     distrib = [0] * bins
     #an iterator for the numbers
     for number in num_iter2:
-        if number > max_:
+        if number > max_ or number < min_:
             continue
         if number == max_:
             #the last value go into the last bin
