@@ -116,8 +116,11 @@ class PipelineTests(unittest.TestCase):
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
         io_fhands['out_seq'].seek(0)
+
         result_seq = io_fhands['out_seq'].read()
         assert result_seq.count('>') == 6
+        #are we keeping the description?
+        assert 'mdust' in result_seq
 
     @staticmethod
     def test_contig_pipeline_run():
@@ -128,12 +131,6 @@ class PipelineTests(unittest.TestCase):
         contigs = caf_parser.contigs()
         contigs = pipeline_runner(pipeline, items=contigs)
         assert  contigs.next().consensus.name == 'Contig1'
-
-
-
-
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

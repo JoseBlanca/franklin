@@ -5,7 +5,6 @@ are steps that trim and mask the sequences. Every one of this step is a function
 factory that will create the function that will do the actual job.
 
 '''
-from django.utils.itercompat import tee
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.

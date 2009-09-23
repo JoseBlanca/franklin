@@ -55,6 +55,8 @@ def create_distribution(numbers, labels=None, distrib_fhand=None,
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     bins = 20
+    if range_ == (None, None):
+        range_ = None
     if labels is None:
         labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count'}
     #we do the distribution
@@ -396,6 +398,8 @@ def histogram(numbers, bins, range_=None):
     distrib = [0] * bins
     #an iterator for the numbers
     for number in num_iter2:
+        if number > max_:
+            continue
         if number == max_:
             #the last value go into the last bin
             bin = bins - 1

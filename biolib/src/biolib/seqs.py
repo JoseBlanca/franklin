@@ -59,7 +59,7 @@ class SeqWithQuality(object):
                               qual = qual)
 
     def __getitem__(self, index):
-        ''' It returns another object but only with the sclice chosed'''
+        ''' It returns another object but only with the slice chose'''
         qual = self.qual
         if qual is not None:
             if isinstance(index, int):
@@ -68,8 +68,8 @@ class SeqWithQuality(object):
                 qual = qual[index]
         else:
             qual = None
-        return self.__class__(name = self.name, seq  = self._seq[index], \
-                              qual = qual )
+        return self.__class__(name=self.name, seq=self._seq[index], qual=qual,
+                              description=self.description)
 
     def __len__(self):
         ''' It returns the length of the sequence'''
