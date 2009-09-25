@@ -18,7 +18,8 @@
 import unittest, os
 
 import biolib
-from biolib.sam import calculate_read_coverage
+from biolib.sam import (calculate_read_coverage, seqvars_in_sam_pileup,
+                        is_seq_var)
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -31,8 +32,34 @@ class Test(unittest.TestCase):
         sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
         sam_fhand = open(sam_fname)
         coverage = calculate_read_coverage(sam_fhand)
-        assert coverage['distrib'] == [8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 15]
+        assert coverage['distrib'] == [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0,
+                                       0, 0, 0, 0, 0, 0, 30]
+
+    @staticmethod
+    def test_seqvars_in_sam_pileup():
+        'It tests the parser of the sam pileup file'
+        sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
+        fhand = open(sam_fname)
+        for seq_vars in seqvars_in_sam_pileup(fhand, 2):
+            print seq_vars
+
+
+    @staticmethod
+    def xtest_is_seq_bar():
+        'It test is_seq_var function'
+        coverage = 5
+        ref_base = 'A'
+        read_bases = '.....'
+        qual     = '~~~~~'
+        min_num_bases  = 2
+        assert not is_seq_var(coverage, ref_base, read_bases, qual,
+                              min_num_bases)
+
+        read_bases = 'TTT..'
+        assert is_seq_var(coverage, ref_base, read_bases, qual, min_num_bases)
+
+
+
 
 
 if __name__ == "__main__":

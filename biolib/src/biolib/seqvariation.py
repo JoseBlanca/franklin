@@ -73,6 +73,30 @@ def allele_count(allele):
         allele_count_ = len(allele)
     return allele_count_
 
+SNP = 0
+INSERTION = 1
+DELETION = 2
+
+class SeqVariation2(object):
+    '''
+    This class is used to represent any kind of sequence variation in
+    and alignment. The variation can be a Snp or a InDel, or ...
+    '''
+    def __init__(self, alleles, reference, kinds, qualities=None, name=None,
+                 location=None, ):
+        self.alleles = alleles
+        self.reference = reference
+        if qualities is None:
+            self.qualities = []
+        else:
+            self.qualities = qualities
+        self.name = name
+        self.location = location
+        self.type = type
+    def __str__(self):
+        return '%s %d: %s:' % (self.reference, self.location, str(self.alleles))
+
+
 class SeqVariation(object):
     '''
     This class is used to represent any kind of sequence variation in

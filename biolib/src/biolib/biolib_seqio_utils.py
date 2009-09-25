@@ -77,7 +77,11 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
                 fhand_qual.write(fasta_str(' '.join(quality), name))
             else:
                 raise AttributeError('Quality can not be empty')
-        fhand_seq.write(fasta_str(seq, name, seq.description))
+        try:
+            desc = seq.description
+        except:
+            desc = None
+        fhand_seq.write(fasta_str(seq, name, desc))
 
     fhand_seq.flush()
     fhand_seq.seek(0)
