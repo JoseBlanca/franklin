@@ -22,7 +22,7 @@ Created on 22/09/2009
 import re
 from biolib.collections_ import FileCachedList
 from biolib.statistics import create_distribution
-from biolib.seqvariation import SeqVariation2, SNP, INSERTION, DELETION
+from biolib.seqvariation import SeqVariation, SNP, INSERTION, DELETION
 
 def seqvars_in_sam_pileup(pileup, min_num):
     '''This function takes from a sam pileup format file all the position that
@@ -38,7 +38,7 @@ def seqvars_in_sam_pileup(pileup, min_num):
         alleles, kinds = _get_kinds(alleles)
 
         if is_seq_var(coverage, ref_base, alleles, min_num):
-            yield SeqVariation2(alleles = alleles,
+            yield SeqVariation(alleles = alleles,
                                name='%s_%s' % (cromosome, position),
                                location=int(position) - 1,
                                reference=cromosome, kinds= kinds,
