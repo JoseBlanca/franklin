@@ -48,6 +48,7 @@ def create_snp_miner_database(engine):
         Column('type',   String,  nullable=False),
         Column('contig_id', String, ForeignKey('contig.contig_id'),
                 nullable=False),
+        
         Column('start',  Integer, nullable=False),
         Column('end',    Integer, nullable=False))
     snp_alleles = Table('snpalleles', metadata,

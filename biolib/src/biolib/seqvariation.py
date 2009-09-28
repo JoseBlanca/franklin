@@ -95,8 +95,14 @@ class SeqVariation(object):
 def seqvar_summary(seqvar):
     '''It takes a seqvar and summarizes, returning a library file like format
      string'''
-    contig_name = seqvar.alignment.consensus.name
-    sorted_alleles = seqvar.sorted_alleles()
+    try:
+        contig_name = seqvar.reference.name
+    except:
+        if len(seqvar.reference) < 30:
+            contig_name = seqvar.reference
+        else:
+            contig_name = ''
+    sorted_alleles = allelesseqvar.sorted_alleles()
     second_alleles = allele_count(sorted_alleles[1][1])
 
     kind               = seqvar.kind()

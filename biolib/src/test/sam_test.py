@@ -20,6 +20,7 @@ import unittest, os
 import biolib
 from biolib.sam import (calculate_read_coverage, seqvars_in_sam_pileup,
                         is_seq_var)
+from biolib.seqvariation import INVARIANT, SNP
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -40,23 +41,29 @@ class Test(unittest.TestCase):
         'It tests the parser of the sam pileup file'
         sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
         fhand = open(sam_fname)
-        for seq_vars in seqvars_in_sam_pileup(fhand, 2):
-            print seq_vars
-
+        seq_vars = list(seqvars_in_sam_pileup(fhand, 2))
+        assert len(seq_vars) == 2
+        assert seq_vars[0][0].reference == 'SGN-U562678'
+        assert seq_vars[1][0].reference == 'SGN-U562679'
 
     @staticmethod
-    def xtest_is_seq_bar():
+    def test_is_seq_bar():
         'It test is_seq_var function'
         coverage = 5
         ref_base = 'A'
-        read_bases = '.....'
-        qual     = '~~~~~'
+        quality  = ['~', '~', '~', '~', '~']
+        alleles = [{'allele':'A', 'reads':3, 'kind':SNP, 'quality': quality},
+                   {'allele':'T', 'reads':2, 'kind':INVARIANT,
+                                                         'quality': quality}]
         min_num_bases  = 2
-        assert not is_seq_var(coverage, ref_base, read_bases, qual,
-                              min_num_bases)
+        assert is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
         read_bases = 'TTT..'
-        assert is_seq_var(coverage, ref_base, read_bases, qual, min_num_bases)
+        alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'quality': quality},
+                   {'allele':'A', 'reads':2, 'kind':INVARIANT,
+                                                       'quality': quality}]
+        min_num_bases  = 3
+        assert is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
 
 

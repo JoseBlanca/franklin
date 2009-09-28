@@ -27,7 +27,8 @@ from biolib.seqvariation import SeqVariation, SNP, INSERTION, DELETION
 def seqvars_in_sam_pileup(pileup, min_num):
     '''This function takes from a sam pileup format file all the position that
     are interesting'''
-
+    previous_cromosome = None
+    seqvars_in_cromosome = []
     for line in pileup:
         if line.isspace():
             continue
@@ -35,41 +36,55 @@ def seqvars_in_sam_pileup(pileup, min_num):
         # get alleles from the string
         alleles, qualities = _get_alleles(ref_base, read_bases, qual)
         alleles, qual_grouped = _group_alleles(alleles, qualities)
-        alleles, kinds = _get_kinds(alleles)
+        alleles = get_allele_type(alleles, qual_grouped)
 
         if is_seq_var(coverage, ref_base, alleles, min_num):
-            yield SeqVariation(alleles = alleles,
-                               name='%s_%s' % (cromosome, position),
-                               location=int(position) - 1,
-                               reference=cromosome, kinds= kinds,
-                               qualities=qual_grouped)
+            seq_var = SeqVariation(alleles = alleles,
+                                   name='%s_%s' % (cromosome, position),
+                                   location=int(position) - 1,
+                                   reference=cromosome)
+            seqvars_in_cromosome.append(seq_var)
 
-def _get_kinds(alleles):
-    '''It gets the type (snp, deletion, insertion) for all alleles and removes
+            if previous_cromosome != cromosome:
+                if previous_cromosome is not None:
+                    yield seqvars_in_cromosome
+                    seqvars_in_cromosome = []
+                previous_cromosome = cromosome
+    yield seqvars_in_cromosome
+
+
+def get_allele_type(alleles, qual_grouped):
+    '''It gets the type (snp, deletion, insertion) for each allele and removes
     the + and -'''
-    new_alleles = {}
-    kinds = {}
+    new_alleles = []
     for allele, num_reads in alleles.items():
+        allele_info = {}
+        allele_info['reads']   = num_reads
+        allele_info['quality'] =  qual_grouped[allele]
         if allele.startswith('+'):
-            allele = allele[1:]
-            kinds[allele] = INSERTION
+            allele_info['allele'] = allele[1:]
+            allele_info['kind']   = INSERTION
         elif allele.startswith('-'):
-            allele = allele[1:]
-            kinds[allele] = DELETION
+            allele_info['allele'] = allele[1:]
+            allele_info['kind']   = DELETION
         else:
-            kinds[allele] = SNP
-        new_alleles[allele] = num_reads
-    return new_alleles, kinds
+            allele_info['allele'] = allele
+            allele_info['kind']   = SNP
+        new_alleles.append(allele_info)
+    return new_alleles
 
 
 def is_seq_var(coverage, ref_base, alleles, min_reads):
     '''This looks if the given data is a seq variations, it return false if it
      is not a seq var and return allele, qual_allele if it is a seq_var'''
 
-    min_alleles = 2
+    min_alleles = 2 # At least it needs a
     if coverage < min_reads:
         return False
-    if len(alleles) < min_alleles and ref_base in alleles:
+    allele_nucleotides = []
+    for allele in alleles:
+        allele_nucleotides.append(allele['allele'])
+    if len(alleles) < min_alleles and ref_base in allele_nucleotides:
         return False
     return True
 
