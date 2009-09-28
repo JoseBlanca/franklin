@@ -1,0 +1,76 @@
+// fpc project demo
+// 8.5.1  Date: 10:54 Fri 18 Aug 2006  User: will
+// Contigs 2  Clones 4  Markers 2  Bands 170
+// Framework Maize Label Chromosome Abbrev Chr Genome 0 AvgBand 4096  AvgInsert 160000
+// Configure 429 Tol 7 Cut 1e-13 Apx 0.100 Gel 3300 End 15 Kill -1 Bad 15 Best 10 Log 0 Std 1 Page 3000 Match 2 agarose
+// CpM Off 50 1 0 0 TBL 1 1e-12 2 1e-11 3 1e-10
+// Build 10/6/105 15:24 Cut 1e-13 Off 50 1 0 0 TBL 1 1e-12 2 1e-11 3 1e-10
+// Clip(0 4600) MinMax(0 65535) Precompute UseSeq DQer(5,1)
+// MTP Mndtry 62 MinOlap -5 MaxOlap 10 MinShared 6 Weight 10 MinScore 400 Identity 97 MaxSeqOlap 50000 CtgRatio 3
+// BES_pre 0 BES_suff 1 BES_dot 0
+
+BAC : "bac1"
+Map "ctg0" Ends Left 1.000
+Map "ctg1" Ends Right 10.000
+Gel_number    b1
+Bands  70 5
+Remark "this is a test"
+Shotgun NONE SHOTGUN
+Positive_STS "marker1" New
+Creation_date 105 6 6 18 22
+Modified_date 106 8 10 13 46
+
+BAC : "bac2"
+Map "ctg0" Ends Left 7.000
+Map "ctg0" Ends Right 17.000
+Gel_number    b1
+Bands  70 5
+Remark "this is a test"
+Shotgun NONE SHOTGUN
+Positive_STS "marker1" New
+Creation_date 105 6 6 18 22
+Modified_date 106 8 10 13 46
+
+BAC : "bac3"
+Map "ctg0" Ends Left 15.000
+Map "ctg0" Ends Right 20.000
+Gel_number    b1
+Bands  70 5
+Remark "this is a test"
+Shotgun NONE SHOTGUN
+Creation_date 105 6 6 18 22
+Modified_date 106 8 10 13 46
+
+BAC : "bac4"
+Map "ctg1" Ends Left 1.000
+Map "ctg1" Ends Right 7.000
+Gel_number    b1
+Bands  70 5
+Remark "this is a test"
+Shotgun NONE SHOTGUN
+Positive_STS "marker2" New
+Creation_date 105 6 6 18 22
+Modified_date 106 8 10 13 46
+
+Markerdata
+
+Marker_STS : "marker1"
+Anchor_bin "X"
+Anchor_pos     1.1 P
+Remark "test"
+Creation_date 106 8 10 13 45
+Modified_date 106 8 10 15 29
+
+Marker_STS : "marker2"
+Anchor_bin "X"
+Anchor_pos     1.1 P
+Remark "test"
+Creation_date 106 8 10 13 45
+Modified_date 106 8 10 15 29
+
+Contigdata 10
+
+Ctg0 10/6/105 15:24 Ok  -1 # High 0 Avg 0 Low 0
+Chr_remark "" Pos   0.000
+Ctg1 10/6/105 15:24 Ok  0 # High 924 Avg 895 Low 792
+Chr_remark "" Pos  -1.000

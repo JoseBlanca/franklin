@@ -28,6 +28,9 @@ class FPCMap(object):
         self._fhand = fpc_file
         self.name = None
         self.version = None
+        self.clones = {}
+        self.contigs = {}
+        self.markers = {}
         self._parse_fpc()
 
     def _parse_fpc(self):
@@ -51,9 +54,9 @@ class FPCMap(object):
                 self.version = line.split()[0]
 
         #clone data
-        clones = {}
-        contigs = {}
-        markers = {}
+        clones = self.clones
+        contigs = self.contigs
+        markers = self.markers
         for line in self._fhand:
             if line.startswith('Markerdata'):
                 break
@@ -158,7 +161,7 @@ class FPCMap(object):
 
         #marker data
         re_group = re.compile('(\d+|\w)(.*)')
-        re_anchor = re.compile('Anchor_pos\s+([\d.]+)\s+(F|P)?')
+        #re_anchor = re.compile('Anchor_pos\s+([\d.]+)\s+(F|P)?')
         for line in self._fhand:
             if line.startswith('Contigdata'):
                 break
@@ -242,4 +245,87 @@ class FPCMap(object):
                 remark = line.split()[1].strip('"')
                 contig['trace_remark'] = remark
 
-        print contigs
+def write_fpc_gff(fpc, fhand):
+    'It writes an fpc map to a gff3 file'
+
+    #relevant SO terms
+    #BAC
+    #A clone is composed by a vector replicon and a clone_insert. The SO BAC is
+    #the vector_replicon. The clone_insert (SO:0000753), in this case, is a
+    #cloned_genomic_insert (SO:0000914) and more specifically a
+    #BAC_cloned_genomic_insert (SO:0000992).
+
+    #Physical map
+    #The map is a fragment_assembly (SO:0001249), although there is a more
+    #specific fingerprint_map (SO:0001250)
+
+    #[Term]
+    #id: SO:0000151
+    #name: clone
+    #def: "A piece of DNA that has been inserted in a vector so that it can be
+    #      propagated in a host bacterium or some other organism." [SO:ke]
+    #subset: SOFA
+    #xref: http:http\://en.wikipedia.org/wiki/Clone_(genetics) "wiki"
+    #is_a: SO:0000695 ! reagent
+
+    #[Term]
+    #id: SO:0000153
+    #name: BAC
+    #def: "Bacterial Artificial Chromosome, a cloning vector that can be
+    #      propagated as mini-chromosomes in a bacterial host." [SO:ma]
+    #comment: This term is mapped to MGED. Do not obsolete without consulting
+    #         MGED ontology.
+    #synonym: "bacterial artificial chromosome" EXACT []
+    #is_a: SO:0000440 ! vector_replicon
+    #is a SO:0000440(vector_replicon)
+
+    #[Term]
+    #id: SO:0000753
+    #name: clone_insert
+    #def: "The region of sequence that has been inserted and is being
+    #      propogated by the clone." [SO:ke]
+    #synonym: "clone insert" EXACT []
+    #is_a: SO:0000695 ! reagent
+    #relationship: part_of SO:0000151 ! clone
+
+    #[Term]
+    #id: SO:0000992
+    #name: BAC_cloned_genomic_insert
+    #comment: Requested by Andy Schroder - Flybase Harvard, Nov 2006.
+    #synonym: "BAC cloned genomic insert" EXACT []
+    #is_a: SO:0000914 ! implied link automatically realized
+    #intersection_of: SO:0000914 ! cloned_genomic_insert
+    #intersection_of: derives_from SO:0000153 ! BAC
+    #relationship: derives_from SO:0000153 ! implied link automatically realized
+
+    #[Term]
+    #id: SO:0001249
+    #name: fragment_assembly
+    #def: "A fragment assembly is a genome assembly that orders overlapping
+    #      fragments of the genome based on landmark sequences. The base pair
+    #      distance between the landmarks is known allowing additivity of
+    #      lengths." [SO:ke]
+    #synonym: "fragment assembly" EXACT []
+    #synonym: "physical map" EXACT []
+    #is_a: SO:0001248 ! assembly
+
+    #[Term]
+    #id: SO:0001250
+    #name: fingerprint_map
+    #def: "A fingerprint_map is a physical map composed of restriction
+    #     fragments." [SO:ke]
+    #synonym: "BACmap" EXACT []
+    #synonym: "fingerprint map" EXACT []
+    #synonym: "FPC" EXACT []
+    #synonym: "FPCmap" EXACT []
+    #synonym: "restriction map" EXACT []
+    #is_a: SO:0001249 ! fragment_assembly
+    #relationship: has_part SO:0000412 ! restriction_fragment
+
+    #[Term]
+    #id: SO:0001251
+    #name: STS_map
+    #def: "An STS map is a physical map organized by the unique STS landmarks."
+    #synonym: "STS map" EXACT []
+    #is_a: SO:0001249 ! fragment_assembly
+    #relationship: has_part SO:0000331 ! STS
