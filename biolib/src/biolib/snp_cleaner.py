@@ -24,30 +24,34 @@ Created on 2009 uzt 30
 from biolib.seqvariation import (calculate_pic, cap_enzime)
 
 
-def create_variation_in_seqref_filter(seq_vars_in_contig, percent):
-    '''This function is a function factory that creates a filter. The function
-    filters the seq_var taking into account the seq_var percentaje in
-    the seq_ref contig'''
+def create_high_variable_region_filter(seq_vars_in_contig, max_variability,
+                                       window_length):
+    'It creates a filter that filters seq_vars from high variable regions'
 
-    seq_vars_cuantity = len(seq_vars_in_contig)
-    def percent_in_contig_filter(seq_var):
+    def high_variable_region_filter(seq_var):
         'The filter'
+        #how many snps are in the window?
+        seq_var_quantity = 0
+        for seq_var2 in seq_vars_in_contig:
+            if seq_var2.location - seq_var.location < window_length:
+                seq_var_quantity += 1
+
         if seq_var.reference is not seq_vars_in_contig[0].reference:
             raise ValueError('The given seqvar list not in the same contig')
 
         reference_len = len(seq_var.reference)
-        seq_var_percent = (100 * seq_vars_cuantity) / float(reference_len)
-        print seq_var_percent, seq_vars_cuantity, float(reference_len)
-        if seq_var_percent > percent:
+        seq_var_percent = seq_var_quantity / float(reference_len)
+        if seq_var_percent > max_variability:
             return False
         else:
             return True
-    return percent_in_contig_filter
+    return high_variable_region_filter
 
-def create_filter_close_to_seqvar(seq_vars_in_contig, distance):
-    '''This function is a function factory that creates a function that filters
-    the snp by the proximity to oher snp. If the seqvar has another seavar
-    closer to DISTANCE, then this snp is filtered'''
+def create_close_to_seqvar_filter(seq_vars_in_contig, distance):
+    '''It returns a filter that filters snps by the proximity to other snps.
+
+    If the seqvar has another seqvar closer than DISTANCE, then this snp is
+    filtered out'''
 
     def close_to_seqvar_filter(seq_var):
         'The filter'
@@ -63,23 +67,23 @@ def create_filter_close_to_seqvar(seq_vars_in_contig, distance):
         return True
     return close_to_seqvar_filter
 
-def create_first_allele_percent_filter(percent):
-    '''It creates a filter in wich the seqvar is filtered if the first allele's
-    percentaje is bigger than the given one'''
+def create_major_allele_freq_filter(frequency):
+    '''It creates a filter in which the seqvar is filtered if the most abundant
+    allele frequency is bigger than the given one'''
 
-    def first_allele_percent_filter(seq_var):
+    def major_allele_freq_filter(seq_var):
         'The filter'
         alleles     = seq_var.alleles
         read_number = 0
         first_read  = alleles[0]['reads']
         for allele in alleles:
             read_number += allele['reads']
-        first_percent = (100 * first_read) / float(read_number)
-        if first_percent > percent:
+        first_percent = (first_read) / float(read_number)
+        if first_percent > frequency:
             return False
         else:
             return True
-    return first_allele_percent_filter
+    return major_allele_freq_filter
 
 def create_pic_filter(min_pic):
     '''This funtion is a factory function that creates a function that look

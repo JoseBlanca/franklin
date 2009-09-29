@@ -21,11 +21,11 @@ Created on 2009 uzt 30
 import unittest
 
 from biolib.seqvariation import (SeqVariation, SNP, DELETION, INVARIANT)
-from biolib.snp_cleaner import (create_first_allele_percent_filter,
+from biolib.snp_cleaner import (create_major_allele_freq_filter,
                                 create_pic_filter,
-                                create_filter_close_to_seqvar,
+                                create_close_to_seqvar_filter,
                                 create_cap_enzyme_filter,
-                                create_variation_in_seqref_filter)
+                                create_high_variable_region_filter)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -58,18 +58,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert cap_enzime(snp) == True
 
     @staticmethod
-    def test_create_first_allele_percent_filter():
+    def test_major_allele_freq_filter():
         'It test the first allele percent filter'
         snp = SeqVariation(alleles=[{'allele':'A', 'reads':4, 'kind':INVARIANT},
                                      {'allele':'T', 'reads':2,'kind':SNP}],
                            location=11, reference='reference')
-        first_percent = create_first_allele_percent_filter(60)
+        first_percent = create_major_allele_freq_filter(0.6)
         assert first_percent(snp) == False
-        first_percent = create_first_allele_percent_filter(80)
+        first_percent = create_major_allele_freq_filter(0.8)
         assert first_percent(snp) == True
 
     @staticmethod
-    def test_create_filter_close_to_seqvar():
+    def test_create_filter_close_seqvar():
         'It test the first allele percent filter'
         snp = SeqVariation(alleles=[{'allele':'A', 'reads':4, 'kind':INVARIANT},
                                      {'allele':'T', 'reads':2,'kind':SNP}],
@@ -84,9 +84,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                      {'allele':'T', 'reads':2,'kind':SNP}],
                            location=15, reference='reference')
         seq_vars = [snp, snp1, snp2]
-        filter4 = create_filter_close_to_seqvar(seq_vars, 5)
-        filter7 = create_filter_close_to_seqvar(seq_vars, 7)
-        filter14 = create_filter_close_to_seqvar(seq_vars, 14)
+        filter4 = create_close_to_seqvar_filter(seq_vars, 5)
+        filter7 = create_close_to_seqvar_filter(seq_vars, 7)
+        filter14 = create_close_to_seqvar_filter(seq_vars, 14)
         assert filter4(snp)
         assert not filter7(snp)
         assert not filter14(snp)
@@ -96,7 +96,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         'It test percent_variations_in_seq_ref filter'
         reference = 'atatat'
         snp = SeqVariation(alleles=[{'allele':'A', 'reads':4, 'kind':INVARIANT},
-                                     {'allele':'T', 'reads':2,'kind':SNP}],
+                                    {'allele':'T', 'reads':2,'kind':SNP}],
                            location=1, reference=reference)
         snp1 = SeqVariation(alleles=[{'allele':'A', 'reads':4,
                                       'kind':INVARIANT},
@@ -108,11 +108,12 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                      {'allele':'T', 'reads':2,'kind':SNP}],
                            location=6, reference=reference)
         seq_vars = [snp, snp1, snp2]
-        filter40 = create_variation_in_seqref_filter(seq_vars, 40)
-        filter60 = create_variation_in_seqref_filter(seq_vars, 60)
+        filter40 = create_high_variable_region_filter(seq_vars, 0.4, 10)
         assert not filter40(snp)
+        filter60 = create_high_variable_region_filter(seq_vars, 0.6, 10)
         assert filter60(snp)
-
+        filter40 = create_high_variable_region_filter(seq_vars, 0.4, 1)
+        assert filter60(snp)
 
 
 
