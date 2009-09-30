@@ -115,6 +115,23 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter40 = create_high_variable_region_filter(seq_vars, 0.4, 1)
         assert filter60(snp)
 
+    @staticmethod
+    def test_allele_number_filter():
+        'It test percent_variations_in_seq_ref filter'
+        reference = 'atatat'
+        snp = SeqVariation(alleles=[{'allele':'A', 'reads':4, 'kind':INVARIANT},
+                                    {'allele':'T', 'reads':2,'kind':SNP}],
+                           location=1, reference=reference)
+        snp1 = SeqVariation(alleles=[{'allele':'A', 'reads':4,
+                                      'kind':INVARIANT}],
+                           location=4, reference=reference)
+        seq_vars = [snp, snp1]
+        filter40 = create_high_variable_region_filter(seq_vars, 0.4, 10)
+        assert not filter40(snp)
+        filter60 = create_high_variable_region_filter(seq_vars, 0.6, 10)
+        assert filter60(snp)
+        filter40 = create_high_variable_region_filter(seq_vars, 0.4, 1)
+        assert filter60(snp)
 
 
 

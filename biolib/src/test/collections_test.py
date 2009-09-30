@@ -16,7 +16,7 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.collections_ import SparseVector
+from biolib.collections_ import SparseVector, item_context_iter
 from biolib.rbtree import RBDict
 
 class SparseVectorTests(unittest.TestCase):
@@ -43,6 +43,74 @@ class SparseVectorTests(unittest.TestCase):
         spv[1] = 'a'
         assert list(spv.non_empty_items()) == [(0, 30), (1, 'a'), (2, [30])]
         assert list(spv.non_empty_values()) == [30, 'a', [30]]
+
+class _Locatable():
+    'A class for locatable items'
+    def __init__(self, location, reference):
+        'The init only requires a location'
+        self.location = location
+        self.reference = reference
+    def __str__(self):
+        'Show myself'
+        return '%s %d' % (self.reference, float(self.location))
+    def __repr__(self):
+        'same as str'
+        return self.__str__()
+
+def _check_item_context_iter(item_context_iter_, expected):
+    'It check that the given iter match the expected items'
+    for index, (item, context) in enumerate(item_context_iter_):
+        assert expected[index][0][0] == item.reference
+        assert expected[index][0][1] == item.location
+        assert len(context) == len(expected[index][1])
+        for context_index, (reference, location) in \
+                                            enumerate(expected[index][1]):
+            assert context[context_index].reference == reference
+            assert context[context_index].location == location
+
+class ItemContextIterTest(unittest.TestCase):
+    'It checks the filtering methods.'
+
+    @staticmethod
+    def test_item_context_iter():
+        'It tests the item contex iterator with a window'
+        #a starndard one
+        items = [_Locatable(1, 'a'), _Locatable(2, 'a'), _Locatable(4, 'a'),
+                 _Locatable(6, 'a'), _Locatable(1, 'b'), _Locatable(5, 'b')]
+        items = iter(items)
+        expected = [(('a', 1), (('a', 1), ('a', 2))),
+                    (('a', 2), (('a', 1), ('a', 2))),
+                    (('a', 4), (('a', 4),)),
+                    (('a', 6), (('a', 6),)),
+                    (('b', 1), (('b', 1),)),
+                    (('b', 5), (('b', 5),)),]
+        _check_item_context_iter(item_context_iter(items, window=3), expected)
+
+        #an empty one
+        items = []
+        items = iter(items)
+        expected = []
+        _check_item_context_iter(item_context_iter(items, window=3), expected)
+
+    @staticmethod
+    def test_no_window():
+        'If no window is given all items from a reference will be returned'
+        items = [_Locatable(1, 'a'), _Locatable(5, 'b')]
+        items = iter(items)
+        expected = [(('a', 1), (('a', 1),)),
+                    (('b', 5), (('b', 5),)),]
+        _check_item_context_iter(item_context_iter(items), expected)
+
+        items = [_Locatable(1, 'a'), _Locatable(2, 'a'), _Locatable(6, 'a'),
+                 _Locatable(1, 'b'), _Locatable(5, 'b')]
+        items = iter(items)
+        expected = [(('a', 1), (('a', 1), ('a', 2), ('a', 6))),
+                    (('a', 2), (('a', 1), ('a', 2), ('a', 6))),
+                    (('a', 6), (('a', 1), ('a', 2), ('a', 6))),
+                    (('b', 1), (('b', 1), ('b', 5))),
+                    (('b', 5), (('b', 1), ('b', 5))),]
+        _check_item_context_iter(item_context_iter(items), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

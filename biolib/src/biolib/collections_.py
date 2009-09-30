@@ -146,3 +146,95 @@ class FileCachedList(object):
             if len(line) == 0:
                 raise StopIteration
             yield self._type(line.strip())
+
+def item_context_iter(items, window=None):
+    '''Given an iter with Locatable items it returns an item, context iter,
+
+    The items in the iter should have a location property (numerical) and a
+    reference porperty. An item located based on its reference and its location.
+    The iter should be sorted by references and locations.
+    This generator will yield every item and its surrounding items (context).
+    If window is not given all items from every reference will be included in
+    the context.
+    '''
+    context = []
+    if window is not None:
+        width = window / 2.0
+    else:
+        width = None
+    current_item = None #the item that we're yielding now
+    items_buffer = []    #the items to be returned
+    context_buffer = []
+    right_edge_item = None
+    last_item_in_iter = False
+    while True:
+        #if we have consumed the right item in the last iteration we ask for
+        #other one
+        if right_edge_item is None:
+            try:
+                right_edge_item = items.next()
+            except StopIteration:
+                #we have to empty the buffers before finishing
+                last_item_in_iter = True
+        #the case or the empty iter
+        if not right_edge_item and not items_buffer:
+            raise StopIteration
+        #if the right item is in the same reference as the current one we add it
+        #to the buffers
+        if (right_edge_item is not None
+            and (current_item is None or
+                 right_edge_item.reference == current_item.reference)):
+            #a buffer with the items to the right of the current one
+            items_buffer.append(right_edge_item)
+            #a buffer with the items to be added to the context
+            context_buffer.append(right_edge_item)
+            #we have consumed this right item
+            right_edge_item = None
+        #do we have to yield an item? we have to fill up the context buffer
+        #first.
+        #if there is no width but we're at the last item of the reference
+        if (last_item_in_iter or
+            #if we're at a new reference
+            (items_buffer[-1].reference != items_buffer[0].reference) or
+            #if we're yet to close to the start we don't return anything
+            (width is not None and items_buffer[-1].location > width)):
+            current_item = items_buffer.pop(0)
+
+        if not current_item:
+            continue
+        current_location = current_item.location
+        current_reference = current_item.reference
+        #which items do we have to add to the context in the right side?
+        while True:
+            #if there are still items that might be added to the reference
+            #and the item to be added has the same reference as the current
+            if (context_buffer and
+                              context_buffer[0].reference == current_reference):
+                if((width is None) or
+                   (width is not None and
+                        context_buffer[0].location - current_location < width)):
+                    #and the item is close enough to the current item
+                    context.append(context_buffer.pop(0))
+                else:
+                    break
+            else:
+                break
+        #purge the items from the context that are not close to the current item
+        while True:
+            if not context:
+                break
+            if ((width is not None and
+                 current_location - context[0].location  > width) or
+                 current_reference != context[0].reference):
+                context.pop(0)
+            else:
+                break
+        yield current_item, context
+        #if we have consumed the buffers for this reference we have to go to the
+        #next reference
+        current_item = None
+        if not items_buffer:
+            current_item = None
+            #if there's no more item and nothing in the buffers we're done
+            if last_item_in_iter:
+                raise StopIteration
