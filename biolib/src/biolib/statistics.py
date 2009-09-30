@@ -458,3 +458,24 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
         plt.show()
     else:
         plt.savefig(fhand)
+
+def calculate_read_coverage(pileup, distrib_fhand=None, plot_fhand=None,
+                            range_=None):
+    '''Given a sam pileup file it returns the coverage distribution.
+
+    The coverage shows how many times the bases has been read.
+    '''
+    coverages = FileCachedList(int)
+    for line in pileup:
+        if line.isspace():
+            continue
+        position_cov = line.split()[3]
+        coverages.append(position_cov)
+    #now the distribution
+    return create_distribution(coverages,
+                               labels={'title':'Read coverage distribution',
+                                      'xlabel':'coverage',
+                                      'ylabel': 'Number of positions'},
+                               distrib_fhand=distrib_fhand,
+                               plot_fhand=plot_fhand,
+                               range_=range_, low_memory=True)
