@@ -20,15 +20,15 @@ Created on 2009 uzt 30
 
 import unittest
 
-from biolib.seqvariation import (SeqVariation, SNP, DELETION, INVARIANT)
-from biolib.snp_cleaner import (create_major_allele_freq_filter,
-                                create_pic_filter,
-                                create_close_to_seqvar_filter,
-                                create_cap_enzyme_filter,
-                                create_high_variable_region_filter,
-                                create_allele_number_filter,
-                                create_bad_quality_reads_cleaner,
-                                create_seqvar_close_to_limit_filter)
+from biolib.seqvar.seqvariation import (SeqVariation, SNP, DELETION, INVARIANT)
+from biolib.seqvar.snp_cleaner import (create_major_allele_freq_filter,
+                                       create_pic_filter,
+                                       create_close_to_seqvar_filter,
+                                       create_cap_enzyme_filter,
+                                       create_high_variable_region_filter,
+                                       create_allele_number_filter,
+                                       create_bad_quality_reads_cleaner,
+                                       create_seqvar_close_to_limit_filter)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):

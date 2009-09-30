@@ -21,7 +21,7 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seqvariation import (calculate_pic, cap_enzime)
+from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime)
 
 
 ## Filters

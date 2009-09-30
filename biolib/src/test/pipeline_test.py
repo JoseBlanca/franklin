@@ -25,7 +25,6 @@ from tempfile import NamedTemporaryFile
 from biolib.pipelines import  (configure_pipeline, seq_pipeline_runner,
                                pipeline_runner)
 from biolib.biolib_seqio_utils import seqs_in_file
-from biolib.contig_io import get_parser
 
 
 
@@ -122,15 +121,15 @@ class PipelineTests(unittest.TestCase):
         #are we keeping the description?
         assert 'mdust' in result_seq
 
-    @staticmethod
-    def test_contig_pipeline_run():
-        'It test the contig clean pipeline'
-        pipeline = 'contig_clean'
-        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
-        caf_parser = get_parser(fhand, format='caf')
-        contigs = caf_parser.contigs()
-        contigs = pipeline_runner(pipeline, items=contigs)
-        assert  contigs.next().consensus.name == 'Contig1'
+#    @staticmethod
+#    def test_contig_pipeline_run():
+#        'It test the contig clean pipeline'
+#        pipeline = 'contig_clean'
+#        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
+#        caf_parser = get_parser(fhand, format='caf')
+#        contigs = caf_parser.contigs()
+#        contigs = pipeline_runner(pipeline, items=contigs)
+#        assert  contigs.next().consensus.name == 'Contig1'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

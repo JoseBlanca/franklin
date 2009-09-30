@@ -47,13 +47,10 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_low_complexity,
                                 create_masker_repeats_by_repeatmasker,
                                 create_masker_for_words)
-from biolib.contig_cleaner import (create_contig_read_stripper,
-                                   create_read_number_contig_filter,
-                                   create_non_matched_region_stripper)
-from biolib.snp_cleaner import (create_bad_quality_allele_remover,
+
+from biolib.seqvar.snp_cleaner import (
                                 create_cap_enzyme_filter,
                                 create_pic_filter,
-                                create_second_allele_number_filter,
                                 create_seqvar_close_to_limit_filter)
 
 from biolib.seq_filters        import create_length_filter
@@ -145,37 +142,21 @@ filter_short_seqs_solexa = {'function': create_length_filter,
 
 ## Contig cleaning   ####
 
-contig_extreme_stripper = {'function':create_contig_read_stripper,
-                        'arguments':{'length_to_strip':12},
-                        'type': 'mapper',
-                        'name': 'Contig_stripper',
-                        'comment':'It strips reads extremes in contig extremes'}
 
-contig_non_matched_stripper = {'function':create_non_matched_region_stripper,
-                        'arguments':{},
-                        'type': 'mapper',
-                        'name': '',
-                        'comment':''}
-
-contig_read_num_filter = {'function':create_read_number_contig_filter,
-                        'arguments':{'min_read_number':4 },
-                        'type': 'filter',
-                        'name': 'filter_by_read_number',
-                        'comment':'It filters by read number in contig'}
 
 
 # Snp cleaning /filtering ####
 
-snp_remove_baq_quality_alleles = {'function':create_bad_quality_allele_remover,
-                                  'arguments':{'qual_threshold':20},
-                                  'type':'mapper',
-                                  'name':'bad_quality_allele_striper',
-                                  'comment': 'It removes bad quality alleles'}
-snp_second_allele_filter = {'function':create_second_allele_number_filter,
-                            'arguments':{'number_2allele':2},
-                            'type':'filter',
-                            'name':'second_allele_num',
-                            'comment': 'It filters by second allele number'}
+#snp_remove_baq_quality_alleles = {'function':create_bad_quality_allele_remover,
+#                                  'arguments':{'qual_threshold':20},
+#                                  'type':'mapper',
+#                                  'name':'bad_quality_allele_striper',
+#                                  'comment': 'It removes bad quality alleles'}
+#snp_second_allele_filter = {'function':create_second_allele_number_filter,
+#                            'arguments':{'number_2allele':2},
+#                            'type':'filter',
+#                            'name':'second_allele_num',
+#                            'comment': 'It filters by second allele number'}
 
 snp_limit_filter = {'function':create_seqvar_close_to_limit_filter,
                     'arguments':{'max_distance':12},
@@ -217,11 +198,8 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'solexa'       : [remove_adaptors_solexa, strip_quality,
                               filter_short_seqs_solexa],
-            'contig_clean' : [contig_extreme_stripper,
-                              contig_non_matched_stripper,
-                              contig_read_num_filter],
-         'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
-                      snp_limit_filter],
+#         'snp_clean':[snp_remove_baq_quality_alleles, snp_second_allele_filter,
+#                      snp_limit_filter],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}
 

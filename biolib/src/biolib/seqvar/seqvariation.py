@@ -113,44 +113,44 @@ class SeqVariation(object):
             seqvar.annotations = annotations
         return seqvar
 
-def seqvar_summary(seqvar):
-    '''It takes a seqvar and summarizes, returning a library file like format
-     string'''
-    try:
-        contig_name = seqvar.reference.name
-    except:
-        if len(seqvar.reference) < 30:
-            contig_name = seqvar.reference
-        else:
-            contig_name = ''
-    sorted_alleles = allelesseqvar.sorted_alleles()
-    second_alleles = allele_count(sorted_alleles[1][1])
-
-    kind               = seqvar.kind()
-    loc_start, loc_end = get_start_end(seqvar.location)
-    id_snp             = contig_name + '_' +  str(loc_start)
-    if 'pic' not in seqvar.annotations:
-        calculate_pic(seqvar)
-    if 'enzyme' not in seqvar.annotations:
-        cap_enzime(seqvar)
-    pic                = seqvar.annotations['pic']
-    enzymes            = seqvar.annotations['enzymes']
-
-    toprint  = "snp\n"
-    toprint += "\tname:%s\n" % id_snp
-    toprint += "\tcontig:%s\n" % contig_name
-    toprint += "\tstart:%d\n" % loc_start
-    toprint += "\tend:%d\n" % loc_end
-    toprint += "\tkind:%s\n" % kind
-    toprint += "\tannotations: pic:%f\nsecond_allele:%d\nenzymes:%s\n" % \
-                                                (pic, second_alleles, enzymes)
-    alleles_toprint = ''
-    for allele, reads in seqvar.alleles.items():
-        reads = [seqvar.alignment[read].name for read in reads]
-        alleles_toprint += "%s:%s" % (allele, ','.join(reads))
-    toprint += "\talleles:%s\n" % alleles_toprint
-
-    return toprint
+#def seqvar_summary(seqvar):
+#    '''It takes a seqvar and summarizes, returning a library file like format
+#     string'''
+#    try:
+#        contig_name = seqvar.reference.name
+#    except:
+#        if len(seqvar.reference) < 30:
+#            contig_name = seqvar.reference
+#        else:
+#            contig_name = ''
+#    sorted_alleles = allelesseqvar.sorted_alleles()
+#    second_alleles = allele_count(sorted_alleles[1][1])
+#
+#    kind               = seqvar.kind()
+#    loc_start, loc_end = get_start_end(seqvar.location)
+#    id_snp             = contig_name + '_' +  str(loc_start)
+#    if 'pic' not in seqvar.annotations:
+#        calculate_pic(seqvar)
+#    if 'enzyme' not in seqvar.annotations:
+#        cap_enzime(seqvar)
+#    pic                = seqvar.annotations['pic']
+#    enzymes            = seqvar.annotations['enzymes']
+#
+#    toprint  = "snp\n"
+#    toprint += "\tname:%s\n" % id_snp
+#    toprint += "\tcontig:%s\n" % contig_name
+#    toprint += "\tstart:%d\n" % loc_start
+#    toprint += "\tend:%d\n" % loc_end
+#    toprint += "\tkind:%s\n" % kind
+#    toprint += "\tannotations: pic:%f\nsecond_allele:%d\nenzymes:%s\n" % \
+#                                                (pic, second_alleles, enzymes)
+#    alleles_toprint = ''
+#    for allele, reads in seqvar.alleles.items():
+#        reads = [seqvar.alignment[read].name for read in reads]
+#        alleles_toprint += "%s:%s" % (allele, ','.join(reads))
+#    toprint += "\talleles:%s\n" % alleles_toprint
+#
+#    return toprint
 
 #functions to characterize the sequence variations
 def calculate_pic(seq_variation):

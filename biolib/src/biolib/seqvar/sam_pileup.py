@@ -19,10 +19,9 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.collections_ import FileCachedList, item_context_iter
-from biolib.statistics import create_distribution
-from biolib.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
-                                 INVARIANT)
+from biolib.collections_ import item_context_iter
+from biolib.seqvar.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
+                                        INVARIANT)
 
 def _seqvars_in_sam_pileup(pileup, min_num, required_positions=None):
     '''This function takes from a sam pileup format file all the position that
@@ -162,23 +161,4 @@ def _get_alleles(ref_base, alleles, qualities):
         ignore_qual = False
     return filtered_alleles, filtered_qualities
 
-def calculate_read_coverage(pileup, distrib_fhand=None, plot_fhand=None,
-                            range_=None):
-    '''Given a sam pileup file it returns the coverage distribution.
 
-    The coverage shows how many times the bases has been read.
-    '''
-    coverages = FileCachedList(int)
-    for line in pileup:
-        if line.isspace():
-            continue
-        position_cov = line.split()[3]
-        coverages.append(position_cov)
-    #now the distribution
-    return create_distribution(coverages,
-                               labels={'title':'Read coverage distribution',
-                                      'xlabel':'coverage',
-                                      'ylabel': 'Number of positions'},
-                               distrib_fhand=distrib_fhand,
-                               plot_fhand=plot_fhand,
-                               range_=range_, low_memory=True)

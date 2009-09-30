@@ -20,7 +20,7 @@ Created on 2009 mar 25
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.seqvariation import (calculate_pic, cap_enzime,
+from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime,
                                  SeqVariation, SNP, INSERTION, DELETION,
                                  INVARIANT, INDEL, COMPLEX)
 from biolib.seqs import SeqWithQuality
