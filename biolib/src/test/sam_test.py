@@ -41,10 +41,10 @@ class Test(unittest.TestCase):
         'It tests the parser of the sam pileup file'
         sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
         fhand = open(sam_fname)
-        seq_vars = list(seqvars_in_sam_pileup(fhand, 2))
-        assert len(seq_vars) == 2
+        seq_vars = list(seqvars_in_sam_pileup(fhand, 2, None))
+        assert len(seq_vars) == 8
         assert seq_vars[0][0].reference == 'SGN-U562678'
-        assert seq_vars[1][0].reference == 'SGN-U562679'
+        assert seq_vars[7][0].reference == 'SGN-U562679'
 
     @staticmethod
     def test_is_seq_bar():

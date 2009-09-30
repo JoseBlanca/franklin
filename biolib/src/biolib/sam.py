@@ -19,16 +19,14 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import re
-from biolib.collections_ import FileCachedList
+from biolib.collections_ import FileCachedList, item_context_iter
 from biolib.statistics import create_distribution
-from biolib.seqvariation import SeqVariation, SNP, INSERTION, DELETION
+from biolib.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
+                                 INVARIANT)
 
-def seqvars_in_sam_pileup(pileup, min_num):
+def _seqvars_in_sam_pileup(pileup, min_num):
     '''This function takes from a sam pileup format file all the position that
     are interesting'''
-    previous_cromosome = None
-    seqvars_in_cromosome = []
     for line in pileup:
         if line.isspace():
             continue
@@ -36,24 +34,24 @@ def seqvars_in_sam_pileup(pileup, min_num):
         # get alleles from the string
         alleles, qualities = _get_alleles(ref_base, read_bases, qual)
         alleles, qual_grouped = _group_alleles(alleles, qualities)
-        alleles = get_allele_type(alleles, qual_grouped)
+        alleles = get_allele_type(ref_base, alleles, qual_grouped)
 
         if is_seq_var(coverage, ref_base, alleles, min_num):
-            seq_var = SeqVariation(alleles = alleles,
-                                   name='%s_%s' % (cromosome, position),
-                                   location=int(position) - 1,
-                                   reference=cromosome)
-            seqvars_in_cromosome.append(seq_var)
+            yield  SeqVariation(alleles = alleles,
+                                name='%s_%s' % (cromosome, position),
+                                location=int(position) - 1,
+                                reference=cromosome)
 
-            if previous_cromosome != cromosome:
-                if previous_cromosome is not None:
-                    yield seqvars_in_cromosome
-                    seqvars_in_cromosome = []
-                previous_cromosome = cromosome
-    yield seqvars_in_cromosome
+def seqvars_in_sam_pileup(pileup, min_num, window):
+    '''This function takes the seqvar iterator of the sam pileup, and it return
+    an iterator with a tuple of seqvar and its context'''
+    seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num)
+    seq_var_with_context_iter = item_context_iter(seqvar_iter, window=window)
+    for seq_var_contex in seq_var_with_context_iter:
+        yield seq_var_contex
 
 
-def get_allele_type(alleles, qual_grouped):
+def get_allele_type(ref_base, alleles, qual_grouped):
     '''It gets the type (snp, deletion, insertion) for each allele and removes
     the + and -'''
     new_alleles = []
@@ -67,6 +65,9 @@ def get_allele_type(alleles, qual_grouped):
         elif allele.startswith('-'):
             allele_info['allele'] = allele[1:]
             allele_info['kind']   = DELETION
+        elif allele == ref_base:
+            allele_info['allele'] = allele
+            allele_info['kind']   = INVARIANT
         else:
             allele_info['allele'] = allele
             allele_info['kind']   = SNP
