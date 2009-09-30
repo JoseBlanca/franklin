@@ -24,41 +24,36 @@ Created on 2009 uzt 30
 from biolib.seqvariation import (calculate_pic, cap_enzime)
 
 
-def create_high_variable_region_filter(seq_vars_in_contig, max_variability,
-                                       window_length):
+## Filters
+def create_high_variable_region_filter(max_variability, window_length):
     'It creates a filter that filters seq_vars from high variable regions'
-
     def high_variable_region_filter(seq_var):
         'The filter'
-        #how many snps are in the window?
-        seq_var_quantity = 0
-        for seq_var2 in seq_vars_in_contig:
-            if seq_var2.location - seq_var.location < window_length:
-                seq_var_quantity += 1
-
-        if seq_var.reference is not seq_vars_in_contig[0].reference:
-            raise ValueError('The given seqvar list not in the same contig')
-
-        reference_len = len(seq_var.reference)
-        seq_var_percent = seq_var_quantity / float(reference_len)
-        if seq_var_percent > max_variability:
+        if seq_var is None:
             return False
-        else:
+        (seq_var, context) = seq_var
+
+        #how many snps are in the window?
+        seq_var_quantity = len(context)
+        seq_var_percent = seq_var_quantity / float(window_length * 2)
+        if seq_var_percent > max_variability:
             return True
+        else:
+            return False
     return high_variable_region_filter
 
-def create_close_to_seqvar_filter(seq_vars_in_contig, distance):
+def create_close_to_seqvar_filter(distance):
     '''It returns a filter that filters snps by the proximity to other snps.
 
     If the seqvar has another seqvar closer than DISTANCE, then this snp is
     filtered out'''
-
     def close_to_seqvar_filter(seq_var):
         'The filter'
-        if seq_var.reference is not seq_vars_in_contig[0].reference:
-            raise ValueError('The given seqvar list not in the same contig')
+        if seq_var is None:
+            return False
+        (seq_var, context) = seq_var
         location = seq_var.location
-        for seqvar_in_contig in seq_vars_in_contig:
+        for seqvar_in_contig in context:
             dist = abs(seqvar_in_contig.location - location)
             if dist == 0 :
                 continue
@@ -73,6 +68,9 @@ def create_major_allele_freq_filter(frequency):
 
     def major_allele_freq_filter(seq_var):
         'The filter'
+        if seq_var is None:
+            return False
+        seq_var = seq_var[0]
         alleles     = seq_var.alleles
         read_number = 0
         first_read  = alleles[0]['reads']
@@ -93,6 +91,9 @@ def create_pic_filter(min_pic):
     def pic_filter(seq_var):
         'The pic filter'
         if seq_var is None:
+            return False
+        seq_var = seq_var[0]
+        if seq_var is None:
             return None
         if calculate_pic(seq_var) < min_pic:
             return False
@@ -106,6 +107,9 @@ def create_cap_enzyme_filter(all_enzymes):
     def enzymes_filter(seq_var):
         'The real filter'
         if seq_var is None:
+            return False
+        seq_var = seq_var[0]
+        if seq_var is None:
             return None
         enzymes = cap_enzime(seq_var, all_enzymes)
         if len(enzymes) != 0:
@@ -114,158 +118,85 @@ def create_cap_enzyme_filter(all_enzymes):
             return False
     return enzymes_filter
 
+def create_allele_number_filter(num_alleles):
+    'This function factory creates a filter that filters by allele number'
+    def allele_number_filter(seq_var):
+        'The filter'
+        if seq_var is None:
+            return False
+        seq_var = seq_var[0]
+        if len(seq_var.alleles) < num_alleles:
+            return False
+        else:
+            return True
+    return allele_number_filter
+def create_seqvar_close_to_limit_filter(max_distance):
+    '''This function is a function factory. These functions are filters than
+     return true if those seqvars ar not clser to the limita than max_distance
+     '''
+    def seqvar_close_to_reference_limit(seq_var):
+        '''True if the sequence variation is close to the contig limits.
 
-#
-#def create_bad_quality_allele_remover(qual_threshold=None,default_quality=None):
-#    '''This function is a factory function that given a seqvar removes bad
-#    quality alleles'''
-#
-#
-#    def remove_bad_quality_alleles(seqvar):
-#        ''' It removes bad quality alleles given a seqvar'''
-#        if seqvar is None:
-#            return None
-#
-#        if  qual_threshold is None:
-#            raise ValueError('Quality threshold must be implicit')
-#
-#        alleles  = seqvar.alleles
-#        contig   = seqvar.alignment
-#        location = seqvar.location
-#
-#        bad_alleles = [] # Alleles we are not going to use
-#        for allele in alleles:
-#            # Gaps does not have quality, and it is OK
-#            if CONFIG.indel_char in allele:
-#                continue
-#            quality_allele = _allele_quality(contig, alleles[allele], location,
-#                                              default_quality)
-#
-#            # We check it the quality is enought to use
-#            if quality_allele < qual_threshold:
-#                bad_alleles.append(allele)
-#        for allele in bad_alleles:
-#            del alleles[allele]
-#
-#        if len(alleles) >1:
-#            return SeqVariation(alleles=alleles, location=seqvar.location, \
-#                                alignment=seqvar.alignment)
-#        else:
-#            return None
-#    return remove_bad_quality_alleles
-#
-#def _allele_quality(contig, reads, location, default_quality):
-#    ''' It returns the quality of a allele'''
-#    quality_allele = 0
-#    for read_num in reads:
-#        read = contig[read_num]
-#        # If the location is more than one column we need to obtain de media
-#        # of all columns involved
-#        try:
-#            columns = slice_to_range(location, None)
-#        except AttributeError:
-#            start = location.start
-#            end = location.end
-#            columns = slice_to_range(slice(start, end + 1), None)
-#
-#
-#        # We sum all qualities of the allele
-#        read_allele_quality = _read_allele_quality(columns, read,
-#                                                   default_quality)
-#        if read_allele_quality is not None:
-#            quality_allele += read_allele_quality
-#    # this is the media of the qualities
-#    return quality_allele / len(reads)
-#
-#
-#def _read_allele_quality(columns, read, default_quality):
-#    '''it returns of the quality of the allele in one read '''
-#    quality_row = 0
-#    cols_with_quality = 0
-#    for column_location in columns:
-#        #It checks if the read have quality, and if we are giving a
-#        #default quality for the reads that haven't
-#        try:
-#            #The easiest way to get simple columns is using this.
-#            # Because it complements and reverses if is needed
-#            nucleotide_quality = read[column_location].qual[0]
-#        except IndexError:
-#            #No quality for this read in this position
-#            continue
-#        except TypeError:
-#            if default_quality is None:
-#                msg = "No Quality in read and no default provided"
-#                raise ValueError(msg)
-#            else:
-#                nucleotide_quality = default_quality
-#        quality_row += nucleotide_quality
-#        cols_with_quality += 1
-#
-#    if cols_with_quality:
-#        return quality_row / cols_with_quality
-#    else:
-#        return None
-#
-#
-#def create_second_allele_number_filter(number_2allele):
-#    '''This function is a function factory that creates a function that gives
-#     True if the second allele of the seqvar is bigger than number2_allele, if
-#     not is returns false and the sevar is filtered'''
-#
-#    def second_allele_read_times(seq_var):
-#        '''It returns True if the second most abundant allele has been read at
-#        least the given times'''
-#        if seq_var is None:
-#            return None
-#        alleles = seq_var.sorted_alleles()
-#        if allele_count(alleles[1][1]) >= number_2allele:
-#            return True
-#        return False
-#    return second_allele_read_times
-#
-#def create_seqvar_close_to_limit_filter(max_distance):
-#    '''This function is a function factory. These functions are filters than
-#     return true if those seqvars ar not clser to the limita than max_distance
-#     '''
-#    def seqvar_close_to_consensus_limit(seq_variation):
-#        '''True if the sequence variation is close to the contig limits.
-#
-#        It checks if the seq_variation is not within the range covered by the
-#        consensus and if it's close to one of its limits. In both cases it will
-#        return True.
-#        '''
-#        if seq_variation is None:
-#            return None
-#        #where does the sequence variation starts and ends?
-#        seq_var_loc = seq_variation.location
-#        try:
-#            #it's a location
-#            seq_var_start = seq_var_loc.start
-#            seq_var_end   = seq_var_loc.end
-#        except AttributeError:
-#            #it's an int
-#            seq_var_start = seq_var_loc
-#            seq_var_end   = seq_var_loc
-#
-#        #where does the consensus starts and ends?
-#        contig = seq_variation.alignment
-#        if contig is None:
-#            raise ValueError('SeqVariation is not associated with an alignment')
-#        consensus = contig.consensus
-#        if consensus is None:
-#            raise ValueError('The alignment has no consensus')
-#        #the consensus might be a LocatableSequence or an standard sequence
-#        try:
-#            con_loc = consensus.location
-#            con_start = con_loc.start
-#            con_end   = con_loc.end
-#        except AttributeError:
-#            con_start = 0
-#            con_end   = len(consensus) - 1
-#
-#        #Now we can check the limits
-#        if (seq_var_start < con_start + max_distance or
-#            seq_var_end   > con_end - max_distance):
-#            return False
-#        return True
-#    return seqvar_close_to_consensus_limit
+        It checks if the seq_variation is not within the range covered by the
+        consensus and if it's close to one of its limits. In both cases it will
+        return True.
+        '''
+        if seq_var is None:
+            return None
+        seq_var = seq_var[0]
+        #where does the sequence variation starts and ends?
+        location = seq_var.location
+
+        #where does the consensus starts and ends?
+        reference = seq_var.reference
+        if reference  is None:
+            msg = 'SeqVariation is not associated with an reference sequence'
+            raise ValueError(msg)
+
+        reference_len = len(reference)
+        if (reference_len - location + 1 > max_distance or
+            location  > max_distance):
+            return True
+        else:
+            return False
+
+    return seqvar_close_to_reference_limit
+
+# Cleaners
+def create_bad_quality_reads_cleaner(qual_treshold):
+    '''This function is a factory function that giving a seqvar removes bad
+    quality reads from it'''
+    def bad_quality_reads_cleaner(seqvar):
+        "The cleaner"
+        if seqvar is None:
+            return None
+        seq_var = seqvar[0]
+        alleles = seq_var.alleles
+        new_alleles = []
+        for allele in alleles:
+            new_qual = []
+            if 'quality' in allele:
+                for qual in allele['quality']:
+                    if qual > qual_treshold:
+                        new_qual.append(qual)
+            # check if allele has changed
+            len_new_qual = len(new_qual)
+            if len_new_qual == 0:
+                continue
+            elif len_new_qual != len(allele['quality']):
+                new_allele = {}
+                new_allele['allele']  = allele['allele']
+                new_allele['kind']    = allele['kind']
+                new_allele['reads']   = len(new_qual)
+                new_allele['quality'] = new_qual
+                new_alleles.append(new_allele)
+            else:
+                new_alleles.append(allele)
+        if len(new_alleles) == 0:
+            return None
+        else:
+            return seq_var.copy(alleles=new_alleles)
+
+    return bad_quality_reads_cleaner
+
+

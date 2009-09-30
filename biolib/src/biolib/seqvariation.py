@@ -63,7 +63,7 @@ class SeqVariation(object):
         self.reference = reference
         self.name = name
         self.location = location
-        self.annotations = {} # a cache to store calculations
+        self.annotations = {}
 
     def _get_kind(self):
         '''It returns the kind of variation.
@@ -91,6 +91,27 @@ class SeqVariation(object):
 
     def __str__(self):
         return '%s %d: %s:' % (self.reference, self.location, str(self.alleles))
+
+    def copy(self, alleles=None, reference=None, name=None, location=None,
+                                                            annotations=None):
+        '''Given a seqvariation in returns a new seqvariation with the new data
+         changes'''
+        if alleles is None:
+            alleles = self.alleles
+        if reference is None:
+            reference = self.reference
+        if name is None:
+            name = self.name
+        if location is None:
+            location = self.location
+
+        seqvar = self.__class__(alleles=alleles, reference=reference, name=name,
+                              location=location)
+        if annotations is None:
+            seqvar.annotations = self.annotations
+        else:
+            seqvar.annotations = annotations
+        return seqvar
 
 def seqvar_summary(seqvar):
     '''It takes a seqvar and summarizes, returning a library file like format

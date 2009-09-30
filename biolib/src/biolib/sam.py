@@ -24,7 +24,7 @@ from biolib.statistics import create_distribution
 from biolib.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
                                  INVARIANT)
 
-def _seqvars_in_sam_pileup(pileup, min_num):
+def _seqvars_in_sam_pileup(pileup, min_num, required_positions=None):
     '''This function takes from a sam pileup format file all the position that
     are interesting'''
     for line in pileup:
@@ -36,13 +36,14 @@ def _seqvars_in_sam_pileup(pileup, min_num):
         alleles, qual_grouped = _group_alleles(alleles, qualities)
         alleles = get_allele_type(ref_base, alleles, qual_grouped)
 
-        if is_seq_var(coverage, ref_base, alleles, min_num):
+        if ((required_positions and required_positions[cromosome][position]) or
+            is_seq_var(coverage, ref_base, alleles, min_num)):
             yield  SeqVariation(alleles = alleles,
                                 name='%s_%s' % (cromosome, position),
                                 location=int(position) - 1,
                                 reference=cromosome)
 
-def seqvars_in_sam_pileup(pileup, min_num, window):
+def seqvars_in_sam_pileup(pileup, min_num, window=None):
     '''This function takes the seqvar iterator of the sam pileup, and it return
     an iterator with a tuple of seqvar and its context'''
     seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num)
