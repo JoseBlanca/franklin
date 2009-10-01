@@ -147,6 +147,26 @@ class FileCachedList(object):
                 raise StopIteration
             yield self._type(line.strip())
 
+class RequiredPosition(object):
+    'This class'
+
+    def __init__(self, fhand):
+        '''It initializes the class '''
+        self._fhand = fhand
+        self._fhand.seek(0)
+
+    def __getitem__(self, index):
+        print "hola", index, "hola" #, index2
+#        for line in self._fhand:
+#            if not line:
+#                continue
+#            line = line.strip()
+#            (cromosome, position) = line.split()
+#            (asked_crom, asked_pos) = index
+#            print index
+
+
+
 def item_context_iter(items, window=None):
     '''Given an iter with Locatable items it returns an item, context iter,
 

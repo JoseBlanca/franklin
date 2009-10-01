@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os
+import unittest, os, StringIO
 
 import biolib
 from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup, is_seq_var
@@ -23,6 +23,11 @@ from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+
+REFERENCES='''>SGN-U562678
+ATATATATATATATATATAT
+>SGN-U562679
+GCGCGCGCGCGCGG'''
 
 class Test(unittest.TestCase):
     'It tests the samtools pileup parser'
@@ -41,11 +46,13 @@ class Test(unittest.TestCase):
         'It tests the parser of the sam pileup file'
         sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
         fhand = open(sam_fname)
-        seq_vars = list(seqvars_in_sam_pileup(fhand, 2, None))
+        references = StringIO.StringIO(REFERENCES)
+        seq_vars = list(seqvars_in_sam_pileup(fhand, references=references))
         assert len(seq_vars) == 8
-        assert seq_vars[0][0].reference == 'SGN-U562678'
-        assert seq_vars[7][0].reference == 'SGN-U562679'
-
+        assert seq_vars[0][0].reference.name == 'SGN-U562678'
+        assert seq_vars[7][0].reference.name == 'SGN-U562679'
+        assert seq_vars[0][0].reference.seq == 'ATATATATATATATATATAT'
+        assert seq_vars[7][0].reference.seq == 'GCGCGCGCGCGCGG'
     @staticmethod
     def test_is_seq_bar():
         'It test is_seq_var function'

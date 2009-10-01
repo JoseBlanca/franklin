@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-from biolib.collections_ import SparseVector, item_context_iter
+import unittest, StringIO
+from biolib.collections_ import (SparseVector, item_context_iter,
+                                 RequiredPosition)
 from biolib.rbtree import RBDict
 
 class SparseVectorTests(unittest.TestCase):
@@ -110,6 +111,27 @@ class ItemContextIterTest(unittest.TestCase):
                     (('b', 1), (('b', 1), ('b', 5))),
                     (('b', 5), (('b', 1), ('b', 5))),]
         _check_item_context_iter(item_context_iter(items), expected)
+
+REQUIRED_POS = '''
+aaa    2
+aaa    3
+aaa    8
+bbb    2
+bbb    7'''
+
+class RequiredPositionsTest(unittest.TestCase):
+    'It checks the FileCachedRequiredPositions methods'
+    @staticmethod
+    def test_required_pos():
+        'Basic class usage'
+        fhand = StringIO.StringIO()
+        fhand.write(REQUIRED_POS)
+        fhand.flush()
+        req_pos = RequiredPosition(fhand)
+
+        a = req_pos['2']['aaa']
+        #assert req_pos['aaa']['2']
+        #assert not req_pos['aaa']['4']
 
 
 if __name__ == "__main__":

@@ -23,19 +23,21 @@ Created on 2009 uzt 30
 
 from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime)
 
-
 ## Filters
-def create_high_variable_region_filter(max_variability, window_length):
+def create_high_variable_region_filter(max_variability, window_length=None):
     'It creates a filter that filters seq_vars from high variable regions'
     def high_variable_region_filter(seq_var):
         'The filter'
+        wlen = window_length
         if seq_var is None:
             return False
         (seq_var, context) = seq_var
 
         #how many snps are in the window?
         seq_var_quantity = len(context)
-        seq_var_percent = seq_var_quantity / float(window_length * 2)
+        if wlen is None:
+            wlen = len(seq_var.reference)
+        seq_var_percent = seq_var_quantity / float(wlen * 2)
         if seq_var_percent > max_variability:
             return True
         else:
@@ -170,7 +172,7 @@ def create_bad_quality_reads_cleaner(qual_treshold):
         "The cleaner"
         if seqvar is None:
             return None
-        seq_var = seqvar[0]
+        (seq_var, context) = seqvar
         alleles = seq_var.alleles
         new_alleles = []
         for allele in alleles:
@@ -195,7 +197,7 @@ def create_bad_quality_reads_cleaner(qual_treshold):
         if len(new_alleles) == 0:
             return None
         else:
-            return seq_var.copy(alleles=new_alleles)
+            return (seq_var.copy(alleles=new_alleles), context)
 
     return bad_quality_reads_cleaner
 

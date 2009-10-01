@@ -19,16 +19,23 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
                                         INVARIANT)
 
-def _seqvars_in_sam_pileup(pileup, min_num, required_positions=None):
+def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
+                           references=None):
     '''This function takes from a sam pileup format file all the position that
     are interesting'''
+    if references is not None:
+        references_index = FileSequenceIndex(references)
+    if min_num == None:
+        min_num = 2
     for line in pileup:
         if line.isspace():
             continue
+
         cromosome, position, ref_base, coverage, read_bases, qual = line.split()
         # get alleles from the string
         alleles, qualities = _get_alleles(ref_base, read_bases, qual)
@@ -37,15 +44,19 @@ def _seqvars_in_sam_pileup(pileup, min_num, required_positions=None):
 
         if ((required_positions and required_positions[cromosome][position]) or
             is_seq_var(coverage, ref_base, alleles, min_num)):
+            if references is not None:
+                cromosome = references_index[cromosome]
             yield  SeqVariation(alleles = alleles,
                                 name='%s_%s' % (cromosome, position),
                                 location=int(position) - 1,
                                 reference=cromosome)
 
-def seqvars_in_sam_pileup(pileup, min_num, window=None):
+def seqvars_in_sam_pileup(pileup, min_num=None, window=None,
+                          required_positions=None, references=None):
     '''This function takes the seqvar iterator of the sam pileup, and it return
     an iterator with a tuple of seqvar and its context'''
-    seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num)
+    seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num, required_positions,
+                                         references)
     seq_var_with_context_iter = item_context_iter(seqvar_iter, window=window)
     for seq_var_contex in seq_var_with_context_iter:
         yield seq_var_contex
@@ -160,5 +171,23 @@ def _get_alleles(ref_base, alleles, qualities):
         qual_delta = 1
         ignore_qual = False
     return filtered_alleles, filtered_qualities
+
+def sam_to_required_pos(seq_vars, outfhand):
+    '''It takes a seqvar iterator and writes the required position file.
+     each line of this file is a tuple separated by a tab of reference and
+     postion'''
+    for seq_var in seq_vars:
+        location = seq_var[0].location
+        try:
+            name = seq_var[0].reference.name
+        except AttributeError:
+            name =  seq_var[0].reference
+        outfhand.write('%s\t%d\n' % (name, location))
+    outfhand.close()
+
+
+
+
+
 
 
