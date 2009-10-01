@@ -8,9 +8,19 @@ from sqlalchemy import create_engine, Table
 from sqlalchemy.orm import mapper, relation, sessionmaker
 from sqlalchemy.orm import exc as orm_exc
 
+def get_db_url(database_conf):
+    'It return a usable db url by sqlalchemy'
+    if database_conf == 'sqlite':
+        return 'sqlite:///:memory:'
+    else:
+        return '%s://%s:%s@%s/%s' % (database_conf['dbname'],
+                                     database_conf['dbuser'],
+                                     database_conf['dbpass'],
+                                     database_conf['dbname'] )
+
 def get_foreign_key(table, column):
     '''It returns the table and column names pointed by the foreign key.
-    
+
     The given column should be a foreign key in the given table.
     The given table and column should be sqlalchemy objects.
     '''
@@ -33,7 +43,7 @@ def get_foreign_key(table, column):
 
 def _setup_table(table_name, relations, table_classes, row_classes, metadata):
     ''' It setups one table of chado
-    
+
     It returns a class that represents the Table and a class that represents
     the rows as objects.
     It also requires the already defined table and row classes.
@@ -41,7 +51,7 @@ def _setup_table(table_name, relations, table_classes, row_classes, metadata):
     #the class that holds the information from the database table
     table = Table(table_name, metadata, autoload=True)
     #we need the names of the columns in the database to check in the
-    #row object inits if the given parameters match with the column names 
+    #row object inits if the given parameters match with the column names
     col_names = [col.name for col in table.columns]
     #if we're defining relations this columns will also be allowable in
     #the inits of the row class
@@ -88,37 +98,37 @@ def setup_mapping(engine, mapping_definitions):
     without having to write table classes and row classes for each database
     table.
     It requires a sqlalchemy engine bind to an already setup database and
-    the definition of the mapping that we want to set up. 
+    the definition of the mapping that we want to set up.
     The mapping definition is a list of dict. For every table in the database
     that we want to set up there's a dict. This dict should have the 'name'
     of the table in the database and an optional 'relations' list. The relations
-    should be tuples with the type of the relation ('one_many' or 'many_one') 
+    should be tuples with the type of the relation ('one_many' or 'many_one')
     and the name of the property in the row class created that will hold that
-    relation. An example mapping definition could be:  
+    relation. An example mapping definition could be:
         [{'name' :'db'}, {'name':'dbxref', 'relations':[('one_many', 'db')]}]
-    It means that we want to map the tables db and dbxref and that in the 
+    It means that we want to map the tables db and dbxref and that in the
     objects that map the rows in dbxref we want a property named db that holds
     a relation with the db objects.
     This function will return two dicts one with the classes that represent the
     tables in the db and other with the classes that represent the rows.
     '''
-    
+
     metadata = sqlalchemy.MetaData()
     metadata.bind  = engine
-    
+
     table_classes = {}
     row_classes   = {}
 
     for mapping_definition in mapping_definitions:
         table_name = mapping_definition['name']
-        
+
         if 'relations' in mapping_definition:
             relations  = mapping_definition['relations']
         else:
             relations = None
         _setup_table(table_name, relations, table_classes, row_classes,
                      metadata)
-    
+
     return table_classes, row_classes
 
 def connect_database(database, username='', password='', host='localhost'):
@@ -128,7 +138,7 @@ def connect_database(database, username='', password='', host='localhost'):
 
 class DbMap(object):
     'A db orm'
-    
+
     def __init__(self, engine, mapping_definitions):
         'The init requires an sqlalchemy engine.'
         self._foreign_cache = {} #a ache for the foreign_key function
@@ -174,7 +184,7 @@ class DbMap(object):
 
     def _get_foreign_key(self, table, column):
         '''It returns the table and column name pointed by the foreign key.
-        
+
         The given column should be a foreign key in the given table.
         '''
         cache_key = table + '%' + column
@@ -223,7 +233,7 @@ class DbMap(object):
                     msg += '\ttable %s \n\tattributes: %s' % \
                                     (referenced_table, str(this_col_attributes))
                     raise ValueError(msg)
-                #where is the table for the current kind defined in the 
+                #where is the table for the current kind defined in the
                 #mapping definitions list?
                 indx = self._table_index_in_mapping(table)
                 rel_attr = \
@@ -235,7 +245,7 @@ class DbMap(object):
 
     def get(self, kind, attributes):
         '''It returns one attribute with the given attributes and kind
-        
+
         If more than one row match with the unique attributes from the given
         ones an error will be raised.
         If some of the attributes of the non unique ones are changed they will
