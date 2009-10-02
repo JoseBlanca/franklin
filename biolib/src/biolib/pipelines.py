@@ -146,20 +146,20 @@ filter_short_seqs_solexa = {'function': create_length_filter,
 
 # Snp cleaning /filtering ####
 snp_high_variable_region_filter = {'function':create_high_variable_region_filter,
-                       'arguments':{'max_variability':0.8},
+                       'arguments':{'max_variability':0.05},
                        'type':'filter',
                        'name':'high_variable_region',
                        'comment': 'It filters snp in a high variable regions'}
 
 snp_close_to_seqvar_filter = {'function':create_close_to_seqvar_filter,
-                            'arguments':{'distance':12},
+                            'arguments':{'distance':20},
                             'type':'filter',
                             'name':'close_to_seqvar',
                             'comment': 'It filters snp if it has a seqvar near'}
 
 
 snp_major_allele_freq_filter = {'function':create_major_allele_freq_filter,
-                                     'arguments':{'frequency':0.8},
+                                     'arguments':{'frequency':0.7},
                                      'type':'filter',
                                      'name':'major_allele_frec',
                               'comment':'It filters by mayor allele frequency'}

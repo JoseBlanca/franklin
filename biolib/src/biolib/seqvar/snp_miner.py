@@ -6,8 +6,6 @@ Created on 2009 eka 18
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from biolib.db.db_utils import  DbMap
-from biolib.file_parsers import snp_summary_parser
-from biolib.read_source import get_read_strain
 
 SNPMINER_MAP_DEF = [{'name':'reference'},
                     {'name':'library'},
