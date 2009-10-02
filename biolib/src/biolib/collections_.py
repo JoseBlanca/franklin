@@ -156,7 +156,7 @@ class RequiredPosition(object):
         self._fhand.seek(0)
 
     def __getitem__(self, index):
-        print "hola", index, "hola" #, index2
+        print "hola", index, "hola" #,  index2
 #        for line in self._fhand:
 #            if not line:
 #                continue

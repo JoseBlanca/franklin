@@ -160,7 +160,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                       'quality':[30, 20]}],
                            location=1, reference='reference')
         snp = (snp, 'context')
-        snp = bad_quality_cleaner(snp)
+        snp = bad_quality_cleaner(snp)[0]
         assert len(snp.alleles)    == 2
         assert snp.alleles[0]['reads'] == 3
 
@@ -170,7 +170,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                       'quality':[20, 20]}],
                            location=1, reference='reference')
         snp = (snp, 'context')
-        snp = bad_quality_cleaner(snp)
+        snp = bad_quality_cleaner(snp)[0]
         assert len(snp.alleles)    == 1
         assert snp.alleles[0]['reads'] == 3
 
