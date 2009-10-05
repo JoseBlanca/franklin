@@ -40,10 +40,10 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
         # get alleles from the string
         alleles, qualities = _get_alleles(ref_base, read_bases, qual)
         alleles, qual_grouped = _group_alleles(alleles, qualities)
-        alleles = get_allele_type(ref_base, alleles, qual_grouped)
+        alleles = _get_allele_type(ref_base, alleles, qual_grouped)
 
         if ((required_positions and required_positions[cromosome, position]) or
-            is_seq_var(coverage, ref_base, alleles, min_num)):
+            _is_seq_var(coverage, ref_base, alleles, min_num)):
             if references is not None:
                 cromosome = references_index[cromosome]
             yield  SeqVariation(alleles = alleles,
@@ -62,7 +62,7 @@ def seqvars_in_sam_pileup(pileup, min_num=None, window=None,
         yield seq_var_contex
 
 
-def get_allele_type(ref_base, alleles, qual_grouped):
+def _get_allele_type(ref_base, alleles, qual_grouped):
     '''It gets the type (snp, deletion, insertion) for each allele and removes
     the + and -'''
     new_alleles = []
@@ -86,7 +86,7 @@ def get_allele_type(ref_base, alleles, qual_grouped):
     return new_alleles
 
 
-def is_seq_var(coverage, ref_base, alleles, min_reads):
+def _is_seq_var(coverage, ref_base, alleles, min_reads):
     '''This looks if the given data is a seq variations, it return false if it
      is not a seq var and return allele, qual_allele if it is a seq_var'''
 
@@ -101,7 +101,7 @@ def is_seq_var(coverage, ref_base, alleles, min_reads):
     return True
 
 def _group_alleles(alleles, quals):
-    '''It converts the list of secs and quals into dicts with the allele as key.
+    '''It converts the list of seqs and quals into dicts with the allele as key.
     allele_group group alleles and counts them and quality_group gives
     the quality for each allele'''
     alleles_dict = {}
@@ -172,7 +172,7 @@ def _get_alleles(ref_base, alleles, qualities):
         ignore_qual = False
     return filtered_alleles, filtered_qualities
 
-def sam_to_required_pos(seq_vars, outfhand):
+def save_seqvars_positions(seq_vars, outfhand):
     '''It takes a seqvar iterator and writes the required position file.
      each line of this file is a tuple separated by a tab of reference and
      postion'''

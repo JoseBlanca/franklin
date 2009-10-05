@@ -132,11 +132,16 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp1 = SeqVariation(alleles=[{'allele':'A', 'reads':4,
                                       'kind':INVARIANT}],
                            location=4, reference=reference)
+        snp2 = SeqVariation(alleles=[{'allele':'A', 'reads':4,
+                                      'kind':SNP}],
+                           location=4, reference=reference)
         filter_ = create_allele_number_filter(2)
-        snp = (snp, 'context')
-        snp1 = (snp1, 'context')
+        snp = (snp, [snp])
+        snp1 = (snp1, [snp1])
+        snp2 = (snp2, [snp2])
         assert filter_(snp)
         assert not filter_(snp1)
+        assert filter_(snp2)
 
     @staticmethod
     def test_remove_bad_quality_reads():

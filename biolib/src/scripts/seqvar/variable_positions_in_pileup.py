@@ -38,9 +38,8 @@ def parse_options():
                       help='Required positions file')
     parser.add_option('-p', '--pipeline', dest='pipeline', default='snp_clean',
                        help='filtering pipeline')
-    parser.add_option('-r', '--references', dest='references',
-                       help='References file')
     return parser
+
 def set_parameters():
     '''It sets the parameters for the script.'''
 
@@ -57,22 +56,16 @@ def set_parameters():
     else:
         outfile = open(options.outfile, 'w')
 
-    if options.references is None:
-        parser.error('Reference file is required')
-    else:
-        references = open(options.references)
-
-
     pipeline = options.pipeline
 
-    return infile, outfile, references, pipeline
+    return infile, outfile, pipeline
 
 def main():
     'The main part of the script'
-    sam_pileup, outfile, references, pipeline = set_parameters()
+    sam_pileup, outfile, pipeline = set_parameters()
 
     #get seqvars from sam pileup
-    seq_vars = seqvars_in_sam_pileup(sam_pileup, references=references)
+    seq_vars = seqvars_in_sam_pileup(sam_pileup)
 
     #filter/clean seq_vars
     seq_vars = pipeline_runner(pipeline, seq_vars)

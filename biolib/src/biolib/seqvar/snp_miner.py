@@ -37,24 +37,33 @@ def create_snp_miner_database(engine):
                         Column('reference_id', Integer, primary_key=True),
                         Column('name',   String,  nullable=False, unique=True),
                         Column('seq', String, nullable=True))
+
     reference_annot_table = Table('referenceprop', metadata,
           Column('reference_prop_id', Integer, primary_key=True),
           Column('reference_id', Integer, ForeignKey('reference.reference_id'),
-                         nullable=False),
+                 nullable=False),
           Column('type',             String,  nullable=False),
           Column('value',            String,  nullable=False),
           Column('start',            Integer),
           Column('end',              Integer),
           UniqueConstraint('reference_id', 'type', 'value'))
 
+    seqvar_location = Table('location', metadata,
+        Column('location_id', Integer, primary_key=True),
+        Column('reference_id', Integer, ForeignKey('reference.reference_id'),
+               nullable=False),
+        Column('position', Integer, nullable=False),
+        UniqueConstraint('reference_id', 'position'))
+
     seqvar_table = Table('seqvar', metadata,
         Column('seqvar_id', Integer, primary_key=True),
-        Column('name',   String,  nullable=False, unique=True),
+        Column('name',   String,  nullable=True),
         Column('type',   String,  nullable=False),
         Column('library_id', Integer, ForeignKey('library.library_id'),
                nullable=False),
         Column('location_id',  Integer, ForeignKey('location.location_id'),
-               nullable=False))
+               nullable=False),
+        UniqueConstraint('library_id', 'location_id'))
 
     seqvar_alleles = Table('seqvaralleles', metadata,
         Column('seqvar_alleles_id', Integer, primary_key=True),
@@ -73,13 +82,6 @@ def create_snp_miner_database(engine):
             Column('type',  String, nullable=False),
             Column('value', String, nullable=False),
             UniqueConstraint('seqvar_id', 'type', 'value'))
-
-    seqvar_location = Table('location', metadata,
-        Column('location_id', Integer, primary_key=True),
-        Column('reference_id', Integer, ForeignKey('reference.reference_id'),
-               nullable=False),
-        Column('position', Integer, nullable=False),
-        UniqueConstraint('reference_id', 'position'))
 
     library = Table('library', metadata,
                     Column('library_id', Integer, primary_key=True),

@@ -217,6 +217,8 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'solexa'       : [remove_adaptors_solexa, strip_quality,
                               filter_short_seqs_solexa],
+            'snp_basic': [snp_remove_baq_quality_alleles,
+                          snp_allele_number_filter],
          'snp_clean':[snp_remove_baq_quality_alleles,
                       snp_high_variable_region_filter,
                       snp_close_to_seqvar_filter,
@@ -224,7 +226,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
                       snp_pic_filter,
                       snp_cap_enzyme_filter,
                       snp_close_to_limit_filter,
-                      snp_allele_number_filter ],
+                      snp_allele_number_filter],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}
 

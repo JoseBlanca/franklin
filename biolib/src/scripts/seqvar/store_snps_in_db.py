@@ -53,7 +53,7 @@ def set_parameters():
     req_posfile = options.req_posfile
 
     if options.references is None:
-        parser.error('Reference file is required')
+        references = None
     else:
         references = open(options.references)
     # Data to insert in the database
@@ -74,17 +74,17 @@ def set_parameters():
         dbname = options.dbname
 
     if options.dbuser is None:
-        parser.error('DN user required')
+        dbuser = None
     else:
         dbuser = options.dbuser
 
     if options.dbpass is None:
-        parser.error('DN password required')
+        dbpass = None
     else:
         dbpass = options.dbpass
 
     if options.dbengine is None:
-        dbengine = 'postgres'
+        dbengine = 'sqlite'
     else:
         dbengine = options.dbengine
 
