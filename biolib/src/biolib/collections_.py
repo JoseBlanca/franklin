@@ -154,16 +154,28 @@ class RequiredPosition(object):
         '''It initializes the class '''
         self._fhand = fhand
         self._fhand.seek(0)
+        self._cache = (None, None)
 
     def __getitem__(self, index):
-        print "hola", index, "hola" #,  index2
-#        for line in self._fhand:
-#            if not line:
-#                continue
-#            line = line.strip()
-#            (cromosome, position) = line.split()
-#            (asked_crom, asked_pos) = index
-#            print index
+        'The get item method. It look the position in the file'
+        if self._cache == index:
+            return True
+        asked_cromosome, asked_position = index
+        for line in self._fhand:
+            line = line.strip()
+            if not line:
+                continue
+            (cromosome, position) = line.split()
+            # if the given position is in the file
+            if index == (cromosome, position):
+                return True
+            #if we haven't found the position but we find a bigger
+            elif (((cromosome == asked_cromosome) and
+                 (asked_position > position)) or (cromosome < asked_cromosome)):
+                self._cache = index
+                return False
+            else:
+                return False
 
 
 

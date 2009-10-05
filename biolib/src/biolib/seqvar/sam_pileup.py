@@ -42,7 +42,7 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
         alleles, qual_grouped = _group_alleles(alleles, qualities)
         alleles = get_allele_type(ref_base, alleles, qual_grouped)
 
-        if ((required_positions and required_positions[cromosome][position]) or
+        if ((required_positions and required_positions[cromosome, position]) or
             is_seq_var(coverage, ref_base, alleles, min_num)):
             if references is not None:
                 cromosome = references_index[cromosome]

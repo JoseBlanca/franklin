@@ -135,8 +135,11 @@ class RequiredPositionsTest(unittest.TestCase):
         fhand.write(REQUIRED_POS)
         fhand.flush()
         req_pos = RequiredPosition(fhand)
-        assert req_pos['aaa']['2']
-        assert not req_pos['aaa']['4']
+        assert req_pos['aaa', '2']
+        assert req_pos['aaa', '3']
+        assert not req_pos['aaa', '4']
+        assert req_pos['bbb', '2']
+
     @staticmethod
     def test_required_pos_no_sorted():
         ''' It test if the file is not ordered  or if you ask in an unsorted
@@ -146,15 +149,15 @@ class RequiredPositionsTest(unittest.TestCase):
         fhand.write(REQUIRED_POS2)
         fhand.flush()
         req_pos = RequiredPosition(fhand)
-        assert not req_pos['aaa']['2']
+        assert not req_pos['aaa', '2']
 
         # you ask unordered
         fhand = StringIO.StringIO()
         fhand.write(REQUIRED_POS)
         fhand.flush()
         req_pos = RequiredPosition(fhand)
-        assert req_pos['aaa']['2']
-        assert not req_pos['aaa']['2']
+        assert req_pos['aaa', '2']
+        assert not req_pos['aaa', '2']
 
 
 
