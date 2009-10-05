@@ -32,12 +32,14 @@ from biolib.pipelines import pipeline_runner
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser('usage: %prog -i sam_pileup, -o req_pos -p pipeline')
-    parser.add_option('-i', '--sampileup', dest='inputfile',
+    parser.add_option('-i', '--sampileup', dest='infile',
                       help='Sam pileup file')
-    parser.add_option('-o', '--req_pos', dest='outputfile',
+    parser.add_option('-o', '--req_pos', dest='outfile',
                       help='Required positions file')
-    parser.add_option('-p', '--pipeline', dest='pipeline',default='snp_clean',
+    parser.add_option('-p', '--pipeline', dest='pipeline', default='snp_clean',
                        help='filtering pipeline')
+    parser.add_option('-r', '--references', dest='references',
+                       help='References file')
     return parser
 def set_parameters():
     '''It sets the parameters for the script.'''
@@ -45,26 +47,32 @@ def set_parameters():
     parser  = parse_options()
     options = parser.parse_args()[0]
 
-    if options.inputfile is None:
+    if options.infile is None:
         parser.error('Input file requierd')
     else:
-        inputfile = open(options.inputfile)
+        infile = open(options.infile)
 
-    if options.outputfile is None:
+    if options.outfile is None:
         outfile = sys.stdout
     else:
         outfile = open(options.outfile, 'w')
 
+    if options.references is None:
+        parser.error('Reference file is required')
+    else:
+        references = open(options.references)
+
+
     pipeline = options.pipeline
 
-    return inputfile, outfile, pipeline
+    return infile, outfile, references, pipeline
 
 def main():
     'The main part of the script'
-    sam_pileup, outfile, pipeline = set_parameters()
+    sam_pileup, outfile, references, pipeline = set_parameters()
 
     #get seqvars from sam pileup
-    seq_vars = seqvars_in_sam_pileup(sam_pileup)
+    seq_vars = seqvars_in_sam_pileup(sam_pileup, references=references)
 
     #filter/clean seq_vars
     seq_vars = pipeline_runner(pipeline, seq_vars)

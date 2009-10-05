@@ -104,7 +104,7 @@ def main():
                                                  set_parameters()
     #get the sevar from requiered base
     seq_vars =  seqvars_in_sam_pileup(samfile, required_positions=req_posfile,
-                                      reference_file=references)
+                                      references=references)
     #prepare database conexion:
     db_url = get_db_url(database_conf)
     engine = sqlalchemy.create_engine(db_url)
