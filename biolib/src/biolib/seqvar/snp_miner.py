@@ -107,10 +107,10 @@ def add_seqvar_to_db(engine, seqvar, library):
         _insert_seqvar_core(snp_miner, seqvar, library)
 
         # add alleles to db
-        _insert_seqvar_alleles(snp_miner, seqvar)
+        _insert_seqvar_alleles(snp_miner, seqvar, library)
 
         # add_seqvar_properties to db
-        _insert_seqvar_properties(snp_miner, seqvar)
+        _insert_seqvar_properties(snp_miner, seqvar, library)
 
         #commit changes
         snp_miner.commit()
@@ -120,16 +120,13 @@ def add_seqvar_to_db(engine, seqvar, library):
 
 def _insert_reference(snp_miner, seqvar):
     'It adds the reference data to the database'
-    try:
-        name = seqvar.reference.name
-    except AttributeError:
-        name = seqvar.reference
+    ref_name =  _get_reference_name(seqvar)
     try:
         seq = seqvar.reference.seq
     except AttributeError:
         seq = None
 
-    ref_attr = {'name':name, 'seq':seq}
+    ref_attr = {'name':ref_name, 'seq':seq}
     snp_miner.get('reference', attributes=ref_attr)
 
 def _insert_location(snp_miner, seqvar):
@@ -160,8 +157,10 @@ def _insert_seqvar_core(snp_miner, seqvar, library):
                     'library_id':{'accesion':library}}
     snp_miner.get('seqvar', attributes=seqvar_attrs)
 
-def _insert_seqvar_alleles(snp_miner, seqvar):
+def _insert_seqvar_alleles(snp_miner, seqvar, library):
     'Insert alleles of a seq var in database'
+    ref_name =  _get_reference_name(seqvar)
+    position = seqvar.location
     qual_separator = ":"
     seqvar_name = seqvar.name
     for allele in seqvar.alleles:
@@ -173,20 +172,36 @@ def _insert_seqvar_alleles(snp_miner, seqvar):
             qual    = qual_separator.join(qual)
         else:
             qual    = None
-        allele_attrs = {'seqvar_id':{'name': seqvar_name},
+        allele_attrs = {'seqvar_id':{'location_id': {'reference_id':
+                                                     {'name':ref_name},
+                                                      'position': position},
+                                     'library_id':{'accesion':library}},
                         'allele': allele_base, 'type': kind, 'num_reads': reads,
                         'quality':qual}
         snp_miner.get('seqvaralleles', attributes=allele_attrs )
 
-def _insert_seqvar_properties(snp_miner, seqvar):
+def _insert_seqvar_properties(snp_miner, seqvar, library):
     'Insert alleles of a seq var in database'
+    ref_name =  _get_reference_name(seqvar)
+    position = seqvar.location
     seqvar_name = seqvar.name
 
     for annotation, value in seqvar.annotations.items():
-        prop_attr = {'seqvar_id':{'name':seqvar_name}, 'type': annotation,
+        prop_attr = {'seqvar_id':{'location_id': {'reference_id':
+                                                              {'name':ref_name},
+                                                  'position': position},
+                                  'library_id':{'accesion':library}},
+                     'type': annotation,
                      'value':value}
         snp_miner.get('seqvarprop', attributes=prop_attr)
 
+def _get_reference_name(seqvar):
+    'It return ref base name of a seqvar'
+    try:
+        name = seqvar.reference.name
+    except AttributeError:
+        name = seqvar.reference
+    return name
 
 def add_reference_annot(engine, list_of_annotation_dicts):
     '''This  function adds annotation information of a contig. Due to the
