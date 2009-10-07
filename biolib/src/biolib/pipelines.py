@@ -145,11 +145,12 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'comment': 'Remove seq shorter than 22 nt'}
 
 # Snp cleaning /filtering ####
-snp_high_variable_region_filter ={'function':create_high_variable_region_filter,
-                       'arguments':{'max_variability':0.05},
-                       'type':'filter',
-                       'name':'high_variable_region',
-                       'comment': 'It filters snp in a high variable regions'}
+snp_high_variable_region_filter = {
+                         'function':create_high_variable_region_filter,
+                         'arguments':{'max_variability':0.05},
+                         'type':'filter',
+                         'name':'high_variable_region',
+                         'comment': 'It filters snp in a high variable regions'}
 
 snp_close_to_seqvar_filter = {'function':create_close_to_seqvar_filter,
                             'arguments':{'distance':20},
@@ -159,7 +160,7 @@ snp_close_to_seqvar_filter = {'function':create_close_to_seqvar_filter,
 
 
 snp_major_allele_freq_cleaner = {'function':create_major_allele_freq_cleaner,
-                                     'arguments':{'frequency':0.7},
+                                     'arguments':{'frequency':0.8},
                                      'type':'mapper',
                                      'name':'major_allele_frec',
                               'comment':'It filters by mayor allele frequency'}
@@ -218,6 +219,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
             'solexa'       : [remove_adaptors_solexa, strip_quality,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_baq_quality_alleles,
+                          snp_major_allele_freq_cleaner,
                           remove_allele_by_quantity],
          'snp_clean':[snp_remove_baq_quality_alleles,
                       snp_high_variable_region_filter,
@@ -292,7 +294,7 @@ def pipeline_runner(pipeline, items, configuration=None):
             cleaner_function = function_factory()
         else:
             #pylint:disable-msg=W0142
-            cleaner_function = function_factory(**arguments)
+            cleaner_function = function_factory(**arguments) #IGNORE:W0142
 
         if type_ == 'mapper':
             filtered_items = imap(cleaner_function, items)
