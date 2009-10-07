@@ -3,29 +3,45 @@ Created on 2009 eka 18
 
 @author: peio
 '''
+
+# Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
+# This file is part of biolib.
+# biolib is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# biolib is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from biolib.db.db_utils import  DbMap
 
-SNPMINER_MAP_DEF = [{'name':'reference'},
-                    {'name':'library'},
-                    {'name':'location',
+SNPMINER_MAP_DEF = [{'name':'Reference'},
+                    {'name':'Library'},
+                    {'name':'Snv',
                      'relations':{'reference_id':{'kind':'one2many',
                                                   'rel_attr':'reference'}}},
-                    {'name':'referenceprop',
+                    {'name':'ReferenceProp',
                      'relations':{'reference_id':{'kind':'one2many',
                                                   'rel_attr':'reference'}}},
-                    {'name':'seqvar',
-                     'relations':{'location_id':{'kind':'one2many',
-                                                 'rel_attr':'location'},
+                    {'name':'LibrarySnv',
+                     'relations':{'snv_id':{'kind':'one2many',
+                                            'rel_attr':'Snv'},
                                   'library_id' :{'kind':'one2many',
                                                  'rel_attr':'library'}}},
-                    {'name':'seqvaralleles',
-                     'relations':{'seqvar_id':{'kind':'one2many',
-                                               'rel_attr':'seqvar'}}},
-                    {'name':'seqvarprop',
-                     'relations':{'seqvar_id':{'kind':'one2many',
-                                           'rel_attr':'seqvar'}}}
+                    {'name':'LibrarySnvAlleles',
+                     'relations':{'library_snv_id':{'kind':'one2many',
+                                                   'rel_attr':'library_svn'}}},
+                    {'name':'LibrarySnvProp',
+                     'relations':{'library_snv_id':{'kind':'one2many',
+                                                    'rel_attr':'library_snv'}}}
                     ]
 
 def create_snp_miner_database(engine):
@@ -33,14 +49,19 @@ def create_snp_miner_database(engine):
     metadata = MetaData()
     metadata.bind  = engine
     #pylint: disable-msg=W0612
-    reference_table = Table('reference', metadata,
-                        Column('reference_id', Integer, primary_key=True),
-                        Column('name',   String,  nullable=False, unique=True),
-                        Column('seq', String, nullable=True))
+    #library table
+    Table('Library', metadata,
+            Column('library_id', Integer, primary_key=True),
+            Column('accesion', String, nullable=False, unique=True))
+    #reference_table
+    Table('Reference', metadata,
+          Column('reference_id', Integer, primary_key=True),
+          Column('name',   String,  nullable=False, unique=True))
 
-    reference_annot_table = Table('referenceprop', metadata,
+    #reference_annot_table
+    Table('ReferenceProp', metadata,
           Column('reference_prop_id', Integer, primary_key=True),
-          Column('reference_id', Integer, ForeignKey('reference.reference_id'),
+          Column('reference_id', Integer, ForeignKey('Reference.reference_id'),
                  nullable=False),
           Column('type',             String,  nullable=False),
           Column('value',            String,  nullable=False),
@@ -48,48 +69,48 @@ def create_snp_miner_database(engine):
           Column('end',              Integer),
           UniqueConstraint('reference_id', 'type', 'value'))
 
-    seqvar_location = Table('location', metadata,
-        Column('location_id', Integer, primary_key=True),
-        Column('reference_id', Integer, ForeignKey('reference.reference_id'),
+    #snv table. A location in a reference sequence is an snv
+    Table('Snv', metadata,
+        Column('snv_id', Integer, primary_key=True),
+        Column('reference_id', Integer, ForeignKey('Reference.reference_id'),
                nullable=False),
-        Column('position', Integer, nullable=False),
-        UniqueConstraint('reference_id', 'position'))
+        Column('location', Integer, nullable=False),
+        UniqueConstraint('reference_id', 'location'))
 
-    seqvar_table = Table('seqvar', metadata,
-        Column('seqvar_id', Integer, primary_key=True),
+    #LibrarySnv_table. an snv in a particular library
+    Table('LibrarySnv', metadata,
+        Column('library_snv_id', Integer, primary_key=True),
         Column('name',   String,  nullable=True),
-        Column('type',   String,  nullable=False),
-        Column('library_id', Integer, ForeignKey('library.library_id'),
+        Column('kind',   String,  nullable=True),
+        Column('library_id', Integer, ForeignKey('Library.library_id'),
                nullable=False),
-        Column('location_id',  Integer, ForeignKey('location.location_id'),
+        Column('snv_id',  Integer, ForeignKey('Snv.snv_id'),
                nullable=False),
-        UniqueConstraint('library_id', 'location_id'))
+        UniqueConstraint('library_id', 'snv_id'))
 
-    seqvar_alleles = Table('seqvaralleles', metadata,
-        Column('seqvar_alleles_id', Integer, primary_key=True),
-        Column('seqvar_id', Integer, ForeignKey('seqvar.seqvar_id'),
-               nullable=False),
+    #LibrarySnvAlleles. The alleles for an snv in a particular library
+    Table('LibrarySnvAlleles', metadata,
+        Column('library_snv_alleles_id', Integer, primary_key=True),
+        Column('library_snv_id', Integer,
+               ForeignKey('LibrarySnv.library_snv_id'), nullable=False),
         Column('allele', String, nullable=False),
-        Column('type', String, nullable=False),
+        Column('kind', String, nullable=False),
         Column('num_reads', Integer, nullable=False),
-        Column('quality',  String, nullable=True),
-        UniqueConstraint('seqvar_id', 'allele' ))
+        Column('qualities',  String, nullable=True),
+        UniqueConstraint('library_snv_id', 'allele' ))
 
-    seqvar_annot = Table('seqvarprop', metadata,
-            Column('seqvarprop_id', Integer, primary_key=True),
-            Column('seqvar_id', Integer, ForeignKey('seqvar.seqvar_id'),
-                    nullable=False),
-            Column('type',  String, nullable=False),
+    #LibrarySnvProp. The annotations associated with an snv in a library
+    Table('LibrarySnvProp', metadata,
+            Column('library_snv_prop_id', Integer, primary_key=True),
+            Column('library_snv_id', Integer,
+                   ForeignKey('LibrarySnv.library_snv_id'),  nullable=False),
+            Column('kind',  String, nullable=False),
             Column('value', String, nullable=False),
-            UniqueConstraint('seqvar_id', 'type', 'value'))
-
-    library = Table('library', metadata,
-                    Column('library_id', Integer, primary_key=True),
-                    Column('accesion', String, nullable=False, unique=True))
+            UniqueConstraint('library_snv_id', 'kind', 'value'))
 
     metadata.create_all(engine)
 
-def add_seqvar_to_db(engine, seqvar, library):
+def add_snv_to_db(engine, seqvar, library):
     '''It adds the snps to the db'''
     snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
     try:
