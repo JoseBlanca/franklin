@@ -30,7 +30,8 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_allele_number_cleaner,
                                        create_bad_quality_reads_cleaner,
                                        create_snv_close_to_limit_filter,
-                                       create_major_allele_freq_cleaner)
+                                       create_major_allele_freq_cleaner,
+                                       create_read_number_cleaner)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -234,6 +235,40 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         assert len(snp.lib_alleles[0]['alleles']) == 1
         assert snp.lib_alleles[0]['alleles'][0]['reads'] == 3
+
+        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+                {'alleles':[{'allele':'AT', 'reads':4, 'kind':DELETION,
+                             'quality':[None, None, None, None]},
+                            {'allele':'T', 'reads':2,'kind':SNP,
+                             'quality':[30, 30]}]}])
+        snp = (snp, 'context')
+        snp = bad_quality_cleaner(snp)[0]
+
+        assert len(snp.lib_alleles[0]['alleles']) == 2
+        assert snp.lib_alleles[0]['alleles'][0]['reads'] == 4
+        assert len(snp.lib_alleles[0]['alleles'][0]['quality']) == 4
+    @staticmethod
+    def test_read_number_cleaner():
+        'Tests read number_cleaner'
+        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+                        {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT,
+                                     'quality':[30, 30, 30, 20]},
+                                    {'allele':'T', 'reads':1,'kind':SNP,
+                                     'quality':[30, 20]}]}])
+        snp = (snp, 'context')
+        read_number_cleaner = create_read_number_cleaner(2)
+        snp = read_number_cleaner(snp)[0]
+        assert len(snp.lib_alleles[0]['alleles']) == 1
+
+        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+                        {'alleles':[{'allele':'A', 'reads':1, 'kind':INVARIANT,
+                                     'quality':[30, 30, 30, 20]},
+                                    {'allele':'T', 'reads':1,'kind':SNP,
+                                     'quality':[30, 20]}]}])
+        snp = (snp, 'context')
+        read_number_cleaner = create_read_number_cleaner(2)
+        snp = read_number_cleaner(snp)
+        assert snp is None
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

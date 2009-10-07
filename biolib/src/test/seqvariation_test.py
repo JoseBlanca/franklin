@@ -133,8 +133,23 @@ class SnvTest(unittest.TestCase):
                                    {'alleles':[{'allele':'A', 'reads':3,
                                                'kind':INVARIANT}]}])
         assert seq_var.kind == COMPLEX
-
-
+    @staticmethod
+    def test_snv_repr():
+        'It'
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':SNP},
+                                               {'allele':'A', 'reads':3,
+                                               'kind':INSERTION}]},
+                                   {'library':'library',
+                                    'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':DELETION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INVARIANT}]}])
+        print repr(seq_var)
+        snv = eval(repr(seq_var))
+        assert seq_var.reference == snv.reference
+        assert seq_var.lib_alleles == snv.lib_alleles
 
 
 

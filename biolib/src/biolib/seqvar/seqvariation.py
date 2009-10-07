@@ -19,6 +19,7 @@ Created on 2009 mar 25
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+from pprint import pprint
 from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_cmd_utils import call
 from biolib.seqs import SeqWithQuality
@@ -197,9 +198,25 @@ class Snv(object):
             snv.annotations = annotations
         return snv
 
-    def __str__(self):
-        return '%s %d: %s:' % (self.reference, self.location,
-                               str(self.lib_alleles))
+    def __repr__(self):
+        to_print  = '%s(\nreference=%s, location=%s,\n' % \
+            (self.__class__.__name__, repr(self.reference),repr(self.location))
+
+        to_print += '\tlib_alleles=[\n'
+        for alleles_in_a_lib in self.lib_alleles:
+            to_print += '\t\t{'
+            for key, value in alleles_in_a_lib.items():
+                if key != 'alleles':
+                    to_print += '\t\t"%s": %s,' % (key, repr(value))
+                else:
+                    to_print += '"alleles" :[\n'
+                    for allele in value:
+                        to_print += '\t\t\t%s,\n' % repr(allele)
+                    to_print += '\t\t\t],\n'
+            to_print += '\t\t},\n'
+        to_print += '])\n\n'
+        return to_print
+
 
 
 

@@ -55,7 +55,8 @@ from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
                                        create_close_to_seqvar_filter,
                                        create_major_allele_freq_cleaner,
                                        create_allele_number_cleaner,
-                                       create_bad_quality_reads_cleaner)
+                                       create_bad_quality_reads_cleaner,
+                                       create_read_number_cleaner)
 
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
@@ -177,11 +178,16 @@ snp_cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'name':      'enzyme_filter',
                       'comment':  'It filters by enzyme'}
 
-remove_allele_by_quantity = {'function': create_allele_number_cleaner,
+snp_remove_by_allele_number = {'function': create_allele_number_cleaner,
                             'arguments':{'num_alleles':2},
                             'type':'mapper',
                             'name':'allele_quantity',
                             'comment': 'It filters by allele_quantity'}
+snp_remove_by_read_number = {'function': create_read_number_cleaner,
+                            'arguments':{'num_reads':3},
+                            'type':'mapper',
+                            'name':'read_number',
+                            'comment': 'It cleans alleles  by read number'}
 
 snp_close_to_limit_filter = {'function':create_snv_close_to_limit_filter ,
                             'arguments':{'max_distance':12},
@@ -220,15 +226,17 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_baq_quality_alleles,
                           snp_major_allele_freq_cleaner,
-                          remove_allele_by_quantity],
-         'snp_clean':[snp_remove_baq_quality_alleles,
+                          snp_remove_by_read_number,
+                          snp_remove_by_allele_number],
+         'snp_exhaustive':[snp_remove_baq_quality_alleles,
                       snp_high_variable_region_filter,
                       snp_close_to_seqvar_filter,
                       snp_major_allele_freq_cleaner,
                       snp_pic_filter,
                       snp_cap_enzyme_filter,
                       snp_close_to_limit_filter,
-                      remove_allele_by_quantity],
+                      snp_remove_by_read_number,
+                      snp_remove_by_allele_number],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}
 

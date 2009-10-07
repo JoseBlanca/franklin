@@ -25,7 +25,7 @@ Created on 30/09/2009
 '''
 from optparse import OptionParser
 import sys
-from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup, sam_to_required_pos
+from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
 from biolib.pipelines import pipeline_runner
 
 
@@ -35,9 +35,9 @@ def parse_options():
     parser.add_option('-i', '--sampileup', dest='infile',
                       help='Sam pileup file')
     parser.add_option('-o', '--req_pos', dest='outfile',
-                      help='Required positions file')
-    parser.add_option('-p', '--pipeline', dest='pipeline', default='snp_clean',
-                       help='filtering pipeline')
+                      help='Outut file. Required positions file or summary')
+    parser.add_option('-p', '--pipeline', dest='pipeline',
+                      help='filtering pipeline:snp_basic, snp_exhaustive ')
     return parser
 
 def set_parameters():
@@ -57,7 +57,6 @@ def set_parameters():
         outfile = open(options.outfile, 'w')
 
     pipeline = options.pipeline
-
     return infile, outfile, pipeline
 
 def main():
@@ -65,14 +64,20 @@ def main():
     sam_pileup, outfile, pipeline = set_parameters()
 
     #get seqvars from sam pileup
-    seq_vars = seqvars_in_sam_pileup(sam_pileup)
+    seq_vars_with_context = seqvars_in_sam_pileup(sam_pileup)
 
     #filter/clean seq_vars
-    seq_vars = pipeline_runner(pipeline, seq_vars)
+    if pipeline is not None:
+        seq_vars_with_context = pipeline_runner(pipeline, seq_vars_with_context)
+    #remove context to the snv iterator
+    #print seq_vars_with_context.next()
 
-    #From seq_vars to required positions
-    sam_to_required_pos(seq_vars, outfile)
+    seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
 
+    # print snvs
+    for snv in seq_vars:
+        if snv is not None:
+            outfile.write(snv.__str__())
 
 if __name__ == '__main__':
     main()
