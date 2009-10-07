@@ -22,7 +22,7 @@ Created on 2009 mar 25
 import unittest
 from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime,
                                  SeqVariation, SNP, INSERTION, DELETION,
-                                 INVARIANT, INDEL, COMPLEX)
+                                 INVARIANT, INDEL, COMPLEX, Snv)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationTest(unittest.TestCase):
@@ -87,6 +87,61 @@ class SeqVariationTest(unittest.TestCase):
         assert alleles[0]['allele'] == 'T'
         assert alleles[1]['allele'] == 'A'
 
+class SnvTest(unittest.TestCase):
+    '''Here we will check if the Snv module works as it should.'''
+    @staticmethod
+    def test_init():
+        '''It tests the init'''
+        lib_alleles = [{'alleles':[{'allele':'A', 'reads':3, 'kind':SNP},
+                                  {'allele':'T', 'reads':4, 'kind':INVARIANT}]}]
+
+        snv = Snv(lib_alleles=lib_alleles, reference='ref', location=2)
+        assert len(snv.lib_alleles) == 1
+
+    @staticmethod
+    def test_kind():
+        'It test that we can get the kind for a seqvariation'
+
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INVARIANT}]}])
+
+        assert seq_var.kind == INVARIANT
+
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':DELETION}]}])
+        assert seq_var.kind == DELETION
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':DELETION},
+                                               {'allele':'A', 'reads':3,
+                                               'kind':INSERTION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INSERTION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INVARIANT}]}])
+        assert seq_var.kind == INDEL
+
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':SNP},
+                                               {'allele':'A', 'reads':3,
+                                               'kind':INSERTION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':DELETION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INVARIANT}]}])
+        assert seq_var.kind == COMPLEX
+
+
+
+
+
+
+
+
+
 class SeqVariationCaracterization(unittest.TestCase):
     '''It tests seqvar caracterization functions  '''
     @staticmethod
@@ -135,6 +190,9 @@ class SeqVariationrEnzime(unittest.TestCase):
                             location=11, reference=reference)
         enzymes = cap_enzime(snp, True)
         assert 'EcoRI' in enzymes
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

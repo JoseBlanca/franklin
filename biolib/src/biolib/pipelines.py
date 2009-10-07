@@ -50,11 +50,11 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
 
 from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
                                        create_pic_filter,
-                                       create_seqvar_close_to_limit_filter,
+                                       create_snv_close_to_limit_filter,
                                        create_high_variable_region_filter,
                                        create_close_to_seqvar_filter,
-                                       create_major_allele_freq_filter,
-                                       create_allele_number_filter,
+                                       create_major_allele_freq_cleaner,
+                                       create_allele_number_cleaner,
                                        create_bad_quality_reads_cleaner)
 
 from biolib.seq_filters        import create_length_filter
@@ -145,7 +145,7 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'comment': 'Remove seq shorter than 22 nt'}
 
 # Snp cleaning /filtering ####
-snp_high_variable_region_filter = {'function':create_high_variable_region_filter,
+snp_high_variable_region_filter ={'function':create_high_variable_region_filter,
                        'arguments':{'max_variability':0.05},
                        'type':'filter',
                        'name':'high_variable_region',
@@ -158,9 +158,9 @@ snp_close_to_seqvar_filter = {'function':create_close_to_seqvar_filter,
                             'comment': 'It filters snp if it has a seqvar near'}
 
 
-snp_major_allele_freq_filter = {'function':create_major_allele_freq_filter,
+snp_major_allele_freq_cleaner = {'function':create_major_allele_freq_cleaner,
                                      'arguments':{'frequency':0.7},
-                                     'type':'filter',
+                                     'type':'mapper',
                                      'name':'major_allele_frec',
                               'comment':'It filters by mayor allele frequency'}
 
@@ -176,13 +176,13 @@ snp_cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'name':      'enzyme_filter',
                       'comment':  'It filters by enzyme'}
 
-snp_allele_number_filter = {'function': create_allele_number_filter,
+remove_allele_by_quantity = {'function': create_allele_number_cleaner,
                             'arguments':{'num_alleles':2},
-                            'type':'filter',
+                            'type':'mapper',
                             'name':'allele_quantity',
                             'comment': 'It filters by allele_quantity'}
 
-snp_close_to_limit_filter = {'function':create_seqvar_close_to_limit_filter ,
+snp_close_to_limit_filter = {'function':create_snv_close_to_limit_filter ,
                             'arguments':{'max_distance':12},
                             'type':'filter',
                             'name':'close_to_limit',
@@ -218,15 +218,15 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
             'solexa'       : [remove_adaptors_solexa, strip_quality,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_baq_quality_alleles,
-                          snp_allele_number_filter],
+                          remove_allele_by_quantity],
          'snp_clean':[snp_remove_baq_quality_alleles,
                       snp_high_variable_region_filter,
                       snp_close_to_seqvar_filter,
-                      snp_major_allele_freq_filter,
+                      snp_major_allele_freq_cleaner,
                       snp_pic_filter,
                       snp_cap_enzyme_filter,
                       snp_close_to_limit_filter,
-                      snp_allele_number_filter],
+                      remove_allele_by_quantity],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}
 
@@ -291,7 +291,7 @@ def pipeline_runner(pipeline, items, configuration=None):
         if arguments is None:
             cleaner_function = function_factory()
         else:
-            # pylint:disable-msg=W0142
+            #pylint:disable-msg=W0142
             cleaner_function = function_factory(**arguments)
 
         if type_ == 'mapper':

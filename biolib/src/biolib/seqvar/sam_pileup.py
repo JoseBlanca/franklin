@@ -21,11 +21,11 @@ Created on 22/09/2009
 
 from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
-from biolib.seqvar.seqvariation import (SeqVariation, SNP, INSERTION, DELETION,
-                                        INVARIANT)
+from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
+                                        INVARIANT, Snv)
 
 def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
-                           references=None):
+                           references=None, library=None):
     '''This function takes from a sam pileup format file all the position that
     are interesting'''
     if references is not None:
@@ -46,17 +46,20 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
             _is_seq_var(coverage, ref_base, alleles, min_num)):
             if references is not None:
                 cromosome = references_index[cromosome]
-            yield  SeqVariation(alleles = alleles,
-                                name='%s_%s' % (cromosome, position),
-                                location=int(position) - 1,
-                                reference=cromosome)
+            lib_alleles = {}
+            lib_alleles['alleles'] = alleles
+            if library is not None:
+                lib_alleles['library'] = library
+            #print lib_alleles
+            yield Snv(lib_alleles=[lib_alleles],
+                      location=int(position) - 1, reference=cromosome)
 
-def seqvars_in_sam_pileup(pileup, min_num=None, window=None,
+def seqvars_in_sam_pileup(pileup, min_num=None, window=None, library=None,
                           required_positions=None, references=None):
     '''This function takes the seqvar iterator of the sam pileup, and it return
     an iterator with a tuple of seqvar and its context'''
     seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num, required_positions,
-                                         references)
+                                         references, library)
     seq_var_with_context_iter = item_context_iter(seqvar_iter, window=window)
     for seq_var_contex in seq_var_with_context_iter:
         yield seq_var_contex

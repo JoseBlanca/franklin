@@ -18,7 +18,7 @@
 import unittest, os, StringIO
 
 import biolib
-from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup, is_seq_var
+from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup, _is_seq_var
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -47,12 +47,14 @@ class Test(unittest.TestCase):
         sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
         fhand = open(sam_fname)
         references = StringIO.StringIO(REFERENCES)
-        seq_vars = list(seqvars_in_sam_pileup(fhand, references=references))
-        assert len(seq_vars) == 8
-        assert seq_vars[0][0].reference.name == 'SGN-U562678'
-        assert seq_vars[7][0].reference.name == 'SGN-U562679'
-        assert seq_vars[0][0].reference.seq == 'ATATATATATATATATATAT'
-        assert seq_vars[7][0].reference.seq == 'GCGCGCGCGCGCGG'
+        snvs = list(seqvars_in_sam_pileup(fhand, references=references))
+        assert len(snvs) == 8
+        assert snvs[0][0].reference.name == 'SGN-U562678'
+        assert snvs[7][0].reference.name == 'SGN-U562679'
+        assert snvs[0][0].reference.seq == 'ATATATATATATATATATAT'
+        assert snvs[7][0].reference.seq == 'GCGCGCGCGCGCGG'
+        assert snvs[0][0].lib_alleles[0]['alleles'][0]['allele'] == 'G'
+
     @staticmethod
     def test_is_seq_bar():
         'It test is_seq_var function'
@@ -63,14 +65,14 @@ class Test(unittest.TestCase):
                    {'allele':'T', 'reads':2, 'kind':INVARIANT,
                                                          'quality': quality}]
         min_num_bases  = 2
-        assert is_seq_var(coverage, ref_base, alleles, min_num_bases)
+        assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
         read_bases = 'TTT..'
         alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'quality': quality},
                    {'allele':'A', 'reads':2, 'kind':INVARIANT,
                                                        'quality': quality}]
         min_num_bases  = 3
-        assert is_seq_var(coverage, ref_base, alleles, min_num_bases)
+        assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
 
 

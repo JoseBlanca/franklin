@@ -112,6 +112,97 @@ class SeqVariation(object):
             seqvar.annotations = annotations
         return seqvar
 
+class Snv(object):
+    '''
+    This class is used to represent a sequence variation respect a reference.
+    The variation can be: Snp, insertion, deletion or non_variant.
+    '''
+    def __init__(self, reference, location, lib_alleles=None, name=None):
+        '''It initializes with an alleles dict and a reference.
+
+        The lib_allele is a list of dictionaries. Each of the dictionaries
+        contains:
+            - library : Library name. Not needed but recommended
+            - alleles : alleles should be given with a list.
+                The allele info should be a dict with the following info:
+                - allele: the sequence variation
+                - reads: the number of reads that support them as values.
+                - kind: the type of variation
+                - qualities: a list of qualities
+        The reference is the reference sequence, can be an str or a SeqRecord.
+        The location must be an int referencing the position in the reference
+        sequence.
+        '''
+        self.reference = reference
+        self.name = name
+        self.location = location
+        self.annotations = {}
+        self.lib_alleles = []
+        if lib_alleles is not None:
+            # we have to sort alleles from each library
+            for library in lib_alleles:
+                new_library = {}
+                if 'library' in library:
+                    new_library['library'] = library['library']
+                #print library
+                new_library['alleles'] = sorted(library['alleles'],
+                                                 _allele_reads_compare)
+                self.lib_alleles.append(new_library)
+
+    def _get_kind(self):
+        '''It returns the kind of variation.
+
+        The kind of variation depends on the kind of the kinds f each allele
+         library.
+        '''
+        kind = INVARIANT
+        for alleles_info in self.lib_alleles:
+            alleles = alleles_info['alleles']
+            for allele_info in alleles:
+                al_kind = allele_info['kind']
+                if kind == INVARIANT and al_kind == DELETION:
+                    kind = DELETION
+                elif kind == INVARIANT and al_kind == INSERTION:
+                    kind = INSERTION
+                elif (kind == DELETION and al_kind == INSERTION or
+                     kind == INSERTION and al_kind == DELETION):
+                    kind = INDEL
+                elif ((kind in (DELETION, INSERTION, INDEL) and
+                       al_kind == SNP) or
+                       (kind == SNP  and al_kind in (INSERTION, INDEL))):
+                    kind = COMPLEX
+                elif kind == INVARIANT and al_kind == SNP:
+                    kind = SNP
+        return kind
+    kind = property(_get_kind)
+
+    def copy(self, lib_alleles=None, reference=None, name=None, location=None,
+                                                            annotations=None):
+        '''Given a seqvariation in returns a new seqvariation with the new data
+         changes'''
+        if lib_alleles is None:
+            lib_alleles = self.lib_alleles
+        if reference is None:
+            reference = self.reference
+        if name is None:
+            name = self.name
+        if location is None:
+            location = self.location
+
+        snv = self.__class__(lib_alleles=lib_alleles, reference=reference,
+                             name=name, location=location)
+        if annotations is None:
+            snv.annotations = self.annotations
+        else:
+            snv.annotations = annotations
+        return snv
+
+    def __str__(self):
+        return '%s %d: %s:' % (self.reference, self.location,
+                               str(self.lib_alleles))
+
+
+
 #functions to characterize the sequence variations
 def calculate_pic(seq_variation):
     '''It calculates and returns the Polymorphic Information Content.
