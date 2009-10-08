@@ -21,7 +21,7 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime, SNP,
+from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
                                         reference_variability)
 
 #filters
@@ -165,7 +165,7 @@ def create_bad_quality_reads_cleaner(qual_treshold):
 
     return bad_quality_reads_cleaner
 
-def create_allele_number_cleaner(num_alleles):
+def create_allele_number_cleaner(num_alleles, ignore_diffs_with_ref=True):
     '''This function factory creates a mapper that cleans librarys of the snv
     that have less than num alleles'''
     def allele_number_cleaner(snv):
@@ -176,7 +176,8 @@ def create_allele_number_cleaner(num_alleles):
         new_library_alleles = []
         for library_info in snv.lib_alleles:
             alleles = library_info['alleles']
-            if ((len(alleles) == 1 and alleles[0]['kind'] == SNP) or
+            if ((not ignore_diffs_with_ref and len(alleles) == 1 and
+                 alleles[0]['kind'] == SNP) or
                 (len(alleles) >= num_alleles)):
                 new_library_alleles.append(library_info)
 
@@ -214,13 +215,6 @@ def create_read_number_cleaner(num_reads):
             return (snv.copy(lib_alleles=new_library_alleles), context)
     return read_number_cleaner
 
-
-
-
-
-
-
-#to change
 def create_pic_filter(min_pic):
     '''This funtion is a factory function that creates a function that look
     for the pic of the seqvar and depending on the pic value it filters the
@@ -233,7 +227,7 @@ def create_pic_filter(min_pic):
         seq_var = seq_var[0]
         if seq_var is None:
             return None
-        if calculate_pic(seq_var) < min_pic:
+        if pic(seq_var) < min_pic:
             return False
         else:
             return True
@@ -249,7 +243,7 @@ def create_cap_enzyme_filter(all_enzymes):
         seq_var = seq_var[0]
         if seq_var is None:
             return None
-        enzymes = cap_enzime(seq_var, all_enzymes)
+        enzymes = cap_enzymes(seq_var, all_enzymes)
         if len(enzymes) != 0:
             return True
         else:

@@ -32,14 +32,18 @@ class TestSnvStats(unittest.TestCase):
     @staticmethod
     def test_ref_variability_distrib():
         'It tests the reference variability distribution'
-        reference_fhand = StringIO('>hola\nATCGTAGCTATA\n>caracola\nATCGTATA\n')
+        seq1 = 'A' * 100
+        reference_fhand = StringIO('>hola\n' + seq1 + '\n>caracola\n' + seq1 +
+                                   '\n')
         seq_var = Snv(reference='hola', location=3, lib_alleles=[])
         seq_var2 = Snv(reference='hola', location=4, lib_alleles=[])
         seq_var3 = Snv(reference='caracola', location=2, lib_alleles=[])
         snv_fhand = StringIO(repr(seq_var) + repr(seq_var2) + repr(seq_var3))
         snv_contexts = svn_contexts_in_file(snv_fhand, reference_fhand)
-
+        for snv_contexts in snv_contexts:
+            print snv_contexts[1]
         distrib = calculate_ref_variability_ditrib(snv_contexts)
+        print distrib
         assert distrib['distrib'] == [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                       0, 0, 0, 0, 0, 1]
     @staticmethod
