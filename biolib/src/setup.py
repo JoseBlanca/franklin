@@ -13,7 +13,7 @@ setup(
     author_email='jblanca@btc.upv.es',
     description='Some genomics related classes',
     # package structure
-    packages=['biolib'],
+    packages=['biolib', 'biolib.seqvar', 'biolib.db'],
     package_dir={'':'.'},
     package_data={'mypkg': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib'],
