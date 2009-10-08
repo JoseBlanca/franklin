@@ -25,17 +25,20 @@ Created on 08/10/2009
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.biolib_seqio_utils import guess_seq_file_format
+import os
+from biolib.biolib_cmd_utils import NamedTemporaryDir, call
+
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser('usage: %prog -i sam_pileup, -o req_pos -p pipeline')
     parser.add_option('-s', '--seqs', dest='seqfile', help='Sequences file')
-    parser.add_option('-f', '--format', dest='format',
-                      help='Sequences file format')
-    parser.add_option('-r', '--references', dest='reffiles',
+    parser.add_option('-f', '--type', dest='seq_type', default='short',
+                      help='Sequences type: short or long')
+    parser.add_option('-r', '--references', dest='reffile',
                       help='reference seq file')
     parser.add_option('-i', '--refdb', dest='refdb', help='reference index')
-    parser.add_option('-b', '--bamfile', dest='samfile', help='bam output file')
+    parser.add_option('-b', '--bamfile', dest='bamfile', help='bam output file',
+                      default='output')
 
     return parser
 def set_parameters():
@@ -47,21 +50,80 @@ def set_parameters():
     if options.seqfile is None:
         parser.error('seqfile is mandatory')
     else:
-        seqfhand = open(options.seqfile)
+        seqfile = options.seqfile
 
     if options.reffile is None:
         parser.error('file is mandatory')
     else:
-        reffhand = open(options.seqfile)
+        reffile = options.seqfile
 
-    if options.format is None:
-        file_format = guess_seq_file_format(seqfhand)
+    seq_type = options.seq_type
+    refdb    = options.refdb
+    bamfile  = options.bamfile
+
+
+
+    return seqfile, reffile, seq_type, refdb, bamfile
+
+def main():
+    "The real script"
+    seqfile, reffile, seq_type, refdb, bamfile = set_parameters()
+
+    # we need that the index is created
+    if not os.path.exists(refdb + '.bwt'):
+        raise OSError('Reference database index not created')
+
+    # TEMPORARY DIR NAME
+    temp_dir = NamedTemporaryDir()
+    dir_name = temp_dir.name
+
+    if seq_type == 'short':
+        cmd = ['bwa', 'aln', refdb, seqfile]
+        stdout, stderr, retcode = call(cmd)
+        if retcode:
+            raise RuntimeError('bwa aln -step error: %s' % stderr)
+        sai_fhand = open(os.path.join(dir_name, 'output.sai'), 'wb')
+        sai_fhand.write(stdout)
+        sai_fhand.close()
+
+        cmd = ['bwa', 'samse', refdb, sai_fhand.name, seqfile]
+        stdout, stderr, retcode = call(cmd)
+        if retcode:
+            raise RuntimeError('bwa samse - step error: %s' % stderr)
+        ali_fhand = open(os.path.join(dir_name, 'output.ali'), 'w')
+        ali_fhand.write(stdout)
+        ali_fhand.close()
+
+    elif seq_type == 'long':
+        #align sanger
+        cmd = ['bwa', 'dbwtsw', reffile, seqfile]
+        stdout, stderr, retcode = call(cmd)
+        if retcode:
+            raise RuntimeError('bwa dbwtsw - step error: %s' % stderr)
+        ali_fhand = open(os.path.join(dir_name, 'output.ali'), 'w')
+        ali_fhand.write(stdout)
+        ali_fhand.close()
     else:
-        file_format = options.format
+        raise ValueError('Seq type: short or long')
 
-    refdb = options.refdb
-    if options.bamfile 
-    
+    #from sam import to bam
+    cmd = ['samtools', 'view' , '-bt', reffile, '-o',
+           os.path.join(dir_name, 'bam_file.bam'), ali_fhand.name]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError('samtools view - step error: %s' % stderr)
+
+    #sort the bam
+    cmd = ['samtools', 'sort', os.path.join(dir_name, 'bam_file.bam'), bamfile]
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        raise RuntimeError('samtools sort - step error: %s' % stderr)
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
