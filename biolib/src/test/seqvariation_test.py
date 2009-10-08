@@ -24,7 +24,8 @@ from StringIO import StringIO
 from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
                                         INSERTION, DELETION, INVARIANT, INDEL,
                                         COMPLEX, Snv, snvs_in_file,
-                                 major_allele_frequency)
+                                        major_allele_frequency,
+                                        reference_variability)
 from biolib.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
@@ -112,8 +113,14 @@ class SnvCaracterizationTest(unittest.TestCase):
         mafs = major_allele_frequency(snp)
         assert mafs[0] == 0.5
 
-class SeqVariationCaracterization(unittest.TestCase):
-    '''It tests seqvar caracterization functions  '''
+    @staticmethod
+    def test_variability():
+        'It checks that we can calculate the reference variability'
+        reference = SeqWithQuality(seq='Actgacttac', name='ref')
+        snp = Snv(lib_alleles=[], reference=reference, location=3)
+        ref_var = reference_variability(snp, ['snp1'])
+        assert ref_var == 10.0
+
     @staticmethod
     def test_calculate_pic():
         'It checks that we are able to calculate the PIC values'

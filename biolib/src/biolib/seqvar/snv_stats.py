@@ -40,7 +40,7 @@ def calculate_ref_variability_ditrib(snv_contexts, window=None,
         variabilities.append(region_variability)
     return create_distribution(variabilities,
                        labels={'title':'Snv reference variability distribution',
-                                'xlabel':'variablity',
+                                'xlabel':'reference variablity (snv / 100pb)',
                                 'ylabel': 'Number of snvs'},
                         distrib_fhand=distrib_fhand,
                         plot_fhand=plot_fhand,
@@ -75,10 +75,15 @@ def snv_distrib(snv_fhand, kind, reference_fhand=None, window=None,
                 distrib_fhand=None, plot_fhand=None, range_=None):
     'It calculates one snv distribution of the given kind'
     distribution_orders = DISTRIBUTIONS[kind]
-    if distribution_orders['snv_iter_kind'] == 'snv_context':
+    if distribution_orders['snv_iter_kind'] == 'snv_contexts':
         snvs = svn_contexts_in_file(snv_fhand, reference_fhand)
+        return distribution_orders['function'](snvs, window=window,
+                                        distrib_fhand=distrib_fhand,
+                                        plot_fhand=plot_fhand,
+                                        range_=range_)
     else:
         snvs = snvs_in_file(snv_fhand)
-    return distribution_orders['function'](snvs, window=None,
-                                           distrib_fhand=None, plot_fhand=None,
-                                           range_=None)
+        return distribution_orders['function'](snvs,
+                                        distrib_fhand=distrib_fhand,
+                                        plot_fhand=plot_fhand,
+                                        range_=range_)

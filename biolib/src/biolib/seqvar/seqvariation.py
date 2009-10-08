@@ -273,7 +273,7 @@ def reference_variability(snv, context, window=None):
         if 'seq' not in dir(snv.reference):
             raise ValueError('The reference should be a seqRecord')
         window = len(snv.reference)
-    return snv_quantity / float(window)
+    return snv_quantity / float(window) * 100.0
 
 def _maf_for_alleles_in_lib(alleles):
     'It returns the maf for the given alleles'

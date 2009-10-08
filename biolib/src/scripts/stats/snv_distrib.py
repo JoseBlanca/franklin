@@ -37,7 +37,7 @@ def parse_options():
     parser.add_option('-i', '--snv_file', dest='snv_file',
                       help='snvs input file')
     parser.add_option('-r', '--ref_file', dest='ref_file',
-                      help='reference seuqence input fasta')
+                      help='reference sequence input fasta')
     parser.add_option('-p', '--plot', dest='plot',
                       help='plot output file')
     parser.add_option('-w', '--distrib', dest='distrib',
@@ -78,7 +78,7 @@ def set_parameters():
     if options.ref_file is None:
         io_fhands['ref_file'] = None
     else:
-        io_fhands['ref_file'] = open(options.ref_file, 'w')
+        io_fhands['ref_file'] = open(options.ref_file, 'r')
 
 
     return kind, io_fhands
@@ -88,9 +88,9 @@ def main():
     kind, io_fhands = set_parameters()
 
     snv_distrib(snv_fhand=io_fhands['snv_file'], kind=kind,
-                reference=io_fhands['ref_file'],
+                reference_fhand=io_fhands['ref_file'],
                 distrib_fhand=io_fhands['distrib'],
-                plot_fhand=io_fhands['plot'], low_memory=True)
+                plot_fhand=io_fhands['plot'])
 
 if __name__ == '__main__':
     main()

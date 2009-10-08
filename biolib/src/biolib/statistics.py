@@ -445,7 +445,13 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
         right_val = value
         if left_val:
             xticks_label = (left_val + right_val) / 2.0
-            xticks_label = '%.1f' % xticks_label
+            if xticks_label >= 10:
+                fmt = '%d'
+            elif xticks_label >= 0.1 and xticks_label < 10:
+                fmt = '%.1f'
+            elif xticks_label < 0.1:
+                fmt = '%.1e'
+            xticks_label = fmt % xticks_label
             xticks_labels.append(xticks_label)
         left_val = right_val
 
