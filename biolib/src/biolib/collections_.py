@@ -22,7 +22,6 @@ Created on 04/09/2009
 #import pysparse
 import tempfile
 
-
 class FileCachedList(object):
     '''A list cached in a file.
 
@@ -90,7 +89,12 @@ class RequiredPosition(object):
             else:
                 return False
 
-
+def _ref_name(reference):
+    'It returns the name of the reference'
+    if 'name' in dir(reference):
+        return reference.name
+    else:
+        return reference
 
 def item_context_iter(items, window=None):
     '''Given an iter with Locatable items it returns an item, context iter,
@@ -128,7 +132,8 @@ def item_context_iter(items, window=None):
         #to the buffers
         if (right_edge_item is not None
             and (current_item is None or
-                 right_edge_item.reference == current_item.reference)):
+                 _ref_name(right_edge_item.reference) ==
+                                           _ref_name(current_item.reference))):
             #a buffer with the items to the right of the current one
             items_buffer.append(right_edge_item)
             #a buffer with the items to be added to the context
@@ -140,7 +145,8 @@ def item_context_iter(items, window=None):
         #if there is no width but we're at the last item of the reference
         if (last_item_in_iter or
             #if we're at a new reference
-            (items_buffer[-1].reference != items_buffer[0].reference) or
+            (_ref_name(items_buffer[-1].reference) !=
+                                       _ref_name(items_buffer[0].reference)) or
             #if we're yet to close to the start we don't return anything
             (width is not None and items_buffer[-1].location > width)):
             current_item = items_buffer.pop(0)
@@ -148,13 +154,13 @@ def item_context_iter(items, window=None):
         if not current_item:
             continue
         current_location = current_item.location
-        current_reference = current_item.reference
+        current_reference = _ref_name(current_item.reference)
         #which items do we have to add to the context in the right side?
         while True:
             #if there are still items that might be added to the reference
             #and the item to be added has the same reference as the current
             if (context_buffer and
-                              context_buffer[0].reference == current_reference):
+                   _ref_name(context_buffer[0].reference) == current_reference):
                 if((width is None) or
                    (width is not None and
                         context_buffer[0].location - current_location < width)):
@@ -170,7 +176,7 @@ def item_context_iter(items, window=None):
                 break
             if ((width is not None and
                  current_location - context[0].location  > width) or
-                 current_reference != context[0].reference):
+                 current_reference != _ref_name(context[0].reference)):
                 context.pop(0)
             else:
                 break

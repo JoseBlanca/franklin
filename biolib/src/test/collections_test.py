@@ -16,34 +16,9 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, StringIO
-from biolib.collections_ import (SparseVector, item_context_iter,
+from biolib.collections_ import (item_context_iter,
                                  RequiredPosition)
 from biolib.rbtree import RBDict
-
-class SparseVectorTests(unittest.TestCase):
-    '''It tests the sparse vector collection'''
-    @staticmethod
-    def test_sparse_vector():
-        'It tests the sparse vector collection'
-        spv = RBDict()
-        spv[50] = 30
-        spv[40] = 30
-        assert [(40, 30), (50, 30)] == list((spv.items()))
-
-    @staticmethod
-    def test_store_non_int():
-        'sparse vectors can hold non int values'
-        spv = SparseVector(nelements=4, store_non_int=True)
-        spv[0] = 30
-        spv[2] = [30]
-        assert spv[2] == [30]
-        assert spv[0] == 30
-        result = [30, None, [30], None]
-        for index, item in enumerate(spv):
-            assert item == result[index]
-        spv[1] = 'a'
-        assert list(spv.non_empty_items()) == [(0, 30), (1, 'a'), (2, [30])]
-        assert list(spv.non_empty_values()) == [30, 'a', [30]]
 
 class _Locatable():
     'A class for locatable items'
@@ -158,11 +133,6 @@ class RequiredPositionsTest(unittest.TestCase):
         req_pos = RequiredPosition(fhand)
         assert req_pos['aaa', '2']
         assert not req_pos['aaa', '2']
-
-
-
-
-
 
 if __name__ == "__main__":
     unittest.main()

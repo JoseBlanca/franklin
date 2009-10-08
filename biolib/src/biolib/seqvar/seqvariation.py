@@ -129,7 +129,13 @@ class Snv(object):
             snv.annotations = annotations
         return snv
 
+    def __str__(self):
+        'It print some minimal info'
+        to_print = '%s: %d' % (self.reference, self.location)
+        return to_print
+
     def __repr__(self):
+        'It prints an evaluable representation'
         to_print  = '%s(\nreference=%s, location=%s,\n' % \
             (self.__class__.__name__, repr(self.reference),repr(self.location))
 
