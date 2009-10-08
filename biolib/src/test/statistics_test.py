@@ -153,46 +153,6 @@ class HistogramTest(unittest.TestCase):
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
 
-#class ContigStatisticsTest(unittest.TestCase):
-#    'It tests the contig statistics'
-#    @staticmethod
-#    def test_read_distribution():
-#        'It test the distribution of number of reads for every contig'
-#        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
-#        caf_parser = get_parser(fhand, format='bowtie')
-#        contigs = caf_parser.contigs()
-#        distrib = seq_distrib('contig_read_distrib', contigs)
-#        assert distrib['distrib'] == [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#                                      0, 0, 0, 0, 0, 1]
-#        assert distrib['bin_edges'][0] == 1.0
-#        assert distrib['bin_edges'][-1] == 2.0
-#
-#    @staticmethod
-#    def test_coverage_distribution():
-#        'It tests the contig coverage distribution'
-#        contig = ('ACTGA', ' CTG ', ' CTG ', ' CTG ', '  TG ', '   G ')
-#        distrib = seq_distrib('contig_coverage_distrib', [contig])
-#        assert distrib['distrib'] == [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-#                                      0, 0, 1, 0, 0, 1]
-#        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
-#        caf_parser = get_parser(fhand, format='caf')
-#        contigs = caf_parser.contigs()
-#        distrib = seq_distrib('contig_coverage_distrib', contigs)
-#        assert distrib['distrib'] == [38, 0, 1, 0, 160, 0, 248, 0, 367, 0, 0,
-#                                      135, 0, 159, 0, 295, 0, 121, 0, 54]
-#
-#    @staticmethod
-#    def test_general_contig_stats():
-#        "it test that we can get some contig statistics"
-#        fhand = open(os.path.join(DATA_DIR, 'bowtie.map.out'), 'r')
-#        caf_parser = get_parser(fhand, format='bowtie')
-#        contigs = caf_parser.contigs()
-#        stats = general_contig_statistics(contigs, low_memory=False)
-#        assert stats['number_contigs']        == 4
-#        assert stats['number_reads_variance'] == 0.1875
-#        assert abs(stats['coverage_variance'] - 0.237503077574) < 0.001
-#        assert abs(stats['mean_coverage'] - 0.925251256281) < 0.001
-#        assert stats['mean_number_reads']     == 1.25
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']

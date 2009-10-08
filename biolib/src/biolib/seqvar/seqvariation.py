@@ -23,6 +23,7 @@ from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_cmd_utils import call
 from biolib.seqs import SeqWithQuality
 from biolib.biolib_seqio_utils import FileSequenceIndex
+from biolib.collections_ import item_context_iter
 
 SNP = 0
 INSERTION = 1
@@ -138,17 +139,19 @@ class Snv(object):
         self.name = name
         self.location = location
         self.annotations = {}
-        self.lib_alleles = []
-        if lib_alleles is not None:
-            # we have to sort alleles from each library
-            for library in lib_alleles:
-                new_library = {}
-                if 'library' in library:
-                    new_library['library'] = library['library']
-                #print library
-                new_library['alleles'] = sorted(library['alleles'],
-                                                 _allele_reads_compare)
-                self.lib_alleles.append(new_library)
+        if lib_alleles is None:
+            lib_alleles = []
+        self.lib_alleles = lib_alleles
+
+        # we have to sort alleles from each library
+        for library in self.lib_alleles:
+            library['alleles'] = sorted(library['alleles'],
+                                        _allele_reads_compare)
+
+        #for every library we have to add the 'annotations'
+        for library in lib_alleles:
+            if 'annotations' not in library:
+                library['annotations'] = {}
 
     def _get_kind(self):
         '''It returns the kind of variation.
@@ -362,20 +365,6 @@ def _parse_remap_output(remap_output):
 
     return enzymes
 
-def snvs_in_file(snv_fhand, ref_fhand=None):
-    'It reads the snv evalable file and it yields snvs'
-    snv_buffer = ''
-    if ref_fhand:
-        references_index = FileSequenceIndex(ref_fhand)
-    for line in snv_fhand:
-        line = line.strip()
-        if not line and snv_buffer:
-            snv = eval(snv_buffer)
-            snv.reference = references_index[snv.reference]
-            yield snv
-            snv_buffer = ''
-        snv_buffer += line
-
 def reference_variability(snv, context, window=None):
     'It calculates the variability of thh reference of the snv'
     #how many snps are in the window?
@@ -385,5 +374,56 @@ def reference_variability(snv, context, window=None):
             raise ValueError('The reference should be a seqRecord')
         window = len(snv.reference)
     return snv_quantity / float(window)
+
+def _calculate_maf_for_alleles_in_lib(alleles):
+    'It returns the maf for the given alleles'
+    most_freq_reads = alleles[0]['reads']
+    tot_reads = 0
+    for allele in alleles:
+        tot_reads += allele['reads']
+    maf = most_freq_reads / float(tot_reads)
+    return maf
+
+SVN_ANNOTATION_CALCULATORS = {'maf': _calculate_maf_for_alleles_in_lib}
+
+def _calculate_libs_annotation(snv, kind):
+    'It calculates an annotation for every library in the snv'
+    annots = []
+    for lib in snv.lib_alleles:
+        if kind in lib['annotations']:
+            value = lib['annotations'][kind]
+        else:
+            alleles = lib['alleles']
+            value = SVN_ANNOTATION_CALCULATORS[kind](alleles)
+        annots.append(value)
+        #we store the value in the annotations
+        lib['annotations'][kind] = value
+    return annots
+
+def major_allele_frequency(snv):
+    'It returns a list with the frequencies of the maf in all libraries'
+    return _calculate_libs_annotation(snv, 'maf')
+
+def snvs_in_file(snv_fhand, ref_fhand=None):
+    'It reads the snv evalable file and it yields snvs'
+    snv_buffer = ''
+    if ref_fhand:
+        references_index = FileSequenceIndex(ref_fhand)
+    else:
+        references_index = None
+    for line in snv_fhand:
+        line = line.strip()
+        if not line and snv_buffer:
+            snv = eval(snv_buffer)
+            if references_index:
+                snv.reference = references_index[snv.reference]
+            yield snv
+            snv_buffer = ''
+        snv_buffer += line
+
+def svn_contexts_in_file(snv_fhand, ref_fhand=None):
+    'It reads an svn file and it yields (svn, context) tuples'
+    return item_context_iter(snvs_in_file(snv_fhand, ref_fhand))
+
 
 

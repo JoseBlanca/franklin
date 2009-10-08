@@ -23,7 +23,8 @@ import unittest
 from StringIO import StringIO
 from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime,
                                  SeqVariation, SNP, INSERTION, DELETION,
-                                 INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file )
+                                 INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file,
+                                 major_allele_frequency)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationTest(unittest.TestCase):
@@ -134,6 +135,7 @@ class SnvTest(unittest.TestCase):
                                    {'alleles':[{'allele':'A', 'reads':3,
                                                'kind':INVARIANT}]}])
         assert seq_var.kind == COMPLEX
+
     @staticmethod
     def test_snv_repr():
         'It'
@@ -151,11 +153,26 @@ class SnvTest(unittest.TestCase):
         assert seq_var.reference == snv.reference
         assert seq_var.lib_alleles == snv.lib_alleles
 
+    @staticmethod
+    def test_sorted_alleles():
+        'It checks that we can get the alleles sorted by the number of reads.'
+        lib_alleles = [{'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':3}]}]
+        snp = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
+        alleles = snp.lib_alleles[0]['alleles']
+        assert alleles[0]['allele'] == 'T'
+        assert alleles[1]['allele'] == 'A'
 
-
-
-
-
+class SnvCaracterizationTest(unittest.TestCase):
+    'It checks that the svns are properly analyzed'
+    @staticmethod
+    def test_maf():
+        'It checks that we can calculate the maf frequency'
+        lib_alleles = [{'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':2}]}]
+        snp = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
+        mafs = major_allele_frequency(snp)
+        assert mafs[0] == 0.5
 
 class SeqVariationCaracterization(unittest.TestCase):
     '''It tests seqvar caracterization functions  '''
@@ -171,9 +188,6 @@ class SeqVariationCaracterization(unittest.TestCase):
         pic_1 = calculate_pic(snp1)
         pic_2 = calculate_pic(snp2)
         assert pic_1 > pic_2
-
-class SeqVariationrEnzime(unittest.TestCase):
-    ''' It checks if we have problems with remaps and it functions'''
 
     @staticmethod
     def test_remap():
@@ -205,6 +219,9 @@ class SeqVariationrEnzime(unittest.TestCase):
                             location=11, reference=reference)
         enzymes = cap_enzime(snp, True)
         assert 'EcoRI' in enzymes
+
+class SnvIOTest(unittest.TestCase):
+    ''' It checks if we have problems with remaps and it functions'''
 
     @staticmethod
     def test_svns_in_file():
