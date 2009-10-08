@@ -17,5 +17,5 @@ setup(
     package_dir={'':'.'},
     package_data={'mypkg': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib'],
-    scripts=['scripts/run_cleanning_pipeline.py']
+    scripts=['scripts/run_cleanning_pipeline.py', 'scripts/seqvar/run_bwa.sh']
 )
