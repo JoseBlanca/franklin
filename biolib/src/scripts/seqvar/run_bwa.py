@@ -71,7 +71,7 @@ def main():
 
     # we need that the index is created
     if not os.path.exists(refdb + '.bwt'):
-        raise OSError('Reference database index not created')
+        raise OSError('Reference database index not created: %s' % refdb)
 
     # TEMPORARY DIR NAME
     temp_dir = NamedTemporaryDir()
