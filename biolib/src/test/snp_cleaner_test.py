@@ -95,7 +95,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_high_variable_region_filter():
         'It test percent_variations_in_seq_ref filter'
-        reference = 'atatat'
+        reference = SeqWithQuality(seq='atatat')
         snp = Snv(location=1, reference=reference, lib_alleles=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},

@@ -20,9 +20,10 @@ Created on 2009 mar 25
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+from StringIO import StringIO
 from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime,
                                  SeqVariation, SNP, INSERTION, DELETION,
-                                 INVARIANT, INDEL, COMPLEX, Snv)
+                                 INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file )
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationTest(unittest.TestCase):
@@ -146,7 +147,6 @@ class SnvTest(unittest.TestCase):
                                                'kind':DELETION}]},
                                    {'alleles':[{'allele':'A', 'reads':3,
                                                'kind':INVARIANT}]}])
-        print repr(seq_var)
         snv = eval(repr(seq_var))
         assert seq_var.reference == snv.reference
         assert seq_var.lib_alleles == snv.lib_alleles
@@ -206,8 +206,23 @@ class SeqVariationrEnzime(unittest.TestCase):
         enzymes = cap_enzime(snp, True)
         assert 'EcoRI' in enzymes
 
-
-
+    @staticmethod
+    def test_svns_in_file():
+        'It we can read the svn file'
+        seq_var = Snv(reference='hola', location=3,
+                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':SNP},
+                                               {'allele':'A', 'reads':3,
+                                               'kind':INSERTION}]},
+                                   {'library':'library',
+                                    'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':DELETION}]},
+                                   {'alleles':[{'allele':'A', 'reads':3,
+                                               'kind':INVARIANT}]}])
+        fhand = StringIO(repr(seq_var))
+        snv   = snvs_in_file(fhand).next()
+        assert seq_var.reference == snv.reference
+        assert seq_var.lib_alleles == snv.lib_alleles
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

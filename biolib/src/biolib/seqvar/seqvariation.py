@@ -19,10 +19,10 @@ Created on 2009 mar 25
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from pprint import pprint
 from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_cmd_utils import call
 from biolib.seqs import SeqWithQuality
+from biolib.biolib_seqio_utils import FileSequenceIndex
 
 SNP = 0
 INSERTION = 1
@@ -361,3 +361,29 @@ def _parse_remap_output(remap_output):
             continue
 
     return enzymes
+
+def snvs_in_file(snv_fhand, ref_fhand=None):
+    'It reads the snv evalable file and it yields snvs'
+    snv_buffer = ''
+    if ref_fhand:
+        references_index = FileSequenceIndex(ref_fhand)
+    for line in snv_fhand:
+        line = line.strip()
+        if not line and snv_buffer:
+            snv = eval(snv_buffer)
+            snv.reference = references_index[snv.reference]
+            yield snv
+            snv_buffer = ''
+        snv_buffer += line
+
+def reference_variability(snv, context, window=None):
+    'It calculates the variability of thh reference of the snv'
+    #how many snps are in the window?
+    snv_quantity = len(context)
+    if window is None:
+        if 'seq' not in dir(snv.reference):
+            raise ValueError('The reference should be a seqRecord')
+        window = len(snv.reference)
+    return snv_quantity / float(window)
+
+

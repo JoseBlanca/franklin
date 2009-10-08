@@ -21,25 +21,18 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime, SNP)
+from biolib.seqvar.seqvariation import (calculate_pic, cap_enzime, SNP,
+                                        reference_variability)
 
 #filters
-def create_high_variable_region_filter(max_variability, window_length=None):
+def create_high_variable_region_filter(max_variability, window=None):
     'It creates a filter that filters seq_vars from high variable regions'
     def high_variable_region_filter(snv):
         'The filter'
-        wlen = window_length
         if snv is None:
             return False
         (snv, context) = snv
-
-        #how many snps are in the window?
-        snv_quantity = len(context)
-        if wlen is None:
-            wlen = len(snv.reference)
-        else:
-            wlen = wlen * 2
-        region_variability = snv_quantity / float(wlen)
+        region_variability = reference_variability(snv, context, window=window)
         if region_variability > max_variability:
             return False
         else:
