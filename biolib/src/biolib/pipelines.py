@@ -79,18 +79,12 @@ remove_vectors = {'function':create_vector_striper_by_alignment,
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
 
-remove_adaptors_solexa = {'function':create_vector_striper_by_alignment,
+remove_adaptors = {'function':create_vector_striper_by_alignment,
        'arguments':{'vectors':os.path.join(DATA_DIR, 'standar_solexa_adaptors'),
                      'aligner':'exonerate'},
        'type': 'mapper',
-       'name': 'remove_adaptors_standar',
-       'comment': 'Remove standar adaptors'}
-
-remove_our_adaptors_solexa = {'function':create_vector_striper_by_alignment,
-       'arguments':{'vectors':None, 'aligner':'exonerate'},
-       'type': 'mapper',
-       'name': 'remove_our_adaptors',
-       'comment': 'Remove our adaptors'}
+       'name': 'remove_adaptors',
+       'comment': 'Remove adaptors'}
 
 strip_quality = {'function': create_striper_by_quality,
                       'arguments':{'quality_treshold':20,
