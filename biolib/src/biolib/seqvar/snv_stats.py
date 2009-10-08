@@ -21,8 +21,10 @@ Created on 07/10/2009
 
 from biolib.statistics import create_distribution
 from biolib.seqvar.seqvariation import (reference_variability,
-                                        major_allele_frequency)
+                                        major_allele_frequency,
+                                        svn_contexts_in_file, snvs_in_file)
 from biolib.collections_ import item_context_iter, FileCachedList
+
 
 def calculate_ref_variability_ditrib(snv_contexts, window=None,
                                      distrib_fhand=None, plot_fhand=None,
@@ -61,3 +63,22 @@ def calculate_maf_distrib(snvs, distrib_fhand=None, plot_fhand=None,
                         distrib_fhand=distrib_fhand,
                         plot_fhand=plot_fhand,
                         range_=range_, low_memory=True)
+
+DISTRIBUTIONS = {
+                 'ref_variability':{'function':calculate_ref_variability_ditrib,
+                                    'snv_iter_kind':'snv_contexts'},
+                 'maf_distrib':{'function':calculate_maf_distrib,
+                                    'snv_iter_kind':'snv'}
+                 }
+
+def snv_distrib(snv_fhand, kind, reference_fhand=None, window=None,
+                distrib_fhand=None, plot_fhand=None, range_=None):
+    'It calculates one snv distribution of the given kind'
+    distribution_orders = DISTRIBUTIONS[kind]
+    if distribution_orders['snv_iter_kind'] == 'snv_context':
+        snvs = svn_contexts_in_file(snv_fhand, reference_fhand)
+    else:
+        snvs = snvs_in_file(snv_fhand)
+    return distribution_orders['function'](snvs, window=None,
+                                           distrib_fhand=None, plot_fhand=None,
+                                           range_=None)
