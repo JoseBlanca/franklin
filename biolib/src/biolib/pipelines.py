@@ -220,8 +220,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
 
-            'solexa'       : [remove_our_adaptors_solexa,
-                              remove_adaptors_solexa, strip_quality,
+            'solexa'       : [remove_adaptors, strip_quality,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_baq_quality_alleles,
                           snp_major_allele_freq_cleaner,
