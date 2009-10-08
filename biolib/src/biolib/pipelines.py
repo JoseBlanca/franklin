@@ -79,13 +79,17 @@ remove_vectors = {'function':create_vector_striper_by_alignment,
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
 
-
-
 remove_adaptors_solexa = {'function':create_vector_striper_by_alignment,
        'arguments':{'vectors':os.path.join(DATA_DIR, 'standar_solexa_adaptors'),
                      'aligner':'exonerate'},
        'type': 'mapper',
-       'name': 'remove_adaptors',
+       'name': 'remove_adaptors_standar',
+       'comment': 'Remove standar adaptors'}
+
+remove_our_adaptors_solexa = {'function':create_vector_striper_by_alignment,
+       'arguments':{'vectors':None, 'aligner':'exonerate'},
+       'type': 'mapper',
+       'name': 'remove_our_adaptors',
        'comment': 'Remove our adaptors'}
 
 strip_quality = {'function': create_striper_by_quality,
@@ -222,7 +226,8 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
 
-            'solexa'       : [remove_adaptors_solexa, strip_quality,
+            'solexa'       : [remove_our_adaptors_solexa,
+                              remove_adaptors_solexa, strip_quality,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_baq_quality_alleles,
                           snp_major_allele_freq_cleaner,

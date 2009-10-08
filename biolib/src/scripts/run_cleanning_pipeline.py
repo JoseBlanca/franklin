@@ -148,8 +148,8 @@ def set_parameters():
         configuration['remove_vectors'] = {}
         configuration['remove_vectors']['vectors'] = options.vecdb
     if options.adaptors is not None:
-        configuration['remove_adaptors'] = {}
-        configuration['remove_adaptors']['vectors'] = options.adaptors
+        configuration['remove_our_adaptors'] = {}
+        configuration['remove_our_adaptors']['vectors'] = options.adaptors
     if options.words is not None:
         configuration['word_masker'] = {}
         configuration['word_masker']['words'] = \
