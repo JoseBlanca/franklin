@@ -42,78 +42,6 @@ def _allele_reads_compare(allele1, allele2):
     'It returns which allele has been read more times'
     return allele2['reads'] - allele1['reads']
 
-class SeqVariation(object):
-    '''
-    This class is used to represent a sequence variation respect a reference.
-    The variation can be: Snp, insertion, deletion or non_variant.
-    '''
-    def __init__(self, alleles, reference, name=None, location=None):
-        '''It initializes with an alleles dict and a reference.
-
-        The alleles should be given with a list.
-        The allele info should be a dict with the following info:
-            - allele: the sequence variation
-            - reads: the number of reads that support them as values.
-            - kind: the type of variation
-            - qualities: a list of qualities
-        The reference is the reference sequence, can be an str or a SeqRecord.
-        The location should be an int refering to the location in the reference
-        sequence.
-        '''
-        self.alleles = sorted(alleles, _allele_reads_compare)
-        self.reference = reference
-        self.name = name
-        self.location = location
-        self.annotations = {}
-
-    def _get_kind(self):
-        '''It returns the kind of variation.
-
-        The kind of variation depends on the kind of alleles.
-        '''
-        kind = INVARIANT
-        for allele_info in self.alleles:
-            al_kind = allele_info['kind']
-            if kind == INVARIANT and al_kind == DELETION:
-                kind = DELETION
-            elif kind == INVARIANT and al_kind == INSERTION:
-                kind = INSERTION
-            elif (kind == DELETION and al_kind == INSERTION or
-                 kind == INSERTION and al_kind == DELETION):
-                kind = INDEL
-            elif ((kind in (DELETION, INSERTION, INDEL) and
-                   al_kind == SNP) or
-                   (kind == SNP  and al_kind in (INSERTION, INDEL))):
-                kind = COMPLEX
-            elif kind == INVARIANT and al_kind == SNP:
-                kind = SNP
-        return kind
-    kind = property(_get_kind)
-
-    def __str__(self):
-        return '%s %d: %s:' % (self.reference, self.location, str(self.alleles))
-
-    def copy(self, alleles=None, reference=None, name=None, location=None,
-                                                            annotations=None):
-        '''Given a seqvariation in returns a new seqvariation with the new data
-         changes'''
-        if alleles is None:
-            alleles = self.alleles
-        if reference is None:
-            reference = self.reference
-        if name is None:
-            name = self.name
-        if location is None:
-            location = self.location
-
-        seqvar = self.__class__(alleles=alleles, reference=reference, name=name,
-                              location=location)
-        if annotations is None:
-            seqvar.annotations = self.annotations
-        else:
-            seqvar.annotations = annotations
-        return seqvar
-
 class Snv(object):
     '''
     This class is used to represent a sequence variation respect a reference.
@@ -220,79 +148,54 @@ class Snv(object):
         to_print += '])\n\n'
         return to_print
 
+def cap_enzymes(snv, all_enzymes=False):
+    '''Given an svn it returns the list of restriction enzymes that distinguish
+    between their alleles.'''
+    if 'cap_enzymes' in snv.annotations:
+        return snv.annotations
 
+    #which alleles do we have?
+    alleles = set()
+    for lib in snv.lib_alleles:
+        for allele in lib['alleles']:
+            alleles.add(repr((allele['allele'], allele['kind'])))
+    #for every pair of different alleles we have to look for differences in
+    #their restriction maps
+    enzymes = set()
+    alleles = list(alleles)
+    reference = snv.reference
+    location = snv.location
+    for i_index in range(len(alleles)):
+        for j_index in range(i_index, len(alleles)):
+            if i_index == j_index:
+                continue
+            allelei = eval(alleles[i_index])
+            allelei = {'allele':allelei[0], 'kind':allelei[1]}
+            allelej = eval(alleles[j_index])
+            allelej = {'allele':allelej[0], 'kind':allelej[1]}
+            i_j_enzymes = _cap_enzymes_between_alleles(allelei, allelej,
+                                                       reference, location,
+                                                       all_enzymes)
+            enzymes = enzymes.union(i_j_enzymes)
 
+    enzymes = list(enzymes)
+    snv.annotations['cap_enzymes'] = enzymes
+    return enzymes
 
-#functions to characterize the sequence variations
-def calculate_pic(seq_variation):
-    '''It calculates and returns the Polymorphic Information Content.
+def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
+                                 all_enzymes=False):
+    '''It looks in the enzymes that differenciate the given alleles.
 
-    The PIC was defined in Botstein 1980. Am. J. Hum. Genet. 32, 314 331 as  the
-    probability that a given marker genotype of an offspring of an affected
-    parent will allow deduction of the parental genotype at the marker locus.
-    The calculation is done following Shete et al. 2000 Theoretical Population
-    Biology 57, 265 271.
+    It returns a set.
     '''
-    # If it is already calculated it returns it
-    if 'pic' in seq_variation.annotations:
-        return seq_variation.annotations['pic']
-
-    #pylint: disable-msg=C0103
-    def _pic_sum_1(alleles, num_reads, num_alleles):
-        '''It returns the first summation for the pic calculation'''
-        # P is the frecuency one allele have been read
-        suma  = 0
-        for i in range(num_alleles):
-            frec = (alleles[i] / num_reads) ** 2
-            suma += frec
-        return suma
-
-    def _pic_sum_2(alleles, num_reads, num_alleles):
-        '''It returns the second summation for the pic calculation '''
-        suma = 0
-        for i in range(num_alleles - 1):
-            freci = (alleles[i] / num_reads) ** 2
-            for j in range(i + 1, num_alleles):
-                frecj = (alleles[j] / num_reads) ** 2
-                suma += freci * frecj
-        return suma
-
-
-    alleles = seq_variation.alleles
-    #the alleles can have the count or a list with the alleles, we make sure
-    #that all have a count, and we convert the dict to a list
-    alleles = [allele['reads'] for allele in alleles]
-    #how many reads are in total?
-    num_reads = float(sum(alleles))
-    #how many alleles are in total
-    num_alleles = len(alleles)
-    sum_1 = _pic_sum_1(alleles, num_reads, num_alleles)
-    sum_2 = _pic_sum_2(alleles, num_reads, num_alleles)
-
-
-    pic = 1.0 - sum_1 - ( 2 * sum_2)
-    # We add the pik to the snp annotations
-    seq_variation.annotations['pic'] = pic
-    return pic
-
-def cap_enzime(snp, all_enzymes=False):
-    ''' It looks in the 2 most frecuent alleles if there is each of the enzimes
-    cut diferently'''
-    # If it is already calculated we return them
-    if 'enzymes' in snp.annotations:
-        return snp.annotations['enzymes']
-
-    # we look for a CAP between the two most abundant alleles.
-    allele1 = snp.alleles[0]
-    allele2 = snp.alleles[1]
     kind1 = allele1['kind']
     kind2 = allele2['kind']
     allele1 = allele1['allele']
     allele2 = allele2['allele']
 
     #we have to build the two sequences
-    ref = snp.reference
-    loc = snp.location
+    ref = reference
+    loc = location
     def create_sequence(name, allele, kind):
         'The returns the sequence for the given allele'
         sseq = ref.seq
@@ -314,10 +217,7 @@ def cap_enzime(snp, all_enzymes=False):
 
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
-    # We add the enzymes to the snp annotations
-    snp.annotations['enzymes'] = enzymes
-    return list(enzymes)
-
+    return enzymes
 
 def _remap_run(seq, all_enzymes):
     '''this command runs remap EMBOSS binary and returns ...'''
@@ -375,7 +275,7 @@ def reference_variability(snv, context, window=None):
         window = len(snv.reference)
     return snv_quantity / float(window)
 
-def _calculate_maf_for_alleles_in_lib(alleles):
+def _maf_for_alleles_in_lib(alleles):
     'It returns the maf for the given alleles'
     most_freq_reads = alleles[0]['reads']
     tot_reads = 0
@@ -384,7 +284,50 @@ def _calculate_maf_for_alleles_in_lib(alleles):
     maf = most_freq_reads / float(tot_reads)
     return maf
 
-SVN_ANNOTATION_CALCULATORS = {'maf': _calculate_maf_for_alleles_in_lib}
+#functions to characterize the sequence variations
+def _pic_for_alleles_in_lib(alleles):
+    '''It calculates and returns the Polymorphic Information Content.
+
+    The PIC was defined in Botstein 1980. Am. J. Hum. Genet. 32, 314 331 as  the
+    probability that a given marker genotype of an offspring of an affected
+    parent will allow deduction of the parental genotype at the marker locus.
+    The calculation is done following Shete et al. 2000 Theoretical Population
+    Biology 57, 265 271.
+    '''
+    #pylint: disable-msg=C0103
+    def _pic_sum_1(alleles, num_reads, num_alleles):
+        '''It returns the first summation for the pic calculation'''
+        # P is the frecuency one allele have been read
+        suma  = 0
+        for i in range(num_alleles):
+            frec = (alleles[i] / num_reads) ** 2
+            suma += frec
+        return suma
+
+    def _pic_sum_2(alleles, num_reads, num_alleles):
+        '''It returns the second summation for the pic calculation '''
+        suma = 0
+        for i in range(num_alleles - 1):
+            freci = (alleles[i] / num_reads) ** 2
+            for j in range(i + 1, num_alleles):
+                frecj = (alleles[j] / num_reads) ** 2
+                suma += freci * frecj
+        return suma
+
+    #the alleles can have the count or a list with the alleles, we make sure
+    #that all have a count, and we convert the dict to a list
+    alleles = [allele['reads'] for allele in alleles]
+    #how many reads are in total?
+    num_reads = float(sum(alleles))
+    #how many alleles are in total
+    num_alleles = len(alleles)
+    sum_1 = _pic_sum_1(alleles, num_reads, num_alleles)
+    sum_2 = _pic_sum_2(alleles, num_reads, num_alleles)
+
+    return 1.0 - sum_1 - ( 2 * sum_2)
+
+SVN_ANNOTATION_CALCULATORS = {'maf': _maf_for_alleles_in_lib,
+                              'pic': _pic_for_alleles_in_lib}
 
 def _calculate_libs_annotation(snv, kind):
     'It calculates an annotation for every library in the snv'
@@ -403,6 +346,11 @@ def _calculate_libs_annotation(snv, kind):
 def major_allele_frequency(snv):
     'It returns a list with the frequencies of the maf in all libraries'
     return _calculate_libs_annotation(snv, 'maf')
+
+def pic(snv):
+    'It returns a list with the pics in all libraries'
+    return _calculate_libs_annotation(snv, 'pic')
+
 
 def snvs_in_file(snv_fhand, ref_fhand=None):
     'It reads the snv evalable file and it yields snvs'
@@ -424,6 +372,3 @@ def snvs_in_file(snv_fhand, ref_fhand=None):
 def svn_contexts_in_file(snv_fhand, ref_fhand=None):
     'It reads an svn file and it yields (svn, context) tuples'
     return item_context_iter(snvs_in_file(snv_fhand, ref_fhand))
-
-
-
