@@ -42,6 +42,7 @@ class TestSnvStats(unittest.TestCase):
         snv_fhand = StringIO(repr(seq_var) + repr(seq_var2) + repr(seq_var3))
         snv_contexts = svn_contexts_in_file(snv_fhand, reference_fhand)
         distrib = calculate_ref_variability_ditrib(snv_contexts)
+
         assert distrib['distrib'] == [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                       0, 0, 0, 0, 0, 2]
     @staticmethod
