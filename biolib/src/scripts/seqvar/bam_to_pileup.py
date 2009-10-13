@@ -29,7 +29,7 @@ from optparse import OptionParser
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser('usage: %prog -i bam_file[,bam_file2] -o sam_pileup')
-    parser.add_option('-i', '--bamfiles', dest='bamfile',
+    parser.add_option('-i', '--bamfiles', dest='bamfiles',
                       help='bam files coma separated, without space')
     parser.add_option('-o', '--sam_pileup', dest='pileup',
                       help='soutput sam_pileup')
@@ -42,7 +42,7 @@ def set_parameters():
     parser  = parse_options()
     options = parser.parse_args()[0]
 
-    if options.bamfile is None:
+    if options.bamfiles is None:
         parser.error('bam input file is needed')
     else:
         bamfiles = options.bamfiles.split(',')
@@ -50,7 +50,7 @@ def set_parameters():
     if options.reffile is None:
         parser.error('file is mandatory')
     else:
-        reffile = options.seqfile
+        reffile = options.reffile
 
     if options.pileup is None:
         pileup = sys.stdout
@@ -86,3 +86,7 @@ def main():
     else:
         pileup.write(stdout)
     pileup.close()
+
+
+if __name__ == '__main__':
+    main()

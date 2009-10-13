@@ -55,7 +55,7 @@ def set_parameters():
     if options.reffile is None:
         parser.error('file is mandatory')
     else:
-        reffile = options.seqfile
+        reffile = options.reffile
 
     seq_type = options.seq_type
     refdb    = options.refdb
@@ -96,10 +96,10 @@ def main():
 
     elif seq_type == 'long':
         #align sanger
-        cmd = ['bwa', 'dbwtsw', reffile, seqfile]
+        cmd = ['bwa', 'dbwtsw', refdb, seqfile]
         stdout, stderr, retcode = call(cmd)
         if retcode:
-            raise RuntimeError('bwa dbwtsw - step error: %s' % stderr)
+            raise RuntimeError('bwa dbwtsw - step error: %s\n%s' % (stderr, " ".join(cmd)))
         ali_fhand = open(os.path.join(dir_name, 'output.ali'), 'w')
         ali_fhand.write(stdout)
         ali_fhand.close()
@@ -118,13 +118,6 @@ def main():
     stdout, stderr, retcode = call(cmd)
     if retcode:
         raise RuntimeError('samtools sort - step error: %s' % stderr)
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     main()
