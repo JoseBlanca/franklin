@@ -166,7 +166,7 @@ def get_content_from_fasta(fhand, kind='seq'):
     return name, description, seq
 
 def quess_seq_type(fhand, format, limit):
-    'It guess seq type: short|long'
+    'It guess seq type: short, long'
     short = 0
     seqs = seqs_in_file(fhand, format=format)
     for i in range(3):

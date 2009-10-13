@@ -48,17 +48,14 @@ class Test(unittest.TestCase):
         fhand = open(sam_fname)
         references = StringIO.StringIO(REFERENCES)
         snvs = list(seqvars_in_sam_pileup(fhand, references=references))
-        print snvs
         assert len(snvs) == 8
         assert snvs[0][0].reference.name == 'SGN-U562678'
         assert snvs[7][0].reference.name == 'SGN-U562679'
         assert snvs[0][0].reference.seq == 'ATATATATATATATATATAT'
         assert snvs[7][0].reference.seq == 'GCGCGCGCGCGCGG'
         assert snvs[0][0].lib_alleles[0]['alleles'][0]['allele'] == 'G'
-
-
-
-
+        assert snvs[0][0].lib_alleles[0]['alleles'][0]['qualities'] == [None,
+                                                                     None, None]
 
     @staticmethod
     def test_is_seq_bar():
@@ -66,21 +63,18 @@ class Test(unittest.TestCase):
         coverage = 5
         ref_base = 'A'
         quality  = ['~', '~', '~', '~', '~']
-        alleles = [{'allele':'A', 'reads':3, 'kind':SNP, 'quality': quality},
+        alleles = [{'allele':'A', 'reads':3, 'kind':SNP, 'qualities': quality},
                    {'allele':'T', 'reads':2, 'kind':INVARIANT,
-                                                         'quality': quality}]
+                                                         'qualities': quality}]
         min_num_bases  = 2
         assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
         read_bases = 'TTT..'
-        alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'quality': quality},
+        alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'qualities': quality},
                    {'allele':'A', 'reads':2, 'kind':INVARIANT,
-                                                       'quality': quality}]
+                                                       'qualities': quality}]
         min_num_bases  = 3
         assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
-
-
-
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def _get_allele_type(ref_base, alleles, qual_grouped):
     for allele, num_reads in alleles.items():
         allele_info = {}
         allele_info['reads']   = num_reads
-        allele_info['quality'] =  qual_grouped[allele]
+        allele_info['qualities'] =  qual_grouped[allele]
         if allele.startswith('+'):
             allele_info['allele'] = allele[1:]
             allele_info['kind']   = INSERTION
@@ -118,6 +118,17 @@ def _group_alleles(alleles, quals):
         alleles_dict[allele] += 1
         qual_dict[allele].append(quals[index])
     return alleles_dict, qual_dict
+
+def _qualities_to_phred(qualities):
+    'It transforms a list of chrs into a phred list'
+    new_qualities = []
+    for qual in qualities:
+        if qual is not None:
+            qual = ord(qual) - 33
+        if qual == 93:  #the character used for unknown qualities
+            qual = None
+        new_qualities.append(qual)
+    return new_qualities
 
 def _get_alleles(ref_base, alleles, qualities):
     '''Given the sequence and qualities strings it returns two lists with the
@@ -174,6 +185,7 @@ def _get_alleles(ref_base, alleles, qualities):
         qual_pos += qual_delta
         qual_delta = 1
         ignore_qual = False
+    filtered_qualities = _qualities_to_phred(filtered_qualities)
     return filtered_alleles, filtered_qualities
 
 def save_seqvars_positions(seq_vars, outfhand):
