@@ -24,7 +24,7 @@ Created on 01/10/2009
 import sqlalchemy
 from optparse import OptionParser
 from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
-from biolib.seqvar.snp_miner import add_seqvar_to_db
+from biolib.seqvar.snp_miner import add_snv_to_db
 from biolib.db.db_utils import get_db_url
 
 def parse_options():
@@ -100,18 +100,18 @@ def set_parameters():
 def main():
     'The main part of the script'
     # set parameters
-    samfile, req_posfile, references, library, database_conf =\
+    samfile, req_posfile, references, library, database_conf = \
                                                  set_parameters()
     #get the sevar from requiered base
-    seq_vars =  seqvars_in_sam_pileup(samfile, required_positions=req_posfile,
+    snvs =  seqvars_in_sam_pileup(samfile, required_positions=req_posfile,
                                       references=references)
     #prepare database conexion:
     db_url = get_db_url(database_conf)
     engine = sqlalchemy.create_engine(db_url)
 
     #Insert the seqvars to the database
-    for seq_var in seq_vars:
-        add_seqvar_to_db(engine, seq_var, library=library)
+    for snv in snvs:
+        add_snv_to_db(engine, snv, library=library)
 
 if __name__ == '__main__':
     main()

@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
         assert snvs[7][0].reference.seq == 'GCGCGCGCGCGCGG'
         assert snvs[0][0].lib_alleles[0]['alleles'][0]['allele'] == 'G'
         assert snvs[0][0].lib_alleles[0]['alleles'][0]['qualities'] == [None,
-                                                                     None, None]
+                                                                     None, 20]
 
     @staticmethod
     def test_is_seq_bar():

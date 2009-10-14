@@ -133,20 +133,20 @@ def create_bad_quality_reads_cleaner(qual_treshold):
             new_alleles = []
             for allele in alleles:
                 new_qual = []
-                if 'quality' in allele:
-                    for qual in allele['quality']:
+                if 'qualities' in allele:
+                    for qual in allele['qualities']:
                         if qual > qual_treshold or qual is None:
                             new_qual.append(qual)
                 # check if allele has changed
                 len_new_qual = len(new_qual)
                 if len_new_qual == 0:
                     continue
-                elif len_new_qual != len(allele['quality']):
+                elif len_new_qual != len(allele['qualities']):
                     new_allele = {}
                     new_allele['allele']  = allele['allele']
                     new_allele['kind']    = allele['kind']
                     new_allele['reads']   = len(new_qual)
-                    new_allele['quality'] = new_qual
+                    new_allele['qualities'] = new_qual
                     new_alleles.append(new_allele)
                 else:
                     new_alleles.append(allele)

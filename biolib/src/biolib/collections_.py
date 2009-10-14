@@ -60,8 +60,10 @@ class FileCachedList(object):
             yield self._type(line.strip())
 
 class RequiredPosition(object):
-    'This class'
+    '''This class checks if the given cromosome and positions are in the given
+     file.
 
+    This file must be ordered'''
     def __init__(self, fhand):
         '''It initializes the class '''
         self._fhand = fhand
@@ -69,7 +71,7 @@ class RequiredPosition(object):
         self._cache = (None, None)
 
     def __getitem__(self, index):
-        'The get item method. It look the position in the file'
+        'The get item method. It look the location in the file'
         if self._cache == index:
             return True
         asked_cromosome, asked_position = index
@@ -77,13 +79,14 @@ class RequiredPosition(object):
             line = line.strip()
             if not line:
                 continue
-            (cromosome, position) = line.split()
-            # if the given position is in the file
-            if index == (cromosome, position):
+            (cromosome, location) = line.split()
+
+            # if the given location is in the file
+            if index == (cromosome, location):
                 return True
-            #if we haven't found the position but we find a bigger
+            #if we haven't found the location but we find a bigger
             elif (((cromosome == asked_cromosome) and
-                 (asked_position > position)) or (cromosome < asked_cromosome)):
+                 (asked_position > location)) or (cromosome < asked_cromosome)):
                 self._cache = index
                 return False
             else:
