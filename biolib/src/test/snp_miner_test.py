@@ -58,7 +58,7 @@ class SnpMinerTest(unittest.TestCase):
 
         ref1 = 'ref1'
         lib1_alleles = {'library': 'some_libary',
-                        'annotations': {},
+                        'annotations': {'hola': 'caracola'},
                         'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
                                      'qualities':[30, 30, 30]},
                                     {'allele':'T', 'reads':3, 'kind':SNP,
@@ -67,13 +67,14 @@ class SnpMinerTest(unittest.TestCase):
         snv = Snv(name='snp1', reference=ref1, location=3,
                       lib_alleles=[lib1_alleles])
 
-        add_snv_to_db(engine, snv, library='lib1')
+        add_snv_to_db(engine, snv)
         snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
-        ref_inst = snp_miner.select_one('reference', {'name':'ref1'})
+        ref_inst = snp_miner.select_one('Reference', {'name':'ref1'})
         assert ref_inst.name == 'ref1'
-        snp_inst  = snp_miner.select_one('seqvar', {'name':'snp1'})
-        assert snp_inst.name ==  'snp1'
-        assert snp_inst.location.reference.name == 'ref1'
+        snp_inst  = snp_miner.select_one('Snv', {'reference':ref_inst})
+        assert snp_inst.location ==  3
+
+    #add an svn that's already in the db and modify it
 
     @staticmethod
     def xtest_add_reference_annot():

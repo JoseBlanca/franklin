@@ -33,13 +33,13 @@ SNPMINER_MAP_DEF = [{'name':'Reference'},
                                                   'rel_attr':'reference'}}},
                     {'name':'LibrarySnv',
                      'relations':{'snv_id':{'kind':'one2many',
-                                            'rel_attr':'Snv'},
+                                            'rel_attr':'snv'},
                                   'library_id' :{'kind':'one2many',
                                                  'rel_attr':'library'}}},
                     {'name':'LibrarySnvAlleles',
                      'relations':{'library_snv_id':{'kind':'one2many',
-                                                   'rel_attr':'library_svn'}}},
-                    {'name':'LibrarySnvProp',
+                                                   'rel_attr':'library_snv'}}},
+                    {'name':'LibrarySnvAnnot',
                      'relations':{'library_snv_id':{'kind':'one2many',
                                                     'rel_attr':'library_snv'}}}
                     ]
@@ -63,10 +63,10 @@ def create_snp_miner_database(engine):
           Column('reference_prop_id', Integer, primary_key=True),
           Column('reference_id', Integer, ForeignKey('Reference.reference_id'),
                  nullable=False),
-          Column('type',             String,  nullable=False),
-          Column('value',            String,  nullable=False),
-          Column('start',            Integer),
-          Column('end',              Integer),
+          Column('type', String,  nullable=False),
+          Column('value', String,  nullable=False),
+          Column('start', Integer),
+          Column('end', Integer),
           UniqueConstraint('reference_id', 'type', 'value'))
 
     #snv table. A location in a reference sequence is an snv
@@ -74,6 +74,7 @@ def create_snp_miner_database(engine):
         Column('snv_id', Integer, primary_key=True),
         Column('reference_id', Integer, ForeignKey('Reference.reference_id'),
                nullable=False),
+        Column('kind',   String,  nullable=True),
         Column('location', Integer, nullable=False),
         UniqueConstraint('reference_id', 'location'))
 
@@ -81,7 +82,6 @@ def create_snp_miner_database(engine):
     Table('LibrarySnv', metadata,
         Column('library_snv_id', Integer, primary_key=True),
         Column('name',   String,  nullable=True),
-        Column('kind',   String,  nullable=True),
         Column('library_id', Integer, ForeignKey('Library.library_id'),
                nullable=False),
         Column('snv_id',  Integer, ForeignKey('Snv.snv_id'),
@@ -97,41 +97,31 @@ def create_snp_miner_database(engine):
         Column('kind', String, nullable=False),
         Column('num_reads', Integer, nullable=False),
         Column('qualities',  String, nullable=True),
-        UniqueConstraint('library_snv_id', 'allele' ))
+        UniqueConstraint('library_snv_id', 'allele', 'kind'))
 
     #LibrarySnvProp. The annotations associated with an snv in a library
-    Table('LibrarySnvProp', metadata,
-            Column('library_snv_prop_id', Integer, primary_key=True),
+    Table('LibrarySnvAnnot', metadata,
+            Column('library_snv_annot_id', Integer, primary_key=True),
             Column('library_snv_id', Integer,
                    ForeignKey('LibrarySnv.library_snv_id'),  nullable=False),
             Column('kind',  String, nullable=False),
             Column('value', String, nullable=False),
-            UniqueConstraint('library_snv_id', 'kind', 'value'))
+            UniqueConstraint('library_snv_id', 'kind'))
 
     metadata.create_all(engine)
 
-def add_snv_to_db(engine, seqvar, library):
+def add_snv_to_db(engine, snv):
     '''It adds the snps to the db'''
     snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
     try:
         # add reference to database
-        _insert_reference(snp_miner, seqvar)
+        _insert_reference(snp_miner, snv)
 
         # add location data to database
-        _insert_location(snp_miner, seqvar)
-
-        # add library to database
-        _insert_library(snp_miner, library)
-#        snp_miner.commit()
-#        return
-        # add seq_var core information
-        _insert_seqvar_core(snp_miner, seqvar, library)
+        sql_snv = _insert_snv(snp_miner, snv)
 
         # add alleles to db
-        _insert_seqvar_alleles(snp_miner, seqvar, library)
-
-        # add_seqvar_properties to db
-        _insert_seqvar_properties(snp_miner, seqvar, library)
+        _insert_library_snv_alleles(snp_miner, snv, sql_snv)
 
         #commit changes
         snp_miner.commit()
@@ -139,82 +129,58 @@ def add_snv_to_db(engine, seqvar, library):
         snp_miner.rollback()
         raise
 
-def _insert_reference(snp_miner, seqvar):
+def _insert_reference(snp_miner, snv):
     'It adds the reference data to the database'
-    ref_name =  _get_reference_name(seqvar)
-    try:
-        seq = seqvar.reference.seq
-    except AttributeError:
-        seq = None
+    ref_name =  _get_reference_name(snv)
+    ref_attr = {'name':ref_name}
+    return snp_miner.get('Reference', attributes=ref_attr)
 
-    ref_attr = {'name':ref_name, 'seq':seq}
-    snp_miner.get('reference', attributes=ref_attr)
-
-def _insert_location(snp_miner, seqvar):
+def _insert_snv(snp_miner, snv):
     'It adds the reference data to the database'
-    try:
-        name = seqvar.reference.name
-    except AttributeError:
-        name = seqvar.reference
-    position = seqvar.location
-    loc_attr = {'reference_id':{'name':name} , 'position':position}
-    snp_miner.get('location', attributes=loc_attr)
+    ref_name =  _get_reference_name(snv)
+    location = snv.location
+    kind     = snv.kind
+    loc_attr = {'reference_id':{'name':ref_name}, 'location':location,
+                'kind':kind}
+    return snp_miner.get('Snv', attributes=loc_attr)
 
 def _insert_library(snp_miner, library):
     'It adds the library to the database'
-    snp_miner.get('library', attributes={'accesion':library})
+    return snp_miner.get('Library', attributes={'accesion':library})
 
-def _insert_seqvar_core(snp_miner, seqvar, library):
+def _insert_library_snv(snp_miner, snv_sql, library_sql):
     '''It transform the given parsed file dict in a db dict format'''
-    snp_name       = seqvar.name
-    ref_name       = seqvar.reference.name
-    position       = seqvar.location
-    kind           = seqvar.kind
+    seqvar_attrs = {'snv': snv_sql,
+                    'library':library_sql}
+    return snp_miner.get('LibrarySnv', attributes=seqvar_attrs)
 
-    seqvar_attrs = {'name': snp_name,
-                    'location_id': {'reference_id':{'name':ref_name},
-                                    'position': position},
-                    'type':kind,
-                    'library_id':{'accesion':library}}
-    snp_miner.get('seqvar', attributes=seqvar_attrs)
-
-def _insert_seqvar_alleles(snp_miner, seqvar, library):
+def _insert_library_snv_alleles(snp_miner, snv, snv_sql):
     'Insert alleles of a seq var in database'
-    ref_name =  _get_reference_name(seqvar)
-    position = seqvar.location
-    qual_separator = ":"
-    seqvar_name = seqvar.name
-    for allele in seqvar.alleles:
-        allele_base = allele['allele']
-        reads       = allele['reads']
-        kind        = allele['kind']
-        if 'quality' in allele:
-            qual = [str(q) for q in allele['quality']]
-            qual    = qual_separator.join(qual)
-        else:
-            qual    = None
-        allele_attrs = {'seqvar_id':{'location_id': {'reference_id':
-                                                     {'name':ref_name},
-                                                      'position': position},
-                                     'library_id':{'accesion':library}},
-                        'allele': allele_base, 'type': kind, 'num_reads': reads,
-                        'quality':qual}
-        snp_miner.get('seqvaralleles', attributes=allele_attrs )
+    for lib_alleles in snv.lib_alleles:
+        library = lib_alleles['library']
+        # add library to database
+        library_sql = _insert_library(snp_miner, library)
 
-def _insert_seqvar_properties(snp_miner, seqvar, library):
-    'Insert alleles of a seq var in database'
-    ref_name =  _get_reference_name(seqvar)
-    position = seqvar.location
-    seqvar_name = seqvar.name
+        # add seq_var core information
+        library_snv_sql = _insert_library_snv(snp_miner, snv_sql, library_sql)
 
-    for annotation, value in seqvar.annotations.items():
-        prop_attr = {'seqvar_id':{'location_id': {'reference_id':
-                                                              {'name':ref_name},
-                                                  'position': position},
-                                  'library_id':{'accesion':library}},
-                     'type': annotation,
-                     'value':value}
-        snp_miner.get('seqvarprop', attributes=prop_attr)
+        for lib_allele in lib_alleles['alleles']:
+            allele = lib_allele['allele']
+            reads  = lib_allele['reads']
+            kind   = lib_allele['kind']
+            if 'quality' in lib_allele:
+                qual = repr(lib_allele['quality'])
+            else:
+                qual    = None
+            allele_attrs = {'library_snv':library_snv_sql,
+                            'allele': allele, 'kind': kind, 'num_reads': reads,
+                            'qualities':qual}
+            snp_miner.get('LibrarySnvAlleles', attributes=allele_attrs )
+
+        for kind, value in lib_alleles['annotations'].items():
+            props_attrs = {'library_snv':library_snv_sql,
+                            'kind': kind, 'value': value,}
+            snp_miner.get('LibrarySnvAnnot', attributes=props_attrs )
 
 def _get_reference_name(seqvar):
     'It return ref base name of a seqvar'
