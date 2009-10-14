@@ -82,7 +82,8 @@ def main():
     cmd = ['samtools', 'pileup', '-f', reffile, merged_bam_file]
     stdout, stderr, retcode = call(cmd)
     if retcode:
-        raise RuntimeError('samtools pileup - step error: %s' % stderr)
+        msg = 'Error:\nstep:%s\n error: %s' % (" ".join(cmd), stderr)
+        raise RuntimeError(msg)
     else:
         pileup.write(stdout)
     pileup.close()

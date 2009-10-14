@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 '''
-This script is the first step of the sam to snp database pipeline. This script
-parses a sam pileup file and get valid sevars (after cleaning and filtering
-them). It writes a required positions file to use in setp 2
+This script parses a sam pileup file and get valid sevars (after cleaning and filtering
+them).
+It writes an evaluable seqvar output file
 
 Created on 30/09/2009
 
@@ -34,7 +34,7 @@ def parse_options():
     parser = OptionParser('usage: %prog -i sam_pileup, -o req_pos -p pipeline')
     parser.add_option('-i', '--sampileup', dest='infile',
                       help='Sam pileup file')
-    parser.add_option('-o', '--req_pos', dest='outfile',
+    parser.add_option('-o', '--outfile', dest='outfile',
                       help='Outut file. Required positions file or summary')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                       help='filtering pipeline:snp_basic, snp_exhaustive ')
@@ -77,7 +77,7 @@ def main():
     # print snvs
     for snv in seq_vars:
         if snv is not None:
-            outfile.write(snv.__str__())
+            outfile.write(repr(snv))
 
 if __name__ == '__main__':
     main()
