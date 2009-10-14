@@ -137,7 +137,10 @@ def create_bad_quality_reads_cleaner(qual_treshold):
                     for qual in allele['qualities']:
                         if qual > qual_treshold or qual is None:
                             new_qual.append(qual)
-                # check if allele has changed
+                else:
+                    new_alleles.append(allele)
+                    continue
+
                 len_new_qual = len(new_qual)
                 if len_new_qual == 0:
                     continue

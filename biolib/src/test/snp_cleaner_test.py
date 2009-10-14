@@ -248,6 +248,15 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert snp.lib_alleles[0]['alleles'][0]['reads'] == 4
         assert len(snp.lib_alleles[0]['alleles'][0]['qualities']) == 4
 
+        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+                {'alleles':[{'allele':'AT', 'reads':4, 'kind':DELETION},
+                            {'allele':'T', 'reads':2,'kind':SNP }]}])
+        snp = (snp, 'context')
+        snp = bad_quality_cleaner(snp)[0]
+        assert len(snp.lib_alleles[0]['alleles']) == 2
+
+
+
     @staticmethod
     def test_read_number_cleaner():
         'Tests read number_cleaner'
