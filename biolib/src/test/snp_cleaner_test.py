@@ -22,7 +22,6 @@ import unittest
 
 from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv)
 from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
-                                       create_pic_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
                                        create_high_variable_region_filter,
@@ -38,35 +37,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
 
     @staticmethod
-    def xtest_pic_filter():
-        '''It test if we can filter by pic '''
-        alleles = [{'allele':'A', 'reads':200, 'kind':SNP},
-                   {'allele':'T', 'reads':200, 'kind':INVARIANT }]
-        snp1 = SeqVariation(alleles=alleles, reference='ref')
-
-        alleles = [{'allele':'A', 'reads':300, 'kind':SNP},
-                   {'allele':'T', 'reads':100, 'kind':INVARIANT }]
-        snp2 = SeqVariation(alleles=alleles, reference='ref')
-        pic_filter = create_pic_filter(0.35)
-        snp1 = (snp1, 'context')
-        assert pic_filter(snp1) == True
-        snp2 = (snp2, 'context')
-        assert pic_filter(snp2) == False
-
-    @staticmethod
-    def xtest_enzyme_filter1():
+    def test_enzyme_filter():
         'It test the enzyme filter'
         seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
         reference = SeqWithQuality(seq=seq, name='ref')
-        snp = SeqVariation(alleles=[{'allele':'A', 'reads':2, 'kind':DELETION},
-                                     {'allele':'A', 'reads':3,
-                                      'kind':INVARIANT}],
-                            location=11, reference=reference)
+        snp = Snv(lib_alleles=[
+                        {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT},
+                                  {'allele':'A', 'reads':2, 'kind':DELETION}]}],
+                        location=11, reference=reference)
         cap_enzime = create_cap_enzyme_filter(True)
         snp = (snp, 'context')
         assert cap_enzime(snp) == True
 
-##############################################################################
     @staticmethod
     def test_major_allele_freq_filter_snv():
         'It test the first allele percent filter'

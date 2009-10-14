@@ -49,7 +49,6 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_words)
 
 from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
-                                       create_pic_filter,
                                        create_snv_close_to_limit_filter,
                                        create_high_variable_region_filter,
                                        create_close_to_seqvar_filter,
@@ -165,12 +164,6 @@ snp_major_allele_freq_cleaner = {'function':create_major_allele_freq_cleaner,
                                      'name':'major_allele_frec',
                               'comment':'It filters by mayor allele frequency'}
 
-snp_pic_filter = {'function':create_pic_filter,
-              'arguments':{'min_pic': 0.05},
-              'type':'filter',
-              'name':'pic_filter',
-              'comment': 'It filters the snp by its pic calcule'}
-
 snp_cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'arguments': {'all_enzymes':True},
                       'type':      'filter',
@@ -237,7 +230,6 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
                       snp_high_variable_region_filter,
                       snp_close_to_seqvar_filter,
                       snp_major_allele_freq_cleaner,
-                      snp_pic_filter,
                       snp_cap_enzyme_filter,
                       snp_close_to_limit_filter,
                       snp_remove_by_read_number,

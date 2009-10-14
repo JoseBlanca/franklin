@@ -245,24 +245,6 @@ def create_alleles_n_cleaner():
             return (snv.copy(lib_alleles=new_library_alleles), context)
     return read_number_cleaner
 
-def create_pic_filter(min_pic):
-    '''This funtion is a factory function that creates a function that look
-    for the pic of the seqvar and depending on the pic value it filters the
-    seqvar o not'''
-
-    def pic_filter(seq_var):
-        'The pic filter'
-        if seq_var is None:
-            return False
-        seq_var = seq_var[0]
-        if seq_var is None:
-            return None
-        if pic(seq_var) < min_pic:
-            return False
-        else:
-            return True
-    return pic_filter
-
 def create_cap_enzyme_filter(all_enzymes):
     '''This funtion is a factory function that creates a function that look
     if the seqvar is differently afected by some enzymes'''
@@ -279,7 +261,3 @@ def create_cap_enzyme_filter(all_enzymes):
         else:
             return False
     return enzymes_filter
-
-
-
-
