@@ -218,6 +218,33 @@ def create_read_number_cleaner(num_reads):
             return (snv.copy(lib_alleles=new_library_alleles), context)
     return read_number_cleaner
 
+def create_alleles_n_cleaner():
+    '''This function factory removes alleles that composed by N'''
+    def read_number_cleaner(snv):
+        'The cleaner'
+        if snv is None:
+            return None
+        (snv, context) = snv
+        new_library_alleles = []
+        for library_info in snv.lib_alleles:
+            alleles = library_info['alleles']
+            new_alleles = []
+            for allele in alleles:
+                if allele['allele'].lower() != 'n'*len(allele['allele']):
+                    new_alleles.append(allele)
+
+            # if we have not remove all the alleles, we add the allele to this
+            # library
+            if len(new_alleles) != 0:
+                new_library = {}
+                if 'library' in library_info:
+                    new_library['library'] = library_info['library']
+                new_library['alleles'] = new_alleles
+                new_library_alleles.append(new_library)
+        if new_library_alleles:
+            return (snv.copy(lib_alleles=new_library_alleles), context)
+    return read_number_cleaner
+
 def create_pic_filter(min_pic):
     '''This funtion is a factory function that creates a function that look
     for the pic of the seqvar and depending on the pic value it filters the

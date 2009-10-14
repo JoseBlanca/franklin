@@ -30,7 +30,8 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_bad_quality_reads_cleaner,
                                        create_snv_close_to_limit_filter,
                                        create_major_allele_freq_cleaner,
-                                       create_read_number_cleaner)
+                                       create_read_number_cleaner,
+                                       create_alleles_n_cleaner)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -279,6 +280,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
         read_number_cleaner = create_read_number_cleaner(2)
         snp = read_number_cleaner(snp)
         assert snp is None
+
+    @staticmethod
+    def test_alleles_n_cleaner():
+        'It checks the removal of alleles N or NN'
+        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+                        {'alleles':[{'allele':'N', 'reads':10},
+                                    {'allele':'nN', 'reads':10},
+                                    {'allele':'T', 'reads':10}]}])
+        snp = (snp, 'context')
+        n_cleaner = create_alleles_n_cleaner()
+        snp = n_cleaner(snp)[0]
+        assert len(snp.lib_alleles[0]['alleles']) == 1
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
