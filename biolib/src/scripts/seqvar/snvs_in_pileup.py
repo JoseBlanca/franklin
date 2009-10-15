@@ -38,6 +38,9 @@ def parse_options():
                       help='Outut file. Required positions file or summary')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                       help='filtering pipeline:snp_basic, snp_exhaustive ')
+    parser.add_option('-r', '--req_pos', dest='req_posfile',
+                      help='Required positions file')
+
     return parser
 
 def set_parameters():
@@ -56,15 +59,17 @@ def set_parameters():
     else:
         outfile = open(options.outfile, 'w')
 
+    req_posfile = options.req_posfile
     pipeline = options.pipeline
-    return infile, outfile, pipeline
+    return infile, outfile, pipeline, req_posfile
 
 def main():
     'The main part of the script'
-    sam_pileup, outfile, pipeline = set_parameters()
+    sam_pileup, outfile, pipeline, req_posfile = set_parameters()
 
     #get seqvars from sam pileup
-    seq_vars_with_context = seqvars_in_sam_pileup(sam_pileup)
+    seq_vars_with_context = seqvars_in_sam_pileup(sam_pileup,
+                                                required_positions=req_posfile)
 
     #filter/clean seq_vars
     if pipeline is not None:

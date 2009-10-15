@@ -11,7 +11,7 @@ from sqlalchemy.orm import exc as orm_exc
 def get_db_url(database_conf):
     'It return a usable db url by sqlalchemy'
     if database_conf == 'sqlite':
-        return 'sqlite:///:memory:'
+        return 'sqlite:///%s.db' % database_conf['dbname']
     else:
         return '%s://%s:%s@%s/%s' % (database_conf['dbname'],
                                      database_conf['dbuser'],

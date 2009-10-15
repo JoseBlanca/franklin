@@ -39,6 +39,12 @@ def parse_options():
     parser.add_option('-l', '--library', dest='library',
                        help='Library source name')
 
+    parser.add_option('-d', '--dbname', dest='dbname', help='db name')
+    parser.add_option('-u', '--dbuser', dest='dbuser', help='db user')
+    parser.add_option('-p', '--dbpass', dest='dbpass', help='db pass')
+    parser.add_option('-e', '--dbengine', dest='dbengine', help='db engine')
+    parser.add_option('-h', '--dbhost', dest='dbhost', help='db host')
+
     return parser
 def set_parameters():
     '''It sets the parameters for the script.'''
