@@ -22,6 +22,7 @@ Created on 2009 eka 18
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from biolib.db.db_utils import  DbMap
+from biolib.seqvar.seqvariation import calculate_kind
 
 SNPMINER_MAP_DEF = [{'name':'Reference'},
                     {'name':'Library'},
@@ -39,7 +40,7 @@ SNPMINER_MAP_DEF = [{'name':'Reference'},
                     {'name':'LibrarySnvAlleles',
                      'relations':{'library_snv_id':{'kind':'one2many',
                                                    'rel_attr':'library_snv'}}},
-                    {'name':'LibrarySnvAnnot',
+                    {'name':'LibrarySnvAnnots',
                      'relations':{'library_snv_id':{'kind':'one2many',
                                                     'rel_attr':'library_snv'}}}
                     ]
@@ -52,7 +53,7 @@ def create_snp_miner_database(engine):
     #library table
     Table('Library', metadata,
             Column('library_id', Integer, primary_key=True),
-            Column('accesion', String, nullable=False, unique=True))
+            Column('accession', String, nullable=False, unique=True))
     #reference_table
     Table('Reference', metadata,
           Column('reference_id', Integer, primary_key=True),
@@ -94,13 +95,13 @@ def create_snp_miner_database(engine):
         Column('library_snv_id', Integer,
                ForeignKey('LibrarySnv.library_snv_id'), nullable=False),
         Column('allele', String, nullable=False),
-        Column('kind', String, nullable=False),
-        Column('num_reads', Integer, nullable=False),
+        Column('kind', Integer, nullable=False),
+        Column('reads', Integer, nullable=False),
         Column('qualities',  String, nullable=True),
         UniqueConstraint('library_snv_id', 'allele', 'kind'))
 
     #LibrarySnvProp. The annotations associated with an snv in a library
-    Table('LibrarySnvAnnot', metadata,
+    Table('LibrarySnvAnnots', metadata,
             Column('library_snv_annot_id', Integer, primary_key=True),
             Column('library_snv_id', Integer,
                    ForeignKey('LibrarySnv.library_snv_id'),  nullable=False),
@@ -110,111 +111,70 @@ def create_snp_miner_database(engine):
 
     metadata.create_all(engine)
 
-def add_snv_to_db(engine, snv):
-    '''It adds the snps to the db'''
-    snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
-    try:
-        # add reference to database
-        _insert_reference(snp_miner, snv)
+class SnvDb(DbMap):
+    'It insert, select from the snv database'
+    def __init__(self, engine):
+        'It initiates the class'
+        super(SnvDb, self).__init__(engine, SNPMINER_MAP_DEF)
 
-        # add location data to database
-        sql_snv = _insert_snv(snp_miner, snv)
+    def _get_reference(self, reference):
+        'It adds the reference data to the database'
+        #ref_name =  self._get_reference_name(snv)
+        ref_attr = {'name':reference}
+        return self.get('Reference', attributes=ref_attr)
 
-        # add alleles to db
-        _insert_library_snv_alleles(snp_miner, snv, sql_snv)
+    def _get_library(self, library):
+        'It adds the library to the database'
+        return self.get('Library', attributes={'accession':library})
 
-        #commit changes
-        snp_miner.commit()
-    except Exception:
-        snp_miner.rollback()
-        raise
+    def get_snv_sql(self, reference, location, kind):
+        'It selects or inserts a row in the svn table'
+        reference = self._get_reference(reference)
+        loc_attr = {'reference':reference, 'location':location,
+                    'kind':kind}
+        return self.get('Snv', attributes=loc_attr)
 
-def _insert_reference(snp_miner, snv):
-    'It adds the reference data to the database'
-    ref_name =  _get_reference_name(snv)
-    ref_attr = {'name':ref_name}
-    return snp_miner.get('Reference', attributes=ref_attr)
+    def _get_info_per_library(self, snv_sql, library_info, name=None):
+        'It selects or inserts a row in the LibrarySnv table'
+        # get library from library_info and map to db
+        if 'library' in library_info:
+            library_accesion = library_info['library']
+            library_sql = self._get_library(library_accesion)
+        else:
+            library_sql = None
+        loc_attr = {'snv':snv_sql, 'library':library_sql, 'name':name}
+        return self.get('LibrarySnv', attributes=loc_attr)
 
-def _insert_snv(snp_miner, snv):
-    'It adds the reference data to the database'
-    ref_name =  _get_reference_name(snv)
-    location = snv.location
-    kind     = snv.kind
-    loc_attr = {'reference_id':{'name':ref_name}, 'location':location,
-                'kind':kind}
-    return snp_miner.get('Snv', attributes=loc_attr)
 
-def _insert_library(snp_miner, library):
-    'It adds the library to the database'
-    return snp_miner.get('Library', attributes={'accesion':library})
+    def add_alleles_per_library(self, snv_sql, library_info):
+        'It inserts each of the alleles of the info_per_library data object'
+        library_snv_sql = self._get_info_per_library(snv_sql, library_info)
 
-def _insert_library_snv(snp_miner, snv_sql, library_sql):
-    '''It transform the given parsed file dict in a db dict format'''
-    seqvar_attrs = {'snv': snv_sql,
-                    'library':library_sql}
-    return snp_miner.get('LibrarySnv', attributes=seqvar_attrs)
-
-def _insert_library_snv_alleles(snp_miner, snv, snv_sql):
-    'Insert alleles of a seq var in database'
-    for lib_alleles in snv.lib_alleles:
-        library = lib_alleles['library']
-        # add library to database
-        library_sql = _insert_library(snp_miner, library)
-
-        # add seq_var core information
-        library_snv_sql = _insert_library_snv(snp_miner, snv_sql, library_sql)
-
-        for lib_allele in lib_alleles['alleles']:
-            allele = lib_allele['allele']
-            reads  = lib_allele['reads']
-            kind   = lib_allele['kind']
-            if 'quality' in lib_allele:
-                qual = repr(lib_allele['quality'])
+        new_kind = snv_sql.kind
+        for allele_info in library_info['alleles']:
+            allele = allele_info['allele']
+            reads  = allele_info['reads']
+            kind   = allele_info['kind']
+            if 'qualities' in allele_info:
+                qual = repr(allele_info['qualities'])
             else:
-                qual    = None
+                qual = None
             allele_attrs = {'library_snv':library_snv_sql,
-                            'allele': allele, 'kind': kind, 'num_reads': reads,
+                            'allele': allele, 'kind': kind, 'reads': reads,
                             'qualities':qual}
-            snp_miner.get('LibrarySnvAlleles', attributes=allele_attrs )
+            #review the new snv_sql kind taking into account this alele_info
+            #kind
+            new_kind = calculate_kind(new_kind, kind)
+            self.get('LibrarySnvAlleles', attributes=allele_attrs)
+        if new_kind != snv_sql.kind:
+            snv_sql.kind = new_kind
 
-        for kind, value in lib_alleles['annotations'].items():
-            props_attrs = {'library_snv':library_snv_sql,
-                            'kind': kind, 'value': value,}
-            snp_miner.get('LibrarySnvAnnot', attributes=props_attrs )
+    def add_annotations_per_library(self, snv_sql, library_info):
+        'It inserts each of the annotations of the info_per_library data object'
+        library_snv_sql = self._get_info_per_library(snv_sql, library_info)
 
-def _get_reference_name(seqvar):
-    'It return ref base name of a seqvar'
-    try:
-        name = seqvar.reference.name
-    except AttributeError:
-        name = seqvar.reference
-    return name
-
-def add_reference_annot(engine, list_of_annotation_dicts):
-    '''This  function adds annotation information of a contig. Due to the
-    variability of the input files, it interfaces accept a list of dict with
-    the information to add'''
-    for annotation in list_of_annotation_dicts:
-        name = annotation['name']
-        type_ = annotation['type']
-        value = annotation['value']
-        if 'start' in annotation:
-            start = annotation['start']
-        else:
-            start = None
-        if 'end' in annotation:
-            end = annotation['end']
-        else:
-            end = None
-        annot_attr = {'reference_id':{'name':name},
-                      'type' : type_,
-                      'value': value,
-                      'start': start,
-                      'end'  : end }
-        contig_annot_map = DbMap(engine, SNPMINER_MAP_DEF)
-        try:
-            contig_annot_map.get('referenceprop', attributes=annot_attr)
-            contig_annot_map.commit()
-        except Exception:
-            contig_annot_map.rollback()
-            raise
+        for kind, value in library_info['annotations'].items():
+            attrs = {'library_snv':library_snv_sql,
+                     'kind':kind,
+                     'value':value}
+            self.get('LibrarySnvAnnots', attributes=attrs)

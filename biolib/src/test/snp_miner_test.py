@@ -3,6 +3,7 @@ Created on 2009 eka 19
 
 @author: peio
 '''
+from django.views import static
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
@@ -20,9 +21,9 @@ Created on 2009 eka 19
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.seqvar.snp_miner import (SNPMINER_MAP_DEF,
-                                      create_snp_miner_database,
-                                      add_snv_to_db, add_reference_annot)
+from biolib.seqvar.snp_miner import (SNPMINER_MAP_DEF, SnvDb,
+                                     create_snp_miner_database)
+
 from biolib.seqvar.seqvariation import Snv, INVARIANT, SNP
 from biolib.seqs import SeqWithQuality
 from biolib.db.db_utils import DbMap
@@ -50,56 +51,81 @@ library_definition
 
 class SnpMinerTest(unittest.TestCase):
     '''It test the snp_miner package '''
+
     @staticmethod
-    def test_add_snp_to_db():
-        '''It test the simple case - add snp'''
+    def test_get_snv_sql():
+        'It test get_svn_sql function'
+
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
+        snp_miner = SnvDb(engine)
 
         ref1 = 'ref1'
-        lib1_alleles = {'library': 'some_libary',
-                        'annotations': {'hola': 'caracola'},
-                        'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
-                                     'qualities':[30, 30, 30]},
-                                    {'allele':'T', 'reads':3, 'kind':SNP,
-                                     'qualities':[30, 30, 30]},]
-                        }
-        snv = Snv(name='snp1', reference=ref1, location=3,
-                      lib_alleles=[lib1_alleles])
 
-        add_snv_to_db(engine, snv)
-        snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
-        ref_inst = snp_miner.select_one('Reference', {'name':'ref1'})
-        assert ref_inst.name == 'ref1'
-        snp_inst  = snp_miner.select_one('Snv', {'reference':ref_inst})
-        assert snp_inst.location ==  3
+        reference = ref1
+        location  = 2
+        kind      = SNP
+        snv_sql = snp_miner.get_snv_sql(reference, location, kind)
+        assert snv_sql.reference.name == 'ref1'
+        assert snv_sql.location == 2
 
-    #add an svn that's already in the db and modify it
+        snv_sql = snp_miner.get_snv_sql(reference, location, kind)
+        assert  snv_sql.reference.name == 'ref1'
 
     @staticmethod
-    def xtest_add_reference_annot():
-        '''It test the simple case - add contig_annot'''
-        annotation_dict = {'name': 'ref1', 'type':'blast',
-                            'value':'GO:0022'}
-
+    def test_add_alleles_per_library():
+        'It tests add_alleles_per_library method'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
+        snv_miner = SnvDb(engine)
 
-        ref1 = SeqWithQuality(seq='atatatat', name='ref1')
-        seq_var = SeqVariation(name='snp1', alleles= [{'allele':'A', 'reads':3,
-                                                       'kind':INVARIANT,
-                                                       'quality':[30, 30, 30]},
-                                                       {'allele':'T', 'reads':3,
-                                                        'kind':SNP,
-                                                       'quality':[30, 30, 30]}],
-                                reference=ref1, location=3)
+        ref1 = 'ref1'
+        library_info1 = {'library': 'some_libary',
+                        'annotations': {'hola': 'caracola'},
+                        'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
+                                     'qualities':[20, 30, 30]},
+                                    {'allele':'T', 'reads':3, 'kind':SNP,
+                                     'qualities':[30, 30, 30]},]}
 
-        add_seqvar_to_db(engine, seq_var, library='lib1')
-        add_reference_annot(engine, [annotation_dict])
-        snp_miner = DbMap(engine, SNPMINER_MAP_DEF)
-        ref_inst = snp_miner.select_one('referenceprop', {'type':'blast'})
-        ref_inst2 = snp_miner.select_one('reference', {'name':'ref1'})
-        assert ref_inst.reference_id == ref_inst2.reference_id
+        # add snv_sql
+        reference = ref1
+        location  = 2
+        kind      = INVARIANT
+        snv_sql = snv_miner.get_snv_sql(reference, location, kind)
+
+        snv_miner.add_alleles_per_library(snv_sql, library_info1)
+        allele_sql = snv_miner.select_one('LibrarySnvAlleles', {'allele':'A'})
+        assert allele_sql.kind == INVARIANT
+        assert allele_sql.reads == 3
+        assert eval(allele_sql.qualities) == [20, 30, 30]
+
+        #the snv has to be changed by now
+        assert snv_sql.kind == SNP
+
+        library_sql = snv_miner.select_one('Library',
+                                         {'accession':library_info1['library']})
+        assert library_sql.accession == library_info1['library']
+
+    @staticmethod
+    def test_add_annotation_per_library():
+        'It tests add_alleles_per_library method'
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_snp_miner_database(engine)
+        snv_miner = SnvDb(engine)
+
+        ref1 = 'ref1'
+        library_info1 = {'library': 'some_libary',
+                        'annotations': {'hola': 'caracola'}}
+
+        # add snv_sql
+        reference = ref1
+        location  = 2
+        kind      = INVARIANT
+        snv_sql = snv_miner.get_snv_sql(reference, location, kind)
+
+        snv_miner.add_annotations_per_library(snv_sql, library_info1)
+        annot = snv_miner.select_one('LibrarySnvAnnots', {'kind':'hola'})
+        assert annot.value == 'caracola'
 
 if __name__ == "__main__":
     unittest.main()

@@ -92,19 +92,7 @@ class Snv(object):
             alleles = alleles_info['alleles']
             for allele_info in alleles:
                 al_kind = allele_info['kind']
-                if kind == INVARIANT and al_kind == DELETION:
-                    kind = DELETION
-                elif kind == INVARIANT and al_kind == INSERTION:
-                    kind = INSERTION
-                elif (kind == DELETION and al_kind == INSERTION or
-                     kind == INSERTION and al_kind == DELETION):
-                    kind = INDEL
-                elif ((kind in (DELETION, INSERTION, INDEL) and
-                       al_kind == SNP) or
-                       (kind == SNP  and al_kind in (INSERTION, INDEL))):
-                    kind = COMPLEX
-                elif kind == INVARIANT and al_kind == SNP:
-                    kind = SNP
+                kind = calculate_kind(al_kind, kind)
         return kind
     kind = property(_get_kind)
 
@@ -378,3 +366,19 @@ def snvs_in_file(snv_fhand, ref_fhand=None):
 def svn_contexts_in_file(snv_fhand, ref_fhand=None):
     'It reads an svn file and it yields (svn, context) tuples'
     return item_context_iter(snvs_in_file(snv_fhand, ref_fhand))
+
+def calculate_kind(kind1, kind2):
+    'It calculates the result of the union of two kinds'
+    if kind1 == kind2:
+        return kind1
+    else:
+        if kind1 is INVARIANT:
+            return kind2
+        elif kind2 is INVARIANT:
+            return kind1
+        elif (kind1 == SNP or kind2 == SNP or kind1 == COMPLEX or
+              kind2 == COMPLEX):
+            return COMPLEX
+        else:
+            return INDEL
+

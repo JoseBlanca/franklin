@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 '''
-This script parses a sam pileup file and get valid sevars (after cleaning and filtering
-them).
+This script parses a sam pileup file and get valid sevars (after cleaning and
+filtering them).
 It writes an evaluable seqvar output file
 
 Created on 30/09/2009

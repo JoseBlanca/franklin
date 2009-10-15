@@ -25,7 +25,8 @@ from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
                                         INSERTION, DELETION, INVARIANT, INDEL,
                                         COMPLEX, Snv, snvs_in_file,
                                         major_allele_frequency,
-                                        reference_variability)
+                                        reference_variability,
+                                        calculate_kind)
 from biolib.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
@@ -172,6 +173,17 @@ class SnvCaracterizationTest(unittest.TestCase):
         snp = Snv(lib_alleles=lib_alleles, reference=reference, location=7)
         enzymes = cap_enzymes(snp, True)
         assert [] == enzymes
+    @staticmethod
+    def test_calculate_kind():
+        'It calculates the rerulting kind'
+        assert calculate_kind(SNP, INVARIANT) == SNP
+        assert calculate_kind(INSERTION, DELETION) == INDEL
+        assert calculate_kind(COMPLEX, SNP) == COMPLEX
+        assert calculate_kind(SNP, INDEL) == COMPLEX
+
+
+        kind1 = SNP
+        kind2 = SNP
 
 class SnvIOTest(unittest.TestCase):
     ''' It checks if we have problems with remaps and it functions'''
