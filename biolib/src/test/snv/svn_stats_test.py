@@ -36,9 +36,9 @@ class TestSnvStats(unittest.TestCase):
         seq2 = 'T' * 100
         reference_fhand = StringIO('>hola\n' + seq1 + '\n>caracola\n' + seq2 +
                                    '\n')
-        seq_var = Snv(reference='hola', location=3, lib_alleles=[])
-        seq_var2 = Snv(reference='hola', location=4, lib_alleles=[])
-        seq_var3 = Snv(reference='caracola', location=2, lib_alleles=[])
+        seq_var = Snv(reference='hola', location=3, per_lib_info=[])
+        seq_var2 = Snv(reference='hola', location=4, per_lib_info=[])
+        seq_var3 = Snv(reference='caracola', location=2, per_lib_info=[])
         snv_fhand = StringIO(repr(seq_var) + repr(seq_var2) + repr(seq_var3))
         snv_contexts = svn_contexts_in_file(snv_fhand, reference_fhand)
         distrib = calculate_ref_variability_ditrib(snv_contexts)
@@ -54,9 +54,9 @@ class TestSnvStats(unittest.TestCase):
                              {'allele':'T', 'reads':1, 'kind':SNP}]}]
         libs3 = [{'alleles':[{'allele':'A', 'reads':9, 'kind':SNP},
                              {'allele':'T', 'reads':1, 'kind':SNP}]}]
-        seq_var = Snv(reference='hola', location=3, lib_alleles=libs1)
-        seq_var2 = Snv(reference='hola', location=4, lib_alleles=libs2)
-        seq_var3 = Snv(reference='caracola', location=2, lib_alleles=libs3)
+        seq_var = Snv(reference='hola', location=3, per_lib_info=libs1)
+        seq_var2 = Snv(reference='hola', location=4, per_lib_info=libs2)
+        seq_var3 = Snv(reference='caracola', location=2, per_lib_info=libs3)
         snv_fhand = StringIO(repr(seq_var) + repr(seq_var2) + repr(seq_var3))
         snvs = snvs_in_file(snv_fhand)
 

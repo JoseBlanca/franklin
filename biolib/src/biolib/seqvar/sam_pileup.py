@@ -52,7 +52,7 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
             if library is not None:
                 lib_alleles['library'] = library
             #print lib_alleles
-            yield Snv(lib_alleles=[lib_alleles],
+            yield Snv(per_lib_info=[lib_alleles],
                       location=int(position) - 1, reference=cromosome)
 
 def seqvars_in_sam_pileup(pileup, min_num=None, window=None, library=None,

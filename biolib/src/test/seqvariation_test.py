@@ -34,28 +34,28 @@ class SnvTest(unittest.TestCase):
     @staticmethod
     def test_init():
         '''It tests the init'''
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':3, 'kind':SNP},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':3, 'kind':SNP},
                                   {'allele':'T', 'reads':4, 'kind':INVARIANT}]}]
 
-        snv = Snv(lib_alleles=lib_alleles, reference='ref', location=2)
-        assert len(snv.lib_alleles) == 1
+        snv = Snv(per_lib_info=per_lib_info, reference='ref', location=2)
+        assert len(snv.per_lib_info) == 1
 
     @staticmethod
     def test_kind():
         'It test that we can get the kind for a seqvariation'
 
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':INVARIANT}]}])
 
         assert seq_var.kind == INVARIANT
 
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':DELETION}]}])
         assert seq_var.kind == DELETION
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':DELETION},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
@@ -66,7 +66,7 @@ class SnvTest(unittest.TestCase):
         assert seq_var.kind == INDEL
 
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
@@ -80,7 +80,7 @@ class SnvTest(unittest.TestCase):
     def test_snv_repr():
         'It'
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
@@ -91,15 +91,15 @@ class SnvTest(unittest.TestCase):
                                                'kind':INVARIANT}]}])
         snv = eval(repr(seq_var))
         assert seq_var.reference == snv.reference
-        assert seq_var.lib_alleles == snv.lib_alleles
+        assert seq_var.per_lib_info == snv.per_lib_info
 
     @staticmethod
     def test_sorted_alleles():
         'It checks that we can get the alleles sorted by the number of reads.'
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':2},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':2},
                                    {'allele':'T', 'reads':3}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
-        alleles = snp.lib_alleles[0]['alleles']
+        snp = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
+        alleles = snp.per_lib_info[0]['alleles']
         assert alleles[0]['allele'] == 'T'
         assert alleles[1]['allele'] == 'A'
 
@@ -108,9 +108,9 @@ class SnvCaracterizationTest(unittest.TestCase):
     @staticmethod
     def test_maf():
         'It checks that we can calculate the maf frequency'
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':2},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':2},
                                    {'allele':'T', 'reads':2}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
+        snp = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
         mafs = major_allele_frequency(snp)
         assert mafs[0] == 0.5
 
@@ -118,19 +118,19 @@ class SnvCaracterizationTest(unittest.TestCase):
     def test_variability():
         'It checks that we can calculate the reference variability'
         reference = SeqWithQuality(seq='Actgacttac', name='ref')
-        snp = Snv(lib_alleles=[], reference=reference, location=3)
+        snp = Snv(per_lib_info=[], reference=reference, location=3)
         ref_var = reference_variability(snp, ['snp1'])
         assert ref_var == 10.0
 
     @staticmethod
     def test_calculate_pic():
         'It checks that we are able to calculate the PIC values'
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':200},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':200},
                                    {'allele':'T', 'reads':200}]}]
-        snp1 = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':300},
+        snp1 = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':300},
                                    {'allele':'T', 'reads':100}]}]
-        snp2 = Snv(lib_alleles=lib_alleles, reference='hola', location=3)
+        snp2 = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
 
         pic_1 = pic(snp1)[0]
         pic_2 = pic(snp2)[0]
@@ -143,34 +143,34 @@ class SnvCaracterizationTest(unittest.TestCase):
     def test_remap():
         '''It test if the remap external program works '''
         reference = SeqWithQuality(seq='Actgacttactgtca', name='ref')
-        lib_alleles = [{'alleles':[{'allele':'C', 'reads':1, 'kind':SNP},
+        per_lib_info = [{'alleles':[{'allele':'C', 'reads':1, 'kind':SNP},
                                   {'allele':'T', 'reads':1, 'kind':INVARIANT}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference=reference, location=7)
+        snp = Snv(per_lib_info=per_lib_info, reference=reference, location=7)
         enzymes = cap_enzymes(snp, True)
         assert set(['HinfI', 'TscAI']) == set(enzymes)
 
         # With a deletion
         seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
         reference = SeqWithQuality(seq=seq, name='ref')
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':1, 'kind':DELETION},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':1, 'kind':DELETION},
                                   {'allele':'A', 'reads':1, 'kind':INVARIANT}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference=reference, location=11)
+        snp = Snv(per_lib_info=per_lib_info, reference=reference, location=11)
         enzymes = cap_enzymes(snp, True)
         assert 'EcoRI' in enzymes
 
         #with an insertion
         seq  = 'ATGATGATG' + 'gaattc' + 'ATGATGATGTGGGAT'
         reference = SeqWithQuality(seq=seq, name='ref')
-        lib_alleles = [{'alleles':[{'allele':'A', 'reads':1, 'kind':INSERTION},
+        per_lib_info = [{'alleles':[{'allele':'A', 'reads':1, 'kind':INSERTION},
                                   {'allele':'A', 'reads':1, 'kind':INVARIANT}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference=reference, location=11)
+        snp = Snv(per_lib_info=per_lib_info, reference=reference, location=11)
         enzymes = cap_enzymes(snp, True)
         assert 'EcoRI' in enzymes
 
         #with only one allele
         reference = SeqWithQuality(seq='Actgacttactgtca', name='ref')
-        lib_alleles = [{'alleles':[{'allele':'C', 'reads':1, 'kind':SNP}]}]
-        snp = Snv(lib_alleles=lib_alleles, reference=reference, location=7)
+        per_lib_info = [{'alleles':[{'allele':'C', 'reads':1, 'kind':SNP}]}]
+        snp = Snv(per_lib_info=per_lib_info, reference=reference, location=7)
         enzymes = cap_enzymes(snp, True)
         assert [] == enzymes
     @staticmethod
@@ -192,7 +192,7 @@ class SnvIOTest(unittest.TestCase):
     def test_svns_in_file():
         'It we can read the svn file'
         seq_var = Snv(reference='hola', location=3,
-                      lib_alleles=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
@@ -204,7 +204,7 @@ class SnvIOTest(unittest.TestCase):
         fhand = StringIO(repr(seq_var))
         snv   = snvs_in_file(fhand).next()
         assert seq_var.reference == snv.reference
-        assert seq_var.lib_alleles == snv.lib_alleles
+        assert seq_var.per_lib_info == snv.per_lib_info
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

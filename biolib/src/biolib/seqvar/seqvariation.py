@@ -47,7 +47,7 @@ class Snv(object):
     This class is used to represent a sequence variation respect a reference.
     The variation can be: Snp, insertion, deletion or non_variant.
     '''
-    def __init__(self, reference, location, lib_alleles=None, name=None):
+    def __init__(self, reference, location, per_lib_info=None, name=None):
         '''It initializes with an alleles dict and a reference.
 
         The lib_allele is a list of dictionaries. Each of the dictionaries
@@ -67,17 +67,17 @@ class Snv(object):
         self.name = name
         self.location = location
         self.annotations = {}
-        if lib_alleles is None:
-            lib_alleles = []
-        self.lib_alleles = lib_alleles
+        if per_lib_info is None:
+            per_lib_info = []
+        self.per_lib_info = per_lib_info
 
         # we have to sort alleles from each library
-        for library in self.lib_alleles:
+        for library in self.per_lib_info:
             library['alleles'] = sorted(library['alleles'],
                                         _allele_reads_compare)
 
         #for every library we have to add the 'annotations'
-        for library in lib_alleles:
+        for library in per_lib_info:
             if 'annotations' not in library:
                 library['annotations'] = {}
 
@@ -88,7 +88,7 @@ class Snv(object):
          library.
         '''
         kind = INVARIANT
-        for alleles_info in self.lib_alleles:
+        for alleles_info in self.per_lib_info:
             alleles = alleles_info['alleles']
             for allele_info in alleles:
                 al_kind = allele_info['kind']
@@ -96,12 +96,12 @@ class Snv(object):
         return kind
     kind = property(_get_kind)
 
-    def copy(self, lib_alleles=None, reference=None, name=None, location=None,
+    def copy(self, per_lib_info=None, reference=None, name=None, location=None,
                                                             annotations=None):
         '''Given a seqvariation in returns a new seqvariation with the new data
          changes'''
-        if lib_alleles is None:
-            lib_alleles = self.lib_alleles
+        if per_lib_info is None:
+            per_lib_info = self.per_lib_info
         if reference is None:
             reference = self.reference
         if name is None:
@@ -109,7 +109,7 @@ class Snv(object):
         if location is None:
             location = self.location
 
-        snv = self.__class__(lib_alleles=lib_alleles, reference=reference,
+        snv = self.__class__(per_lib_info=per_lib_info, reference=reference,
                              name=name, location=location)
         if annotations is None:
             snv.annotations = self.annotations
@@ -127,8 +127,8 @@ class Snv(object):
         to_print  = '%s(\nreference=%s, location=%s,\n' % \
             (self.__class__.__name__, repr(self.reference),repr(self.location))
 
-        to_print += '\tlib_alleles=[\n'
-        for alleles_in_a_lib in self.lib_alleles:
+        to_print += '\tper_lib_info=[\n'
+        for alleles_in_a_lib in self.per_lib_info:
             to_print += '\t\t{'
             for key, value in alleles_in_a_lib.items():
                 if key != 'alleles':
@@ -150,7 +150,7 @@ def cap_enzymes(snv, all_enzymes=False):
 
     #which alleles do we have?
     alleles = set()
-    for lib in snv.lib_alleles:
+    for lib in snv.per_lib_info:
         for allele in lib['alleles']:
             alleles.add(repr((allele['allele'], allele['kind'])))
     #for every pair of different alleles we have to look for differences in
@@ -326,7 +326,7 @@ SVN_ANNOTATION_CALCULATORS = {'maf': _maf_for_alleles_in_lib,
 def _calculate_libs_annotation(snv, kind):
     'It calculates an annotation for every library in the snv'
     annots = []
-    for lib in snv.lib_alleles:
+    for lib in snv.per_lib_info:
         if kind in lib['annotations']:
             value = lib['annotations'][kind]
         else:

@@ -22,7 +22,7 @@ Created on 2009 eka 5
 import unittest
 from StringIO import StringIO
 import sqlalchemy
-from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey, 
+from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
 from biolib.db.chado import (add_csv_to_chado, add_libraries_to_chado,
@@ -38,21 +38,21 @@ from biolib.db.naming import (create_naming_database,
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def create_chado_example():
-    '''It creates a chado mini schema with only two tables and one relaion 
+    '''It creates a chado mini schema with only two tables and one relaion
     in a sqlite memory database '''
     engine = sqlalchemy.create_engine('sqlite:///:memory:')
     metadata = MetaData()
     metadata.bind  = engine
     #aNow I create the tables
     #pylint: disable-msg=W0612
-    db_table = Table('db', metadata, 
+    db_table = Table('db', metadata,
                      Column('db_id', Integer, primary_key=True),
                      Column('name', String, nullable=False, unique=True),
                      Column('description', String))
-    
+
     dbxref_table = Table('dbxref', metadata,
                          Column('dbxref_id', Integer, primary_key=True),
-                         Column('db_id', Integer, ForeignKey('db.db_id'), 
+                         Column('db_id', Integer, ForeignKey('db.db_id'),
                                 nullable=False),
                          Column('accession', String, nullable=False),
                          UniqueConstraint('db_id','accession'))
@@ -69,28 +69,28 @@ def create_chado_example():
                      UniqueConstraint('genus','species'))
     cvterm_table = Table('cvterm', metadata,
                    Column('cvterm_id', Integer, primary_key=True),
-                   Column('cv_id', Integer, ForeignKey('cv.cv_id'), 
+                   Column('cv_id', Integer, ForeignKey('cv.cv_id'),
                            nullable=False),
                    Column('name', String, nullable=False),
                    Column('definition', String),
                    Column('dbxref_id', Integer, ForeignKey('dbxref.dbxref_id')),
-                          UniqueConstraint('cv_id','name')) 
+                          UniqueConstraint('cv_id','name'))
     library_table = Table('library', metadata,
                         Column('library_id', Integer, primary_key=True),
                         Column('organism_id', Integer,
-                               ForeignKey('organism.organism_id'), 
+                               ForeignKey('organism.organism_id'),
                                nullable=False),
                         Column('name', String),
                         Column('uniquename', String, nullable=False),
-                        Column('type_id', Integer, 
+                        Column('type_id', Integer,
                                ForeignKey('cvterm.cvterm_id'), nullable=False),
                        UniqueConstraint('organism_id', 'uniquename', 'type_id'))
     libraryprop_table = Table('libraryprop', metadata,
                             Column('libraryprop_id', Integer, primary_key=True),
-                            Column('library_id', Integer, 
+                            Column('library_id', Integer,
                                    ForeignKey('library.library_id'),
                                    nullable=False),
-                            Column('type_id', Integer, 
+                            Column('type_id', Integer,
                                ForeignKey('cvterm.cvterm_id'), nullable=False),
                             Column('value', String),
                             Column('rank', Integer, nullable=False ),
@@ -104,7 +104,7 @@ class ChadoOrmTest(unittest.TestCase):
     def test_setup_mapping():
         '''It test basic mapping setup '''
         engine = create_chado_example()
-        mapping_definitions = [{'name' :'db'}, 
+        mapping_definitions = [{'name' :'db'},
                        {'name':'dbxref',
                         'relations':{'db_id':{'kind':'one2many',
                                            'rel_attr':'db'}
@@ -113,20 +113,20 @@ class ChadoOrmTest(unittest.TestCase):
         #pylint: disable-msg=W0612
         table_classes, row_classes = setup_mapping(engine, mapping_definitions)
         #pylint: disable-msg=C0103
-        Db       = row_classes['db']    
+        Db       = row_classes['db']
         Dbxref   = row_classes['dbxref']
-        
+
         Session = sessionmaker(bind=engine)
         session = Session()
-        
+
         new_db  = Db(name='comav', description='comac_seq')
         session.add(new_db)
         new_dbxref = Dbxref(db=new_db, accession='CMV9789')
         session.add(new_dbxref)
         a_dbxref = session.query(Dbxref).filter_by(accession='CMV9789').first()
         assert isinstance(a_dbxref.dbxref_id, int)
-        assert isinstance(a_dbxref.db_id, int) 
- 
+        assert isinstance(a_dbxref.db_id, int)
+
     def test_chado_orm_helper_basic(self):
         'It test the create, select and get helper functions'
         engine = create_chado_example()
@@ -152,7 +152,7 @@ class ChadoOrmTest(unittest.TestCase):
                                             'description':'a fake database'})
         new_dbxref = chado.create(kind='dbxref', attributes={'accession':'666',
                                                              'db':new_db})
-        
+
         the_db = chado.select_one(kind='db', attributes={'name':'hola_db'})
         assert new_db is the_db
         the_dbxref = chado.select_one(kind='dbxref',
@@ -170,7 +170,7 @@ class ChadoOrmTest(unittest.TestCase):
         chado2 = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         the_db3  = chado2.select_one(kind='db', attributes={'name':'hola_db'})
         assert the_db3.name == 'hola_db'
- 
+
     def test_chado_orm_helper_recursive(self):
         '''We can get instances from the session giving dicts inside the id
         columns'''
@@ -244,7 +244,7 @@ class AddLibraryToChado(unittest.TestCase):
         library_fhand.write(EXAMPLE_LIBRARY)
         library_fhand.flush()
         library_fhand.seek(0)
-        
+
         engine = create_chado_example()
         chado = DbMap(engine, CHADO_MAPPING_DEFINITIONS)
         # create data necesary to add library
@@ -254,7 +254,7 @@ class AddLibraryToChado(unittest.TestCase):
                                          'definition':'a fake cv'})
         chado.get(kind='db', attributes={'name':'hola_db',
                                          'description':'a fake database'})
-        chado.get(kind='organism', attributes={'genus':'Cucumis', 
+        chado.get(kind='organism', attributes={'genus':'Cucumis',
                                                'species':'melo'})
         chado.get(kind='dbxref', attributes={'accession':'001',
                                              'db_id':{'name':'hola_db'}})
@@ -277,7 +277,7 @@ class AddLibraryToChado(unittest.TestCase):
                         'dbxref_id':{'accession':'003',
                                      'db_id':{'name':'hola_db'}}})
 
-        chado.select_one(kind='cvterm', 
+        chado.select_one(kind='cvterm',
                          attributes={'cv_id': {'name': 'library type'},
                                      'name' : 'genomic'})
         #the naming stuff test set up
@@ -297,7 +297,7 @@ class AddLibraryToChado(unittest.TestCase):
         assert library_ins
         assert library_ins.type.name == 'genomic'
         assert library_ins.name == 'a'
-        
-        
+
+
 if __name__ == '__main__':
     unittest.main()

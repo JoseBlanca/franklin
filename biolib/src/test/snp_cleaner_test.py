@@ -41,7 +41,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         'It test the enzyme filter'
         seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
         reference = SeqWithQuality(seq=seq, name='ref')
-        snp = Snv(lib_alleles=[
+        snp = Snv(per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT},
                                   {'allele':'A', 'reads':2, 'kind':DELETION}]}],
                         location=11, reference=reference)
@@ -52,7 +52,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_major_allele_freq_filter_snv():
         'It test the first allele percent filter'
-        snp = Snv(lib_alleles=[
+        snp = Snv(per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':2, 'kind':INVARIANT},
@@ -62,9 +62,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
         frec_cleaner = create_major_allele_freq_cleaner(0.51)
         snp = frec_cleaner(snp)[0]
 
-        assert len(snp.lib_alleles) == 1
+        assert len(snp.per_lib_info) == 1
 
-        snp = Snv(location=11, reference='reference', lib_alleles=[
+        snp = Snv(location=11, reference='reference', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
@@ -78,19 +78,19 @@ class SeqVariationFilteringTest(unittest.TestCase):
     def test_high_variable_region_filter():
         'It test percent_variations_in_seq_ref filter'
         reference = SeqWithQuality(seq='atatat')
-        snp = Snv(location=1, reference=reference, lib_alleles=[
+        snp = Snv(location=1, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp1 = Snv(location=4, reference=reference, lib_alleles=[
+        snp1 = Snv(location=4, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp2 = Snv(location=7, reference=reference, lib_alleles=[
+        snp2 = Snv(location=7, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
@@ -109,19 +109,19 @@ class SeqVariationFilteringTest(unittest.TestCase):
     def test_create_filter_close_seqvar():
         'It test the first allele percent filter'
         reference = 'reference'
-        snp = Snv(location=10, reference=reference, lib_alleles=[
+        snp = Snv(location=10, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp1 = Snv(location=15, reference=reference, lib_alleles=[
+        snp1 = Snv(location=15, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp2 = Snv(location=20, reference=reference, lib_alleles=[
+        snp2 = Snv(location=20, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
@@ -138,17 +138,17 @@ class SeqVariationFilteringTest(unittest.TestCase):
     def test_allele_number_cleaner():
         'It test percent_variations_in_seq_ref filter'
         reference = 'atatat'
-        snp = Snv(location=10, reference=reference, lib_alleles=[
+        snp = Snv(location=10, reference=reference, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp1 = Snv(location=15, reference=reference, lib_alleles=[
+        snp1 = Snv(location=15, reference=reference, per_lib_info=[
                     {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                 {'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        snp2 = Snv(location=20, reference=reference, lib_alleles=[
+        snp2 = Snv(location=20, reference=reference, per_lib_info=[
                       {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT}]},
                       {'alleles':[{'allele':'T', 'reads':2,'kind':SNP}]}])
 
@@ -160,19 +160,19 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp1 = allele_number_cleaner(snp1)
         snp2 = allele_number_cleaner(snp2)
 
-        assert len(snp[0].lib_alleles) == 2
-        assert len(snp[0].lib_alleles[0]['alleles']) == 2
-        assert len(snp[0].lib_alleles[1]['alleles']) == 2
+        assert len(snp[0].per_lib_info) == 2
+        assert len(snp[0].per_lib_info[0]['alleles']) == 2
+        assert len(snp[0].per_lib_info[1]['alleles']) == 2
 
-        assert len(snp1[0].lib_alleles) == 1
-        assert len(snp1[0].lib_alleles[0]['alleles']) == 2
+        assert len(snp1[0].per_lib_info) == 1
+        assert len(snp1[0].per_lib_info[0]['alleles']) == 2
 
         assert snp2 is None
 
     @staticmethod
     def test_create_seqvar_close_to_limt():
         'It tests the close to limit filter function '
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
                                     {'allele':'T', 'reads':2,'kind':SNP}]},
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT},
@@ -198,17 +198,17 @@ class SeqVariationFilteringTest(unittest.TestCase):
         #       40                   1 in 10,000              99.99%
         #       50                   1 in 100,000             99.999%
         bad_quality_cleaner = create_bad_quality_reads_cleaner(25)
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT,
                                      'qualities':[30, 30, 30, 20]},
                                     {'allele':'T', 'reads':2,'kind':SNP,
                                      'qualities':[30, 20]}]}])
         snp = (snp, 'context')
         snp = bad_quality_cleaner(snp)[0]
-        assert len(snp.lib_alleles[0]['alleles']) == 2
-        assert snp.lib_alleles[0]['alleles'][0]['reads'] == 3
+        assert len(snp.per_lib_info[0]['alleles']) == 2
+        assert snp.per_lib_info[0]['alleles'][0]['reads'] == 3
 
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                 {'alleles':[{'allele':'A', 'reads':3, 'kind':INVARIANT,
                              'qualities':[30, 30, 30, 20]},
                             {'allele':'T', 'reads':2,'kind':SNP,
@@ -216,10 +216,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp = (snp, 'context')
         snp = bad_quality_cleaner(snp)[0]
 
-        assert len(snp.lib_alleles[0]['alleles']) == 1
-        assert snp.lib_alleles[0]['alleles'][0]['reads'] == 3
+        assert len(snp.per_lib_info[0]['alleles']) == 1
+        assert snp.per_lib_info[0]['alleles'][0]['reads'] == 3
 
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                 {'alleles':[{'allele':'AT', 'reads':4, 'kind':DELETION,
                              'qualities':[None, None, None, None]},
                             {'allele':'T', 'reads':2,'kind':SNP,
@@ -227,23 +227,23 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp = (snp, 'context')
         snp = bad_quality_cleaner(snp)[0]
 
-        assert len(snp.lib_alleles[0]['alleles']) == 2
-        assert snp.lib_alleles[0]['alleles'][0]['reads'] == 4
-        assert len(snp.lib_alleles[0]['alleles'][0]['qualities']) == 4
+        assert len(snp.per_lib_info[0]['alleles']) == 2
+        assert snp.per_lib_info[0]['alleles'][0]['reads'] == 4
+        assert len(snp.per_lib_info[0]['alleles'][0]['qualities']) == 4
 
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                 {'alleles':[{'allele':'AT', 'reads':4, 'kind':DELETION},
                             {'allele':'T', 'reads':2,'kind':SNP }]}])
         snp = (snp, 'context')
         snp = bad_quality_cleaner(snp)[0]
-        assert len(snp.lib_alleles[0]['alleles']) == 2
+        assert len(snp.per_lib_info[0]['alleles']) == 2
 
 
 
     @staticmethod
     def test_read_number_cleaner():
         'Tests read number_cleaner'
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT,
                                      'quality':[30, 30, 30, 20]},
                                     {'allele':'T', 'reads':1,'kind':SNP,
@@ -251,9 +251,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snp = (snp, 'context')
         read_number_cleaner = create_read_number_cleaner(2)
         snp = read_number_cleaner(snp)[0]
-        assert len(snp.lib_alleles[0]['alleles']) == 1
+        assert len(snp.per_lib_info[0]['alleles']) == 1
 
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':1, 'kind':INVARIANT,
                                      'quality':[30, 30, 30, 20]},
                                     {'allele':'T', 'reads':1,'kind':SNP,
@@ -266,14 +266,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_alleles_n_cleaner():
         'It checks the removal of alleles N or NN'
-        snp = Snv(location=4, reference='atatatatat', lib_alleles=[
+        snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'N', 'reads':10},
                                     {'allele':'nN', 'reads':10},
                                     {'allele':'T', 'reads':10}]}])
         snp = (snp, 'context')
         n_cleaner = create_alleles_n_cleaner()
         snp = n_cleaner(snp)[0]
-        assert len(snp.lib_alleles[0]['alleles']) == 1
+        assert len(snp.per_lib_info[0]['alleles']) == 1
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

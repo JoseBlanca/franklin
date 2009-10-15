@@ -178,3 +178,18 @@ class SnvDb(DbMap):
                      'kind':kind,
                      'value':value}
             self.get('LibrarySnvAnnots', attributes=attrs)
+
+    def add_snv(self, snv):
+        'it selects or adds a svn to the database'
+        reference     = snv.reference
+        location      = snv.location
+        kind          = snv.kind
+        library_infos = snv.per_lib_info
+        snv_sql       = self.get_snv_sql(reference, location, kind)
+        for library_info in library_infos:
+            self.add_alleles_per_library(snv_sql, library_info)
+            self.add_annotations_per_library(snv_sql, library_info)
+
+
+
+

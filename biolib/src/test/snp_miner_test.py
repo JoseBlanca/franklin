@@ -127,6 +127,57 @@ class SnpMinerTest(unittest.TestCase):
         annot = snv_miner.select_one('LibrarySnvAnnots', {'kind':'hola'})
         assert annot.value == 'caracola'
 
+    @staticmethod
+    def test_add_svn_to_db():
+        'It tests that we can add a snv to the database'
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_snp_miner_database(engine)
+        snv_miner = SnvDb(engine)
+
+        ref1 = 'ref1'
+        library_info1 = {'library': 'some_library1',
+                        'annotations': {'hola': 'caracola'},
+                        'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
+                                     'qualities':[20, 30, 30]},
+                                    {'allele':'T', 'reads':3, 'kind':SNP,
+                                     'qualities':[30, 30, 30]},]}
+        snv = Snv(reference=ref1, location=3,
+                  per_lib_info=[library_info1])
+        # add an snv
+        snv_miner.add_snv(snv)
+        selected_svn = snv_miner.select_one('Snv', attributes={'location':3})
+        assert selected_svn.location == 3
+
+
+
+        # try to add again the same snv
+        snv_miner.add_snv(snv)
+
+        library_info2 = {'library': 'some_library2',
+                        'annotations': {'hola': 'caracola'},
+                        'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
+                                     'qualities':[20, 30, 30]},
+                                    {'allele':'T', 'reads':3, 'kind':SNP,
+                                     'qualities':[30, 30, 30]},]}
+        snv = Snv(reference=ref1, location=3,
+                  per_lib_info=[library_info2])
+
+        # Trying to add another library to the same snv
+        snv_miner.add_snv(snv)
+        selected_svn = snv_miner.select_one('Snv', attributes={'location':3})
+        assert selected_svn.location == 3
+        print dir(selected_svn)
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
 

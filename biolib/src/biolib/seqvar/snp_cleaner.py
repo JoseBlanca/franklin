@@ -102,7 +102,7 @@ def create_major_allele_freq_cleaner(frequency):
             return None
         (snv, context) = snv
         new_lib_alleles = []
-        for library_info in snv.lib_alleles:
+        for library_info in snv.per_lib_info:
             alleles = library_info['alleles']
             read_number = 0
             first_read  = alleles[0]['reads']
@@ -113,7 +113,7 @@ def create_major_allele_freq_cleaner(frequency):
                 new_lib_alleles.append(library_info)
 
         if new_lib_alleles:
-            return (snv.copy(lib_alleles=new_lib_alleles), context)
+            return (snv.copy(per_lib_info=new_lib_alleles), context)
         else:
             return None
 
@@ -128,7 +128,7 @@ def create_bad_quality_reads_cleaner(qual_treshold):
             return None
         (snv, context) = snv
         new_library_alleles = []
-        for library_info in snv.lib_alleles:
+        for library_info in snv.per_lib_info:
             alleles = library_info['alleles']
             new_alleles = []
             for allele in alleles:
@@ -164,7 +164,7 @@ def create_bad_quality_reads_cleaner(qual_treshold):
                 new_library_alleles.append(new_library)
 
         if new_library_alleles:
-            return (snv.copy(lib_alleles=new_library_alleles), context)
+            return (snv.copy(per_lib_info=new_library_alleles), context)
 
     return bad_quality_reads_cleaner
 
@@ -177,7 +177,7 @@ def create_allele_number_cleaner(num_alleles, ignore_diffs_with_ref=True):
             return None
         (snv, context) = snv
         new_library_alleles = []
-        for library_info in snv.lib_alleles:
+        for library_info in snv.per_lib_info:
             alleles = library_info['alleles']
             if ((not ignore_diffs_with_ref and len(alleles) == 1 and
                  alleles[0]['kind'] == SNP) or
@@ -185,7 +185,7 @@ def create_allele_number_cleaner(num_alleles, ignore_diffs_with_ref=True):
                 new_library_alleles.append(library_info)
 
         if new_library_alleles:
-            return (snv.copy(lib_alleles=new_library_alleles), context)
+            return (snv.copy(per_lib_info=new_library_alleles), context)
         else:
             return None
     return allele_number_cleaner
@@ -199,7 +199,7 @@ def create_read_number_cleaner(num_reads):
             return None
         (snv, context) = snv
         new_library_alleles = []
-        for library_info in snv.lib_alleles:
+        for library_info in snv.per_lib_info:
             alleles = library_info['alleles']
             new_alleles = []
             for allele in alleles:
@@ -215,7 +215,7 @@ def create_read_number_cleaner(num_reads):
                 new_library['alleles'] = new_alleles
                 new_library_alleles.append(new_library)
         if new_library_alleles:
-            return (snv.copy(lib_alleles=new_library_alleles), context)
+            return (snv.copy(per_lib_info=new_library_alleles), context)
     return read_number_cleaner
 
 def create_alleles_n_cleaner():
@@ -226,7 +226,7 @@ def create_alleles_n_cleaner():
             return None
         (snv, context) = snv
         new_library_alleles = []
-        for library_info in snv.lib_alleles:
+        for library_info in snv.per_lib_info:
             alleles = library_info['alleles']
             new_alleles = []
             for allele in alleles:
@@ -242,7 +242,7 @@ def create_alleles_n_cleaner():
                 new_library['alleles'] = new_alleles
                 new_library_alleles.append(new_library)
         if new_library_alleles:
-            return (snv.copy(lib_alleles=new_library_alleles), context)
+            return (snv.copy(per_lib_info=new_library_alleles), context)
     return read_number_cleaner
 
 def create_cap_enzyme_filter(all_enzymes):

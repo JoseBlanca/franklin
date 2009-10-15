@@ -53,8 +53,8 @@ class Test(unittest.TestCase):
         assert snvs[7][0].reference.name == 'SGN-U562679'
         assert snvs[0][0].reference.seq == 'ATATATATATATATATATAT'
         assert snvs[7][0].reference.seq == 'GCGCGCGCGCGCGG'
-        assert snvs[0][0].lib_alleles[0]['alleles'][0]['allele'] == 'G'
-        assert snvs[0][0].lib_alleles[0]['alleles'][0]['qualities'] == [None,
+        assert snvs[0][0].per_lib_info[0]['alleles'][0]['allele'] == 'G'
+        assert snvs[0][0].per_lib_info[0]['alleles'][0]['qualities'] == [None,
                                                                      None, 20]
 
     @staticmethod
