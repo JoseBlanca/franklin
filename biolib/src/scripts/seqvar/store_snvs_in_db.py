@@ -26,6 +26,7 @@ from optparse import OptionParser
 from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
 from biolib.seqvar.snp_miner import add_snv_to_db
 from biolib.db.db_utils import get_db_url
+from biolib.pipelines import pipeline_runner
 
 def parse_options():
     'It parses the command line arguments'
@@ -38,6 +39,8 @@ def parse_options():
                        help='References file')
     parser.add_option('-l', '--library', dest='library',
                        help='Library source name')
+    parser.add_option('-p', '--pipeline', dest='pipeline',
+                       help='Another filtering pipeline')
 
     parser.add_option('-d', '--dbname', dest='dbname', help='db name')
     parser.add_option('-u', '--dbuser', dest='dbuser', help='db user')
@@ -67,7 +70,7 @@ def set_parameters():
         parser.error('Library source name is requires')
     else:
         library = options.library
-
+    pipeline = options.pipeline
     #database_conf
     if options.dbhost is None:
         dbhost = 'localhost'
@@ -101,16 +104,24 @@ def set_parameters():
     database_conf['dbpass'] = dbpass
     database_conf['dbengine'] = dbengine
 
-    return samfile, req_posfile, references, library, database_conf
+    return samfile, req_posfile, references, library, pipeline, database_conf
 
 def main():
     'The main part of the script'
     # set parameters
-    samfile, req_posfile, references, library, database_conf = \
+    samfile, req_posfile, references, library, pipeline, database_conf = \
                                                  set_parameters()
     #get the sevar from requiered base
-    snvs =  seqvars_in_sam_pileup(samfile, required_positions=req_posfile,
-                                      references=references)
+    snvs_with_context =  seqvars_in_sam_pileup(samfile,
+                                               required_positions=req_posfile,
+                                               references=references)
+    # filter using pipeline
+    if pipeline is not None:
+        snvs_with_context = pipeline_runner(pipeline, snvs_with_context)
+
+    # remove context
+    snvs = (snv[0] for snv in snvs_with_context if snv is not None)
+
     #prepare database conexion:
     db_url = get_db_url(database_conf)
     engine = sqlalchemy.create_engine(db_url)
