@@ -76,7 +76,6 @@ def main():
     # TEMPORARY DIR NAME
     temp_dir = NamedTemporaryDir()
     dir_name = temp_dir.name
-
     if seq_type == 'short':
         cmd = ['bwa', 'aln', refdb, seqfile]
         stdout, stderr, retcode = call(cmd)

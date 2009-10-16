@@ -21,11 +21,10 @@ Created on 01/10/2009
 
 @author: peio
 '''
-import sqlalchemy
+import sqlalchemy, os
 from optparse import OptionParser
 from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
-from biolib.seqvar.snp_miner import add_snv_to_db
-from biolib.db.db_utils import get_db_url
+from biolib.seqvar.snp_miner import SnvDb, create_snp_miner_database
 from biolib.pipelines import pipeline_runner
 
 def parse_options():
@@ -37,16 +36,14 @@ def parse_options():
                       help='Required positions file')
     parser.add_option('-f', '--references', dest='references',
                        help='References file')
-    parser.add_option('-l', '--library', dest='library',
-                       help='Library source name')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                        help='Another filtering pipeline')
 
     parser.add_option('-d', '--dbname', dest='dbname', help='db name')
-    parser.add_option('-u', '--dbuser', dest='dbuser', help='db user')
-    parser.add_option('-p', '--dbpass', dest='dbpass', help='db pass')
-    parser.add_option('-e', '--dbengine', dest='dbengine', help='db engine')
-    parser.add_option('-h', '--dbhost', dest='dbhost', help='db host')
+#    parser.add_option('-u', '--dbuser', dest='dbuser', help='db user')
+#    parser.add_option('-w', '--dbpass', dest='dbpass', help='db pass')
+#    parser.add_option('-e', '--dbengine', dest='dbengine', help='db engine')
+#    parser.add_option('-h', '--dbhost', dest='dbhost', help='db host')
 
     return parser
 def set_parameters():
@@ -66,51 +63,20 @@ def set_parameters():
     else:
         references = open(options.references)
     # Data to insert in the database
-    if options.library is None:
-        parser.error('Library source name is requires')
-    else:
-        library = options.library
     pipeline = options.pipeline
-    #database_conf
-    if options.dbhost is None:
-        dbhost = 'localhost'
-    else:
-        dbhost = options.dbhost
 
     if options.dbname is None:
         parser.error('DB name required')
     else:
         dbname = options.dbname
 
-    if options.dbuser is None:
-        dbuser = None
-    else:
-        dbuser = options.dbuser
-
-    if options.dbpass is None:
-        dbpass = None
-    else:
-        dbpass = options.dbpass
-
-    if options.dbengine is None:
-        dbengine = 'sqlite'
-    else:
-        dbengine = options.dbengine
-
-    database_conf = {}
-    database_conf['dbhost'] = dbhost
-    database_conf['dbname'] = dbname
-    database_conf['dbuser'] = dbuser
-    database_conf['dbpass'] = dbpass
-    database_conf['dbengine'] = dbengine
-
-    return samfile, req_posfile, references, library, pipeline, database_conf
+    return samfile, req_posfile, references, pipeline, dbname
 
 def main():
     'The main part of the script'
     # set parameters
-    samfile, req_posfile, references, library, pipeline, database_conf = \
-                                                 set_parameters()
+    samfile, req_posfile, references, pipeline, dbname = set_parameters()
+
     #get the sevar from requiered base
     snvs_with_context =  seqvars_in_sam_pileup(samfile,
                                                required_positions=req_posfile,
@@ -123,12 +89,15 @@ def main():
     snvs = (snv[0] for snv in snvs_with_context if snv is not None)
 
     #prepare database conexion:
-    db_url = get_db_url(database_conf)
+    db_url = 'sqlite:///%s'  % dbname
     engine = sqlalchemy.create_engine(db_url)
+    if not os.path.exists(dbname):
+        create_snp_miner_database(engine)
+    snv_miner = SnvDb(engine)
 
     #Insert the seqvars to the database
     for snv in snvs:
-        add_snv_to_db(engine, snv, library=library)
+        snv_miner.create_snv(snv)
 
 if __name__ == '__main__':
     main()

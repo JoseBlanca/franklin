@@ -21,8 +21,9 @@ Created on 2009 eka 18
 
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
+from sqlalchemy.sql import select
 from biolib.db.db_utils import  DbMap
-from biolib.seqvar.seqvariation import calculate_kind
+from biolib.seqvar.seqvariation import calculate_kind, Snv
 
 SNPMINER_MAP_DEF = [{'name':'Reference'},
                     {'name':'Library'},
@@ -146,7 +147,7 @@ class SnvDb(DbMap):
         return self.get('LibrarySnv', attributes=loc_attr)
 
 
-    def add_alleles_per_library(self, snv_sql, library_info):
+    def create_alleles_per_library(self, snv_sql, library_info):
         'It inserts each of the alleles of the info_per_library data object'
         library_snv_sql = self._get_info_per_library(snv_sql, library_info)
 
@@ -165,11 +166,11 @@ class SnvDb(DbMap):
             #review the new snv_sql kind taking into account this alele_info
             #kind
             new_kind = calculate_kind(new_kind, kind)
-            self.get('LibrarySnvAlleles', attributes=allele_attrs)
+            self.create('LibrarySnvAlleles', attributes=allele_attrs)
         if new_kind != snv_sql.kind:
             snv_sql.kind = new_kind
 
-    def add_annotations_per_library(self, snv_sql, library_info):
+    def create_annotations_per_library(self, snv_sql, library_info):
         'It inserts each of the annotations of the info_per_library data object'
         library_snv_sql = self._get_info_per_library(snv_sql, library_info)
 
@@ -177,9 +178,9 @@ class SnvDb(DbMap):
             attrs = {'library_snv':library_snv_sql,
                      'kind':kind,
                      'value':value}
-            self.get('LibrarySnvAnnots', attributes=attrs)
+            self.create('LibrarySnvAnnots', attributes=attrs)
 
-    def add_snv(self, snv):
+    def create_snv(self, snv):
         'it selects or adds a svn to the database'
         reference     = snv.reference
         location      = snv.location
@@ -187,8 +188,46 @@ class SnvDb(DbMap):
         library_infos = snv.per_lib_info
         snv_sql       = self.get_snv_sql(reference, location, kind)
         for library_info in library_infos:
-            self.add_alleles_per_library(snv_sql, library_info)
-            self.add_annotations_per_library(snv_sql, library_info)
+            self.create_alleles_per_library(snv_sql, library_info)
+            self.create_annotations_per_library(snv_sql, library_info)
+
+    def _select_snv_sql(self, reference, location):
+        'It selects or inserts a row in the svn table'
+        reference = self._get_reference(reference)
+        loc_attr = {'reference':reference, 'location':location}
+        return self.select_one('Snv', attributes=loc_attr)
+
+    def select_snv(self, reference, location):
+        'it returns a snv object giving the reference and the position'
+        snv_sql = self._select_snv_sql(reference, location)
+        library_snv_sqls = self.select('LibrarySnv', {'snv':snv_sql})
+        per_lib_info = []
+        for library_snv_sql in library_snv_sqls:
+            alleles = []
+            for allele in self.select('LibrarySnvAlleles', {'library_snv':
+                                                            library_snv_sql}):
+                alleles.append({'kind':allele.kind,
+                                'reads':allele.reads,
+                                'allele':allele.allele,
+                                'qualities':eval(allele.qualities)})
+            annotations = []
+
+            for annot in self.select('LibrarySnvAnnots', {'library_snv':
+                                                          library_snv_sql}):
+                annotations.append({'kind':annot.kind,
+                                    'value':annot.value})
+
+            per_lib_info.append({'library':library_snv_sql.library.accession,
+                                 'alleles':alleles,
+                                 'annotations':annotations})
+        return Snv(reference=reference, location=location,
+                   per_lib_info=per_lib_info)
+
+    def select_snvs(self):
+        'An snvs iterator for the database'
+        for snv_sql in self.select('Snv'):
+            yield self.select_snv(snv_sql.reference.name, snv_sql.location)
+
 
 
 

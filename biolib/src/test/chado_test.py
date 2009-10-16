@@ -157,7 +157,7 @@ class ChadoOrmTest(unittest.TestCase):
         assert new_db is the_db
         the_dbxref = chado.select_one(kind='dbxref',
                                       attributes={'accession':'666',
-                                                  'db':new_db})
+                                                  'db':new_db})cd wo
         assert new_dbxref is the_dbxref
 
         ######

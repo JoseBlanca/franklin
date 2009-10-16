@@ -20,6 +20,8 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
@@ -39,7 +41,12 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
 
         cromosome, position, ref_base, coverage, read_bases, qual = line.split()
         # get alleles from the string
-        alleles, qualities = _get_alleles(ref_base, read_bases, qual)
+        try:
+            alleles, qualities = _get_alleles(ref_base, read_bases, qual)
+        except RuntimeError:
+            sys.stderr.write('malformed line in pileup: %s %s\n' % (cromosome,
+                                                                    position))
+            continue
         alleles, qual_grouped = _group_alleles(alleles, qualities)
         alleles = _get_allele_type(ref_base, alleles, qual_grouped)
 
@@ -140,7 +147,10 @@ def _get_alleles(ref_base, alleles, qualities):
         number = alleles[pos]
         while True:
             pos += 1
-            new_number = alleles[pos]
+            try:
+                new_number = alleles[pos]
+            except IndexError:
+                raise RuntimeError('Malformed pileup line')
             if not new_number.isdigit():
                 break
             number += new_number

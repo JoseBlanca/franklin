@@ -48,7 +48,7 @@ class Test(unittest.TestCase):
         fhand = open(sam_fname)
         references = StringIO.StringIO(REFERENCES)
         snvs = list(seqvars_in_sam_pileup(fhand, references=references))
-        assert len(snvs) == 8
+        assert len(snvs) == 9
         assert snvs[0][0].reference.name == 'SGN-U562678'
         assert snvs[7][0].reference.name == 'SGN-U562679'
         assert snvs[0][0].reference.seq == 'ATATATATATATATATATAT'
@@ -56,6 +56,8 @@ class Test(unittest.TestCase):
         assert snvs[0][0].per_lib_info[0]['alleles'][0]['allele'] == 'G'
         assert snvs[0][0].per_lib_info[0]['alleles'][0]['qualities'] == [None,
                                                                      None, 20]
+        assert snvs[2][0].per_lib_info[0]['alleles'][0]['reads'] == 3
+        assert snvs[1][0].per_lib_info[0]['alleles'][0]['kind'] == INVARIANT
 
     @staticmethod
     def test_is_seq_bar():

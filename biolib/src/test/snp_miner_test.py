@@ -3,8 +3,6 @@ Created on 2009 eka 19
 
 @author: peio
 '''
-from django.views import static
-
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
 # biolib is free software: you can redistribute it and/or modify
@@ -21,12 +19,10 @@ from django.views import static
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.seqvar.snp_miner import (SNPMINER_MAP_DEF, SnvDb,
+from biolib.seqvar.snp_miner import (SnvDb,
                                      create_snp_miner_database)
 
 from biolib.seqvar.seqvariation import Snv, INVARIANT, SNP
-from biolib.seqs import SeqWithQuality
-from biolib.db.db_utils import DbMap
 import sqlalchemy
 
 #from biolib.db.naming import (create_naming_database,
@@ -74,7 +70,7 @@ class SnpMinerTest(unittest.TestCase):
 
     @staticmethod
     def test_add_alleles_per_library():
-        'It tests add_alleles_per_library method'
+        'It tests create_alleles_per_library method'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
         snv_miner = SnvDb(engine)
@@ -93,7 +89,7 @@ class SnpMinerTest(unittest.TestCase):
         kind      = INVARIANT
         snv_sql = snv_miner.get_snv_sql(reference, location, kind)
 
-        snv_miner.add_alleles_per_library(snv_sql, library_info1)
+        snv_miner.create_alleles_per_library(snv_sql, library_info1)
         allele_sql = snv_miner.select_one('LibrarySnvAlleles', {'allele':'A'})
         assert allele_sql.kind == INVARIANT
         assert allele_sql.reads == 3
@@ -108,7 +104,7 @@ class SnpMinerTest(unittest.TestCase):
 
     @staticmethod
     def test_add_annotation_per_library():
-        'It tests add_alleles_per_library method'
+        'It tests create_alleles_per_library method'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
         snv_miner = SnvDb(engine)
@@ -123,12 +119,11 @@ class SnpMinerTest(unittest.TestCase):
         kind      = INVARIANT
         snv_sql = snv_miner.get_snv_sql(reference, location, kind)
 
-        snv_miner.add_annotations_per_library(snv_sql, library_info1)
+        snv_miner.create_annotations_per_library(snv_sql, library_info1)
         annot = snv_miner.select_one('LibrarySnvAnnots', {'kind':'hola'})
         assert annot.value == 'caracola'
 
-    @staticmethod
-    def test_add_svn_to_db():
+    def test_add_snv_to_db(self):
         'It tests that we can add a snv to the database'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_snp_miner_database(engine)
@@ -136,7 +131,7 @@ class SnpMinerTest(unittest.TestCase):
 
         ref1 = 'ref1'
         library_info1 = {'library': 'some_library1',
-                        'annotations': {'hola': 'caracola'},
+                        'annotations': {'hola1': 'caracola1'},
                         'alleles': [{'allele':'A', 'reads':3, 'kind':INVARIANT,
                                      'qualities':[20, 30, 30]},
                                     {'allele':'T', 'reads':3, 'kind':SNP,
@@ -144,14 +139,16 @@ class SnpMinerTest(unittest.TestCase):
         snv = Snv(reference=ref1, location=3,
                   per_lib_info=[library_info1])
         # add an snv
-        snv_miner.add_snv(snv)
+        snv_miner.create_snv(snv)
         selected_svn = snv_miner.select_one('Snv', attributes={'location':3})
         assert selected_svn.location == 3
-
-
-
+        snv_miner.commit()
         # try to add again the same snv
-        snv_miner.add_snv(snv)
+        try:
+            snv_miner.create_snv(snv)
+            self.fail()
+        except Exception:
+            snv_miner.rollback()
 
         library_info2 = {'library': 'some_library2',
                         'annotations': {'hola': 'caracola'},
@@ -163,19 +160,27 @@ class SnpMinerTest(unittest.TestCase):
                   per_lib_info=[library_info2])
 
         # Trying to add another library to the same snv
-        snv_miner.add_snv(snv)
-        selected_svn = snv_miner.select_one('Snv', attributes={'location':3})
+        snv_miner.create_snv(snv)
+        selected_snv = snv_miner.select_one('Snv', attributes={'location':3})
+        lib_snvs = snv_miner.select('LibrarySnv',
+                                    attributes={'snv': selected_snv})
+        for lib_snv in lib_snvs:
+            assert lib_snv.library.accession in ['some_library1',
+                                                 'some_library2']
         assert selected_svn.location == 3
-        print dir(selected_svn)
 
+        # test the svn selection
+        new_snv = snv_miner.select_snv(snv.reference, snv.location)
 
+        assert new_snv.per_lib_info[0]['annotations'][0]['value'] == 'caracola1'
+        assert new_snv.per_lib_info[1]['annotations'][0]['value'] == 'caracola'
+        assert len(new_snv.per_lib_info) == 2
 
-
-
-
-
-
-
+        #test snvs selections
+        new_snv = list(snv_miner.select_snvs())[0]
+        assert new_snv.per_lib_info[0]['annotations'][0]['value'] == 'caracola1'
+        assert new_snv.per_lib_info[1]['annotations'][0]['value'] == 'caracola'
+        assert len(new_snv.per_lib_info) == 2
 
 
 if __name__ == "__main__":
