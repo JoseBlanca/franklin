@@ -76,7 +76,6 @@ def create_snp_miner_database(engine):
         Column('snv_id', Integer, primary_key=True),
         Column('reference_id', Integer, ForeignKey('Reference.reference_id'),
                nullable=False),
-        Column('kind',   String,  nullable=True),
         Column('location', Integer, nullable=False),
         UniqueConstraint('reference_id', 'location'))
 
@@ -128,11 +127,10 @@ class SnvDb(DbMap):
         'It adds the library to the database'
         return self.get('Library', attributes={'accession':library})
 
-    def get_snv_sql(self, reference, location, kind):
+    def get_snv_sql(self, reference, location):
         'It selects or inserts a row in the svn table'
         reference = self._get_reference(reference)
-        loc_attr = {'reference':reference, 'location':location,
-                    'kind':kind}
+        loc_attr = {'reference':reference, 'location':location}
         return self.get('Snv', attributes=loc_attr)
 
     def _get_info_per_library(self, snv_sql, library_info, name=None):
@@ -151,7 +149,6 @@ class SnvDb(DbMap):
         'It inserts each of the alleles of the info_per_library data object'
         library_snv_sql = self._get_info_per_library(snv_sql, library_info)
 
-        new_kind = snv_sql.kind
         for allele_info in library_info['alleles']:
             allele = allele_info['allele']
             reads  = allele_info['reads']
@@ -160,15 +157,9 @@ class SnvDb(DbMap):
                 qual = repr(allele_info['qualities'])
             else:
                 qual = None
-            allele_attrs = {'library_snv':library_snv_sql,
-                            'allele': allele, 'kind': kind, 'reads': reads,
-                            'qualities':qual}
-            #review the new snv_sql kind taking into account this alele_info
-            #kind
-            new_kind = calculate_kind(new_kind, kind)
-            self.create('LibrarySnvAlleles', attributes=allele_attrs)
-        if new_kind != snv_sql.kind:
-            snv_sql.kind = new_kind
+            attrs = {'library_snv':library_snv_sql, 'allele': allele,
+                     'kind': kind, 'reads': reads, 'qualities':qual}
+            self.create('LibrarySnvAlleles', attributes=attrs)
 
     def create_annotations_per_library(self, snv_sql, library_info):
         'It inserts each of the annotations of the info_per_library data object'
@@ -184,9 +175,8 @@ class SnvDb(DbMap):
         'it selects or adds a svn to the database'
         reference     = snv.reference
         location      = snv.location
-        kind          = snv.kind
         library_infos = snv.per_lib_info
-        snv_sql       = self.get_snv_sql(reference, location, kind)
+        snv_sql       = self.get_snv_sql(reference, location)
         for library_info in library_infos:
             self.create_alleles_per_library(snv_sql, library_info)
             self.create_annotations_per_library(snv_sql, library_info)

@@ -60,12 +60,11 @@ class SnpMinerTest(unittest.TestCase):
 
         reference = ref1
         location  = 2
-        kind      = SNP
-        snv_sql = snp_miner.get_snv_sql(reference, location, kind)
+        snv_sql = snp_miner.get_snv_sql(reference, location)
         assert snv_sql.reference.name == 'ref1'
         assert snv_sql.location == 2
 
-        snv_sql = snp_miner.get_snv_sql(reference, location, kind)
+        snv_sql = snp_miner.get_snv_sql(reference, location)
         assert  snv_sql.reference.name == 'ref1'
 
     @staticmethod
@@ -86,17 +85,12 @@ class SnpMinerTest(unittest.TestCase):
         # add snv_sql
         reference = ref1
         location  = 2
-        kind      = INVARIANT
-        snv_sql = snv_miner.get_snv_sql(reference, location, kind)
-
+        snv_sql = snv_miner.get_snv_sql(reference, location)
         snv_miner.create_alleles_per_library(snv_sql, library_info1)
         allele_sql = snv_miner.select_one('LibrarySnvAlleles', {'allele':'A'})
         assert allele_sql.kind == INVARIANT
         assert allele_sql.reads == 3
         assert eval(allele_sql.qualities) == [20, 30, 30]
-
-        #the snv has to be changed by now
-        assert snv_sql.kind == SNP
 
         library_sql = snv_miner.select_one('Library',
                                          {'accession':library_info1['library']})
@@ -116,8 +110,7 @@ class SnpMinerTest(unittest.TestCase):
         # add snv_sql
         reference = ref1
         location  = 2
-        kind      = INVARIANT
-        snv_sql = snv_miner.get_snv_sql(reference, location, kind)
+        snv_sql = snv_miner.get_snv_sql(reference, location)
 
         snv_miner.create_annotations_per_library(snv_sql, library_info1)
         annot = snv_miner.select_one('LibrarySnvAnnots', {'kind':'hola'})
