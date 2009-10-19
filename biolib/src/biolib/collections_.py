@@ -72,25 +72,32 @@ class RequiredPosition(object):
 
     def __getitem__(self, index):
         'The get item method. It look the location in the file'
-        if self._cache == index:
+        def bigger_than_index(cache_index, index):
+            'Is bigger??'
+            return (cache_index[0] > index[0] or
+                   (cache_index[0] == index[0] and cache_index[1] > index[1]))
+
+        index = index[0], int(index[1])
+        cache_index = self._cache
+        if cache_index == index:
             return True
-        asked_cromosome, asked_position = index
+        elif bigger_than_index(cache_index, index):
+            return False
         for line in self._fhand:
             line = line.strip()
             if not line:
                 continue
-            (cromosome, location) = line.split()
+            cromosome, location = line.split()
+            line_index  = cromosome, int(location)
+            self._cache = line_index
 
             # if the given location is in the file
-            if index == (cromosome, location):
+            if index == line_index:
                 return True
-            #if we haven't found the location but we find a bigger
-            elif (((cromosome == asked_cromosome) and
-                 (asked_position > location)) or (cromosome < asked_cromosome)):
-                self._cache = index
-                return False
-            else:
-                return False
+            #if the asked_index > index
+            elif bigger_than_index(line_index, index):
+                break
+        return False
 
 def _ref_name(reference):
     'It returns the name of the reference'

@@ -90,6 +90,7 @@ class ItemContextIterTest(unittest.TestCase):
 REQUIRED_POS = '''
 aaa    2
 aaa    3
+aaa    5
 aaa    8
 bbb    2
 bbb    7'''
@@ -113,6 +114,9 @@ class RequiredPositionsTest(unittest.TestCase):
         assert req_pos['aaa', '2']
         assert req_pos['aaa', '3']
         assert not req_pos['aaa', '4']
+        assert not req_pos['aaa', '4']
+        assert req_pos['aaa', '5']
+        assert not req_pos['aaa', '4']
         assert req_pos['bbb', '2']
 
     @staticmethod
@@ -132,7 +136,7 @@ class RequiredPositionsTest(unittest.TestCase):
         fhand.flush()
         req_pos = RequiredPosition(fhand)
         assert req_pos['aaa', '2']
-        assert not req_pos['aaa', '2']
+        assert req_pos['aaa', '2']
 
 if __name__ == "__main__":
     unittest.main()

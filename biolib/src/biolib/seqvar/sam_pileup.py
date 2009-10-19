@@ -40,6 +40,10 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
             continue
 
         cromosome, position, ref_base, coverage, read_bases, qual = line.split()
+
+        if required_positions and not required_positions[cromosome, position]:
+            continue
+
         # get alleles from the string
         try:
             alleles, qualities = _get_alleles(ref_base, read_bases, qual)
@@ -50,8 +54,11 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
         alleles, qual_grouped = _group_alleles(alleles, qualities)
         alleles = _get_allele_type(ref_base, alleles, qual_grouped)
 
-        if ((required_positions and required_positions[cromosome, position]) or
-            _is_seq_var(coverage, ref_base, alleles, min_num)):
+        if required_positions:
+            yield_snv = required_positions[cromosome, position]
+        else:
+            yield_snv = _is_seq_var(coverage, ref_base, alleles, min_num)
+        if yield_snv:
             if references is not None:
                 cromosome = references_index[cromosome]
             lib_alleles = {}

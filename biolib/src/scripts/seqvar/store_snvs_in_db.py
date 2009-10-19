@@ -26,6 +26,7 @@ from optparse import OptionParser
 from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
 from biolib.seqvar.snp_miner import SnvDb, create_snp_miner_database
 from biolib.pipelines import pipeline_runner
+from biolib.collections_ import RequiredPosition
 
 def parse_options():
     'It parses the command line arguments'
@@ -38,6 +39,8 @@ def parse_options():
                        help='References file')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                        help='Another filtering pipeline')
+    parser.add_option('-l', '--library', dest='library',
+                       help='File library')
 
     parser.add_option('-d', '--dbname', dest='dbname', help='db name')
 #    parser.add_option('-u', '--dbuser', dest='dbuser', help='db user')
@@ -57,6 +60,7 @@ def set_parameters():
     else:
         samfile = open(options.samfile)
     req_posfile = options.req_posfile
+    library     = options.library
 
     if options.references is None:
         references = None
@@ -70,17 +74,20 @@ def set_parameters():
     else:
         dbname = options.dbname
 
-    return samfile, req_posfile, references, pipeline, dbname
+    return samfile, req_posfile, references, pipeline, dbname, library
 
 def main():
     'The main part of the script'
     # set parameters
-    samfile, req_posfile, references, pipeline, dbname = set_parameters()
+    samfile, req_posfile, references, pipeline, dbname, library = \
+                                                                set_parameters()
 
+    req_pos_obj = RequiredPosition(open(req_posfile))
     #get the sevar from requiered base
     snvs_with_context =  seqvars_in_sam_pileup(samfile,
-                                               required_positions=req_posfile,
-                                               references=references)
+                                               required_positions=req_pos_obj,
+                                               references=references,
+                                               library=library)
     # filter using pipeline
     if pipeline is not None:
         snvs_with_context = pipeline_runner(pipeline, snvs_with_context)
@@ -98,6 +105,7 @@ def main():
     #Insert the seqvars to the database
     for snv in snvs:
         snv_miner.create_snv(snv)
+        snv_miner.commit()
 
 if __name__ == '__main__':
     main()
