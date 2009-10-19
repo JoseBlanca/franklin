@@ -21,7 +21,7 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
+from biolib.seqvar.seqvariation import (cap_enzymes, SNP, COMPLEX,
                                         reference_variability)
 
 #filters
@@ -93,16 +93,17 @@ def create_snv_close_to_limit_filter(max_distance):
 
 
 #cleaners
-def create_major_allele_freq_cleaner(frequency):
+def create_major_allele_freq_filter(frequency, libraries=None):
     '''It creates a cleaner in which the alleles from each library are removed
     if the most abundant allele frequency is bigger than the given one'''
     def major_allele_freq_cleaner(snv):
         'The cleaner'
         if snv is None:
-            return None
-        (snv, context) = snv
-        new_lib_alleles = []
+            return False
+        snv = snv[0]
         for library_info in snv.per_lib_info:
+            if libraries and library_info['library'] not in libraries:
+                continue
             alleles = library_info['alleles']
             read_number = 0
             first_read  = alleles[0]['reads']
@@ -110,12 +111,8 @@ def create_major_allele_freq_cleaner(frequency):
                 read_number += allele['reads']
             first_percent = (first_read) / float(read_number)
             if first_percent < frequency:
-                new_lib_alleles.append(library_info)
-
-        if new_lib_alleles:
-            return (snv.copy(per_lib_info=new_lib_alleles), context)
-        else:
-            return None
+                return True
+        return False
 
     return major_allele_freq_cleaner
 
@@ -168,27 +165,38 @@ def create_bad_quality_reads_cleaner(qual_treshold):
 
     return bad_quality_reads_cleaner
 
-def create_allele_number_cleaner(num_alleles, ignore_diffs_with_ref=True):
+def create_allele_number_filter(num_alleles, ignore_diffs_with_ref=True,
+                                libraries=None):
     '''This function factory creates a mapper that cleans librarys of the snv
     that have less than num alleles'''
     def allele_number_cleaner(snv):
         'The cleaner'
         if snv is None:
-            return None
-        (snv, context) = snv
-        new_library_alleles = []
+            return False
+        snv = snv[0]
         for library_info in snv.per_lib_info:
+            if libraries and library_info['library'] not in libraries:
+                continue
             alleles = library_info['alleles']
             if ((not ignore_diffs_with_ref and len(alleles) == 1 and
                  alleles[0]['kind'] == SNP) or
                 (len(alleles) >= num_alleles)):
-                new_library_alleles.append(library_info)
+                return True
 
-        if new_library_alleles:
-            return (snv.copy(per_lib_info=new_library_alleles), context)
-        else:
-            return None
+        return False
     return allele_number_cleaner
+
+def create_kind_filter(kinds):
+    'This filter filters by kind. It only passes snps or complex snv kinds'
+    def kind_filter(snv):
+        'The filter'
+        if snv is None:
+            return False
+        snv = snv[0]
+        if snv.kind in kinds:
+            return True
+        return False
+    return kind_filter
 
 def create_read_number_cleaner(num_reads):
     '''This function factory remove alleles that have more than num_reads

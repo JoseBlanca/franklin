@@ -52,11 +52,12 @@ from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
                                        create_snv_close_to_limit_filter,
                                        create_high_variable_region_filter,
                                        create_close_to_seqvar_filter,
-                                       create_major_allele_freq_cleaner,
-                                       create_allele_number_cleaner,
+                                       create_major_allele_freq_filter,
+                                       create_allele_number_filter,
                                        create_bad_quality_reads_cleaner,
                                        create_read_number_cleaner,
-                                       create_alleles_n_cleaner)
+                                       create_alleles_n_cleaner,
+                                       create_kind_filter)
 
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
@@ -158,9 +159,9 @@ snp_close_to_seqvar_filter = {'function':create_close_to_seqvar_filter,
                             'comment': 'It filters snp if it has a seqvar near'}
 
 
-snp_major_allele_freq_cleaner = {'function':create_major_allele_freq_cleaner,
+snp_major_allele_freq_filter = {'function':create_major_allele_freq_filter,
                                      'arguments':{'frequency':0.8},
-                                     'type':'mapper',
+                                     'type':'filter',
                                      'name':'major_allele_frec',
                               'comment':'It filters by mayor allele frequency'}
 
@@ -170,9 +171,9 @@ snp_cap_enzyme_filter  = {'function':  create_cap_enzyme_filter,
                       'name':      'enzyme_filter',
                       'comment':  'It filters by enzyme'}
 
-snp_remove_by_allele_number = {'function': create_allele_number_cleaner,
+snp_filter_by_allele_number = {'function': create_allele_number_filter,
                             'arguments':{'num_alleles':2},
-                            'type':'mapper',
+                            'type':'filter',
                             'name':'allele_quantity',
                             'comment': 'It filters by allele_quantity'}
 snp_remove_by_read_number = {'function': create_read_number_cleaner,
@@ -198,6 +199,11 @@ snp_remove_alleles_n = {'function':create_alleles_n_cleaner,
                         'name':'allele_n_cleaner',
                         'comment': 'It removes alleles composed by N'
                         }
+snp_filter_by_kind = {'function':create_kind_filter ,
+                      'arguments':{},
+                      'type':'filter',
+                      'name':'kind_filter',
+                      'comment': 'It filters by snv kind'}
 
 # words
 mask_words = {'function'  : create_masker_for_words,
@@ -225,17 +231,17 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
             'snp_basic': [snp_remove_alleles_n,
                           snp_remove_baq_quality_alleles,
                           snp_remove_by_read_number,
-                          snp_remove_by_allele_number],
+                          snp_filter_by_allele_number],
             'snp_to_db_clean':[snp_remove_alleles_n,
                                snp_remove_baq_quality_alleles],
          'snp_exhaustive':[snp_remove_baq_quality_alleles,
                       snp_high_variable_region_filter,
                       snp_close_to_seqvar_filter,
-                      snp_major_allele_freq_cleaner,
+                      snp_major_allele_freq_filter,
                       snp_cap_enzyme_filter,
                       snp_close_to_limit_filter,
                       snp_remove_by_read_number,
-                      snp_remove_by_allele_number],
+                      snp_filter_by_allele_number],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}
 

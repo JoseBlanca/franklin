@@ -142,6 +142,41 @@ class Snv(object):
         to_print += '])\n\n'
         return to_print
 
+    def libraries_per_allele(self):
+        '''This method returns a list of dictionaries ordered by number of
+        libraries that contain this allele.
+        Each of the dictionaries contains two fields:
+            .- allele: nucleotide
+            .- libraries: list of libraries that contain this allele
+        '''
+        alleles_unsorted = {}
+        for alleles_in_a_lib in self.per_lib_info:
+            library = alleles_in_a_lib['library']
+            for alleles in alleles_in_a_lib['alleles']:
+                nucleotide = alleles['allele']
+                if nucleotide not in alleles_unsorted:
+                    alleles_unsorted[nucleotide] = []
+                alleles_unsorted[nucleotide].append(library)
+        # Sorting
+        libraries_per_allele = []
+        ordered_len_values = [len(value) for value in alleles_unsorted.values()]
+        ordered_len_values.sort(reverse=True)
+        for index in ordered_len_values:
+            for allele, libraries in alleles_unsorted.items():
+                if index == len(libraries):
+                    libraries_per_allele.append({'allele':allele,
+                                                 'libraries':libraries})
+                    del alleles_unsorted[allele]
+        return libraries_per_allele
+
+def mayor_frec_allele_per_library(snv):
+    'It returns mayor allele in library frecuency'
+    allele_frec_per_lib = snv.libraries_per_allele()
+    most_abundant_frec = len(allele_frec_per_lib[0]['libraries'])
+    total_num          = sum(allele_frec_per_lib.values())
+    return most_abundant_frec / total_num * 100
+
+
 def cap_enzymes(snv, all_enzymes=False):
     '''Given an svn it returns the list of restriction enzymes that distinguish
     between their alleles.'''
