@@ -20,7 +20,7 @@ import unittest, os, StringIO
 import biolib
 from biolib.seqvar.sam_pileup import (seqvars_in_sam_pileup, _is_seq_var,
                                       _locations_in_pileups,
-                                      seqvars_in_sam_pileups)
+                                      snvs_in_sam_pileups)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -64,20 +64,19 @@ class Test(unittest.TestCase):
     @staticmethod
     def test_is_seq_bar():
         'It test is_seq_var function'
-        coverage = 5
         ref_base = 'A'
         quality  = ['~', '~', '~', '~', '~']
         alleles = [{'allele':'A', 'reads':3, 'kind':SNP, 'qualities': quality},
                    {'allele':'T', 'reads':2, 'kind':INVARIANT,
                                                          'qualities': quality}]
         min_num_bases  = 2
-        assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
+        assert _is_seq_var(ref_base, alleles, min_num_bases)
 
         alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'qualities': quality},
                    {'allele':'A', 'reads':2, 'kind':INVARIANT,
                                                        'qualities': quality}]
         min_num_bases  = 3
-        assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
+        assert _is_seq_var(ref_base, alleles, min_num_bases)
 
     @staticmethod
     def test_positions_in_pileups():
@@ -107,7 +106,7 @@ ref2     4      A      1       ,       ~'''
     @staticmethod
     def test_seqvars_in_sam_pileups():
         'We can get the Snv from a list of pile ups'
-        pileup1 = '''ref1     1      A      1       ,       ~
+        pileup1 = '''ref1     1      A      2       ,T       aa
 ref1     2      A      1       ,       ~
 ref1     4      A      1       ,       ~
 ref2     2      A      1       ,       ~
@@ -120,10 +119,15 @@ ref2     4      A      1       ,       ~'''
         pileup1 = StringIO.StringIO(pileup1)
         pileup2 = StringIO.StringIO(pileup2)
 
-        for snv in seqvars_in_sam_pileups([pileup1, pileup2],
-                                          libraries=['lib1', 'lib2']):
-            print snv
+        snvs = list(snvs_in_sam_pileups([pileup1, pileup2],
+                                        libraries=['lib1', 'lib2']))
+        assert snvs[0].reference == 'ref1'
+        assert snvs[0].location == 1
+        assert len(snvs[0].per_lib_info[0]['alleles']) == 2
 
+        assert snvs[1].reference == 'ref2'
+        assert snvs[1].location == 3
+        assert len(snvs[1].per_lib_info[0]['alleles']) == 1
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_coverage']

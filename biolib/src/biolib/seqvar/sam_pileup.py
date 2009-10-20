@@ -309,31 +309,47 @@ def _agregate_alleles(alleles):
                 ag_al['qualities'].extend(allele['qualities'])
     return ag_alleles.values()
 
-def seqvars_in_sam_pileups(pileups, libraries, references=None, min_num=None,
-                           window=None):
+def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
     '''It yields Snvs from the given pileups'''
+    if references is not None:
+        references_index = FileSequenceIndex(references)
+
     for lines_in_pileups in _locations_in_pileups(pileups):
         lib_alleles = _alleles_in_pileups(lines_in_pileups)
         ag_alleles = _agregate_alleles(lib_alleles)
         #which is the ref_base
-        ref_base = None
+        non_empty_line = None
         for line_in_pileup in lines_in_pileups:
             if line_in_pileup:
-                ref_base = line_in_pileup[2]
+                non_empty_line = line_in_pileup
                 break
+        ref_base = non_empty_line[2]
         if not _is_seq_var(ref_base, ag_alleles, min_num):
             continue
-        print ag_alleles
-    yield None
+        #now we can build the Snv
+        if references is not None:
+            reference = references_index[non_empty_line[0]]
+        else:
+            reference = non_empty_line[0]
+        location = non_empty_line[1]
+        per_lib_info = []
+        for lib_index, lib_allele in enumerate(lib_alleles):
+            library = libraries[lib_index]
+            if lib_allele:
+                per_lib_info.append({'alleles':lib_allele,
+                                     'library':library,
+                                     'annotations':{},
+                                     },
+                                    )
+        yield Snv(reference=reference, location=location,
+                  per_lib_info=per_lib_info)
 
-
-#        if yield_snv:
-#            if references is not None:
-#                cromosome = references_index[cromosome]
-#            lib_alleles = {}
-#            lib_alleles['alleles'] = alleles
-#            if library is not None:
-#                lib_alleles['library'] = library
-#            #print lib_alleles
-#            yield Snv(per_lib_info=[lib_alleles],
-#                      location=int(position) - 1, reference=cromosome)
+def snv_contexts_in_sam_pileup(pileups, libraries, min_num=None, window=None,
+                       references=None):
+    '''This function takes the seqvar iterator of the sam pileup, and it return
+    an iterator with a tuple of seqvar and its context'''
+    seqvar_iter = snvs_in_sam_pileups(pileups, libraries=libraries,
+                                       min_num=min_num, references=references)
+    seq_var_with_context_iter = item_context_iter(seqvar_iter, window=window)
+    for seq_var_contex in seq_var_with_context_iter:
+        yield seq_var_contex

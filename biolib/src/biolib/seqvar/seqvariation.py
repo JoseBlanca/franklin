@@ -65,7 +65,7 @@ class Snv(object):
         '''
         self.reference = reference
         self.name = name
-        self.location = location
+        self.location = int(location)
         self.annotations = {}
         if per_lib_info is None:
             per_lib_info = []

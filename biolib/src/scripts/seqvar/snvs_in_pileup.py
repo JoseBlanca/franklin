@@ -25,7 +25,7 @@ Created on 30/09/2009
 '''
 from optparse import OptionParser
 import sys
-from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
+from biolib.seqvar.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import pipeline_runner
 
 
@@ -33,13 +33,13 @@ def parse_options():
     'It parses the command line arguments'
     parser = OptionParser('usage: %prog -i sam_pileup, -o req_pos -p pipeline')
     parser.add_option('-i', '--sampileup', dest='infile',
-                      help='Sam pileup file')
+                      help='list of sam pileup files')
     parser.add_option('-o', '--outfile', dest='outfile',
                       help='Outut file. Required positions file or summary')
     parser.add_option('-p', '--pipeline', dest='pipeline',
                       help='filtering pipeline:snp_basic, snp_exhaustive ')
-    parser.add_option('-r', '--req_pos', dest='req_posfile',
-                      help='Required positions file')
+    parser.add_option('-l', '--libraries', dest='libraries',
+                      help='list of libraries')
 
     return parser
 
@@ -52,24 +52,29 @@ def set_parameters():
     if options.infile is None:
         parser.error('Input file requierd')
     else:
-        infile = open(options.infile)
+        infiles = options.infile.split(',')
+        in_fhands = [open(inf) for inf in infiles]
 
     if options.outfile is None:
-        outfile = sys.stdout
+        out_fhand = sys.stdout
     else:
-        outfile = open(options.outfile, 'w')
+        out_fhand = open(options.outfile, 'w')
 
-    req_posfile = options.req_posfile
+    if options.libraries is None:
+        parser.error('Libraries list is required')
+    else:
+        libraries = options.libraries.split(',')
+
     pipeline = options.pipeline
-    return infile, outfile, pipeline, req_posfile
+    return in_fhands, out_fhand, pipeline, libraries
 
 def main():
     'The main part of the script'
-    sam_pileup, outfile, pipeline, req_posfile = set_parameters()
+    in_fhands, out_fhand, pipeline, libraries = set_parameters()
 
     #get seqvars from sam pileup
-    seq_vars_with_context = seqvars_in_sam_pileup(sam_pileup,
-                                                required_positions=req_posfile)
+    seq_vars_with_context = snv_contexts_in_sam_pileup(in_fhands,
+                                                       libraries=libraries)
 
     #filter/clean seq_vars
     if pipeline is not None:
@@ -82,7 +87,7 @@ def main():
     # print snvs
     for snv in seq_vars:
         if snv is not None:
-            outfile.write(repr(snv))
+            out_fhand.write(repr(snv))
 
 if __name__ == '__main__':
     main()
