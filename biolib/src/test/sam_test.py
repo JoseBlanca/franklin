@@ -19,7 +19,8 @@ import unittest, os, StringIO
 
 import biolib
 from biolib.seqvar.sam_pileup import (seqvars_in_sam_pileup, _is_seq_var,
-                                      locations_in_pileups)
+                                      _locations_in_pileups,
+                                      seqvars_in_sam_pileups)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -94,12 +95,34 @@ ref2     3      A      1       ,       ~
 ref2     4      A      1       ,       ~'''
         pileup1 = StringIO.StringIO(pileup1)
         pileup2 = StringIO.StringIO(pileup2)
-        locations = list(locations_in_pileups([pileup1, pileup2]))
+        locations = list(_locations_in_pileups([pileup1, pileup2]))
         location = locations[0]
-            loc1, loc2 = location[0:2]
-            loc1 = loc1[:2]
-            loc2 = loc2[:2]
-            print loc1, loc2
+        assert location[0][:2] == ['ref1', '1']
+        assert not location[1]
+        last_loc = locations[7]
+
+        assert not last_loc[0]
+        assert last_loc[1][:2] == ['ref2', '4']
+
+    @staticmethod
+    def test_seqvars_in_sam_pileups():
+        'We can get the Snv from a list of pile ups'
+        pileup1 = '''ref1     1      A      1       ,       ~
+ref1     2      A      1       ,       ~
+ref1     4      A      1       ,       ~
+ref2     2      A      1       ,       ~
+ref2     3      A      1       ,       ~'''
+        pileup2 = '''ref1     2      A      1       ,       ~
+ref1     3      A      1       ,       ~
+ref2     1      A      1       ,       ~
+ref2     3      A      1       T       ~
+ref2     4      A      1       ,       ~'''
+        pileup1 = StringIO.StringIO(pileup1)
+        pileup2 = StringIO.StringIO(pileup2)
+
+        for snv in seqvars_in_sam_pileups([pileup1, pileup2],
+                                          libraries=['lib1', 'lib2']):
+            print snv
 
 
 if __name__ == "__main__":

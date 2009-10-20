@@ -38,26 +38,22 @@ def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
     for line in pileup:
         if line.isspace():
             continue
-
-        cromosome, position, ref_base, coverage, read_bases, qual = line.split()
+        line_split = line.split()
+        cromosome, position, ref_base = line_split[:3]
 
         if required_positions and not required_positions[cromosome, position]:
             continue
-
-        # get alleles from the string
+        #get Alleles from line and continue if the line is wrong
         try:
-            alleles, qualities = _get_alleles(ref_base, read_bases, qual)
-        except RuntimeError:
-            sys.stderr.write('malformed line in pileup: %s %s\n' % (cromosome,
-                                                                    position))
+            alleles = _get_alleles_from_line(line_split)
+        except ValueError:
+            #TODO print in log
             continue
-        alleles, qual_grouped = _group_alleles(alleles, qualities)
-        alleles = _get_allele_type(ref_base, alleles, qual_grouped)
 
         if required_positions:
             yield_snv = required_positions[cromosome, position]
         else:
-            yield_snv = _is_seq_var(coverage, ref_base, alleles, min_num)
+            yield_snv = _is_seq_var(ref_base, alleles, min_num)
         if yield_snv:
             if references is not None:
                 cromosome = references_index[cromosome]
@@ -79,6 +75,19 @@ def seqvars_in_sam_pileup(pileup, min_num=None, window=None, library=None,
     for seq_var_contex in seq_var_with_context_iter:
         yield seq_var_contex
 
+def _get_alleles_from_line(line_split):
+    'It gets allele from each line of the pileup'
+    cromosome, position, ref_base, coverage, read_bases, qual = line_split
+    # get alleles from the string
+    try:
+        alleles, qualities = _get_alleles(ref_base, read_bases, qual)
+    except RuntimeError:
+        msg = 'malformed line in pileup: %s %s\n' % (cromosome, position)
+        raise ValueError(msg)
+
+    alleles, qual_grouped = _group_alleles(alleles, qualities)
+    alleles = _get_allele_type(ref_base, alleles, qual_grouped)
+    return alleles
 
 def _get_allele_type(ref_base, alleles, qual_grouped):
     '''It gets the type (snp, deletion, insertion) for each allele and removes
@@ -104,13 +113,11 @@ def _get_allele_type(ref_base, alleles, qual_grouped):
     return new_alleles
 
 
-def _is_seq_var(coverage, ref_base, alleles, min_reads):
+def _is_seq_var(ref_base, alleles, min_reads):
     '''This looks if the given data is a seq variations, it return false if it
      is not a seq var and return allele, qual_allele if it is a seq_var'''
 
     min_alleles = 2 # At least it needs a
-    if coverage < min_reads:
-        return False
     allele_nucleotides = []
     for allele in alleles:
         allele_nucleotides.append(allele['allele'])
@@ -265,7 +272,7 @@ def _pop_lines_from_cache(index, cache):
         raise StopIteration
     return lines
 
-def locations_in_pileups(pileups):
+def _locations_in_pileups(pileups):
     'It yields the equivalent positions from different pileup files'
     cache = [[]] * len(pileups)
     _fill_cache(pileups, cache)
@@ -274,3 +281,59 @@ def locations_in_pileups(pileups):
         lines_in_index = _pop_lines_from_cache(lowest_index, cache)
         yield lines_in_index
         _fill_cache(pileups, cache)
+
+
+def _alleles_in_pileups(line_in_pileups):
+    'It gets the alleles of each of the pileups.'
+    lib_alleles = []
+    for line_split in line_in_pileups:
+        if line_split:
+            alleles = _get_alleles_from_line(line_split)
+        else:
+            alleles = []
+        lib_alleles.append(alleles)
+    return lib_alleles
+
+def _agregate_alleles(alleles):
+    'It aggreates the alleles from a list of alleles (one for every lib)'
+    ag_alleles = {}
+    for lib_alleles in alleles:
+        for allele in lib_alleles:
+            base = allele['allele']
+            kind = allele['kind']
+            if (base, kind) not in ag_alleles:
+                ag_alleles[(base, kind)] = allele
+            else:
+                ag_al = ag_alleles[(base, kind)]
+                ag_al['reads'] += allele['reads']
+                ag_al['qualities'].extend(allele['qualities'])
+    return ag_alleles.values()
+
+def seqvars_in_sam_pileups(pileups, libraries, references=None, min_num=None,
+                           window=None):
+    '''It yields Snvs from the given pileups'''
+    for lines_in_pileups in _locations_in_pileups(pileups):
+        lib_alleles = _alleles_in_pileups(lines_in_pileups)
+        ag_alleles = _agregate_alleles(lib_alleles)
+        #which is the ref_base
+        ref_base = None
+        for line_in_pileup in lines_in_pileups:
+            if line_in_pileup:
+                ref_base = line_in_pileup[2]
+                break
+        if not _is_seq_var(ref_base, ag_alleles, min_num):
+            continue
+        print ag_alleles
+    yield None
+
+
+#        if yield_snv:
+#            if references is not None:
+#                cromosome = references_index[cromosome]
+#            lib_alleles = {}
+#            lib_alleles['alleles'] = alleles
+#            if library is not None:
+#                lib_alleles['library'] = library
+#            #print lib_alleles
+#            yield Snv(per_lib_info=[lib_alleles],
+#                      location=int(position) - 1, reference=cromosome)
