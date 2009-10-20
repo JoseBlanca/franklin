@@ -151,30 +151,29 @@ class Snv(object):
         '''
         alleles_unsorted = {}
         for alleles_in_a_lib in self.per_lib_info:
-            library = alleles_in_a_lib['library']
             for alleles in alleles_in_a_lib['alleles']:
                 nucleotide = alleles['allele']
                 if nucleotide not in alleles_unsorted:
-                    alleles_unsorted[nucleotide] = []
-                alleles_unsorted[nucleotide].append(library)
-        # Sorting
-        libraries_per_allele = []
-        ordered_len_values = [len(value) for value in alleles_unsorted.values()]
-        ordered_len_values.sort(reverse=True)
-        for index in ordered_len_values:
-            for allele, libraries in alleles_unsorted.items():
-                if index == len(libraries):
-                    libraries_per_allele.append({'allele':allele,
-                                                 'libraries':libraries})
-                    del alleles_unsorted[allele]
-        return libraries_per_allele
+                    alleles_unsorted[nucleotide] = 0
+                alleles_unsorted[nucleotide] += 1
+        alleles = alleles_unsorted.items()
 
-def mayor_frec_allele_per_library(snv):
+        def cmp_(allele1, allele2):
+            'It returns which alleles has more reads'
+            return allele2[1] - allele1[1]
+        alleles = sorted(alleles, cmp_)
+        return alleles
+
+def major_frec_allele_per_library(snv):
     'It returns mayor allele in library frecuency'
     allele_frec_per_lib = snv.libraries_per_allele()
-    most_abundant_frec = len(allele_frec_per_lib[0]['libraries'])
-    total_num          = sum(allele_frec_per_lib.values())
-    return most_abundant_frec / total_num * 100
+    most_abundant_frec = allele_frec_per_lib[0][1]
+    total_num = 0
+    for alleles in allele_frec_per_lib:
+        total_num += alleles[1]
+    result = most_abundant_frec / float(total_num)
+    print result, allele_frec_per_lib
+    return  result
 
 
 def cap_enzymes(snv, all_enzymes=False):
@@ -381,22 +380,29 @@ def pic(snv):
     return _calculate_libs_annotation(snv, 'pic')
 
 
-def snvs_in_file(snv_fhand, ref_fhand=None):
+def _snvs_in_file(snv_fhand):
     'It reads the snv evalable file and it yields snvs'
     snv_buffer = ''
-    if ref_fhand:
-        references_index = FileSequenceIndex(ref_fhand)
-    else:
-        references_index = None
     for line in snv_fhand:
         line = line.strip()
         if not line and snv_buffer:
             snv = eval(snv_buffer)
-            if references_index:
-                snv.reference = references_index[snv.reference]
             yield snv
             snv_buffer = ''
         snv_buffer += line
+def snvs_in_file(snv_fhand, ref_fhand=None):
+    'It reads the snv evalable file and it yields snvs'
+    snvs = _snvs_in_file(snv_fhand)
+    if ref_fhand:
+        snvs = add_reference_to_svns(snvs, ref_fhand)
+    return snvs
+
+def add_reference_to_svns(snvs, ref_fhand):
+    'It adds the reference to the svn, it yields the complete svn'
+    references_index = FileSequenceIndex(ref_fhand)
+    for snv in snvs:
+        snv.reference = references_index[snv.reference]
+        yield snv
 
 def svn_contexts_in_file(snv_fhand, ref_fhand=None):
     'It reads an svn file and it yields (svn, context) tuples'

@@ -22,7 +22,8 @@ Created on 07/10/2009
 from biolib.statistics import create_distribution
 from biolib.seqvar.seqvariation import (reference_variability,
                                         major_allele_frequency,
-                                        svn_contexts_in_file, snvs_in_file)
+                                        svn_contexts_in_file, snvs_in_file,
+                                        major_frec_allele_per_library)
 from biolib.collections_ import item_context_iter, FileCachedList
 
 
@@ -46,44 +47,62 @@ def calculate_ref_variability_ditrib(snv_contexts, window=None,
                         plot_fhand=plot_fhand,
                         range_=range_, low_memory=True)
 
-def calculate_maf_distrib(snvs, distrib_fhand=None, plot_fhand=None,
-                          range_=None):
+def calculate_snv_distrib(snvs, distrib_info, distrib_fhand=None,
+                          plot_fhand=None, range_=None):
     '''It calculates the major allele frequency snv distribution.
 
     Number of snvs versus major allele frequency
     '''
-    mafs = FileCachedList(float)
+    values = FileCachedList(float)
     for snv in snvs:
-        maf = major_allele_frequency(snv)
-        mafs.extend(maf)
-    return create_distribution(mafs,
-                       labels={'title':'Major allele frequency distribution',
-                                'xlabel':'maf',
-                                'ylabel': 'Number of snvs'},
-                        distrib_fhand=distrib_fhand,
-                        plot_fhand=plot_fhand,
-                        range_=range_, low_memory=True)
+        value = distrib_info['function'](snv)
+        if isinstance(value, list):
+            values.extend(value)
+        else:
+            values.append(value)
+    return create_distribution(values,
+                               labels=distrib_info['labels'],
+                               distrib_fhand=distrib_fhand,
+                               plot_fhand=plot_fhand,
+                               range_=range_, low_memory=True)
 
 DISTRIBUTIONS = {
-                 'ref_variability':{'function':calculate_ref_variability_ditrib,
-                                    'snv_iter_kind':'snv_contexts'},
-                 'maf_distrib':{'function':calculate_maf_distrib,
-                                    'snv_iter_kind':'snv'}
-                 }
+                 'ref_variability':{
+                            'function':calculate_ref_variability_ditrib,
+                            'snv_iter_kind':'snv_contexts'
+                 },
+                 'maf_distrib':{
+                            'function':major_allele_frequency,
+                            'snv_iter_kind':'snv',
+                            'labels':{
+                                'title':'Major allele frequency distribution',
+                                'xlabel':'maf',
+                                'ylabel': 'Number of snvs'
+                            }
+                },
+                'allele_library_distrib':{
+                            'function':major_frec_allele_per_library,
+                            'snv_iter_kind':'snv',
+                            'labels':{
+                                'title':'Major allele frequency distribution',
+                                'xlabel':'maf',
+                                'ylabel': 'Number of snvs'
+                            }
+                },
+}
 
-def snv_distrib(snv_fhand, kind, reference_fhand=None, window=None,
-                distrib_fhand=None, plot_fhand=None, range_=None):
+def snv_distrib(snvs, kind,window=None, distrib_fhand=None, plot_fhand=None,
+                range_=None):
     'It calculates one snv distribution of the given kind'
     distribution_orders = DISTRIBUTIONS[kind]
     if distribution_orders['snv_iter_kind'] == 'snv_contexts':
-        snvs = svn_contexts_in_file(snv_fhand, reference_fhand)
+        snvs = item_context_iter(snvs)
         return distribution_orders['function'](snvs, window=window,
                                         distrib_fhand=distrib_fhand,
                                         plot_fhand=plot_fhand,
                                         range_=range_)
     else:
-        snvs = snvs_in_file(snv_fhand)
-        return distribution_orders['function'](snvs,
+        return calculate_snv_distrib(snvs, distribution_orders,
                                         distrib_fhand=distrib_fhand,
                                         plot_fhand=plot_fhand,
                                         range_=range_)

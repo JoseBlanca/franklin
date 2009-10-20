@@ -20,7 +20,8 @@ Created on 2009 uzt 30
 
 import unittest
 
-from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX)
+from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX,
+                                        INSERTION)
 from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
@@ -31,7 +32,8 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_major_allele_freq_filter,
                                        create_read_number_cleaner,
                                        create_alleles_n_cleaner,
-                                       create_kind_filter)
+                                       create_kind_filter,
+                                       create_major_allele_in_lib_frec_filter)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -282,6 +284,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv = (snv, 'context')
         kind_filter = create_kind_filter([SNP, COMPLEX])
         assert kind_filter(snv)
+
+    @staticmethod
+    def test_major_allele_in_lib_frec_filter():
+        'It checks the filter that filters by allele frecuency in lbraries'
+        per_lib_info = [{'library':'lib1',
+                         'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':3}]},
+                        {'library':'lib2',
+                         'alleles':[{'allele':'A', 'reads':2}]},
+                        {'library':'lib3',
+                         'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':3}]}]
+        snv = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
+
+        snv = snv, [snv]
+        filter_ = create_major_allele_in_lib_frec_filter(0.5)
+        assert filter_(snv)
+        filter_ = create_major_allele_in_lib_frec_filter(0.61)
+        assert not filter_(snv)
 
 
 

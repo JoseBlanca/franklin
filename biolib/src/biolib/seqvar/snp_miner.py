@@ -190,6 +190,7 @@ class SnvDb(DbMap):
     def select_snv(self, reference, location):
         'it returns a snv object giving the reference and the position'
         snv_sql = self._select_snv_sql(reference, location)
+        #TODO it should order by reference and location
         library_snv_sqls = self.select('LibrarySnv', {'snv':snv_sql})
         per_lib_info = []
         for library_snv_sql in library_snv_sqls:
@@ -200,12 +201,10 @@ class SnvDb(DbMap):
                                 'reads':allele.reads,
                                 'allele':allele.allele,
                                 'qualities':eval(allele.qualities)})
-            annotations = []
-
+            annotations = {}
             for annot in self.select('LibrarySnvAnnots', {'library_snv':
                                                           library_snv_sql}):
-                annotations.append({'kind':annot.kind,
-                                    'value':annot.value})
+                annotations[annot.kind] = annot.value
 
             per_lib_info.append({'library':library_snv_sql.library.accession,
                                  'alleles':alleles,

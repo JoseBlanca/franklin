@@ -22,7 +22,8 @@ Created on 2009 uzt 30
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.seqvar.seqvariation import (cap_enzymes, SNP, COMPLEX,
-                                        reference_variability)
+                                        reference_variability,
+                                        major_frec_allele_per_library)
 
 #filters
 def create_high_variable_region_filter(max_variability, window=None):
@@ -256,16 +257,32 @@ def create_alleles_n_cleaner():
 def create_cap_enzyme_filter(all_enzymes):
     '''This funtion is a factory function that creates a function that look
     if the seqvar is differently afected by some enzymes'''
-    def enzymes_filter(seq_var):
+    def enzymes_filter(snv):
         'The real filter'
-        if seq_var is None:
+        if snv is None:
             return False
-        seq_var = seq_var[0]
-        if seq_var is None:
+        snv = snv[0]
+        if snv is None:
             return None
-        enzymes = cap_enzymes(seq_var, all_enzymes)
+        enzymes = cap_enzymes(snv, all_enzymes)
         if len(enzymes) != 0:
             return True
         else:
             return False
     return enzymes_filter
+
+def create_major_allele_in_lib_frec_filter(frequency):
+    '''This function is a factory function that creates a function taht filters
+    by the more spreaded allele frequency'''
+    def filter_(snv):
+        'the filter'
+        if snv is None:
+            return False
+        snv = snv[0]
+        if frequency < major_frec_allele_per_library(snv):
+            return True
+        else:
+            return False
+    return filter_
+
+

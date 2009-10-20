@@ -27,7 +27,7 @@ from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
                                         major_allele_frequency,
                                         reference_variability,
                                         calculate_kind,
-                                        mayor_frec_allele_per_library)
+                                        major_frec_allele_per_library)
 from biolib.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
@@ -117,30 +117,8 @@ class SnvTest(unittest.TestCase):
                                    {'allele':'T', 'reads':3}]}]
         snp = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
         lib_per_allele = snp.libraries_per_allele()
-        assert lib_per_allele[0]['allele'] == 'A'
-        assert lib_per_allele[1]['allele'] == 'T'
-        assert len(lib_per_allele[0]['libraries']) == 3
-        assert len(lib_per_allele[1]['libraries']) == 2
-
-    @staticmethod
-    def test_frec_allele_per_library():
-        'It tests frec_allele_per_library'
-        per_lib_info = [{'library':'lib1',
-                         'alleles':[{'allele':'A', 'reads':2},
-                                   {'allele':'T', 'reads':3}]},
-                        {'library':'lib2',
-                         'alleles':[{'allele':'A', 'reads':2}]},
-                        {'library':'lib3',
-                         'alleles':[{'allele':'A', 'reads':2},
-                                   {'allele':'T', 'reads':3}]}]
-        snp = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
-        assert mayor_frec_allele_per_library(snp) == 0.5
-
-
-
-
-
-
+        assert lib_per_allele[0] == ('A', 3)
+        assert lib_per_allele[1] == ('T', 2)
 
 class SnvCaracterizationTest(unittest.TestCase):
     'It checks that the svns are properly analyzed'
@@ -220,9 +198,19 @@ class SnvCaracterizationTest(unittest.TestCase):
         assert calculate_kind(COMPLEX, SNP) == COMPLEX
         assert calculate_kind(SNP, INDEL) == COMPLEX
 
-
-        kind1 = SNP
-        kind2 = SNP
+    @staticmethod
+    def test_frec_allele_per_library():
+        'It tests frec_allele_per_library'
+        per_lib_info = [{'library':'lib1',
+                         'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':3}]},
+                        {'library':'lib2',
+                         'alleles':[{'allele':'A', 'reads':2}]},
+                        {'library':'lib3',
+                         'alleles':[{'allele':'A', 'reads':2},
+                                   {'allele':'T', 'reads':3}]}]
+        snp = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
+        assert major_frec_allele_per_library(snp) == 0.6
 
 class SnvIOTest(unittest.TestCase):
     ''' It checks if we have problems with remaps and it functions'''
@@ -231,14 +219,16 @@ class SnvIOTest(unittest.TestCase):
     def test_svns_in_file():
         'It we can read the svn file'
         seq_var = Snv(reference='hola', location=3,
-                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
+                      per_lib_info=[{'library':'library2',
+                                     'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
                                    {'library':'library',
                                     'alleles':[{'allele':'A', 'reads':3,
                                                'kind':DELETION}]},
-                                   {'alleles':[{'allele':'A', 'reads':3,
+                                   {'library':'library3',
+                                    'alleles':[{'allele':'A', 'reads':3,
                                                'kind':INVARIANT}]}])
         fhand = StringIO(repr(seq_var))
         snv   = snvs_in_file(fhand).next()
