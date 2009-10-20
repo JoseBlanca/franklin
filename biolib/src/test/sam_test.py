@@ -18,7 +18,8 @@
 import unittest, os, StringIO
 
 import biolib
-from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup, _is_seq_var
+from biolib.seqvar.sam_pileup import (seqvars_in_sam_pileup, _is_seq_var,
+                                      locations_in_pileups)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -71,12 +72,34 @@ class Test(unittest.TestCase):
         min_num_bases  = 2
         assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
 
-        read_bases = 'TTT..'
         alleles = [{'allele':'T', 'reads':3, 'kind':SNP, 'qualities': quality},
                    {'allele':'A', 'reads':2, 'kind':INVARIANT,
                                                        'qualities': quality}]
         min_num_bases  = 3
         assert _is_seq_var(coverage, ref_base, alleles, min_num_bases)
+
+    @staticmethod
+    def test_positions_in_pileups():
+        'We can get the equivalent positions from different pileup files'
+
+        pileup1 = '''ref1     1      A      1       ,       ~
+ref1     2      A      1       ,       ~
+ref1     4      A      1       ,       ~
+ref2     2      A      1       ,       ~
+ref2     3      A      1       ,       ~'''
+        pileup2 = '''ref1     2      A      1       ,       ~
+ref1     3      A      1       ,       ~
+ref2     1      A      1       ,       ~
+ref2     3      A      1       ,       ~
+ref2     4      A      1       ,       ~'''
+        pileup1 = StringIO.StringIO(pileup1)
+        pileup2 = StringIO.StringIO(pileup2)
+        locations = list(locations_in_pileups([pileup1, pileup2]))
+        location = locations[0]
+            loc1, loc2 = location[0:2]
+            loc1 = loc1[:2]
+            loc2 = loc2[:2]
+            print loc1, loc2
 
 
 if __name__ == "__main__":

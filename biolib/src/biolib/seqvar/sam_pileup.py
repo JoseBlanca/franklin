@@ -219,8 +219,58 @@ def save_seqvars_positions(seq_vars, outfhand):
     outfhand.close()
 
 
+def _fill_cache(pileups, cache):
+    'It replenishes the cache with the cache'
+    for index in range(len(pileups)):
+        if not cache[index]:
+            #if this pileup cache is fill, nothing to do
+            #else we get one line
+            try:
+                line = pileups[index].next().strip()
+            except StopIteration:
+                line = ''
+            cache[index] = line.split()
 
+def _index_lower(index1, index2):
+    'Compares two Snv ref, locations and returns True if the 1 is lower than 2'
+    if (index1[0] < index2[0] or
+        (index1[0] == index2[0] and index1[1] < index2[1])):
+        return True
+    return False
 
+def _lowest_location(pileup_lines):
+    'Given a list with pileup lines it returns the lowest one'
+    lowest_index = (None, None)
+    for pileup_line in pileup_lines:
+        this_index = pileup_line[:2]
+        if not this_index:  #an empty index when the pileup file is over
+            continue
+        if (lowest_index == (None, None) or
+            not _index_lower(lowest_index, this_index)):
+            lowest_index = this_index
+    return lowest_index
 
+def _pop_lines_from_cache(index, cache):
+    'It returns the lines from the cache that have the given index'
+    lines = []
+    all_empty = True
+    for cache_index in range(len(cache)):
+        if cache[cache_index][:2] == index:
+            lines.append(cache[cache_index])
+            cache[cache_index] = []
+            all_empty = False
+        else:
+            lines.append([])
+    if all_empty:
+        raise StopIteration
+    return lines
 
-
+def locations_in_pileups(pileups):
+    'It yields the equivalent positions from different pileup files'
+    cache = [[]] * len(pileups)
+    _fill_cache(pileups, cache)
+    while True:
+        lowest_index = _lowest_location(cache)
+        lines_in_index = _pop_lines_from_cache(lowest_index, cache)
+        yield lines_in_index
+        _fill_cache(pileups, cache)
