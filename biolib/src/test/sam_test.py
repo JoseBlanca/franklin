@@ -18,8 +18,7 @@
 import unittest, os, StringIO
 
 import biolib
-from biolib.seqvar.sam_pileup import (seqvars_in_sam_pileup, _is_seq_var,
-                                      _locations_in_pileups,
+from biolib.seqvar.sam_pileup import (_is_seq_var, _locations_in_pileups,
                                       snvs_in_sam_pileups)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
@@ -42,24 +41,6 @@ class Test(unittest.TestCase):
         coverage = calculate_read_coverage(sam_fhand)
         assert coverage['distrib'] == [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0,
                                        0, 0, 0, 0, 0, 0, 30]
-
-    @staticmethod
-    def test_seqvars_in_sam_pileup():
-        'It tests the parser of the sam pileup file'
-        sam_fname = os.path.join(DATA_DIR, 'sam.pileup')
-        fhand = open(sam_fname)
-        references = StringIO.StringIO(REFERENCES)
-        snvs = list(seqvars_in_sam_pileup(fhand, references=references))
-        assert len(snvs) == 9
-        assert snvs[0][0].reference.name == 'SGN-U562678'
-        assert snvs[7][0].reference.name == 'SGN-U562679'
-        assert snvs[0][0].reference.seq == 'ATATATATATATATATATAT'
-        assert snvs[7][0].reference.seq == 'GCGCGCGCGCGCGG'
-        assert snvs[0][0].per_lib_info[0]['alleles'][0]['allele'] == 'G'
-        assert snvs[0][0].per_lib_info[0]['alleles'][0]['qualities'] == [None,
-                                                                     None, 20]
-        assert snvs[2][0].per_lib_info[0]['alleles'][0]['reads'] == 3
-        assert snvs[1][0].per_lib_info[0]['alleles'][0]['kind'] == INVARIANT
 
     @staticmethod
     def test_is_seq_bar():

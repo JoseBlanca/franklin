@@ -142,39 +142,6 @@ class Snv(object):
         to_print += '])\n\n'
         return to_print
 
-    def libraries_per_allele(self):
-        '''This method returns a list of dictionaries ordered by number of
-        libraries that contain this allele.
-        Each of the dictionaries contains two fields:
-            .- allele: nucleotide
-            .- libraries: list of libraries that contain this allele
-        '''
-        alleles_unsorted = {}
-        for alleles_in_a_lib in self.per_lib_info:
-            for alleles in alleles_in_a_lib['alleles']:
-                nucleotide = alleles['allele']
-                if nucleotide not in alleles_unsorted:
-                    alleles_unsorted[nucleotide] = 0
-                alleles_unsorted[nucleotide] += 1
-        alleles = alleles_unsorted.items()
-
-        def cmp_(allele1, allele2):
-            'It returns which alleles has more reads'
-            return allele2[1] - allele1[1]
-        alleles = sorted(alleles, cmp_)
-        return alleles
-
-def major_frec_allele_per_library(snv):
-    'It returns mayor allele in library frecuency'
-    allele_frec_per_lib = snv.libraries_per_allele()
-    most_abundant_frec = allele_frec_per_lib[0][1]
-    total_num = 0
-    for alleles in allele_frec_per_lib:
-        total_num += alleles[1]
-    result = most_abundant_frec / float(total_num)
-    print result, allele_frec_per_lib
-    return  result
-
 
 def cap_enzymes(snv, all_enzymes=False):
     '''Given an svn it returns the list of restriction enzymes that distinguish
@@ -417,8 +384,7 @@ def calculate_kind(kind1, kind2):
             return kind2
         elif kind2 is INVARIANT:
             return kind1
-        elif (kind1 == SNP or kind2 == SNP or kind1 == COMPLEX or
-              kind2 == COMPLEX):
+        elif kind1 in [SNP, COMPLEX] or kind2 in [SNP, COMPLEX]:
             return COMPLEX
         else:
             return INDEL

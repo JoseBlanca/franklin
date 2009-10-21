@@ -21,9 +21,7 @@ Created on 07/10/2009
 
 from biolib.statistics import create_distribution
 from biolib.seqvar.seqvariation import (reference_variability,
-                                        major_allele_frequency,
-                                        svn_contexts_in_file, snvs_in_file,
-                                        major_frec_allele_per_library)
+                                        major_allele_frequency)
 from biolib.collections_ import item_context_iter, FileCachedList
 
 
@@ -80,18 +78,9 @@ DISTRIBUTIONS = {
                                 'ylabel': 'Number of snvs'
                             }
                 },
-                'allele_library_distrib':{
-                            'function':major_frec_allele_per_library,
-                            'snv_iter_kind':'snv',
-                            'labels':{
-                                'title':'Major allele frequency distribution',
-                                'xlabel':'maf',
-                                'ylabel': 'Number of snvs'
-                            }
-                },
 }
 
-def snv_distrib(snvs, kind,window=None, distrib_fhand=None, plot_fhand=None,
+def snv_distrib(snvs, kind, window=None, distrib_fhand=None, plot_fhand=None,
                 range_=None):
     'It calculates one snv distribution of the given kind'
     distribution_orders = DISTRIBUTIONS[kind]

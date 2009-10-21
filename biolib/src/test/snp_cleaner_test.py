@@ -26,14 +26,14 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
                                        create_high_variable_region_filter,
-                                       create_allele_number_filter,
+                                       create_is_variable_in_some_filter,
+                                       create_is_variable_in_aggregate_filter,
                                        create_bad_quality_reads_cleaner,
                                        create_snv_close_to_limit_filter,
                                        create_major_allele_freq_filter,
                                        create_read_number_cleaner,
                                        create_alleles_n_cleaner,
-                                       create_kind_filter,
-                                       create_major_allele_in_lib_frec_filter)
+                                       create_kind_filter)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -158,14 +158,36 @@ class SeqVariationFilteringTest(unittest.TestCase):
                       {'library':'lib2',
                        'alleles':[{'allele':'T', 'reads':2,'kind':SNP}]}])
 
-        allele_number_filter = create_allele_number_filter(2)
+        allele_number_filter = create_is_variable_in_some_filter()
         assert  allele_number_filter((snp, [snp]))
         assert not allele_number_filter((snp1, [snp]))
         assert allele_number_filter((snp2, [snp]))
 
-        allele_number_filter = create_allele_number_filter(2,
+        allele_number_filter = create_is_variable_in_some_filter(
                                                            libraries=['lib2'])
         assert not allele_number_filter((snp2, [snp]))
+
+    @staticmethod
+    def test_is_variable_in_aggregate_filter():
+        'It test percent_variations_in_seq_ref filter'
+        reference = 'atatat'
+        snv = Snv(location=10, reference=reference, per_lib_info=[
+                    {'library':'lib1',
+                     'alleles':[{'allele':'A', 'reads':3, 'kind':SNP,
+                                 'qualities':[]}]},
+                    {'library':'lib2',
+                     'alleles':[{'allele':'T', 'reads':2, 'kind':SNP,
+                                 'qualities':[]}]},
+                    {'library':'lib3',
+                     'alleles':[{'allele':'T', 'reads':2, 'kind':SNP,
+                                 'qualities':[]}]}])
+        snv = snv, [snv]
+        filter_ = create_is_variable_in_aggregate_filter()
+        assert filter_(snv)
+
+        filter_ = create_is_variable_in_aggregate_filter(libraries=['lib3',
+                                                                    'lib2'])
+        assert not filter_(snv)
 
 
     @staticmethod
@@ -285,24 +307,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind_filter = create_kind_filter([SNP, COMPLEX])
         assert kind_filter(snv)
 
-    @staticmethod
-    def test_major_allele_in_lib_frec_filter():
-        'It checks the filter that filters by allele frecuency in lbraries'
-        per_lib_info = [{'library':'lib1',
-                         'alleles':[{'allele':'A', 'reads':2},
-                                   {'allele':'T', 'reads':3}]},
-                        {'library':'lib2',
-                         'alleles':[{'allele':'A', 'reads':2}]},
-                        {'library':'lib3',
-                         'alleles':[{'allele':'A', 'reads':2},
-                                   {'allele':'T', 'reads':3}]}]
-        snv = Snv(per_lib_info=per_lib_info, reference='hola', location=3)
 
-        snv = snv, [snv]
-        filter_ = create_major_allele_in_lib_frec_filter(0.5)
-        assert filter_(snv)
-        filter_ = create_major_allele_in_lib_frec_filter(0.61)
-        assert not filter_(snv)
 
 
 

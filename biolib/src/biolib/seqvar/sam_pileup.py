@@ -27,54 +27,6 @@ from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
                                         INVARIANT, Snv)
 
-def _seqvars_in_sam_pileup(pileup, min_num=None, required_positions=None,
-                           references=None, library=None):
-    '''This function takes from a sam pileup format file all the position that
-    are interesting'''
-    if references is not None:
-        references_index = FileSequenceIndex(references)
-    if min_num == None:
-        min_num = 2
-    for line in pileup:
-        if line.isspace():
-            continue
-        line_split = line.split()
-        cromosome, position, ref_base = line_split[:3]
-
-        if required_positions and not required_positions[cromosome, position]:
-            continue
-        #get Alleles from line and continue if the line is wrong
-        try:
-            alleles = _get_alleles_from_line(line_split)
-        except ValueError:
-            #TODO print in log
-            continue
-
-        if required_positions:
-            yield_snv = required_positions[cromosome, position]
-        else:
-            yield_snv = _is_seq_var(ref_base, alleles, min_num)
-        if yield_snv:
-            if references is not None:
-                cromosome = references_index[cromosome]
-            lib_alleles = {}
-            lib_alleles['alleles'] = alleles
-            if library is not None:
-                lib_alleles['library'] = library
-            #print lib_alleles
-            yield Snv(per_lib_info=[lib_alleles],
-                      location=int(position) - 1, reference=cromosome)
-
-def seqvars_in_sam_pileup(pileup, min_num=None, window=None, library=None,
-                          required_positions=None, references=None):
-    '''This function takes the seqvar iterator of the sam pileup, and it return
-    an iterator with a tuple of seqvar and its context'''
-    seqvar_iter = _seqvars_in_sam_pileup(pileup, min_num, required_positions,
-                                         references, library)
-    seq_var_with_context_iter = item_context_iter(seqvar_iter, window=window)
-    for seq_var_contex in seq_var_with_context_iter:
-        yield seq_var_contex
-
 def _get_alleles_from_line(line_split):
     'It gets allele from each line of the pileup'
     cromosome, position, ref_base, coverage, read_bases, qual = line_split
@@ -288,13 +240,17 @@ def _alleles_in_pileups(line_in_pileups):
     lib_alleles = []
     for line_split in line_in_pileups:
         if line_split:
-            alleles = _get_alleles_from_line(line_split)
+            try:
+                alleles = _get_alleles_from_line(line_split)
+            except ValueError:
+                #TODO Add a log here
+                alleles = []
         else:
             alleles = []
         lib_alleles.append(alleles)
     return lib_alleles
 
-def _agregate_alleles(alleles):
+def agregate_alleles(alleles):
     'It aggreates the alleles from a list of alleles (one for every lib)'
     ag_alleles = {}
     for lib_alleles in alleles:
@@ -316,7 +272,7 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
 
     for lines_in_pileups in _locations_in_pileups(pileups):
         lib_alleles = _alleles_in_pileups(lines_in_pileups)
-        ag_alleles = _agregate_alleles(lib_alleles)
+        ag_alleles = agregate_alleles(lib_alleles)
         #which is the ref_base
         non_empty_line = None
         for line_in_pileup in lines_in_pileups:

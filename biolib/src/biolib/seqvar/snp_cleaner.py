@@ -22,8 +22,8 @@ Created on 2009 uzt 30
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.seqvar.seqvariation import (cap_enzymes, SNP, COMPLEX,
-                                        reference_variability,
-                                        major_frec_allele_per_library)
+                                        reference_variability)
+from biolib.seqvar.sam_pileup import agregate_alleles
 
 #filters
 def create_high_variable_region_filter(max_variability, window=None):
@@ -166,12 +166,13 @@ def create_bad_quality_reads_cleaner(qual_treshold):
 
     return bad_quality_reads_cleaner
 
-def create_allele_number_filter(num_alleles, ignore_diffs_with_ref=True,
-                                libraries=None):
-    '''This function factory creates a mapper that cleans librarys of the snv
-    that have less than num alleles'''
-    def allele_number_cleaner(snv):
-        'The cleaner'
+def create_is_variable_in_some_filter(ignore_svns_respect_ref=True,
+                                      libraries=None):
+    '''This function factory creates a filter. This filter pass the svn if one
+    of the given libraries is variable'''
+    num_alleles = 2
+    def is_variable_filter(snv):
+        'The filter'
         if snv is None:
             return False
         snv = snv[0]
@@ -179,13 +180,34 @@ def create_allele_number_filter(num_alleles, ignore_diffs_with_ref=True,
             if libraries and library_info['library'] not in libraries:
                 continue
             alleles = library_info['alleles']
-            if ((not ignore_diffs_with_ref and len(alleles) == 1 and
-                 alleles[0]['kind'] == SNP) or
-                (len(alleles) >= num_alleles)):
+            if ((not ignore_svns_respect_ref and len(alleles) == 1 and
+                 alleles[0]['kind'] == SNP) or (len(alleles) >= num_alleles)):
                 return True
-
         return False
-    return allele_number_cleaner
+    return is_variable_filter
+
+def create_is_variable_in_aggregate_filter(libraries=None):
+    '''This function factory creates a filter. This filter pass the svn if the
+    aggregate produced by the alleles of all libraries is variable'''
+    num_alleles = 2
+    def is_variable_filter(snv):
+        'The filter'
+        if snv is None:
+            return False
+        snv = snv[0]
+        alleles = []
+        for library_info in snv.per_lib_info:
+            if libraries and library_info['library'] not in libraries:
+                continue
+            #TODO AGrregate alleles
+            alleles.append(library_info['alleles'])
+        alleles = agregate_alleles(alleles)
+        if len(alleles) >= num_alleles:
+            return True
+        return False
+
+
+    return is_variable_filter
 
 def create_kind_filter(kinds):
     'This filter filters by kind. It only passes snps or complex snv kinds'
@@ -271,18 +293,5 @@ def create_cap_enzyme_filter(all_enzymes):
             return False
     return enzymes_filter
 
-def create_major_allele_in_lib_frec_filter(frequency):
-    '''This function is a factory function that creates a function taht filters
-    by the more spreaded allele frequency'''
-    def filter_(snv):
-        'the filter'
-        if snv is None:
-            return False
-        snv = snv[0]
-        if frequency < major_frec_allele_per_library(snv):
-            return True
-        else:
-            return False
-    return filter_
 
 

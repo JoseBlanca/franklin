@@ -116,34 +116,35 @@ class SeqsInFileTests(unittest.TestCase):
         fcontent  = '@seq1\n'
         fcontent += 'CCCT\n'
         fcontent += '+\n'
-        fcontent += 'ZZZZ\n'
+        fcontent += 'AAAA\n'
         fcontent += '@seq2\n'
         fcontent += 'GTTGC\n'
         fcontent += '+\n'
-        fcontent += 'ZZZZZ\n'
+        fcontent += 'AAAAA\n'
         fhand = StringIO.StringIO(fcontent)
 
-        expected = [('seq1', 'CCCT', [26, 26, 26, 26]),
-                    ('seq2', 'GTTGC', [26, 26, 26, 26, 26])]
+        expected = [('seq1', 'CCCT', [1, 1, 1, 1]),
+                    ('seq2', 'GTTGC', [1, 1, 1, 1, 1])]
         for index, seq in enumerate(seqs_in_file(fhand,
                                                  format='fastq-illumina')):
             assert seq.name == expected[index][0]
             assert str(seq.seq) == expected[index][1]
+            print seq.qual
             assert seq.qual == expected[index][2]
 
         #fastq-solexa
         fcontent  = '@seq1\n'
         fcontent += 'CCCT\n'
         fcontent += '+\n'
-        fcontent += ':>@Z\n'
+        fcontent += 'BBBB\n'
         fcontent += '@seq2\n'
         fcontent += 'GTTGC\n'
         fcontent += '+\n'
-        fcontent += ':>@BZ\n'
+        fcontent += 'BBBBB\n'
         fhand = StringIO.StringIO(fcontent)
 
-        expected = [('seq1', 'CCCT', [0, 2, 3, 26]),
-                    ('seq2', 'GTTGC', [0, 2, 3, 4, 26])]
+        expected = [('seq1', 'CCCT', [4, 4, 4, 4]),
+                    ('seq2', 'GTTGC', [4, 4, 4, 4, 4])]
         for index, seq in enumerate(seqs_in_file(fhand,
                                                  format='fastq-solexa')):
             assert seq.name == expected[index][0]

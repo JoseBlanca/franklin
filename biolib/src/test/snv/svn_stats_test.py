@@ -25,7 +25,7 @@ from StringIO import StringIO
 from biolib.seqvar.seqvariation import (Snv, svn_contexts_in_file, snvs_in_file,
                                         SNP)
 from biolib.seqvar.snv_stats import (calculate_ref_variability_ditrib,
-                                     calculate_maf_distrib)
+                                     snv_distrib)
 
 class TestSnvStats(unittest.TestCase):
     'It tests the snv statistics'
@@ -60,7 +60,7 @@ class TestSnvStats(unittest.TestCase):
         snv_fhand = StringIO(repr(seq_var) + repr(seq_var2) + repr(seq_var3))
         snvs = snvs_in_file(snv_fhand)
 
-        distrib = calculate_maf_distrib(snvs)
+        distrib = snv_distrib(snvs, kind='maf_distrib')
         assert distrib['distrib'] == [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                       0, 0, 0, 1, 0, 1]
 
