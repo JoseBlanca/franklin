@@ -80,7 +80,9 @@ class SnvTest(unittest.TestCase):
     def test_snv_repr():
         'It'
         seq_var = Snv(reference='hola', location=3,
-                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':3,
+                      annotations={'cap_enzymes':['ecoR']},
+                      per_lib_info=[{'library':'lib1',
+                                    'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
                                                {'allele':'A', 'reads':3,
                                                'kind':INSERTION}]},
@@ -92,6 +94,8 @@ class SnvTest(unittest.TestCase):
         snv = eval(repr(seq_var))
         assert seq_var.reference == snv.reference
         assert seq_var.per_lib_info == snv.per_lib_info
+        assert snv.annotations['cap_enzymes'] == ['ecoR']
+
 
     @staticmethod
     def test_sorted_alleles():
@@ -157,6 +161,7 @@ class SnvCaracterizationTest(unittest.TestCase):
         snp = Snv(per_lib_info=per_lib_info, reference=reference, location=11)
         enzymes = cap_enzymes(snp, True)
         assert 'EcoRI' in enzymes
+        assert 'EcoRI' in snp.annotations['cap_enzymes']
 
         #with an insertion
         seq  = 'ATGATGATG' + 'gaattc' + 'ATGATGATGTGGGAT'

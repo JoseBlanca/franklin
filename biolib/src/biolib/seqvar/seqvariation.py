@@ -47,7 +47,8 @@ class Snv(object):
     This class is used to represent a sequence variation respect a reference.
     The variation can be: Snp, insertion, deletion or non_variant.
     '''
-    def __init__(self, reference, location, per_lib_info=None, name=None):
+    def __init__(self, reference, location, per_lib_info=None, name=None,
+                 annotations=None):
         '''It initializes with an alleles dict and a reference.
 
         The lib_allele is a list of dictionaries. Each of the dictionaries
@@ -66,7 +67,11 @@ class Snv(object):
         self.reference = reference
         self.name = name
         self.location = int(location)
-        self.annotations = {}
+
+        if annotations is None:
+            self.annotations = {}
+        else:
+            self.annotations = annotations
         if per_lib_info is None:
             per_lib_info = []
         self.per_lib_info = per_lib_info
@@ -119,20 +124,29 @@ class Snv(object):
 
     def __str__(self):
         'It print some minimal info'
-        to_print = '%s: %d' % (self.reference, self.location)
+        try:
+            ref = self.reference.name
+        except AttributeError:
+            ref = self.reference
+        to_print = '%s: %d' % (ref, self.location)
         return to_print
 
     def __repr__(self):
         'It prints an evaluable representation'
+        try:
+            ref = self.reference.name
+        except AttributeError:
+            ref = self.reference
         to_print  = '%s(\nreference=%s, location=%s,\n' % \
-            (self.__class__.__name__, repr(self.reference),repr(self.location))
-
+            (self.__class__.__name__, repr(ref), repr(self.location))
+        if 'annotations' in dir(self):
+            to_print += 'annotations=%s,\n' % repr(self.annotations)
         to_print += '\tper_lib_info=[\n'
         for alleles_in_a_lib in self.per_lib_info:
             to_print += '\t\t{'
             for key, value in alleles_in_a_lib.items():
                 if key != 'alleles':
-                    to_print += '\t\t"%s": %s,' % (key, repr(value))
+                    to_print += '\t\t"%s": %s,\n' % (key, repr(value))
                 else:
                     to_print += '"alleles" :[\n'
                     for allele in value:
