@@ -58,7 +58,8 @@ from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
                                        create_read_number_cleaner,
                                        create_alleles_n_cleaner,
                                        create_kind_filter,
-                                       create_is_variable_in_aggregate_filter)
+                                       create_is_variable_in_aggregate_filter,
+                                       create_reference_list_filter)
 
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
@@ -213,6 +214,12 @@ snp_filter_by_kind = {'function':create_kind_filter ,
                       'type':'filter',
                       'name':'kind_filter',
                       'comment': 'It filters by snv kind'}
+snp_filter_reference_not_in_list = {
+                        'function':create_reference_list_filter,
+                        'arguments':{},
+                        'type':'filter',
+                        'name':'reference_list_filter',
+                'comment': 'It filters by if the reference is not in the list'}
 
 # words
 mask_words = {'function'  : create_masker_for_words,

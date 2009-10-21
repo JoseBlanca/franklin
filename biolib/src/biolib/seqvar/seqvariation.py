@@ -38,6 +38,14 @@ COMMON_ENZYMES = ['ecori', 'smai', 'bamhi', 'alui', 'bglii',
                   'haeiii', 'xhoi', 'kpni', 'scai', 'banii',
                   'hinfi', 'drai', 'apai', 'asp718']
 
+def get_reference_name(reference):
+    'It returns the reference name'
+    try:
+        ref = reference.name
+    except AttributeError:
+        ref = reference
+    return ref
+
 def _allele_reads_compare(allele1, allele2):
     'It returns which allele has been read more times'
     return allele2['reads'] - allele1['reads']
@@ -124,19 +132,13 @@ class Snv(object):
 
     def __str__(self):
         'It print some minimal info'
-        try:
-            ref = self.reference.name
-        except AttributeError:
-            ref = self.reference
+        ref = get_reference_name(self.reference)
         to_print = '%s: %d' % (ref, self.location)
         return to_print
 
     def __repr__(self):
         'It prints an evaluable representation'
-        try:
-            ref = self.reference.name
-        except AttributeError:
-            ref = self.reference
+        ref = get_reference_name(self.reference)
         to_print  = '%s(\nreference=%s, location=%s,\n' % \
             (self.__class__.__name__, repr(ref), repr(self.location))
         if 'annotations' in dir(self):

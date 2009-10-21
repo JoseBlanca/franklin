@@ -21,8 +21,9 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seqvar.seqvariation import (cap_enzymes, SNP, COMPLEX,
-                                        reference_variability)
+from biolib.seqvar.seqvariation import (cap_enzymes, SNP,
+                                        reference_variability,
+                                        get_reference_name)
 from biolib.seqvar.sam_pileup import agregate_alleles
 
 #filters
@@ -199,14 +200,11 @@ def create_is_variable_in_aggregate_filter(libraries=None):
         for library_info in snv.per_lib_info:
             if libraries and library_info['library'] not in libraries:
                 continue
-            #TODO AGrregate alleles
             alleles.append(library_info['alleles'])
         alleles = agregate_alleles(alleles)
         if len(alleles) >= num_alleles:
             return True
         return False
-
-
     return is_variable_filter
 
 def create_kind_filter(kinds):
@@ -293,5 +291,15 @@ def create_cap_enzyme_filter(all_enzymes):
             return False
     return enzymes_filter
 
+def create_reference_list_filter(references):
+    'It creates a filter that removes the snvs with a reference not in the list'
+    def reference_list_filter(snv):
+        'It filters out the snvs with a reference not in the list'
+        ref_name = get_reference_name(snv.reference)
+        if ref_name in references:
+            return True
+        else:
+            return False
+    return reference_list_filter
 
 

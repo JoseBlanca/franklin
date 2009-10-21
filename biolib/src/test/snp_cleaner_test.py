@@ -20,8 +20,7 @@ Created on 2009 uzt 30
 
 import unittest
 
-from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX,
-                                        INSERTION)
+from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX)
 from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
@@ -33,7 +32,8 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_major_allele_freq_filter,
                                        create_read_number_cleaner,
                                        create_alleles_n_cleaner,
-                                       create_kind_filter)
+                                       create_kind_filter,
+                                       create_reference_list_filter)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -307,9 +307,15 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind_filter = create_kind_filter([SNP, COMPLEX])
         assert kind_filter(snv)
 
-
-
-
+    @staticmethod
+    def test_reference_in_ref_list():
+        'It can filter out the snvs with a reference not in the given list'
+        allowed_refs = ['ref1']
+        snv1 = Snv(location=4, reference='ref1', per_lib_info=[])
+        snv2 = Snv(location=4, reference='ref2', per_lib_info=[])
+        filter_ = create_reference_list_filter(allowed_refs)
+        assert filter_(snv1)
+        assert not filter_(snv2)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
