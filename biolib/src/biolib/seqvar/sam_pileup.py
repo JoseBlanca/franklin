@@ -272,7 +272,7 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
 
     # check if the pileups are well formed
     for pileup in pileups:
-        if not check_pileup(pileup):
+        if not _check_pileup(pileup):
             raise ValueError(pileup.name, ' malformed')
 
     for lines_in_pileups in _locations_in_pileups(pileups):
@@ -315,25 +315,25 @@ def snv_contexts_in_sam_pileup(pileups, libraries, min_num=None, window=None,
     for seq_var_contex in seq_var_with_context_iter:
         yield seq_var_contex
 
-def check_pileup(pileup):
+def _check_pileup(pileup):
     'It check if the pileup is weel formed and its data is correct'
     notdotcomma = 0
     total_nt    = 0
     total_lines = 0
     ref_base_n  = 0
     for i, line in enumerate(pileup):
-        if i == 100:
+        if i >= 100:
             break
         items = line.split()
-        if items[2] == 'N':
+        if items[2].upper() == 'N':
             ref_base_n += 1
         total_lines += 1
-        for nt in items[4]:
-            if nt not in [',', '.', '$', '^']:
+        for nucl in items[4]:
+            if nucl not in [',', '.', '$', '^']:
                 notdotcomma += 1
             total_nt += 1
     pileup.seek(0)
-    if ((notdotcomma / float(total_nt) >= 0.4) or
+    if ((notdotcomma / float(total_nt) >= 0.5) or
         (ref_base_n / float(total_lines) > 0.3)):
         return False
     return True

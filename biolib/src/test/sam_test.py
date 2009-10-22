@@ -19,7 +19,7 @@ import unittest, os, StringIO
 
 import biolib
 from biolib.seqvar.sam_pileup import (_is_seq_var, _locations_in_pileups,
-                                      snvs_in_sam_pileups, check_pileup)
+                                      snvs_in_sam_pileups, _check_pileup)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -132,9 +132,9 @@ ref2     4      N      1       .       ~'''
         pileup1 = StringIO.StringIO(pileup1)
         pileup2 = StringIO.StringIO(pileup2)
         pileup3 = StringIO.StringIO(pileup3)
-        assert check_pileup(pileup1)
-        assert not check_pileup(pileup2)
-        assert not check_pileup(pileup3)
+        assert _check_pileup(pileup1)
+        assert not _check_pileup(pileup2)
+        assert not _check_pileup(pileup3)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_coverage']
