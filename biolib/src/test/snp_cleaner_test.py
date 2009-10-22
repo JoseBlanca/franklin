@@ -314,8 +314,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv1 = Snv(location=4, reference='ref1', per_lib_info=[])
         snv2 = Snv(location=4, reference='ref2', per_lib_info=[])
         filter_ = create_reference_list_filter(allowed_refs)
-        assert filter_(snv1)
-        assert not filter_(snv2)
+
+        assert filter_((snv1, [snv1]))
+        assert not filter_((snv2, [snv2]))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']

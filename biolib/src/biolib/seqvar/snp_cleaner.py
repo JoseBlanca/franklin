@@ -282,8 +282,6 @@ def create_cap_enzyme_filter(all_enzymes):
         if snv is None:
             return False
         snv = snv[0]
-        if snv is None:
-            return None
         enzymes = cap_enzymes(snv, all_enzymes)
         if len(enzymes) != 0:
             return True
@@ -295,6 +293,9 @@ def create_reference_list_filter(references):
     'It creates a filter that removes the snvs with a reference not in the list'
     def reference_list_filter(snv):
         'It filters out the snvs with a reference not in the list'
+        if snv is None:
+            return False
+        snv = snv[0]
         ref_name = get_reference_name(snv.reference)
         if ref_name in references:
             return True
