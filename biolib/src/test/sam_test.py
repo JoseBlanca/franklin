@@ -19,7 +19,7 @@ import unittest, os, StringIO
 
 import biolib
 from biolib.seqvar.sam_pileup import (_is_seq_var, _locations_in_pileups,
-                                      snvs_in_sam_pileups)
+                                      snvs_in_sam_pileups, check_pileup)
 from biolib.seqvar.seqvariation import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
@@ -109,6 +109,32 @@ ref2     4      A      1       ,       ~'''
         assert snvs[1].reference == 'ref2'
         assert snvs[1].location == 3
         assert len(snvs[1].per_lib_info[0]['alleles']) == 1
+
+    @staticmethod
+    def test_pileup_checker():
+        'It tests if we can check the pileups'
+        pileup1 = '''ref1     1      A      2       ,T       aa
+ref1     2      A      1       ,.       ~
+ref1     4      A      1       ,.       ~
+ref2     2      A      1       ,.       ~
+ref2     3      A      1       ,..       ~'''
+        pileup2 = '''ref1     2      A      1       ,       ~
+ref1     3      A      1       T       ~
+ref2     1      A      1       T       ~
+ref2     3      A      1       T       ~
+ref2     4      A      1       T       ~'''
+        pileup3 = '''ref1     2      A      1       ,       ~
+ref1     3      N      1       .       ~
+ref2     1      N      1       .       ~
+ref2     3      N      1       .       ~
+ref2     4      N      1       .       ~'''
+
+        pileup1 = StringIO.StringIO(pileup1)
+        pileup2 = StringIO.StringIO(pileup2)
+        pileup3 = StringIO.StringIO(pileup3)
+        assert check_pileup(pileup1)
+        assert not check_pileup(pileup2)
+        assert not check_pileup(pileup3)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_coverage']

@@ -80,7 +80,8 @@ def main():
         cmd = ['bwa', 'aln', refdb, seqfile]
         stdout, stderr, retcode = call(cmd)
         if retcode:
-            raise RuntimeError('bwa aln -step error: %s' % stderr)
+            print stderr
+            raise RuntimeError(" ".join(cmd))
         sai_fhand = open(os.path.join(dir_name, 'output.sai'), 'wb')
         sai_fhand.write(stdout)
         sai_fhand.close()
@@ -88,7 +89,8 @@ def main():
         cmd = ['bwa', 'samse', refdb, sai_fhand.name, seqfile]
         stdout, stderr, retcode = call(cmd)
         if retcode:
-            raise RuntimeError('bwa samse - step error: %s' % stderr)
+            print stderr
+            raise RuntimeError(" ".join(cmd))
         ali_fhand = open(os.path.join(dir_name, 'output.ali'), 'w')
         ali_fhand.write(stdout)
         ali_fhand.close()
@@ -98,7 +100,9 @@ def main():
         cmd = ['bwa', 'dbwtsw', refdb, seqfile]
         stdout, stderr, retcode = call(cmd)
         if retcode:
-            raise RuntimeError('bwa dbwtsw - step error: %s\n%s' % (stderr, " ".join(cmd)))
+            print stderr
+            raise RuntimeError(" ".join(cmd))
+
         ali_fhand = open(os.path.join(dir_name, 'output.ali'), 'w')
         ali_fhand.write(stdout)
         ali_fhand.close()
@@ -110,13 +114,15 @@ def main():
            os.path.join(dir_name, 'bam_file.bam'), ali_fhand.name]
     stdout, stderr, retcode = call(cmd)
     if retcode:
-        raise RuntimeError('samtools view - step error: %s' % stderr)
+        print stderr
+        raise RuntimeError(" ".join(cmd))
 
     #sort the bam
     cmd = ['samtools', 'sort', os.path.join(dir_name, 'bam_file.bam'), bamfile]
     stdout, stderr, retcode = call(cmd)
     if retcode:
-        raise RuntimeError('samtools sort - step error: %s' % stderr)
+        print stderr
+        raise RuntimeError(" ".join(cmd))
 
 if __name__ == '__main__':
     main()
