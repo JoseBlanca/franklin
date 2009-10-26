@@ -334,7 +334,7 @@ def _check_pileup(pileup):
             total_nt += 1
     pileup.seek(0)
     if ((notdotcomma / float(total_nt) >= 0.5) or
-        (ref_base_n / float(total_lines) > 0.3)):
+        (ref_base_n / float(total_lines) >= 0.3)):
         return False
     return True
 

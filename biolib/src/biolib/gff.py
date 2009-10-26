@@ -18,6 +18,44 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+def gff_parser(fhand, version):
+    'It parses a gff file and return an iterator of each line of the gff parsed'
+
+    for line in fhand:
+        line = line.strip()
+        if not line:
+            continue
+
+        feature = {}
+
+        seqid, source, type_, start, end, score, strand, phase, annots = \
+                                                            line.split("\t" , 8)
+        start = int(start)
+        end   = int(end)
+
+        attributes = {}
+        if version == 2:
+            separator = ' '
+        elif version == 3:
+            separator = '='
+
+        for attribute in annots.split(';'):
+            attribute = attribute.strip(' ')
+            key, value = attribute.split(separator, 1)
+            value = value.strip('"')
+            attributes[key] = value
+
+        feature['seqid']   = seqid
+        feature['source']  = source
+        feature['type']    = type_
+        feature['start']   = start
+        feature['end']     = end
+        feature['score']   = score
+        feature['strand']  = strand
+        feature['phase']   = phase
+        feature['attributes'] = attributes
+        yield feature
+
 def _feature_to_str(feature):
     'Given a feature dict it returns a gff feature line'
     feat_str = []
