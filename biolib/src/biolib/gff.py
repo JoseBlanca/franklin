@@ -25,6 +25,8 @@ def gff_parser(fhand, version):
         line = line.strip()
         if not line:
             continue
+        if line.startswith('##'):
+            continue
 
         feature = {}
 
@@ -69,7 +71,7 @@ def _feature_to_str(feature):
         feat_str.append('.')
     feat_str.append('\t')
 
-    feat_str.append(feature['kind'])
+    feat_str.append(feature['type'])
     feat_str.append('\t')
 
     feat_str.append('%d' % feature['start'])
@@ -78,7 +80,7 @@ def _feature_to_str(feature):
     feat_str.append('%d' % feature['end'])
     feat_str.append('\t')
 
-    for tag, default in (('score', '.'), ('strand', '+'), ('phase', '.')):
+    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
         if tag in feature:
             feat_str.append(feature[tag])
         else:
@@ -96,8 +98,8 @@ def _feature_to_str(feature):
         attributes.append('Parent=%s' % ','.join(feature['parents']))
 
     #the rest of the attributes
-    done_attrs = ('seqid', 'source', 'kind', 'start', 'end', 'id', 'name',
-                  'parents')
+    done_attrs = ('seqid', 'source', 'type', 'start', 'end', 'id', 'name',
+                  'parents', 'score', 'phase', 'strand')
     for attribute, value in feature.items():
         if attribute not in done_attrs:
             attributes.append('%s=%s' % (attribute, value))

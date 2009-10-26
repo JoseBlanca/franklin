@@ -31,13 +31,6 @@ def fpcgff2_parser(fhand):
 
         feature['id']      = name
         feature['name']    = name
-        feature['alias']   = None
-        feature['target']  = None
-        feature['gap']     = None
-        feature['note']    = None
-        feature['dbxref']  = None
-        feature['derived_from'] = None
-
         feature['parents'] = []
 
         if type_ == 'Chromosome':
@@ -51,6 +44,7 @@ def fpcgff2_parser(fhand):
 
             # add its parents
             feature['parents'].append(contig_name)
+
             if 'Marker_hit' in annotations:
                 feature['marker_hit'] = annotations['Marker_hit']
 
@@ -63,7 +57,9 @@ def fpcgff2_parser(fhand):
 
         else:
             raise ValueError('Unknown feature type: %s' % type_)
-
+        del feature['attributes']
+        if not feature['parents']:
+            del feature['parents']
         yield feature
 
 class FPCMap(object):

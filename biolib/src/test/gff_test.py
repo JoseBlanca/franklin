@@ -31,7 +31,7 @@ class GffOutTest(unittest.TestCase):
     def test_simple_output():
         'We can write a simple gff3 file'
         feat1 = {'seqid': 'ctg123',
-                 'kind':  'gene',
+                 'type':  'gene',
                  'start': 1000,
                  'end':   9000,
                  'id':    'gene00001',
@@ -40,19 +40,19 @@ class GffOutTest(unittest.TestCase):
         feats = ['##sequence-region ctg123 1 1497228', feat1]
         result = '''##gff-version 3
 ##sequence-region ctg123 1 1497228
-ctg123\t.\tgene\t1000\t9000\t.\t+\t.\tID=gene00001;Name=EDEN\n'''
+ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
         outh = StringIO()
         write_gff(feats, outh)
         assert result == outh.getvalue()
 
         feat1 = {'seqid': 'ctg123',
-                 'kind':  'gene',
+                 'type':  'gene',
                  'start': 1000,
                  'end':   9000,
                  'parents': ['p1', 'p2']}
         feats = [feat1]
         result = '''##gff-version 3
-ctg123\t.\tgene\t1000\t9000\t.\t+\t.\tParent=p1,p2\n'''
+ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tParent=p1,p2\n'''
         outh = StringIO()
         write_gff(feats, outh)
         assert result == outh.getvalue()
