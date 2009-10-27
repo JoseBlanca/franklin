@@ -19,6 +19,48 @@ This module has been coded looking at the bioperl equivalent module
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import re
+from biolib.gff import gff_parser
+
+def fpcgff2_parser(fhand):
+    'It parses a gff2_annotations file and yields converted gff3 features'
+
+    for feature in gff_parser(fhand, 2):
+        annotations = feature['attributes']
+        name        = annotations['Name']
+        type_ = feature['type']
+
+        feature['id']      = name
+        feature['name']    = name
+        feature['parents'] = []
+
+        if type_ == 'Chromosome':
+            pass
+        elif type_ == 'contig':
+            # Add his parent
+            feature['parents'].append(feature['seqid'])
+
+        elif type_ == 'BAC':
+            contig_name = 'ctg%d' % int(annotations['Contig_hit'])
+
+            # add its parents
+            feature['parents'].append(contig_name)
+
+            if 'Marker_hit' in annotations:
+                feature['marker_hit'] = annotations['Marker_hit']
+
+        elif type_ == 'marker':
+            items = annotations['Contig_hit'].split('-')
+            contig = items[0].strip()
+            feature['parents'].append(contig)
+            bacs = items[1].strip(')').split('(')[1].split()
+            feature['parents'].extend(bacs)
+
+        else:
+            raise ValueError('Unknown feature type: %s' % type_)
+        del feature['attributes']
+        if not feature['parents']:
+            del feature['parents']
+        yield feature
 
 class FPCMap(object):
     '''It parses and hold the information from an FPC map'''
