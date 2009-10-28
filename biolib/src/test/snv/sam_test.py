@@ -91,11 +91,11 @@ ref2     4      A      1       ,       ~'''
 ref1     2      A      1       ,       ~
 ref1     4      A      1       ,       ~
 ref2     2      A      1       ,       ~
-ref2     3      A      1       ,       ~'''
+ref2     3      A      1       ,       a'''
         pileup2 = '''ref1     2      A      1       ,       ~
 ref1     3      A      1       ,       ~
 ref2     1      A      1       ,       ~
-ref2     3      A      1       T       ~
+ref2     3      A      1       TT      AA
 ref2     4      A      1       ,       ~'''
         pileup1 = StringIO.StringIO(pileup1)
         pileup2 = StringIO.StringIO(pileup2)
@@ -109,6 +109,8 @@ ref2     4      A      1       ,       ~'''
         assert snvs[1].reference == 'ref2'
         assert snvs[1].location == 3
         assert len(snvs[1].per_lib_info[0]['alleles']) == 1
+        assert snvs[1].per_lib_info[0]['alleles'][0]['qualities'] == [64]
+        assert snvs[1].per_lib_info[1]['alleles'][0]['qualities'] == [32, 32]
 
     @staticmethod
     def test_pileup_checker():

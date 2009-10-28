@@ -26,6 +26,7 @@ from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
                                         INVARIANT, Snv)
+import copy
 
 def _get_alleles_from_line(line_split):
     'It gets allele from each line of the pileup'
@@ -258,7 +259,7 @@ def agregate_alleles(alleles):
             base = allele['allele']
             kind = allele['kind']
             if (base, kind) not in ag_alleles:
-                ag_alleles[(base, kind)] = allele
+                ag_alleles[(base, kind)] = copy.copy(allele)
             else:
                 ag_al = ag_alleles[(base, kind)]
                 ag_al['reads'] += allele['reads']
@@ -273,7 +274,7 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
     # check if the pileups are well formed
     for pileup in pileups:
         if not _check_pileup(pileup):
-            raise ValueError(pileup.name, ' malformed')
+            raise ValueError(' malformed pile up file: %s' % pileup.name)
 
     for lines_in_pileups in _locations_in_pileups(pileups):
         lib_alleles = _alleles_in_pileups(lines_in_pileups)
@@ -316,7 +317,7 @@ def snv_contexts_in_sam_pileup(pileups, libraries, min_num=None, window=None,
         yield seq_var_contex
 
 def _check_pileup(pileup):
-    'It check if the pileup is weel formed and its data is correct'
+    'It check if the pileup is well formed and its data is correct'
     notdotcomma = 0
     total_nt    = 0
     total_lines = 0

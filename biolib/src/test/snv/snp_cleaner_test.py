@@ -19,6 +19,7 @@ Created on 2009 uzt 30
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+from StringIO import StringIO
 
 from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX)
 from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
@@ -34,6 +35,11 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_alleles_n_cleaner,
                                        create_kind_filter,
                                        create_reference_list_filter)
+from biolib.seqvar.sam_pileup import snv_contexts_in_sam_pileup
+from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
+                              snp_filter_is_variable_in_aggregate,
+                              snp_filter_by_kind,
+                              snp_filter_reference_not_in_list)
 from biolib.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
@@ -317,6 +323,67 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         assert filter_((snv1, [snv1]))
         assert not filter_((snv2, [snv2]))
+
+    @staticmethod
+    def test_svn_pipeline():
+        'The complete snv minning process from pileup to filtered Snvs'
+        pileup1 = '''ref1     1      A      3       TTTGGG       aaabbb
+ref1     2      A      1       ,,,,,,,       aaaaaaa
+ref1     3      A      1       ,       a
+ref1     4      A      1       ,       a'''
+        pileup2 = '''ref1     1      A      1       TTT       ccc
+ref1     2      A      1       ,,,,,,,       aaaaaaa
+ref1     3      A      1       ,       a
+ref1     4      A      1       ,       a'''
+        pileup3 = '''ref1     1      A      1       GG       dd
+ref1     2      A      1       ,,,,,,,       aaaaaaa
+ref1     3      A      1       ,       a
+ref1     4      A      1       ,       a'''
+
+        pileup1 = StringIO(pileup1)
+        pileup2 = StringIO(pileup2)
+        pileup3 = StringIO(pileup3)
+
+        #we get the snvs from the pileups
+        snv_contexts = list(snv_contexts_in_sam_pileup([pileup3,
+                                                        pileup2, pileup1],
+                                        libraries=['lib3', 'lib2', 'lib1']))
+
+        #we filter them
+        pipeline = []
+        config = {}
+        # variable in lib1
+        pipeline.append(snp_filter_is_variable_in_some)
+        config['variable_in_some'] = {'libraries':'lib1'}
+
+        # variable in the aggregate of all other libraries
+        pipeline.append(snp_filter_is_variable_in_aggregate)
+        config['variable_in_aggregate'] = {'libraries':['lib2', 'lib3']}
+        # kind snp
+        pipeline.append(snp_filter_by_kind)
+        config['kind_filter'] = {'kinds':[SNP]}
+        # variability of the unigene
+        #pipeline.append(snp_high_variable_region_filter)
+        #config['high_variable_region'] = {'max_variability':3}
+        # close to seqvar filter
+        #pipeline.append(snp_close_to_seqvar_filter)
+        #config['close_to_seqvar'] = {'distance':30}
+        #close to limit filter
+        #pipeline.append(snp_close_to_limit_filter)
+        #config['close_to_limit'] = {'max_distance': 30}
+        #cap filter
+        #pipeline.append(snp_cap_enzyme_filter)
+        #config['enzyme_filter'] = {'all_enzymes': False}
+        #reference filter
+        pipeline.append(snp_filter_reference_not_in_list)
+        config['reference_list_filter'] = {'references':['ref1']}
+
+        snv_contexts = pipeline_runner(pipeline, snv_contexts, config)
+
+        snv_contexts = list(snv_contexts)
+        #in lib3 the G is read just twice
+        assert snv_contexts[0][0].per_lib_info[0]['alleles'][0]['reads'] == 2
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
