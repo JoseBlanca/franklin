@@ -232,7 +232,7 @@ def create_read_number_cleaner(num_reads):
             alleles = library_info['alleles']
             new_alleles = []
             for allele in alleles:
-                if allele['reads'] > num_reads:
+                if allele['reads'] >= num_reads:
                     new_alleles.append(allele)
 
             # if we have not remove all the alleles, we add the allele to this
@@ -245,6 +245,8 @@ def create_read_number_cleaner(num_reads):
                 new_library_alleles.append(new_library)
         if new_library_alleles:
             return (snv.copy(per_lib_info=new_library_alleles), context)
+        else:
+            return None
     return read_number_cleaner
 
 def create_alleles_n_cleaner():

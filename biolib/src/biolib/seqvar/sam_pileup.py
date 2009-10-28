@@ -259,7 +259,7 @@ def agregate_alleles(alleles):
             base = allele['allele']
             kind = allele['kind']
             if (base, kind) not in ag_alleles:
-                ag_alleles[(base, kind)] = copy.copy(allele)
+                ag_alleles[(base, kind)] = copy.deepcopy(allele)
             else:
                 ag_al = ag_alleles[(base, kind)]
                 ag_al['reads'] += allele['reads']

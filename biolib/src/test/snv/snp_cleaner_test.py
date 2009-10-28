@@ -327,22 +327,22 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_svn_pipeline():
         'The complete snv minning process from pileup to filtered Snvs'
-        pileup1 = '''ref1     1      A      3       TTTGGG       aaabbb
+        tpileup1 = '''ref1     1      A      3       TTTGGG       aaabbb
 ref1     2      A      1       ,,,,,,,       aaaaaaa
 ref1     3      A      1       ,       a
 ref1     4      A      1       ,       a'''
-        pileup2 = '''ref1     1      A      1       TTT       ccc
+        tpileup2 = '''ref1     1      A      3       TTT       ccc
 ref1     2      A      1       ,,,,,,,       aaaaaaa
 ref1     3      A      1       ,       a
 ref1     4      A      1       ,       a'''
-        pileup3 = '''ref1     1      A      1       GG       dd
+        tpileup3 = '''ref1     1      A      3       GGG       ddd
 ref1     2      A      1       ,,,,,,,       aaaaaaa
 ref1     3      A      1       ,       a
 ref1     4      A      1       ,       a'''
 
-        pileup1 = StringIO(pileup1)
-        pileup2 = StringIO(pileup2)
-        pileup3 = StringIO(pileup3)
+        pileup1 = StringIO(tpileup1)
+        pileup2 = StringIO(tpileup2)
+        pileup3 = StringIO(tpileup3)
 
         #we get the snvs from the pileups
         snv_contexts = list(snv_contexts_in_sam_pileup([pileup3,
@@ -382,9 +382,26 @@ ref1     4      A      1       ,       a'''
 
         snv_contexts = list(snv_contexts)
         #in lib3 the G is read just twice
-        assert snv_contexts[0][0].per_lib_info[0]['alleles'][0]['reads'] == 2
+        assert snv_contexts[0][0].per_lib_info[0]['alleles'][0]['reads'] == 3
+        assert (snv_contexts[0][0].per_lib_info[0]['alleles'][0]['qualities'] ==
+                                                                   [67, 67, 67])
+
+        #the same, but with the snp basic pipeline
+        pileup1 = StringIO(tpileup1)
+        pileup2 = StringIO(tpileup2)
+        pileup3 = StringIO(tpileup3)
+        #we get the snvs from the pileups
+        snv_contexts = list(snv_contexts_in_sam_pileup([pileup3,
+                                                        pileup2, pileup1],
+                                        libraries=['lib3', 'lib2', 'lib1']))
+        snv_contexts = pipeline_runner('snp_basic', snv_contexts)
+        snv_contexts = list(snv_contexts)
+        #in lib3 the G is read just twice
+        assert snv_contexts[0][0].per_lib_info[0]['alleles'][0]['reads'] == 3
+        assert (snv_contexts[0][0].per_lib_info[0]['alleles'][0]['qualities'] ==
+                                                                   [67, 67, 67])
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.test_SeqVariation_init']
+    #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']
     unittest.main()
