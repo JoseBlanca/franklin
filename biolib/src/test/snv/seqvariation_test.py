@@ -178,6 +178,7 @@ class SnvCaracterizationTest(unittest.TestCase):
         snp = Snv(per_lib_info=per_lib_info, reference=reference, location=7)
         enzymes = cap_enzymes(snp, True)
         assert [] == enzymes
+
     @staticmethod
     def test_calculate_kind():
         'It calculates the rerulting kind'

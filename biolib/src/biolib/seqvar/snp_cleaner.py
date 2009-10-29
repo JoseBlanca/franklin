@@ -21,6 +21,8 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 from biolib.seqvar.seqvariation import (cap_enzymes, SNP,
                                         reference_variability,
                                         get_reference_name)
@@ -251,7 +253,7 @@ def create_read_number_cleaner(num_reads):
 
 def create_alleles_n_cleaner():
     '''This function factory removes alleles that composed by N'''
-    def read_number_cleaner(snv):
+    def alleles_n_cleaner(snv):
         'The cleaner'
         if snv is None:
             return None
@@ -274,7 +276,7 @@ def create_alleles_n_cleaner():
                 new_library_alleles.append(new_library)
         if new_library_alleles:
             return (snv.copy(per_lib_info=new_library_alleles), context)
-    return read_number_cleaner
+    return alleles_n_cleaner
 
 def create_cap_enzyme_filter(all_enzymes):
     '''This funtion is a factory function that creates a function that look
@@ -305,4 +307,58 @@ def create_reference_list_filter(references):
             return False
     return reference_list_filter
 
+def _required_quality(allele, min_quality, default_quality):
+    'It returns True if the allele has the mininum quality'
+    #the quals with the default qualities
+    quals = []
+    for qual in allele['qualities']:
+        if qual is None:
+            qual = default_quality
+        quals.append(qual)
+    #we sort with the best qualities first
+    qual_oris = zip(quals, allele['orientations'])
+    qual_oris = sorted(qual_oris, lambda qo1, qo2: qo2[0] - qo1[0])
+    #qualities for both orientations
+    forward_quals, rev_quals = [], []
+    for qual, ori in qual_oris:
+        if ori:
+            forward_quals.append(qual)
+        else:
+            rev_quals.append(qual)
+    #now we calculate the qualities:
+    qual = 0
+    if forward_quals:
+        qual += forward_quals[0]
+        if len(forward_quals) > 1:
+            qual += forward_quals[1] / 10.0
+    if rev_quals:
+        qual += rev_quals[0]
+        if len(rev_quals) > 1:
+            qual += rev_quals[1] / 10.0
+    #the final check
+    if qual >= min_quality:
+        return True
+    else:
+        return False
 
+
+def create_allele_qual_cleaner(min_quality=30, default_quality=20):
+    'It removes alleles with al least minimun quality.'
+    def allele_qual_cleaner(snv):
+        if snv is None:
+            return None
+        (snv, context) = snv
+        new_library_alleles = []
+        for library_info in snv.per_lib_info:
+            alleles = library_info['alleles']
+            new_alleles = []
+            for allele in alleles:
+                if _required_quality(allele, min_quality, default_quality):
+                    new_alleles.append(allele)
+            if new_alleles:
+                new_library = copy.deepcopy(library_info)
+                new_library['alleles'] = new_alleles
+                new_library_alleles.append(new_library)
+        if new_library_alleles:
+            return (snv.copy(per_lib_info=new_library_alleles), context)
+    return allele_qual_cleaner

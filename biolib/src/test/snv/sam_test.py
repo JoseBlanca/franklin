@@ -104,7 +104,7 @@ ref2     4      A      1       ,       ~'''
                                         libraries=['lib1', 'lib2']))
         assert snvs[0].reference == 'ref1'
         assert snvs[0].location == 1
-        assert len(snvs[0].per_lib_info[0]['alleles']) == 2
+        assert len(snvs[0].per_lib_info[0]['alleles']) == 2 
         assert snvs[0].per_lib_info[0]['alleles'][0]['orientations'] == [True]
         assert snvs[0].per_lib_info[0]['alleles'][1]['orientations'] == [False]
 

@@ -158,7 +158,6 @@ class Snv(object):
         to_print += '])\n\n'
         return to_print
 
-
 def cap_enzymes(snv, all_enzymes=False):
     '''Given an svn it returns the list of restriction enzymes that distinguish
     between their alleles.'''
