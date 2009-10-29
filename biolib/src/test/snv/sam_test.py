@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
                                        0, 0, 0, 0, 0, 0, 30]
 
     @staticmethod
-    def test_is_seq_bar():
+    def test_is_seq_var():
         'It test is_seq_var function'
         ref_base = 'A'
         quality  = ['~', '~', '~', '~', '~']
@@ -87,7 +87,7 @@ ref2     4      A      1       ,       ~'''
     @staticmethod
     def test_seqvars_in_sam_pileups():
         'We can get the Snv from a list of pile ups'
-        pileup1 = '''ref1     1      A      2       ,T       aa
+        pileup1 = '''ref1     1      A      2       .t       aa
 ref1     2      A      1       ,       ~
 ref1     4      A      1       ,       ~
 ref2     2      A      1       ,       ~
@@ -95,7 +95,7 @@ ref2     3      A      1       ,       a'''
         pileup2 = '''ref1     2      A      1       ,       ~
 ref1     3      A      1       ,       ~
 ref2     1      A      1       ,       ~
-ref2     3      A      1       TT      AA
+ref2     3      A      1       Tt      AA
 ref2     4      A      1       ,       ~'''
         pileup1 = StringIO.StringIO(pileup1)
         pileup2 = StringIO.StringIO(pileup2)
@@ -105,6 +105,8 @@ ref2     4      A      1       ,       ~'''
         assert snvs[0].reference == 'ref1'
         assert snvs[0].location == 1
         assert len(snvs[0].per_lib_info[0]['alleles']) == 2
+        assert snvs[0].per_lib_info[0]['alleles'][0]['orientations'] == [True]
+        assert snvs[0].per_lib_info[0]['alleles'][1]['orientations'] == [False]
 
         assert snvs[1].reference == 'ref2'
         assert snvs[1].location == 3

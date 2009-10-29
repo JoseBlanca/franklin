@@ -20,8 +20,6 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
 from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
@@ -38,18 +36,19 @@ def _get_alleles_from_line(line_split):
         msg = 'malformed line in pileup: %s %s\n' % (cromosome, position)
         raise ValueError(msg)
 
-    alleles, qual_grouped = _group_alleles(alleles, qualities)
-    alleles = _get_allele_type(ref_base, alleles, qual_grouped)
+    alleles, qualities, orientations = _group_alleles(alleles, qualities)
+    alleles = _get_allele_type(ref_base, alleles, qualities, orientations)
     return alleles
 
-def _get_allele_type(ref_base, alleles, qual_grouped):
+def _get_allele_type(ref_base, alleles, qualities, orientations):
     '''It gets the type (snp, deletion, insertion) for each allele and removes
     the + and -'''
     new_alleles = []
     for allele, num_reads in alleles.items():
         allele_info = {}
         allele_info['reads']   = num_reads
-        allele_info['qualities'] =  qual_grouped[allele]
+        allele_info['qualities'] =  qualities[allele]
+        allele_info['orientations'] = orientations[allele]
         if allele.startswith('+'):
             allele_info['allele'] = allele[1:]
             allele_info['kind']   = INSERTION
@@ -84,14 +83,21 @@ def _group_alleles(alleles, quals):
     the quality for each allele'''
     alleles_dict = {}
     qual_dict = {}
+    orientations_dict = {}
     for index, allele in enumerate(alleles):
+        al_orig = allele
         allele = allele.upper()
         if allele not in alleles_dict:
             alleles_dict[allele] = 0
             qual_dict[allele] = []
+            orientations_dict[allele] = []
+        if al_orig == allele:
+            orientations_dict[allele].append(True)
+        else:
+            orientations_dict[allele].append(False)
         alleles_dict[allele] += 1
         qual_dict[allele].append(quals[index])
-    return alleles_dict, qual_dict
+    return alleles_dict, qual_dict, orientations_dict
 
 def _qualities_to_phred(qualities):
     'It transforms a list of chrs into a phred list'
@@ -131,8 +137,10 @@ def _get_alleles(ref_base, alleles, qualities):
     ignore_qual = False
     while al_pos < len(alleles):
         item = alleles[al_pos:al_pos + pos_delta]
-        if item == ['.'] or item == [',']:
+        if item == ['.']:
             item = [ref_base]
+        elif item == [',']:
+            item = [ref_base.lower()]
         if item == ['$']:
             item = []
             qual_delta = 0
