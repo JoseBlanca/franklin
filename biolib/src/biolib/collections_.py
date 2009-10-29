@@ -199,3 +199,10 @@ def item_context_iter(items, window=None):
             #if there's no more item and nothing in the buffers we're done
             if last_item_in_iter:
                 raise StopIteration
+
+def list_pairs_iter(items):
+    'Given a list it yields all pairs between the items'
+    length = len(items)
+    for i_index in range(length):
+        for j_index in range(i_index +1, length):
+            yield(items[i_index], items[j_index])

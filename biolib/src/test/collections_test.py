@@ -17,8 +17,7 @@
 
 import unittest, StringIO
 from biolib.collections_ import (item_context_iter,
-                                 RequiredPosition)
-from biolib.rbtree import RBDict
+                                 RequiredPosition, list_pairs_iter)
 
 class _Locatable():
     'A class for locatable items'
@@ -137,6 +136,13 @@ class RequiredPositionsTest(unittest.TestCase):
         req_pos = RequiredPosition(fhand)
         assert req_pos['aaa', '2']
         assert req_pos['aaa', '2']
+
+    @staticmethod
+    def test_pairs():
+        'We can get all pair for the elements of a list'
+        items = [1, 2, 3, 4]
+        pairs = list(list_pairs_iter(items))
+        assert list(pairs) == [(1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)]
 
 if __name__ == "__main__":
     unittest.main()
