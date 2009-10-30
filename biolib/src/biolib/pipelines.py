@@ -199,15 +199,20 @@ snp_close_to_limit_filter = {'function':create_snv_close_to_limit_filter ,
                             'name':'close_to_limit',
                             'comment': 'It filters by proximity to limit'}
 
-snp_remove_baq_quality_reads = {'function':create_bad_quality_reads_cleaner,
+snp_no_bad_quality_alleles_per_lib = {'function':create_bad_quality_reads_cleaner,
                                   'arguments':{'qual_treshold':20},
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
                                   'comment': 'It removes bad quality reads'}
-snp_remove_baq_quality_alleles = {'function':
+snp_no_baq_quality_alleles_agg = {'function':
                                           create_aggregate_allele_qual_cleaner,
-                                  'arguments':{'min_quality':45,
-                                               'default_quality':25},
+                                  'arguments':{},
+                                  'type':'mapper',
+                                  'name':'bad_quality_allele_striper',
+                                  'comment': 'It removes bad quality reads'}
+snp_no_bad_quality_alleles_per_lib = {'function':
+                                         create_min_qual_per_lib_allele_cleaner,
+                                   'arguments':{},
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
                                   'comment': 'It removes bad quality reads'}
@@ -253,7 +258,8 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
             'solexa'       : [remove_adaptors, strip_quality,
                               filter_short_seqs_solexa],
             'snp_basic': [snp_remove_alleles_n,
-                          snp_remove_baq_quality_alleles,
+                          snp_no_baq_quality_alleles_agg,
+                          snp_no_bad_quality_alleles_per_lib,
                           snp_filter_is_variable_in_some],
          'mask_dust' : [mask_polia, mask_low_complexity],
          'word_masker' : [mask_words, filter_short_seqs_solexa]}

@@ -220,9 +220,9 @@ def create_kind_filter(kinds):
         return False
     return kind_filter
 
-def create_min_qual_per_lib_allele_cleaner(min_quality=45, default_quality=25):
-    '''This function factory remove alleles that have more than num_reads
-    reads'''
+def create_min_qual_per_lib_allele_cleaner(min_quality=50, default_quality=25):
+    '''This function factory remove alleles that have not enough reads with good
+    quality reads'''
     def qual_per_library_cleaner(snv):
         'The cleaner'
         if snv is None:
@@ -358,7 +358,7 @@ def _alleles_with_required_quality(alleles, min_quality, default_quality):
     return ok_alleles
 
 def create_aggregate_allele_qual_cleaner(min_quality=45, default_quality=25):
-    'It removes alleles with al least minimun quality.'
+    'It removes alleles with at least min quality.'
     def allele_qual_cleaner(snv):
         'It removes the alleles which have not enough quality'
         if snv is None:
