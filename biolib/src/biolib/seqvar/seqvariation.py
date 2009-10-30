@@ -19,6 +19,8 @@ Created on 2009 mar 25
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_cmd_utils import call
 from biolib.seqs import SeqWithQuality
@@ -157,6 +159,30 @@ class Snv(object):
             to_print += '\t\t},\n'
         to_print += '])\n\n'
         return to_print
+
+    def aggregate_alleles(self):
+        'It returns a list with the alleles from all libraries aggregated'
+        ag_alleles = []
+        for libinfo in self.per_lib_info:
+            ag_alleles.extend(libinfo['alleles'])
+        return aggregate_alleles(ag_alleles)
+
+def aggregate_alleles(alleles):
+    '''It aggreates the alleles from a list of alleles (useful to remove
+    redundancies)'''
+    ag_alleles = {}
+    for allele in alleles:
+        base = allele['allele']
+        kind = allele['kind']
+        if (base, kind) not in ag_alleles:
+            ag_alleles[(base, kind)] = copy.deepcopy(allele)
+        else:
+            ag_al = ag_alleles[(base, kind)]
+            ag_al['reads'] += allele['reads']
+            ag_al['qualities'].extend(allele['qualities'])
+            if 'orientations' in ag_al:
+                ag_al['orientations'].extend(allele['orientations'])
+    return ag_alleles.values()
 
 def cap_enzymes(snv, all_enzymes=False):
     '''Given an svn it returns the list of restriction enzymes that distinguish

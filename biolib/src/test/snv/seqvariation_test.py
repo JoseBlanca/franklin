@@ -107,6 +107,45 @@ class SnvTest(unittest.TestCase):
         assert alleles[0]['allele'] == 'T'
         assert alleles[1]['allele'] == 'A'
 
+    @staticmethod
+    def test_aggregate_alleles():
+        '''We can get all the alleles from the different libraries aggregated
+        into one'''
+        seq_var = Snv(reference='hola', location=3,
+                      per_lib_info=[{'alleles':[{'allele':'A', 'reads':1,
+                                               'kind':DELETION,
+                                               'qualities':[10],
+                                               'orientations':[True]},
+                                               {'allele':'A', 'reads':1,
+                                               'kind':INSERTION,
+                                               'qualities':[20],
+                                               'orientations':[False]}]},
+                                   {'alleles':[{'allele':'A', 'reads':1,
+                                               'kind':INSERTION,
+                                               'qualities':[30],
+                                               'orientations':[True]}]},
+                                   {'alleles':[{'allele':'A', 'reads':1,
+                                               'kind':INVARIANT,
+                                               'qualities':[40],
+                                               'orientations':[False]}]}])
+        #expected = [{'allele':'A', 'reads':1, 'kind':DELETION,
+        #             'qualities':[10],
+        #             'orientations':[True]},
+        #            {'allele':'A', 'reads':2, 'kind':INSERTION,
+        #             'qualities':[20, 30], 'orientations':[False, True]},
+        #            {'allele':'A', 'reads':1, 'kind':INVARIANT,
+        #              'qualities':[40],
+        #             'orientations':[False]}]
+        alleles = seq_var.aggregate_alleles()
+        assert len(alleles) == 3
+        expected = {('A', INSERTION): ([20, 30], [False, True])}
+        for allele in alleles:
+            index = (allele['allele'], allele['kind'])
+            if index in expected:
+                assert allele['qualities'] == expected[index][0]
+                assert allele['orientations'] == expected[index][1]
+
+
 class SnvCaracterizationTest(unittest.TestCase):
     'It checks that the svns are properly analyzed'
     @staticmethod

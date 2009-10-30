@@ -23,8 +23,7 @@ Created on 22/09/2009
 from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
 from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
-                                        INVARIANT, Snv)
-import copy
+                                        INVARIANT, Snv, aggregate_alleles)
 
 def _get_alleles_from_line(line_split):
     'It gets allele from each line of the pileup'
@@ -259,21 +258,6 @@ def _alleles_in_pileups(line_in_pileups):
         lib_alleles.append(alleles)
     return lib_alleles
 
-def agregate_alleles(alleles):
-    'It aggreates the alleles from a list of alleles (one for every lib)'
-    ag_alleles = {}
-    for lib_alleles in alleles:
-        for allele in lib_alleles:
-            base = allele['allele']
-            kind = allele['kind']
-            if (base, kind) not in ag_alleles:
-                ag_alleles[(base, kind)] = copy.deepcopy(allele)
-            else:
-                ag_al = ag_alleles[(base, kind)]
-                ag_al['reads'] += allele['reads']
-                ag_al['qualities'].extend(allele['qualities'])
-    return ag_alleles.values()
-
 def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
     '''It yields Snvs from the given pileups'''
     if references is not None:
@@ -286,8 +270,12 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
 
     for lines_in_pileups in _locations_in_pileups(pileups):
         lib_alleles = _alleles_in_pileups(lines_in_pileups)
-        ag_alleles = agregate_alleles(lib_alleles)
-        #which is the ref_base
+        #we neeed all alleles to decide if it's a seq var
+        ag_alleles = []
+        for alleles in lib_alleles:
+            ag_alleles.extend(alleles)
+        ag_alleles = aggregate_alleles(ag_alleles)
+        #which is the ref_base?
         non_empty_line = None
         for line_in_pileup in lines_in_pileups:
             if line_in_pileup:
@@ -309,8 +297,7 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
                 per_lib_info.append({'alleles':lib_allele,
                                      'library':library,
                                      'annotations':{},
-                                     },
-                                    )
+                                     },)
         yield Snv(reference=reference, location=location,
                   per_lib_info=per_lib_info)
 
