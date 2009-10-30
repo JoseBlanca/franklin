@@ -31,11 +31,11 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_bad_quality_reads_cleaner,
                                        create_snv_close_to_limit_filter,
                                        create_major_allele_freq_filter,
-                                       create_read_number_cleaner,
+                                       create_min_qual_per_lib_allele_cleaner,
                                        create_alleles_n_cleaner,
                                        create_kind_filter,
                                        create_reference_list_filter,
-                                       create_allele_qual_cleaner)
+                                       create_aggregate_allele_qual_cleaner)
 from biolib.seqvar.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
                               snp_filter_is_variable_in_aggregate,
@@ -269,27 +269,28 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
 
     @staticmethod
-    def test_read_number_cleaner():
+    def test_create_min_qual_per_lib_cleaner():
         'Tests read number_cleaner'
         snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':4, 'kind':INVARIANT,
-                                     'quality':[30, 30, 30, 20]},
+                                     'qualities':[30, 30, 30, 20],
+                                     'orientationa':[True, True, True, True]},
                                     {'allele':'T', 'reads':1,'kind':SNP,
-                                     'quality':[30, 20]}]}])
+                                     'qualities':[30, 10],
+                                     'orientationa':[True, True]}]}])
         snp = (snp, 'context')
-        read_number_cleaner = create_read_number_cleaner(2)
-        snp = read_number_cleaner(snp)[0]
+        min_qual_per_lib_cleaner = create_min_qual_per_lib_allele_cleaner()
+        snp = min_qual_per_lib_cleaner(snp)[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
 
         snp = Snv(location=4, reference='atatatatat', per_lib_info=[
-                        {'alleles':[{'allele':'A', 'reads':1, 'kind':INVARIANT,
-                                     'quality':[30, 30, 30, 20]},
-                                    {'allele':'T', 'reads':1,'kind':SNP,
-                                     'quality':[30, 20]}]}])
+                        {'alleles':[{'allele':'A', 'reads':2, 'kind':INVARIANT,
+                                     'qualities':[30, 10]},
+                                    {'allele':'T', 'reads':2,'kind':SNP,
+                                     'qualities':[30, 10]}]}])
         snp = (snp, 'context')
-        read_number_cleaner = create_read_number_cleaner(2)
-        snp = read_number_cleaner(snp)
-        assert snp is None
+        min_qual_per_lib_cleaner = create_min_qual_per_lib_allele_cleaner()
+        assert min_qual_per_lib_cleaner(snp) is None
 
     @staticmethod
     def test_alleles_n_cleaner():
@@ -310,18 +311,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
                         {'alleles':[{'allele':'A', 'reads':2, 'kind':SNP,
                                      'qualities':[29, 22],
                                      'orientations':[True, True]}]}])
-        filter_ = create_allele_qual_cleaner()
+        filter_ = create_aggregate_allele_qual_cleaner()
+        assert filter_((snp, [snp])) is None
+
+        filter_ = create_aggregate_allele_qual_cleaner(min_quality=32)
         snp = filter_((snp, [snp]))[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
 
-        filter_ = create_allele_qual_cleaner(min_quality=32)
-        assert filter_((snp, [snp])) is None
-
         snp = Snv(location=4, reference='atatatatat', per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':2, 'kind':SNP,
-                                     'qualities':[20, 22],
+                                     'qualities':[23, 22],
                                      'orientations':[True, False]}]}])
-        filter_ = create_allele_qual_cleaner()
+        filter_ = create_aggregate_allele_qual_cleaner()
         snp = filter_((snp, [snp]))[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
 
@@ -329,9 +330,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
                         {'alleles':[{'allele':'A', 'reads':3, 'kind':SNP,
                                      'qualities':[20, 22, None],
                                      'orientations':[True, True, False]}]}])
-        filter_ = create_allele_qual_cleaner()
+        filter_ = create_aggregate_allele_qual_cleaner()
         snp = filter_((snp, [snp]))[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
+        return
 
         #we take into account the alleles from differnt libraries
         snp = Snv(location=4, reference='atatatatat', per_lib_info=[
@@ -347,7 +349,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                      {'allele':'T', 'reads':1, 'kind':SNP,
                                      'qualities':[25],
                                      'orientations':[True]}]}])
-        filter_ = create_allele_qual_cleaner()
+        filter_ = create_aggregate_allele_qual_cleaner()
         snp = filter_((snp, [snp]))[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
 

@@ -55,12 +55,12 @@ from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
                                        create_major_allele_freq_filter,
                                        create_is_variable_in_some_filter,
                                        create_bad_quality_reads_cleaner,
-                                       create_read_number_cleaner,
+                                       create_min_qual_per_lib_allele_cleaner,
                                        create_alleles_n_cleaner,
                                        create_kind_filter,
                                        create_is_variable_in_aggregate_filter,
                                        create_reference_list_filter,
-                                       create_allele_qual_cleaner)
+                                       create_aggregate_allele_qual_cleaner)
 
 from biolib.seq_filters        import create_length_filter
 from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
@@ -187,7 +187,7 @@ snp_filter_is_variable_in_aggregate = {
                           'name':'variable_in_aggregate',
                           'comment': 'It filters by aggregate variability'}
 
-snp_remove_by_read_number = {'function': create_read_number_cleaner,
+snp_remove_by_read_number = {'function': create_min_qual_per_lib_allele_cleaner,
                             'arguments':{'num_reads':3},
                             'type':'mapper',
                             'name':'read_number',
@@ -204,7 +204,7 @@ snp_remove_baq_quality_reads = {'function':create_bad_quality_reads_cleaner,
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
                                   'comment': 'It removes bad quality reads'}
-snp_remove_baq_quality_alleles = {'function':create_allele_qual_cleaner,
+snp_remove_baq_quality_alleles = {'function':create_aggregate_allele_qual_cleaner,
                                   'arguments':{'min_quality':30,
                                                'default_quality':20},
                                   'type':'mapper',

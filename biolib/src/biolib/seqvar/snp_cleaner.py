@@ -220,10 +220,10 @@ def create_kind_filter(kinds):
         return False
     return kind_filter
 
-def create_read_number_cleaner(num_reads, min_quality, default_quality):
+def create_min_qual_per_lib_allele_cleaner(min_quality=45, default_quality=25):
     '''This function factory remove alleles that have more than num_reads
     reads'''
-    def read_number_cleaner(snv):
+    def qual_per_library_cleaner(snv):
         'The cleaner'
         if snv is None:
             return None
@@ -233,7 +233,12 @@ def create_read_number_cleaner(num_reads, min_quality, default_quality):
             alleles = library_info['alleles']
             new_alleles = []
             for allele in alleles:
-                if allele['reads'] >= num_reads:
+                qual_sum = 0
+                for qual in allele['qualities']:
+                    if qual is None:
+                        qual = default_quality
+                    qual_sum += qual
+                if qual_sum  >= min_quality:
                     new_alleles.append(allele)
 
             # if we have not remove all the alleles, we add the allele to this
@@ -248,7 +253,7 @@ def create_read_number_cleaner(num_reads, min_quality, default_quality):
             return (snv.copy(per_lib_info=new_library_alleles), context)
         else:
             return None
-    return read_number_cleaner
+    return qual_per_library_cleaner
 
 def create_alleles_n_cleaner():
     '''This function factory removes alleles that composed by N'''
@@ -329,11 +334,15 @@ def _allele_with_required_quality(allele, min_quality, default_quality):
     if forward_quals:
         qual += forward_quals[0]
         if len(forward_quals) > 1:
-            qual += forward_quals[1] / 10.0
+            qual += forward_quals[1] / 4.0
+            if len(forward_quals) > 2:
+                qual += forward_quals[2] / 4.0
     if rev_quals:
         qual += rev_quals[0]
         if len(rev_quals) > 1:
-            qual += rev_quals[1] / 10.0
+            qual += rev_quals[1] / 4.0
+            if len(rev_quals) > 2:
+                qual += rev_quals[2] / 4.0
     #the final check
     if qual >= min_quality:
         return True
@@ -348,7 +357,7 @@ def _alleles_with_required_quality(alleles, min_quality, default_quality):
             ok_alleles.append((allele['allele'], allele['kind']))
     return ok_alleles
 
-def create_allele_qual_cleaner(min_quality=40, default_quality=25):
+def create_aggregate_allele_qual_cleaner(min_quality=45, default_quality=25):
     'It removes alleles with al least minimun quality.'
     def allele_qual_cleaner(snv):
         'It removes the alleles which have not enough quality'
@@ -373,6 +382,10 @@ def create_allele_qual_cleaner(min_quality=40, default_quality=25):
         if new_library_alleles:
             return (snv.copy(per_lib_info=new_library_alleles), context)
     return allele_qual_cleaner
+
+
+
+
 
 def _required_quality2(allele, min_quality, default_quality):
     'It returns True if the allele has the mininum quality'
