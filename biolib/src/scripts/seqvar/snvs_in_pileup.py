@@ -84,7 +84,6 @@ def main():
 
     seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
 
-    # print snvs
     for snv in seq_vars:
         if snv is not None:
             out_fhand.write(repr(snv))

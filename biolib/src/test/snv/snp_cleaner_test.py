@@ -377,8 +377,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_svn_pipeline():
         'The complete snv minning process from pileup to filtered Snvs'
-        tpileup1 = '''ref1     1      A      8       NTtGGaCC       ~==<<~>>
-ref1     2      A      1       ,,,,,,,       aaaaaaa
+        tpileup1 = '''ref1     1      A      20       NTttGGGaCCC   ~===<<<~>>>
+ref1     2      A      1       ,,,,,,,,,,,,,,,       aaaaaaaaaaaaaaa
 ref1     3      A      1       ,       a
 ref1     4      A      1       ,       a'''
         tpileup2 = '''ref1     1      A      3       TTt       ccc
@@ -452,7 +452,7 @@ ref1     4      A      1       ,       a'''
         assert len(snv0.per_lib_info[2]['alleles']) == 2
         assert snv0.per_lib_info[2]['alleles'][1]['allele'] == 'G'
         assert snv0.per_lib_info[2]['alleles'][0]['allele'] == 'T'
-        assert snv0.per_lib_info[2]['alleles'][0]['qualities'] == [28, 28]
+        assert snv0.per_lib_info[2]['alleles'][0]['qualities'] == [28, 28, 28]
 
 
 if __name__ == "__main__":
