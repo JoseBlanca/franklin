@@ -204,9 +204,10 @@ snp_remove_baq_quality_reads = {'function':create_bad_quality_reads_cleaner,
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
                                   'comment': 'It removes bad quality reads'}
-snp_remove_baq_quality_alleles = {'function':create_aggregate_allele_qual_cleaner,
-                                  'arguments':{'min_quality':30,
-                                               'default_quality':20},
+snp_remove_baq_quality_alleles = {'function':
+                                          create_aggregate_allele_qual_cleaner,
+                                  'arguments':{'min_quality':45,
+                                               'default_quality':25},
                                   'type':'mapper',
                                   'name':'bad_quality_allele_striper',
                                   'comment': 'It removes bad quality reads'}

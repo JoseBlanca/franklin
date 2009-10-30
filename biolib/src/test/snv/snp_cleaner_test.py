@@ -333,7 +333,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_aggregate_allele_qual_cleaner()
         snp = filter_((snp, [snp]))[0]
         assert len(snp.per_lib_info[0]['alleles']) == 1
-        return
 
         #we take into account the alleles from differnt libraries
         snp = Snv(location=4, reference='atatatatat', per_lib_info=[
@@ -376,7 +375,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert not filter_((snv2, [snv2]))
 
     @staticmethod
-    def xtest_svn_pipeline():
+    def test_svn_pipeline():
         'The complete snv minning process from pileup to filtered Snvs'
         tpileup1 = '''ref1     1      A      8       NTtGGaCC       ~==<<~>>
 ref1     2      A      1       ,,,,,,,       aaaaaaa
@@ -451,9 +450,9 @@ ref1     4      A      1       ,       a'''
         snv0 = snv_contexts[0][0]
         assert len(snv0.per_lib_info) == 3
         assert len(snv0.per_lib_info[2]['alleles']) == 2
-        assert snv0.per_lib_info[2]['alleles'][0]['allele'] == 'C'
-        assert snv0.per_lib_info[2]['alleles'][1]['allele'] == 'T'
-        assert snv0.per_lib_info[2]['alleles'][0]['qualities'] == [29, 29]
+        assert snv0.per_lib_info[2]['alleles'][1]['allele'] == 'G'
+        assert snv0.per_lib_info[2]['alleles'][0]['allele'] == 'T'
+        assert snv0.per_lib_info[2]['alleles'][0]['qualities'] == [28, 28]
 
 
 if __name__ == "__main__":
