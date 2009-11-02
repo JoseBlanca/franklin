@@ -103,13 +103,13 @@ ref2     4      A      1       ,       ~'''
         snvs = list(snvs_in_sam_pileups([pileup1, pileup2],
                                         libraries=['lib1', 'lib2']))
         assert snvs[0].reference == 'ref1'
-        assert snvs[0].location == 1
-        assert len(snvs[0].per_lib_info[0]['alleles']) == 2 
+        assert snvs[0].location == 0
+        assert len(snvs[0].per_lib_info[0]['alleles']) == 2
         assert snvs[0].per_lib_info[0]['alleles'][0]['orientations'] == [True]
         assert snvs[0].per_lib_info[0]['alleles'][1]['orientations'] == [False]
 
         assert snvs[1].reference == 'ref2'
-        assert snvs[1].location == 3
+        assert snvs[1].location == 2
         assert len(snvs[1].per_lib_info[0]['alleles']) == 1
         assert snvs[1].per_lib_info[0]['alleles'][0]['qualities'] == [64]
         assert snvs[1].per_lib_info[1]['alleles'][0]['qualities'] == [32, 32]

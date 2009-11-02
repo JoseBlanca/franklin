@@ -289,7 +289,7 @@ def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
             reference = references_index[non_empty_line[0]]
         else:
             reference = non_empty_line[0]
-        location = non_empty_line[1]
+        location = int(non_empty_line[1]) - 1 #we use 0-based indexes
         per_lib_info = []
         for lib_index, lib_allele in enumerate(lib_alleles):
             library = libraries[lib_index]
