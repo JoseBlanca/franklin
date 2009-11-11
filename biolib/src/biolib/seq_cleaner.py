@@ -354,11 +354,18 @@ def _extract_name_description(seq_iter):
 
     return name_description
 
-def create_striper_by_quality_lucy2():
+def create_striper_by_quality_lucy2(vector=None):
     '''It creates a function that removes bad quality regions using lucy.
 
     The function will take a sequence iterator and it will return a new sequence
     iterator with the processed sequences in it.'''
+    #we prepare the function that will run lucy
+    if vector is None:
+        run_lucy_for_seqs = create_runner(kind='lucy')
+    else:
+        run_lucy_for_seqs = create_runner(kind='lucy',
+                                          parameters={'vector':vector})
+
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.
 
@@ -367,8 +374,6 @@ def create_striper_by_quality_lucy2():
         because the iterator feeds from them and they are temporary files that
         will be removed as soon as they get out of scope.
         '''
-        #we prepare the function that will run lucy
-        run_lucy_for_seqs = create_runner(kind='lucy')
         #pylint: disable-msg=W0612
         #now we run lucy
         sequences, sequences_copy = tee(sequences, 2)

@@ -109,7 +109,9 @@ RUNNER_DEFINITIONS = {
                       'keep'   :{'option':'-k', 'default':None},
                       'bracket':{'option':'-b', 'default':[10, 0.02]},
                       'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]},
-                      'error'  :{'option':'-e', 'default':[0.015, 0.015]}},
+                      'error'  :{'option':'-e', 'default':[0.015, 0.015]},
+                      'vector' :{'option':'-vector'}
+                      },
 
             'input':{'option': ARGUMENT,  'arg_before_params':True,
                      'files':['seq', 'qual']},
@@ -140,7 +142,7 @@ def _process_parameters(parameters, parameters_def):
         param_opt = parameters_def[param]['option']
         bin_.append(param_opt)
         # Values can be a list of parameters
-        if isinstance(value, list):
+        if isinstance(value, list) or isinstance(value, tuple):
             bin_.extend([ _param_to_str(value_) for value_ in value])
         else:
             if value is not None:

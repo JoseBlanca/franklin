@@ -67,6 +67,10 @@ def parse_options():
                       dest='checkpoint', help='Do we need checkpoints?')
     parser.add_option('-w', '--words', dest='words',
                       help='file containing words in the first column')
+    parser.add_option('--lucy_vector', dest='lucy_vector',
+                      help='file used by lucy for vector clipping(vector)')
+    parser.add_option('--lucy_splice_site', dest='lucy_splice_site',
+                     help='file used by lucy for vector clipping(splice_sites)')
 
     parser.add_option('-f', '--inputformat', dest="file_format",
      help='Input file format: fasta(default), fastq, fastaq, fastq-solexa, ...')
@@ -80,7 +84,7 @@ def set_parameters():
     '''
     options = parse_options()[0]
 
-     # kind
+    # kind
     if options.pipeline is None:
         raise RuntimeError('Pipeline is mandatory, use -p pipeline')
     else:
@@ -154,6 +158,10 @@ def set_parameters():
         configuration['word_masker'] = {}
         configuration['word_masker']['words'] = \
                        [line.strip().split()[0]for line in open(options.words)]
+    if options.lucy_vector is not None and options.lucy_splice_site is not None:
+        configuration['strip_lucy'] = {}
+        configuration['strip_lucy']['vector'] = [options.lucy_vector,
+                                                     options.lucy_splice_site]
     return (io_fhands, work_dir, log_fhand, pipeline, configuration, checkpoint,
             file_format)
 

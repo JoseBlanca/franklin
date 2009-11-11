@@ -24,7 +24,10 @@ import unittest
 from biolib.biolib_cmd_utils import _process_parameters, create_runner
 from biolib.biolib_seqio_utils import parse_fasta
 from biolib.seqs import SeqWithQuality
+import biolib
+import os
 
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 class ProcessParametersTest(unittest.TestCase):
     'tests the parameter processing'
@@ -90,6 +93,18 @@ class RunnerFactorytest(unittest.TestCase):
         seq1 = SeqWithQuality(seq)
         result = run_mdust__for_seq(seq1)[0]
         assert result.read()[-10:-1] == 'aaaaaaaaa'
+    @staticmethod
+    def test_create_lucy_runner():
+        'We can create a runner class for lucy'
+        fastafile = os.path.join(DATA_DIR, 'seq.fasta')
+        run_lucy_for_seq = create_runner(kind='lucy',
+                                    parameters={'vector':(fastafile,fastafile)})
+        seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        qual = [30] * len(seq)
+        seq1 = SeqWithQuality(seq, qual=qual)
+        seqs = [seq1, seq1]
+        result = run_lucy_for_seq(seqs)[0]
+        assert result.read() == ''
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

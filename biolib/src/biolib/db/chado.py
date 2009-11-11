@@ -59,6 +59,7 @@ def add_csv_to_chado(fhand, table, engine):
         raise RuntimeError('''There have been a error during inserts in table %s
          %s''' % (table, msg))
     chado.commit()
+    
 def load_ontology(ontology_fhand, dbname, dbuser, dbpass, dbhost):
     '''It adds a ontology to chado.
 

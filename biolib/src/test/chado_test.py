@@ -38,12 +38,12 @@ from biolib.db.naming import (create_naming_database,
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def create_chado_example():
-    '''It creates a chado mini schema with only two tables and one relaion
+    '''It creates a chado mini schema with only two tables and one relation
     in a sqlite memory database '''
     engine = sqlalchemy.create_engine('sqlite:///:memory:')
     metadata = MetaData()
     metadata.bind  = engine
-    #aNow I create the tables
+    #Now I create the tables
     #pylint: disable-msg=W0612
     db_table = Table('db', metadata,
                      Column('db_id', Integer, primary_key=True),
@@ -110,8 +110,8 @@ class ChadoOrmTest(unittest.TestCase):
                                            'rel_attr':'db'}
                                     }
                        }]
-        #pylint: disable-msg=W0612
-        table_classes, row_classes = setup_mapping(engine, mapping_definitions)
+
+        row_classes = setup_mapping(engine, mapping_definitions)[1]
         #pylint: disable-msg=C0103
         Db       = row_classes['db']
         Dbxref   = row_classes['dbxref']

@@ -99,7 +99,7 @@ strip_quality = {'function': create_striper_by_quality,
                       'comment':'Strip low quality with our algorithm'}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
-                      'arguments':{},
+                      'arguments':{'vector':None,'splice_site':None },
                       'type':'mapper',
                       'name':'strip_lucy',
                       'comment':'Strip low quality with lucy'}
