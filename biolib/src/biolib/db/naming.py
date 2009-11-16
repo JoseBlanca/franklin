@@ -3,6 +3,7 @@
 import sqlalchemy, re
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
 from biolib.db.db_utils import setup_mapping
+from biolib.biolib_seqio_utils import seqs_in_file, write_seqs_in_file
 
 def create_naming_database(engine):
     'It creates a new empty database to hold the naming schema status'
@@ -34,7 +35,7 @@ def _setup_naming_database_mapping(engine):
                                                 'rel_attr':'project'}}},
                     ]
     return setup_mapping(engine, mapping_definitions)
-    
+
 
 def add_project_to_naming_database(engine, name, code, description=None):
     'It adds a new project to the naming database'
@@ -113,7 +114,7 @@ class DbNamingSchema(object):
         #the session
         session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
         self._session = session_klass()
-        
+
         self._code_generators = {}
         self._curr_code = {}  #the last code given for every feature kind
         #pylint: disable-msg=W0612
@@ -122,7 +123,7 @@ class DbNamingSchema(object):
         #the project instance
         project_klass = self._row_classes['projects']
         self._project = \
-         self._session.query(project_klass).filter_by(short_name=project).one() 
+         self._session.query(project_klass).filter_by(short_name=project).one()
 
     @staticmethod
     def _get_so_term(feature_kind):
@@ -179,7 +180,7 @@ class DbNamingSchema(object):
 
     def commit(self):
         '''It stores the current code in the database.
-        
+
         The next time that someone ask for a code to the database, this one
         will be used as seed.
         '''
@@ -209,7 +210,7 @@ class FileNamingSchema(object):
         self._naming_file_to_dict()
 
     def get_uniquename(self, name=None, kind=None):
-        '''Given a name and a it returns a uniquename''' 
+        '''Given a name and a it returns a uniquename'''
         if name in self._naming_dict or name in self._new_naming_dict:
             try:
                 uniquename = self._naming_dict[name]
@@ -218,7 +219,7 @@ class FileNamingSchema(object):
         elif kind is None:
             msg = 'You must provide feature type if the name is not added'
             raise ValueError(msg)
-        else: 
+        else:
             if self._naming_schema is None:
                 msg = 'Uncached name and no naming schema'
                 raise ValueError(msg)
@@ -226,21 +227,21 @@ class FileNamingSchema(object):
                 uniquename = self._naming_schema.get_uniquename(kind)
             self._new_naming_dict[name] = uniquename
         return uniquename
-    
+
     def commit(self):
         '''It commits the new  '''
         self._naming_schema.commit()
         self._write_dict_to_file()
-        
+
     def _write_dict_to_file(self):
         '''It writes the new uniquenames to the fhand '''
         for name, uniquename in self._new_naming_dict.items():
             self._fhand.write('%s:%s\n' % (name, uniquename))
             self._new_naming_dict = {}
         self._fhand.flush()
-    
+
     def _naming_file_to_dict(self):
-        '''Giving a a file with name: uniquename translation it returns a 
+        '''Giving a a file with name: uniquename translation it returns a
         dictionary'''
         for line in self._fhand:
             if not line.isspace():
@@ -248,7 +249,7 @@ class FileNamingSchema(object):
                 name       = items[0].strip()
                 uniquename = items[1].strip()
                 self._naming_dict[name] = uniquename
-        
+
 REPLACE_RE = {
     'fasta':[(r'^(>)([^ \n]+)(.*)$', 2)],
     'caf'  :[(r'^(DNA *: *)([^ \n]+)(.*)$', 2),
@@ -260,15 +261,16 @@ REPLACE_RE = {
              (r'^(RD +)([^ ]+)(.*)$', 2)]
 }
 
-def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
+def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
+                          feature_kind):
     '''It changes the accession names in the files.
-    
+
     Given a naming schema and a file kind
     names found in the in file and it writes the result in the output file.
     '''
     def repl_factory(regex, group_num):
         '''It creates a repl function for the re.sub function.
-        
+
         We need one of these function for each regular expression given.
         Besides the regex we need the group number that has the name to be
         changed.
@@ -279,7 +281,7 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
             replace = []
             for group_i, group in enumerate(matchobj.groups()):
                 if group_i + 1 == group_num:
-                    replace.append(naming[group])
+                    replace.append(naming.get_uniquename(kind=feature_kind))
                 else:
                     replace.append(group)
             return ''.join(replace)
@@ -288,7 +290,7 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
         return repl_fun, re_obj
 
     #the repl and re_obj for each regular expression
-    re_list = REPLACE_RE[file_kind]
+    re_list = REPLACE_RE[file_format]
     regex_list = []
     for regex in re_list:
         func, re_obj = repl_factory(regex[0], regex[1])
@@ -301,6 +303,30 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_kind):
             line = re.sub(regex['re'], regex['function'], line)
         fhand_out.write(line)
 
+def _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
+                                  feature_kind):
+    'It replaces the seq name using the  per_seq method'
+    seqs = seqs_in_file(fhand_in, format=file_format)
+
+    for seq in seqs:
+        seq.name = naming.get_uniquename(kind=feature_kind)
+        write_seqs_in_file([seq], fhand_out, format=file_format)
+
+def change_names_in_files(fhand_in, fhand_out, naming, file_format,
+                          feature_kind):
+    '''It changes the accession names in the files.
+
+    Given a naming schema and a file kind
+    names found in the in file and it writes the result in the output file.
+    '''
+    if file_format in REPLACE_RE:
+        _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
+                                     feature_kind)
+    else:
+        _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
+                                     feature_kind)
+
+
 #pylint: disable-msg=R0903
 class _GeneralNameParser(object):
     '''This class parses some kind of files looking for names '''
@@ -312,7 +338,7 @@ class _GeneralNameParser(object):
         self._names = {}
         self._parser()
         self._setup_accesor_methods()
-    
+
     def _parser(self):
         '''The real parser '''
         for obj_kind in self.regexs:

@@ -34,9 +34,9 @@ EXAMPLES = {'fasta':('''
 ATCGTAGTCAGTTCAGTCTATGCTAGT
 >carcola
 ATGCGTAGCTAGTCGTAGTCTAGTCAT''','''
->001
+>myES000001
 ATCGTAGTCAGTTCAGTCTATGCTAGT
->002
+>myES000002
 ATGCGTAGCTAGTCGTAGTCTAGTCAT'''),
 'caf': ('''
 Sequence : contig1
@@ -73,7 +73,7 @@ Is_read'''),
 'ace':('''
 CO Contig2 213 6 1 U
 TCGTGGTGGTTCATCGACATT
-        
+
 BQ
 96 97 95 95 97 93 96
 
@@ -86,7 +86,7 @@ QA 1 173 1 173
 ''', '''
 CO 001 213 6 1 U
 TCGTGGTGGTTCATCGACATT
-        
+
 BQ
 96 97 95 95 97 93 96
 
@@ -117,7 +117,7 @@ library_definition
 
 class DbNamingSchemaTest(unittest.TestCase):
     'We test the behaviour of a naming schema stored in a naming database'
-    
+
     @staticmethod
     def test_basic_behaviour():
         'It tests that we can get names'
@@ -143,7 +143,7 @@ class DbNamingSchemaTest(unittest.TestCase):
         naming.commit()
         naming = DbNamingSchema(engine, project='my_project')
         assert naming.get_uniquename(kind='EST') == 'myES000002'
-        
+
     @staticmethod
     def test_rollback():
         "If we don't commit we lose the changes"
@@ -159,7 +159,7 @@ class DbNamingSchemaTest(unittest.TestCase):
 
 class FileNamingSchemaTest(unittest.TestCase):
     'We test the behaviour of a naming schema cached in a file'
-    
+
     def test_basic_behaviour(self):
         'It tests that we can get names using a FileNamingSchema'
         fhand = NamedTemporaryFile()
@@ -205,19 +205,23 @@ class FileNamingSchemaTest(unittest.TestCase):
         except ValueError:
             pass
 
-#class ChangeNameTest(unittest.TestCase):
-#    '''It test that we can modify the names/accs in different kind of files'''
-#    @staticmethod
-#    def test_fasta():
-#        'It test that we can change the name in the fasta files.'
-#        fhand_in = StringIO(EXAMPLES['fasta'][0])
-#        fhand_out = StringIO('')
-#        naming = NamingSchema('aproject', 'feature_kind',
-#                              'a db connection')
-#        naming = CachedNamingSchema(naming)
-#        change_names_in_files(fhand_in, fhand_out, naming, 'fasta')
-#        assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
-#
+class ChangeNameTest(unittest.TestCase):
+    '''It test that we can modify the names/accs in different kind of files'''
+    @staticmethod
+    def test_fasta():
+        'It test that we can change the name in the fasta files.'
+        fhand_in  = StringIO(EXAMPLES['fasta'][0])
+        fhand_out = StringIO('')
+        engine    = sqlalchemy.create_engine('sqlite:///:memory:')
+
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='test_project', code='my',
+                                       description='a test project')
+        naming    = DbNamingSchema(engine, 'test_project')
+
+        change_names_in_files(fhand_in, fhand_out, naming, 'fasta', 'EST')
+        assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
+
 #    @staticmethod
 #    def test_contig_naming():
 #        'It tests that we can create the names for a caf file.'
@@ -259,4 +263,4 @@ class FileNamingSchemaTest(unittest.TestCase):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']
     unittest.main()
-    
+
