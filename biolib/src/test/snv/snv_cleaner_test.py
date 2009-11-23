@@ -21,8 +21,8 @@ Created on 2009 uzt 30
 import unittest
 from StringIO import StringIO
 
-from biolib.seqvar.seqvariation import (SNP, DELETION, INVARIANT, Snv, COMPLEX)
-from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
+from biolib.snv.snv import SNP, DELETION, INVARIANT, Snv, COMPLEX
+from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
                                        create_high_variable_region_filter,
@@ -36,7 +36,7 @@ from biolib.seqvar.snp_cleaner import (#create_major_allele_freq_filter,
                                        create_kind_filter,
                                        create_reference_list_filter,
                                        create_aggregate_allele_qual_cleaner)
-from biolib.seqvar.sam_pileup import snv_contexts_in_sam_pileup
+from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
                               snp_filter_is_variable_in_aggregate,
                               snp_filter_by_kind,

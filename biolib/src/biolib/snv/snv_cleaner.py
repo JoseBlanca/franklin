@@ -23,9 +23,8 @@ Created on 2009 uzt 30
 
 import copy
 
-from biolib.seqvar.seqvariation import (cap_enzymes, SNP,
-                                        reference_variability,
-                                        get_reference_name, aggregate_alleles)
+from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
+                            get_reference_name, aggregate_alleles)
 
 #filters
 def create_high_variable_region_filter(max_variability, window=None):

@@ -21,9 +21,8 @@ Created on 2009 eka 18
 
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
-from sqlalchemy.sql import select
 from biolib.db.db_utils import  DbMap
-from biolib.seqvar.seqvariation import calculate_kind, Snv
+from biolib.snv.snv import Snv
 
 SNPMINER_MAP_DEF = [{'name':'Reference'},
                     {'name':'Library'},

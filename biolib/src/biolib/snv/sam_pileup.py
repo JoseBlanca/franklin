@@ -22,8 +22,8 @@ Created on 22/09/2009
 
 from biolib.biolib_seqio_utils import FileSequenceIndex
 from biolib.collections_ import item_context_iter
-from biolib.seqvar.seqvariation import (SNP, INSERTION, DELETION,
-                                        INVARIANT, Snv, aggregate_alleles)
+from biolib.snv.snv import (SNP, INSERTION, DELETION, INVARIANT, Snv,
+                            aggregate_alleles)
 
 def _get_alleles_from_line(line_split):
     'It gets allele from each line of the pileup'

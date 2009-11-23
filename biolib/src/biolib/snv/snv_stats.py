@@ -20,8 +20,7 @@ Created on 07/10/2009
 
 
 from biolib.statistics import create_distribution
-from biolib.seqvar.seqvariation import (reference_variability,
-                                        major_allele_frequency)
+from biolib.snv.snv import reference_variability, major_allele_frequency
 from biolib.collections_ import item_context_iter, FileCachedList
 
 

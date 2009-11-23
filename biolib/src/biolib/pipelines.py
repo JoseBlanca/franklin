@@ -48,7 +48,7 @@ from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_repeats_by_repeatmasker,
                                 create_masker_for_words)
 
-from biolib.seqvar.snp_cleaner import (create_cap_enzyme_filter,
+from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
                                        create_snv_close_to_limit_filter,
                                        create_high_variable_region_filter,
                                        create_close_to_seqvar_filter,

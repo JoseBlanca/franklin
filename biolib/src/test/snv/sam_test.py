@@ -18,9 +18,9 @@
 import unittest, os, StringIO
 
 import biolib
-from biolib.seqvar.sam_pileup import (_is_seq_var, _locations_in_pileups,
-                                      snvs_in_sam_pileups, _check_pileup)
-from biolib.seqvar.seqvariation import INVARIANT, SNP
+from biolib.snv.sam_pileup import (_is_seq_var, _locations_in_pileups,
+                                   snvs_in_sam_pileups, _check_pileup)
+from biolib.snv.snv import INVARIANT, SNP
 from biolib.statistics import calculate_read_coverage
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

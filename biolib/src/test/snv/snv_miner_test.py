@@ -19,10 +19,9 @@ Created on 2009 eka 19
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.seqvar.snp_miner import (SnvDb,
-                                     create_snp_miner_database)
+from biolib.snv.snv_miner import SnvDb, create_snp_miner_database
 
-from biolib.seqvar.seqvariation import Snv, INVARIANT, SNP
+from biolib.snv.snv import Snv, INVARIANT, SNP
 import sqlalchemy
 
 #from biolib.db.naming import (create_naming_database,

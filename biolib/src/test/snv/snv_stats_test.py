@@ -22,10 +22,9 @@ Created on 08/10/2009
 import unittest
 from StringIO import StringIO
 
-from biolib.seqvar.seqvariation import (Snv, svn_contexts_in_file, snvs_in_file,
-                                        SNP)
-from biolib.seqvar.snv_stats import (calculate_ref_variability_ditrib,
-                                     snv_distrib)
+from biolib.snv.snv import Snv, svn_contexts_in_file, snvs_in_file, SNP
+from biolib.snv.snv_stats import (calculate_ref_variability_ditrib,
+                                  snv_distrib)
 
 class TestSnvStats(unittest.TestCase):
     'It tests the snv statistics'

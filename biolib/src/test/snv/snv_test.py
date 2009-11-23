@@ -21,12 +21,10 @@ Created on 2009 mar 25
 
 import unittest
 from StringIO import StringIO
-from biolib.seqvar.seqvariation import (pic, cap_enzymes, SNP,
-                                        INSERTION, DELETION, INVARIANT, INDEL,
-                                        COMPLEX, Snv, snvs_in_file,
-                                        major_allele_frequency,
-                                        reference_variability,
-                                        calculate_kind)
+from biolib.snv.snv import (pic, cap_enzymes, SNP, INSERTION, DELETION,
+                            INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file,
+                            major_allele_frequency, reference_variability,
+                            calculate_kind)
 from biolib.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
