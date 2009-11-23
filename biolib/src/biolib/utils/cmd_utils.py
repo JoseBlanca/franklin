@@ -20,8 +20,8 @@ This module provides utilities to run external commands into biolib
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 
-from biolib.biolib_seqio_utils import temp_fasta_file, parse_fasta
-from biolib.biolib_utils import NamedTemporaryDir
+from biolib.utils.seqio_utils import temp_fasta_file, parse_fasta
+from biolib.utils.misc_utils import NamedTemporaryDir
 
 import subprocess, signal, tempfile, os
 import StringIO, logging

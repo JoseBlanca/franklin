@@ -24,11 +24,10 @@ from tempfile import NamedTemporaryFile
 
 import numpy
 
-from biolib.biolib_utils import float_lists_are_equal
-from biolib.biolib_seqio_utils import seqs_in_file
+from biolib.utils.misc_utils import float_lists_are_equal
+from biolib.utils.seqio_utils import seqs_in_file
 from biolib.statistics import (seq_distrib, general_seq_statistics,
-                               seq_distrib_diff, histogram,
-                               general_contig_statistics)
+                               seq_distrib_diff, histogram)
 import biolib
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

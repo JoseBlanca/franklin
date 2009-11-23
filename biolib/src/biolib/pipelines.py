@@ -63,9 +63,9 @@ from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
                                        create_aggregate_allele_qual_cleaner)
 
 from biolib.seq_filters        import create_length_filter
-from biolib.biolib_seqio_utils import (seqs_in_file, write_fasta_file,
-                                       write_seqs_in_file,
-                                       guess_seq_file_format)
+from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
+                                      write_seqs_in_file,
+                                      guess_seq_file_format)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

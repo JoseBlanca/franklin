@@ -20,8 +20,8 @@ Created on 22/09/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.biolib_seqio_utils import FileSequenceIndex
-from biolib.collections_ import item_context_iter
+from biolib.utils.seqio_utils import FileSequenceIndex
+from biolib.utils.collections_ import item_context_iter
 from biolib.snv.snv import (SNP, INSERTION, DELETION, INVARIANT, Snv,
                             aggregate_alleles)
 

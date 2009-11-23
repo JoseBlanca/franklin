@@ -18,7 +18,7 @@ Created on 27/10/2009
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 from copy import copy
 
-from biolib.collections_ import list_pairs_iter
+from biolib.utils.collections_ import list_pairs_iter
 from biolib.gff import write_gff
 
 def _species_pragma(species):

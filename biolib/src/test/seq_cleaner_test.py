@@ -7,7 +7,7 @@ import unittest, os
 import biolib
 
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_seqio_utils import temp_multi_fasta_file
+from biolib.utils.seqio_utils import temp_multi_fasta_file
 from biolib.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,

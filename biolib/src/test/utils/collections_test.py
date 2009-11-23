@@ -16,8 +16,8 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, StringIO
-from biolib.collections_ import (item_context_iter,
-                                 RequiredPosition, list_pairs_iter)
+from biolib.utils.collections_ import (item_context_iter,
+                                       RequiredPosition, list_pairs_iter)
 
 class _Locatable():
     'A class for locatable items'

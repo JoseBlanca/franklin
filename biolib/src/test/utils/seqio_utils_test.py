@@ -23,9 +23,9 @@ import unittest
 import StringIO
 
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_seqio_utils import (seqs_in_file, guess_seq_file_format,
-                                       temp_fasta_file, FileSequenceIndex,
-                                       quess_seq_type)
+from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
+                                      temp_fasta_file, FileSequenceIndex,
+                                      quess_seq_type)
 
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
@@ -129,7 +129,6 @@ class SeqsInFileTests(unittest.TestCase):
                                                  format='fastq-illumina')):
             assert seq.name == expected[index][0]
             assert str(seq.seq) == expected[index][1]
-            print seq.qual
             assert seq.qual == expected[index][2]
 
         #fastq-solexa

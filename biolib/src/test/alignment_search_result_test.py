@@ -23,7 +23,7 @@ from biolib.alignment_search_result import (BlastParser,
                                             _compatible_incompatible_length,
                                              ExonerateParser)
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_utils import floats_are_equal
+from biolib.utils.misc_utils import floats_are_equal
 
 import unittest
 import os

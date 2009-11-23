@@ -22,8 +22,8 @@ Created on 2009 mai 21
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 import StringIO
-from biolib.biolib_utils import xml_itemize
-from biolib.biolib_cmd_utils import  call
+from biolib.utils.misc_utils import xml_itemize
+from biolib.utils.cmd_utils import  call
 
 class InterProHandler(ContentHandler):
     '''  It parses the iprscan output'''

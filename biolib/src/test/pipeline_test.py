@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 from biolib.pipelines import  (configure_pipeline, seq_pipeline_runner,
                                pipeline_runner)
-from biolib.biolib_seqio_utils import seqs_in_file
+from biolib.utils.seqio_utils import seqs_in_file
 
 
 

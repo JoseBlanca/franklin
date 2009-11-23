@@ -21,11 +21,11 @@ Created on 2009 mar 25
 
 import copy
 
-from biolib.biolib_seqio_utils import temp_fasta_file
-from biolib.biolib_cmd_utils import call
+from biolib.utils.seqio_utils import temp_fasta_file
+from biolib.utils.cmd_utils import call
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_seqio_utils import FileSequenceIndex
-from biolib.collections_ import item_context_iter
+from biolib.utils.seqio_utils import FileSequenceIndex
+from biolib.utils.collections_ import item_context_iter
 
 SNP = 0
 INSERTION = 1

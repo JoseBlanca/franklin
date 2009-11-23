@@ -16,7 +16,7 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
-from biolib.collections_ import FileCachedList
+from biolib.utils.collections_ import FileCachedList
 import itertools
 
 PLOT_LABELS = {'masked_seq_distrib' :{

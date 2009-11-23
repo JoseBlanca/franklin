@@ -1,6 +1,6 @@
 'Blast utilities'
-from biolib.biolib_seqio_utils import create_temp_fasta_files, temp_fasta_file
-from biolib.biolib_cmd_utils import call
+from biolib.utils.seqio_utils import create_temp_fasta_files, temp_fasta_file
+from biolib.utils.cmd_utils import call
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.

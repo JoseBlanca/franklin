@@ -8,7 +8,7 @@ import tempfile, StringIO, math
 from uuid import uuid4
 
 from biolib.seqs import SeqWithQuality
-from biolib.biolib_utils import FileIndex
+from biolib.utils.misc_utils import FileIndex
 
 import Bio
 from Bio import SeqIO

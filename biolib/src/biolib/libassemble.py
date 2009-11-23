@@ -4,9 +4,9 @@ Created on 15/09/2009
 @author: peio
 '''
 import os
-from biolib.biolib_seqio_utils import (guess_seq_file_format,
-                                       quess_seq_type, seqio)
-from biolib.biolib_cmd_utils import call
+from biolib.utils.seqio_utils import (guess_seq_file_format,
+                                      quess_seq_type, seqio)
+from biolib.utils.cmd_utils import call
 
 def check_and_fix_config(config):
     'It checks and prepares the configurations'

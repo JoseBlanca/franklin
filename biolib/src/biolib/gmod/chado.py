@@ -5,7 +5,7 @@ Created on 2009 eka 4
 '''
 import sqlalchemy
 from sqlalchemy.orm import exc as orm_exc
-from biolib.biolib_cmd_utils import call
+from biolib.utils.cmd_utils import call
 from biolib.gmod.file_parsers import library_parser
 from biolib.db.db_utils import DbMap
 import csv, tempfile

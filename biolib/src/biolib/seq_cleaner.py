@@ -26,12 +26,12 @@ from tempfile import NamedTemporaryFile
 from itertools import tee
 
 import biolib
-from biolib.biolib_cmd_utils import create_runner, run_repeatmasker_for_sequence
-from biolib.biolib_seqio_utils import (get_content_from_fasta, seqs_in_file,
-                                 fasta_str)
+from biolib.utils.cmd_utils import create_runner, run_repeatmasker_for_sequence
+from biolib.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
+                                      fasta_str)
 from biolib.seqs import  SeqWithQuality
-from biolib.alignment_search_result import  (FilteredAlignmentResults,
-                                             get_alignment_parser)
+from biolib.alignment_search_result import (FilteredAlignmentResults,
+                                            get_alignment_parser)
 
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

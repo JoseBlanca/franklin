@@ -6,7 +6,7 @@ Created on 15/09/2009
 import unittest
 from biolib.libassemble import (check_and_fix_config,
                                 prepare_files_to_load_in_bank)
-from biolib.biolib_utils import NamedTemporaryDir
+from biolib.utils.misc_utils import NamedTemporaryDir
 import biolib
 import os.path
 
