@@ -7,7 +7,7 @@ Created on 2009 uzt 28
 import tempfile, StringIO, math
 from uuid import uuid4
 
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.misc_utils import FileIndex
 
 import Bio

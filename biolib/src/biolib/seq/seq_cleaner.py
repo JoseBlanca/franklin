@@ -29,7 +29,7 @@ import biolib
 from biolib.utils.cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
                                       fasta_str)
-from biolib.seqs import  SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 

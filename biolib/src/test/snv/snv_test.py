@@ -25,7 +25,7 @@ from biolib.snv.snv import (pic, cap_enzymes, SNP, INSERTION, DELETION,
                             INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file,
                             major_allele_frequency, reference_variability,
                             calculate_kind)
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
     '''Here we will check if the Snv module works as it should.'''

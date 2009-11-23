@@ -23,7 +23,7 @@ import copy
 
 from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.utils.cmd_utils import call
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import FileSequenceIndex
 from biolib.utils.collections_ import item_context_iter
 

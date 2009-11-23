@@ -22,7 +22,7 @@ Created on 2009 uzt 28
 import unittest
 import StringIO
 
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, FileSequenceIndex,
                                       quess_seq_type)

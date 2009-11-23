@@ -25,7 +25,7 @@ from biolib.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                      _get_xml_header, NamedTemporaryDir,
                                      FileIndex, split_long_sequences)
 from biolib.utils.collections_ import FileCachedList
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''

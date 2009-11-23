@@ -17,7 +17,7 @@
 
 import unittest
 from biolib.pairwise_alignment import bl2seq, water
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 
 class Bl2seqTest(unittest.TestCase):
     'It tests the bl2seq function'

@@ -52,7 +52,7 @@ for every match. Every evidence is similar to a match.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from Bio.Blast import NCBIXML
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 
 from math import log10
 

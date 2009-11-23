@@ -38,7 +38,7 @@ modify the sequences.
 import os, biolib, logging
 from itertools import imap, ifilter
 
-from biolib.seq_cleaner import (create_vector_striper_by_alignment,
+from biolib.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_striper_by_quality,
                                 create_striper_by_quality_lucy,
                                 create_striper_by_quality_lucy2,
@@ -62,7 +62,7 @@ from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
                                        create_reference_list_filter,
                                        create_aggregate_allele_qual_cleaner)
 
-from biolib.seq_filters        import create_length_filter
+from biolib.seq.seq_filters import create_length_filter
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
                                       write_seqs_in_file,
                                       guess_seq_file_format)

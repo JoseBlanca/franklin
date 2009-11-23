@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.seq_filters import (create_aligner_filter, create_length_filter,
+from biolib.seq.seq_filters import (create_aligner_filter, create_length_filter,
                                 create_adaptor_matches_filter,
                                 create_comtaminant_filter)
-from biolib.seqs import Seq, SeqWithQuality
+from biolib.seq.seqs import Seq, SeqWithQuality
 
 import unittest
 from itertools import ifilter

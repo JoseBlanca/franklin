@@ -41,7 +41,7 @@ from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
                               snp_filter_is_variable_in_aggregate,
                               snp_filter_by_kind,
                               snp_filter_reference_not_in_list)
-from biolib.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
