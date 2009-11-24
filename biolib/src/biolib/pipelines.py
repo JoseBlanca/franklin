@@ -257,7 +257,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'solexa'       : [remove_adaptors, strip_quality,
                               filter_short_seqs_solexa],
-            '454_adaptors':[remove_adaptors,filter_short_seqs_sanger],
+            'adaptors':[remove_adaptors, filter_short_seqs_sanger],
             'snp_basic': [snp_remove_alleles_n,
                           snp_no_baq_quality_alleles_agg,
                           snp_no_bad_quality_alleles_per_lib,
