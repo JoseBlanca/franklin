@@ -39,28 +39,28 @@ import os, biolib, logging
 from itertools import imap, ifilter
 
 from biolib.seq.seq_cleaner import (create_vector_striper_by_alignment,
-                                create_striper_by_quality,
-                                create_striper_by_quality_lucy,
-                                create_striper_by_quality_lucy2,
-                                create_striper_by_quality_trimpoly,
-                                create_masker_for_polia,
-                                create_masker_for_low_complexity,
-                                create_masker_repeats_by_repeatmasker,
-                                create_masker_for_words)
+                                    create_striper_by_quality,
+                                    create_striper_by_quality_lucy,
+                                    create_striper_by_quality_lucy2,
+                                    create_striper_by_quality_trimpoly,
+                                    create_masker_for_polia,
+                                    create_masker_for_low_complexity,
+                                    create_masker_repeats_by_repeatmasker,
+                                    create_masker_for_words)
 
 from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
-                                       create_snv_close_to_limit_filter,
-                                       create_high_variable_region_filter,
-                                       create_close_to_seqvar_filter,
-                                       create_major_allele_freq_filter,
-                                       create_is_variable_in_some_filter,
-                                       create_bad_quality_reads_cleaner,
-                                       create_min_qual_per_lib_allele_cleaner,
-                                       create_alleles_n_cleaner,
-                                       create_kind_filter,
-                                       create_is_variable_in_aggregate_filter,
-                                       create_reference_list_filter,
-                                       create_aggregate_allele_qual_cleaner)
+                                    create_snv_close_to_limit_filter,
+                                    create_high_variable_region_filter,
+                                    create_close_to_seqvar_filter,
+                                    create_major_allele_freq_filter,
+                                    create_is_variable_in_some_filter,
+                                    create_bad_quality_reads_cleaner,
+                                    create_min_qual_per_lib_allele_cleaner,
+                                    create_alleles_n_cleaner,
+                                    create_kind_filter,
+                                    create_is_variable_in_aggregate_filter,
+                                    create_reference_list_filter,
+                                    create_aggregate_allele_qual_cleaner)
 
 from biolib.seq.seq_filters import create_length_filter
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
@@ -257,6 +257,7 @@ PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
 
             'solexa'       : [remove_adaptors, strip_quality,
                               filter_short_seqs_solexa],
+            '454_adaptors':[remove_adaptors,filter_short_seqs_sanger],
             'snp_basic': [snp_remove_alleles_n,
                           snp_no_baq_quality_alleles_agg,
                           snp_no_bad_quality_alleles_per_lib,
