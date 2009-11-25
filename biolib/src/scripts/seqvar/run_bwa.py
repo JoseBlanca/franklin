@@ -26,7 +26,7 @@ Created on 08/10/2009
 '''
 from optparse import OptionParser
 import os
-from biolib.biolib_cmd_utils import NamedTemporaryDir, call
+from biolib.utils.cmd_utils import NamedTemporaryDir, call
 
 def parse_options():
     'It parses the command line arguments'
