@@ -22,7 +22,7 @@ Created on 08/10/2009
 @author: peio
 '''
 
-from biolib.biolib_cmd_utils import NamedTemporaryDir, call
+from biolib.utils.cmd_utils import NamedTemporaryDir, call
 import os, sys
 from optparse import OptionParser
 
