@@ -18,7 +18,7 @@
 import unittest
 from biolib.contig import Contig
 from biolib.locatable_sequence import locate_sequence
-from test.test_utils import Seq, SeqWithQuality, SeqRecord
+from test.test_utils import Seq, SeqRecord, SeqRecord
 
 # pylint: disable-msg=R0201
 # disable to many public methods
@@ -109,9 +109,9 @@ class ContigTests(unittest.TestCase):
         #seq2  GCTA   revcomp
         #qual2 89123
         contig = Contig()
-        seq1 = SeqWithQuality(Seq('ATCT'), [5, 6, 7, 8])
+        seq1 = SeqRecord(Seq('ATCT'), [5, 6, 7, 8])
         contig.append_to_location(seq1, start=2)
-        seq2 = SeqWithQuality(Seq('ATCG'), [3, 2, 1, 9])
+        seq2 = SeqRecord(Seq('ATCG'), [3, 2, 1, 9])
         contig.append_to_location(seq2, strand=-1, forward=False)
 
         assert len(contig) == 2

@@ -12,6 +12,7 @@ from biolib.utils.misc_utils import FileIndex
 
 import Bio
 from Bio import SeqIO
+from Bio.Seq import UnknownSeq
 
 def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
@@ -20,7 +21,10 @@ def fasta_str(seq, name, description=None):
     if description is not None:
         fasta_str_.append(' %s' % description)
     fasta_str_.append('\n')
-    fasta_str_.append(str(seq).strip())
+    try:
+        fasta_str_.append(str(seq.seq).strip())
+    except AttributeError:
+        fasta_str_.append(str(seq).strip())
     fasta_str_.append('\n')
     return ''.join(fasta_str_)
 
@@ -38,14 +42,15 @@ def append_to_fasta(seq, seq_fhand, qual_fhand=None):
         qual_fasta = fasta_str(" ".join(qual), name, description)
         qual_fhand.write(qual_fasta)
 
-
 def _get_seq_name(seq):
     'Given a sequence and its default name it returns its name'
     try:
         name = seq.name
     except AttributeError:
         name = None
-
+    #the SeqRecord default
+    if name == "<unknown name>":
+        name = None
     if name is None:
         name  = str(uuid4())
     return name
@@ -68,9 +73,9 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
 
         if fhand_qual is not None:
             try:
-                quality = seq.qual
+                quality = seq.letter_annotations["phred_quality"]
             except AttributeError:
-                msg = 'Sequence must be a SeqWithQuality instance'
+                msg = 'Sequence must have a phred_quality letter annotation'
                 raise AttributeError(msg)
             if quality is not None:
                 quality = [str(qual) for qual in quality]
@@ -80,6 +85,8 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
         try:
             desc = seq.description
         except:
+            desc = None
+        if desc == "<unknown description>":
             desc = None
         fhand_seq.write(fasta_str(seq, name, desc))
 
@@ -105,16 +112,6 @@ def temp_fasta_file(seqs, write_qual=False):
         return fhand_seq, fhand_qual
     else:
         return fhand_seq
-
-def temp_multi_fasta_file(seqs):
-    '''It creates a temporari fasta file using a list of sequences'''
-    fileh = tempfile.NamedTemporaryFile(suffix='.fasta')
-    for seq in seqs:
-        name = _get_seq_name(seq)
-        fileh.write(fasta_str(seq, name))
-    fileh.flush()
-    fileh.seek(0)
-    return fileh
 
 def create_temp_fasta_files(seq1, seq2):
     'It returns two temporal fasta files.'
@@ -194,8 +191,7 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
-def seqs_in_file(seq_fhand, qual_fhand=None, format=None,
-                 create_seqrecord=False):
+def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
     if format is None:
         seq_file_format = guess_seq_file_format(seq_fhand)
@@ -240,13 +236,9 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None,
             raise RuntimeError(msg)
         description = " ".join(seqrec.description.split(' ')[1:])
         annotations = seqrec.annotations
-        if create_seqrecord:
-            seqrec = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq)), id=name,
-                               description=description, annotations=annotations,
-                               letter_annotations={'phred_quality':qual})
-        else:
-            seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,
-                            description=description, annotations=annotations)
+        seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,
+                                description=description,
+                                annotations=annotations)
         yield seqrec
 
 class FileSequenceIndex(object):
@@ -275,13 +267,17 @@ class FileSequenceIndex(object):
         if self._format in ('fasta', 'qual'):
             if self._format == 'fasta':
                 name, description, seq = get_content_from_fasta(seq_content)
-                return SeqWithQuality(name=name, description=description,
-                                      seq=seq)
+                qual = None
             else:
-                name, description, seq = get_content_from_fasta(seq_content,
+                name, description, qual = get_content_from_fasta(seq_content,
                                                                 kind='qual')
-                return SeqWithQuality(name=name, description=description,
-                                      qual=seq)
+                seq=UnknownSeq(length=len(qual))
+            seqrec = SeqWithQuality(seq=seq, qual=qual)
+            if name is not None:
+                seqrec.name = name
+            if description is not None:
+                seqrec.description = description
+            return seqrec
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     '''It writes the given sequences in the given files.
@@ -289,17 +285,6 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     The seqs can be an iterartor or a list of Biopython SeqRecords or
     SeqWithQualities'''
     for seq in seqs:
-        #if the seq is a SeqWithQuality we have to transform it into a SeqRecord
-        if 'id' not in dir(seq):
-            description = seq.description
-            if description is None:
-                description = ''
-            seq = Bio.SeqRecord.SeqRecord(Bio.Seq.Seq(str(seq.seq)),
-                                          id=seq.name,
-                                          description=description,
-                                          annotations=seq.annotations,
-                                          letter_annotations={'phred_quality':
-                                                              seq.qual})
         if ('phred_quality' not in seq.letter_annotations or
             not seq.letter_annotations['phred_quality']):
             qual = [30] * len(seq.seq)
@@ -313,10 +298,7 @@ def seqio(in_seq_fhand, in_qual_fhand, in_format, out_seq_fhand, out_qual_fhand,
     'It converts format of the files'
     seqs = seqs_in_file(seq_fhand=in_seq_fhand,
                         qual_fhand=in_qual_fhand,
-                        format=in_format,
-                        create_seqrecord=True)
+                        format=in_format)
     write_seqs_in_file(seqs, seq_fhand=out_seq_fhand,
                        qual_fhand=out_qual_fhand,
                        format=out_format)
-
-

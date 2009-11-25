@@ -53,7 +53,7 @@ for every match. Every evidence is similar to a match.
 
 from Bio.Blast import NCBIXML
 from biolib.seq.seqs import SeqWithQuality
-
+from Bio.Seq import UnknownSeq
 from math import log10
 
 class BlastParser(object):
@@ -88,24 +88,29 @@ class BlastParser(object):
             else:
                 definition = None
         else:
-            name  = bio_result.query_id
+            name       = bio_result.query_id
             definition = definition
+        if definition is None:
+            definition = "<unknown description>"
         #length of query sequence
         length     = bio_result.query_letters
         #now we can create the query sequence
         query = SeqWithQuality(name=name, description=definition,
-                               length=length)
+                               seq=UnknownSeq(length=length))
 
         #now we go for the hits (matches)
         matches = []
         for alignment in bio_result.alignments:
             #the subject sequence
             #subj_name = alignment.title.split()[0]
-            name = alignment.accession
+            name       = alignment.accession
             definition = alignment.hit_def
-            length = alignment.length
-            subject = SeqWithQuality(name=name, description=definition,
-                                     length=length)
+            if definition is None:
+                definition = "<unknown description>"
+            length     = alignment.length
+            subject    = SeqWithQuality(name=name, description=definition,
+                                        seq=UnknownSeq(length=length))
+
             #the hsps (match parts)
             match_parts = []
             match_start, match_end = None, None
@@ -212,7 +217,9 @@ class ExonerateParser(object):
         struct_dict  = {}
         query_name   = query_result[0][0]
         query_length = int(query_result[0][9])
-        query        = SeqWithQuality(name=query_name, length=query_length)
+
+        query        = SeqWithQuality(name=query_name,
+                                      seq=UnknownSeq(length=query_length))
         struct_dict['query']   = query
         struct_dict['matches'] = []
         for match_part_ in  query_result:
@@ -253,7 +260,7 @@ class ExonerateParser(object):
             else:
                 match = {}
                 match['subject'] = SeqWithQuality(name=subject_name,
-                                                  length=int(subject_length))
+                                     seq=UnknownSeq(length=int(subject_length)))
                 match['start']       = query_start
                 match['end']         = query_end
                 match['scores']       = {'score':score}

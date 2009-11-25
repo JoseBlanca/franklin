@@ -39,7 +39,7 @@ class TestFPC(unittest.TestCase):
         assert len(fpc.markers) == 2
         assert len(fpc.clones) == 4
         assert len(fpc.contigs) == 2
-        print fpc.contigs
+        #print fpc.contigs
 
     @staticmethod
     def test_gff():

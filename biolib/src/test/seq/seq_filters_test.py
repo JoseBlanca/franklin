@@ -19,6 +19,7 @@ from biolib.seq.seq_filters import (create_aligner_filter, create_length_filter,
                                 create_adaptor_matches_filter,
                                 create_comtaminant_filter)
 from biolib.seq.seqs import Seq, SeqWithQuality
+from Bio.Seq import UnknownSeq
 
 import unittest
 from itertools import ifilter
@@ -43,7 +44,7 @@ class BlastFilteringTest(unittest.TestCase):
                                      cmd_parameters=parameters,
                                      match_filters=match_filters )
         assert  blast_filter(seq1) == False
-        assert  blast_filter(seq2) == False
+        assert  blast_filter(seq2) == True
 
 ADAPTORS = '''>adaptor1
 AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
@@ -58,17 +59,17 @@ class TooManyAdaptorsTest(unittest.TestCase):
         'It test that we can filter the chimeric sequences using exonerate'
         adapt1 = 'AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA'
         adapt2 = 'AAAAATACTCTGATCGATCGGATCTAGCATGCAA'
-        adaptators = [adapt1, adapt2]
+        adaptors = [adapt1, adapt2]
         seq2 = 'ATCGACTACGACATCGACTACGATACGATCAGATCAGATCGATCGACTACTA'
 
         seq = adapt1 + seq2 + adapt2
         seq1    = SeqWithQuality(seq=seq)
-        filter_ = create_adaptor_matches_filter(adaptators)
+        filter_ = create_adaptor_matches_filter(adaptors)
         assert filter_(seq1)
 
         seq = adapt1 + seq2 + adapt2 +  seq2 + adapt1
         seq1    = SeqWithQuality(seq=seq)
-        filter_ = create_adaptor_matches_filter(adaptators)
+        filter_ = create_adaptor_matches_filter(adaptors)
         assert not filter_(seq1)
 
 class LengthFilterTest(unittest.TestCase):
@@ -76,7 +77,8 @@ class LengthFilterTest(unittest.TestCase):
     @staticmethod
     def test_length_filter():
         'It test the standard sequence length filter'
-        seqs = [SeqWithQuality(length=300), SeqWithQuality(length=100)]
+        seqs = [SeqWithQuality(UnknownSeq(length=300)),
+                SeqWithQuality(UnknownSeq(length=100))]
         filter_ = create_length_filter(200)
         filtered_seqs = ifilter(filter_, seqs)
         assert len(list(filtered_seqs)[0]) == 300

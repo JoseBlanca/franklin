@@ -22,6 +22,7 @@ Created on 2009 api 30
 
 import tempfile, shutil
 import os, re, math
+from biolib.seq.seqs import copy_seq_with_quality
 
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
@@ -88,7 +89,7 @@ def _split_seq(seq, maxlength):
             qual = seq.qual[start:end]
         else:
             qual = None
-        yield seq.copy(seq=seq.seq[start:end], qual=qual,
+        yield copy_seq_with_quality(seq, seq=seq.seq[start:end], qual=qual,
                         name='%s_%d' % (seq.name, i+1))
 
 def _calculate_divisions(length, splits):

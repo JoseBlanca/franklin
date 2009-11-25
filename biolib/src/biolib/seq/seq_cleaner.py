@@ -29,7 +29,7 @@ import biolib
 from biolib.utils.cmd_utils import create_runner, run_repeatmasker_for_sequence
 from biolib.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
                                       fasta_str)
-from biolib.seq.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality, copy_seq_with_quality
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 
@@ -204,7 +204,7 @@ def create_masker_for_low_complexity():
         fhand = mask_low_complex_by_seq(sequence)[0]
         #pylint:disable-msg=W0612
         name, desc, seq = get_content_from_fasta(fhand)
-        return sequence.copy(seq=seq)
+        return copy_seq_with_quality(sequence, seq=seq)
     return mask_low_complexity
 
 def create_masker_for_polia():
@@ -236,7 +236,7 @@ def create_masker_for_words(words):
         for word in words:
             seq = seq.replace(word, word.lower())
             seq = seq_class(seq)
-        return sequence.copy(seq=seq)
+        return copy_seq_with_quality(sequence, seq=seq)
     return word_masker
 
 def create_striper_by_quality_trimpoly():
@@ -267,7 +267,7 @@ def create_striper_by_quality_trimpoly():
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
         mask_polya_by_seq = create_runner(kind='trimpoly',
                                           parameters=parameters)
-        fhand = mask_polya_by_seq(SeqWithQuality(seq=sequence))[0]
+        fhand = mask_polya_by_seq(sequence)[0]
         return _sequence_from_trimpoly(fhand, sequence, trim=True)
     return strip_seq_by_quality_trimpoly
 
@@ -289,7 +289,7 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
         return sequence[end3:end5]
     else:
         seq_class = sequence.seq.__class__
-        return sequence.copy(seq=seq_class(new_sequence))
+        return copy_seq_with_quality(sequence, seq=seq_class(new_sequence))
 
 def create_striper_by_quality_lucy():
     'It creates a function that removes bad quality regions using lucy'
@@ -361,10 +361,11 @@ def create_striper_by_quality_lucy2(vector=None):
     iterator with the processed sequences in it.'''
     #we prepare the function that will run lucy
     if vector is None:
-        run_lucy_for_seqs = create_runner(kind='lucy')
+        run_lucy_for_seqs = create_runner(kind='lucy', multiseq=True)
     else:
         run_lucy_for_seqs = create_runner(kind='lucy',
-                                          parameters={'vector':vector})
+                                          parameters={'vector':vector},
+                                          multiseq=True)
 
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.
@@ -605,7 +606,7 @@ def _get_matched_locations(seq, locations, min_length):
             qual = None
         if seq.name is not None:
             name = '%s_%d' % (seq.name, i + 1)
-        yield seq.copy(seq=seq1, qual=qual, name=name)
+        yield copy_seq_with_quality(seq, seq=seq1, qual=qual, name=name)
 
 def split_seq_by_masked_regions(seq_iter, min_length):
     '''It takes a sequence iterator and return another iterator of sequences.

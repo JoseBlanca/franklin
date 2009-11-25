@@ -20,7 +20,7 @@ Created on 2009 api 27
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.contig import  Contig
-from biolib.seqs import SeqWithQuality
+from biolib.seqs import SeqRecord
 from biolib.locatable_sequence import Location
 from biolib.pairwise_alignment import water
 
@@ -71,7 +71,7 @@ def create_non_matched_region_stripper():
 
             # Alignment of the read with the consensus. The read is only
             # the unmasked region
-            align_result = water(consensus, SeqWithQuality(seq, name='seq2'))
+            align_result = water(consensus, SeqRecord(seq, name='seq2'))
             seq_start    = align_result['alignment']['seq2']['start']
             seq_end      = align_result['alignment']['seq2']['end']
 

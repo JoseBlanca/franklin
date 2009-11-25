@@ -26,7 +26,7 @@ from biolib.seqvariation import (CONFIG, SeqVariation,
                                  cap_enzime)
 from biolib.locatable_sequence import locate_sequence
 from biolib.contig import Contig
-from biolib.seqs import SeqWithQuality
+from biolib.seqs import SeqRecord
 from test.test_utils import SeqRecord
 
 class SeqVariationConfigTest(unittest.TestCase):
@@ -236,8 +236,8 @@ class SeqVariationrEnzime(unittest.TestCase):
     @staticmethod
     def test_remap():
         '''It test if the remap external program works '''
-        con  = SeqWithQuality(seq='Actgactgactgtca', name='consensus')
-        seq  = SeqWithQuality(seq='Actgacttactgtca', name='seq')
+        con  = SeqRecord(seq='Actgactgactgtca', name='consensus')
+        seq  = SeqRecord(seq='Actgacttactgtca', name='seq')
         consensus = locate_sequence(con, location=0)
         cont = Contig([seq, seq], consensus=consensus)
         snp = SeqVariation(alleles={'C':2, 'T':3}, location=7, alignment=cont)
@@ -246,8 +246,8 @@ class SeqVariationrEnzime(unittest.TestCase):
         assert ['HinfI', 'TscAI'] == enzymes
 
         # We need to test it with locations
-        con       = SeqWithQuality(seq='Actgactgactgtca', name='consensus')
-        seq       = SeqWithQuality(seq='Actgacttactgtca', name='seq')
+        con       = SeqRecord(seq='Actgactgactgtca', name='consensus')
+        seq       = SeqRecord(seq='Actgacttactgtca', name='seq')
         consensus = locate_sequence(con, location=0)
         contig    = Contig(consensus=consensus)
         contig.append_to_location(seq, 0)

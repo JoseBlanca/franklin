@@ -69,11 +69,8 @@ class SeqsTest(unittest.TestCase):
         assert seq3.seq == 'tttggaaa'
 
         # Let's check the sliceability of the seq
-        seq4 = []
-        for num in range(len(seq1)):
-            seq4.append(seq1[num])
-        assert seq4[0].seq  == 'a'
-        assert seq4[0].qual == [2]
+        assert seq2[0:2].seq == 'aa'
+        assert seq2[0:2].qual == [2, 4]
 
     @staticmethod
     def test_add_seqs():
@@ -81,32 +78,15 @@ class SeqsTest(unittest.TestCase):
         sequence1 = Seq('aaaccttt')
 
         # First we initialice the quality in the init
-        seq1 = SeqWithQuality(name = 'seq1', seq = sequence1, \
-                               qual = [2, 4 , 1, 4, 5, 6, 12, 34])
-        seq2 = SeqWithQuality(name = 'seq1', seq = sequence1, \
-                               qual = [2, 4 , 1, 4, 5, 6, 12, 34])
-
+        seq1 = SeqWithQuality(name = 'seq1', seq = sequence1,
+                              qual = [2, 4 , 1, 4, 5, 6, 12, 34])
+        seq2 = SeqWithQuality(name = 'seq2', seq = sequence1,
+                              qual = [2, 4 , 1, 4, 5, 6, 12, 34])
         seq3 = seq1 + seq2
         assert seq3.seq == 'aaacctttaaaccttt'
-        assert seq3.qual == [2, 4 , 1, 4, 5, 6, 12, 34, 2, 4 , 1, 4, 5, \
+        assert seq3.qual == [2, 4 , 1, 4, 5, 6, 12, 34, 2, 4 , 1, 4, 5,
                              6, 12, 34]
-
-    def test_empty_seq(self):
-        'EmptySeq basic behaviour'
-        seq = SeqWithQuality(length=300)
-        assert len(seq) == 300
-
-        #We can create an empty seq and add the sequence latter
-        seq = SeqWithQuality(length=4)
-        seq.seq = 'ACTG'
-
-        #we'll fail if we try to reassing
-        try:
-            seq.seq = 'ACTG'
-            self.fail('AttributeError expected')
-            #pylint: disable-msg=W0704
-        except AttributeError:
-            pass
+        assert seq3.name == 'seq1+seq2'
 
     @staticmethod
     def test_description():

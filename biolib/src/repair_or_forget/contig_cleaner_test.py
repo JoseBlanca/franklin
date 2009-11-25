@@ -25,7 +25,7 @@ from biolib.locatable_sequence import locate_sequence
 from biolib.contig_cleaner import (create_contig_read_stripper,
                                    create_non_matched_region_stripper,
                                    create_read_number_contig_filter)
-from biolib.seqs import SeqWithQuality
+from biolib.seqs import SeqRecord
 from Bio.Seq import Seq
 
 class StripTest(unittest.TestCase):
@@ -59,7 +59,7 @@ class StripTest(unittest.TestCase):
     @staticmethod
     def test_contig_water_strip():
         '''It test the contig water strip function '''
-        seq1 = SeqWithQuality(name='consensus', seq='AATTCCGG')
+        seq1 = SeqRecord(name='consensus', seq='AATTCCGG')
         contig = Contig(consensus=locate_sequence(sequence=seq1, location=1))
         seq = 'tAATTCCGGt'
         mask = (1, 8)
@@ -82,7 +82,7 @@ class StripTest(unittest.TestCase):
     @staticmethod
     def test_read_number_contig_filter():
         'It test the read number contig filter'
-        seq1   = SeqWithQuality(name='consensus', seq='AATTCCGG')
+        seq1   = SeqRecord(name='consensus', seq='AATTCCGG')
         contig = Contig(consensus=locate_sequence(sequence=seq1, location=1))
         seq = 'tAATTCCGGt'
         contig.append_to_location(seq)

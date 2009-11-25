@@ -24,7 +24,7 @@ from biolib.locatable_sequence import NonStaticParentLocation
 from biolib.biolib_seqio_utils import temp_fasta_file
 from biolib.biolib_utils import get_start_end
 from biolib.biolib_cmd_utils import call
-from biolib.seqs import SeqWithQuality
+from biolib.seqs import SeqRecord
 
 class _SeqVarConf(object):
     '''This class contains some switches to configure to your needs
@@ -584,8 +584,8 @@ def cap_enzime(snp, all_enzymes=False):
     if len(seq1.strip()) < (piece_from_location * 2 + 1):
         return None
         #raise ValueError('The snp is in the end of the consensus')
-    seq1 = SeqWithQuality(name='seq1', seq=seq1)
-    seq2 = SeqWithQuality(name='seq2', seq=seq2)
+    seq1 = SeqRecord(name='seq1', seq=seq1)
+    seq2 = SeqRecord(name='seq2', seq=seq2)
 
     enzymes1 = _remap_run(seq1, all_enzymes)
     enzymes2 = _remap_run(seq2, all_enzymes)

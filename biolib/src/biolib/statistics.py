@@ -84,7 +84,7 @@ def _masked_sequence_lengths(sequences, low_memory):
         lengths = []
     for seq in sequences:
         length = 0
-        for letter in str(seq):
+        for letter in str(seq.seq):
             if letter.islower():
                 length += 1
         lengths.append(length)
@@ -251,9 +251,9 @@ def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
     '''
     has_qual = False
     if low_memory:
-        lengths        = FileCachedList(float)
-        masked_lengths = FileCachedList(float)
-        qualities      = FileCachedList(float)
+        lengths        = FileCachedList(int)
+        masked_lengths = FileCachedList(int)
+        qualities      = FileCachedList(int)
     else:
         lengths        = []
         masked_lengths = []

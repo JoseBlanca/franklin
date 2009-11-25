@@ -29,6 +29,7 @@ import unittest
 import os
 from StringIO import StringIO
 from tempfile import NamedTemporaryFile
+from Bio.Seq import UnknownSeq
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -83,7 +84,8 @@ class BlastParserTest(unittest.TestCase):
         parser = BlastParser(fhand=blast_file)
 
         expected_results = [
-            {'query':{'name':'cCL1Contig2', 'description':None,
+            {'query':{'name':'cCL1Contig2',
+                      'description':"<unknown description>",
                       'length':1924},
              'matches':[
                  {'subject':{'name':'chr18',
@@ -102,7 +104,8 @@ class BlastParserTest(unittest.TestCase):
                  }
              ]
             },
-            {'query':{'name':'cCL1Contig3', 'description':None,
+            {'query':{'name':'cCL1Contig3',
+                      'description':"<unknown description>",
                       'length':629},
             },
             {}, {}
@@ -182,7 +185,7 @@ class ExonerateParserTest(unittest.TestCase):
         parser = ExonerateParser(fhand=StringIO(EXONERATE_OUTPUT))
 
         expected_results = [
-            {'query':{'name':'prueba', 'description':None,
+            {'query':{'name':'prueba', 'description':"<unknown description>",
                       'length':54},
              'matches':[
                  {'subject':{'name':'adaptor2','length':35},
@@ -384,8 +387,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         #simil                 90%
         #subject           <--> <---->
         #subject           ----------------------------------
-        query   = SeqWithQuality(length=21)
-        subject = SeqWithQuality(length=32)
+        query   = SeqWithQuality(seq=UnknownSeq(length=21))
+        subject = SeqWithQuality(seq=UnknownSeq(length=32))
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 10,
                        'query_end'     : 13,
@@ -432,8 +435,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         #simil                 90%
         #subject           <-->  <--->
         #subject ----------------------
-        query   = SeqWithQuality(length=21)
-        subject = SeqWithQuality(length=22)
+        query   = SeqWithQuality(seq=UnknownSeq(length=21))
+        subject = SeqWithQuality(seq=UnknownSeq(length=22))
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 1,
                        'query_end'     : 4,
@@ -481,8 +484,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         #simil                 90%
         #subject           <--<-->--->
         #subject ---------------------
-        query   = SeqWithQuality(length=21)
-        subject = SeqWithQuality(length=21)
+        query   = SeqWithQuality(seq=UnknownSeq(length=21))
+        subject = SeqWithQuality(seq=UnknownSeq(length=21))
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 1,
                        'query_end'     : 7,
@@ -518,8 +521,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         #t   |   x
         #    |  x
         #  224 x
-        query   = SeqWithQuality(length=110)
-        subject = SeqWithQuality(length=250)
+        query   = SeqWithQuality(seq=UnknownSeq(length=110))
+        subject = SeqWithQuality(seq=UnknownSeq(length=250))
         match = {'match_parts': [{'query_strand': -1, 'subject_end': 66,
                                 'subject_start': 1, 'query_start': 31,
                                 'query_end': 94,
@@ -540,8 +543,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         compat, incompat = _compatible_incompatible_length(match, query)
         assert (compat, incompat) == (64, 32)
 
-        query   = SeqWithQuality(length=180)
-        subject = SeqWithQuality(length=500)
+        query   = SeqWithQuality(seq=UnknownSeq(length=180))
+        subject = SeqWithQuality(seq=UnknownSeq(length=500))
         match = {'match_parts': [{'query_strand': -1, 'subject_end': 289,
                                  'subject_start': 158, 'query_start': 34,
                                  'query_end': 166,
@@ -561,8 +564,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         compat, incompat = _compatible_incompatible_length(match, query)
         assert (compat, incompat) == (133, 47)
 
-        query   = SeqWithQuality(length=260)
-        subject = SeqWithQuality(length=110)
+        query   = SeqWithQuality(seq=UnknownSeq(length=260))
+        subject = SeqWithQuality(seq=UnknownSeq(length=110))
         match = {'match_parts': [{'query_strand': -1, 'subject_end': 37,
                                   'subject_start': 1, 'query_start': 215,
                                   'query_end': 251,
@@ -582,8 +585,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         compat, incompat = _compatible_incompatible_length(match, query)
         assert (compat, incompat) == (37, 75)
 
-        query   = SeqWithQuality(length=200)
-        subject = SeqWithQuality(length=200)
+        query   = SeqWithQuality(seq=UnknownSeq(length=200))
+        subject = SeqWithQuality(seq=UnknownSeq(length=200))
         match = {'match_parts': [{'query_strand': -1, 'subject_end': 187,
                                   'subject_start': 127, 'query_start': 1,
                                   'query_end': 65,
@@ -603,8 +606,8 @@ class IncompatibleLengthTest(unittest.TestCase):
         compat, incompat = _compatible_incompatible_length(match, query)
         assert (compat, incompat) == (124, 67)
 
-        query   = SeqWithQuality(length=220)
-        subject = SeqWithQuality(length=220)
+        query   = SeqWithQuality(seq=UnknownSeq(length=220))
+        subject = SeqWithQuality(seq=UnknownSeq(length=220))
         match = {'match_parts': [{'query_strand': -1, 'subject_end': 187,
                                   'subject_start': 100, 'query_start': 69,
                                   'query_end': 156,
@@ -630,9 +633,9 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
     @staticmethod
     def test_alignment_results_scores():
         'It tests that we can get all the scores from a result'
-        query    = SeqWithQuality(length=25, name='query')
-        subject1 = SeqWithQuality(length=32, name='hola')
-        subject2 = SeqWithQuality(length=32, name='query')
+        query    = SeqWithQuality(seq=UnknownSeq(length=25), name='query')
+        subject1 = SeqWithQuality(seq=UnknownSeq(length=32), name='hola')
+        subject2 = SeqWithQuality(seq=UnknownSeq(length=32), name='query')
         match_part1 = {'scores':{'similarity':90.0},
                        'query_start'   : 10,
                        'query_end'     : 20,

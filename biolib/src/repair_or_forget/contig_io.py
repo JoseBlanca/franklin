@@ -2,7 +2,7 @@
 
 from re import match
 from biolib.contig import Contig,  locate_sequence
-from biolib.seqs import SeqWithQuality, Seq
+from biolib.seqs import SeqRecord, Seq
 from biolib.biolib_seqio_utils import fasta_str
 from biolib.biolib_utils import  FileIndex
 from Bio.Seq import Seq
@@ -91,7 +91,7 @@ def _build_contig_from_dict(reads):
         real_name = read['name'] #different for the consensus
         if read_name == 'consensus':
             #consensus
-            seq = SeqWithQuality(name=real_name, seq=seq,
+            seq = SeqRecord(name=real_name, seq=seq,
                                  qual=read['quality'])
             con = \
               locate_sequence(seq, location=start, parent=contig)
@@ -102,7 +102,7 @@ def _build_contig_from_dict(reads):
                 qual = read['quality']
             else:
                 qual = None
-            seq = SeqWithQuality(name=real_name, seq=seq, qual=qual)
+            seq = SeqRecord(name=real_name, seq=seq, qual=qual)
             mask = read['mask']
             forward = read['forward']
             if forward:
@@ -344,7 +344,7 @@ class CafParser(object):
         return sec_info
 
     def read(self, name):
-        '''Given a read name it returns a SeqWithQuality object'''
+        '''Given a read name it returns a SeqRecord object'''
 
         if self._type_index[name] == 'Is_read':
 
@@ -352,7 +352,7 @@ class CafParser(object):
             dna      = self._read_dna_section(name)
             quality  = self._read_qual_section(name)
 
-            seq_rec  = SeqWithQuality(seq=Seq(dna), name=name, qual=quality )
+            seq_rec  = SeqRecord(seq=Seq(dna), name=name, qual=quality )
             seq_rec.annotations =  seq_info
             return seq_rec
         else:
@@ -688,7 +688,7 @@ class BowtieParser(object):
         # The encoded quality values are on the Phred scale and the encoding is
         #ASCII-offset by 33 (ASCII char !
         qualities = [ord(qual) - 33 for qual in qualities]
-        read = SeqWithQuality(name=read_name, seq=sequence, qual=qualities)
+        read = SeqRecord(name=read_name, seq=sequence, qual=qualities)
         return read, read_location
 
     def contig(self, name):
@@ -735,7 +735,7 @@ class BowtieParser(object):
 #        # The encoded quality values are on the Phred scale and the encoding is
 #        #ASCII-offset by 33 (ASCII char !
 #        qualities = [ord(qual) - 33 for qual in qualities]
-#        read = SeqWithQuality(name=read_name, seq=sequence, qual=qualities)
+#        read = SeqRecord(name=read_name, seq=sequence, qual=qualities)
 #        return read, read_location
 #
 #    def contig(self, name):

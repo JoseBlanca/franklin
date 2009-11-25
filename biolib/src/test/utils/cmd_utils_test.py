@@ -97,7 +97,8 @@ class RunnerFactorytest(unittest.TestCase):
         'We can create a runner class for lucy'
         fastafile = os.path.join(DATA_DIR, 'seq.fasta')
         run_lucy_for_seq = create_runner(kind='lucy',
-                                    parameters={'vector':(fastafile,fastafile)})
+                                    parameters={'vector':(fastafile,fastafile)},
+                                    multiseq=True)
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         qual = [30] * len(seq)
         seq1 = SeqWithQuality(seq, qual=qual)

@@ -19,7 +19,7 @@ import unittest
 from biolib.locatable_sequence import (Location, NonStaticParentLocation, 
                                        LocatableSequence, _reparent_location,
                                        locate_sequence)
-from test.test_utils import Seq, SeqWithQuality, Seqmut
+from test.test_utils import Seq, SeqRecord, Seqmut
 
 # pylint: disable-msg=R0201
 # disable to many public methods
@@ -1182,7 +1182,7 @@ class LocatableSequenceTests(unittest.TestCase):
     @staticmethod
     def test_seq_attrs():
         'It test that we can get the .sequence attributes'
-        seq = SeqWithQuality(name='hola', seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        seq = SeqRecord(name='hola', seq=Seq('ATCT'), qual=[1, 2, 3, 4])
         loc_seq = locate_sequence(seq, location=1)
         #both the seq and the loc_seq have the same properties
         #we can access the seq properties through the locseq properties
@@ -1197,7 +1197,7 @@ class LocatableSequenceTests(unittest.TestCase):
         #    01234
         #seq  AGAT
         #qual 4321
-        seq = SeqWithQuality(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        seq = SeqRecord(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
         loc_seq = locate_sequence(seq, location=1, strand=-1, forward=False)
         assert loc_seq.seq[2:4] == 'GA'
         assert seq.qual[3] == loc_seq.qual[1]
@@ -1206,7 +1206,7 @@ class LocatableSequenceTests(unittest.TestCase):
         #    01234
         #seq  TCTA
         #qual 4321
-        seq = SeqWithQuality(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
+        seq = SeqRecord(seq=Seq('ATCT'), qual=[1, 2, 3, 4])
         loc_seq = locate_sequence(seq, location=1, forward=False)
         assert loc_seq.seq[2:4] == 'CT'
         assert seq.qual[3] == loc_seq.qual[1]

@@ -160,11 +160,12 @@ def _param_to_str(param):
     return str(param)
 
 
-def create_runner(kind, bin_=None, parameters=None):
+def create_runner(kind, bin_=None, parameters=None, multiseq=False):
     ''''It creates a runner class.
 
     The runner will be able to run a binary program for different sequences.
     kind is the type of runner (blast, seqclean, etc)
+    if multiseq is True the runner will expect list or iterator of sequences.
     '''
     runner_def = RUNNER_DEFINITIONS[kind]
     bin_ = _get_aligner_binary(kind)
@@ -173,20 +174,24 @@ def create_runner(kind, bin_=None, parameters=None):
     cmd_param = _process_parameters(parameters, runner_def['parameters'])
 
     def run_cmd_for_sequence(sequence):
-        'It returns a result for the given sequence'
+        'It returns a result for the given sequence or sequences'
+        #parameters should be in the scope because some tempfile could be in
+        #there. In some pythons this has been a problem.
+        assert type(parameters)
         # Do we nedd quality for the input??
         input_ = runner_def['input']
-#        if 'files' in input_ and 'qual' in input_['files']:
-#            qual_fhand = temp_fasta_file(sequence, write_qual=True)
-#            qual_fname = qual_fhand.name
-#        #do we have to process the sequence?
-#        seq_fhand = temp_fasta_file(sequence)
+
+        if multiseq:
+            seqs = sequence
+        else:
+            seqs = [sequence]
 
         if 'files' in input_ and 'qual' in input_['files']:
-            seq_fhand, qual_fhand = temp_fasta_file(sequence, write_qual=True)
+            seq_fhand, qual_fhand = temp_fasta_file(seqs=seqs,
+                                                    write_qual=True)
             qual_fname = qual_fhand.name
         else:
-            seq_fhand = temp_fasta_file(sequence)
+            seq_fhand = temp_fasta_file(seqs=seqs)
 
         cmd = [bin_]
 

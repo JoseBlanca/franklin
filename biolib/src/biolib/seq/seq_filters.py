@@ -22,11 +22,9 @@ can also return None if no sequence is left after the filtering process.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from biolib.utils.cmd_utils import create_runner
-from biolib.utils.seqio_utils import temp_multi_fasta_file
+from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
-
-
 
 def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
                             result_filters=None):
@@ -104,10 +102,9 @@ def create_adaptor_matches_filter(adaptors, number=3):
     if 'name' in properties and 'close' in properties:
         fhand = adaptors
     else:
-        fhand = temp_multi_fasta_file(adaptors)
-    fname = fhand.name
+        fhand = temp_fasta_file(adaptors)
 
-    parameters     =  {'target': fname}
+    parameters     =  {'target': fhand}
     match_filters  = [{'kind'          : 'min_scores',
                       'score_key'      : 'similarity',
                       'min_score_value': 96},
@@ -123,11 +120,8 @@ def create_adaptor_matches_filter(adaptors, number=3):
 
     def filter_by_adaptor_matches(sequence):
         'It return False if the sequence have more than number or equal tiems'
-        fhand
         return match_filter(sequence)
     return filter_by_adaptor_matches
-
-
 
 def create_comtaminant_filter(contaminant_db):
     '''It creates a filter that return False if the sequence has a strong match

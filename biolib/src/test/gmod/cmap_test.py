@@ -70,7 +70,7 @@ class CmapTest(unittest.TestCase):
                 'species':{'cmelo': species}}
         fhand = StringIO()
         cmap_to_gff(cmap, fhand)
-        print fhand.getvalue()
+        #print fhand.getvalue()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

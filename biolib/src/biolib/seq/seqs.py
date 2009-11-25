@@ -19,169 +19,184 @@ Created on 2009 mar 27
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-class SeqWithQuality(object):
-    'This class is a container of a sequence with quality atribute'
-    #we don't need more public methods
-    #pylint: disable-msg=R0903
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq as BioSeq
 
-    def __init__(self, seq=None, qual= None, name=None, length=None,
-                description=None, annotations=None):
-        '''To initialice this class we need name and seq arguments.
+def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
+                          id_=None):
+    '''Given a seqrecord it returns a new seqrecord with seq or qual changed.
 
-        Arguments:
-            name : Name of the secuence
-            seq  : Sequence in a string, it accepts Biopython seq,
-                that is used to complement the seq.
-            qual : Quality of the sequence, in a list object
-            length : The sequence length, useful for empty seq objects
-            annotations: A dict with the annotations that affect the sequence
-                         as a whole, not just a fragment of the sequence
-            description: an str with the sequence description
-        '''
-        self._length = length
-        self.name = name
-        self._seq = None
-        self.seq  = seq
-        self._qual = None
-        self.qual  = qual
-        self.description = description
-        self.annotations = annotations
+    This is necessary because our SeqWithQuality is inmutable
+    '''
+    if seq is None:
+        seq=seqwithquality.seq
+    if id_ is  None:
+        id_ = seqwithquality.id
+    if name is None:
+        name = seqwithquality.name
 
-    def __add__(self, seq2):
-        '''It returns a new object with both seq and qual joined '''
-        if self._qual is  None or seq2.qual is None:
-            qual = None
+    #the letter annotations
+    let_annot = {}
+    for annot, value in seqwithquality.letter_annotations.items():
+        if qual is not None and "phred_quality" == annot:
+            let_annot[annot] = qual
         else:
-            qual = self._qual + seq2.qual
+            let_annot[annot] = value
 
-        return self.__class__(name = self.name, \
-                              seq  = self._seq + seq2.seq, \
-                              qual = qual)
+    #the rest of parameters
+    description = seqwithquality.description
+    dbxrefs     = seqwithquality.dbxrefs
+    features    = seqwithquality.features
+    annotations = seqwithquality.annotations
 
-    def __getitem__(self, index):
-        ''' It returns another object but only with the slice chose'''
-        qual = self.qual
+    #the new sequence
+    new_seq = SeqWithQuality(seq=seq, id=id_, name=name,
+                             description=description, dbxrefs=dbxrefs,
+                             features=features, annotations=annotations)
+
+    #we restore the letter annotations (including the quality
+    for annot, value in let_annot.items():
+        new_seq.letter_annotations[annot] = value
+    return new_seq
+
+class SeqWithQuality(SeqRecord):
+    '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
+    methods'''
+    def __init__(self, seq, id= "<unknown id>", name= "<unknown name>",
+                 description = "<unknown description>", dbxrefs = None,
+                 features = None, annotations = None,
+                 letter_annotations = None, qual = None):
+        SeqRecord.__init__(self, seq, id=id, name=name,
+                           description=description, dbxrefs=dbxrefs,
+                           features=features, annotations=annotations,
+                           letter_annotations=letter_annotations)
         if qual is not None:
-            if isinstance(index, int):
-                qual = [qual[index]]
-            elif isinstance(index,slice):
-                qual = qual[index]
-        else:
-            qual = None
-        return self.__class__(name=self.name, seq=self._seq[index], qual=qual,
-                              description=self.description)
+            self.qual = qual
 
-    def __len__(self):
-        ''' It returns the length of the sequence'''
-        if self._length is not None:
-            return self._length
-        elif self._seq is not None:
-            return len(self._seq)
-        else:
-            return 0
-
-    def __repr__(self):
-        ''' It prints the seq in a readable'''
-        sprint = 'Name : ' + self.name.__repr__() + '\n'
-        sprint += 'Seq  : ' + self._seq.__repr__()  + '\n'
-        sprint += 'Quality : '
-        quals = self._qual
-        if quals is not None:
-            for qual in quals:
-                sprint += '%d ' % int(qual)
-            sprint += '\n'
-        else:
-            sprint += 'None'
-        return sprint
-
-    def __str__(self):
-        'It returns just the str of the seq property'
-        return str(self.seq)
+    def _set_qual(self, qual):
+        '''It stores the quality in the letter_annotations['phred_quality']'''
+        self.letter_annotations["phred_quality"] = qual
+    def _get_qual(self):
+        '''It gets the quality from letter_annotations['phred_quality']'''
+        if "phred_quality" not in self.letter_annotations:
+            return None
+        return self.letter_annotations["phred_quality"]
+    qual = property(_get_qual, _set_qual)
 
     def complement(self):
         ''' it returns a new object with the complementary strand of the seq '''
+        return self.__class__(seq=self.seq.complement(),
+                              id = self.id + '_complemented',
+                              name = self.name + '_complemented',
+                              description = self.description,
+                              dbxrefs = self.dbxrefs, features = self.features,
+                              annotations = self.annotations,
+                              letter_annotations = self.letter_annotations)
 
-        return self.__class__(name = self.name + '_complemented', \
-                              seq  = self._seq.complement(), \
-                              qual = self._qual)
+    def __add__(self, seq2):
+        '''It returns a new object with both seq and qual joined '''
+        #per letter annotations
+        new_seq = self.__class__(name = self.name + '+' + seq2.name,
+                                 id = self.id + '+' + seq2.id,
+                                 seq  = self.seq + seq2.seq)
+        #the letter annotations, including quality
+        for name, annot in self.letter_annotations.items():
+            if name in seq2.letter_annotations:
+                new_seq.letter_annotations[name] = annot + \
+                                                   seq2.letter_annotations[name]
+        return new_seq
 
-    def _get_qual(self):
-        ''' It returns the quality of the sequence'''
-        return self._qual
+from Bio import Alphabet
+import string
+from Bio.Data.IUPACData import (ambiguous_dna_complement,
+                                ambiguous_rna_complement)
+def _maketrans(complement_mapping) :
+    """Makes a python string translation table (PRIVATE).
 
-    def _set_qual(self, qual):
-        '''  It sets the quality of the sequence and it checks if
-        it is of the same lenght'''
-        if self._qual is not None:
-            raise AttributeError("Can't reset the qual attribute")
-        length = len(self)
-        if length and qual is not None and length != len(qual):
-            if self.name is None:
-                print_name = ''
-            else:
-                print_name = ' in ' + self.name
-            raise ValueError('qual should have the same length as this ' +
-                            self.__class__.__name__  + print_name)
-        self._qual = qual
-    qual = property(_get_qual, _set_qual)
+    Arguments:
+     - complement_mapping - a dictionary such as ambiguous_dna_complement
+       and ambiguous_rna_complement from Data.IUPACData.
 
-    def _set_seq(self, seq):
-        'It sets the seq property'
-        if self._seq is not None:
-            raise AttributeError("Can't reset the seq attribute")
-        length = len(self)
-        if length and seq is not None and length != len(seq):
-            raise ValueError('seq should have the same length as this ' +
-                            self.__class__.__name__)
-        self._seq = seq
+    Returns a translation table (a string of length 256) for use with the
+    python string's translate method to use in a (reverse) complement.
 
-    def _get_seq(self):
-        ''' It returns the seq of the sequence '''
-        return self._seq
-    seq = property(_get_seq, _set_seq)
+    Compatible with lower case and upper case sequences.
 
-    def copy(self, seq=None, qual=None, name=None):
-        '''Given a seqrecord it returns a new seqrecord with seq or qual changed.
+    For internal use only.
+    """
+    before = ''.join(complement_mapping.keys())
+    after  = ''.join(complement_mapping.values())
+    before = before + before.lower()
+    after  = after + after.lower()
+    return string.maketrans(before, after)
 
-        This is necessary because our SeqWithQuality is inmutable
-        '''
-        if seq is None:
-            seq = self.seq
-        if qual is None:
-            qual = self.qual
-        if name is None:
-            name = self.name
-        return self.__class__(name=name, seq=seq, qual=qual,
-                              annotations=self.annotations,
-                              description=self.description)
+_dna_complement_table = _maketrans(ambiguous_dna_complement)
+_rna_complement_table = _maketrans(ambiguous_rna_complement)
 
-class Seq(str):
-    "It represents a sequence. It's basically an str with some extra methods"
-    # too many public method is str's fault
-    #pylint: disable-msg=R0904
-    _super = str
-    def __new__(cls, string, *args, **kargs):
-        'It creates a new Seq instance'
-        return str.__new__(cls, string)
-    def __init__(self, seq):
-        'It requires a sequence (str) to be initialized.'
-        pass
+class Seq(BioSeq):
+    'A biopython Seq with some extra functionality'
+    def __eq__(self, seq):
+        'It checks if the given seq is equal to this one'
+        return str(self) == str(seq)
 
     def complement(self):
-        'It returns a complemented the sequence'
-        compdict = { 'a':'t', 'c':'g', 'g':'c', 't':'a', 'u':'t',
-                     'm':'k', 'r':'y', 'w':'w', 's':'s', 'y':'r',
-                     'k':'m', 'v':'b', 'h':'d', 'd':'h', 'b':'v',
-                     'x':'x', 'n':'n',
-                     'A':'T', 'C':'G', 'G':'C', 'T':'A', 'U':'T',
-                     'M':'K', 'R':'Y', 'W':'W', 'S':'S', 'Y':'R',
-                     'K':'M', 'V':'B', 'H':'D', 'D':'H', 'B':'V',
-                     'X':'X', 'N':'N', '*':'*', '-':'-', ' ':' '
-                     }
-        return self.__class__(''.join([compdict[base] for base in self]))
+        """Returns the complement sequence. New Seq object.
 
-    def __add__(self, seq):
-        'It returns an new added sequence'
-        add_result = self._super.__add__(self, seq)
-        return self.__class__(add_result)
+        >>> from Bio.Seq import Seq
+        >>> from Bio.Alphabet import IUPAC
+        >>> my_dna = Seq("CCCCCGATAG", IUPAC.unambiguous_dna)
+        >>> my_dna
+        Seq('CCCCCGATAG', IUPACUnambiguousDNA())
+        >>> my_dna.complement()
+        Seq('GGGGGCTATC', IUPACUnambiguousDNA())
 
+        You can of course used mixed case sequences,
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.Alphabet import generic_dna
+        >>> my_dna = Seq("CCCCCgatA-GD", generic_dna)
+        >>> my_dna
+        Seq('CCCCCgatA-GD', DNAAlphabet())
+        >>> my_dna.complement()
+        Seq('GGGGGctaT-CH', DNAAlphabet())
+
+        Note in the above example, ambiguous character D denotes
+        G, A or T so its complement is H (for C, T or A).
+
+        Trying to complement a protein sequence raises an exception.
+
+        >>> my_protein = Seq("MAIVMGR", IUPAC.protein)
+        >>> my_protein.complement()
+        Traceback (most recent call last):
+           ...
+        ValueError: Proteins do not have complements!
+        """
+        base = Alphabet._get_base_alphabet(self.alphabet)
+        if isinstance(base, Alphabet.ProteinAlphabet) :
+            raise ValueError("Proteins do not have complements!")
+        if isinstance(base, Alphabet.DNAAlphabet) :
+            ttable = _dna_complement_table
+        elif isinstance(base, Alphabet.RNAAlphabet) :
+            ttable = _rna_complement_table
+        elif ('U' in self._data or 'u' in self._data) \
+        and ('T' in self._data or 't' in self._data):
+            #TODO - Handle this cleanly?
+            raise ValueError("Mixed RNA/DNA found")
+        elif 'U' in self._data or 'u' in self._data:
+            ttable = _rna_complement_table
+        else:
+            ttable = _dna_complement_table
+        #Much faster on really long sequences than the previous loop based one.
+        #thx to Michael Palmer, University of Waterloo
+        return self.__class__(str(self).translate(ttable), self.alphabet)
+
+    def __getitem__(self, index) :                 # Seq API requirement
+        #Note since Python 2.0, __getslice__ is deprecated
+        #and __getitem__ is used instead.
+        #See http://docs.python.org/ref/sequence-methods.html
+        if isinstance(index, int) :
+            #Return a single letter as a string
+            return self._data[index]
+        else :
+            #Return the (sub)sequence as another Seq object
+            return self.__class__(self._data[index], self.alphabet)
