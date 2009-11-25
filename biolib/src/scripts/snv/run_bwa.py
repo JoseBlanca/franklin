@@ -18,7 +18,7 @@
 '''
 It runs bwa.
 
-It needs tha the database is indexed. It can run any type of sequence
+It needs the database is indexed. It can run any type of sequence
 
 Created on 08/10/2009
 
