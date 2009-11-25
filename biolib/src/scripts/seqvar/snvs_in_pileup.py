@@ -25,7 +25,7 @@ Created on 30/09/2009
 '''
 from optparse import OptionParser
 import sys
-from biolib.seqvar.sam_pileup import snv_contexts_in_sam_pileup
+from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import pipeline_runner
 
 

@@ -23,8 +23,8 @@ Created on 01/10/2009
 '''
 import sqlalchemy, os
 from optparse import OptionParser
-from biolib.seqvar.sam_pileup import seqvars_in_sam_pileup
-from biolib.seqvar.snp_miner import SnvDb, create_snp_miner_database
+from biolib.snv.sam_pileup import seqvars_in_sam_pileup
+from biolib.snv.snp_miner import SnvDb, create_snp_miner_database
 from biolib.pipelines import pipeline_runner
 from biolib.collections_ import RequiredPosition
 
