@@ -22,14 +22,82 @@ Created on 26/11/2009
 from biolib.utils.cmd_utils import create_runner
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
+from biolib.utils.collections_ import list_pairs_iter
 
-def _infer_introns_from_match_parts(alignments):
+def _infer_introns_from_matches(alignments):
     'Given a match with several match parts it returns the introns'
     alignment = alignments.next()
-    match = alignment['matches'][0]
-    from pprint import pprint
-    pprint(match)
+    match     = alignment['matches'][0]
+    hsps      = match['match_parts']
 
+    introns = []
+    direct_hsps, reverse_hsps = _separate_hsps(hsps)
+    for hsps in (direct_hsps, reverse_hsps):
+        for hsp1, hsp2 in list_pairs_iter(hsps):
+            intron = _infer_introns_form_match_parts(hsp1, hsp2)
+            if intron:
+                introns.append(intron)
+    return introns
+
+def _infer_introns_form_match_parts(hsp1, hsp2):
+    'It looks for introns between two hsps'
+    blast_tolerance = 10 #in base pairs
+    #which hsp1 should start before than hsp2
+    if hsp1['query_start'] > hsp2['query_start']:
+        hsp1, hsp2 = hsp2, hsp1
+    #we need the points that define the gap between the hsps
+    # \
+    #  \
+    #   x 1  x 2 point 1 and 2
+    #         \
+    #          \
+    #           \
+    point1, point2 = {}, {}
+    if hsp1['query_strand'] > 1:
+        point1['query']   = hsp1['query_end']
+        point1['subject'] = hsp1['subject_end']
+        point2['query']   = hsp2['query_start']
+        point2['subject'] = hsp2['subject_start']
+    else:
+        point1['query']   = hsp1['query_start']
+        point1['subject'] = hsp1['subject_start']
+        point2['query']   = hsp2['query_end']
+        point2['subject'] = hsp2['subject_end']
+    #the point 2 should be at the same position as point1 or to 3'
+    # \
+    #  \
+    #   xooooo
+    #   oooooo
+    #   oooooo
+    query_dif   = point2['query'] - point1['query']
+    subject_dif = point2['subject'] - point1['subject']
+    if query_dif + blast_tolerance < 0:
+        return None
+    if subject_dif + blast_tolerance < 0:
+        return None
+    #now the real introns
+    # \
+    #  \
+    #   xooooo
+    #     oooo
+    #       oo
+    #        o (this is not a straight line!)
+
+    print point1, point2
+
+    return
+
+
+def _separate_hsps(hsps):
+    'It separates hsps taking into accound the query and subject strands'
+    direct_hsps  = []
+    reverse_hsps = []
+    for hsp in hsps:
+        if (hsp['query_strand'] * hsp['subject_strand']) > 0:
+            direct_hsps.append(hsp)
+        else:
+            reverse_hsps.append(hsp)
+    return direct_hsps, reverse_hsps
 
 def infer_introns_for_cdna(sequence, genomic_db, blast_db_path):
     '''Doing a blast with the sequences against the genomic db it infers the
@@ -54,5 +122,5 @@ def infer_introns_for_cdna(sequence, genomic_db, blast_db_path):
                                           results=blast_result)
 
     #now we have to guess the introns
-    introns = _infer_introns_from_match_parts(alignments)
+    introns = _infer_introns_from_matches(alignments)
     return introns
