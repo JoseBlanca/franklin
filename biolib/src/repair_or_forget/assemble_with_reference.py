@@ -43,7 +43,7 @@ def set_parameters():
         steps = [int(step) for step in options.steps.split(',')]
     return cfile, steps
 def prepare_env():
-    from biolib.biolib_utils import NamedTemporaryDir
+    from biolib.utils.misc_utils import NamedTemporaryDir
     import os
     import biolib
     data_dir = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')

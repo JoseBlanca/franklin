@@ -25,8 +25,8 @@ Created on 2009 uzt 24
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.seq_cleaner import  split_seq_by_masked_regions
-from biolib.biolib_seqio_utils import seqs_in_file, write_fasta_file
+from biolib.seq.seq_cleaner import  split_seq_by_masked_regions
+from biolib.utils.seqio_utils import seqs_in_file, write_fasta_file
 
 def parse_options():
     'It parses the command line arguments'

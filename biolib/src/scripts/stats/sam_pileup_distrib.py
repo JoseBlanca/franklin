@@ -21,7 +21,7 @@ distribution values.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.sam import calculate_read_coverage
+from biolib.statistics import calculate_read_coverage
 
 def parse_options():
     'It parses the command line arguments'
@@ -58,11 +58,11 @@ def set_parameters():
         io_fhands['distrib'] = None
     else:
         io_fhands['distrib'] = open(options.distrib, 'w')
-    max = options.max
-    if max:
-        max = int(max)
+    max_ = options.max
+    if max_:
+        max_ = int(max_)
 
-    return io_fhands, (None, max)
+    return io_fhands, (None, max_)
 
 def main():
     'The main function'

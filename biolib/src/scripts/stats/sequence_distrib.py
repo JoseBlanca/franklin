@@ -29,7 +29,7 @@ distribution values.
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.biolib_seqio_utils import seqs_in_file
+from biolib.utils.seqio_utils import seqs_in_file
 from biolib.statistics import seq_distrib
 
 def parse_options():

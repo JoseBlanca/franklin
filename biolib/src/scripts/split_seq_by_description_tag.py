@@ -4,7 +4,7 @@ This script takes a seq file and splits the file taking into account one of the
 
 from optparse import OptionParser
 import os
-from biolib.biolib_seqio_utils import seqs_in_file, write_seqs_in_file
+from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
 
 def parse_options():
     'It parses the command line arguments'
