@@ -18,7 +18,7 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
+import unittest, os
 from StringIO import StringIO
 
 from biolib.snv.snv import SNP, DELETION, INVARIANT, Snv, COMPLEX
@@ -35,13 +35,15 @@ from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_alleles_n_cleaner,
                                        create_kind_filter,
                                        create_reference_list_filter,
-                                       create_aggregate_allele_qual_cleaner)
+                                       create_aggregate_allele_qual_cleaner,
+                                       create_close_to_intron_filter)
 from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
                               snp_filter_is_variable_in_aggregate,
                               snp_filter_by_kind,
                               snp_filter_reference_not_in_list)
-from biolib.seq.seqs import SeqWithQuality
+from biolib.seq.seqs import SeqWithQuality, Seq
+from biolib.utils.misc_utils import DATA_DIR
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -454,6 +456,51 @@ ref1     4      A      1       ,       a'''
         assert snv0.per_lib_info[2]['alleles'][0]['allele'] == 'T'
         assert snv0.per_lib_info[2]['alleles'][0]['qualities'] == [28, 28, 28]
 
+    @staticmethod
+    def test_close_to_intron_filter():
+        'We filter out the snv close to an intron'
+        seq1 =  'ATGATAATTATGAAAAATAAAATAAAATTTAATTATATAATTCATTTCATCTAATCGTACAA'
+        seq1 += 'GCTAGATATTACTATATCAACAACTTTGTGTATAAAAAGGGCAAGAAATTAAGCATTATCGT'
+        seq1 += 'GTGAGCCACTTTTTCTATATCTAGAGATAGAAGGTTTAAAATCATGTCTCTAATTGGAAAGC'
+        seq1 += 'TTGTGAGTGAATTAGAGATCAATGCAGCTGCTGAGAAATTTTACGAAATATTCAAAGATCAA'
+        seq1 += 'TGTTTTCAGGTTCCCAATATAACCCCCAGATGCATTCAACAAGTTGAAATTCATGGTACTAA'
+        seq1 += 'TTGGGATGGCCATGGACATGGCTCTATCAAGTCTTGGTATTACACTATTGATGGCAAGGCAG'
+        seq1 += 'AAGTTTTTAAGGAACGGGTCGAGTTTCACGATGATAAATTGTTGATAGTCTTGGATGGAGTG'
+        seq1 += 'GGAGGAGATGTGTTCAAAAATTATAAAAGCTTTAAACCAGCTTACCAATTTGTACCTAAGGA'
+        seq1 += 'TCGTAACCATTGCCAGGCAATTCTGAGTATAGAGTATGAGAAACTTCATCATGGGTCTCCTG'
+        seq1 += 'ATCCTCATAAGTATATTGACCTCATGATTGGTATCACTAACGACATTGGATCTCACATTAAA'
+        seq1 += 'TAAGTATTTAATGTCTGTCACATTCTCAAGTGTGGCTTGTTAATTTGTTGTGGGAAAGTTAT'
+        seq1 += 'ATTTTATTTTGAAGTCATTTTCGTGTGGTTGATTATGTATCTTTGCTATTTTGCTTTTATAT'
+        seq1 += 'TTCAATAAGTTATATGGTTTATATAATATTACAAAGTAAATAAAATCCAAGGATCATCCCTT'
+        seq1 += 'GTTTATGTTTCGTTATTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        seq1 += 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        seq1 += 'AAAAAAAAAAAAAAAAAAAGGCCCCCCCCCCCCCCCAAAAAAATTAAAAAACCCCCCCCCCC'
+        seq1 += 'CGGGGGGGGCCC'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq1))
+        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        filter_ = create_close_to_intron_filter(distance=60,
+                                                genomic_db='arabidopsis_genes',
+                                                blast_db_path=blast_db_path)
+        snv1 = Snv(location=100, reference=seq, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        snv2 = Snv(location=330, reference=seq, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        snv3 = Snv(location=380, reference=seq, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        snv4 = Snv(location=500, reference=seq, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        assert filter_((snv1, [snv1, snv2, snv3, snv4]))
+        assert not filter_((snv2, [snv1, snv2, snv3, snv4]))
+        assert not filter_((snv3, [snv1, snv2, snv3, snv4]))
+        assert filter_((snv4, [snv1, snv2, snv3, snv4]))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']

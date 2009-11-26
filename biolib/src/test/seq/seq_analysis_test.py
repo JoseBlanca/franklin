@@ -218,7 +218,6 @@ class IntronTest(unittest.TestCase):
         introns = _infer_introns_from_matches(alignments)
         assert introns == []
 
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -25,6 +25,34 @@ import copy
 
 from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
                             get_reference_name, aggregate_alleles)
+from biolib.seq.seq_analysis import infer_introns_for_cdna
+
+def create_close_to_intron_filter(distance, genomic_db, blast_db_path):
+    '''It returns a filter that filters snv by the proximity to introns.
+
+    The introns are predicted by blasting against a similar species'''
+    introns_cache = {}
+    def close_to_intron_filter(snv):
+        'The filter'
+        if snv is None:
+            return False
+        (snv, context) = snv
+        location = snv.location
+        #where are the introns?
+        sequence = snv.reference
+        cache_index = str(sequence.id) + str(sequence.name)
+        if cache_index in introns_cache:
+            introns = introns_cache[cache_index]
+        else:
+            introns = infer_introns_for_cdna(sequence=snv.reference,
+                                             genomic_db=genomic_db,
+                                             blast_db_path=blast_db_path)
+            introns_cache[cache_index] = introns
+        for intron in introns:
+            if abs(location - intron) < distance:
+                return False
+        return True
+    return close_to_intron_filter
 
 #filters
 def create_high_variable_region_filter(max_variability, window=None):
