@@ -80,8 +80,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-
-        configuration = {'remove_vectors': {'vectors':'UniVec'},
+        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         seq_fhand  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
@@ -103,8 +103,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-
-        configuration = {'remove_vectors': {'vectors':'UniVec'},
+        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
@@ -120,16 +120,6 @@ class PipelineTests(unittest.TestCase):
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq
-
-#    @staticmethod
-#    def test_contig_pipeline_run():
-#        'It test the contig clean pipeline'
-#        pipeline = 'contig_clean'
-#        fhand = open(os.path.join(DATA_DIR, 'example.caf'), 'r')
-#        caf_parser = get_parser(fhand, format='caf')
-#        contigs = caf_parser.contigs()
-#        contigs = pipeline_runner(pipeline, items=contigs)
-#        assert  contigs.next().consensus.name == 'Contig1'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

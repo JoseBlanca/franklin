@@ -19,9 +19,10 @@ from biolib.seq.seq_filters import (create_aligner_filter, create_length_filter,
                                 create_adaptor_matches_filter,
                                 create_comtaminant_filter)
 from biolib.seq.seqs import Seq, SeqWithQuality
+from biolib.utils.misc_utils import DATA_DIR
 from Bio.Seq import UnknownSeq
 
-import unittest
+import unittest, os
 from itertools import ifilter
 
 class BlastFilteringTest(unittest.TestCase):
@@ -34,17 +35,19 @@ class BlastFilteringTest(unittest.TestCase):
         #an arabidopsis cdna sequence
         seq2 = Seq('ATGGTGGGTGGCAAGAAGAAAACCAAGATATGTGACAAAGTGTCACATGAGAAGATAG')
         #we keep the sequences with a good hit in the blast
-        parameters = {'expect':1e-10, 'database':'tair7_cdna',
+        parameters = {'expect':1e-10, 'database':'arabidopsis_genes',
                       'program':'blastn'}
         match_filters = [{'kind'           : 'min_scores',
                           'score_key'      : 'expect',
                           'max_score_value': 0.001}]
 
+        blastpath = os.path.join(DATA_DIR, 'blast')
         blast_filter = create_aligner_filter(aligner_cmd='blast',
                                      cmd_parameters=parameters,
-                                     match_filters=match_filters )
+                                     match_filters=match_filters,
+                                     environment={'BLASTDB':blastpath} )
         assert  blast_filter(seq1) == False
-        assert  blast_filter(seq2) == True
+        assert  blast_filter(seq2) == False
 
 ADAPTORS = '''>adaptor1
 AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
@@ -98,7 +101,9 @@ class ContaminantFilterTest(unittest.TestCase):
         'It tests if the sequence has a contaminant'
         seq1 = 'TTGGCAATCGGTTCCTGGATTGGACTTAGACCCCTACGCATCCTCAAATACCAATACAATTGT'
         seq  = SeqWithQuality(seq=seq1)
-        filter_by_contaminant = create_comtaminant_filter('tair7_cdna')
+        blastpath = os.path.join(DATA_DIR, 'blast')
+        filter_by_contaminant = create_comtaminant_filter('arabidopsis_genes',
+                                              environment={'BLASTDB':blastpath})
         assert not filter_by_contaminant(seq)
 
 

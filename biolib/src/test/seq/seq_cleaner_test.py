@@ -298,7 +298,7 @@ class SeqCleanerTest(unittest.TestCase):
     @staticmethod
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
-        vector = '/srv/databases/blast/UniVec'
+        vector = os.path.join(DATA_DIR, 'blast', 'univec')
         vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'

@@ -23,10 +23,8 @@ import unittest
 
 from biolib.utils.cmd_utils import _process_parameters, create_runner
 from biolib.seq.seqs import SeqWithQuality
-import biolib
+from biolib.utils.misc_utils import DATA_DIR
 import os
-
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 class ProcessParametersTest(unittest.TestCase):
     'tests the parameter processing'
@@ -77,9 +75,11 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_blast_runner():
         'We can create a runner class for blast'
+        blastpath = os.path.join(DATA_DIR, 'blast')
         run_blast_for_seq = create_runner(bin_='blast2', kind='blast',
-                                          parameters={'database':'tair7_cdna',
-                                                      'program':'blastn'})
+                                    parameters={'database':'arabidopsis_genes',
+                                                'program':'blastn'},
+                                          environment={'BLASTDB':blastpath})
         seq = 'AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT'
         seq1 = SeqWithQuality(seq)
         result = run_blast_for_seq(seq1)[0]

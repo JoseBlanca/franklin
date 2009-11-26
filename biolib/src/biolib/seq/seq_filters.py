@@ -27,7 +27,7 @@ from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 
 def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
-                            result_filters=None):
+                            result_filters=None, environment=None):
     '''A function factory factory that creates aligner filters.
 
     It returns a function that will accept a sequence and it will return
@@ -45,7 +45,7 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
         bin_cmd = None # create_runer will know how to do
 
     run_align_for_seq = create_runner(kind=aligner_cmd, bin_=bin_cmd,
-                           parameters=cmd_parameters)
+                           parameters=cmd_parameters, environment=environment)
 
     def _filter(sequence):
         'Giving a sequence it returns true or False depending on the exonerate'
@@ -123,7 +123,7 @@ def create_adaptor_matches_filter(adaptors, number=3):
         return match_filter(sequence)
     return filter_by_adaptor_matches
 
-def create_comtaminant_filter(contaminant_db):
+def create_comtaminant_filter(contaminant_db, environment=None):
     '''It creates a filter that return False if the sequence has a strong match
      with the database
     '''
@@ -138,7 +138,8 @@ def create_comtaminant_filter(contaminant_db):
     match_filter = create_aligner_filter(aligner_cmd='blast',
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
-                                    result_filters=result_filters )
+                                    result_filters=result_filters,
+                                    environment=environment )
 
     def filter_(sequence):
         'It return Fase if the sequence have more than number or equal tiems'
