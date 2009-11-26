@@ -501,9 +501,6 @@ def get_alignment_parser(kind):
     parser  = parsers[kind]
     return parser
 
-#a global variable used in the first hit filter
-MATCHES_PROCESSED = None
-
 class FilteredAlignmentResults(object):
     '''An iterator that yield the search results with its matches filtered
 
@@ -614,35 +611,22 @@ class FilteredAlignmentResults(object):
         else:
             min_score  = None
             max_score  = parameters['max_score_value']
-        global MATCHES_PROCESSED
-        MATCHES_PROCESSED = 0
-        if log_tolerance is None:
-            def filter_without_tolerance_(match):
-                'It returns True only for the first match'
-                global MATCHES_PROCESSED
-                if not MATCHES_PROCESSED:
-                    return True
-                else:
-                    MATCHES_PROCESSED += 1
-                    return False
-            return filter_without_tolerance_
-        else:
-            def filter_with_tolerance_(match):
-                '''It returns True or False depending on the match meeting
-                the criteria'''
-                score = get_match_score(match, score_key)
-                if max_score is not None and score == 0.0:
-                    result = True
-                elif min_score is not None and score <= min_score:
-                    result = False
-                elif max_score is not None and score >= max_score:
-                    result = False
-                elif abs(log10(score) - log_best_score) < log_tolerance:
-                    result = True
-                else:
-                    result = False
-                return result
-            return filter_with_tolerance_
+        def filter_(match):
+            '''It returns True or False depending on the match meeting
+            the criteria'''
+            score = get_match_score(match, score_key)
+            if max_score is not None and score == 0.0:
+                result = True
+            elif min_score is not None and score <= min_score:
+                result = False
+            elif max_score is not None and score >= max_score:
+                result = False
+            elif abs(log10(score) - log_best_score) < log_tolerance:
+                result = True
+            else:
+                result = False
+            return result
+        return filter_
 
     @staticmethod
     def _create_filter_min_score(parameters):
@@ -773,10 +757,7 @@ class FilteredAlignmentResults(object):
             else:
                 log_best_score = log10(best_score)
             filter_['log_best_score'] = log_best_score
-            if filter_['score_tolerance'] in (None, 0):
-                filter_['log_tolerance'] = None
-            else:
-                filter_['log_tolerance'] = log10(filter_['score_tolerance'])
+            filter_['log_tolerance']  = log10(filter_['score_tolerance'])
         elif kind == 'min_length' and 'min_length_query_%' in filter_:
             filter_['query'] = result['query']
         elif kind == 'compatibility':
