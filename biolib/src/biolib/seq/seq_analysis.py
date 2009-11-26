@@ -22,7 +22,7 @@ Created on 26/11/2009
 from biolib.utils.cmd_utils import create_runner
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
-from biolib.utils.collections_ import list_pairs_iter
+from biolib.utils.collections_ import list_consecutive_pairs_iter
 
 def _infer_introns_from_matches(alignments):
     'Given a match with several match parts it returns the introns'
@@ -32,16 +32,32 @@ def _infer_introns_from_matches(alignments):
 
     introns = []
     direct_hsps, reverse_hsps = _separate_hsps(hsps)
-    for hsps in (direct_hsps, reverse_hsps):
-        for hsp1, hsp2 in list_pairs_iter(hsps):
+    #from pprint import pprint
+    #pprint (direct_hsps)
+    #pprint (reverse_hsps)
+    for hsps, orient in ((direct_hsps, 'direct'), (reverse_hsps, 'reverse')):
+        #we sort the hsps to compare the consecutive ones
+        if orient == 'direct':
+            sort_by = 'query_end'
+        else:
+            sort_by = 'query_start'
+        hsps = sorted(hsps, lambda x, y: x[sort_by] - y[sort_by])
+        #pprint(hsps)
+        for hsp1, hsp2 in list_consecutive_pairs_iter(hsps):
+            #pprint(hsp1)
+            #pprint(hsp2)
             intron = _infer_introns_form_match_parts(hsp1, hsp2)
+            #print 'intron', intron
+            #print '***************************'
             if intron:
                 introns.append(intron)
+    introns = sorted(introns, lambda x, y: x - y)
     return introns
 
 def _infer_introns_form_match_parts(hsp1, hsp2):
     'It looks for introns between two hsps'
     blast_tolerance = 10 #in base pairs
+    intron_tolerance = 0.05 #error
     #which hsp1 should start before than hsp2
     if hsp1['query_start'] > hsp2['query_start']:
         hsp1, hsp2 = hsp2, hsp1
@@ -53,7 +69,7 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     #          \
     #           \
     point1, point2 = {}, {}
-    if hsp1['query_strand'] > 1:
+    if hsp1['query_strand'] > 0:
         point1['query']   = hsp1['query_end']
         point1['subject'] = hsp1['subject_end']
         point2['query']   = hsp2['query_start']
@@ -63,6 +79,8 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
         point1['subject'] = hsp1['subject_start']
         point2['query']   = hsp2['query_end']
         point2['subject'] = hsp2['subject_end']
+    #print 'point1', point1
+    #print 'point2', point2
     #the point 2 should be at the same position as point1 or to 3'
     # \
     #  \
@@ -82,11 +100,14 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     #     oooo
     #       oo
     #        o (this is not a straight line!)
-
-    print point1, point2
-
-    return
-
+    intron_index = (point2['subject'] - point1['subject'] - point2['query'] +
+                    point1['query']) / \
+                    float(point2['subject'] - point1['subject'])
+    #print intron_index
+    if intron_index > intron_tolerance:
+        return int((point2['query'] + point1['query']) / 2.0)
+    else:
+        return None
 
 def _separate_hsps(hsps):
     'It separates hsps taking into accound the query and subject strands'
@@ -107,7 +128,7 @@ def infer_introns_for_cdna(sequence, genomic_db, blast_db_path):
     parameters = {'database': genomic_db, 'program':'tblastx'}
 
     filters = [{'kind'          : 'min_length',
-                'min_length_bp' : 15}]
+                'min_length_bp' : 20}]
     blast_runner = create_runner(kind='blast', parameters=parameters,
                                  environment={'BLASTDB':blast_db_path})
     blast_fhand = blast_runner(sequence)[0]

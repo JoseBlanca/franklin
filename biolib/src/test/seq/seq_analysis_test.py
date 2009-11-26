@@ -21,13 +21,14 @@ Created on 26/11/2009
 
 import unittest, os
 from biolib.seq.seqs import SeqWithQuality, Seq
-from biolib.seq.seq_analysis import infer_introns_for_cdna
+from biolib.seq.seq_analysis import (infer_introns_for_cdna,
+                                     _infer_introns_from_matches)
 from biolib.utils.misc_utils import DATA_DIR
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
     @staticmethod
-    def test_introns_for_cdna():
+    def test_basic_introns_for_cdna():
         'It tests that we can locate introns'
         seq1 =  'ATGATAATTATGAAAAATAAAATAAAATTTAATTATATAATTCATTTCATCTAATCGTACAA'
         seq1 += 'GCTAGATATTACTATATCAACAACTTTGTGTATAAAAAGGGCAAGAAATTAAGCATTATCGT'
@@ -46,11 +47,11 @@ class IntronTest(unittest.TestCase):
         seq1 += 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         seq1 += 'AAAAAAAAAAAAAAAAAAAGGCCCCCCCCCCCCCCCAAAAAAATTAAAAAACCCCCCCCCCC'
         seq1 += 'CGGGGGGGGCCC'
-        seq1 = SeqWithQuality(name='seq1', seq=Seq(seq1))
+        seq = SeqWithQuality(name='seq', seq=Seq(seq1))
         blast_db_path = os.path.join(DATA_DIR, 'blast')
-        introns = infer_introns_for_cdna(seq1, genomic_db='arabidopsis_genes',
+        introns = infer_introns_for_cdna(seq, genomic_db='arabidopsis_genes',
                                          blast_db_path=blast_db_path)
-        print introns
+        assert introns == [359]
 
         seq2  = 'AAACCAACTTTCTCCCCATTTTCTTCCTCAAACCTCCATCAATGGCTTCCTTCTCCAGAATC'
         seq2 += 'CTCTCCCCATTTTCACTATTTCTTCTGATTCTTGTCATCTCCACTCAAACCCACCTCTCCTT'
@@ -65,7 +66,158 @@ class IntronTest(unittest.TestCase):
         seq2 += 'TCTTTGTTTTTATGTCATGAACCTACGGTGTCCATTTTTAATCTTTTTCTTACATGTTCATC'
         seq2 += 'TATATTTATATC-ATATCATAAATATTCTCACATGTTTACCTAATGTTTTCTTTCAATAATA'
         seq2 += 'TTATCTTTTTACGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        seq2 = SeqWithQuality(name='seq2', seq=Seq(seq2))
+        seq = SeqWithQuality(name='seq', seq=Seq(seq2))
+        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        introns = infer_introns_for_cdna(seq, genomic_db='arabidopsis_genes',
+                                         blast_db_path=blast_db_path)
+        assert introns == []
+
+    @staticmethod
+    def test_basic_introns_for_cdna_extra():
+        'It tests that we can locate introns'
+        #no intron, two hsps that follow
+        # \
+        #  \
+        #
+        #    \
+        #     \
+        #      \
+        hsp1 = {'query_start': 1,
+                'query_end': 10,
+                'query_strand': 1,
+                'subject_start': 1,
+                'subject_end': 10,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 11,
+                'query_end': 20,
+                'query_strand': 1,
+                'subject_start': 11,
+                'subject_end': 20,
+                'subject_strand': 1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == []
+        # \
+        #  \
+        #
+        #       \
+        #        \
+        #         \
+        hsp1 = {'query_start': 1,
+                'query_end': 10,
+                'query_strand': 1,
+                'subject_start': 1,
+                'subject_end': 10,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 11,
+                'query_end': 20,
+                'query_strand': 1,
+                'subject_start': 21,
+                'subject_end': 30,
+                'subject_strand': 1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == [10]
+        # \
+        #  \
+        #
+        # \
+        #  \
+        #   \
+        hsp1 = {'query_start': 10,
+                'query_end': 100,
+                'query_strand': 1,
+                'subject_start': 10,
+                'subject_end': 100,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 110,
+                'query_end': 200,
+                'query_strand': 1,
+                'subject_start': 10,
+                'subject_end': 100,
+                'subject_strand': 1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == []
+
+        #reverse
+                #no intron, two hsps that follow
+        # \
+        #  \
+        #
+        #    \
+        #     \
+        #      \
+        hsp1 = {'query_start': 1,
+                'query_end': 10,
+                'query_strand': 1,
+                'subject_start': 1,
+                'subject_end': 10,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 11,
+                'query_end': 20,
+                'query_strand': 1,
+                'subject_start': 11,
+                'subject_end': 20,
+                'subject_strand': -1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == []
+        # \
+        #  \
+        #
+        #       \
+        #        \
+        #         \
+        hsp1 = {'query_start': 1,
+                'query_end': 10,
+                'query_strand': -1,
+                'subject_start': 1,
+                'subject_end': 10,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 11,
+                'query_end': 20,
+                'query_strand': -1,
+                'subject_start': 21,
+                'subject_end': 30,
+                'subject_strand': 1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == [10]
+        # \
+        #  \
+        #
+        # \
+        #  \
+        #   \
+        hsp1 = {'query_start': 10,
+                'query_end': 100,
+                'query_strand': -1,
+                'subject_start': 10,
+                'subject_end': 100,
+                'subject_strand': 1}
+        hsp2 = {'query_start': 110,
+                'query_end': 200,
+                'query_strand': -1,
+                'subject_start': 10,
+                'subject_end': 100,
+                'subject_strand': -1}
+        match = {'match_parts':[hsp1, hsp2]}
+        alignment = {'matches':[match]}
+        alignments = iter([alignment])
+        introns = _infer_introns_from_matches(alignments)
+        assert introns == []
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -206,3 +206,18 @@ def list_pairs_iter(items):
     for i_index in range(length):
         for j_index in range(i_index +1, length):
             yield(items[i_index], items[j_index])
+
+def list_consecutive_pairs_iter(items):
+    'Given a list it yields all consecutive pairs (1,2, 2,3, 3,4)'
+    first_time = True
+    first_item, second_item = None, None
+    for item in items:
+        if first_time:
+            first_item = item
+            first_time = False
+            continue
+        second_item = item
+        yield first_item, second_item
+        first_item, second_item = second_item, first_item
+
+
