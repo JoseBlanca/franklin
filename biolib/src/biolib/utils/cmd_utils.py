@@ -26,7 +26,7 @@ from biolib.utils.misc_utils import NamedTemporaryDir
 import subprocess, signal, tempfile, os
 import StringIO, logging
 
-def call(cmd, env=None, stdin=None):
+def call(cmd, environment=None, stdin=None):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -39,10 +39,20 @@ def call(cmd, env=None, stdin=None):
         pstdin = None
     else:
         pstdin = subprocess.PIPE
-
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=env, stdin=pstdin,
-                               preexec_fn=subprocess_setup)
+    #we want to inherit the environment, and modify it
+    if environment is not None:
+        new_env = {}
+        for key, value in os.environ.items():
+            new_env[key] = value
+        for key, value in environment.items():
+            new_env[key] = value
+        environment = new_env
+    try:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, env=environment,
+                               stdin=pstdin, preexec_fn=subprocess_setup)
+    except OSError:
+        raise OSError('No such file or directory, executable was ' + cmd[0])
     if stdin is None:
         stdout, stderr = process.communicate()
     else:
@@ -160,7 +170,8 @@ def _param_to_str(param):
     return str(param)
 
 
-def create_runner(kind, bin_=None, parameters=None, multiseq=False):
+def create_runner(kind, bin_=None, parameters=None, multiseq=False,
+                  environment=None):
     ''''It creates a runner class.
 
     The runner will be able to run a binary program for different sequences.
@@ -169,8 +180,10 @@ def create_runner(kind, bin_=None, parameters=None, multiseq=False):
     '''
     runner_def = RUNNER_DEFINITIONS[kind]
     bin_ = _get_aligner_binary(kind)
-    if parameters == None:
+    if parameters is None:
         parameters = {}
+    if environment is None:
+        environment = {}
     cmd_param = _process_parameters(parameters, runner_def['parameters'])
 
     def run_cmd_for_sequence(sequence):
@@ -246,7 +259,7 @@ def create_runner(kind, bin_=None, parameters=None, multiseq=False):
         cmd.extend(output_cmd)
 
         #print ' '.join(cmd)
-        stdout, stderr, retcode = call(cmd, stdin=stdin)
+        stdout, stderr, retcode = call(cmd, stdin=stdin, environment=environment)
 
         # there is a error
         if retcode:

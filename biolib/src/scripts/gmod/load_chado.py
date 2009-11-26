@@ -25,12 +25,12 @@ ONTOLOGIES = 'cmv_internal_go_lib'
 def reload_db_from_scratch(dbname, dbuser, dbpass, dbhost, sql_dump):
     '''It reloads the database from a sql_dump '''
     cmd = ['dropdb', '-U', dbuser,  '-h', dbhost, dbname]
-    call(cmd, env={'PGPASS' :dbpass})
+    call(cmd, environment={'PGPASS' :dbpass})
     cmd = ['createdb', '-U', dbuser, '-h', dbhost, dbname]
-    call(cmd, env={'PGPASS' :dbpass})
+    call(cmd, environment={'PGPASS' :dbpass})
 
     cmd = ['psql', '-U', dbuser, '-h', dbhost, dbname]
-    call(cmd, env={'PGPASS' :dbpass}, stdin=sql_dump)
+    call(cmd, environment={'PGPASS' :dbpass}, stdin=sql_dump)
 
 
 #pylint: disable

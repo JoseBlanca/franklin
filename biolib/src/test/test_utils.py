@@ -61,7 +61,7 @@ class Seq(object):
             return True
         else:
             return False
-    
+
 class SeqWithQuality(object):
     '''A simple seq with Quality class to do some tests.'''
     # pylint: disable-msg=R0903
@@ -121,7 +121,7 @@ class SeqRecord(object):
         return str(self.seq)
     def __repr__(self):
         '''It prints the content '''
-        return self.seq.__repr__() 
+        return self.seq.__repr__()
 
 class Seqmut(object):
     '''This mutable seq class has only test porpouses'''

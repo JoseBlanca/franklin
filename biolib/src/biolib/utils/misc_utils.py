@@ -23,6 +23,9 @@ Created on 2009 api 30
 import tempfile, shutil
 import os, re, math
 from biolib.seq.seqs import copy_seq_with_quality
+import biolib
+
+DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'

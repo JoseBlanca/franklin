@@ -251,6 +251,20 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
+        #with no tolerance
+        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        filters = [{'kind'           : 'best_scores',
+                    'score_key'      : 'expect',
+                    'max_score_value': 1e-4,
+                    'score_tolerance': 0
+                   }]
+        expected  = {'cCL1Contig2':3}
+        blasts = BlastParser(fhand=blast_file)
+        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
+                                                   results=blasts)
+        match_summary = _summarize_matches(filtered_blasts)
+        _check_match_summary(match_summary, expected)
+
     @staticmethod
     def test_min_scores_filter():
         'We can keep the hits scores above the given one'
