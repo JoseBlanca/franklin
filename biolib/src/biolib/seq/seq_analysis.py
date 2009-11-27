@@ -120,7 +120,7 @@ def _separate_hsps(hsps):
             reverse_hsps.append(hsp)
     return direct_hsps, reverse_hsps
 
-def infer_introns_for_cdna(sequence, genomic_db, blast_db_path):
+def infer_introns_for_cdna(sequence, genomic_db):
     '''Doing a blast with the sequences against the genomic db it infers the
     positions of introns'''
 
@@ -129,8 +129,7 @@ def infer_introns_for_cdna(sequence, genomic_db, blast_db_path):
 
     filters = [{'kind'          : 'min_length',
                 'min_length_bp' : 20}]
-    blast_runner = create_runner(kind='blast', parameters=parameters,
-                                 environment={'BLASTDB':blast_db_path})
+    blast_runner = create_runner(kind='blast', parameters=parameters)
     blast_fhand = blast_runner(sequence)[0]
 
     #now we parse the blast

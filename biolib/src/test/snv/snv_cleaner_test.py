@@ -478,9 +478,9 @@ ref1     4      A      1       ,       a'''
         seq1 += 'CGGGGGGGGCCC'
         seq = SeqWithQuality(name='seq', seq=Seq(seq1))
         blast_db_path = os.path.join(DATA_DIR, 'blast')
+        genomic_db = os.path.join(blast_db_path, 'arabidopsis_genes')
         filter_ = create_close_to_intron_filter(distance=60,
-                                                genomic_db='arabidopsis_genes',
-                                                blast_db_path=blast_db_path)
+                                                genomic_db=genomic_db)
         snv1 = Snv(location=100, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
