@@ -13,9 +13,11 @@ setup(
     author_email='jblanca@btc.upv.es',
     description='Some genomics related classes',
     # package structure
-    packages=['biolib', 'biolib.seqvar', 'biolib.db'],
+    packages=['biolib', 'biolib.snv', 'biolib.db', 'biolib.gmod', 'biolib.seq',
+              'biolib.utils'],
     package_dir={'':'.'},
     package_data={'mypkg': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib'],
-    scripts=['scripts/run_cleanning_pipeline.py', 'scripts/seqvar/run_bwa.py']
+    scripts=['scripts/run_cleanning_pipeline.py', 'scripts/snv/run_bwa.py',
+             'scripts/seqio.py', ]
 )
