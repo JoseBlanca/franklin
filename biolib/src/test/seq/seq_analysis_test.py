@@ -22,7 +22,8 @@ Created on 26/11/2009
 import unittest, os
 from biolib.seq.seqs import SeqWithQuality, Seq
 from biolib.seq.seq_analysis import (infer_introns_for_cdna,
-                                     _infer_introns_from_matches)
+                                     _infer_introns_from_matches,
+                                     look_for_similar_sequences)
 from biolib.utils.misc_utils import DATA_DIR
 
 class IntronTest(unittest.TestCase):
@@ -48,9 +49,8 @@ class IntronTest(unittest.TestCase):
         seq1 += 'AAAAAAAAAAAAAAAAAAAGGCCCCCCCCCCCCCCCAAAAAAATTAAAAAACCCCCCCCCCC'
         seq1 += 'CGGGGGGGGCCC'
         seq = SeqWithQuality(name='seq', seq=Seq(seq1))
-        blast_db_path = os.path.join(DATA_DIR, 'blast')
-        introns = infer_introns_for_cdna(seq, genomic_db='arabidopsis_genes',
-                                         blast_db_path=blast_db_path)
+        genomic_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db)
         assert introns == [359]
 
         seq2  = 'AAACCAACTTTCTCCCCATTTTCTTCCTCAAACCTCCATCAATGGCTTCCTTCTCCAGAATC'
@@ -67,9 +67,7 @@ class IntronTest(unittest.TestCase):
         seq2 += 'TATATTTATATC-ATATCATAAATATTCTCACATGTTTACCTAATGTTTTCTTTCAATAATA'
         seq2 += 'TTATCTTTTTACGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         seq = SeqWithQuality(name='seq', seq=Seq(seq2))
-        blast_db_path = os.path.join(DATA_DIR, 'blast')
-        introns = infer_introns_for_cdna(seq, genomic_db='arabidopsis_genes',
-                                         blast_db_path=blast_db_path)
+        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db)
         assert introns == []
 
     @staticmethod
@@ -217,6 +215,20 @@ class IntronTest(unittest.TestCase):
         alignments = iter([alignment])
         introns = _infer_introns_from_matches(alignments)
         assert introns == []
+
+    @staticmethod
+    def test_look_for_similar_seqs():
+        'It test if we can look for simialr seqs in a database'
+        seq  = 'AATCACCGAGCTCAAGGGTATTCAGGTGAAGAAATTCTTTATTTGGCTCGATGTCGATGAGA'
+        seq += 'TCAAGGTCGATCTTCCACCTTCTGATTCAATCTACTTCAAAGTTGGCTTTATCAATAAGAAG'
+        seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
+        seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        similar_seqs = look_for_similar_sequences(seq1, db=db,
+                                                  blast_program='blastn')
+        assert similar_seqs == ['AT5G19860.1']
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

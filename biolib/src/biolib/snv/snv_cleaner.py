@@ -26,6 +26,32 @@ import copy
 from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
                             get_reference_name, aggregate_alleles)
 from biolib.seq.seq_analysis import infer_introns_for_cdna
+from biolib.seq import seq_filters
+
+SEQUENCE_FILTERS = {'aligner': seq_filters.create_aligner_filter,
+                    'similar_seqs': seq_filters.create_similar_seqs_filter}
+
+def create_reference_filter(seq_filter, filter_args):
+    '''It filters the all snv that have a reference that is filtered by the
+    given sequence filter'''
+    seq_filter = SEQUENCE_FILTERS[seq_filter](filter_args)
+    cache = {}
+    def snv_filter(snv):
+        'An snv filter that filters according to the reference sequence'
+        if snv is None:
+            return False
+        snv = snv[0]
+        #do we filter the reference sequence?
+        sequence = snv.reference
+        cache_id = id(sequence.seq)
+        if cache_id == cache['seq_id']:
+            return cache['result']
+        else:
+            result = seq_filter(sequence)
+            cache['result'] = result
+            cache['seq_id'] = cache_id
+            return result
+    return snv_filter
 
 def create_close_to_intron_filter(distance, genomic_db):
     '''It returns a filter that filters snv by the proximity to introns.

@@ -17,7 +17,8 @@
 
 from biolib.seq.seq_filters import (create_aligner_filter, create_length_filter,
                                 create_adaptor_matches_filter,
-                                create_comtaminant_filter)
+                                create_comtaminant_filter,
+                                create_similar_seqs_filter)
 from biolib.seq.seqs import Seq, SeqWithQuality
 from biolib.utils.misc_utils import DATA_DIR
 from Bio.Seq import UnknownSeq
@@ -105,6 +106,31 @@ class ContaminantFilterTest(unittest.TestCase):
         filter_by_contaminant = create_comtaminant_filter('arabidopsis_genes',
                                               environment={'BLASTDB':blastpath})
         assert not filter_by_contaminant(seq)
+
+class SimilarSeqTest(unittest.TestCase):
+    'It test if there are similar seqs in the database'
+    @staticmethod
+    def test_similar_seqs():
+        'It shoul return True if there are similar seqs'
+        seq  = 'AATCACCGAGCTCAAGGGTATTCAGGTGAAGAAATTCTTTATTTGGCTCGATGTCGATGAGA'
+        seq += 'TCAAGGTCGATCTTCCACCTTCTGATTCAATCTACTTCAAAGTTGGCTTTATCAATAAGAAG'
+        seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
+        seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        filter_ = create_similar_seqs_filter(db=db, blast_program='blastn')
+        assert filter_(seq1)
+
+        filter_ = create_similar_seqs_filter(db=db, blast_program='blastn',
+                                             inverse=True)
+        assert not filter_(seq1)
+
+        filter_ = create_similar_seqs_filter(db=db, blast_program='blastn',
+                                             min_sim_seqs=2)
+        assert not filter_(seq1)
+
+
+
 
 
 if __name__ == "__main__":

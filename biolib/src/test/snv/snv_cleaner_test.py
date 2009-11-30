@@ -36,7 +36,8 @@ from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_kind_filter,
                                        create_reference_list_filter,
                                        create_aggregate_allele_qual_cleaner,
-                                       create_close_to_intron_filter)
+                                       create_close_to_intron_filter,
+                                       create_reference_filter)
 from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
 from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
                               snp_filter_is_variable_in_aggregate,
@@ -480,7 +481,7 @@ ref1     4      A      1       ,       a'''
         blast_db_path = os.path.join(DATA_DIR, 'blast')
         genomic_db = os.path.join(blast_db_path, 'arabidopsis_genes')
         filter_ = create_close_to_intron_filter(distance=60,
-                                                genomic_db=genomic_db)
+                                                          genomic_db=genomic_db)
         snv1 = Snv(location=100, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
@@ -501,6 +502,41 @@ ref1     4      A      1       ,       a'''
         assert not filter_((snv2, [snv1, snv2, snv3, snv4]))
         assert not filter_((snv3, [snv1, snv2, snv3, snv4]))
         assert filter_((snv4, [snv1, snv2, snv3, snv4]))
+
+    @staticmethod
+    def similar_reference_test():
+        'It test that we can look for snps in reference seqs similar to a db'
+        #with a similar seq
+        seq  = 'AATCACCGAGCTCAAGGGTATTCAGGTGAAGAAATTCTTTATTTGGCTCGATGTCGATGAGA'
+        seq += 'TCAAGGTCGATCTTCCACCTTCTGATTCAATCTACTTCAAAGTTGGCTTTATCAATAAGAAG'
+        seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
+        seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        snv1 = Snv(location=100, reference=seq1, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        filter_ = create_reference_filter(seq_filter='similar_seqs',
+                                          filter_args={'db':db,
+                                                       'blast_program':'blastn',
+                                                       'inverse':True,
+                                                       'min_sim_seqs':2})
+        #with a similar seq
+        assert filter_(snv1, [snv1])
+        #with a seq not found in the database
+        seq = 'TAGCAGTGTTACTAGCTACGGACGGATCGATCTATGCTAGTCGATGCTGATGCTGATATCGATC'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        snv1 = Snv(location=100, reference=seq1, per_lib_info=[
+                        {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
+                                    {'allele':'T', 'reads':10,
+                                     'kind':INVARIANT}]}])
+        filter_ = create_reference_filter(seq_filter='similar_seqs',
+                                          filter_args={'db':db,
+                                                       'blast_program':'blastn',
+                                                       })
+        assert not filter_(snv1, [snv1])
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']

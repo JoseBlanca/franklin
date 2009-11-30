@@ -25,6 +25,22 @@ from biolib.utils.cmd_utils import create_runner
 from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
+from biolib.seq.seq_analysis import look_for_similar_sequences
+
+def create_similar_seqs_filter(db, blast_program, inverse=False,
+                               min_sim_seqs=1):
+    '''It creates a filter that looks for similar seqs in a database. It return
+    True if it finds them. '''
+    def filter_by_similar_seqs(sequence):
+        if sequence is None:
+            return False
+        similar_seqs = look_for_similar_sequences(sequence, db, blast_program)
+        if inverse:
+            return not len(similar_seqs)>=min_sim_seqs
+        else:
+            return len(similar_seqs)>=min_sim_seqs
+
+    return filter_by_similar_seqs
 
 def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
                             result_filters=None, environment=None):

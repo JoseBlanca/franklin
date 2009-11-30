@@ -144,3 +144,42 @@ def infer_introns_for_cdna(sequence, genomic_db):
     #now we have to guess the introns
     introns = _infer_introns_from_matches(alignments)
     return introns
+
+def look_for_similar_sequences(sequence, db, blast_program, filters=None):
+    'It return a list with the similar sequences in the database'
+    parameters = {'database': db, 'program':blast_program}
+
+    if filters is None:
+        filters = [{'kind'           : 'min_scores',
+                    'score_key'      : 'similarity',
+                    'min_score_value': 90,
+                   },
+                   {'kind'           : 'min_length',
+                    'min_length_bp'  : 100,
+                   }
+                  ]
+
+    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_fhand = blast_runner(sequence)[0]
+
+    #now we parse the blast
+    blast_parser = get_alignment_parser('blast')
+    blast_result = blast_parser(blast_fhand)
+
+    # We filter the results with appropiate  filters
+
+    alignments = FilteredAlignmentResults(match_filters=filters,
+                                          results=blast_result)
+    try:
+        alignment = alignments.next()
+    except StopIteration:
+        return []
+    similar_seqs = []
+    for match in alignment['matches']:
+        similar_seqs.append(match['subject'].name)
+
+    return similar_seqs
+
+
+
+

@@ -60,7 +60,8 @@ from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
                                     create_kind_filter,
                                     create_is_variable_in_aggregate_filter,
                                     create_reference_list_filter,
-                                    create_aggregate_allele_qual_cleaner)
+                                    create_aggregate_allele_qual_cleaner,
+                                    create_close_to_intron_filter)
 
 from biolib.seq.seq_filters import create_length_filter
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
@@ -233,6 +234,11 @@ snp_filter_reference_not_in_list = {
                         'type':'filter',
                         'name':'reference_list_filter',
                 'comment': 'It filters by if the reference is not in the list'}
+snp_filter_by_intron_proximity = {'function':create_close_to_intron_filter,
+                               'arguments':{'distance':30, 'genomic_db':None},
+                               'type':'filter',
+                               'name':'intron_filter',
+                               'comment': 'It filters by proximity to a intron'}
 
 # words
 mask_words = {'function'  : create_masker_for_words,
