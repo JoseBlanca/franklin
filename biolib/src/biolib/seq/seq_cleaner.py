@@ -639,8 +639,7 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
 
         seq_fhand = run_repeatmasker_for_sequence(sequence, species)
         #pylint: disable-msg=W0612
-        name, definition, masked_seq = get_content_from_fasta(seq_fhand)
-        seq_class = sequence.seq.__class__
-        return sequence.copy(seq=seq_class(masked_seq))
+        masked_seq = get_content_from_fasta(seq_fhand)[2]
+        return copy_seq_with_quality(sequence, seq=masked_seq)
     return mask_repeats_by_repeatmasker
 

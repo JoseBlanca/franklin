@@ -80,6 +80,7 @@ def create_close_to_intron_filter(distance, genomic_db):
             print "Introns", snv.reference.name, introns
             introns_cache['introns'] = introns
             introns_cache['seq_id'] = cache_id
+        print 'name', cache_id
         for intron in introns:
             if abs(location - intron) < distance:
                 return False
