@@ -50,6 +50,7 @@ def create_reference_filter(seq_filter, filter_args):
             return cache['result']
         else:
             result = seq_filter(sequence)
+            print "Similar - %s : %s" % (snv.reference.name , ",".join(result))
             cache['result'] = result
             cache['seq_id'] = cache_id
             return result
@@ -76,6 +77,7 @@ def create_close_to_intron_filter(distance, genomic_db):
         else:
             introns = infer_introns_for_cdna(sequence=snv.reference,
                                              genomic_db=genomic_db)
+            print "Introns - %s : %s" % (snv.reference.name , ",".join(introns))
             introns_cache['introns'] = introns
             introns_cache['seq_id'] = cache_id
         for intron in introns:
