@@ -26,7 +26,10 @@ from biolib.utils.collections_ import list_consecutive_pairs_iter
 
 def _infer_introns_from_matches(alignments):
     'Given a match with several match parts it returns the introns'
-    alignment = alignments.next()
+    try:
+        alignment = alignments.next()
+    except StopIteration:
+        return []
     match     = alignment['matches'][0]
     hsps      = match['match_parts']
 
@@ -127,7 +130,6 @@ def _separate_hsps(hsps):
 def infer_introns_for_cdna(sequence, genomic_db):
     '''Doing a blast with the sequences against the genomic db it infers the
     positions of introns'''
-
     #first we run the blast
     parameters = {'database': genomic_db, 'program':'tblastx'}
 
@@ -139,12 +141,10 @@ def infer_introns_for_cdna(sequence, genomic_db):
     #now we parse the blast
     blast_parser = get_alignment_parser('blast')
     blast_result = blast_parser(blast_fhand)
-
     # We filter the results with appropiate  filters
 
     alignments = FilteredAlignmentResults(match_filters=filters,
                                           results=blast_result)
-
     #now we have to guess the introns
     introns = _infer_introns_from_matches(alignments)
     return introns
@@ -183,7 +183,3 @@ def look_for_similar_sequences(sequence, db, blast_program, filters=None):
         similar_seqs.append(match['subject'].name)
 
     return similar_seqs
-
-
-
-

@@ -67,7 +67,7 @@ def create_close_to_intron_filter(distance, genomic_db):
         'The filter'
         if snv is None:
             return False
-        (snv, context) = snv
+        snv = snv[0]
         location = snv.location
         #where are the introns?
         sequence = snv.reference
@@ -77,10 +77,8 @@ def create_close_to_intron_filter(distance, genomic_db):
         else:
             introns = infer_introns_for_cdna(sequence=snv.reference,
                                              genomic_db=genomic_db)
-            print "Introns", snv.reference.name, introns
             introns_cache['introns'] = introns
             introns_cache['seq_id'] = cache_id
-        print 'name', cache_id
         for intron in introns:
             if abs(location - intron) < distance:
                 return False
