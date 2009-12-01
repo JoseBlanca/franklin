@@ -36,6 +36,8 @@ def create_reference_filter(seq_filter, filter_args):
     given sequence filter'''
     seq_filter = SEQUENCE_FILTERS[seq_filter](**filter_args)
     cache = {}
+    cache['seq_id'] = None
+    cache['result'] = None
     def snv_filter(snv):
         'An snv filter that filters according to the reference sequence'
         if snv is None:

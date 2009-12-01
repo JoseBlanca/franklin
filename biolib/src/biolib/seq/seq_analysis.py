@@ -100,6 +100,10 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     #     oooo
     #       oo
     #        o (this is not a straight line!)
+
+    # this is a very strange case. when it happens there is no intron
+    if float(point2['subject'] - point1['subject']) == 0:
+        return None
     intron_index = (point2['subject'] - point1['subject'] - point2['query'] +
                     point1['query']) / \
                     float(point2['subject'] - point1['subject'])
