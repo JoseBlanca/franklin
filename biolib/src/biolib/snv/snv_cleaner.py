@@ -34,7 +34,7 @@ SEQUENCE_FILTERS = {'aligner': seq_filters.create_aligner_filter,
 def create_reference_filter(seq_filter, filter_args):
     '''It filters the all snv that have a reference that is filtered by the
     given sequence filter'''
-    seq_filter = SEQUENCE_FILTERS[seq_filter](filter_args)
+    seq_filter = SEQUENCE_FILTERS[seq_filter](**filter_args)
     cache = {}
     def snv_filter(snv):
         'An snv filter that filters according to the reference sequence'
