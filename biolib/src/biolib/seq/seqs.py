@@ -62,10 +62,12 @@ def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
 class SeqWithQuality(SeqRecord):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''
-    def __init__(self, seq, id= "<unknown id>", name= "<unknown name>",
+    def __init__(self, seq, id= None, name= "<unknown name>",
                  description = "<unknown description>", dbxrefs = None,
                  features = None, annotations = None,
                  letter_annotations = None, qual = None):
+        if id is None:
+            id = name
         SeqRecord.__init__(self, seq, id=id, name=name,
                            description=description, dbxrefs=dbxrefs,
                            features=features, annotations=annotations,

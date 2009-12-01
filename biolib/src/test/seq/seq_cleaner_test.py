@@ -336,6 +336,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert 'tggcctcaacacgat' in masked_str
         assert 'CGTTTGACTT'      in masked_str
         assert masked_seq.description == 'hola'
+        assert masked_seq.id  == 'seq'
 
 
         #This test with no repetitive regions
