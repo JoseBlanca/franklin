@@ -158,6 +158,8 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     #this will speed up things
     similar_seqs = look_for_similar_sequences(sequence, db=genomic_db,
                                               blast_program='blastn')
+    if not similar_seqs:
+        return []
     similar_seq = similar_seqs[0]
     start = similar_seq['subject_start']
     end   = similar_seq['subject_end']
@@ -190,13 +192,13 @@ def est2genome_parser(output):
             continue
         if line.startswith('Exon'):
             items = line.split()
-            genomic = {'start':items[3], 'end':items[4]}
-            cdna = {'start':items[6], 'end':items[7]}
+            genomic = {'start': int(items[3]), 'end': int(items[4])}
+            cdna = {'start': int(items[6]), 'end': int(items[7])}
             result['cdna']['exons'].append(cdna)
             result['genomic']['exons'].append(genomic)
         elif line.startswith('-Intron'):
             items = line.split()
-            genomic = {'start':items[3], 'end':items[4]}
+            genomic = {'start': int(items[3]), 'end': int(items[4])}
             cdna = result['cdna']['exons'][-1]['end']
             result['cdna']['introns'].append(cdna)
             result['genomic']['introns'].append(genomic)
@@ -207,6 +209,7 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
     '''Doing a blast with the sequences against the genomic db it infers the
     positions of introns'''
     if method == 'blast':
+        print 'The blast method for looking for introns is not well tested'
         return _infer_introns_for_cdna_blast(sequence, genomic_db)
     else:
         return _infer_introns_for_cdna_est2genome(sequence, genomic_db,

@@ -57,7 +57,8 @@ def create_reference_filter(seq_filter, filter_args):
             return result
     return snv_filter
 
-def create_close_to_intron_filter(distance, genomic_db, genomic_seqs_fhand=None):
+def create_close_to_intron_filter(distance, genomic_db,
+                                  genomic_seqs_fhand=None):
     '''It returns a filter that filters snv by the proximity to introns.
 
     The introns are predicted by blasting against a similar species'''

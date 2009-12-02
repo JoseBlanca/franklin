@@ -235,11 +235,11 @@ class IntronTest(unittest.TestCase):
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq1 = SeqWithQuality(seq = Seq(seq))
-        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome')
+        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome2')
         genomic_seqs_index = FileSequenceIndex(open(genomic_db), 'fasta')
         introns = infer_introns_for_cdna(seq1, genomic_db,
                                          genomic_seqs_index=genomic_seqs_index)
-        assert introns == ['478', '572', '613']
+        assert introns == [478, 572, 613]
 
     @staticmethod
     def test_parse_est2genome():
@@ -262,14 +262,14 @@ Segment     41 100.0 2272628 2272668 scaffold06070   573   613 SGN-U562593
 Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         result = est2genome_parser(output)
         assert len(result['cdna']['introns']) == 3
-        assert result['cdna']['exons'][0]['start'] == '1'
-        assert result['cdna']['exons'][2]['start'] == '573'
-        assert result['genomic']['exons'][0]['start'] == '2270227'
-        assert result['genomic']['exons'][2]['start'] == '2272628'
-        assert result['cdna']['introns'][0] == '478'
-        assert result['cdna']['introns'][2] == '613'
-        assert result['genomic']['introns'][0]['start'] == '2270705'
-        assert result['genomic']['introns'][2]['start'] == '2272669'
+        assert result['cdna']['exons'][0]['start'] == 1
+        assert result['cdna']['exons'][2]['start'] == 573
+        assert result['genomic']['exons'][0]['start'] == 2270227
+        assert result['genomic']['exons'][2]['start'] == 2272628
+        assert result['cdna']['introns'][0] == 478
+        assert result['cdna']['introns'][2] == 613
+        assert result['genomic']['introns'][0]['start'] == 2270705
+        assert result['genomic']['introns'][2]['start'] == 2272669
 
 
 

@@ -460,41 +460,37 @@ ref1     4      A      1       ,       a'''
     @staticmethod
     def test_close_to_intron_filter():
         'We filter out the snv close to an intron'
-        seq1 =  'ATGATAATTATGAAAAATAAAATAAAATTTAATTATATAATTCATTTCATCTAATCGTACAA'
-        seq1 += 'GCTAGATATTACTATATCAACAACTTTGTGTATAAAAAGGGCAAGAAATTAAGCATTATCGT'
-        seq1 += 'GTGAGCCACTTTTTCTATATCTAGAGATAGAAGGTTTAAAATCATGTCTCTAATTGGAAAGC'
-        seq1 += 'TTGTGAGTGAATTAGAGATCAATGCAGCTGCTGAGAAATTTTACGAAATATTCAAAGATCAA'
-        seq1 += 'TGTTTTCAGGTTCCCAATATAACCCCCAGATGCATTCAACAAGTTGAAATTCATGGTACTAA'
-        seq1 += 'TTGGGATGGCCATGGACATGGCTCTATCAAGTCTTGGTATTACACTATTGATGGCAAGGCAG'
-        seq1 += 'AAGTTTTTAAGGAACGGGTCGAGTTTCACGATGATAAATTGTTGATAGTCTTGGATGGAGTG'
-        seq1 += 'GGAGGAGATGTGTTCAAAAATTATAAAAGCTTTAAACCAGCTTACCAATTTGTACCTAAGGA'
-        seq1 += 'TCGTAACCATTGCCAGGCAATTCTGAGTATAGAGTATGAGAAACTTCATCATGGGTCTCCTG'
-        seq1 += 'ATCCTCATAAGTATATTGACCTCATGATTGGTATCACTAACGACATTGGATCTCACATTAAA'
-        seq1 += 'TAAGTATTTAATGTCTGTCACATTCTCAAGTGTGGCTTGTTAATTTGTTGTGGGAAAGTTAT'
-        seq1 += 'ATTTTATTTTGAAGTCATTTTCGTGTGGTTGATTATGTATCTTTGCTATTTTGCTTTTATAT'
-        seq1 += 'TTCAATAAGTTATATGGTTTATATAATATTACAAAGTAAATAAAATCCAAGGATCATCCCTT'
-        seq1 += 'GTTTATGTTTCGTTATTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        seq1 += 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        seq1 += 'AAAAAAAAAAAAAAAAAAAGGCCCCCCCCCCCCCCCAAAAAAATTAAAAAACCCCCCCCCCC'
-        seq1 += 'CGGGGGGGGCCC'
-        seq = SeqWithQuality(name='seq', seq=Seq(seq1))
+        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
+        seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
+        seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
+        seq += 'TTACAGGCAGAGGTGTAATTCAGATATGGTGCCTGCCAGATCTCATTCAAAAAGATATAATTG'
+        seq += 'TGAAAGAAGATTATTTTGCTCAGGTTAACAAAAAACCGTATAGAAATTTGACAAGAAGTGAAG'
+        seq += 'CAGGTACGGGAGAAGTATCTGGACCTCAAAAACCAAGAGGAAGACCAAAAAAGAACCCTGGTA'
+        seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
+        seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
+        seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
+        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq))
         blast_db_path = os.path.join(DATA_DIR, 'blast')
-        genomic_db = os.path.join(blast_db_path, 'arabidopsis_genes')
+        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+
         filter_ = create_close_to_intron_filter(distance=60,
-                                                          genomic_db=genomic_db)
+                                                genomic_db=genomic_db,
+                                            genomic_seqs_fhand=open(genomic_db))
         snv1 = Snv(location=100, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
                                      'kind':INVARIANT}]}])
-        snv2 = Snv(location=330, reference=seq, per_lib_info=[
+        snv2 = Snv(location=450, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
                                      'kind':INVARIANT}]}])
-        snv3 = Snv(location=380, reference=seq, per_lib_info=[
+        snv3 = Snv(location=640, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
                                      'kind':INVARIANT}]}])
-        snv4 = Snv(location=500, reference=seq, per_lib_info=[
+        snv4 = Snv(location=700, reference=seq, per_lib_info=[
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
                                      'kind':INVARIANT}]}])
