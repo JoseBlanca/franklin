@@ -28,6 +28,9 @@ from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
                             get_reference_name, aggregate_alleles)
 from biolib.seq.seq_analysis import infer_introns_for_cdna
 from biolib.seq import seq_filters
+from biolib.utils.cmd_utils import create_runner
+from biolib.alignment_search_result import (FilteredAlignmentResults,
+                                            get_alignment_parser)
 
 SEQUENCE_FILTERS = {'aligner': seq_filters.create_aligner_filter,
                     'similar_seqs': seq_filters.create_similar_seqs_filter}
@@ -51,11 +54,58 @@ def create_reference_filter(seq_filter, filter_args):
             return cache['result']
         else:
             result = seq_filter(sequence)
-            print "Similar", snv.reference.name , result
             cache['result'] = result
             cache['seq_id'] = cache_id
             return result
     return snv_filter
+
+def create_unique_contiguous_region_filter(distance, genomic_db):
+    '''It returns a filter that removes snv in a region that give more than one
+    match or more than one match_parts'''
+    parameters = {'database': genomic_db, 'program':'blastn'}
+    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_parser = get_alignment_parser('blast')
+    filters = [{'kind'           : 'min_scores',
+            'score_key'      : 'similarity',
+            'min_score_value': 90,
+           },
+           {'kind'           : 'min_length',
+            'min_length_bp'  : 20,
+           }
+          ]
+    def unique_contiguous_region_filter(snv):
+        '''It filters out the snv in regions repeated in the genome or
+        discontiguous'''
+        snv = snv[0]
+        #we make a blast
+        #with the sequence around the snv
+        location = snv.location
+        start = location - distance
+        end   = location + distance
+        if start < 0:
+            start = 0
+        blast_fhand = blast_runner(snv.reference[start:end])[0]
+        #now we parse the blast
+        blast_result = blast_parser(blast_fhand)
+        alignments = FilteredAlignmentResults(match_filters=filters,
+                                          results=blast_result)
+        #are there any similar sequences?
+        try:
+            alignment = alignments.next()
+        except StopIteration:
+            #if there is no similar sequence we assume that is unique
+            return True
+        #how many matches, it should be only one
+        num_hits = len(alignment['matches'])
+        if num_hits > 1:
+            return False
+        #how many match parts have the first match
+        num_hsps = len(alignment['matches'][0]['match_parts'])
+        if num_hsps == 1:
+            return True
+        else:
+            return False
+    return unique_contiguous_region_filter
 
 def create_close_to_intron_filter(distance, genomic_db,
                                   genomic_seqs_fhand=None):

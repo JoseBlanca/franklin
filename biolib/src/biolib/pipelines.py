@@ -62,7 +62,8 @@ from biolib.snv.snv_cleaner import (create_cap_enzyme_filter,
                                     create_reference_list_filter,
                                     create_aggregate_allele_qual_cleaner,
                                     create_close_to_intron_filter,
-                                    create_reference_filter)
+                                    create_reference_filter,
+                                    create_unique_contiguous_region_filter)
 
 from biolib.seq.seq_filters import create_length_filter
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
@@ -241,6 +242,13 @@ snp_filter_by_intron_proximity = {'function':create_close_to_intron_filter,
                                'type':'filter',
                                'name':'intron_filter',
                                'comment': 'It filters by proximity to a intron'}
+msg  = 'It filters the snv in regions that give more than one hit or one hsp'
+snv_filter_unique_contiguous_region = \
+                            {'function':create_unique_contiguous_region_filter,
+                           'arguments':{'distance':60, 'genomic_db':None},
+                           'type':'filter',
+                           'name':'uniique_contiguous_region',
+                           'comment': msg}
 snv_filter_by_reference = {'function':create_reference_filter,
                            'arguments':{'seq_filter':None, 'filter_args':None},
                            'type':'filter',
