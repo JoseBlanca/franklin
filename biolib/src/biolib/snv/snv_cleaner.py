@@ -23,6 +23,7 @@ Created on 2009 uzt 30
 
 import copy
 
+from biolib.utils.seqio_utils import FileSequenceIndex
 from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
                             get_reference_name, aggregate_alleles)
 from biolib.seq.seq_analysis import infer_introns_for_cdna
@@ -56,13 +57,20 @@ def create_reference_filter(seq_filter, filter_args):
             return result
     return snv_filter
 
-def create_close_to_intron_filter(distance, genomic_db):
+def create_close_to_intron_filter(distance, genomic_db, genomic_seqs_file=None):
     '''It returns a filter that filters snv by the proximity to introns.
 
     The introns are predicted by blasting against a similar species'''
     introns_cache = {}
     introns_cache['seq_id'] = None
     introns_cache['introns'] = None
+
+    genomic_seqs_index = None
+    if genomic_seqs_file:
+        genomic_seqs_index = FileSequenceIndex(open(genomic_seqs_file), 'fasta')
+
+    # we supose that the genomicdb is also the path to the file
+
     def close_to_intron_filter(snv):
         'The filter'
         if snv is None:
@@ -76,7 +84,8 @@ def create_close_to_intron_filter(distance, genomic_db):
             introns = introns_cache['introns']
         else:
             introns = infer_introns_for_cdna(sequence=snv.reference,
-                                             genomic_db=genomic_db)
+                                          genomic_db=genomic_db,
+                                          genomic_seqs_index=genomic_seqs_index)
             introns_cache['introns'] = introns
             introns_cache['seq_id'] = cache_id
         for intron in introns:

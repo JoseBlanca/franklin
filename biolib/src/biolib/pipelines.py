@@ -236,7 +236,8 @@ snp_filter_reference_not_in_list = {
                         'name':'reference_list_filter',
                 'comment': 'It filters by if the reference is not in the list'}
 snp_filter_by_intron_proximity = {'function':create_close_to_intron_filter,
-                               'arguments':{'distance':30, 'genomic_db':None},
+                               'arguments':{'distance':30, 'genomic_db':None,
+                                            'genomic_seqs_file':None},
                                'type':'filter',
                                'name':'intron_filter',
                                'comment': 'It filters by proximity to a intron'}
