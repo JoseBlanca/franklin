@@ -238,7 +238,7 @@ snp_filter_reference_not_in_list = {
                 'comment': 'It filters by if the reference is not in the list'}
 snp_filter_by_intron_proximity = {'function':create_close_to_intron_filter,
                                'arguments':{'distance':30, 'genomic_db':None,
-                                            'genomic_seqs_file':None},
+                                            'genomic_seqs_fhand':None},
                                'type':'filter',
                                'name':'intron_filter',
                                'comment': 'It filters by proximity to a intron'}
@@ -247,7 +247,7 @@ snv_filter_unique_contiguous_region = \
                             {'function':create_unique_contiguous_region_filter,
                            'arguments':{'distance':60, 'genomic_db':None},
                            'type':'filter',
-                           'name':'uniique_contiguous_region',
+                           'name':'unique_contiguous_region',
                            'comment': msg}
 snv_filter_by_reference = {'function':create_reference_filter,
                            'arguments':{'seq_filter':None, 'filter_args':None},
