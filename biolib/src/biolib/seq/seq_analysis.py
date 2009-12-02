@@ -19,7 +19,8 @@ Created on 26/11/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-from biolib.utils.cmd_utils import create_runner
+from biolib.utils.cmd_utils import create_runner, call
+from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from biolib.utils.collections_ import list_consecutive_pairs_iter
@@ -155,7 +156,8 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
 
     #first we want to know where is the most similar seq in the genomic_db
     #this will speed up things
-    similar_seqs = look_for_similar_sequences(sequence, db=genomic_db)
+    similar_seqs = look_for_similar_sequences(sequence, db=genomic_db,
+                                              blast_program='blastn')
     similar_seq = similar_seqs[0]
     start = similar_seq['subject_start']
     end   = similar_seq['subject_end']
@@ -164,7 +166,7 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     #now we run est2genome for this cdna
     cdna_file = temp_fasta_file(seqs=[sequence])
     similar_seq_file = temp_fasta_file(seqs=[similar_seq])
-    
+
     #we run est2genome
     cmd = ['est2genome', cdna_file.name, similar_seq_file.name,
            '-sbegin2', str(start), '-send2', str(end), '-stdout', '-auto']
@@ -172,9 +174,33 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     if retcode:
         msg = 'There was an error running est2genome: ' + stderr
         raise RuntimeError(msg)
-    
     #parse est2genome
-    
+    result = est2genome_parser(stdout)
+
+    #get_introns_from parser_result
+    return result['cdna']['introns']
+
+def est2genome_parser(output):
+    '''It parses est2genome output'''
+    result = {'cdna':{'introns':[], 'exons':[]},
+              'genomic':{'introns':[], 'exons':[]}}
+    for line in output.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('Exon'):
+            items = line.split()
+            genomic = {'start':items[3], 'end':items[4]}
+            cdna = {'start':items[6], 'end':items[7]}
+            result['cdna']['exons'].append(cdna)
+            result['genomic']['exons'].append(genomic)
+        elif line.startswith('-Intron'):
+            items = line.split()
+            genomic = {'start':items[3], 'end':items[4]}
+            cdna = result['cdna']['exons'][-1]['end']
+            result['cdna']['introns'].append(cdna)
+            result['genomic']['introns'].append(genomic)
+    return result
 
 def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
                            method='est2genome'):
@@ -183,8 +209,8 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
     if method == 'blast':
         return _infer_introns_for_cdna_blast(sequence, genomic_db)
     else:
-        _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                           genomic_seqs_index)
+        return _infer_introns_for_cdna_est2genome(sequence, genomic_db,
+                                                  genomic_seqs_index)
 
 
 

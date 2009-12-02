@@ -23,8 +23,10 @@ import unittest, os
 from biolib.seq.seqs import SeqWithQuality, Seq
 from biolib.seq.seq_analysis import (infer_introns_for_cdna,
                                      _infer_introns_from_matches,
-                                     look_for_similar_sequences)
+                                     look_for_similar_sequences,
+                                     est2genome_parser)
 from biolib.utils.misc_utils import DATA_DIR
+from biolib.utils.seqio_utils import FileSequenceIndex
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
@@ -217,6 +219,59 @@ class IntronTest(unittest.TestCase):
         alignments = iter([alignment])
         introns = _infer_introns_from_matches(alignments)
         assert introns == []
+
+    @staticmethod
+    def test_infer_introns_est2genome_method():
+        'It tests the est2genome method of infering introns'
+        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
+        seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
+        seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
+        seq += 'TTACAGGCAGAGGTGTAATTCAGATATGGTGCCTGCCAGATCTCATTCAAAAAGATATAATTG'
+        seq += 'TGAAAGAAGATTATTTTGCTCAGGTTAACAAAAAACCGTATAGAAATTTGACAAGAAGTGAAG'
+        seq += 'CAGGTACGGGAGAAGTATCTGGACCTCAAAAACCAAGAGGAAGACCAAAAAAGAACCCTGGTA'
+        seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
+        seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
+        seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
+        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
+        seq1 = SeqWithQuality(seq = Seq(seq))
+        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome')
+        genomic_seqs_index = FileSequenceIndex(open(genomic_db), 'fasta')
+        introns = infer_introns_for_cdna(seq1, genomic_db,
+                                         genomic_seqs_index=genomic_seqs_index)
+        assert introns == ['478', '572', '613']
+
+    @staticmethod
+    def test_parse_est2genome():
+        'It test the parser of the est2genome output'
+        output = '''Note Best alignment is between reversed est and forward
+genome, but splice sites imply REVERSED GENE
+Exon       476  99.8 2270227 2270704 scaffold06070     1   478 SGN-U562593
+-Intron    -20   0.0 2270705 2271433 scaffold06070
+Exon        94 100.0 2271434 2271527 scaffold06070   479   572 SGN-U562593
+-Intron    -20   0.0 2271528 2272627 scaffold06070
+Exon        41 100.0 2272628 2272668 scaffold06070   573   613 SGN-U562593
+-Intron    -20   0.0 2272669 2272767 scaffold06070
+Exon        57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593
+
+Span       608  99.7 2270227 2272826 scaffold06070     1   672 SGN-U562593
+
+Segment    476  99.8 2270227 2270704 scaffold06070     1   478 SGN-U562593
+Segment     94 100.0 2271434 2271527 scaffold06070   479   572 SGN-U562593
+Segment     41 100.0 2272628 2272668 scaffold06070   573   613 SGN-U562593
+Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
+        result = est2genome_parser(output)
+        assert len(result['cdna']['introns']) == 3
+        assert result['cdna']['exons'][0]['start'] == '1'
+        assert result['cdna']['exons'][2]['start'] == '573'
+        assert result['genomic']['exons'][0]['start'] == '2270227'
+        assert result['genomic']['exons'][2]['start'] == '2272628'
+        assert result['cdna']['introns'][0] == '478'
+        assert result['cdna']['introns'][2] == '613'
+        assert result['genomic']['introns'][0]['start'] == '2270705'
+        assert result['genomic']['introns'][2]['start'] == '2272669'
+
+
 
     @staticmethod
     def test_look_for_similar_seqs():

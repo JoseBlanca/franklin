@@ -10,7 +10,6 @@ from uuid import uuid4
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.misc_utils import FileIndex
 
-import Bio
 from Bio import SeqIO
 from Bio.Seq import UnknownSeq
 
