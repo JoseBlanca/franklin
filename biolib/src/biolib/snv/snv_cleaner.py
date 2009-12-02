@@ -57,7 +57,7 @@ def create_reference_filter(seq_filter, filter_args):
             return result
     return snv_filter
 
-def create_close_to_intron_filter(distance, genomic_db, genomic_seqs_file=None):
+def create_close_to_intron_filter(distance, genomic_db, genomic_seqs_fhand=None):
     '''It returns a filter that filters snv by the proximity to introns.
 
     The introns are predicted by blasting against a similar species'''
@@ -66,10 +66,8 @@ def create_close_to_intron_filter(distance, genomic_db, genomic_seqs_file=None):
     introns_cache['introns'] = None
 
     genomic_seqs_index = None
-    if genomic_seqs_file:
-        genomic_seqs_index = FileSequenceIndex(open(genomic_seqs_file), 'fasta')
-
-    # we supose that the genomicdb is also the path to the file
+    if genomic_seqs_fhand:
+        genomic_seqs_index = FileSequenceIndex(genomic_seqs_fhand, 'fasta')
 
     def close_to_intron_filter(snv):
         'The filter'
