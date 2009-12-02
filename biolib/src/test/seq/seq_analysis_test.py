@@ -50,7 +50,8 @@ class IntronTest(unittest.TestCase):
         seq1 += 'CGGGGGGGGCCC'
         seq = SeqWithQuality(name='seq', seq=Seq(seq1))
         genomic_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
-        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db)
+        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db,
+                                         method='blast')
         assert introns == [359]
 
         seq2  = 'AAACCAACTTTCTCCCCATTTTCTTCCTCAAACCTCCATCAATGGCTTCCTTCTCCAGAATC'
@@ -67,7 +68,8 @@ class IntronTest(unittest.TestCase):
         seq2 += 'TATATTTATATC-ATATCATAAATATTCTCACATGTTTACCTAATGTTTTCTTTCAATAATA'
         seq2 += 'TTATCTTTTTACGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         seq = SeqWithQuality(name='seq', seq=Seq(seq2))
-        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db)
+        introns = infer_introns_for_cdna(seq, genomic_db=genomic_db,
+                                         method='blast')
         assert introns == []
 
     @staticmethod
@@ -227,7 +229,9 @@ class IntronTest(unittest.TestCase):
         db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
         similar_seqs = look_for_similar_sequences(seq1, db=db,
                                                   blast_program='blastn')
-        assert similar_seqs == ['AT5G19860.1']
+        assert similar_seqs[0]['name'] == 'AT5G19860.1'
+        assert similar_seqs[0]['query_start'] == 1
+        assert similar_seqs[0]['subject_start'] == 323
 
 
 if __name__ == "__main__":

@@ -13,8 +13,10 @@ The sequence can have: name, description, annotations={'database':some db} and
 len(sequence).
 Every match is a dict.
 match  = {'subject':the subject sequence
-          'start'  :match start position in bp
-          'end'    :match end position in bp
+          'start'  :match start position in bp in query
+          'end'    :match end position in bp in query
+          'subject_start' : match start position in bp in subject
+          'subject_end'    :match end position in bp in subject
           'scores' :a dict with the scores
           'match_parts': [a list of match_parts(hsps in the blast lingo)]
           'evidences'  : [a list of tuples for the iprscan]
@@ -114,6 +116,7 @@ class BlastParser(object):
             #the hsps (match parts)
             match_parts = []
             match_start, match_end = None, None
+            match_subject_start, match_subject_end = None, None
             for hsp in alignment.hsps:
                 expect         = hsp.expect
                 subject_start  = hsp.sbjct_start
@@ -160,11 +163,16 @@ class BlastParser(object):
                     match_start = query_start
                 if match_end is None or query_end > match_end:
                     match_end = query_end
-
+                if match_subject_start is None or subject_start < subject_start:
+                    match_subject_start = subject_start
+                if match_subject_end is None or subject_end > match_subject_end:
+                    match_subject_end = subject_end
             matches.append({
                 'subject': subject,
                 'start'  : match_start,
                 'end'    : match_end,
+                'subject_start': match_subject_start,
+                'subject_end'  : match_subject_end,
                 'scores' : {'expect':match_parts[0]['scores']['expect']},
                 'match_parts' : match_parts})
         result = {'query'  : query,
@@ -214,6 +222,7 @@ class ExonerateParser(object):
     def _create_structure_result(query_result):
         '''It creates the result dictionary structure giving a list of
         match_parts of a query_id '''
+        #TODO add to the match the match subject start and end
         struct_dict  = {}
         query_name   = query_result[0][0]
         query_length = int(query_result[0][9])

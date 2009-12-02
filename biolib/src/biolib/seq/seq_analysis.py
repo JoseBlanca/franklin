@@ -127,7 +127,7 @@ def _separate_hsps(hsps):
             reverse_hsps.append(hsp)
     return direct_hsps, reverse_hsps
 
-def infer_introns_for_cdna(sequence, genomic_db):
+def _infer_introns_for_cdna_blast(sequence, genomic_db):
     '''Doing a blast with the sequences against the genomic db it infers the
     positions of introns'''
     #first we run the blast
@@ -148,6 +148,45 @@ def infer_introns_for_cdna(sequence, genomic_db):
     #now we have to guess the introns
     introns = _infer_introns_from_matches(alignments)
     return introns
+
+def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
+                                       genomic_seqs_index):
+    'It infers the intron location in the cdna using est2genome'
+
+    #first we want to know where is the most similar seq in the genomic_db
+    #this will speed up things
+    similar_seqs = look_for_similar_sequences(sequence, db=genomic_db)
+    similar_seq = similar_seqs[0]
+    start = similar_seq['subject_start']
+    end   = similar_seq['subject_end']
+    similar_seq = genomic_seqs_index[similar_seq['name']]
+
+    #now we run est2genome for this cdna
+    cdna_file = temp_fasta_file(seqs=[sequence])
+    similar_seq_file = temp_fasta_file(seqs=[similar_seq])
+    
+    #we run est2genome
+    cmd = ['est2genome', cdna_file.name, similar_seq_file.name,
+           '-sbegin2', str(start), '-send2', str(end), '-stdout', '-auto']
+    stdout, stderr, retcode = call(cmd)
+    if retcode:
+        msg = 'There was an error running est2genome: ' + stderr
+        raise RuntimeError(msg)
+    
+    #parse est2genome
+    
+
+def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
+                           method='est2genome'):
+    '''Doing a blast with the sequences against the genomic db it infers the
+    positions of introns'''
+    if method == 'blast':
+        return _infer_introns_for_cdna_blast(sequence, genomic_db)
+    else:
+        _infer_introns_for_cdna_est2genome(sequence, genomic_db,
+                                           genomic_seqs_index)
+
+
 
 def look_for_similar_sequences(sequence, db, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
@@ -180,6 +219,12 @@ def look_for_similar_sequences(sequence, db, blast_program, filters=None):
         return []
     similar_seqs = []
     for match in alignment['matches']:
-        similar_seqs.append(match['subject'].name)
-
+        #to which sequence our query is similar?
+        name = match['subject'].name
+        similar_seqs.append({'name':name,
+                             'subject_start': match['subject_start'],
+                             'subject_end':   match['subject_end'],
+                             'query_start':   match['start'],
+                             'query_end':     match['end']
+                             })
     return similar_seqs
