@@ -40,7 +40,7 @@ be requested.
 
 import logging, os
 from optparse import OptionParser
-from biolib.pipelines import seq_pipeline_runner
+from biolib.pipelines.pipelines import seq_pipeline_runner
 
 def parse_options():
     'It parses the command line arguments'

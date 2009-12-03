@@ -40,10 +40,11 @@ from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_reference_filter,
                                        create_unique_contiguous_region_filter)
 from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
-from biolib.pipelines import (pipeline_runner, snp_filter_is_variable_in_some,
-                              snp_filter_is_variable_in_aggregate,
-                              snp_filter_by_kind,
-                              snp_filter_reference_not_in_list)
+from biolib.pipelines.pipelines import (pipeline_runner,
+                                         snp_filter_is_variable_in_some,
+                                         snp_filter_is_variable_in_aggregate,
+                                         snp_filter_by_kind,
+                                         snp_filter_reference_not_in_list)
 from biolib.seq.seqs import SeqWithQuality, Seq
 from biolib.utils.misc_utils import DATA_DIR
 
