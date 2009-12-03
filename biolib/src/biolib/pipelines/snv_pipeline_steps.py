@@ -120,7 +120,7 @@ msg  = 'It filters the snv in regions that give more than one hit or one hsp'
 snv_filter_unique_contiguous_region = \
                             {'function':create_unique_contiguous_region_filter,
                            'arguments':{'distance':60, 'genomic_db':None,
-                                        'genomics_seqs_fhand':None},
+                                        'genomic_seqs_fhand':None},
                            'type':'filter',
                            'name':'unique_contiguous_region',
                            'comment': msg}
