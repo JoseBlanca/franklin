@@ -14,7 +14,7 @@ setup(
     description='Some genomics related classes',
     # package structure
     packages=['biolib', 'biolib.snv', 'biolib.db', 'biolib.gmod', 'biolib.seq',
-              'biolib.utils'],
+              'biolib.utils', 'biolib.pipelines'],
     package_dir={'':'.'},
     package_data={'mypkg': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib'],
