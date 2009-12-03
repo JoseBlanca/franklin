@@ -59,9 +59,11 @@ def create_reference_filter(seq_filter, filter_args):
             return result
     return snv_filter
 
-def create_unique_contiguous_region_filter(distance, genomic_db):
+def create_unique_contiguous_region_filter(distance, genomic_db,
+                                           genomic_seqs_fhand):
     '''It returns a filter that removes snv in a region that give more than one
     match or more than one match_parts'''
+    genomic_seqs_index = FileSequenceIndex(genomic_seqs_fhand, 'fasta')
     parameters = {'database': genomic_db, 'program':'blastn'}
     blast_runner = create_runner(kind='blast', parameters=parameters)
     blast_parser = get_alignment_parser('blast')
@@ -84,7 +86,9 @@ def create_unique_contiguous_region_filter(distance, genomic_db):
         end   = location + distance
         if start < 0:
             start = 0
-        blast_fhand = blast_runner(snv.reference[start:end])[0]
+        #print start, end
+        seq_fragment = snv.reference[start:end]
+        blast_fhand = blast_runner(seq_fragment)[0]
         #now we parse the blast
         blast_result = blast_parser(blast_fhand)
         alignments = FilteredAlignmentResults(match_filters=filters,
@@ -99,12 +103,17 @@ def create_unique_contiguous_region_filter(distance, genomic_db):
         num_hits = len(alignment['matches'])
         if num_hits > 1:
             return False
-        #how many match parts have the first match
-        num_hsps = len(alignment['matches'][0]['match_parts'])
-        if num_hsps == 1:
+        #how many match parts have the first match?
+        #we could do it with the blast result, but blast is not very good
+        #aligning, so we realign with est2genome
+        introns = infer_introns_for_cdna(sequence=seq_fragment,
+                                          genomic_db=genomic_db,
+                                          genomic_seqs_index=genomic_seqs_index)
+        if not introns:
             return True
         else:
             return False
+
     return unique_contiguous_region_filter
 
 def create_close_to_intron_filter(distance, genomic_db,

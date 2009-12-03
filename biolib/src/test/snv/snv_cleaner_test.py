@@ -40,11 +40,12 @@ from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_reference_filter,
                                        create_unique_contiguous_region_filter)
 from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
-from biolib.pipelines.pipelines import (pipeline_runner,
-                                         snp_filter_is_variable_in_some,
-                                         snp_filter_is_variable_in_aggregate,
-                                         snp_filter_by_kind,
-                                         snp_filter_reference_not_in_list)
+from biolib.pipelines.pipelines import pipeline_runner
+
+from biolib.pipelines.snv_pipeline_steps import (snp_filter_is_variable_in_some,
+                                            snp_filter_is_variable_in_aggregate,
+                                            snp_filter_by_kind,
+                                            snp_filter_reference_not_in_list)
 from biolib.seq.seqs import SeqWithQuality, Seq
 from biolib.utils.misc_utils import DATA_DIR
 
@@ -542,7 +543,8 @@ ref1     4      A      1       ,       a'''
         the genome'''
         genomic_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
         filter_ = create_unique_contiguous_region_filter(distance=60,
-                                                         genomic_db=genomic_db)
+                                                         genomic_db=genomic_db,
+                                            genomic_seqs_fhand=open(genomic_db))
         #an snv in an unique region
         seq  = 'CTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGATTGTTTC'
         seq += 'TTCATTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATATCTGTTGAA'
@@ -572,7 +574,8 @@ ref1     4      A      1       ,       a'''
                                      'kind':INVARIANT}]}])
         assert not filter_((snv1, [snv1]))
 
-        #a sequence with one hit but two hsps
+        #a sequence with one hit but two hsps, but a contiguous region according
+        #to est2genome
         seq  = 'TAACATATGTATCGTTTGCTAACTGTATATCAGGAGAAGGAGTAATGTAAAAATTCGAGA'
         seq += 'TTATTGTAATTTAAGAAACTCTTTAGGTAGAATGTAATTAATACCAAAATCATTAAAATT'
         seq += 'TCTGTACTTTATACTTGTCATATTCTCAAGATACGAGTCAAAAATGTCTGATTAAATATG'
@@ -582,7 +585,8 @@ ref1     4      A      1       ,       a'''
                         {'alleles':[{'allele':'A', 'reads':10, 'kind':SNP},
                                     {'allele':'T', 'reads':10,
                                      'kind':INVARIANT}]}])
-        assert not filter_((snv1, [snv1]))
+        assert filter_((snv1, [snv1]))
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']
