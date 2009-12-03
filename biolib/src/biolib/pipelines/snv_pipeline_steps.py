@@ -128,3 +128,13 @@ snv_filter_by_reference = {'function':create_reference_filter,
                            'type':'filter',
                            'name':'reference_filter',
                            'comment': 'It filters by snv.refernce properties'}
+
+################################################################################
+# PIPELINES
+################################################################################
+
+SNVPIPELINES = {'snp_basic'  : [snp_remove_alleles_n,
+                                snp_no_baq_quality_alleles_agg,
+                                snp_no_bad_quality_alleles_per_lib,
+                                snp_filter_is_variable_in_some],
+                }

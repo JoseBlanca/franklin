@@ -40,32 +40,13 @@ from itertools import imap, ifilter
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
                                       write_seqs_in_file,
                                       guess_seq_file_format)
-from biolib.pipelines.seq_pipeline_steps import *
-from biolib.pipelines.snv_pipeline_steps import *
+from biolib.pipelines.seq_pipeline_steps import SEQPIPELINES
+from biolib.pipelines.snv_pipeline_steps import SNVPIPELINES
 
-################################################################################
-# PIPELINES
-################################################################################
 
-PIPELINES = {'sanger_with_qual' : [remove_vectors, strip_quality_lucy2,
-                                mask_low_complexity, filter_short_seqs_sanger ],
+# Join the pipelines in PIPELINE
+PIPELINES = dict(SEQPIPELINES.items() + SNVPIPELINES.items())
 
-            'sanger_without_qual': [remove_vectors, strip_quality_by_n,
-                               mask_low_complexity, filter_short_seqs_sanger ],
-
-            'repeatmasker' : [mask_repeats, filter_short_seqs_sanger],
-
-            'solexa'       : [remove_adaptors, strip_quality,
-                              filter_short_seqs_solexa],
-            'adaptors':[remove_adaptors, filter_short_seqs_sanger],
-            'snp_basic': [snp_remove_alleles_n,
-                          snp_no_baq_quality_alleles_agg,
-                          snp_no_bad_quality_alleles_per_lib,
-                          snp_filter_is_variable_in_some],
-         'mask_dust' : [mask_polia, mask_low_complexity],
-         'word_masker' : [mask_words, filter_short_seqs_solexa]}
-
-###############################################################################
 
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
@@ -105,7 +86,7 @@ def pipeline_runner(pipeline, items, configuration=None):
     if configuration is None:
         configuration = {}
     # We configure the pipeline depending on the sequences type and
-    # configuratiom parameters
+    # configuration parameters
     pipeline_steps = configure_pipeline(pipeline, configuration)
 
     # List of temporary files created by the bulk processors.
