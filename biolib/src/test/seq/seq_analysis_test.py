@@ -249,7 +249,7 @@ genome, but splice sites imply REVERSED GENE
 Exon       476  99.8 2270227 2270704 scaffold06070     1   478 SGN-U562593
 -Intron    -20   0.0 2270705 2271433 scaffold06070
 Exon        94 100.0 2271434 2271527 scaffold06070   479   572 SGN-U562593
--Intron    -20   0.0 2271528 2272627 scaffold06070
++Intron    -20   0.0 2271528 2272627 scaffold06070
 Exon        41 100.0 2272628 2272668 scaffold06070   573   613 SGN-U562593
 -Intron    -20   0.0 2272669 2272767 scaffold06070
 Exon        57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593
@@ -270,6 +270,10 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         assert result['cdna']['introns'][2] == 613
         assert result['genomic']['introns'][0]['start'] == 2270705
         assert result['genomic']['introns'][2]['start'] == 2272669
+
+
+
+
 
 
 

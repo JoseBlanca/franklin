@@ -196,7 +196,7 @@ def est2genome_parser(output):
             cdna = {'start': int(items[6]), 'end': int(items[7])}
             result['cdna']['exons'].append(cdna)
             result['genomic']['exons'].append(genomic)
-        elif line.startswith('-Intron'):
+        elif line.startswith('-Intron') or line.startswith('+Intron'):
             items = line.split()
             genomic = {'start': int(items[3]), 'end': int(items[4])}
             cdna = result['cdna']['exons'][-1]['end']
