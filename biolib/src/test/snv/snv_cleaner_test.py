@@ -502,6 +502,10 @@ ref1     4      A      1       ,       a'''
         assert not filter_((snv3, [snv1, snv2, snv3, snv4]))
         assert filter_((snv4, [snv1, snv2, snv3, snv4]))
 
+  
+
+
+
     @staticmethod
     def test_similar_reference():
         'It test that we can look for snps in reference seqs similar to a db'

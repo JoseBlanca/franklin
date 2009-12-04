@@ -271,12 +271,6 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         assert result['genomic']['introns'][0]['start'] == 2270705
         assert result['genomic']['introns'][2]['start'] == 2272669
 
-
-
-
-
-
-
     @staticmethod
     def test_look_for_similar_seqs():
         'It test if we can look for simialr seqs in a database'
