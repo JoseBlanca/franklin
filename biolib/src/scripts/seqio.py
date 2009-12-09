@@ -2,7 +2,7 @@
 'It inputs and ouputs sequences, usually to change their format'
 
 from optparse import OptionParser
-from biolib.biolib_seqio_utils import seqs_in_file, write_seqs_in_file
+from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
 from Bio import SeqIO
 
 def parse_options():
