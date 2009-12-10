@@ -54,7 +54,7 @@ def main():
 
     if  infhand_qual is not None or outfhand_qual is not None:
         seqs = seqs_in_file(seq_fhand=infhand_seq, qual_fhand=infhand_qual,
-                        format=format_in, create_seqrecord=True)
+                        format=format_in)
         write_seqs_in_file(seqs, seq_fhand=outfhand_seq,
                            qual_fhand=outfhand_qual,format=format_out)
     else:
