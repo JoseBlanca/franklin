@@ -485,3 +485,102 @@ def calculate_read_coverage(pileup, distrib_fhand=None, plot_fhand=None,
                                distrib_fhand=distrib_fhand,
                                plot_fhand=plot_fhand,
                                range_=range_, low_memory=True)
+
+
+def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
+                 groups_for_shape=None, title=None, xlabel= None,
+                 ylabel=None, fhand=None):
+    '''It draws an scatter plot.
+
+    x_axe and y_axe should be two lists of numbers. The names should be a list
+    of the same lenght and will be applied to every data point drawn. The
+    groups_for_shape and color should be list of the same length and will be
+    used to calculate the color. Every point that belongs to the same group
+    will be drawn with the same color.
+    If an fhand is given the scatter plot will be saved.
+    '''
+    #in some circunstances matplot lib could generate this error
+    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
+    #writable directory for matplotlib configuration data
+    #in that case we don't know how to use matplotlib, it would require
+    #to set the MPLCONFIGDIR variable, but we can't do that in the
+    #current shell, so the matplotlib greatness wouldn't be available
+    #in those occasions
+    global IMPORTED_MATPLOTLIB
+    if IMPORTED_MATPLOTLIB is None:
+        import matplotlib
+        matplotlib.use('AGG')
+        IMPORTED_MATPLOTLIB = matplotlib
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+    #text labels
+    if names is not None:
+        max_x = max(x_axe)
+        min_x = min(x_axe)
+        x_text_offset = float(max_x - min_x) / 40.0
+        for name, x_value, y_value in zip(names, x_axe, y_axe):
+            axes.text(x_value + x_text_offset, y_value, name)
+
+    if names is None:
+        #all belong to the same group
+        names = (None,) * len(x_axe)
+    if groups_for_color is None:
+        #all belong to the same group
+        groups_for_color = (None,) * len(x_axe)
+    if groups_for_shape is None:
+        #all belong to the same group
+        groups_for_shape = (None,) * len(x_axe)
+    #now I want the x, y values divided by color and shape
+    scatters = {}
+    scat_indexes = []
+    for x_value, y_value, name, color, shape in zip(x_axe, y_axe, names,
+                                                    groups_for_color,
+                                                    groups_for_shape):
+        scat_index = str(color) + str(shape)
+        if scat_index not in scatters:
+            scat_indexes.append(scat_index)
+            scatters[scat_index] = {}
+            scatters[scat_index]['x'] = []
+            scatters[scat_index]['y'] = []
+            scatters[scat_index]['names'] = []
+            scatters[scat_index]['color'] = color
+            scatters[scat_index]['shape'] = shape
+        scatters[scat_index]['x'].append(x_value)
+        scatters[scat_index]['y'].append(y_value)
+        scatters[scat_index]['names'].append(name)
+    #which color every scatter should use?
+    colors = []
+    shapes = []
+    avail_shapes = ['o', 's', '^', 'd', 'p', '+', 'x', '<', '>', 'v', 'h']
+    for scat_index in scat_indexes:
+        color = scatters[scat_index]['color']
+        shape = scatters[scat_index]['shape']
+        if color not in colors:
+            colors.append(color)
+        if shape not in shapes:
+            shapes.append(shape)
+        color_index = colors.index(color)
+        shape_index = shapes.index(shape)
+        scatters[scat_index]['color'] = color_by_index(color_index,
+                                                       kind='rgb_float')
+        scatters[scat_index]['shape'] = avail_shapes[shape_index]
+
+    #now the drawing
+    for scat_index in scatters:
+        scat = scatters[scat_index]
+        axes.scatter(scat['x'], scat['y'], c=scat['color'],
+                     marker=scat['shape'], s=60)
+    if fhand is None:
+        plt.show()
+    else:
+        fig.savefig(fhand)
+

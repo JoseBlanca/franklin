@@ -33,7 +33,7 @@ get a 3-D distribution plot. To get that you should chose the --incompat option.
 # along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.utils.misc_utils import draw_scatter
+from biolib.statistics import draw_scatter
 from biolib.alignment_search_result import (BlastParser,
                                                        alignment_results_scores)
 import numpy
