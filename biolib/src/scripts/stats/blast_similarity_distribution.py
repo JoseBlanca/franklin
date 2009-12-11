@@ -44,6 +44,7 @@ def parse_options():
     '''The main section'''
     parser = OptionParser('usage: %prog -i blast.xml', version='%prog 0.1')
     parser.add_option('-i', '--infile', dest='infile', help='blast xml')
+    parser.add_option('-o', '--outfile', dest='outfile', help='png output')
     msg = 'sum hits in the distribution, not lengths'
     parser.add_option('-t', '--hits', dest='use_length',
                       action='store_true', default=False, help=msg)
@@ -60,12 +61,16 @@ def set_parameters():
         parser.error('Script at least needs an input file (blast xml output)')
     else:
         infhand = open(options.infile)
+    if options.outfile is None:
+        outfhand = None
+    else:
+        outfhand = open(options.outfile, 'w')
 
-    return infhand, options.do_incompat
+    return infhand, outfhand, options.do_incompat
 
 def main():
     '''The main section'''
-    infhand, do_incompat = set_parameters()
+    infhand, outfhand, do_incompat = set_parameters()
     bins = 20
 
     blasts = BlastParser(infhand)
@@ -93,7 +98,7 @@ def main():
         image.set_interpolation('bilinear')
         pylab.show()
     else:
-        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib)
+        draw_scatter(x_axe=bin_edges[:-1], y_axe=distrib, fhand=outfhand)
     return
 
 if __name__ == '__main__':
