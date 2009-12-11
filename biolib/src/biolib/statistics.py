@@ -486,6 +486,34 @@ def calculate_read_coverage(pileup, distrib_fhand=None, plot_fhand=None,
                                plot_fhand=plot_fhand,
                                range_=range_, low_memory=True)
 
+def _color_by_index(index, kind='str'):
+    'Given an int index it returns a color'
+    colors = [{'black'        :(0x00, 0x00, 0x00)},
+              {'green'        :(0x00, 0x80, 0x00)},
+              {'deep_sky_blue':(0x00, 0xbf, 0xff)},
+              {'indigo'       :(0x4b, 0x00, 0x82)},
+              {'maroon'       :(0x80, 0x00, 0x00)},
+              {'blue_violet'  :(0x8a, 0x2b, 0xe2)},
+              {'pale_green'   :(0x98, 0xfb, 0x98)},
+              {'sienna'       :(0xa0, 0x52, 0x22)},
+              {'medium_orchid':(0xba, 0x55, 0xd3)},
+              {'rosy_brown'   :(0xbc, 0x8f, 0x8f)},
+              {'chocolate'    :(0xd2, 0x69, 0x1e)},
+              {'crimson'      :(0xdc, 0x14, 0x3c)},
+              {'dark_salmon'  :(0xe9, 0x96, 0x7a)},
+              {'khaki'        :(0xf0, 0xe6, 0x8c)},
+              {'red'          :(0xff, 0x00, 0x00)},
+              {'blue'         :(0x00, 0x00, 0xff)},
+              {'lime'         :(0x00, 0xff, 0x00)},
+             ]
+    color = colors[index].values()[0]
+    #rgb str
+    if kind == 'str':
+        color = ' '.join([str(channel) for channel in list(color)])
+    elif kind == 'rgb_float':
+        color = [float(channel)/255.0 for channel in list(color)]
+    return color
+
 
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                  groups_for_shape=None, title=None, xlabel= None,
@@ -570,7 +598,7 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
             shapes.append(shape)
         color_index = colors.index(color)
         shape_index = shapes.index(shape)
-        scatters[scat_index]['color'] = color_by_index(color_index,
+        scatters[scat_index]['color'] = _color_by_index(color_index,
                                                        kind='rgb_float')
         scatters[scat_index]['shape'] = avail_shapes[shape_index]
 
