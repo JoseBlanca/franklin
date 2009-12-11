@@ -35,11 +35,12 @@ get a 3-D distribution plot. To get that you should chose the --incompat option.
 from optparse import OptionParser
 from biolib.utils.misc_utils import draw_scatter
 from biolib.alignment_search_result import (BlastParser,
-                                            alignment_results_scores)
+                                                       alignment_results_scores)
 import numpy
 import pylab
 
-def main():
+def parse_options():
+    'It parses the command line arguments'
     '''The main section'''
     parser = OptionParser('usage: %prog -i blast.xml', version='%prog 0.1')
     parser.add_option('-i', '--infile', dest='infile', help='blast xml')
@@ -48,31 +49,40 @@ def main():
                       action='store_true', default=False, help=msg)
     parser.add_option('-c', '--incompat', dest='do_incompat',
                       action='store_true', default=False, help=msg)
-    options = parser.parse_args()[0]
+    return parser
 
+def set_parameters():
+    '''It set the parameters for this scripts. From de options or from the
+     default values'''
+    parser  = parse_options()
+    options = parser.parse_args()[0]
     if options.infile is None:
         parser.error('Script at least needs an input file (blast xml output)')
     else:
-        infile = options.infile
-    #use_length = options.use_length
+        infhand = open(options.infile)
 
+    return infhand, options.do_incompat
+
+def main():
+    '''The main section'''
+    infhand, do_incompat = set_parameters()
     bins = 20
 
-    blasts = BlastParser(fhand=open(infile, 'r'))
+    blasts = BlastParser(infhand)
     #the values for the distribution
     score_keys = ['similarity']
-    if options.do_incompat:
+    if do_incompat:
         score_keys.append('d_incompatibility')
     scores = alignment_results_scores(blasts, score_keys)
     #the distribution
-    if options.do_incompat:
+    if do_incompat:
         #distrib, x_edges, y_edges = numpy.histogram2d(scores[0], scores[1],
         #                                              bins=bins)
         distrib = numpy.histogram2d(scores[0], scores[1], bins=bins)[0]
     else:
         distrib, bin_edges = numpy.histogram(scores, bins=bins)
     #the drawing
-    if options.do_incompat:
+    if do_incompat:
         #fig = pylab.figure()
         pylab.figure()
         #axes = Axes3D(fig)
