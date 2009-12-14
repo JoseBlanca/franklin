@@ -167,6 +167,32 @@ class Snv(object):
             ag_alleles.extend(libinfo['alleles'])
         return aggregate_alleles(ag_alleles)
 
+def get_alleles(snv):
+    '''It return alleles and number of times reads of all the per_lib_annotations
+    together'''
+    allele_dict = {}
+    for library in snv.per_lib_info:
+        alleles = library['alleles']
+        for allele in alleles:
+            nucleotide = allele['allele']
+            reads      = allele['reads']
+            if nucleotide not in allele_dict:
+                allele_dict[nucleotide] = 0
+            allele_dict[nucleotide] += reads
+    return allele_dict
+
+def basic_print(snv):
+    'It prints a snv, showing the unigene, the positioan and the alleles'
+    position = str(snv.location)
+    unigene = get_reference_name(snv.reference)
+    allele_dict = get_alleles(snv)
+
+    allele_print = []
+    for allele, number in allele_dict.items():
+        allele_print.append('%s=%s' % (allele, str(number)))
+
+    return "%s\t%s\tAlleles: %s" % (unigene, position, ", ".join(allele_print))
+
 def aggregate_alleles(alleles):
     '''It aggreates the alleles from a list of alleles (useful to remove
     redundancies)'''
