@@ -36,6 +36,8 @@ from optparse import OptionParser
 from biolib.statistics import draw_scatter
 from biolib.alignment_search_result import (BlastParser,
                                                        alignment_results_scores)
+from biolib.statistics import create_distribution
+
 import numpy
 import pylab
 
@@ -50,6 +52,9 @@ def parse_options():
                       action='store_true', default=False, help=msg)
     parser.add_option('-c', '--incompat', dest='do_incompat',
                       action='store_true', default=False, help=msg)
+    parser.add_option('-l', '--low_memory', dest='low_memory',
+                      action='store_true', default=False, help='Use low_memory')
+
     return parser
 
 def set_parameters():
@@ -66,27 +71,38 @@ def set_parameters():
     else:
         outfhand = open(options.outfile, 'w')
 
-    return infhand, outfhand, options.do_incompat
+    return infhand, outfhand, options.do_incompat, options.low_memory
 
 def main():
     '''The main section'''
-    infhand, outfhand, do_incompat = set_parameters()
-    bins = 20
 
+    # Get parameters
+    infhand, outfhand, do_incompat, low_memory = set_parameters()
+    bins = 20
+    range_ = (95, 100)
+
+    # Parse blast results
     blasts = BlastParser(infhand)
-    #the values for the distribution
+
+    # The values for the distribution
     score_keys = ['similarity']
+
     if do_incompat:
         score_keys.append('d_incompatibility')
     scores = alignment_results_scores(blasts, score_keys)
-    #the distribution
+
+    # The distribution
     if do_incompat:
         #distrib, x_edges, y_edges = numpy.histogram2d(scores[0], scores[1],
         #                                              bins=bins)
         distrib = numpy.histogram2d(scores[0], scores[1], bins=bins)[0]
     else:
-        distrib, bin_edges = numpy.histogram(scores, bins=bins)
-    #the drawing
+        result = create_distribution(scores, range=range_, bins=bins,
+                                     low_memory=low_memory)
+        distrib   = result['distrib'][0]
+        bin_edges = result['bin_edges'][0]
+
+    # The drawing
     if do_incompat:
         #fig = pylab.figure()
         pylab.figure()

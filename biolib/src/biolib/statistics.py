@@ -50,11 +50,12 @@ def _write_distribution(fhand, distribution, bin_edges):
         fhand.write('\n')
     fhand.flush()
 
-def create_distribution(numbers, labels=None, distrib_fhand=None,
-                         plot_fhand=None, range_=None, low_memory=True):
+def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
+                        plot_fhand=None, range_=None, low_memory=True):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
-    bins = 20
+    if bins is None:
+        bins = 20
     if range_ == (None, None):
         range_ = None
     if labels is None:
