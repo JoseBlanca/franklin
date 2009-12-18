@@ -24,7 +24,7 @@ from StringIO import StringIO
 from biolib.snv.snv import (pic, cap_enzymes, SNP, INSERTION, DELETION,
                             INVARIANT, INDEL, COMPLEX, Snv, snvs_in_file,
                             major_allele_frequency, reference_variability,
-                            calculate_kind)
+                            calculate_kind, illumina_print)
 from biolib.seq.seqs import SeqWithQuality
 
 class SnvTest(unittest.TestCase):
@@ -77,22 +77,26 @@ class SnvTest(unittest.TestCase):
     @staticmethod
     def test_snv_repr():
         'It'
-        seq_var = Snv(reference='hola', location=3,
+        seq_var = Snv(reference='012345678', location=3,
                       annotations={'cap_enzymes':['ecoR']},
                       per_lib_info=[{'library':'lib1',
                                     'alleles':[{'allele':'A', 'reads':3,
                                                'kind':SNP},
-                                               {'allele':'A', 'reads':3,
+                                               {'allele':'G', 'reads':3,
                                                'kind':INSERTION}]},
                                    {'library':'library',
                                     'alleles':[{'allele':'A', 'reads':3,
                                                'kind':DELETION}]},
-                                   {'alleles':[{'allele':'A', 'reads':3,
+                                   {'alleles':[{'allele':'T', 'reads':3,
                                                'kind':INVARIANT}]}])
         snv = eval(repr(seq_var))
         assert seq_var.reference == snv.reference
         assert seq_var.per_lib_info == snv.per_lib_info
         assert snv.annotations['cap_enzymes'] == ['ecoR']
+
+        # test illumina print
+        assert illumina_print(snv, 2) == '012345678_3,SNP,12[A/T/G]45'
+
 
 
     @staticmethod

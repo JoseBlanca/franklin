@@ -193,6 +193,17 @@ def basic_print(snv):
 
     return "%s\t%s\tAlleles: %s" % (unigene, position, ", ".join(allele_print))
 
+def illumina_print(snv, length=60):
+    'It prints the snv in the format needed by Illumina goldengate'
+    location = snv.location
+    seq      = snv.reference
+    name         = "%s_%d" % (get_reference_name(snv.reference), location)
+    snv_alleles  = "[" + "/".join(get_alleles(snv).keys()) + "]"
+
+    seq_rigth    = seq[location - length: location]
+    seq_left     = seq[location + 1: location + length + 1]
+    return "%s,SNP,%s" % (name, seq_rigth + snv_alleles + seq_left)
+
 def aggregate_alleles(alleles):
     '''It aggreates the alleles from a list of alleles (useful to remove
     redundancies)'''
