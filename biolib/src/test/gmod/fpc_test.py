@@ -22,7 +22,7 @@ Created on 23/09/2009
 import unittest, os, tempfile
 
 import biolib
-from biolib.gmod.fpc import FPCMap, write_fpc_gff
+from biolib.gmod.fpc import FPCMap
 
 DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
 
@@ -41,13 +41,6 @@ class TestFPC(unittest.TestCase):
         assert len(fpc.contigs) == 2
         #print fpc.contigs
 
-    @staticmethod
-    def test_gff():
-        'It tests the fpc gff3 writting'
-        fhand = tempfile.TemporaryFile(suffix='.gff')
-        fpc_fname = os.path.join(DATA_DIR, 'fpc_test.fpc')
-        fpc = FPCMap(open(fpc_fname))
-        write_fpc_gff(fpc, fhand=fhand)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestFPC.test_fpc']

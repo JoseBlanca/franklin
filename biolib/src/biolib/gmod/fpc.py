@@ -287,9 +287,6 @@ class FPCMap(object):
                 remark = line.split()[1].strip('"')
                 contig['trace_remark'] = remark
 
-def write_fpc_gff(fpc, fhand):
-    'It writes an fpc map to a gff3 file'
-
     #relevant SO terms
     #BAC
     #A clone is composed by a vector replicon and a clone_insert. The SO BAC is
