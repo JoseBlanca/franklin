@@ -3,6 +3,7 @@
 import sqlalchemy, re
 from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
 from biolib.db.db_utils import setup_mapping
+
 from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
 
 def create_naming_database(engine):
@@ -51,6 +52,18 @@ def add_project_to_naming_database(engine, name, code, description=None):
         project.description = description
     session.add(project)
     session.commit()
+
+def project_in_database(engine, name):
+    'It checks if the project is already added to the database'
+    table_classes, row_classes = _setup_naming_database_mapping(engine)
+    session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
+    session = session_klass()
+    project_klass = row_classes['projects']
+    try:
+        session.query(project_klass).filter_by(short_name=name).one()
+    except sqlalchemy.orm.exc.NoResultFound:
+        return False
+    return True
 
 class _CodeGenerator(object):
     '''This class gives the next code, giving the last one'''
@@ -309,7 +322,9 @@ def _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
     seqs = seqs_in_file(fhand_in, format=file_format)
 
     for seq in seqs:
-        seq.name = naming.get_uniquename(kind=feature_kind)
+        new_name = naming.get_uniquename(kind=feature_kind)
+        seq.name = new_name
+        seq.id   = new_name
         write_seqs_in_file([seq], fhand_out, format=file_format)
 
 def change_names_in_files(fhand_in, fhand_out, naming, file_format,

@@ -23,11 +23,11 @@ import biolib
 from biolib.db.naming import (change_names_in_files,
                               create_naming_database, DbNamingSchema,
                               FileNamingSchema,
-                              add_project_to_naming_database)
+                              add_project_to_naming_database,
+                              project_in_database)
 from tempfile import NamedTemporaryFile
 import sqlalchemy
-
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+from biolib.utils.misc_utils import DATA_DIR
 
 EXAMPLES = {'fasta':('''
 >hola
@@ -112,6 +112,20 @@ library_definition
     organism: Cucumis melo
     cvterms:SO:0003, SO:0004
     properties: SO:222, SO:3456
+'''),
+'fastq':('''
+@MEES000003
+AGATGGATGTTCCACAGGCTTTGATATGGTCCTCGACTTACTACGCAAATCGATGCCAGATCCTCCAATCCAGATATATT
+CAGCAATAATCTTGTCGGTATATGGAGTGACGT
++
+EEEEEEEEEA@@@@DDD@@444@@IFEC:;:;;AEEEDDEEEEEEA===EEEEEEEEEEEEEEDDDDDEEEEEEEEEEEE
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEDA
+@MEES000004
+CTGTCTCTGCGAAGAAGAGCAAGGCATCCAGTAGTTCGGAGGAAGACTCATCTGAAGATGATTCTGATTCTGATGAGGAA
+CCAAAGGGAAAGTTATTGCAGCAA
++
+FFFFFFFFFFFFFFFFFFIIIIIIIIIIIIIIIIIIIIIIIIIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFBBBF;;>>78@FEEEEFFFFFF
 ''')
 }
 
@@ -156,6 +170,18 @@ class DbNamingSchemaTest(unittest.TestCase):
 
         naming = DbNamingSchema(engine, project='my_project')
         assert naming.get_uniquename(kind='EST') == 'myES000001'
+
+    @staticmethod
+    def test_project_in_database():
+        'It test the ability tpo know if the databse is already added'
+        project = 'test'
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_naming_database(engine)
+        assert not project_in_database(engine, project)
+        add_project_to_naming_database(engine, name=project, code='my',
+                                       description='a test project')
+        assert project_in_database(engine, project)
+        assert not project_in_database(engine, 'test2')
 
 class FileNamingSchemaTest(unittest.TestCase):
     'We test the behaviour of a naming schema cached in a file'
@@ -221,6 +247,22 @@ class ChangeNameTest(unittest.TestCase):
 
         change_names_in_files(fhand_in, fhand_out, naming, 'fasta', 'EST')
         assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
+
+
+    @staticmethod
+    def test_fastq():
+        'It test that we can change the name in the fasta files.'
+        fhand_in  = open(os.path.join(DATA_DIR, 'solexa.fastq'))
+        fhand_out = StringIO('')
+        engine    = sqlalchemy.create_engine('sqlite:///:memory:')
+
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='test_project', code='my',
+                                       description='a test project')
+        naming    = DbNamingSchema(engine, 'test_project')
+
+        change_names_in_files(fhand_in, fhand_out, naming, 'fastq', 'EST')
+        assert fhand_out.getvalue()[:8] == '@myES000'
 
 #    @staticmethod
 #    def test_contig_naming():
