@@ -70,5 +70,5 @@ setup(
     #py_modules = modules,
     package_data={'biolib': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib'],
-    #scripts=scripts,
+    scripts=scripts,
 )
