@@ -89,9 +89,13 @@ def main():
                                        description=project['description'])
     # create a naming schema
     naming = DbNamingSchema(engine, project_name)
-    print naming.get_uniquename(kind='EST', name='hoa')
-    # change name to seqs in file
-    change_names_in_files(infhand, outfhand, naming, format, tag)
+    try:
+        # change name to seqs in file
+        change_names_in_files(infhand, outfhand, naming, format, tag)
+        naming.commit()
+    except:
+        #if we don't commit we lose the changes in the database
+        pass
 
 if __name__ == '__main__':
     main()
