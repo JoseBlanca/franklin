@@ -199,6 +199,10 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     else:
         seq_file_format = format
 
+    #if the format is None maybe the file is empty
+    if seq_file_format is None and not open(seq_fhand.name).readline():
+        raise StopIteration
+
     seq_iter = SeqIO.parse(seq_fhand, seq_file_format)
     if qual_fhand is None:
         qual_iter = None

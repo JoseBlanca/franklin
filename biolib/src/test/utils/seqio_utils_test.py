@@ -20,7 +20,7 @@ Created on 2009 uzt 28
 
 
 import unittest
-import StringIO
+import StringIO, tempfile
 
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
@@ -95,6 +95,12 @@ class SeqsInFileTests(unittest.TestCase):
             #pylint: disable-msg=W0704
         except RuntimeError:
             pass
+
+    @staticmethod
+    def test_emptyfile():
+        'It should work with empty files'
+        fhand = tempfile.NamedTemporaryFile()
+        assert not list(seqs_in_file(fhand))
 
     @staticmethod
     def test_fasq():
