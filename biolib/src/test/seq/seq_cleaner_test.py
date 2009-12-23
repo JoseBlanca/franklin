@@ -228,7 +228,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq_iter = iter([seqrec1, seqrec2])
         lucy_striper = create_striper_by_quality_lucy2()
         #pylint:disable-msg=W0612
-        seq_iter, output_files = lucy_striper(seq_iter)
+        seq_iter = lucy_striper(seq_iter)[0]
         seqs = list(seq_iter)
         seq = seqs[0].seq
         assert seqrec1.description == seqs[0].description
@@ -437,7 +437,6 @@ class SeqSplitterTests(unittest.TestCase):
         assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
         assert str(new_seq_iter.next().seq) == 'AATTAAT'
         assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

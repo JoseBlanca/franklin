@@ -177,6 +177,8 @@ def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
     fhand.seek(0)
     line = fhand.readline()
+    if not line:
+        return None
     if line[0] == '>':
         item = fhand.readline().strip()[0]
         if item.isdigit():

@@ -38,6 +38,12 @@ class GuessFormatSeqFileTest(unittest.TestCase):
         fhand = StringIO.StringIO('LOCUS AX0809\n')
         assert guess_seq_file_format(fhand) == 'genbank'
 
+    @staticmethod
+    def test_staticmethod():
+        'If an empty file is given it should not fail'
+        fhand = StringIO.StringIO()
+        assert guess_seq_file_format(fhand) is None
+
 class GuessSeqFileTypeTest(unittest.TestCase):
     'It tests that we can guess the type of a sequence file(short|long)'
     @staticmethod
@@ -83,7 +89,7 @@ class SeqsInFileTests(unittest.TestCase):
         fhand_qual = StringIO.StringIO(fcontent_qual)
         try:
             for seq in seqs_in_file(fhand, fhand_qual):
-               #pylint: disable-msg=W0104
+                #pylint: disable-msg=W0104
                 seq.name
             self.fail()
             #pylint: disable-msg=W0704
