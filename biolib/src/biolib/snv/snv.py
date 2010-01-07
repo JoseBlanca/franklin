@@ -202,7 +202,11 @@ def illumina_print(snv, length=60):
 
     seq_rigth    = seq[location - length: location]
     seq_left     = seq[location + 1: location + length + 1]
-    return "%s,SNP,%s" % (name, seq_rigth.seq + snv_alleles + seq_left.seq)
+    if not isinstance(snv.reference, str):
+        seq_rigth = seq_rigth.seq
+        seq_left  = seq_left.seq
+
+    return "%s,SNP,%s" % (name, seq_rigth + snv_alleles + seq_left)
 
 def aggregate_alleles(alleles):
     '''It aggreates the alleles from a list of alleles (useful to remove
