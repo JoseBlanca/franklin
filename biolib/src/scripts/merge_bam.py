@@ -47,11 +47,12 @@ def create_header_from_readgroup(readgroups):
     'It creates a bam header from readgroup list'
     header = []
     for readgroup in readgroups:
-        head_line = '@RG    ID:%s LB:%s SM:%s' % (3 * readgroup)
+        head_line = '@RG    ID:%s LB:%s SM:%s' % (readgroup, readgroup,
+                                                  readgroup)
         header.append(head_line)
     return  "\n".join(header)
 
-def add_readgroup_to_bams(work_dir, temp_dir):
+def add_readgroup_to_bams(work_dir, output_dir):
     'it adds readgroupto bams and return added reaadgroups'
     #add to each of the bams the readgroup_tag
     readgroups = []
@@ -60,7 +61,8 @@ def add_readgroup_to_bams(work_dir, temp_dir):
             #get the readgroup from the name:
             readgroup = re.sub('lib_*', '', bam.split('.')[0])
             readgroups.append(readgroup)
-            newbam = os.path.join(temp_dir, bam)
+            newbam = os.path.join(output_dir, bam)
+            bam    = os.path.join(work_dir, bam)
             add_tag_to_bam(bam, {'RG':readgroup}, newbam)
     return readgroups
 
