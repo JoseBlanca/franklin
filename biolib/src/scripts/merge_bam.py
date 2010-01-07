@@ -60,7 +60,7 @@ def add_readgroup_to_bams(work_dir, temp_dir):
             #get the readgroup from the name:
             readgroup = re.sub('lib_*', '', bam.split('.')[0])
             readgroups.append(readgroup)
-            newbam = os.path.join(temp_dir.name, bam)
+            newbam = os.path.join(temp_dir, bam)
             add_tag_to_bam(bam, {'RG':readgroup}, newbam)
     return readgroups
 
@@ -70,7 +70,7 @@ def main():
     work_dir, output = set_parameters()
 
     # make a working tempfir
-    temp_dir = NamedTemporaryDir()
+    temp_dir = NamedTemporaryDir().name
 
     # add readgroup tag to each alignment in bam and get this readgroups
     readgroups = add_readgroup_to_bams(work_dir, temp_dir)
@@ -79,7 +79,7 @@ def main():
     header = create_header_from_readgroup(readgroups)
 
     # merge all the bam in one
-    merge_bam(os.listdir(temp_dir.name), output, header)
+    merge_bam(os.listdir(temp_dir), output, header)
 
 
 if __name__ == '__main__':
