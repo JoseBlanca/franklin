@@ -26,7 +26,7 @@ from biolib.utils.misc_utils import NamedTemporaryDir
 import subprocess, signal, tempfile, os
 import StringIO, logging
 
-def call(cmd, environment=None, stdin=None):
+def call(cmd, environment=None, stdin=None, raise_on_error=False):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -62,7 +62,13 @@ def call(cmd, environment=None, stdin=None):
 #        print stdin.read()
         stdout, stderr = process.communicate(stdin)
     retcode = process.returncode
-    return stdout, stderr, retcode
+    if raise_on_error:
+        if retcode:
+            raise RuntimeError(stderr)
+        else:
+            return stdout
+    else:
+        return stdout, stderr, retcode
 
 
 # Runner definitions, Define here the parameters of the prgrams you want to
