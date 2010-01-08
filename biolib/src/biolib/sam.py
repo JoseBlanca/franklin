@@ -6,80 +6,92 @@ Created on 05/01/2010
 
 @author: peio
 '''
-from biolib.utils.cmd_utils import call
+import os
 from tempfile import NamedTemporaryFile
 
-def bam2sam(bampath, sampath=None):
-    '''It converts between bam and sam. It sampath is not given, it return
-    sam content'''
-    cmd = ['samtools', 'view', '-h', bampath]
-    if sampath:
-        cmd.extend(['-o', sampath])
-    sam = call(cmd, raise_on_error=True)
-    return sam
+from biolib.utils.cmd_utils import call
+from biolib.utils.seqio_utils import seqs_in_file
 
-def sam2bam(sampath, bampath):
-    'It converts between bam and sam.'
-    cmd = ['samtools', 'view', '-bth', '-o', bampath, sampath]
+PICARDPATH = '/usr/local/biology/picard'
+
+def bamsam_converter(input_, output_):
+    'Converts between sam and bam'
+    picard_jar = os.path.join(PICARDPATH, 'SamFormatConverter.jar')
+    cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_,
+           'OUTPUT=' + output_]
     call(cmd, raise_on_error=True)
 
-def get_bam_header(bampath):
-    'It gets the header of a bam file'
-    cmd = ['samtools', 'view', '-H', bampath]
-    bamheader = call(cmd, raise_on_error=True)
-    return bamheader
-
-def merge_bam(bampath_list, out_bam_path, header=None):
-    'It merges two bams adding some lines to the header if needed'
-
-    cmd = ['samtools', 'merge', out_bam_path]
-    cmd.extend(bampath_list)
-
-    if header:
-        #I need to append the new header to bams header
-        samheader = get_bam_header(bampath_list[0])
-        samheader += header
-        samheader_file = NamedTemporaryFile()
-        samheader_file.write(samheader)
-        samheader_file.flush()
-        # add header option and header file
-        cmd.extend(['-h', samheader_file.name])
-
-    call(cmd, raise_on_error=True)
-
-def add_tag_to_bam(bam, tags, newbam):
+def add_readgroup_to_sam(sam_fhand, readgroup, new_sam_fhand):
     '''It adds tags to each of the reads of the alignemnets on the bam.
     It creates a new bam in other to avoid errors'''
-    tags_to_add = _make_tag_string(tags)
 
-    sam = bam2sam(bam)
-    new_sam = []
-    for line in sam.split('\n'):
+    # first we write the headers
+    sam_fhand.seek(0)
+    for line in sam_fhand:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('@'):
+            new_sam_fhand.write(line + '\n')
+
+    # we add a new header
+    new_sam_fhand.write('@RG\tID:%s\tLB:%s\tSM:%s\n' % (3 * (readgroup,)))
+
+    # now the alignments
+    sam_fhand.seek(0)
+    for line in sam_fhand:
         line = line.strip()
         if not line:
             continue
         if not line.startswith('@'):
-            line = line + "\t" + tags_to_add
+            line = line + "\t" + 'RG:Z:%s' % readgroup
+            new_sam_fhand.write(line + '\n')
 
-        new_sam.append(line)
-    tempsam = NamedTemporaryFile()
-    tempsam.write("\n".join(new_sam))
-    tempsam.flush()
-    sam2bam(tempsam.name, newbam)
+def merge_sam(infiles, outfile, reference):
+    'It merges a list of sam files'
 
+    #first the reference part of the header
+    ref_header = []
+    for seq in seqs_in_file(reference):
+        name   = seq.name
+        length = len(seq)
+        ref_header.append(['@SQ', 'SN:%s' % name, 'LN:%d' % length])
 
-def _make_tag_string(tags):
-    '''It converts the tag dictionariin a string that can be appended to each of
-    the read on a bam'''
-    tags_ = []
-    tag_type = {'RG':'Z'}
-    for key, value in tags.items():
-        tags_.append('%s:%s:%s' % (key, tag_type[key], value))
-    return "\t".join(tags_)
+    #now the read groups
+    headers = set()
 
+    for input_ in infiles:
+        input_.seek(0)
+        for line in input_:
+            line = line.strip()
+            if line.startswith('@SQ'):
+                continue
+            elif line.startswith('@'):
+                headers.add(tuple(line.split()))
+            else:
+                break
 
+    #join and writhe both header parts
+    ref_header.extend(headers)
+    for header in ref_header:
+        outfile.write('\t'.join(header))
+        outfile.write('\n')
 
+    #the non header parts
+    for input_ in infiles:
+        input_.seek(0)
+        for line in input_:
+            if line.startswith('@'):
+                continue
+            outfile.write('\t'.join(line.split()))
+            outfile.write('\n')
 
+def sort_bam_sam(infile, outfile, sort_method='coordinate'):
+    'It sorts a bam file using picard'
+    picard_sort_jar = os.path.join(PICARDPATH, 'SortSam.jar')
+    cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  infile,
+           'OUTPUT=' + outfile, 'SORT_ORDER=' + sort_method]
+    call(cmd, raise_on_error=True)
 
 
 

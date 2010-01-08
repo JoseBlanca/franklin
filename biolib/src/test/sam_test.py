@@ -4,62 +4,77 @@ Created on 05/01/2010
 
 @author: peio
 '''
+from tempfile import NamedTemporaryFile
 import unittest, os
 
 from biolib.utils.misc_utils import DATA_DIR
-from biolib.utils.misc_utils import NamedTemporaryDir
+from StringIO import StringIO
 
-from biolib.sam import (bam2sam, sam2bam, add_tag_to_bam, merge_bam)
+from biolib.sam import (merge_sam, bamsam_converter, add_readgroup_to_sam)
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
 
     @staticmethod
-    def testbam2sam():
-        'It test bam2sam function'
-        tempdir = NamedTemporaryDir()
+    def test_format_converter():
+        'It test BAM SAM converter'
+        #bam to sam
         bampath = os.path.join(DATA_DIR, 'seq.bam')
-        sampath = os.path.join(tempdir.get_name(), 'seq.sam')
-        bam2sam(bampath, sampath)
-        assert 'SN:SGN-U572743' in open(sampath).readline()
-        tempdir.close()
+        sam = NamedTemporaryFile(suffix='.sam')
+        bamsam_converter(bampath, sam.name)
+        sam.flush()
+        assert 'SN:SGN-U572743' in sam.read()
+
+        #SAM TO bam
+        bam = NamedTemporaryFile(suffix='.bam')
+        bamsam_converter(sam.name, bam.name)
+        bam.flush()
 
     @staticmethod
-    def testsam2bam():
-        'It test sam2bam function'
-        tempdir = NamedTemporaryDir()
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
-        sampath = os.path.join(tempdir.get_name(), 'seq.sam')
-        bam2sam(bampath, sampath)
-        assert 'SN:SGN-U572743' in open(sampath).readline()
+    def test_merge_sam():
+        'It merges two sams'
+        reference = StringIO('''>SGN-U572743
+atatata
+>SGN-U576692
+gcgc''')
+        sam1 = StringIO('''@SQ    SN:SGN-U576692    LN:1714
+@SQ    SN:SGN-U572743    LN:833
+@RG    ID:g1    LB:g1    SM:g1
+@RG    ID:g2    LB:g2    SM:g2
+SGN-E221403    0    SGN-U576692    1416    207    168M    *    0    0    AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT    558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7    AS:i:160    XS:i:0    XF:i:3    XE:i:4    XN:i:0    RG:Z:g2
+SGN-E221664    0    SGN-U572743    317    226    254M24S    *    0    0    GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA    999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ    AS:i:250    XS:i:0    XF:i:0    XE:i:7    XN:i:0    RG:Z:g1
+''')
+        sam2 = StringIO('''@SQ    SN:SGN-U576692    LN:1714
+@SQ    SN:SGN-U572743    LN:833
+@RG    ID:g1    LB:g1    SM:g1
+@RG    ID:g3    LB:g3    SM:g3
+SGN-E200000    0    SGN-U572743    317    226    254M24S    *    0    0    GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA    999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ    AS:i:250    XS:i:0    XF:i:0    XE:i:7    XN:i:0    RG:Z:g1
+SGN-E40000    0    SGN-U576692    1416    207    168M    *    0    0    AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT    558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7    AS:i:160    XS:i:0    XF:i:3    XE:i:4    XN:i:0    RG:Z:g3
+''')
+        sam3 = StringIO()
+        merge_sam(infiles=[sam1, sam2], outfile=sam3, reference=reference)
+        sam3_content = sam3.getvalue()
+        assert 'SN:SGN-U572743' in  sam3_content.split('\n')[0]
+        assert 'SGN-E200000' in sam3_content
+        assert 'SGN-E221664' in sam3_content
 
-        newbam = os.path.join(tempdir.get_name(), 'new.bam')
-        sam2bam(sampath, newbam)
-        assert open(newbam).read() == open(bampath).read()
-        tempdir.close()
+        open('/home/peio/tmp/samtools/merged.sam', 'w').write(sam3.getvalue())
 
     @staticmethod
-    def test_add_tag_to_bam():
-        'It tests the add tag to bam'
-        tags = {'RG':'group1'}
-        tempdir = NamedTemporaryDir()
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
-        newbam = os.path.join(tempdir.get_name(), 'new.bam')
-        add_tag_to_bam(bampath, tags, newbam)
-        sam = bam2sam(newbam)
-        assert  "RG:Z:group1" in sam
-        tempdir.close()
+    def test_readgroup_to_sam():
+        'It test that we can add readgroup tah and header to a bam'
+        sam = StringIO('''@SQ    SN:SGN-U576692    LN:1714
+@SQ    SN:SGN-U572743    LN:833
+SGN-E221403    0    SGN-U576692    1416    207    168M    *    0    0    AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT    558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7    AS:i:160    XS:i:0    XF:i:3    XE:i:4    XN:i:0
+SGN-E221664    0    SGN-U572743    317    226    254M24S    *    0    0    GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA    999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ    AS:i:250    XS:i:0    XF:i:0    XE:i:7    XN:i:0
+''')
+        readgroup = 'group1'
+        outsam = StringIO()
+        add_readgroup_to_sam(sam, readgroup, outsam)
+        out_content = outsam.getvalue()
 
-    @staticmethod
-    def test_merge_bam():
-        'It test that we can merge bams'
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
-        bampath_list = [bampath, bampath]
-        tempdir = NamedTemporaryDir()
-        newbam = os.path.join(tempdir.get_name(), 'new.bam')
-        header = '@RG    ID:group1 LB:group1'
-        merge_bam(bampath_list, newbam, header=header)
-        merged_sam = bam2sam(newbam)
-        assert '@RG    ID:group1 LB:group1' in merged_sam
+        assert 'RG:Z:group1' in out_content
+
+
 
 
 
