@@ -16,8 +16,8 @@ import os, re
 from tempfile import NamedTemporaryFile
 from biolib.utils.misc_utils import NamedTemporaryDir
 from biolib.utils.cmd_utils import call
-from biolib.sam import (bamsam_converter, add_readgroup_to_sam, merge_sam,
-                        sort_bam_sam)
+from biolib.sam import (add_readgroup_to_sam, merge_sam, sort_bam_sam, bam2sam,
+                        sam2bam)
 
 def parse_options():
     'It parses the command line arguments'
@@ -44,7 +44,7 @@ def set_parameters():
         output = 'out.bam'
     else:
         output = options.output
-    if options.reference in None:
+    if options.reference is None:
         parser.error('Reference is needed')
     else:
         reference = open(options.reference)
@@ -72,7 +72,8 @@ def add_readgroup_to_bams(work_dir, output_dir):
             sam = open(os.path.join(output_dir, prefix + '.sam'), 'w')
             temp_sam = NamedTemporaryFile(suffix='.sam')
 
-            bamsam_converter(bam, temp_sam.name)
+            bam2sam(os.path.join(work_dir, bam), temp_sam.name)
+#            bamsam_converter(os.path.join(work_dir, bam), temp_sam.name)
 
             add_readgroup_to_sam(temp_sam, readgroup, sam)
 
@@ -80,12 +81,12 @@ def add_readgroup_to_bams(work_dir, output_dir):
             sam.close()
             temp_sam.close()
 
-def get_sams_from_dir(dir_):
+def get_opened_sams_from_dir(dir_):
     'It gets all sams from dir'
     sams = []
     for file_ in os.listdir(dir_):
         if file_.endswith('.sam'):
-            sams.append(os.path.join(dir_, file_))
+            sams.append(open(os.path.join(dir_, file_)))
     return sams
 
 def main():
@@ -101,7 +102,7 @@ def main():
     add_readgroup_to_bams(work_dir, temp_dir)
 
     # Prepare files to merge
-    sams = get_sams_from_dir(temp_dir)
+    sams = get_opened_sams_from_dir(temp_dir)
     temp_sam = NamedTemporaryFile()
 
     # merge all the sam in one
@@ -109,7 +110,7 @@ def main():
 
     # Convert sam into a bam,(Temporary)
     temp_bam = NamedTemporaryFile(suffix='.bam')
-    bamsam_converter(temp_sam.name, temp_bam.name)
+    sam2bam(temp_sam.name, temp_bam.name)
 
     # finally we need to order the bam
     sort_bam_sam(temp_bam.name, output)

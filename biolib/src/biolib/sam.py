@@ -14,6 +14,20 @@ from biolib.utils.seqio_utils import seqs_in_file
 
 PICARDPATH = '/usr/local/biology/picard'
 
+def bam2sam(bampath, sampath=None):
+    '''It converts between bam and sam. It sampath is not given, it return
+    sam content'''
+    cmd = ['samtools', 'view', '-h', bampath]
+    if sampath:
+        cmd.extend(['-o', sampath])
+    sam = call(cmd, raise_on_error=True)
+    return sam
+
+def sam2bam(sampath, bampath):
+    'It converts between bam and sam.'
+    cmd = ['samtools', 'view', '-bth', '-o', bampath, sampath]
+    call(cmd, raise_on_error=True)
+
 def bamsam_converter(input_, output_):
     'Converts between sam and bam'
     picard_jar = os.path.join(PICARDPATH, 'SamFormatConverter.jar')
@@ -83,8 +97,10 @@ def merge_sam(infiles, outfile, reference):
         for line in input_:
             if line.startswith('@'):
                 continue
-            outfile.write('\t'.join(line.split()))
-            outfile.write('\n')
+            #outfile.write('\t'.join(line.split()))
+            #outfile.write('\n')
+            outfile.write(line)
+    outfile.flush()
 
 def sort_bam_sam(infile, outfile, sort_method='coordinate'):
     'It sorts a bam file using picard'

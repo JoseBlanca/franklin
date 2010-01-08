@@ -10,9 +10,31 @@ import unittest, os
 from biolib.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
 
-from biolib.sam import (merge_sam, bamsam_converter, add_readgroup_to_sam)
+from biolib.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
+                        add_readgroup_to_sam)
+
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
+
+    @staticmethod
+    def testbam2sam():
+        'It test bam2sam function'
+        bampath = os.path.join(DATA_DIR, 'seq.bam')
+        sampath = NamedTemporaryFile(suffix='.sam').name
+        bam2sam(bampath, sampath)
+        assert 'SN:SGN-U572743' in open(sampath).readline()
+
+    @staticmethod
+    def testsam2bam():
+        'It test sam2bam function'
+        bampath = os.path.join(DATA_DIR, 'seq.bam')
+        sampath = NamedTemporaryFile(suffix='.sam').name
+        bam2sam(bampath, sampath)
+        assert 'SN:SGN-U572743' in open(sampath).readline()
+
+        newbam = NamedTemporaryFile(suffix='.bam')
+        sam2bam(sampath, newbam.name)
+        assert newbam.read() == open(bampath).read()
 
     @staticmethod
     def test_format_converter():
