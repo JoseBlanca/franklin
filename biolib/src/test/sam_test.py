@@ -11,7 +11,7 @@ from biolib.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
 
 from biolib.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
-                        add_readgroup_to_sam)
+                        add_header_and_tags_to_sam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -89,9 +89,9 @@ SGN-E40000    0    SGN-U576692    1416    207    168M    *    0    0    AGCCTGAT
 SGN-E221403    0    SGN-U576692    1416    207    168M    *    0    0    AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT    558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7    AS:i:160    XS:i:0    XF:i:3    XE:i:4    XN:i:0
 SGN-E221664    0    SGN-U572743    317    226    254M24S    *    0    0    GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA    999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ    AS:i:250    XS:i:0    XF:i:0    XE:i:7    XN:i:0
 ''')
-        readgroup = 'group1'
+        sam.name = 'lb_group1.sam'
         outsam = StringIO()
-        add_readgroup_to_sam(sam, readgroup, outsam)
+        add_header_and_tags_to_sam(sam, outsam)
         out_content = outsam.getvalue()
 
         assert 'RG:Z:group1' in out_content

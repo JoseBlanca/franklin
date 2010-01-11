@@ -35,7 +35,7 @@ def bamsam_converter(input_, output_):
            'OUTPUT=' + output_]
     call(cmd, raise_on_error=True)
 
-def add_readgroup_to_sam(sam_fhand, readgroup, new_sam_fhand):
+def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
     '''It adds tags to each of the reads of the alignemnets on the bam.
     It creates a new bam in other to avoid errors'''
 
@@ -48,8 +48,19 @@ def add_readgroup_to_sam(sam_fhand, readgroup, new_sam_fhand):
         if line.startswith('@'):
             new_sam_fhand.write(line + '\n')
 
-    # we add a new header
-    new_sam_fhand.write('@RG\tID:%s\tLB:%s\tSM:%s\n' % (3 * (readgroup,)))
+    # we add a new header. We take this information from the name of the file
+    prefix = sam_fhand.name.split('.')[:-1]
+
+    rgid_ = []
+    append_to_header = []
+    for item in prefix:
+        key, value = item.split('_')
+        append_to_header.append('%s:%s' % (key.upper(), value))
+        rgid_.append(value)
+    rgid = "+".join(rgid_)
+
+    new_sam_fhand.write('@RG\tID:%s\t' % rgid)
+    new_sam_fhand.write("\t".join(append_to_header) + " \n")
 
     # now the alignments
     sam_fhand.seek(0)
@@ -58,7 +69,7 @@ def add_readgroup_to_sam(sam_fhand, readgroup, new_sam_fhand):
         if not line:
             continue
         if not line.startswith('@'):
-            line = line + "\t" + 'RG:Z:%s' % readgroup
+            line = line + "\t" + 'RG:Z:%s' % rgid
             new_sam_fhand.write(line + '\n')
 
 def merge_sam(infiles, outfile, reference):

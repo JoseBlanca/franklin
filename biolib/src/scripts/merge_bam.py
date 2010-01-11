@@ -16,7 +16,7 @@ import os, re
 from tempfile import NamedTemporaryFile
 from biolib.utils.misc_utils import NamedTemporaryDir
 from biolib.utils.cmd_utils import call
-from biolib.sam import (add_readgroup_to_sam, merge_sam, sort_bam_sam, bam2sam,
+from biolib.sam import (add_header_and_tags_to_sam, merge_sam, sort_bam_sam, bam2sam,
                         sam2bam)
 
 def parse_options():
@@ -60,22 +60,20 @@ def create_header_from_readgroup(readgroups):
         header.append(head_line)
     return  "\n".join(header)
 
-def add_readgroup_to_bams(work_dir, output_dir):
+def add_header_and_tags_bams(work_dir, output_dir):
     'it adds readgroupto bams and return added reaadgroups'
     #add to each of the bams the readgroup_tag
     for bam in os.listdir(work_dir):
         if bam.endswith('.bam'):
             #get the readgroup from the name:
             prefix = bam.split('.')[0]
-            readgroup = re.sub('lib_*', '', prefix)
-
             sam = open(os.path.join(output_dir, prefix + '.sam'), 'w')
             temp_sam = NamedTemporaryFile(suffix='.sam')
 
             bam2sam(os.path.join(work_dir, bam), temp_sam.name)
 #            bamsam_converter(os.path.join(work_dir, bam), temp_sam.name)
 
-            add_readgroup_to_sam(temp_sam, readgroup, sam)
+            add_header_and_tags_to_sam(temp_sam, sam)
 
             # close and remove temporal stuff
             sam.close()
@@ -99,7 +97,7 @@ def main():
     temp_dir = "%s/tmp" % work_dir
 
     # add readgroup tag to each alignment in bam
-    add_readgroup_to_bams(work_dir, temp_dir)
+    add_header_and_tags_bams(work_dir, temp_dir)
 
     # Prepare files to merge
     sams = get_opened_sams_from_dir(temp_dir)
