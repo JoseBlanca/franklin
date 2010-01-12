@@ -66,12 +66,12 @@ def add_header_and_tags_bams(work_dir, output_dir):
     for bam in os.listdir(work_dir):
         if bam.endswith('.bam'):
             #get the readgroup from the name:
-            prefix = bam.split('.')[0]
+            prefix = ".".join(bam.split('.')[:-1])
             sam = open(os.path.join(output_dir, prefix + '.sam'), 'w')
-            temp_sam = NamedTemporaryFile(suffix='.sam')
+
+            temp_sam = NamedTemporaryFile(prefix='%s.' % prefix , suffix='.sam')
 
             bam2sam(os.path.join(work_dir, bam), temp_sam.name)
-#            bamsam_converter(os.path.join(work_dir, bam), temp_sam.name)
 
             add_header_and_tags_to_sam(temp_sam, sam)
 
@@ -93,7 +93,8 @@ def main():
     work_dir, output, reference = set_parameters()
 
     # make a working tempfir
-    temp_dir = NamedTemporaryDir().name
+    temp_dir_ = NamedTemporaryDir()
+    tempdir   = temp_dir_.name
     temp_dir = "%s/tmp" % work_dir
 
     # add readgroup tag to each alignment in bam

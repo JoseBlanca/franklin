@@ -36,7 +36,7 @@ def bamsam_converter(input_, output_):
     call(cmd, raise_on_error=True)
 
 def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
-    '''It adds tags to each of the reads of the alignemnets on the bam.
+    '''It adds tags to each of the reads of the alignments on the bam.
     It creates a new bam in other to avoid errors'''
 
     # first we write the headers
@@ -49,12 +49,19 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
             new_sam_fhand.write(line + '\n')
 
     # we add a new header. We take this information from the name of the file
-    prefix = sam_fhand.name.split('.')[:-1]
+    prefix = os.path.basename(sam_fhand.name)
+    prefix = prefix.split('.')[:-1]
 
     rgid_ = []
     append_to_header = []
     for item in prefix:
-        key, value = item.split('_')
+        try:
+            key, value = item.split('_', 1)
+            if key not in ['SM', 'LB', 'PT']:
+                continue
+        except ValueError:
+            continue
+
         append_to_header.append('%s:%s' % (key.upper(), value))
         rgid_.append(value)
     rgid = "+".join(rgid_)
