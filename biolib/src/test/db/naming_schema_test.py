@@ -173,7 +173,7 @@ class DbNamingSchemaTest(unittest.TestCase):
 
     @staticmethod
     def test_project_in_database():
-        'It test the ability tpo know if the databse is already added'
+        'It test the ability to know if the databse is already added'
         project = 'test'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')
         create_naming_database(engine)
