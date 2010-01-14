@@ -5,6 +5,7 @@ from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
 from biolib.db.db_utils import setup_mapping
 
 from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
+import os
 
 def create_naming_database(engine):
     'It creates a new empty database to hold the naming schema status'
@@ -224,21 +225,23 @@ class FileNamingSchema(object):
 
     def get_uniquename(self, name=None, kind=None):
         '''Given a name and a it returns a uniquename'''
-        if name in self._naming_dict or name in self._new_naming_dict:
+        try:
+            uniquename = self._naming_dict[name]
+        except KeyError:
             try:
-                uniquename = self._naming_dict[name]
-            except KeyError:
                 uniquename = self._new_naming_dict[name]
-        elif kind is None:
+            except KeyError:
+                uniquename = None
+        if uniquename is None and kind is None:
             msg = 'You must provide feature type if the name is not added'
             raise ValueError(msg)
-        else:
+        if uniquename is None:
             if self._naming_schema is None:
                 msg = 'Uncached name and no naming schema'
                 raise ValueError(msg)
             else:
                 uniquename = self._naming_schema.get_uniquename(kind)
-            self._new_naming_dict[name] = uniquename
+                self._new_naming_dict[name] = uniquename
         return uniquename
 
     def commit(self):
@@ -248,6 +251,11 @@ class FileNamingSchema(object):
 
     def _write_dict_to_file(self):
         '''It writes the new uniquenames to the fhand '''
+        if not os.path.exists(self._fhand.name):
+            mode = 'w'
+        else:
+            mode = 'a'
+        self._fhand = open(self._fhand.name, mode)
         for name, uniquename in self._new_naming_dict.items():
             self._fhand.write('%s:%s\n' % (name, uniquename))
             self._new_naming_dict = {}
@@ -256,7 +264,7 @@ class FileNamingSchema(object):
     def _naming_file_to_dict(self):
         '''Giving a a file with name: uniquename translation it returns a
         dictionary'''
-        for line in self._fhand:
+        for line in open(self._fhand.name, 'r'):
             if not line.isspace():
                 items      = line.split(':')
                 name       = items[0].strip()
@@ -294,7 +302,8 @@ def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
             replace = []
             for group_i, group in enumerate(matchobj.groups()):
                 if group_i + 1 == group_num:
-                    replace.append(naming.get_uniquename(kind=feature_kind))
+                    replace.append(naming.get_uniquename(name=group,
+                                                         kind=feature_kind))
                 else:
                     replace.append(group)
             return ''.join(replace)

@@ -19,7 +19,6 @@ like ace, caf or fasta'''
 import unittest
 import os.path
 from StringIO import StringIO
-import biolib
 from biolib.db.naming import (change_names_in_files,
                               create_naming_database, DbNamingSchema,
                               FileNamingSchema,
@@ -248,6 +247,29 @@ class ChangeNameTest(unittest.TestCase):
         change_names_in_files(fhand_in, fhand_out, naming, 'fasta', 'EST')
         assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
 
+        # test it with file naming naming schema
+        #filenaming_fhand = open('/tmp/ppp', 'w')
+        filenaming_fhand = NamedTemporaryFile()
+        fhand_in = StringIO(EXAMPLES['fasta'][0])
+        fhand_out = StringIO('')
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='my_project', code='my',
+                                       description='a test project')
+        naming = DbNamingSchema(engine, project='my_project')
+        naming = FileNamingSchema(filenaming_fhand, naming)
+        change_names_in_files(fhand_in, fhand_out, naming, 'fasta', 'EST')
+        naming.commit()
+        assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
+
+
+        fhand_in.seek(0)
+        filenaming_fhand.seek(0)
+        fhand_out = StringIO('')
+        naming = FileNamingSchema(filenaming_fhand)
+        change_names_in_files(fhand_in, fhand_out, naming, 'fasta', 'EST')
+        assert fhand_out.getvalue() == EXAMPLES['fasta'][1]
+
 
     @staticmethod
     def test_fastq():
@@ -263,44 +285,6 @@ class ChangeNameTest(unittest.TestCase):
 
         change_names_in_files(fhand_in, fhand_out, naming, 'fastq', 'EST')
         assert fhand_out.getvalue()[:8] == '@myES000'
-
-#    @staticmethod
-#    def test_contig_naming():
-#        'It tests that we can create the names for a caf file.'
-#        #caf naming
-#        contig_path = os.path.join(DATA_DIR, 'example.caf')
-#        contig_fh = open(contig_path, 'rt')
-#        est_naming = NamingSchema('aproject', 'est', 'a db connection')
-#        contig_naming = NamingSchema('aproject', 'contig', 'a db connection')
-#        names = create_names_for_contigs(contig_fh, 'caf', {'read':est_naming,
-#                                                      'contig':contig_naming})
-#        assert names['Contig1']       == '001'
-#        assert names['22ak65e10.s1t'] == '001'
-#        assert names['22ak93c2.s1t']  == '021'
-#
-#        #ace naming
-#        contig_path = os.path.join(DATA_DIR, 'example.ace')
-#        contig_fh = open(contig_path, 'rt')
-#        est_naming = NamingSchema('aproject', 'est', 'a db connection')
-#        contig_naming = NamingSchema('aproject', 'contig', 'a db connection')
-#        names = create_names_for_contigs(contig_fh, 'ace', {'read':est_naming,
-#                                                      'contig':contig_naming})
-#        assert names['Contig2']          == '001'
-#        assert names['eucalyptus0111']   == '001'
-#        assert names['eucalyptus57514']  == '034'
-#
-#        #caf and ace complete name change
-#        for kind in ('ace', ('caf')):
-#            fhand_in = StringIO(EXAMPLES[kind][0])
-#            fhand_out = StringIO('')
-#            est_naming = NamingSchema('aproject', 'est', 'a db connection')
-#            contig_naming = NamingSchema('aproject', 'contig',
-#                                         'a db connection')
-#            names = create_names_for_contigs(fhand_in, kind,
-#                                             {'read':est_naming,
-#                                              'contig':contig_naming})
-#            change_names_in_files(fhand_in, fhand_out, names, kind)
-#            assert fhand_out.getvalue() == EXAMPLES[kind][1]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

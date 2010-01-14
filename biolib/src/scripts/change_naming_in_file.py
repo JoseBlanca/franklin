@@ -15,7 +15,7 @@ from optparse import OptionParser
 import sys, sqlalchemy, os
 from biolib.db.naming import (create_naming_database, project_in_database,
                               add_project_to_naming_database, DbNamingSchema,
-                              change_names_in_files)
+                              change_names_in_files, FileNamingSchema)
 
 def parse_options():
     'It parses the command line arguments'
@@ -32,6 +32,8 @@ def parse_options():
                       help='Project name')
     parser.add_option('-t', '--tag', dest="tag",
                       help='Type of seq to change. EST, CONTIG, ...')
+    parser.add_option('-c', '--filecache', dest="filecache",
+                  help='If you want to give it a file to add or use as a cache')
     return parser
 
 
@@ -45,16 +47,15 @@ def set_parameters():
         parser.error('Input file is mandatory')
     else:
         infhand = open(options.infile)
+
     if options.outfile is None:
         outfhand = sys.stdout
     else:
         outfhand = open(options.outfile, 'w')
-    format = options.format
 
-    if options.database is None:
-        parser.error('Database is mandatory')
-    else:
-        database = options.database
+    format    = options.format
+    database  = options.database
+    filecache = options.filecache
 
     if options.project is None:
         parser.error('Project is mandatory')
@@ -71,24 +72,43 @@ def set_parameters():
         tag = 'EST'
     else:
         tag = options.tag
-    return infhand, outfhand, format, database,  project, tag
+
+    # check if database and filecache are None. One of them is necessary
+    if database is None and filecache is None:
+        parser.error('Database or filecache ir mandatory!')
+
+    return infhand, outfhand, format, database, filecache, project, tag
 
 def main():
     'The main part of the script'
-    infhand, outfhand, format, database, project, tag = set_parameters()
+    infhand, outfhand, format, database, filecache, project, tag = \
+                                                                set_parameters()
 
     # check if the database exits
-    engine   = sqlalchemy.create_engine( 'sqlite:///%s'  % database)
-    if not os.path.exists(database):
-        create_naming_database(engine)
-    # check if the project exists
-    project_name = project['name']
-    if not project_in_database(engine, project_name):
-        add_project_to_naming_database(engine, name=project_name,
-                                       code=project['code'],
-                                       description=project['description'])
-    # create a naming schema
-    naming = DbNamingSchema(engine, project_name)
+    if database is not None:
+        engine   = sqlalchemy.create_engine( 'sqlite:///%s'  % database)
+        if not os.path.exists(database):
+            create_naming_database(engine)
+        # check if the project exists
+        project_name = project['name']
+        if not project_in_database(engine, project_name):
+            add_project_to_naming_database(engine, name=project_name,
+                                           code=project['code'],
+                                           description=project['description'])
+
+        # create a naming schema
+        naming = DbNamingSchema(engine, project_name)
+    else:
+        naming = None
+
+    if filecache is not None:
+        if os.path.exists(filecache):
+            mode = 'a'
+        else:
+            mode = 'w'
+        fhand = open(filecache, mode)
+        naming = FileNamingSchema(fhand, naming)
+
     try:
         # change name to seqs in file
         change_names_in_files(infhand, outfhand, naming, format, tag)
