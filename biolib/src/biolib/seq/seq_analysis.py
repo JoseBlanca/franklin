@@ -221,6 +221,16 @@ def look_for_similar_sequences(sequence, db, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
     parameters = {'database': db, 'program':blast_program}
 
+    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_fhand = blast_runner(sequence)[0]
+    return similar_sequences_for_blast(blast_fhand, filters=filters)
+
+def similar_sequences_for_blast(blast_fhand, filters=None):
+    #now we parse the blast
+    blast_parser = get_alignment_parser('blast')
+    blast_result = blast_parser(blast_fhand)
+
+    # We filter the results with appropiate  filters
     if filters is None:
         filters = [{'kind'           : 'min_scores',
                     'score_key'      : 'similarity',
@@ -230,16 +240,6 @@ def look_for_similar_sequences(sequence, db, blast_program, filters=None):
                     'min_length_bp'  : 100,
                    }
                   ]
-
-    blast_runner = create_runner(kind='blast', parameters=parameters)
-    blast_fhand = blast_runner(sequence)[0]
-
-    #now we parse the blast
-    blast_parser = get_alignment_parser('blast')
-    blast_result = blast_parser(blast_fhand)
-
-    # We filter the results with appropiate  filters
-
     alignments = FilteredAlignmentResults(match_filters=filters,
                                           results=blast_result)
     try:

@@ -81,7 +81,7 @@ class BlastParserTest(unittest.TestCase):
     def test_blast_parser():
         'It test the blast parser'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
-        parser = BlastParser(fhand=blast_file)
+        parser = BlastParser(fhand=blast_file, def_as_accession=(True, False))
 
         expected_results = [
             {'query':{'name':'cCL1Contig2',
@@ -120,10 +120,17 @@ class BlastParserTest(unittest.TestCase):
         expected_results = [
             {'query':{'name':'lcl|2_0', 'description':'cCL1Contig2',
                       'length':1924}},{}, {}, {}]
-        parser = BlastParser(fhand=blast_file,
-                             use_query_def_as_accession=False)
+        parser = BlastParser(fhand=blast_file, def_as_accession=(False, False))
         for index, blast in enumerate(parser):
             _check_blast(blast, expected_results[index])
+
+        # Check using def as acceion in all the blasts
+        #It changes depending on the blast output format. depends on version
+        blast_file = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
+        parser = BlastParser(fhand=blast_file)
+        assert parser.next()['matches'][0]['subject'].name == 'tair1'
+
+
 
     def test_blast_no_result(self):
         'It test that the xml output can be and empty string'

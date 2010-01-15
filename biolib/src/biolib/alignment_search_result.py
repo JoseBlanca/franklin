@@ -61,8 +61,9 @@ from math import log10
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
-    def __init__(self, fhand, use_query_def_as_accession=True):
+    def __init__(self, fhand, def_as_accession=None):
         'The init requires a file to be parser'
+
         fhand.seek(0, 0)
         self._blast_file  = fhand
         #we use the biopython parser
@@ -72,7 +73,10 @@ class BlastParser(object):
             fhand.seek(0)
             self._blast_parse = NCBIXML.parse(fhand)
 
-        self.use_query_def_as_accession = use_query_def_as_accession
+        if def_as_accession is None:
+            def_as_accession = (True, True)
+        self.use_query_def_as_accession = def_as_accession[0]
+        self.use_subject_def_as_accession = def_as_accession[1]
 
     def __iter__(self):
         'Part of the iterator protocol'
@@ -109,6 +113,9 @@ class BlastParser(object):
             definition = alignment.hit_def
             if definition is None:
                 definition = "<unknown description>"
+            if self.use_subject_def_as_accession:
+                name = definition.split(' ', 1)[0]
+
             length     = alignment.length
             subject    = SeqWithQuality(name=name, description=definition,
                                         seq=UnknownSeq(length=length))
