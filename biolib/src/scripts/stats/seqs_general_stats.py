@@ -75,8 +75,11 @@ def main():
 
     for key, value in stats.items():
         if value is not None:
-            print '%-19s : %d' % (key, value)
-
+            to_print = '%-19s : %d' % (key, value)
+            if result_file:
+                result_file.write(to_print)
+            else:
+                print to_print
 
 if __name__ == '__main__':
     main()

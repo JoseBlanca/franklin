@@ -242,7 +242,7 @@ def _range(numbers):
             max_ = number
     return min_, max_
 
-def general_seq_statistics(sequences, distrib_fhand=None, low_memory=True):
+def general_seq_statistics(sequences, low_memory=True):
     '''Given a sequence iterator it calculates some general statistics.
 
     The statistics will be written into the given distrib_fhand (if given) and
