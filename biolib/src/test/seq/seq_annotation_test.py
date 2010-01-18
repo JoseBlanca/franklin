@@ -39,7 +39,7 @@ class OrthologsTests(unittest.TestCase):
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
     @staticmethod
-    def xtest_get_description_basic():
+    def test_get_description_basic():
         'It tests if we can get description for seqs in blasts'
         # this fasta does not have definitio information
         blast = open(os.path.join(DATA_DIR, 'tair_melon.xml'))

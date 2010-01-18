@@ -63,7 +63,7 @@ def _get_hit_pairs_fom_blast(blast1_fhand):
                 subject =  match_hit['subject'].name
             yield(query, subject)
 
-def get_descriptions_from_blasts(blasts, def_as_accession=None ):
+def get_descriptions_from_blasts(blasts):
     '''It gets a description from a list of blast outputs.
     Blast description of the xml may be modified to remove trash. This depends
     blast xml, so the item of the list can be a blast or a dict with the blast
@@ -83,8 +83,7 @@ def get_descriptions_from_blasts(blasts, def_as_accession=None ):
         else:
             blast_fhand   = blast
             desc_modifier = None
-        blast = BlastParser(fhand=blast_fhand,
-                            def_as_accession=def_as_accession)
+        blast = BlastParser(fhand=blast_fhand)
         filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                     results=blast)
         #filtered_results = [filtered_results]

@@ -61,11 +61,21 @@ from math import log10
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
-    def __init__(self, fhand, def_as_accession=None):
+    def __init__(self, fhand):
         'The init requires a file to be parser'
 
         fhand.seek(0, 0)
         self._blast_file  = fhand
+        blast_version = self._get_blast_version()
+        self._blast_file.seek(0, 0)
+
+        if blast_version and '+' in blast_version:
+            self.use_query_def_as_accession   = True
+            self.use_subject_def_as_accession = True
+        else:
+            self.use_query_def_as_accession   = True
+            self.use_subject_def_as_accession = False
+
         #we use the biopython parser
         #if there are no results we put None in our blast_parse results
         self._blast_parse = None
@@ -73,10 +83,6 @@ class BlastParser(object):
             fhand.seek(0)
             self._blast_parse = NCBIXML.parse(fhand)
 
-        if def_as_accession is None:
-            def_as_accession = (True, True)
-        self.use_query_def_as_accession = def_as_accession[0]
-        self.use_subject_def_as_accession = def_as_accession[1]
 
     def __iter__(self):
         'Part of the iterator protocol'
@@ -192,6 +198,12 @@ class BlastParser(object):
         result = {'query'  : query,
                   'matches': matches}
         return result
+    def _get_blast_version(self):
+        'It gets blast parser version'
+        for line in self._blast_file.read().split('\n'):
+            line = line.strip()
+            if line.startswith('<BlastOutput_version>'):
+                return line.split('>')[1].split('<')[0]
 
     def next(self):
         'It returns the next blast result'

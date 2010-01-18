@@ -81,7 +81,7 @@ class BlastParserTest(unittest.TestCase):
     def test_blast_parser():
         'It test the blast parser'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
-        parser = BlastParser(fhand=blast_file, def_as_accession=(True, False))
+        parser = BlastParser(fhand=blast_file)
 
         expected_results = [
             {'query':{'name':'cCL1Contig2',
@@ -118,9 +118,9 @@ class BlastParserTest(unittest.TestCase):
 
         #with the subject id given in the xml blast
         expected_results = [
-            {'query':{'name':'lcl|2_0', 'description':'cCL1Contig2',
+            {'query':{'name':'cCL1Contig2', 'description':'<unknown description>',
                       'length':1924}},{}, {}, {}]
-        parser = BlastParser(fhand=blast_file, def_as_accession=(False, False))
+        parser = BlastParser(fhand=blast_file)
         for index, blast in enumerate(parser):
             _check_blast(blast, expected_results[index])
 
