@@ -65,10 +65,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False):
     if raise_on_error:
         if retcode:
             raise RuntimeError(stderr)
-        else:
-            return stdout
-    else:
-        return stdout, stderr, retcode
+    return stdout, stderr, retcode
 
 
 # Runner definitions, Define here the parameters of the prgrams you want to
