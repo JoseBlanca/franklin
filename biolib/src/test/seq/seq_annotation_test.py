@@ -20,7 +20,7 @@ Created on 15/01/2010
 
 import os, unittest
 from biolib.utils.misc_utils import DATA_DIR
-from biolib.orthologs import get_orthologs
+from biolib.seq.seq_annotation import get_orthologs, get_descriptions_from_blasts
 
 class OrthologsTests(unittest.TestCase):
     'It test basic use of the orthologs functions'
@@ -34,6 +34,30 @@ class OrthologsTests(unittest.TestCase):
         #print orthologs.next()
         assert orthologs.next() == ('melon1', 'tair1')
         assert orthologs.next() == ('melon2', 'tair2')
+
+
+class AnnotationTests(unittest.TestCase):
+    'Annotations tests'
+    @staticmethod
+    def xtest_get_description_basic():
+        'It tests if we can get description for seqs in blasts'
+        # this fasta does not have definitio information
+        blast = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
+        assert get_descriptions_from_blasts([blast]) == {}
+
+    @staticmethod
+    def test_get_description_with_funct():
+        'It tests if we can get description for seqs in blasts. with mod funct'
+
+        def mod_func(definition):
+            'Arabidopsis def modifier'
+            return definition.split('|')[2]
+        # test with a modifier function
+        blast_fhand    = open(os.path.join(DATA_DIR, 'blast2.xml'))
+        blast = {'fhand':blast_fhand, 'desc_modifier': mod_func}
+        assert get_descriptions_from_blasts([blast]) == \
+                    {u'CUTC021854': u' ankyrin repeat family protein ',
+                     u'CUTC021853': u' DNA-binding protein-related '}
 
 
 

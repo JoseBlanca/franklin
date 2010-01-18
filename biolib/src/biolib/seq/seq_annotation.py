@@ -63,6 +63,52 @@ def _get_hit_pairs_fom_blast(blast1_fhand):
                 subject =  match_hit['subject'].name
             yield(query, subject)
 
+def get_descriptions_from_blasts(blasts, def_as_accession=None ):
+    '''It gets a description from a list of blast outputs.
+    Blast description of the xml may be modified to remove trash. This depends
+    blast xml, so the item of the list can be a blast or a dict with the blast
+    and the function to modify the description field.
+
+    It tries to find the name in the first file, after in the second, etc'''
+
+    seq_annot = {}
+    filters = [{'kind'           : 'best_scores',
+                'score_key'      : 'expect',
+                'max_score_value': 1e-4,
+                'score_tolerance': 10}]
+    for blast in blasts:
+        if isinstance(blast, dict):
+            blast_fhand   = blast['fhand']
+            desc_modifier = blast['desc_modifier']
+        else:
+            blast_fhand   = blast
+            desc_modifier = None
+        blast = BlastParser(fhand=blast_fhand,
+                            def_as_accession=def_as_accession)
+        filtered_results = FilteredAlignmentResults(match_filters=filters,
+                                                    results=blast)
+        #filtered_results = [filtered_results]
+        for match in filtered_results:
+            try:
+                query =  match['query'].id
+            except AttributeError:
+                query =  match['query'].name
+            if query not in seq_annot:
+                match_hit = match['matches'][0]
+                description = match_hit['subject'].description
+                if desc_modifier is not None:
+                    description = desc_modifier(description)
+                if description != "<unknown description>":
+                    seq_annot[query] = description
+    return seq_annot
+
+
+
+
+
+
+
+
 
 
 

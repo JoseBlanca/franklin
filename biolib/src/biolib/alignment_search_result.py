@@ -82,6 +82,7 @@ class BlastParser(object):
         'Part of the iterator protocol'
         return self
 
+
     def _create_result_structure(self, bio_result):
         'Given a BioPython blast result it returns our result structure'
         #the query name and definition
@@ -108,13 +109,19 @@ class BlastParser(object):
         matches = []
         for alignment in bio_result.alignments:
             #the subject sequence
-            #subj_name = alignment.title.split()[0]
-            name       = alignment.accession
-            definition = alignment.hit_def
+            if self.use_subject_def_as_accession:
+                items = alignment.hit_def.split(' ', 1)
+                name  = items[0]
+                if len(items) > 1:
+                    definition = items[1]
+                else:
+                    definition = None
+            else:
+                name       = alignment.accession
+                definition = alignment.hit_def
+
             if definition is None:
                 definition = "<unknown description>"
-            if self.use_subject_def_as_accession:
-                name = definition.split(' ', 1)[0]
 
             length     = alignment.length
             subject    = SeqWithQuality(name=name, description=definition,
@@ -764,9 +771,12 @@ class FilteredAlignmentResults(object):
 
         #some filters need extra data
         if kind == 'best_scores':
+            score_key = filter_['score_key']
+            #if the are no matches, there's nothig to filter
+            if not result['matches']:
+                return
             #the log10 for the best score
             #the best score should be in the first hit
-            score_key = filter_['score_key']
             best_score = result['matches'][0]['scores'][score_key]
             if best_score == 0.0:
                 log_best_score = 0.0
