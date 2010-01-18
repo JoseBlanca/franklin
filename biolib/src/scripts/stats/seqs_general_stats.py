@@ -24,6 +24,7 @@ It calculates:
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from optparse import OptionParser
 from biolib.utils.seqio_utils import seqs_in_file
 from biolib.statistics import general_seq_statistics
@@ -73,13 +74,15 @@ def main():
 
     stats = general_seq_statistics(seqs)
 
+    if result_file:
+        output = result_file
+    else:
+        output = sys.stdout
+
     for key, value in stats.items():
         if value is not None:
-            to_print = '%-19s : %d' % (key, value)
-            if result_file:
-                result_file.write(to_print)
-            else:
-                print to_print
+            to_print = '%-19s : %d\n' % (key, value)
+            output.wirte(to_print)
 
 if __name__ == '__main__':
     main()
