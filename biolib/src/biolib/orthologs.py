@@ -47,7 +47,7 @@ def _get_hit_pairs_fom_blast(blast1_fhand):
     blasts = BlastParser(fhand=blast1_fhand)
     filters = [{'kind'           : 'best_scores',
                 'score_key'      : 'expect',
-                'max_score_value': 0.1,
+                'max_score_value': 1e-4,
                 'score_tolerance': 10}]
     filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                 results=blasts)

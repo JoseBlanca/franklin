@@ -30,11 +30,10 @@ class OrthologsTests(unittest.TestCase):
         blast_file  = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
         blast_file2 = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
 
-        for orthologs in get_orthologs(blast_file, blast_file2):
-            print orthologs
-
-
-
+        orthologs = get_orthologs(blast_file, blast_file2)
+        #print orthologs.next()
+        assert orthologs.next() == ('melon1', 'tair1')
+        assert orthologs.next() == ('melon2', 'tair2')
 
 
 
