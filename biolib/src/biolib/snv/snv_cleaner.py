@@ -88,7 +88,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             start = 0
         #print start, end
         seq_fragment = snv.reference[start:end]
-        blast_fhand = blast_runner(seq_fragment)[0]
+        blast_fhand = blast_runner(seq_fragment)['blast']
         #now we parse the blast
         blast_result = blast_parser(blast_fhand)
         alignments = FilteredAlignmentResults(match_filters=filters,

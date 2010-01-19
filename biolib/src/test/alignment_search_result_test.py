@@ -130,8 +130,6 @@ class BlastParserTest(unittest.TestCase):
         parser = BlastParser(fhand=blast_file)
         assert parser.next()['matches'][0]['subject'].name == 'tair1'
 
-
-
     def test_blast_no_result(self):
         'It test that the xml output can be and empty string'
         blast_file = NamedTemporaryFile()

@@ -82,7 +82,7 @@ RUNNER_DEFINITIONS = {
                              #'megablast':{'default':'T',  'option':'-n'},
                              'alig_format': {'default':7, 'option':'-m'}
                             },
-              'output':[{'option':STDOUT}],
+              'output':{'blast':{'option':STDOUT}},
               'input':{'option':'-i'},
               'ignore_stderrs': ['Karlin-Altschul']
               },
@@ -92,12 +92,12 @@ RUNNER_DEFINITIONS = {
                                    'no_trim_A':{'default':None, 'option':'-A'},
                                      'no_dust':{'default':None, 'option':'-L'},
                                  'min_seq_len':{'required':True}},
-                     'output':[{'option':'-o', 'files':['seq']}],
+                     'output':{'sequence':{'option':'-o', 'files':['seq']}},
                      'input':{'option':ARGUMENT, 'arg_before_params':True}
                     },
     'mdust':{'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
                           'cut_off'    :{'default':'25', 'option':'-v' }},
-             'output':[{'option':STDOUT}],
+             'output':{'sequence':{'option':STDOUT}},
              'input':{'option':ARGUMENT, 'arg_before_params':True}
             },
     'trimpoly':{'parameters':{'min_score':{'option':'-s'},
@@ -107,14 +107,14 @@ RUNNER_DEFINITIONS = {
                               'only_n_trim':{'option':'-N'},
                               'ntrim_above_percent':{'option':'-n'}
                               },
-             'output':[{'option':STDOUT}],
+             'output':{'sequence':{'option':STDOUT}},
              'input':{'option':STDIN}
                 },
     'exonerate':{'parameters':{'target':{'required':True, 'option':'--target'},
        'show_vulgar':{'default':'False', 'option':'--showvulgar'},
        'show_alignment':{'default':'False', 'option':'--showalignment'},
      'how_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
-                 'output':[{'option':STDOUT}],
+                 'output':{'exonerate':{'option':STDOUT}},
                  'input' :{'option':'--query'}
                  },
     'lucy':{'parameters':{
@@ -128,8 +128,22 @@ RUNNER_DEFINITIONS = {
 
             'input':{'option': ARGUMENT,  'arg_before_params':True,
                      'files':['seq', 'qual']},
-            'output':[{'option': '-output', 'files':['seq', 'qual']}]
+            'output':{'sequence':{'option': '-output','files':['seq', 'qual']}}
             },
+#    'lucy.py':{'parameters':{
+#                      'cdna'   :{'option':'-c', 'default':None},
+#                      'keep'   :{'option':'-k', 'default':None},
+#                      'bracket':{'option':'-b', 'default':[10, 0.02]},
+#                      'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]},
+#                      'error'  :{'option':'-e', 'default':[0.015, 0.015]},
+#                      'vector' :{'option':'-vector'}
+#                      },
+#
+#               'input':{'inseq': {'option': '--seq', 'file':'seq'},
+#                        'inqual': {'option': '--inqual', 'file':'qual'}},
+#               'output':{'sequence':{'option': '--outseq', 'file':'seq'},
+#                         'quality' :{'option': '--outqual', 'file':'qual'}},
+#            },
     }
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
@@ -243,8 +257,8 @@ def create_runner(kind, bin_=None, parameters=None, multiseq=False,
         # of dict with the different output options
         output_cmd    = []
         #Which are the fhands that will be populated by the external cmd?
-        output_fhands = []
-        for output in outputs:
+        output_fhands = {}
+        for key, output in outputs.items():
             option = output['option']
             if 'files' not in output:
                 files = ['seq']
@@ -252,15 +266,20 @@ def create_runner(kind, bin_=None, parameters=None, multiseq=False,
                 files = output['files']
             if option != STDOUT:
                 output_cmd.append(option)
+
             for file_ in files:
                 if option == STDOUT:
-                    output_fhands.append(STDOUT)
+                    output_fhands[key] = STDOUT
                 else:
                     fhand = tempfile.NamedTemporaryFile()
-                    output_fhands.append(fhand)
+                    if len(files) > 1:
+                        if key not in output_fhands:
+                            output_fhands[key] = []
+                        output_fhands[key].append(fhand)
+                    else:
+                        output_fhands[key] = fhand
                     output_cmd.append(fhand.name)
-        cmd.extend(output_cmd)
-
+            cmd.extend(output_cmd)
         #print ' '.join(cmd)
         stdout, stderr, retcode = call(cmd, stdin=stdin, environment=environment)
 
@@ -284,11 +303,13 @@ def create_runner(kind, bin_=None, parameters=None, multiseq=False,
 
         # Now we are going to make this list with the files we are going to
         # return
-        returns = []
-        for fhand in output_fhands:
+        returns = {}
+        for key, fhand in output_fhands.items():
+            #print key, fhand
             if fhand == STDOUT:
                 fhand = StringIO.StringIO(stdout)
-            returns.append(fhand)
+
+            returns[key] = fhand
         return returns
     return run_cmd_for_sequence
 

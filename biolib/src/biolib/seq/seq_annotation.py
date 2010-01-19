@@ -24,7 +24,7 @@ Created on 15/01/2010
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
-
+from biolib.utils.cmd_utils import call
 
 def get_orthologs(blast1_fhand, blast2_fhand):
     '''It return orthologs from two pools. It needs the xml otput blast of the
@@ -101,13 +101,25 @@ def get_descriptions_from_blasts(blasts):
                     seq_annot[query] = description
     return seq_annot
 
+def get_ssrs(fasta_fhand):
+    "Giving a fasta file,  it gets the microsatellites"
+    max_unit_length   = 4
+    min_unit_length   = 2
+    min_length_of_ssr = 20
+    cmd = ['sputnik', '-u', max_unit_length, '-v', min_unit_length, '-L',
+           min_length_of_ssr, fasta_fhand.name]
+    stdout = call(cmd, raise_on_error=True)[0]
+
+    return _parse_sputnik_output(stdout)
+
+def _parse_sputnik_output(output):
+    'It parses the sputnik output'
+    return
 
 
 
 
-
-
-
+#$bin -u $max_unit_length -v $min_unit_length -L $min_length_of_ssr $in_file > $out_file"
 
 
 

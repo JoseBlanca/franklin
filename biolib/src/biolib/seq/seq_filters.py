@@ -67,7 +67,7 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
         'Giving a sequence it returns true or False depending on the exonerate'
         if sequence is None:
             return False
-        source_result    = run_align_for_seq(sequence)[0]
+        source_result    = run_align_for_seq(sequence)[aligner_cmd]
         results          = parser(source_result)
         filtered_results = FilteredAlignmentResults(match_filters=match_filters,
                                                   result_filters=result_filters,

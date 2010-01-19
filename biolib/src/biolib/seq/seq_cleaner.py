@@ -201,7 +201,7 @@ def create_masker_for_low_complexity():
         '''
         if sequence is None:
             return None
-        fhand = mask_low_complex_by_seq(sequence)[0]
+        fhand = mask_low_complex_by_seq(sequence)['sequence']
         #pylint:disable-msg=W0612
         name, desc, seq = get_content_from_fasta(fhand)
         return copy_seq_with_quality(sequence, seq=seq)
@@ -220,7 +220,7 @@ def create_masker_for_polia():
         if sequence is None:
             return None
 
-        fhand = mask_polya_by_seq(sequence)[0]
+        fhand = mask_polya_by_seq(sequence)['sequence']
         return _sequence_from_trimpoly(fhand, sequence, trim=False)
     return mask_polya
 
@@ -267,7 +267,7 @@ def create_striper_by_quality_trimpoly():
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
         mask_polya_by_seq = create_runner(kind='trimpoly',
                                           parameters=parameters)
-        fhand = mask_polya_by_seq(sequence)[0]
+        fhand = mask_polya_by_seq(sequence)['sequence']
         return _sequence_from_trimpoly(fhand, sequence, trim=True)
     return strip_seq_by_quality_trimpoly
 
@@ -378,7 +378,7 @@ def create_striper_by_quality_lucy2(vector=None):
         #pylint: disable-msg=W0612
         #now we run lucy
         sequences, sequences_copy = tee(sequences, 2)
-        seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)
+        seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)['sequence']
 
         # we need to preserve the original description field.
         descriptions = _extract_name_description(sequences_copy)
@@ -446,7 +446,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
             return None
         #
         # first we are going to align he sequence with the vectors
-        alignment_fhand = aligner_(sequence)[0]
+        alignment_fhand = aligner_(sequence)[aligner]
 
         # We need to parse the result
         alignment_result = parser(alignment_fhand)

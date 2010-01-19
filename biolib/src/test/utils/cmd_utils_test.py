@@ -82,7 +82,7 @@ class RunnerFactorytest(unittest.TestCase):
                                           environment={'BLASTDB':blastpath})
         seq = 'AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT'
         seq1 = SeqWithQuality(seq)
-        result = run_blast_for_seq(seq1)[0]
+        result = run_blast_for_seq(seq1)['blast']
         assert result.read()[0] == '<'
     @staticmethod
     def test_create_mdust_runner():
@@ -90,7 +90,7 @@ class RunnerFactorytest(unittest.TestCase):
         run_mdust__for_seq = create_runner(kind='mdust')
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         seq1 = SeqWithQuality(seq)
-        result = run_mdust__for_seq(seq1)[0]
+        result = run_mdust__for_seq(seq1)['sequence']
         assert result.read()[-10:-1] == 'aaaaaaaaa'
     @staticmethod
     def test_create_lucy_runner():
@@ -103,8 +103,8 @@ class RunnerFactorytest(unittest.TestCase):
         qual = [30] * len(seq)
         seq1 = SeqWithQuality(seq, qual=qual)
         seqs = [seq1, seq1]
-        result = run_lucy_for_seq(seqs)[0]
-        assert result.read() == ''
+        result = run_lucy_for_seq(seqs)['sequence']
+        assert result[0].read() == ''
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

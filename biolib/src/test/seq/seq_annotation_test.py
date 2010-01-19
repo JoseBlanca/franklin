@@ -48,13 +48,9 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_get_description_with_funct():
         'It tests if we can get description for seqs in blasts. with mod funct'
-
-        def mod_func(definition):
-            'Arabidopsis def modifier'
-            return definition.split('|')[2]
         # test with a modifier function
-        blast_fhand    = open(os.path.join(DATA_DIR, 'blast2.xml'))
-        blast = {'fhand':blast_fhand, 'desc_modifier': mod_func}
+        blast = open(os.path.join(DATA_DIR, 'blast2.xml'))
+        blast = {'fhand':blast, 'desc_modifier': lambda(x):x.split('|')[2]}
         assert get_descriptions_from_blasts([blast]) == \
                     {u'CUTC021854': u' ankyrin repeat family protein ',
                      u'CUTC021853': u' DNA-binding protein-related '}
