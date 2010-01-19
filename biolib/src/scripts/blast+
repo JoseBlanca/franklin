@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+'''
+Created on 19/01/2010
+
+@author: peio
+'''
+import sys
+from biolib.utils.cmd_utils import call
+
+def run_blast():
+    'It runs one of the blast+ programs'
+    args = sys.argv[1:]
+    try:
+        program_index = args.index('-p') + 1
+        program = args[program_index]
+        del args[program_index -1]
+        del args[program_index -1 ]
+    except IndexError:
+        raise IndexError('wrong parameters')
+    cmd = [program]
+    cmd.extend(args)
+    # run the blast
+    print " ".join(cmd)
+    call(cmd, raise_on_error=True)
+
+if __name__ == '__main__':
+     run_blast()

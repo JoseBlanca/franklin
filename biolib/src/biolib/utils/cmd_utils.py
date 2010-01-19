@@ -86,6 +86,17 @@ RUNNER_DEFINITIONS = {
               'input':{'option':'-i'},
               'ignore_stderrs': ['Karlin-Altschul']
               },
+    'blast+': {'parameters': {'database' :{'required':True,  'option': '-db'},
+                    'program'  :{'required':True,  'option':'-p'},
+                    'expect'   :{'default': 0.0001,'option': '-evalue'},
+                    'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+                    'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
+                    'alig_format': {'default':5, 'option':'-outfmt'}
+                            },
+              'output':{'blast+':{'option':'-out'}},
+              'input':{'option':'-query'},
+              'ignore_stderrs': ['Karlin-Altschul']
+              },
     'seqclean_vect':{'parameters':{'vector_db':{'required':True,'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},
                                 'no_trash_low':{'default':None, 'option':'-M'},

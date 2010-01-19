@@ -420,8 +420,10 @@ def create_vector_striper_by_alignment(vectors, aligner):
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
     #depending on the aligner program we need different parameters and filters
+
     parameters = {'exonerate': {'target':vectors},
-                  'blast'    : {'database': vectors, 'program':'blastn'}}
+                  'blast'    : {'database': vectors, 'program':'blastn'},
+                  'blast+'    : {'database': vectors, 'program':'blastn'}}
 
     filters = {'exonerate': [{'kind'          : 'min_scores',
                              'score_key'      : 'similarity',
@@ -433,7 +435,13 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
+                              'min_length_bp' : 15}],
+               'blast+':      [{'kind'         : 'min_scores',
+                             'score_key'      : 'similarity',
+                             'min_score_value': 96},
+                             {'kind'          : 'min_length',
                               'min_length_bp' : 15}]}
+
     aligner_ = create_runner(kind=aligner, parameters=parameters[aligner])
     parser   = get_alignment_parser(aligner)
 

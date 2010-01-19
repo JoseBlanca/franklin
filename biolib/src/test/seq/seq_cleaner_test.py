@@ -315,6 +315,25 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
+    def test_strip_vector_align_blast_plus():
+        'It tests strip_vector_by_alignment using blast+ and UniVec'
+        vector = os.path.join(DATA_DIR, 'blast', 'univec')
+        vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
+        vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
+        vec1 += 'CGTCTCAACGCGCTTT'
+        seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq  = SeqWithQuality(name='seq', seq=seq1+vec1)
+        strip_vector_by_alignment = \
+                            create_vector_striper_by_alignment(vector, 'blast+')
+        striped_seq = strip_vector_by_alignment(seq)
+        striped_seq = str(striped_seq.seq)
+
+        assert seq1[4:14]  in striped_seq
+        assert seq1[-14:-4]  in striped_seq
+        assert vec1[4:14]  not in striped_seq
+        assert vec1[-14:-4] not  in striped_seq
+
+    @staticmethod
     def xtest_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         mask_repeats_by_repeatmasker = \
