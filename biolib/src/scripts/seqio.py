@@ -2,8 +2,7 @@
 'It inputs and ouputs sequences, usually to change their format'
 
 from optparse import OptionParser
-from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
-from Bio import SeqIO
+from biolib.utils.seqio_utils import seqio
 
 def parse_options():
     'It parses the command line arguments'
@@ -49,17 +48,13 @@ def set_parameters():
 
 def main():
     'The main function'
-    (infhand_seq, infhand_qual, format_in, outfhand_seq, outfhand_qual,
-     format_out) = set_parameters()
+    (in_seq_fhand, in_qual_fhand, in_format, out_seq_fhand, out_qual_fhand,
+     out_format) = set_parameters()
 
-    if  infhand_qual is not None or outfhand_qual is not None:
-        seqs = seqs_in_file(seq_fhand=infhand_seq, qual_fhand=infhand_qual,
-                        format=format_in)
-        write_seqs_in_file(seqs, seq_fhand=outfhand_seq,
-                           qual_fhand=outfhand_qual,format=format_out)
-    else:
-        SeqIO.convert(infhand_seq, format_in, outfhand_seq, format_out)
-
+    seqio(in_seq_fhand=in_seq_fhand, in_qual_fhand=in_qual_fhand,
+          in_format=in_format,
+          out_seq_fhand=out_seq_fhand, out_qual_fhand=out_qual_fhand,
+          out_format=out_format)
 
 if __name__ == '__main__':
     main()

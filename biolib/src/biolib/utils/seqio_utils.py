@@ -301,9 +301,19 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
 def seqio(in_seq_fhand, in_qual_fhand, in_format, out_seq_fhand, out_qual_fhand,
           out_format):
     'It converts format of the files'
-    seqs = seqs_in_file(seq_fhand=in_seq_fhand,
-                        qual_fhand=in_qual_fhand,
-                        format=in_format)
-    write_seqs_in_file(seqs, seq_fhand=out_seq_fhand,
-                       qual_fhand=out_qual_fhand,
-                       format=out_format)
+    if  in_qual_fhand is not None or out_qual_fhand is not None:
+        seqs = seqs_in_file(seq_fhand=in_seq_fhand,
+                            qual_fhand=in_qual_fhand,
+                            format=in_format)
+        write_seqs_in_file(seqs, seq_fhand=out_seq_fhand,
+                           qual_fhand=out_qual_fhand,
+                           format=out_format)
+    else:
+        SeqIO.convert(in_seq_fhand, in_format, out_seq_fhand, out_format)
+
+def cat(infiles, outfile):
+    'It concatenates the given files'
+    for infile in infiles:
+        infile.seek(0)
+        for line in infile:
+            outfile.write(line)

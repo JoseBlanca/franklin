@@ -21,12 +21,13 @@ Created on 2009 uzt 28
 
 import unittest
 import StringIO, tempfile
+import biolib
+print biolib.__path__
 
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, FileSequenceIndex,
-                                      quess_seq_type)
-
+                                      quess_seq_type, cat)
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
     @staticmethod
@@ -209,6 +210,17 @@ class TestSequenceFileIndexer(unittest.TestCase):
         assert seqrec1.description == 'una seq'
         assert seqrec1.qual == [1, 2, 3]
         assert seqrec2.qual == [10]
+
+class TestCat(unittest.TestCase):
+    'It tests the sequence converter'
+    @staticmethod
+    def test_cat():
+        'It tests the cat function'
+        inh1 = StringIO.StringIO('>seq1\nACTG\n')
+        inh2 = StringIO.StringIO('>seq2\nGTCA\n')
+        outh = StringIO.StringIO()
+        cat(infiles=[inh1, inh2], outfile=outh)
+        assert outh.getvalue() == '>seq1\nACTG\n>seq2\nGTCA\n'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
