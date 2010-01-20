@@ -298,8 +298,8 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
         if qual_fhand and format == 'fasta':
             SeqIO.write([seq], qual_fhand, 'qual')
 
-def seqio(in_seq_fhand, in_qual_fhand, out_seq_fhand, out_qual_fhand,
-          out_format, in_format=None):
+def seqio(in_seq_fhand, in_qual_fhand, out_seq_fhand,
+          out_format, out_qual_fhand=None, in_format=None):
     'It converts format of the files'
     if  in_qual_fhand is not None or out_qual_fhand is not None:
         seqs = seqs_in_file(seq_fhand=in_seq_fhand,
