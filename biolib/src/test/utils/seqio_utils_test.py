@@ -39,6 +39,11 @@ class GuessFormatSeqFileTest(unittest.TestCase):
         fhand = StringIO.StringIO('LOCUS AX0809\n')
         assert guess_seq_file_format(fhand) == 'genbank'
 
+        fhand = StringIO.StringIO('@fastq\nACTAG\n')
+        fhand.name = 'hola.sfastq'
+        assert guess_seq_file_format(fhand) == 'fastq'
+
+
     @staticmethod
     def test_staticmethod():
         'If an empty file is given it should not fail'

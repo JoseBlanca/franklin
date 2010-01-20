@@ -185,6 +185,8 @@ def guess_seq_file_format(fhand):
             format_ = 'qual'
         else:
             format_ = 'fasta'
+    elif line[0] == '@' and fhand.name.endswith('.sfastq'):
+        format_ = 'fastq'
     elif line.split()[0] == 'LOCUS':
         format_ = 'genbank'
     else:
