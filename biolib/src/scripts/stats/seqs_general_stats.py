@@ -82,7 +82,7 @@ def main():
     for key, value in stats.items():
         if value is not None:
             to_print = '%-19s : %d\n' % (key, value)
-            output.wirte(to_print)
+            output.write(to_print)
 
 if __name__ == '__main__':
     main()
