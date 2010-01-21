@@ -309,7 +309,7 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
             not seq.letter_annotations['phred_quality']):
             qual = [30] * len(seq.seq)
             seq.letter_annotations['phred_quality'] = qual
-        SeqIO.write([seq], seq_fhand, format)
+        SeqIO.write([seq], seq_fhand, BIOPYTHON_FORMATS[format])
         if qual_fhand and format == 'fasta':
             SeqIO.write([seq], qual_fhand, 'qual')
 
