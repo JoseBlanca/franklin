@@ -196,9 +196,9 @@ def guess_seq_file_format(fhand):
 
 #the translation between our formats and the biopython formats
 BIOPYTHON_FORMATS = {'fasta': 'fasta',
-                     'fastq': 'fastq-sanger',
-                     'sfastq':'fastq-sanger',
-                     'fastq-sanger': 'fastq-sanger',
+                     'fastq': 'fastq',
+                     'sfastq':'fastq',
+                     'fastq-sanger': 'fastq',
                      'ifastq': 'fastq-illumina',
                      'fastq-illumina': 'fastq-illumina',
                      'fastq-solexa': 'fastq-solexa',
