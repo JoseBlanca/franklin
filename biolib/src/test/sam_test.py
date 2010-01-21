@@ -93,10 +93,7 @@ SGN-E221664    0    SGN-U572743    317    226    254M24S    *    0    0    GGATG
         outsam = StringIO()
         add_header_and_tags_to_sam(sam, outsam)
         out_content = outsam.getvalue()
-        print out_content
         assert 'RG:Z:group1' in out_content
-
-
 
 
 

@@ -20,54 +20,9 @@ This module provides utilities to run external commands into biolib
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 
-from biolib.utils.seqio_utils import (temp_fasta_file, parse_fasta,
-                                      temp_qual_file)
-from biolib.utils.misc_utils import NamedTemporaryDir
-
-import subprocess, signal, tempfile, os, itertools
-import StringIO, logging, copy
-
-def call(cmd, environment=None, stdin=None, raise_on_error=False):
-    'It calls a command and it returns stdout, stderr and retcode'
-    def subprocess_setup():
-        ''' Python installs a SIGPIPE handler by default. This is usually not
-        what non-Python subprocesses expect.  Taken from this url:
-        http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
-        2009-07-02-python-sigpipe'''
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-    if stdin is None:
-        pstdin = None
-    else:
-        pstdin = subprocess.PIPE
-    #we want to inherit the environment, and modify it
-    if environment is not None:
-        new_env = {}
-        for key, value in os.environ.items():
-            new_env[key] = value
-        for key, value in environment.items():
-            new_env[key] = value
-        environment = new_env
-    try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=environment,
-                               stdin=pstdin, preexec_fn=subprocess_setup)
-    except OSError:
-        raise OSError('No such file or directory, executable was ' + cmd[0])
-    if stdin is None:
-        stdout, stderr = process.communicate()
-    else:
-#        a = stdin.read()
-#        print a
-#        stdout, stderr = subprocess.Popen.stdin = stdin
-#        print stdin.read()
-        stdout, stderr = process.communicate(stdin)
-    retcode = process.returncode
-    if raise_on_error:
-        if retcode:
-            raise RuntimeError(stderr)
-    return stdout, stderr, retcode
-
+from biolib.utils.seqio_utils import temp_fasta_file, temp_qual_file
+from biolib.utils.cmd_utils import call
+import StringIO, logging, tempfile, copy, os
 
 # Runner definitions, Define here the parameters of the prgrams you want to
 # use with this class
@@ -96,7 +51,7 @@ RUNNER_DEFINITIONS = {
                    'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
                    'alig_format': {'default':5, 'option':'-outfmt'}
                             },
-            'output':{'blast+':{'option':STDOUT}},
+            'output':{'blast+':{'option':'-out'}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
             'ignore_stderrs': ['Karlin-Altschul']
               },
@@ -157,6 +112,7 @@ RUNNER_DEFINITIONS = {
                                   'files_format':['fasta', 'qual']}}
             },
     }
+
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
     It returns the parameters need by programa'''
@@ -204,12 +160,11 @@ def _prepare_input_files(inputs, seqs):
         files_format = value['files_format']
         inputs[key]['fhands'] = []
         inputs[key]['fpaths'] = []
-        seqs, seqs_qual = itertools.tee(seqs, 2)
         for file_format in files_format:
             if file_format == 'fasta':
                 fhand = temp_fasta_file(seqs=seqs)
             elif file_format == 'qual':
-                fhand = temp_qual_file(seqs=seqs_qual)
+                fhand = temp_qual_file(seqs=seqs)
             inputs[key]['fhands'].append(fhand)
             inputs[key]['fpaths'].append(fhand.name)
 
@@ -231,12 +186,11 @@ def _prepare_output_files(outputs):
             fhands = _get_mktemp_fpaths(1)
         outputs[key]['fpaths'] = fhands
 
-def _build_cmd(cmd_params, runner_def):
+
+def _build_cmd(tool, inputs, outputs, cmd_params):
     'It bulds the cmd line using  the command definitions'
-    inputs = runner_def['input']
-    outputs = runner_def['output']
     stdin = None
-    bin = runner_def['binary']
+    bin = RUNNER_DEFINITIONS[tool]['binary']
     cmd_args_begin = []
     cmd_args_end = []
 
@@ -244,8 +198,8 @@ def _build_cmd(cmd_params, runner_def):
         for name, parameter in parameters.items():
             fpaths = parameter['fpaths']
             if parameter['option'] == STDIN:
-                stdin = parameter['fhands'][0].read()
-            elif parameter['option'] == STDOUT:
+                stdin = fpaths[0].read()
+            if parameter['option'] == STDOUT:
                 pass
             elif (parameter['option'] == ARGUMENT and
                   parameter['arg_before_params']):
@@ -272,20 +226,19 @@ def create_runner(tool, parameters=None, environment=None):
     kind is the type of runner (blast, seqclean, etc)
     if multiseq is True the runner will expect list or iterator of sequences.
     '''
+    runner_def = RUNNER_DEFINITIONS[tool]
+
     # process parameters to build the cmd
     if parameters is None:
         parameters = {}
     if environment is None:
         environment = {}
-    general_cmd_param = _process_parameters(parameters,
-                                    RUNNER_DEFINITIONS[tool]['parameters'])
+    cmd_param = _process_parameters(parameters, runner_def['parameters'])
 
     def run_cmd_for_sequence(sequence):
         'It returns a result for the given sequence or sequences'
         #parameters should be in the scope because some tempfile could be in
         #there. In some pythons this has been a problem.
-        runner_data = copy.deepcopy(RUNNER_DEFINITIONS[tool])
-        cmd_param = copy.deepcopy(general_cmd_param)
         assert type(parameters)
 
         #is this a sequence or a generator with seqs
@@ -295,20 +248,21 @@ def create_runner(tool, parameters=None, environment=None):
         else:
             sequences = sequence
 
-        _prepare_input_files(runner_data['input'], sequences)
-        _prepare_output_files(runner_data['output'])
-        cmd, stdin = _build_cmd(cmd_param, runner_data)
+        inputs = copy.deepcopy(runner_def['input'])
+        outputs = copy.deepcopy(runner_def['output'])
+        _prepare_input_files(inputs, sequences)
+        _prepare_output_files(outputs)
+        cmd, stdin = _build_cmd(tool, inputs, outputs, cmd_param)
 
-#        print runner_data['input']
-
+        print ' '.join(cmd)
         stdout, stderr, retcode = call(cmd, stdin=stdin,
                                        environment=environment)
 
         # there is a error
         if retcode:
             ignore_error = False
-            if 'ignore_stderrs' in runner_data:
-                for error in runner_data['ignore_stderrs']:
+            if 'ignore_stderrs' in runner_def:
+                for error in runner_def['ignore_stderrs']:
                     if error in stderr:
                         ignore_error = True
             if ignore_error:
@@ -325,7 +279,7 @@ def create_runner(tool, parameters=None, environment=None):
         # Now we are going to make this list with the files we are going to
         # return
         returns = {}
-        for key, values in runner_data['output'].items():
+        for key, values in outputs.items():
             #print key, fhand
             if values['option'] == STDOUT:
                 fhands = StringIO.StringIO(stdout)
@@ -335,116 +289,3 @@ def create_runner(tool, parameters=None, environment=None):
             returns[key] = fhands
         return returns
     return run_cmd_for_sequence
-
-
-def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
-    '''It returns masked sequence (StrinIO) for the given sequence.
-    '''
-
-    #we run repeat masker in a temp dir
-    temp_dir = NamedTemporaryDir()
-    old_pwd = os.getcwd()
-    os.chdir(temp_dir.name)
-
-    #input sequence and output file
-    in_seq_fhand = temp_fasta_file(sequence)
-    out_seq_fname = in_seq_fhand.name + '.masked'
-
-    #parameters used
-    # q         fast search (qq is even faster and less sensitive)
-    # species   the species to use (e.g. arabidopsis, eudicotyledons)
-    # no_is     do not look for bacterial insertions
-    # no_cut    do not excise the repeats found
-    # xsmall    repeats lower cased
-    cmd = ['RepeatMasker', '-q', '-species', species, '-no_is',
-           'no_cut', '-xsmall', in_seq_fhand.name]
-    stdout, stderr, retcode = call(cmd)
-    if retcode:
-        raise RuntimeError('Problem running RepeatMasker: ' + stderr)
-
-    # If there are no repetitive sequences, repreatmasker does not return any
-    # file
-    if 'No repetitive sequences' in stderr:
-        out_seq_fname =  in_seq_fhand.name
-
-
-    #we store the output file in a StringIO because the temp dir is going to
-    #disapear
-    #raw_input()
-    result = StringIO.StringIO(open(out_seq_fname).read())
-
-    #we go to the old pwd and we close the temp dir
-    os.chdir(old_pwd)
-    temp_dir.close()
-    return result
-
-
-class SeqcleanRunner(object):
-    '''Class to run seqclean '''
-    def __init__(self, parameters, ):
-        '''Initiator
-
-        We need a working temporal directory to work with seqclean. it poutputs
-        a lot of files but we only need two to proceed'''
-        self._temp_dir = NamedTemporaryDir()
-        self._work_dir = self._temp_dir.name()
-        os.chdir(self._work_dir)
-        self._parameters = parameters
-
-    def process_sequence(self, sequence):
-        ''' Here we process the file '''
-        fhand_new_seq = tempfile.NamedTemporaryFile()
-        fhand_seq_log = tempfile.NamedTemporaryFile()
-        fastah = temp_fasta_file(sequence)
-        fastah.flush()
-
-        cmd = ['seqclean', fastah.name]
-        cmd.extend(self._parameters)
-        cmd.extend(['-o', fhand_new_seq.name])
-        cmd.extend(['-r', fhand_seq_log.name])
-
-        stdout, stderr, retcode = call(cmd)
-        if retcode:
-            raise RuntimeError('seqclean run time error:', stderr)
-        self._temp_dir.close()
-        fhand_new_seq.flush()
-        fhand_seq_log.flush()
-        seq, name, description = parse_fasta(fhand_new_seq)
-        return seq
-
-## This two functions have to be ported to the new runner schema
-def translate(seq):
-    '''It translates the dna sequence to protein. It uses emboss binary
-    transeq'''
-
-    translation_binary = 'transeq'
-
-    fasta_fileh = temp_fasta_file(seq)
-    cmd = [translation_binary, fasta_fileh.name, '-stdout', '-auto']
-    stdout, stderr, retcode = call(cmd)
-    if retcode != 0:
-        raise RuntimeError(stderr)
-    return parse_fasta(stdout)
-def get_best_orf(seq, matrix_path=None):
-    '''It returns a new seq with the orf '''
-
-    if matrix_path is None:
-        raise ValueError('ESTscan need a matrix to be able to work')
-    elif not os.path.exists(matrix_path):
-        raise OSError('Matrix file not found: ' + matrix_path)
-
-    estscan_binary = '/usr/local/bin/ESTScan'
-    fasta_fileh = temp_fasta_file(seq)
-    file_orfh = tempfile.NamedTemporaryFile(suffix='.orf')
-
-    cmd = [estscan_binary, '-M', matrix_path, fasta_fileh.name,
-           '-t', file_orfh.name]
-    stdout, stderr, retcode = call(cmd)
-
-    if retcode :
-        raise RuntimeError(stderr)
-
-    stdout    = StringIO.StringIO(stdout)
-    orf_dna  = parse_fasta(stdout)[0]
-    orf_prot = parse_fasta(file_orfh)[0]
-    return orf_dna, orf_prot

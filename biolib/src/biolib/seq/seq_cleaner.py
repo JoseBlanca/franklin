@@ -26,7 +26,7 @@ from tempfile import NamedTemporaryFile
 from itertools import tee
 
 import biolib
-from biolib.utils.cmd_utils import create_runner, run_repeatmasker_for_sequence
+from biolib.utils.cmd_utils import  create_runner, run_repeatmasker_for_sequence
 from biolib.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
                                       fasta_str)
 from biolib.seq.seqs import copy_seq_with_quality
@@ -192,7 +192,7 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
 
 def create_masker_for_low_complexity():
     'It creates a masker function for low complexity sections that uses mdust'
-    mask_low_complex_by_seq = create_runner(kind='mdust')
+    mask_low_complex_by_seq = create_runner(tool='mdust')
 
     def mask_low_complexity(sequence):
         '''It adds a mask to the sequence where low complexity is found
@@ -211,7 +211,7 @@ def create_masker_for_polia():
     'It creates a masker function that will mask poly-A tracks'
     parameters = {'min_score':'10', 'end':'x', 'incremental_dist':'20',
                       'fixed_dist':None}
-    mask_polya_by_seq = create_runner(kind='trimpoly', parameters=parameters)
+    mask_polya_by_seq = create_runner(tool='trimpoly', parameters=parameters)
     def mask_polya(sequence):
         '''It adds a mask to the sequence where the poly-A is found.
 
@@ -265,7 +265,7 @@ def create_striper_by_quality_trimpoly():
             return None
 
         parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
-        mask_polya_by_seq = create_runner(kind='trimpoly',
+        mask_polya_by_seq = create_runner(tool='trimpoly',
                                           parameters=parameters)
         fhand = mask_polya_by_seq(sequence)['sequence']
         return _sequence_from_trimpoly(fhand, sequence, trim=True)
@@ -323,7 +323,7 @@ def create_striper_by_quality_lucy():
             logging.warning(msg)
             return None
         #we run lucy
-        run_lucy_for_seq = create_runner(kind='lucy')
+        run_lucy_for_seq = create_runner(tool='lucy')
         #pylint: disable-msg=W0612
         seq_out_fhand, qual_out_fhand = run_lucy_for_seq(sequence)
 
@@ -361,9 +361,9 @@ def create_striper_by_quality_lucy2(vector=None):
     iterator with the processed sequences in it.'''
     #we prepare the function that will run lucy
     if vector is None:
-        run_lucy_for_seqs = create_runner(kind='lucy', multiseq=True)
+        run_lucy_for_seqs = create_runner(tool='lucy')
     else:
-        run_lucy_for_seqs = create_runner(kind='lucy',
+        run_lucy_for_seqs = create_runner(tool='lucy',
                                           parameters={'vector':vector},
                                           multiseq=True)
 
@@ -442,7 +442,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              {'kind'          : 'min_length',
                               'min_length_bp' : 15}]}
 
-    aligner_ = create_runner(kind=aligner, parameters=parameters[aligner])
+    aligner_ = create_runner(tool=aligner, parameters=parameters[aligner])
     parser   = get_alignment_parser(aligner)
 
     def strip_vector_by_alignment(sequence):
@@ -455,11 +455,10 @@ def create_vector_striper_by_alignment(vectors, aligner):
         #
         # first we are going to align he sequence with the vectors
         alignment_fhand = aligner_(sequence)[aligner]
-
         # We need to parse the result
         alignment_result = parser(alignment_fhand)
 
-        # We filter the results with appropiate  filters
+        # We filter the results with appropriate  filters
         alignments = FilteredAlignmentResults(match_filters=filters[aligner],
                                               results=alignment_result)
 

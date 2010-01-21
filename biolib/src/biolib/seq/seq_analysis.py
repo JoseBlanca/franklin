@@ -136,7 +136,7 @@ def _infer_introns_for_cdna_blast(sequence, genomic_db):
 
     filters = [{'kind'          : 'min_length',
                 'min_length_bp' : 20}]
-    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_runner = create_runner(tool='blast', parameters=parameters)
     blast_fhand = blast_runner(sequence)['blast']
 
     #now we parse the blast
@@ -221,7 +221,7 @@ def look_for_similar_sequences(sequence, db, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
     parameters = {'database': db, 'program':blast_program}
 
-    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_runner = create_runner(tool='blast', parameters=parameters)
     blast_fhand = blast_runner(sequence)['blast']
     return similar_sequences_for_blast(blast_fhand, filters=filters)
 

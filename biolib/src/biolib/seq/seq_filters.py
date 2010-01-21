@@ -60,8 +60,8 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
     else:
         bin_cmd = None # create_runer will know how to do
 
-    run_align_for_seq = create_runner(kind=aligner_cmd, bin_=bin_cmd,
-                           parameters=cmd_parameters, environment=environment)
+    run_align_for_seq = create_runner(tool=aligner_cmd, environment=environment,
+                                      parameters=cmd_parameters)
 
     def _filter(sequence):
         'Giving a sequence it returns true or False depending on the exonerate'

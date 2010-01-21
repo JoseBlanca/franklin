@@ -65,7 +65,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
     match or more than one match_parts'''
     genomic_seqs_index = FileSequenceIndex(genomic_seqs_fhand, 'fasta')
     parameters = {'database': genomic_db, 'program':'blastn'}
-    blast_runner = create_runner(kind='blast', parameters=parameters)
+    blast_runner = create_runner(tool='blast', parameters=parameters)
     blast_parser = get_alignment_parser('blast')
     filters = [{'kind'           : 'min_scores',
             'score_key'      : 'similarity',

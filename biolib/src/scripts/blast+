@@ -20,8 +20,8 @@ def run_blast():
     cmd = [program]
     cmd.extend(args)
     # run the blast
-    print " ".join(cmd)
-    call(cmd, raise_on_error=True)
+    result = call(cmd, raise_on_error=True)[0]
+    sys.stdout.write(result)
 
 if __name__ == '__main__':
      run_blast()

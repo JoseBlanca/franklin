@@ -76,7 +76,7 @@ class RunnerFactorytest(unittest.TestCase):
     def test_create_blast_runner():
         'We can create a runner class for blast'
         blastpath = os.path.join(DATA_DIR, 'blast')
-        run_blast_for_seq = create_runner(bin_='blast2', kind='blast',
+        run_blast_for_seq = create_runner(tool='blast',
                                     parameters={'database':'arabidopsis_genes',
                                                 'program':'blastn'},
                                           environment={'BLASTDB':blastpath})
@@ -87,7 +87,7 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_mdust_runner():
         'We can create a runner class for mdust'
-        run_mdust__for_seq = create_runner(kind='mdust')
+        run_mdust__for_seq = create_runner(tool='mdust')
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         seq1 = SeqWithQuality(seq)
         result = run_mdust__for_seq(seq1)['sequence']
@@ -96,9 +96,8 @@ class RunnerFactorytest(unittest.TestCase):
     def test_create_lucy_runner():
         'We can create a runner class for lucy'
         fastafile = os.path.join(DATA_DIR, 'seq.fasta')
-        run_lucy_for_seq = create_runner(kind='lucy',
-                                    parameters={'vector':(fastafile,fastafile)},
-                                    multiseq=True)
+        run_lucy_for_seq = create_runner(tool='lucy',
+                                    parameters={'vector':(fastafile,fastafile)})
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         qual = [30] * len(seq)
         seq1 = SeqWithQuality(seq, qual=qual)
@@ -109,6 +108,3 @@ class RunnerFactorytest(unittest.TestCase):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']
     unittest.main()
-
-
-

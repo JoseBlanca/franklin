@@ -96,6 +96,20 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
         fhand_qual.flush()
         fhand_qual.seek(0)
 
+def temp_qual_file(seqs):
+    'Given a qual seq it return a temporary qual fasta file'
+    fhand_qual = tempfile.NamedTemporaryFile(suffix='.qual')
+    for seq in seqs:
+        name    = _get_seq_name(seq)
+        quality = seq.letter_annotations["phred_quality"]
+
+        quality = [str(qual) for qual in quality]
+        fhand_qual.write('>%s\n%s\n' % (name , ' '.join(quality)))
+
+    fhand_qual.flush()
+    fhand_qual.seek(0)
+    return fhand_qual
+
 def temp_fasta_file(seqs, write_qual=False):
     '''Given a Seq and its default name it returns a fasta file in a
     temporary file. If the seq is a SeqWithQuality you can ask a qual fasta

@@ -4,7 +4,6 @@ Created on 2009 uzt 6
 @author: peio
 '''
 import unittest, os
-import biolib
 
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import temp_fasta_file
@@ -22,8 +21,7 @@ from biolib.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_masker_for_words)
-
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+from biolib.utils.misc_utils import DATA_DIR
 
 
 class SeqCleanerTest(unittest.TestCase):
@@ -317,7 +315,7 @@ class SeqCleanerTest(unittest.TestCase):
     @staticmethod
     def test_strip_vector_align_blast_plus():
         'It tests strip_vector_by_alignment using blast+ and UniVec'
-        vector = os.path.join(DATA_DIR, 'blast', 'univec')
+        vector = os.path.join(DATA_DIR, 'blast', 'univec+')
         vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'
@@ -327,14 +325,13 @@ class SeqCleanerTest(unittest.TestCase):
                             create_vector_striper_by_alignment(vector, 'blast+')
         striped_seq = strip_vector_by_alignment(seq)
         striped_seq = str(striped_seq.seq)
-
         assert seq1[4:14]  in striped_seq
         assert seq1[-14:-4]  in striped_seq
         assert vec1[4:14]  not in striped_seq
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def xtest_repeatmasking():
+    def test_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         mask_repeats_by_repeatmasker = \
                  create_masker_repeats_by_repeatmasker(species='eudicotyledons')
