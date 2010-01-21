@@ -343,6 +343,8 @@ def seqio(in_seq_fhand, out_seq_fhand, out_format,
 def cat(infiles, outfile):
     'It concatenates the given files'
     for infile in infiles:
+        if infile is None:
+            continue
         infile.seek(0)
         for line in infile:
             outfile.write(line)

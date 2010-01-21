@@ -25,7 +25,7 @@ import StringIO, tempfile
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, FileSequenceIndex,
-                                      quess_seq_type, cat)
+                                      quess_seq_type, cat, seqio)
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
     @staticmethod
@@ -214,6 +214,50 @@ class TestSequenceFileIndexer(unittest.TestCase):
         assert seqrec1.qual == [1, 2, 3]
         assert seqrec2.qual == [10]
 
+class TestSeqio(unittest.TestCase):
+    'It test the converter'
+    @staticmethod
+    def test_fastq_to_fasta_qual():
+        'It tests the conversion from fastq to fasta'
+        fcontent  = '@seq1\n'
+        fcontent += 'CCCT\n'
+        fcontent += '+\n'
+        fcontent += ';;3;\n'
+        fcontent += '@SRR001666.1\n'
+        fcontent += 'GTTGC\n'
+        fcontent += '+\n'
+        fcontent += ';;;;;\n'
+        fhand = StringIO.StringIO(fcontent)
+
+        out_seq_fhand = StringIO.StringIO()
+        out_qual_fhand = StringIO.StringIO()
+        seqio(in_seq_fhand=fhand, in_format='fastq',
+              out_seq_fhand=out_seq_fhand, out_qual_fhand=out_qual_fhand,
+              out_format='fasta')
+        assert out_seq_fhand.getvalue() == '>seq1\nCCCT\n>SRR001666.1\nGTTGC\n'
+        qual = '>seq1\n26 26 18 26\n>SRR001666.1\n26 26 26 26 26\n'
+        assert out_qual_fhand.getvalue() == qual
+
+    @staticmethod
+    def test_fastq_to_fastq_solexa():
+        'It tests the conversion using the Biopython convert function'
+        fcontent  = '@seq1\n'
+        fcontent += 'CCCT\n'
+        fcontent += '+\n'
+        fcontent += ';;3;\n'
+        fcontent += '@SRR001666.1\n'
+        fcontent += 'GTTGC\n'
+        fcontent += '+\n'
+        fcontent += ';;;;;\n'
+        fhand = StringIO.StringIO(fcontent)
+
+        out_seq_fhand = StringIO.StringIO()
+        seqio(in_seq_fhand=fhand, in_format='fastq',
+              out_seq_fhand=out_seq_fhand, out_format='fastq-solexa')
+        result = '@seq1\nCCCT\n+\nZZRZ\n@SRR001666.1\nGTTGC\n+\nZZZZZ\n'
+        assert out_seq_fhand.getvalue() == result
+
+
 class TestCat(unittest.TestCase):
     'It tests the sequence converter'
     @staticmethod
@@ -224,6 +268,11 @@ class TestCat(unittest.TestCase):
         outh = StringIO.StringIO()
         cat(infiles=[inh1, inh2], outfile=outh)
         assert outh.getvalue() == '>seq1\nACTG\n>seq2\nGTCA\n'
+
+        #it works also with None Values
+        outh = StringIO.StringIO()
+        cat(infiles=[None, None], outfile=outh)
+        assert outh.getvalue() == ''
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
