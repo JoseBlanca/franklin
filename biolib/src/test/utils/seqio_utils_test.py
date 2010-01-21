@@ -21,8 +21,6 @@ Created on 2009 uzt 28
 
 import unittest
 import StringIO, tempfile
-import biolib
-print biolib.__path__
 
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,

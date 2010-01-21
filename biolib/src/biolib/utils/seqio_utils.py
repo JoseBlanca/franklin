@@ -194,6 +194,19 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
+#the translation between our formats and the biopython formats
+BIOPYTHON_FORMATS = {'fasta': 'fasta',
+                     'fastq': 'fastq-sanger',
+                     'sfastq':'fastq-sanger',
+                     'fastq-sanger': 'fastq-sanger',
+                     'ifastq': 'fastq-illumina',
+                     'fastq-illumina': 'fastq-illumina',
+                     'fastq-solexa': 'fastq-solexa',
+                     'genbank': 'genbank',
+                     'gb': 'genbank',
+                     'embl': 'embl',
+                     'qual': 'qual',}
+
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
     if format is None:
@@ -205,7 +218,7 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     if seq_file_format is None and not open(seq_fhand.name).readline():
         raise StopIteration
 
-    seq_iter = SeqIO.parse(seq_fhand, seq_file_format)
+    seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[seq_file_format])
     if qual_fhand is None:
         qual_iter = None
     else:

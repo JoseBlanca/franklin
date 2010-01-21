@@ -65,17 +65,20 @@ def set_parameters():
             description = items[2]
         except IndexError:
             description = None
-        project = {'name':items[0], 'code':items[1],
-                   'description':description}
+        try:
+            code = items[1]
+        except IndexError:
+            code = None
+        project = {'name':items[0], 'code':code, 'description':description}
 
     if options.tag is None:
-        tag = 'EST'
+        parser.error('type of tag to change is mandatory')
     else:
         tag = options.tag
 
     # check if database and filecache are None. One of them is necessary
     if database is None and filecache is None:
-        parser.error('Database or filecache ir mandatory!')
+        parser.error('Database or filecache is mandatory!')
 
     return infhand, outfhand, format, database, filecache, project, tag
 
@@ -92,9 +95,13 @@ def main():
         # check if the project exists
         project_name = project['name']
         if not project_in_database(engine, project_name):
-            add_project_to_naming_database(engine, name=project_name,
+            if project['code']:
+                add_project_to_naming_database(engine, name=project_name,
                                            code=project['code'],
                                            description=project['description'])
+            else:
+                msg = 'To add a new project to the database the code should be given'
+                raise ValueError(msg)
 
         # create a naming schema
         naming = DbNamingSchema(engine, project_name)
@@ -115,7 +122,7 @@ def main():
         naming.commit()
     except:
         #if we don't commit we lose the changes in the database
-        pass
+        raise
 
 if __name__ == '__main__':
     main()
