@@ -27,7 +27,8 @@ from biolib.utils.misc_utils import NamedTemporaryDir
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy
 
-def call(cmd, environment=None, stdin=None, raise_on_error=False):
+def call(cmd, environment=None, stdin=None, raise_on_error=False,
+         stdout=None, stderr=None):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -40,6 +41,10 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False):
         pstdin = None
     else:
         pstdin = subprocess.PIPE
+    if stdout is None:
+        stdout = subprocess.PIPE
+    if stderr is None:
+        stderr = subprocess.PIPE
     #we want to inherit the environment, and modify it
     if environment is not None:
         new_env = {}
@@ -49,9 +54,9 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False):
             new_env[key] = value
         environment = new_env
     try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=environment,
-                               stdin=pstdin, preexec_fn=subprocess_setup)
+        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                   env=environment, stdin=pstdin,
+                                   preexec_fn=subprocess_setup)
     except OSError:
         raise OSError('No such file or directory, executable was ' + cmd[0])
     if stdin is None:
