@@ -41,7 +41,7 @@ def append_to_fasta(seq, seq_fhand, qual_fhand=None):
         qual_fasta = fasta_str(" ".join(qual), name, description)
         qual_fhand.write(qual_fasta)
 
-def _get_seq_name(seq):
+def get_seq_name(seq):
     'Given a sequence and its default name it returns its name'
     try:
         name = seq.name
@@ -68,7 +68,7 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
         pass
 
     for seq in seqs:
-        name = _get_seq_name(seq)
+        name = get_seq_name(seq)
 
         if fhand_qual is not None:
             try:
@@ -100,7 +100,7 @@ def temp_qual_file(seqs):
     'Given a qual seq it return a temporary qual fasta file'
     fhand_qual = tempfile.NamedTemporaryFile(suffix='.qual')
     for seq in seqs:
-        name    = _get_seq_name(seq)
+        name    = get_seq_name(seq)
         quality = seq.letter_annotations["phred_quality"]
 
         quality = [str(qual) for qual in quality]
@@ -236,6 +236,7 @@ def _seqs_in_file_with_repr(seq_fhand):
     'It yields all the sequences in repr format in a file'
     from Bio.Alphabet import *
     from Bio.SeqFeature import *
+    from biolib.seq.seqs import SeqFeature
     from Bio.Seq import Seq
 
     buffer_ = ''

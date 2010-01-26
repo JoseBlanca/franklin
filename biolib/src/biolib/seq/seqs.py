@@ -21,6 +21,7 @@ Created on 2009 mar 27
 
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq as BioSeq
+from Bio.SeqFeature import SeqFeature as BioSeqFeature
 
 def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
                           id_=None):
@@ -113,14 +114,28 @@ class SeqWithQuality(SeqRecord):
         including annotations and feautures'''
         toprint     = SeqRecord.__repr__(self)
         toprint = toprint[:-1]
-        toprint += ', features=%s, ' % self.features.__repr__()
-        toprint += 'annotations=%s' % self.annotations.__repr__()
+        toprint += ', features=%s, ' % repr(self.features)
+        toprint += 'annotations=%s' % repr(self.annotations)
         toprint += ")"
-
         return toprint
 
+class SeqFeature(BioSeqFeature):
+    '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
+    methods'''
+    def __init__(self, *args, **kwargs):
+        BioSeqFeature.__init__(self, *args, **kwargs)
+
+    def __repr__(self):
+        'It prints representing the seqfeature'
+        toprint = BioSeqFeature.__repr__(self)
+        toprint = toprint[:-1]
+        toprint += ', qualifiers=%s ' % repr(self.qualifiers)
+        toprint += ")"
+        return toprint
+
+
 from Bio import Alphabet
-import string
+from string import maketrans
 from Bio.Data.IUPACData import (ambiguous_dna_complement,
                                 ambiguous_rna_complement)
 def _maketrans(complement_mapping) :
@@ -141,7 +156,7 @@ def _maketrans(complement_mapping) :
     after  = ''.join(complement_mapping.values())
     before = before + before.lower()
     after  = after + after.lower()
-    return string.maketrans(before, after)
+    return maketrans(before, after)
 
 _dna_complement_table = _maketrans(ambiguous_dna_complement)
 _rna_complement_table = _maketrans(ambiguous_rna_complement)

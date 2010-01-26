@@ -20,41 +20,58 @@ Created on 15/01/2010
 
 import os, unittest
 from biolib.utils.misc_utils import DATA_DIR
-from biolib.seq.seq_annotation import get_orthologs, get_descriptions_from_blasts
-
-class OrthologsTests(unittest.TestCase):
-    'It test basic use of the orthologs functions'
-    @staticmethod
-    def test_get_orthologs():
-        'It tests the get_orthologs functions'
-        blast_file  = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
-        blast_file2 = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
-
-        orthologs = get_orthologs(blast_file, blast_file2)
-        #print orthologs.next()
-        assert orthologs.next() == ('melon1', 'tair1')
-        assert orthologs.next() == ('melon2', 'tair2')
+from biolib.seq.seqs import SeqWithQuality
+from biolib.seq.seq_annotation import (_get_descriptions_from_blasts,
+                                       create_microsatelite_annotator,
+                                       create_ortholog_annotator,
+                                       create_description_annotator)
 
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
     @staticmethod
-    def test_get_description_basic():
-        'It tests if we can get description for seqs in blasts'
-        # this fasta does not have definitio information
-        blast = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
-        assert get_descriptions_from_blasts([blast]) == {}
+    def test_orthologs_annotator():
+        'It test the ortholog annotator'
+        blast_fhand  = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
+        reverse_blast_fhand = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
+        blast = {'results':{'blast':blast_fhand}}
+        reverse_blast = {'results':{'blast':reverse_blast_fhand}}
+        ortho_annotator = create_ortholog_annotator(blast, reverse_blast,
+                                                    species='arabidopsis')
+        sequence = SeqWithQuality(seq='aaa', name='melon1')
+        sequence = ortho_annotator(sequence)
+        assert sequence.annotations['arabidopsis-orthologs'] == ['tair1']
+
+        sequence = SeqWithQuality(seq='aaa', name='melon2')
+        sequence = ortho_annotator(sequence)
+        assert sequence.annotations['arabidopsis-orthologs'] == ['tair2']
 
     @staticmethod
     def test_get_description_with_funct():
         'It tests if we can get description for seqs in blasts. with mod funct'
         # test with a modifier function
-        blast = open(os.path.join(DATA_DIR, 'blast2.xml'))
-        blast = {'fhand':blast, 'desc_modifier': lambda(x):x.split('|')[2]}
-        assert get_descriptions_from_blasts([blast]) == \
-                    {u'CUTC021854': u' ankyrin repeat family protein ',
-                     u'CUTC021853': u' DNA-binding protein-related '}
+        blast_fhand = open(os.path.join(DATA_DIR, 'blast2.xml'))
+        blast = {'results':{'blast':blast_fhand}, 'modifier':lambda(x):x.split('|')[2]}
+        descrip_annotator = create_description_annotator([blast])
+        sequence = SeqWithQuality(seq='aaa', name='CUTC021854')
+        sequence = descrip_annotator(sequence)
+        assert sequence.annotations['description'] == \
+                                                'ankyrin repeat family protein'
+        sequence = SeqWithQuality(seq='aaa', name='CUTC021853')
+        sequence = descrip_annotator(sequence)
+        assert sequence.annotations['description'] == \
+                                                'DNA-binding protein-related'
 
+    @staticmethod
+    def test_microsatelite_annotator():
+        'It test the srrs annotator'
+        seq = 'atgatgatgatgatgatgatgatgatgatggcgcgcgcgcgcgcgcgcgcgcgcgcg'
+        ssr_annot = create_microsatelite_annotator()
+        seq1 = SeqWithQuality(seq=seq, qual=[30]* len(seq), description='desc')
+        seq1 = ssr_annot(seq1)
+        assert seq1.features[0].qualifiers['score'] == 27
+
+    
 
 
 if __name__ == "__main__":

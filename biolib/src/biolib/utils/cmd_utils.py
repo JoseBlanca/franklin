@@ -161,7 +161,29 @@ RUNNER_DEFINITIONS = {
             'output':{'sequence':{'option': '-output',
                                   'files_format':['fasta', 'qual']}}
             },
+    'sputnik':{'binary':'sputnik',
+               'parameters':{
+                             'max_unit_length':{'option':'-u', 'default':4},
+                             'min_unit_length':{'option':'-v', 'default':2},
+                             'min_length_of_ssr':{'option':'-L', 'default':20}
+                             },
+               'input':{'sequence':{'option':ARGUMENT,
+                                    'arg_before_params':False,
+                                    'files_format':['fasta']}
+                       },
+               'output':{'sputnik':{'option':STDOUT}}
+               },
+    'ESTscan':{'binary':'ESTscan',
+               'parameters':{ 'matrix':{'option':'-M'},
+                             'translate':{'option':'-t', 'default':''}},
+               'input':{'sequence':{'option':ARGUMENT,
+                                    'arg_before_params':False,
+                                    'files_format':['fasta']}},
+               'output':{'dna':{'option':STDOUT, 'file_format':'fasta'},
+                         'protein':{'option': '-t', 'file_format':'fasta'}}
+               }
     }
+
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
     It returns the parameters need by programa'''
@@ -430,6 +452,7 @@ def translate(seq):
     if retcode != 0:
         raise RuntimeError(stderr)
     return parse_fasta(stdout)
+
 def get_best_orf(seq, matrix_path=None):
     '''It returns a new seq with the orf '''
 
