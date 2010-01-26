@@ -83,7 +83,7 @@ def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
                 raise AttributeError('Quality can not be empty')
         try:
             desc = seq.description
-        except:
+        except AttributeError:
             desc = None
         if desc == "<unknown description>":
             desc = None
@@ -135,7 +135,6 @@ def create_temp_fasta_files(seq1, seq2):
 
 def parse_fasta(seq_fhand, qual_fhand=None):
     '''It returns the fasta file content giving a file hanler'''
-    seq  = []
     qual = None
     name, description, seq = get_content_from_fasta(seq_fhand)
     if qual_fhand is not None:
@@ -193,7 +192,9 @@ def guess_seq_file_format(fhand):
     line = fhand.readline()
     if not line:
         return None
-    if line[0] == '>':
+    if line[:4] in ('SeqW', 'SeqR'):
+        format_ = 'repr'
+    elif line[0] == '>':
         item = fhand.readline().strip()[0]
         if item.isdigit():
             format_ = 'qual'
@@ -224,25 +225,43 @@ BIOPYTHON_FORMATS = {'fasta': 'fasta',
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
     if format is None:
-        seq_file_format = guess_seq_file_format(seq_fhand)
+        format = guess_seq_file_format(seq_fhand)
+    if format == 'repr':
+        return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
     else:
-        seq_file_format = format
+        return _seqs_in_file_with_bio(seq_fhand=seq_fhand, format=format,
+                                      qual_fhand=qual_fhand)
 
-    #if the format is None maybe the file is empty
-    if seq_file_format is None and not open(seq_fhand.name).readline():
+def _seqs_in_file_with_repr(seq_fhand):
+    'It yields all the sequences in repr format in a file'
+    from Bio.Alphabet import *
+    from Bio.SeqFeature import *
+    from Bio.Seq import Seq
+
+    buffer_ = ''
+    for line in seq_fhand:
+        if line[:4] in ('SeqW', 'SeqR'):
+            if buffer_:
+                yield eval(buffer_)
+                buffer_ = ''
+            buffer_ += line
+    if buffer_:
+        yield eval(buffer_)
+    else:
         raise StopIteration
 
-    seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[seq_file_format])
+def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
+    '''It yields a seqrecord for each of the sequences found in the seq file
+    using biopython'''
+    #if the format is None maybe the file is empty
+    if format is None and not open(seq_fhand.name).readline():
+        raise StopIteration
+
+    seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[format])
     if qual_fhand is None:
         qual_iter = None
     else:
-        if format is None:
-            qual_file_format = guess_seq_file_format(qual_fhand)
-        elif format == 'fasta':
-            qual_file_format = 'qual'
-        else:
-            qual_file_format = format
-        qual_iter = SeqIO.parse(qual_fhand, qual_file_format)
+        qual_iter = SeqIO.parse(qual_fhand, 'qual')
 
     for seqrec in seq_iter:
         #do we have quality?
@@ -305,7 +324,7 @@ class FileSequenceIndex(object):
             else:
                 name, description, qual = get_content_from_fasta(seq_content,
                                                                 kind='qual')
-                seq=UnknownSeq(length=len(qual))
+                seq = UnknownSeq(length=len(qual))
             seqrec = SeqWithQuality(seq=seq, qual=qual)
             if name is not None:
                 seqrec.name = name
@@ -319,13 +338,17 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     The seqs can be an iterartor or a list of Biopython SeqRecords or
     SeqWithQualities'''
     for seq in seqs:
-        if ('phred_quality' not in seq.letter_annotations or
-            not seq.letter_annotations['phred_quality']):
-            qual = [30] * len(seq.seq)
-            seq.letter_annotations['phred_quality'] = qual
-        SeqIO.write([seq], seq_fhand, BIOPYTHON_FORMATS[format])
-        if qual_fhand and format == 'fasta':
-            SeqIO.write([seq], qual_fhand, 'qual')
+        if format == 'repr':
+            seq_fhand.write(repr(seq) + '\n')
+        else:
+            if ('phred_quality' not in seq.letter_annotations or
+                not seq.letter_annotations['phred_quality']):
+                qual = [30] * len(seq.seq)
+                seq.letter_annotations['phred_quality'] = qual
+            SeqIO.write([seq], seq_fhand, BIOPYTHON_FORMATS[format])
+            if qual_fhand and format == 'fasta':
+                SeqIO.write([seq], qual_fhand, 'qual')
+
 
 def seqio(in_seq_fhand, out_seq_fhand, out_format,
           in_qual_fhand=None, out_qual_fhand=None, in_format=None):

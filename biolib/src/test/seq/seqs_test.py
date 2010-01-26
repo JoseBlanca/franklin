@@ -21,7 +21,7 @@ Created on 2009 mar 27
 
 import unittest
 from biolib.seq.seqs import SeqWithQuality, Seq
-
+from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 class SeqsTest(unittest.TestCase):
     '''Tests the seq with quality class '''
     #pylint: disable-msg=R0904
@@ -96,6 +96,28 @@ class SeqsTest(unittest.TestCase):
         seq = SeqWithQuality(seq='A', description=desc, annotations=annots)
         assert seq.description is desc
         assert seq.annotations is annots
+
+
+    @staticmethod
+    def test_repr():
+        'It test the __repr__ function'
+        desc = 'a short sequence'
+        annots = {'type':'region', 'go':['0001', '0002'], 'database':'my'}
+        from Bio.Alphabet import generic_dna, DNAAlphabet
+        seq1 = SeqWithQuality(name = 'seq1', seq = Seq('aaaccttt', generic_dna),
+                              description=desc, annotations=annots,
+                              qual = [2, 4 , 1, 4, 5, 6, 12, 34], )
+        seqfeature = SeqFeature(location=FeatureLocation(5, 8), type='ortholog',
+                            qualifiers={'arabidposys':['arab1', 'arab2']})
+        seq1.features.append(seqfeature)
+
+        print repr(seq1.seq)
+
+        print repr(seq1)
+        a = eval(repr(seq1))
+        print a.annotations
+        print a.features
+        print a.seq
 
 class SeqTest(unittest.TestCase):
     'It tests the Seq object.'

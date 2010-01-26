@@ -108,6 +108,17 @@ class SeqWithQuality(SeqRecord):
                                                    seq2.letter_annotations[name]
         return new_seq
 
+    def __repr__(self):
+        '''It writes the representation of the whole serecord,
+        including annotations and feautures'''
+        toprint     = SeqRecord.__repr__(self)
+        toprint = toprint[:-1]
+        toprint += ', features=%s, ' % self.features.__repr__()
+        toprint += 'annotations=%s' % self.annotations.__repr__()
+        toprint += ")"
+
+        return toprint
+
 from Bio import Alphabet
 import string
 from Bio.Data.IUPACData import (ambiguous_dna_complement,

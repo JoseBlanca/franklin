@@ -25,7 +25,12 @@ import StringIO, tempfile
 from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, FileSequenceIndex,
-                                      quess_seq_type, cat, seqio)
+                                      quess_seq_type, cat, seqio,
+    write_seqs_in_file)
+from Bio.Seq import  Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import SeqFeature, FeatureLocation
+
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
     @staticmethod
@@ -273,6 +278,32 @@ class TestCat(unittest.TestCase):
         outh = StringIO.StringIO()
         cat(infiles=[None, None], outfile=outh)
         assert outh.getvalue() == ''
+
+class TestReprIn_Out(unittest.TestCase):
+    'Tests repr write and read functions'
+    @staticmethod
+    def test_repr():
+        'It test seqs in file read and write with repr'
+        fhand = StringIO.StringIO()
+        seq1 = SeqWithQuality(id='seqid', name='seqname',
+                         description='seqdescription', seq=Seq('ATGAT'))
+        seq1.letter_annotations["phred_quality"] = [40, 40, 38, 30, 30]
+        seq1.annotations['source'] = 'ara1'
+
+        seqfeature = SeqFeature(location=FeatureLocation(5, 8),
+                                type='orthologs',
+                                qualifiers={'arabidposys':['arab1', 'arab2']})
+        seq1.features.append(seqfeature)
+        write_seqs_in_file([seq1], fhand, format='repr')
+        seqs = seqs_in_file(fhand)
+        seq0 = seqs.next()
+        assert repr(seq0) == repr(seq1)
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

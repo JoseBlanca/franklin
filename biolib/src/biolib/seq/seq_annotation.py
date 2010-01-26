@@ -26,6 +26,11 @@ from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
 from biolib.utils.cmd_utils import call
 
+def create_ortholog_annotator(blast1_fhand, blast2_fhand):
+    '''It creates a function factory that calculates all the orthologs between
+     crossed species. First it calculates all the orthologs'''
+
+
 def get_orthologs(blast1_fhand, blast2_fhand):
     '''It return orthologs from two pools. It needs the xml otput blast of the
     pools'''
@@ -116,10 +121,6 @@ def _parse_sputnik_output(output):
     'It parses the sputnik output'
     return
 
-
-
-
-#$bin -u $max_unit_length -v $min_unit_length -L $min_length_of_ssr $in_file > $out_file"
 
 
 
