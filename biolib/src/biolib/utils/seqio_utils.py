@@ -255,7 +255,8 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
     '''It yields a seqrecord for each of the sequences found in the seq file
     using biopython'''
     seq_fhand.seek(0)
-    qual_fhand.seek(0)
+    if qual_fhand is not None:
+        qual_fhand.seek(0)
     #if the format is None maybe the file is empty
     if format is None and not open(seq_fhand.name).readline():
         raise StopIteration

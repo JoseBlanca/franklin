@@ -406,7 +406,7 @@ def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     return result
 
 
-class SeqcleanRunner(object):
+class xSeqcleanRunner(object):
     '''Class to run seqclean '''
     def __init__(self, parameters, ):
         '''Initiator
@@ -439,8 +439,9 @@ class SeqcleanRunner(object):
         seq, name, description = parse_fasta(fhand_new_seq)
         return seq
 
-## This two functions have to be ported to the new runner schema
-def translate(seq):
+
+## This function have to be ported to the new runner schema
+def xtranslate(seq):
     '''It translates the dna sequence to protein. It uses emboss binary
     transeq'''
 
@@ -453,26 +454,3 @@ def translate(seq):
         raise RuntimeError(stderr)
     return parse_fasta(stdout)
 
-def get_best_orf(seq, matrix_path=None):
-    '''It returns a new seq with the orf '''
-
-    if matrix_path is None:
-        raise ValueError('ESTscan need a matrix to be able to work')
-    elif not os.path.exists(matrix_path):
-        raise OSError('Matrix file not found: ' + matrix_path)
-
-    estscan_binary = '/usr/local/bin/ESTScan'
-    fasta_fileh = temp_fasta_file(seq)
-    file_orfh = tempfile.NamedTemporaryFile(suffix='.orf')
-
-    cmd = [estscan_binary, '-M', matrix_path, fasta_fileh.name,
-           '-t', file_orfh.name]
-    stdout, stderr, retcode = call(cmd)
-
-    if retcode :
-        raise RuntimeError(stderr)
-
-    stdout    = StringIO.StringIO(stdout)
-    orf_dna  = parse_fasta(stdout)[0]
-    orf_prot = parse_fasta(file_orfh)[0]
-    return orf_dna, orf_prot

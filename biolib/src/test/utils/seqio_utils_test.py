@@ -26,10 +26,10 @@ from biolib.seq.seqs import SeqWithQuality
 from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, FileSequenceIndex,
                                       quess_seq_type, cat, seqio,
-    write_seqs_in_file)
+                                      write_seqs_in_file)
 from Bio.Seq import  Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.SeqFeature import SeqFeature, FeatureLocation
+from Bio.SeqFeature import FeatureLocation
+from biolib.seq.seqs import SeqFeature
 
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'
@@ -298,11 +298,6 @@ class TestReprIn_Out(unittest.TestCase):
         seqs = seqs_in_file(fhand)
         seq0 = seqs.next()
         assert repr(seq0) == repr(seq1)
-
-
-
-
-
 
 
 if __name__ == "__main__":

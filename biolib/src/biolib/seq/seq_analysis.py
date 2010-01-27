@@ -257,3 +257,9 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
                              'query_end':     match['end']
                              })
     return similar_seqs
+
+def build_sequence_clusters(aligner_config, filters=None):  
+
+    pass
+
+

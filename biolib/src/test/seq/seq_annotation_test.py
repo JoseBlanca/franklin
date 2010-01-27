@@ -24,7 +24,8 @@ from biolib.seq.seqs import SeqWithQuality
 from biolib.seq.seq_annotation import (create_microsatelite_annotator,
                                        create_ortholog_annotator,
                                        create_description_annotator,
-                                       create_orf_annotator)
+                                       create_orf_annotator,
+                                       create_superunigene_annotator)
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'

@@ -24,7 +24,8 @@ from biolib.seq.seqs import SeqWithQuality, Seq
 from biolib.seq.seq_analysis import (infer_introns_for_cdna,
                                      _infer_introns_from_matches,
                                      look_for_similar_sequences,
-                                     est2genome_parser)
+                                     est2genome_parser,
+                                     build_sequence_clusters)
 from biolib.utils.misc_utils import DATA_DIR
 from biolib.utils.seqio_utils import FileSequenceIndex
 
@@ -285,6 +286,15 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         assert similar_seqs[0]['name'] == 'AT5G19860.1'
         assert similar_seqs[0]['query_start'] == 1
         assert similar_seqs[0]['subject_start'] == 323
+
+    @staticmethod
+    def test_build_sequence_clusters():
+        'It test the build sequences_cluster function'
+        blast_fhand = open(os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes'))
+        aligner_config = {'results':{'blast':blast_fhand}}
+        clusters = build_sequence_clusters(aligner_config)
+        print clusters
+
 
 
 if __name__ == "__main__":
