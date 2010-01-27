@@ -21,11 +21,10 @@ Created on 15/01/2010
 import os, unittest
 from biolib.utils.misc_utils import DATA_DIR
 from biolib.seq.seqs import SeqWithQuality
-from biolib.seq.seq_annotation import (_get_descriptions_from_blasts,
-                                       create_microsatelite_annotator,
+from biolib.seq.seq_annotation import (create_microsatelite_annotator,
                                        create_ortholog_annotator,
-                                       create_description_annotator)
-
+                                       create_description_annotator,
+                                       create_orf_annotator)
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -67,11 +66,27 @@ class AnnotationTests(unittest.TestCase):
         'It test the srrs annotator'
         seq = 'atgatgatgatgatgatgatgatgatgatggcgcgcgcgcgcgcgcgcgcgcgcgcg'
         ssr_annot = create_microsatelite_annotator()
-        seq1 = SeqWithQuality(seq=seq, qual=[30]* len(seq), description='desc')
-        seq1 = ssr_annot(seq1)
+        seq1 = SeqWithQuality(seq=seq)
+        ssr_annot(seq1)
         assert seq1.features[0].qualifiers['score'] == 27
 
-    
+    @staticmethod
+    def test_orf_annotator():
+        'It tests that we can annotate orfs'
+        seq  = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
+        seq += 'GCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
+        seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
+        seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
+        seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
+        seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
+        seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTACTGGACCATG'
+        seq += 'TGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+        seq1 = SeqWithQuality(seq=seq)
+        matrix_fpath = os.path.join(DATA_DIR, 'At.smat')
+        annotator = create_orf_annotator(parameters={'matrix':matrix_fpath})
+        annotator(seq1)
+        assert len(seq1.features) == 1
+        assert seq1.features[0].type == 'orf'
 
 
 if __name__ == "__main__":

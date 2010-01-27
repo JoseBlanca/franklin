@@ -26,8 +26,12 @@ from biolib.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
 from biolib.utils.cmd_utils import  create_runner
 from biolib.utils.seqio_utils import get_seq_name
-from Bio.SeqFeature import  FeatureLocation
 from biolib.seq.seqs import SeqFeature
+from biolib.utils.seqio_utils import get_content_from_fasta
+
+from Bio.SeqFeature import  FeatureLocation
+from Bio.Alphabet import generic_dna, generic_protein
+from Bio.Seq import Seq
 
 def create_ortholog_annotator(blast, reverse_blast, species):
     '''It creates a function factory that calculates all the orthologs between
@@ -136,11 +140,11 @@ def _get_descriptions_from_blasts(blasts):
 
 def create_microsatelite_annotator():
     'It creates a function that'
-    srrs_runner = create_runner(tool='sputnik')
+    runner = create_runner(tool='sputnik')
 
     def search_ssr(sequence):
         'Do the actual search'
-        srrs_out_fhand = srrs_runner(sequence)['sputnik']
+        srrs_out_fhand = runner(sequence)['sputnik']
         for feature in _get_features_from_sputnik(srrs_out_fhand):
             sequence.features.append(feature)
         return sequence
@@ -161,7 +165,26 @@ def _get_features_from_sputnik(fhand):
             yield SeqFeature(location=FeatureLocation(start, end), type='ssr',
                              qualifiers={'score':score, 'unit':unit,
                                          'type':ssr_type})
+def create_orf_annotator(parameters):
+    'It creates a function that annotates orfs'
+    runner = create_runner(tool='estscan', parameters=parameters)
 
+    def annotate_orf(sequence):
+        'It adds the orf to the SeqFeatures'
+        results = runner(sequence)
+        dna_fhand = results['dna']
+        prot_fhand = results['protein']
+        description, seq = get_content_from_fasta(dna_fhand)[1:]
+        pep = get_content_from_fasta(prot_fhand)[-1]
+        start, end = description.split()[-2:]
+        start, end = int(start), int(end)
+        seq = Seq(seq, generic_dna)
+        pep = Seq(pep, generic_protein)
+        feature = SeqFeature(location=FeatureLocation(start, end), type='orf',
+                             qualifiers={'dna':seq, 'pep':pep})
+        sequence.features.append(feature)
+
+    return annotate_orf
 
 
 

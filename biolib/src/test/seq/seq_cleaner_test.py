@@ -190,7 +190,7 @@ class SeqCleanerTest(unittest.TestCase):
 
     @staticmethod
     def test_strip_seq_by_quality_lucy2():
-        'It tests strip_seq_by_quality_liucy2'
+        'It tests strip_seq_by_quality_lucy2'
         seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCA'

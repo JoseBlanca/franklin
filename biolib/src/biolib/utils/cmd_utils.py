@@ -153,11 +153,9 @@ RUNNER_DEFINITIONS = {
                       'error'  :{'option':'-e', 'default':[0.015, 0.015]},
                       'vector' :{'option':'-vector'}
                       },
-
-#            'input':{'option': ARGUMENT,  'arg_before_params':True,
-#                     'files':['seq', 'qual']},
-             'input':{'sequence':{'option': ARGUMENT,  'arg_before_params':True,
-                               'files_format':['fasta', 'qual']}},
+            'input':{'sequence':{'option': ARGUMENT,
+                                 'arg_before_params':True,
+                                 'files_format':['fasta', 'qual']}},
             'output':{'sequence':{'option': '-output',
                                   'files_format':['fasta', 'qual']}}
             },
@@ -173,14 +171,14 @@ RUNNER_DEFINITIONS = {
                        },
                'output':{'sputnik':{'option':STDOUT}}
                },
-    'ESTscan':{'binary':'ESTscan',
+    'estscan':{'binary':'ESTScan',
                'parameters':{ 'matrix':{'option':'-M'},
                              'translate':{'option':'-t', 'default':''}},
                'input':{'sequence':{'option':ARGUMENT,
                                     'arg_before_params':False,
                                     'files_format':['fasta']}},
-               'output':{'dna':{'option':STDOUT, 'file_format':'fasta'},
-                         'protein':{'option': '-t', 'file_format':'fasta'}}
+               'output':{'dna':{'option':STDOUT, 'files_format':['fasta']},
+                         'protein':{'option': '-t', 'files_format':['fasta']}}
                }
     }
 
@@ -358,6 +356,8 @@ def create_runner(tool, parameters=None, environment=None):
                 fhands = StringIO.StringIO(stdout)
             else:
                 fhands = [open(fpath) for fpath in values['fpaths']]
+                if len(fhands) == 1:
+                    fhands = fhands[0]
 
             returns[key] = fhands
         return returns
