@@ -24,7 +24,8 @@ from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from biolib.utils.collections_ import list_consecutive_pairs_iter
-
+from biolib.seq.seq_annotation import get_hit_pairs_fom_blast
+from tempfile import NamedTemporaryFile
 def _infer_introns_from_matches(alignments):
     'Given a match with several match parts it returns the introns'
     try:
@@ -151,12 +152,12 @@ def _infer_introns_for_cdna_blast(sequence, genomic_db):
     return introns
 
 def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                       genomic_seqs_index):
+                                                            genomic_seqs_index):
     'It infers the intron location in the cdna using est2genome'
 
     #first we want to know where is the most similar seq in the genomic_db
     #this will speed up things
-    similar_seqs = look_for_similar_sequences(sequence, db=genomic_db,
+    similar_seqs = look_for_similar_sequences(sequence, database=genomic_db,
                                               blast_program='blastn')
     if not similar_seqs:
         return []
@@ -217,15 +218,16 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
 
 
 
-def look_for_similar_sequences(sequence, db, blast_program, filters=None):
+def look_for_similar_sequences(sequence, database, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
-    parameters = {'database': db, 'program':blast_program}
+    parameters = {'database': database, 'program':blast_program}
 
     blast_runner = create_runner(tool='blast', parameters=parameters)
     blast_fhand = blast_runner(sequence)['blast']
     return similar_sequences_for_blast(blast_fhand, filters=filters)
 
 def similar_sequences_for_blast(blast_fhand, filters=None):
+    'It look fro similar sequences ina blast result'
     #now we parse the blast
     blast_parser = get_alignment_parser('blast')
     blast_result = blast_parser(blast_fhand)
@@ -258,8 +260,41 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
                              })
     return similar_seqs
 
-def build_sequence_clusters(aligner_config, filters=None):  
+def build_sequence_clusters(aligner_config, filters=None):
+    '''It builds sequence clusters. It need sequences or the blast results of
+    all against all alignment'''
 
-    pass
+    alignment_result = aligner_config['results']['blast']
+    if filters is None:
+        filters = [{'kind' : 'min_scores',
+                    'score_key'      : 'similarity',
+                    'min_score_value': 96},
+                   {'kind'          : 'min_length',
+                    'min_length_bp' : 15}]
+    pairs = get_hit_pairs_fom_blast(alignment_result, filters=filters)
+    # run of to run tclust
+    input_fhand  = NamedTemporaryFile()
+    for pair1, pair2 in pairs:
+        if pair1 != pair2:
+            input_fhand.write("%s\t%s\n" % (pair1, pair2))
+    input_fhand.flush()
+    #print open(input_fhand.name).read()
+    cmd = ['tclust', input_fhand.name]
+    tclust_result = call(cmd, raise_on_error=True)[0]
+    if tclust_result:
+        return _parse_tclust_result(tclust_result)
+    else:
+        return None
 
+def _parse_tclust_result(result):
+    '''It parses tcust result. It return a list of clusters as listt of elements
+    [['element1', 'element2'], ['element3', 'element4']]
+    '''
+    clusters = []
+    for line in result.split('\n'):
+        line = line.strip()
+        if not line or line[0] == '>':
+            continue
+        clusters.append(line.split())
+    return clusters
 

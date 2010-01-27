@@ -20,59 +20,11 @@ This module provides utilities to run external commands into biolib
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 
-from biolib.utils.seqio_utils import (temp_fasta_file, parse_fasta,
-                                      temp_qual_file)
+from biolib.utils.seqio_utils import temp_fasta_file, temp_qual_file
 from biolib.utils.misc_utils import NamedTemporaryDir
 
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy
-
-def call(cmd, environment=None, stdin=None, raise_on_error=False,
-         stdout=None, stderr=None):
-    'It calls a command and it returns stdout, stderr and retcode'
-    def subprocess_setup():
-        ''' Python installs a SIGPIPE handler by default. This is usually not
-        what non-Python subprocesses expect.  Taken from this url:
-        http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
-        2009-07-02-python-sigpipe'''
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-    if stdin is None:
-        pstdin = None
-    else:
-        pstdin = subprocess.PIPE
-    if stdout is None:
-        stdout = subprocess.PIPE
-    if stderr is None:
-        stderr = subprocess.PIPE
-    #we want to inherit the environment, and modify it
-    if environment is not None:
-        new_env = {}
-        for key, value in os.environ.items():
-            new_env[key] = value
-        for key, value in environment.items():
-            new_env[key] = value
-        environment = new_env
-    try:
-        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
-                                   env=environment, stdin=pstdin,
-                                   preexec_fn=subprocess_setup)
-    except OSError:
-        raise OSError('No such file or directory, executable was ' + cmd[0])
-    if stdin is None:
-        stdout, stderr = process.communicate()
-    else:
-#        a = stdin.read()
-#        print a
-#        stdout, stderr = subprocess.Popen.stdin = stdin
-#        print stdin.read()
-        stdout, stderr = process.communicate(stdin)
-    retcode = process.returncode
-    if raise_on_error:
-        if retcode:
-            raise RuntimeError(stderr)
-    return stdout, stderr, retcode
-
 
 # Runner definitions, Define here the parameters of the prgrams you want to
 # use with this class
@@ -266,7 +218,7 @@ def _build_cmd(cmd_params, runner_def):
     cmd_args_end = []
 
     for parameters in (inputs, outputs):
-        for name, parameter in parameters.items():
+        for parameter in parameters.values():
             fpaths = parameter['fpaths']
             if parameter['option'] == STDIN:
                 stdin = parameter['fhands'][0].read()
@@ -363,6 +315,51 @@ def create_runner(tool, parameters=None, environment=None):
         return returns
     return run_cmd_for_sequence
 
+def call(cmd, environment=None, stdin=None, raise_on_error=False,
+         stdout=None, stderr=None):
+    'It calls a command and it returns stdout, stderr and retcode'
+    def subprocess_setup():
+        ''' Python installs a SIGPIPE handler by default. This is usually not
+        what non-Python subprocesses expect.  Taken from this url:
+        http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
+        2009-07-02-python-sigpipe'''
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    if stdin is None:
+        pstdin = None
+    else:
+        pstdin = subprocess.PIPE
+    if stdout is None:
+        stdout = subprocess.PIPE
+    if stderr is None:
+        stderr = subprocess.PIPE
+    #we want to inherit the environment, and modify it
+    if environment is not None:
+        new_env = {}
+        for key, value in os.environ.items():
+            new_env[key] = value
+        for key, value in environment.items():
+            new_env[key] = value
+        environment = new_env
+    try:
+        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                   env=environment, stdin=pstdin,
+                                   preexec_fn=subprocess_setup)
+    except OSError:
+        raise OSError('No such file or directory, executable was ' + cmd[0])
+    if stdin is None:
+        stdout, stderr = process.communicate()
+    else:
+#        a = stdin.read()
+#        print a
+#        stdout, stderr = subprocess.Popen.stdin = stdin
+#        print stdin.read()
+        stdout, stderr = process.communicate(stdin)
+    retcode = process.returncode
+    if raise_on_error:
+        if retcode:
+            raise RuntimeError(stderr)
+    return stdout, stderr, retcode
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     '''It returns masked sequence (StrinIO) for the given sequence.

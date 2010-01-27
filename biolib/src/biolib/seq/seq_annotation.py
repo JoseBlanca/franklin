@@ -56,23 +56,24 @@ def _get_orthologs(blast1_fhand, blast2_fhand):
     pools'''
     # First we have to get hist from the first blast. We will put the in a set
     blast1_hits = set()
-    for hits in _get_hit_pairs_fom_blast(blast1_fhand):
+    for hits in get_hit_pairs_fom_blast(blast1_fhand):
         blast1_hits.add(hits)
 
     # Know we will see if the hits in the second blast in the first too
-    for hits in _get_hit_pairs_fom_blast(blast2_fhand):
+    for hits in get_hit_pairs_fom_blast(blast2_fhand):
         hits = (hits[1], hits[0])
         if hits in blast1_hits:
             yield hits
 
-def _get_hit_pairs_fom_blast(blast1_fhand):
+def get_hit_pairs_fom_blast(blast1_fhand, filters=None):
     'It return a iterator with query subjetc tuples of the hist in the blast'
 
     blasts = BlastParser(fhand=blast1_fhand)
-    filters = [{'kind'           : 'best_scores',
-                'score_key'      : 'expect',
-                'max_score_value': 1e-4,
-                'score_tolerance': 10}]
+    if filters is None:
+        filters = [{'kind'           : 'best_scores',
+                    'score_key'      : 'expect',
+                    'max_score_value': 1e-4,
+                    'score_tolerance': 10}]
     filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                 results=blasts)
     for match in filtered_results:

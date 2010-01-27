@@ -281,7 +281,7 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
         db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
-        similar_seqs = look_for_similar_sequences(seq1, db=db,
+        similar_seqs = look_for_similar_sequences(seq1, database=db,
                                                   blast_program='blastn')
         assert similar_seqs[0]['name'] == 'AT5G19860.1'
         assert similar_seqs[0]['query_start'] == 1
@@ -290,11 +290,11 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
     @staticmethod
     def test_build_sequence_clusters():
         'It test the build sequences_cluster function'
-        blast_fhand = open(os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes'))
+        blast_fhand = open(os.path.join(DATA_DIR, 'cluster_blast.xml'))
         aligner_config = {'results':{'blast':blast_fhand}}
         clusters = build_sequence_clusters(aligner_config)
-        print clusters
-
+        assert len(clusters) == 1
+        assert clusters[0] == ['seq1', 'seq2']
 
 
 if __name__ == "__main__":
