@@ -17,7 +17,8 @@
 
 
 import sqlalchemy, re
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import (Table, Column, Integer, String, Boolean, ForeignKey,
+                        DateTime)
 from biolib.db.db_utils import setup_mapping
 
 from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
@@ -28,13 +29,15 @@ def create_naming_database(engine):
     #the table definition
     metadata = sqlalchemy.MetaData()
     metadata.bind = engine
-    Table('last_names', metadata,
+    Table('names', metadata,
          Column('id', Integer, primary_key=True),
          Column('project_id', String(50), ForeignKey("projects.id"),
                 nullable=False),
-         Column('last_name', String(50), unique=True, nullable=False),
+         Column('name', String(50), unique=True, nullable=False),
          Column('feature_type', String(50), nullable=False),
-         Column('lock', Boolean)
+         Column('lock', Boolean),
+         Column('description', String(200)),
+         Column('date', DateTime)
     )
     Table('projects', metadata,
          Column('id', Integer, primary_key=True),
@@ -48,7 +51,7 @@ def _setup_naming_database_mapping(engine):
     'It creates the orm mapping form the naming db'
     mapping_definitions = [
                     {'name':'projects'},
-                    {'name':'last_names',
+                    {'name':'names',
                      'relations':{'project_id':{'kind':'one2many',
                                                 'rel_attr':'project'}}},
                     ]
@@ -59,7 +62,7 @@ def add_project_to_naming_database(engine, name, code, description=None):
     'It adds a new project to the naming database'
     #the mapping
     #pylint: disable-msg=W0612
-    table_classes, row_classes = _setup_naming_database_mapping(engine)
+    row_classes = _setup_naming_database_mapping(engine)[1]
     session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
     session = session_klass()
     project = row_classes['projects']()
@@ -72,7 +75,7 @@ def add_project_to_naming_database(engine, name, code, description=None):
 
 def project_in_database(engine, name):
     'It checks if the project is already added to the database'
-    table_classes, row_classes = _setup_naming_database_mapping(engine)
+    row_classes = _setup_naming_database_mapping(engine)[1]
     session_klass = sqlalchemy.orm.sessionmaker(bind=engine)
     session = session_klass()
     project_klass = row_classes['projects']
@@ -148,8 +151,7 @@ class DbNamingSchema(object):
         self._code_generators = {}
         self._curr_code = {}  #the last code given for every feature kind
         #pylint: disable-msg=W0612
-        table_classes, self._row_classes = \
-                                    _setup_naming_database_mapping(engine)
+        self._row_classes = _setup_naming_database_mapping(engine)[1]
         #the project instance
         project_klass = self._row_classes['projects']
         self._project = \
@@ -179,12 +181,12 @@ class DbNamingSchema(object):
         if kind in self._code_generators:
             return self._code_generators[kind]
         #which was the last name given for this kind of feature
-        names_klass = self._row_classes['last_names']
+        names_klass = self._row_classes['names']
         try:
             last_name = \
              self._session.query(names_klass).filter_by(project=self._project,
                                                        feature_type=kind).one()
-            last_name = last_name.last_name
+            last_name = last_name.name
         except sqlalchemy.orm.exc.NoResultFound:
             #it's the first time we're using this type in this database
             #we add one row to the last_name table
@@ -192,7 +194,7 @@ class DbNamingSchema(object):
                                                                        '000000'
             self._session.add(names_klass(project=self._project,
                                           feature_type=kind,
-                                          last_name=last_name))
+                                          name=last_name))
         code_gen = _CodeGenerator(last_name[4:])
         self._code_generators[kind] = code_gen
         return code_gen
@@ -214,12 +216,12 @@ class DbNamingSchema(object):
         The next time that someone ask for a code to the database, this one
         will be used as seed.
         '''
-        names_klass = self._row_classes['last_names']
+        names_klass = self._row_classes['names']
         for kind, last_name in self._curr_code.items():
             last_name_row = \
              self._session.query(names_klass).filter_by(project=self._project,
                                                        feature_type=kind).one()
-            last_name_row.last_name = last_name
+            last_name_row.name = last_name
         self._session.commit()
 
 NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
