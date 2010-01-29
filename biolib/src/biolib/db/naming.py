@@ -16,13 +16,13 @@
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 
-import sqlalchemy, re
+import sqlalchemy, re, os
 from sqlalchemy import (Table, Column, Integer, String, Boolean, ForeignKey,
                         DateTime)
 from biolib.db.db_utils import setup_mapping
 
 from biolib.utils.seqio_utils import seqs_in_file, write_seqs_in_file
-import os
+from datetime import datetime
 
 def create_naming_database(engine):
     'It creates a new empty database to hold the naming schema status'
@@ -182,19 +182,16 @@ class DbNamingSchema(object):
             return self._code_generators[kind]
         #which was the last name given for this kind of feature
         names_klass = self._row_classes['names']
-        try:
-            last_name = \
-             self._session.query(names_klass).filter_by(project=self._project,
-                                                       feature_type=kind).one()
+        last_name = \
+               self._session.query(names_klass).filter_by(project=self._project,
+                    feature_type=kind).order_by(names_klass.date.desc()).first()
+        if last_name:
             last_name = last_name.name
-        except sqlalchemy.orm.exc.NoResultFound:
+        else:
             #it's the first time we're using this type in this database
             #we add one row to the last_name table
             last_name = self._project.code + self._get_type_code(kind) +\
-                                                                       '000000'
-            self._session.add(names_klass(project=self._project,
-                                          feature_type=kind,
-                                          name=last_name))
+                                                                        '000000'
         code_gen = _CodeGenerator(last_name[4:])
         self._code_generators[kind] = code_gen
         return code_gen
@@ -210,7 +207,7 @@ class DbNamingSchema(object):
         self._curr_code[kind] = next_code
         return next_code
 
-    def commit(self):
+    def commit(self, description=None):
         '''It stores the current code in the database.
 
         The next time that someone ask for a code to the database, this one
@@ -218,11 +215,31 @@ class DbNamingSchema(object):
         '''
         names_klass = self._row_classes['names']
         for kind, last_name in self._curr_code.items():
-            last_name_row = \
-             self._session.query(names_klass).filter_by(project=self._project,
-                                                       feature_type=kind).one()
-            last_name_row.name = last_name
+            new_row = names_klass(project=self._project,
+                                  name=last_name,
+                                  feature_type=kind,
+                                  date=datetime.now(),
+                                  description=description)
+            self._session.add(new_row)
         self._session.commit()
+
+    def get_names_from_db(self, project=None):
+        'It shows all the names in the database'
+        names_klass = self._row_classes['names']
+        if project is None:
+            names = self._session.query(names_klass).all()
+        else:
+            project_klass = self._row_classes['projects']
+            project = self._session.query(project_klass).filter_by(short_name=project).one()
+            names = self._session.query(names_klass).filter_by(project=project).all()
+
+        for name in names:
+            name_dict = {}
+            for field in ('name', 'feature_type', 'description', 'date'):
+                name_dict[field] = getattr(name, field)
+            name_dict['project'] = getattr(name, 'project').short_name
+            yield name_dict
+
 
 NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
             'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
@@ -367,6 +384,8 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_format,
     else:
         _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
                                      feature_kind)
+
+
 
 
 #pylint: disable-msg=R0903

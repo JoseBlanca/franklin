@@ -16,17 +16,16 @@ like ace, caf or fasta'''
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-import os.path
+import unittest, os.path, sqlalchemy
 from StringIO import StringIO
+from tempfile import NamedTemporaryFile
+from biolib.utils.misc_utils import DATA_DIR
 from biolib.db.naming import (change_names_in_files,
                               create_naming_database, DbNamingSchema,
                               FileNamingSchema,
                               add_project_to_naming_database,
                               project_in_database)
-from tempfile import NamedTemporaryFile
-import sqlalchemy
-from biolib.utils.misc_utils import DATA_DIR
+from datetime import datetime
 
 EXAMPLES = {'fasta':('''
 >hola
@@ -155,6 +154,7 @@ class DbNamingSchemaTest(unittest.TestCase):
         assert naming.get_uniquename(kind='EST') == 'myES000001'
         naming.commit()
         naming = DbNamingSchema(engine, project='my_project')
+
         assert naming.get_uniquename(kind='EST') == 'myES000002'
 
     @staticmethod
@@ -229,6 +229,29 @@ class FileNamingSchemaTest(unittest.TestCase):
             #pylint: disable-msg=W0704
         except ValueError:
             pass
+
+    @staticmethod
+    def test_get_all_names():
+        'It test if we can get all names stored in teh database'
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='my_project', code='my',
+                                       description='a test project')
+        naming = DbNamingSchema(engine, project='my_project')
+        naming.get_uniquename(kind='EST')
+        naming.commit()
+        naming.get_uniquename(kind='EST')
+        naming.commit()
+
+        names = list(naming.get_names_from_db())
+        assert names[0]['project'] == 'my_project'
+        assert len(names) == 2
+
+        name = naming.get_names_from_db(project='my_project').next()
+        assert name['project'] == 'my_project'
+
+
+
 
 class ChangeNameTest(unittest.TestCase):
     '''It test that we can modify the names/accs in different kind of files'''
