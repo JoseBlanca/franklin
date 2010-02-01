@@ -239,6 +239,17 @@ class DbNamingSchema(object):
                 name_dict[field] = getattr(name, field)
             name_dict['project'] = getattr(name, 'project').short_name
             yield name_dict
+    def revert_last_name(self, project, kind):
+        '''It reverts the database to the previous state for a certain kind and
+        project'''
+        names_klass   = self._row_classes['names']
+        project_klass = self._row_classes['projects']
+        project = self._session.query(project_klass).filter_by(short_name=project).one()
+        last_name = \
+               self._session.query(names_klass).filter_by(project=self._project,
+                    feature_type=kind).order_by(names_klass.date.desc()).first()
+        self._session.commit()
+        self._session.delete(last_name)
 
 
 NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
@@ -384,9 +395,6 @@ def change_names_in_files(fhand_in, fhand_out, naming, file_format,
     else:
         _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
                                      feature_kind)
-
-
-
 
 #pylint: disable-msg=R0903
 class _GeneralNameParser(object):

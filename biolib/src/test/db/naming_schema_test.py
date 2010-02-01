@@ -250,6 +250,30 @@ class FileNamingSchemaTest(unittest.TestCase):
         name = naming.get_names_from_db(project='my_project').next()
         assert name['project'] == 'my_project'
 
+    @staticmethod
+    def test_revert_last_name():
+        '''It test if we can revert the database to its last stste for a kind
+        and project'''
+        engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='my_project', code='my',
+                                       description='a test project')
+        naming = DbNamingSchema(engine, project='my_project')
+        naming.get_uniquename(kind='EST')
+        naming.commit()
+        naming.get_uniquename(kind='EST')
+        naming.commit()
+        names = list(naming.get_names_from_db())
+        assert names[0]['project'] == 'my_project'
+        assert names[0]['name'] == 'myES000001'
+        assert names[1]['name'] == 'myES000002'
+        assert len(names) == 2
+        naming.revert_last_name(project='my_project', kind='EST')
+
+        names = list(naming.get_names_from_db())
+        assert len(names) == 1
+        assert names[0]['name'] == 'myES000001'
+
 
 
 
