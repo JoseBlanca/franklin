@@ -137,7 +137,7 @@ class _CodeGenerator(object):
 
 class DbNamingSchema(object):
     'This class gives unique names for the objects in the databases'
-    def __init__(self, engine, project):
+    def __init__(self, engine, project=None, feature_kind=None):
         '''It inits the NamingSchema.
 
         engine is a sqlalchemy engine db.
@@ -149,61 +149,74 @@ class DbNamingSchema(object):
         self._session = session_klass()
 
         self._code_generators = {}
-        self._curr_code = {}  #the last code given for every feature kind
+        self._curr_code = {}  #the last code given for every feature_kind
         #pylint: disable-msg=W0612
         self._row_classes = _setup_naming_database_mapping(engine)[1]
         #the project instance
-        project_klass = self._row_classes['projects']
-        self._project = \
-         self._session.query(project_klass).filter_by(short_name=project).one()
+        self.project = project
+        self.kind = feature_kind
 
-    @staticmethod
-    def _get_so_term(feature_kind):
+    def set_project(self, name):
+        'It sets the project property'
+        if name is None:
+            self._project = None
+        else:
+            project_klass = self._row_classes['projects']
+            self._project = \
+             self._session.query(project_klass).filter_by(short_name=name).one()
+    def get_project(self):
+        'It returns the project name'
+        if self._project is None:
+            return None
+        else:
+            return self._project.short_name
+    project = property(get_project, set_project)
+
+    def _get_so_term(self):
         'It returns the Sequence Ontology term  for the given feature'
         so_terms = {'EST':'SO:0000345', 'transcribed_cluster':'SO:0001457',
                     'sa':'SO:0001059'
              }
-        if not feature_kind in so_terms:
+        if not self.kind in so_terms:
             raise ValueError('Unkown feature_kind, please use so')
-        return so_terms[feature_kind]
+        return so_terms[self.kind]
 
-    @staticmethod
-    def _get_type_code(kind):
+    def _get_type_code(self):
         'It returns the two letter code for the feature kind.'
         type_code = {'SO:0000345': 'ES', 'transcribed_cluster':'TC',
                      'EST':'ES', 'library':'lc', 'sa':'sa'}
-        if kind not in type_code:
-            raise ValueError('No code to the feature kind: ' + kind)
-        return type_code[kind]
+        if self.kind not in type_code:
+            raise ValueError('No code to the feature kind: ' + self.kind)
+        return type_code[self.kind]
 
-    def _get_code_generator(self, kind):
+    def _get_code_generator(self):
         'It returns a code generator for the given object kind'
-        if kind in self._code_generators:
-            return self._code_generators[kind]
+        if self.kind in self._code_generators:
+            return self._code_generators[self.kind]
         #which was the last name given for this kind of feature
         names_klass = self._row_classes['names']
         last_name = \
-               self._session.query(names_klass).filter_by(project=self._project,
-                    feature_type=kind).order_by(names_klass.date.desc()).first()
+            self._session.query(names_klass).filter_by(project=self._project,
+               feature_type=self.kind).order_by(names_klass.date.desc()).first()
         if last_name:
             last_name = last_name.name
         else:
             #it's the first time we're using this type in this database
             #we add one row to the last_name table
-            last_name = self._project.code + self._get_type_code(kind) +\
-                                                                        '000000'
+            last_name = self._project.code + self._get_type_code() + '000000'
         code_gen = _CodeGenerator(last_name[4:])
-        self._code_generators[kind] = code_gen
+        self._code_generators[self.kind] = code_gen
         return code_gen
 
-    def get_uniquename(self, kind, name=None):
+    def get_uniquename(self, name=None):
         'It returns the valid name for the next feature in the project'
+        kind = self.kind
         #pylint: disable-msg=W0613
-        code_gen = self._get_code_generator(kind)
+        code_gen = self._get_code_generator()
 
         #now we want the next number
         num_next = code_gen.next()
-        next_code = self._project.code + self._get_type_code(kind) + num_next
+        next_code = self._project.code + self._get_type_code() + num_next
         self._curr_code[kind] = next_code
         return next_code
 
@@ -223,34 +236,34 @@ class DbNamingSchema(object):
             self._session.add(new_row)
         self._session.commit()
 
-    def get_names_from_db(self, project=None):
+    def get_names_from_db(self):
         'It shows all the names in the database'
         names_klass = self._row_classes['names']
-        if project is None:
-            names = self._session.query(names_klass).all()
-        else:
-            project_klass = self._row_classes['projects']
-            project = self._session.query(project_klass).filter_by(short_name=project).one()
-            names = self._session.query(names_klass).filter_by(project=project).all()
+        query = self._session.query(names_klass)
+        if self.project is not None:
+            query = query.filter_by(project=self._project)
+        if self.kind is not None:
+            query = query.filter_by(feature_type=self.kind)
 
-        for name in names:
+        for name in query.all():
             name_dict = {}
             for field in ('name', 'feature_type', 'description', 'date'):
                 name_dict[field] = getattr(name, field)
             name_dict['project'] = getattr(name, 'project').short_name
             yield name_dict
-    def revert_last_name(self, project, kind):
+
+    def revert_last_name(self):
         '''It reverts the database to the previous state for a certain kind and
         project'''
+        if self.project is None or self.kind is None:
+            msg = 'Project and kind should be given to remove a name'
+            raise ValueError(msg)
         names_klass   = self._row_classes['names']
-        project_klass = self._row_classes['projects']
-        project = self._session.query(project_klass).filter_by(short_name=project).one()
         last_name = \
-               self._session.query(names_klass).filter_by(project=self._project,
-                    feature_type=kind).order_by(names_klass.date.desc()).first()
-        self._session.commit()
+            self._session.query(names_klass).filter_by(project=self._project,
+               feature_type=self.kind).order_by(names_klass.date.desc()).first()
         self._session.delete(last_name)
-
+        self._session.commit()
 
 NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
             'library':{'library_names' :[r'\s*name\s*:\s*(\w+)']},
@@ -261,15 +274,28 @@ NAMES_RE = {'fasta'  :{'sequence_names':[r'^>([^ \n]+).*$']},
           }
 class FileNamingSchema(object):
     '''It takes a naming file and it converts to a dict '''
-    def __init__(self, fhand, naming_schema=None):
+    def __init__(self, fhand, naming_schema=None, feature_kind=None):
         '''The initiator '''
         self._fhand           = fhand
         self._naming_schema   = naming_schema
         self._naming_dict     = {}
         self._new_naming_dict = {}
         self._naming_file_to_dict()
+        self._feature_kind = feature_kind
 
-    def get_uniquename(self, name=None, kind=None):
+    def _set_kind(self, kind):
+        'It sets the kind in of feature'
+        if self._naming_schema:
+            self._naming_schema.kind = kind
+    def _get_kind(self):
+        'It returns the kind of feature'
+        if self._naming_schema:
+            return self._naming_schema.kind
+        else:
+            return self._feature_kind
+    kind = property(_get_kind, _set_kind)
+
+    def get_uniquename(self, name=None):
         '''Given a name and a it returns a uniquename'''
         try:
             uniquename = self._naming_dict[name]
@@ -278,7 +304,7 @@ class FileNamingSchema(object):
                 uniquename = self._new_naming_dict[name]
             except KeyError:
                 uniquename = None
-        if uniquename is None and kind is None:
+        if uniquename is None and self.kind is None:
             msg = 'You must provide feature type if the name is not added'
             raise ValueError(msg)
         if uniquename is None:
@@ -286,7 +312,7 @@ class FileNamingSchema(object):
                 msg = 'Uncached name and no naming schema'
                 raise ValueError(msg)
             else:
-                uniquename = self._naming_schema.get_uniquename(kind)
+                uniquename = self._naming_schema.get_uniquename()
                 self._new_naming_dict[name] = uniquename
         return uniquename
 
@@ -328,8 +354,7 @@ REPLACE_RE = {
              (r'^(RD +)([^ ]+)(.*)$', 2)]
 }
 
-def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
-                          feature_kind):
+def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format):
     '''It changes the accession names in the files.
 
     Given a naming schema and a file kind
@@ -348,8 +373,7 @@ def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
             replace = []
             for group_i, group in enumerate(matchobj.groups()):
                 if group_i + 1 == group_num:
-                    replace.append(naming.get_uniquename(name=group,
-                                                         kind=feature_kind))
+                    replace.append(naming.get_uniquename(name=group))
                 else:
                     replace.append(group)
             return ''.join(replace)
@@ -371,30 +395,26 @@ def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
             line = re.sub(regex['re'], regex['function'], line)
         fhand_out.write(line)
 
-def _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
-                                  feature_kind):
+def _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format):
     'It replaces the seq name using the  per_seq method'
     seqs = seqs_in_file(fhand_in, format=file_format)
 
     for seq in seqs:
-        new_name = naming.get_uniquename(kind=feature_kind)
+        new_name = naming.get_uniquename()
         seq.name = new_name
         seq.id   = new_name
         write_seqs_in_file([seq], fhand_out, format=file_format)
 
-def change_names_in_files(fhand_in, fhand_out, naming, file_format,
-                          feature_kind):
+def change_names_in_files(fhand_in, fhand_out, naming, file_format):
     '''It changes the accession names in the files.
 
     Given a naming schema and a file kind
     names found in the in file and it writes the result in the output file.
     '''
     if file_format in REPLACE_RE:
-        _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format,
-                                     feature_kind)
+        _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format)
     else:
-        _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format,
-                                     feature_kind)
+        _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format)
 
 #pylint: disable-msg=R0903
 class _GeneralNameParser(object):
