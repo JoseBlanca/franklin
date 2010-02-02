@@ -38,7 +38,7 @@ def parse_options():
     parser.add_option('-c', '--projectcode', dest='projectcode',
                       help='Project name')
     parser.add_option('-e', '--projectdescription', dest='projectdesc',
-                      help='Project name')
+                      help='Project description')
     parser.add_option('-k', '--feature_kind', dest="feature_kind",
                       help='Type of seq to change. EST, CONTIG, ...')
     parser.add_option('-l', '--filecache', dest="filecache",
