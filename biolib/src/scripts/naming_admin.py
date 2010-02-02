@@ -33,6 +33,8 @@ def parse_options():
                     help='path to the naming schema database')
     parser.add_option('-p', '--projectname', dest='projectname',
                       help='Project name')
+    parser.add_option('-a', '--actiondesc', dest='actiondesc',
+                      help='Action description')
     parser.add_option('-c', '--projectcode', dest='projectcode',
                       help='Project name')
     parser.add_option('-e', '--projectdescription', dest='projectdesc',
@@ -58,12 +60,14 @@ def set_parameters():
     feature_kind = _parse_feature_kind_option(options, parser, action)
     database     = _parse_database_option(options, parser, action)
     filecache    = options.filecache
+    description  = options.actiondesc
 
     # check if database and filecache are None. One of them is necessary
     if database is None and filecache is None:
         parser.error('Database or filecache is mandatory!')
 
-    return io_options, database, filecache, project, feature_kind, action
+    return (io_options, database, filecache, project, feature_kind, action,
+            description)
 
 def _parse_io_options(options, parser, action):
     'parse IO options'
@@ -123,12 +127,12 @@ def _parse_database_option(options, parser, action):
 
 def main():
     'The main part of the script'
-    io_options, database, filecache, project, feature_kind, action = \
-                                                                set_parameters()
+    (io_options, database, filecache, project, feature_kind,
+                                        action, description) = set_parameters()
 
     if action == 'change_name':
         _change_names_in_file(io_options, database, filecache, project,
-                              feature_kind)
+                              feature_kind, description)
 
     elif action == 'delete':
         _delete_last_row(database, project['name'], feature_kind)
@@ -163,7 +167,7 @@ def _delete_last_row(database, project_name, feature_kind):
 
 
 def _change_names_in_file(io_options, database, filecache, project,
-                          feature_kind):
+                          feature_kind, description):
     'It changes the name to a file giving a naming'
     # check if the database exits
     if database is not None:
@@ -202,7 +206,7 @@ def _change_names_in_file(io_options, database, filecache, project,
         outfhand = io_options['outfhand']
         format   = io_options['format']
         change_names_in_files(infhand, outfhand, naming, format)
-        naming.commit()
+        naming.commit(description=description)
     except:
         #if we don't commit we lose the changes in the database
         raise
