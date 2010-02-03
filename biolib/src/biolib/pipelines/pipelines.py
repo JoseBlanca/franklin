@@ -147,7 +147,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     '''
     # Here we extract our input/output files
     in_fhand_seqs  = io_fhands['in_seq']
-    in_fhand_qual  = io_fhands['in_qual']
+    if 'in_qual' in io_fhands:
+        in_fhand_qual  = io_fhands['in_qual']
+    else:
+        in_fhand_qual  = None
     out_fhand_seq  = io_fhands['out_seq']
     if 'out_qual' in io_fhands:
         out_fhand_qual = io_fhands['out_qual']
