@@ -37,6 +37,7 @@ modify the sequences.
 
 import  logging
 from itertools import imap, ifilter
+import multiprocessing
 from biolib.utils.seqio_utils import (seqs_in_file, write_fasta_file,
                                       write_seqs_in_file,
                                       guess_seq_file_format)
@@ -72,7 +73,20 @@ def configure_pipeline(pipeline, configuration):
                 raise RuntimeError(msg)
     return seq_pipeline
 
-def pipeline_runner(pipeline, items, configuration=None):
+def _get_func_tools(processes):
+    'It returns a mapping function from multiprocessing or itertools'
+    if isinstance(processes, bool) and not processes:
+        map_ = imap
+    else:
+        #multiprocessing
+        if not isinstance(processes, int):
+            processes = None    #number determined by cpu_count
+        pool = multiprocessing.Pool(processes)
+        map_ = pool.imap_unordered
+    filter_ = ifilter
+    return {'map': map_, 'filter': filter_}
+
+def pipeline_runner(pipeline, items, configuration=None, processes=False):
     '''It runs all the analysis for the given pipeline.
 
     It takes one or two input files and one or two output files. (Fasta files
@@ -93,6 +107,9 @@ def pipeline_runner(pipeline, items, configuration=None):
     # we need to keep them until the analysis is done because some seq_iters
     # may depend on them
     temp_bulk_files = []
+
+    #are we multiprocessing?
+    functs = _get_func_tools(processes)
 
     for analisis_step in pipeline_steps:
         function_factory  = analisis_step['function']
@@ -133,7 +150,8 @@ def pipeline_runner(pipeline, items, configuration=None):
     return items
 
 
-def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
+def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
+                        processes=False):
 
     '''It runs all the analysis for the given sequence pipeline.
 
@@ -163,7 +181,8 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None):
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     #run the pipeline
-    filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
+    filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration,
+                                        processes)
 
     # write result
     if file_format == 'fasta':

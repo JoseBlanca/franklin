@@ -122,6 +122,33 @@ class PipelineTests(unittest.TestCase):
         #are we keeping the description?
         assert 'mdust' in result_seq
 
+    @staticmethod
+    def test_seq_pipeline_parallel_run():
+        'It tests that the pipeline runs ok'
+        pipeline = 'sanger_with_qual'
+
+        fhand_adaptors = NamedTemporaryFile()
+        fhand_adaptors.write(ADAPTORS)
+        fhand_adaptors.flush()
+        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        configuration = {'remove_vectors': {'vectors':univec},
+                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+
+        io_fhands = {}
+        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        io_fhands['out_seq']  = NamedTemporaryFile()
+        io_fhands['out_qual'] = NamedTemporaryFile()
+
+        seq_pipeline_runner(pipeline, configuration, io_fhands, processes=2)
+        io_fhands['out_seq'].seek(0)
+
+        result_seq = io_fhands['out_seq'].read()
+        assert result_seq.count('>') == 6
+        #are we keeping the description?
+        assert 'mdust' in result_seq
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
