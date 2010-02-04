@@ -119,13 +119,18 @@ class TestBackbone(unittest.TestCase):
         do_analysis(project_settings=settings_path,
                     kind='mira_assembly',
                     analysis_config=analsysis_config)
-        assembly_dir = os.path.join(project_dir)
+        assembly_dir = os.path.join(project_dir, 'assembly')
+        singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
+        assert os.path.exists(os.path.join(assembly_dir, singular_assembly_dir,
+                                           'stderr.txt'))
 
         do_analysis(project_settings=settings_path,
                     kind='select_last_assembly',
                     analysis_config=analsysis_config)
-#        print test_dir.name
-#        raw_input()
+        assem_result_dir = os.path.join(assembly_dir, 'result')
+        assert os.path.exists(assem_result_dir)
+        assert os.path.exists(os.path.join(assem_result_dir, 'info'))
+
         test_dir.close()
 
 if __name__ == "__main__":

@@ -305,11 +305,13 @@ class MiraAssemblyAnalyzer(Analyzer):
                                       mira_basename + mira_ext)
             res_fpath = os.path.join(results_dir,
                                      'contigs' + result_ext)
-            os.symlink(mira_fpath, res_fpath)
+            if os.path.exists(mira_fpath):
+                os.symlink(mira_fpath, res_fpath)
+            
 
         mira_info_dir = os.path.join(mira_dir, '%s_d_info' % proj_name)
-        os.symlink(mira_info_dir,
-                   os.path.join(results_dir, 'info'))
+        if os.path.exists(mira_info_dir):
+            os.symlink(mira_info_dir, os.path.join(results_dir, 'info'))
 
 class LastAssemblyAnalyzer(Analyzer):
     'It chooses the latest assembly as the result'
