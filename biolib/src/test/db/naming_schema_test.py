@@ -146,6 +146,18 @@ class DbNamingSchemaTest(unittest.TestCase):
         naming.commit()
 
     @staticmethod
+    def xtest_basic_behaviour2():
+        'It tests that we can get names'
+        engine = sqlalchemy.create_engine('sqlite:////home/jope/test/naming_db')
+        create_naming_database(engine)
+        add_project_to_naming_database(engine, name='Melo', code='ME',
+                                       description='Melonomics Ests')
+        naming = DbNamingSchema(engine, project='Melo', feature_kind='EST')
+        assert naming.get_uniquename() == 'MEES000001'
+        assert naming.get_uniquename() == 'MEES000002'
+        naming.commit(description='Initial')
+
+    @staticmethod
     def test_name_persistance():
         'The names are stored between db commits'
         engine = sqlalchemy.create_engine('sqlite:///:memory:')

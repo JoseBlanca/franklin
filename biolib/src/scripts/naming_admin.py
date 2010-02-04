@@ -20,8 +20,9 @@ from biolib.db.naming import (create_naming_database, project_in_database,
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
+    msg = 'Which action are you going to do? change_name, delete, show_names '
     parser.add_option('-A', '--action', dest='action', default='change_names',
-                      help='Which action Are we goint to do?')
+                      help=msg)
 
     parser.add_option('-s', '--infile', dest='infile',
                     help='input sequence file')
@@ -146,16 +147,14 @@ def _get_names_from_db(database, project_name=None):
     'It show the names in the database'
     engine   = sqlalchemy.create_engine( 'sqlite:///%s'  % database)
     naming = DbNamingSchema(engine, project_name, feature_kind=None)
-    toprint  = " Project   | Feature | date              | description \n"
+    toprint  = " Project | Project Code | Name | Feature | date              | description \n"
     toprint += "-------------------------------------------------------\n"
     for name in naming.get_names_from_db():
         date = name['date']
-        toprint += ' %s |   %s   | %d/%d/%d %d:%d:%d | %s\n' % (name['project'],
-                                                    name['feature_type'],
-                                                    date.year, date.month,
-                                                    date.day, date.hour,
-                                                    date.minute, date.second,
-                                                    name['description'])
+        toprint += ' %s |   %s   | %s | %s |%d/%d/%d %d:%d:%d | %s\n' % \
+                (name['project'], name['project_code'], name['name'],
+                 name['feature_type'], date.year, date.month, date.day,
+                 date.hour, date.minute, date.second, name['description'])
     return toprint
 
 def _delete_last_row(database, project_name, feature_kind):

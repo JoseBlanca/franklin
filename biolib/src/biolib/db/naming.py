@@ -250,6 +250,7 @@ class DbNamingSchema(object):
             for field in ('name', 'feature_type', 'description', 'date'):
                 name_dict[field] = getattr(name, field)
             name_dict['project'] = getattr(name, 'project').short_name
+            name_dict['project_code'] = getattr(name, 'project').code
             yield name_dict
 
     def revert_last_name(self):
