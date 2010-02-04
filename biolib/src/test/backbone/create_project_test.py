@@ -10,6 +10,51 @@ from biolib.backbone.create_project import create_project
 from biolib.backbone.analysis import do_analysis, BACKBONE_DIRECTORIES
 from configobj import ConfigObj
 
+READS_454 = '''@FKU4KFK07H6D2L
+GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAAT
++
+CCFFFFFCC;;;FFF99;HHIHECCHHIIIFHHEEEHHHHHHIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGGFFGGBCCGFFFGG
+@FKU4KFK07IJEB9
+AATTCCCTTTCCGGTGATCGCCTCTCCTAGCAATGATGCAGCAAAGCCGATCATAGCAACACGGCCGACGAAGAGTTCATTCTGCTTGGTAAAACCAATGCCACCAGAAGTCCCAAAAATTCCATCTTCAACCTTCTGCTTCGGCTTCTCAACCTTCTTGGGCGGGGCTTTAGTTCTGGATTTGAACACAGCAAGAGGGTGAAACCA
++
+FFFFFFFFFFFFFFFFFFIIIIIIIIIIIIIIIIIIIIIIIIIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGGFFFFGGGGGGFFFFFFGAA@5557>55577G
+@FKU4KFK07IMD9G
+ACCCTTCTAGCAGTAGGAATGACTTGACCACCTCCTCTGTGGATGGCATCAGCGTGAAGCACCACATCACAAACTTCAAAACAGATGCCT
++
+B>>>GGFFFFFFFFFGGGGHHHHHHHHHIIIIIIIIIIIIIIIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGCB;;;;BGFFFFFFF
+@FKU4KFK07IE66H
+ATGAACCGCAAAAGCTTGTATGCTGTATTGCCTTGATTTGGTTTCCAAGATTCTTCCCACATATTTAGGAGAGAGTGTAGCTGGAAACCGAGACTTTGGCTGGAGAAGCA
++
+FFFFFFFFG7777CGFFFFHHHHHHIHHHHHHHHHHHHHHH==?CCFFFFFFFGGCCCGFFFFFFFFFFFFFFFFFFFFFFFFFGGGFFFFFFFFFFFFFGGGFFFFFFF
+'''
+READS_ILL= '''@HWI-EAS59:3:1:5:1186#0/1
+TGATACCACTGCTTANTCTGCGTTGNTACCA
++
+BBBBCBAAABA=BB<%<C@?BBA@9%<B;A@
+@HWI-EAS59:3:1:5:169#0/1
+GTTGATACCACTGCTNACTCTGCG
++
+BBA@ABBBBBBBAA9%;BBBBCAA
+@HWI-EAS59:3:1:5:1467#0/1
+AAGCAGTGGTATCAANGCAGAGTTCNGCTTC
++
+B?@CBCBCBAACBB:%>BBBAC@B<%9>BBB
+@HWI-EAS59:3:1:5:651#0/1
+CATACCCAATTGCTTNAGATGGAT
++
+AAAABBA@@B?7=@<%=<ABBA:A
+@HWI-EAS59:3:1:5:1609#0/1
+AGAGCATTGCTTTGANTTTAAAAACNCGGTT
++
+?BA@B>CCCBCBB:<%>BCA@;A?<%?BBAB
+@HWI-EAS59:3:1:5:247#0/1
+GATGGATCCCAAGTTNTTGAGGAACNAGAGG
++
+BBA?;BBBBBA3AB=%=BBB@A=A=%<><@?
+'''
+
+
+
 class TestBackbone(unittest.TestCase):
     'It tests the backbone'
 
@@ -44,11 +89,9 @@ class TestBackbone(unittest.TestCase):
 
         #print original_reads_dir
         fpath_454 = os.path.join(original_reads_dir, 'pt_454.sfastq')
-        reads_454 = '@seq1\nGCTAGTCATGTCTA\n+\nqaeiidaijsidaj\n'
         fpath_ill = os.path.join(original_reads_dir, 'pt_illumina.sfastq')
-        reads_ill = '@seq2\nGCTACATGTCTA\n+\nqaeiidasidaj\n'
-        open(fpath_454, 'w').write(reads_454)
-        open(fpath_ill, 'w').write(reads_ill)
+        open(fpath_454, 'w').write(READS_454)
+        open(fpath_ill, 'w').write(READS_ILL)
 
         #use only the 454 and sanger reads
         analsysis_config = {
@@ -57,16 +100,32 @@ class TestBackbone(unittest.TestCase):
         do_analysis(project_settings=settings_path,
                     kind='clean_reads',
                     analysis_config=analsysis_config)
+        cleaned_dir = os.path.join(project_dir, 'reads', 'cleaned')
+        assert os.path.exists(cleaned_dir)
+        cleaned_454 = os.path.join(cleaned_dir, os.path.basename(fpath_454))
+        assert os.path.exists(cleaned_454)
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly',
                     analysis_config=analsysis_config)
+        assembly_input = os.path.join(project_dir, 'assembly', 'input')
+        assert os.path.exists(assembly_input)
+        mira_in_454 = os.path.join(assembly_input, 'backbone_in.454.fasta')
+        mira_in_qul = os.path.join(assembly_input, 'backbone_in.454.fasta.qual')
+        assert os.path.exists(mira_in_454)
+        assert os.path.exists(mira_in_qul)
+
 
         do_analysis(project_settings=settings_path,
                     kind='mira_assembly',
                     analysis_config=analsysis_config)
+        assembly_dir = os.path.join(project_dir)
 
-
+        do_analysis(project_settings=settings_path,
+                    kind='select_last_assembly',
+                    analysis_config=analsysis_config)
+#        print test_dir.name
+#        raw_input()
         test_dir.close()
 
 if __name__ == "__main__":

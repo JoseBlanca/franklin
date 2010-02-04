@@ -69,6 +69,6 @@ setup(
     package_dir={'':'.'},
     #py_modules = modules,
     package_data={'biolib': ['data/*']},
-    requires=['BioPython', 'sqlalchemy', 'matplotlib'],
+    requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj'],
     scripts=scripts,
 )

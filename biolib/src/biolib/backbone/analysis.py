@@ -4,7 +4,7 @@ Created on 29/01/2010
 @author: jose
 '''
 
-import os, tempfile, time
+import os, tempfile, time, shutil
 from biolib.utils.seqio_utils import guess_seq_file_format, seqio, cat
 from biolib.pipelines.pipelines import seq_pipeline_runner
 from biolib.utils.cmd_utils import call
@@ -13,7 +13,7 @@ from configobj import ConfigObj
 def _is_sequence_file(fpath):
     'It returns true if the function is a sequence'
     ext = os.path.splitext(fpath)[-1].strip('.')
-    if ext in ('fasta', 'fastq', 'sfastq'):
+    if ext in ('fasta', 'fastq', 'sfastq', 'qual'):
         return True
     else:
         return False
@@ -27,26 +27,39 @@ class Analyzer(object):
     It checks if the the analysis is already done, looking to the output
     directory
     '''
-    def __init__(self, project_settings, analysis_definition):
+    def __init__(self, project_settings, analysis_definition,
+                 create_output_dir=True):
         'The init'
         self._project_settings = project_settings
         self._analysis_def = analysis_definition
-        self._create_output_dir()
+        if create_output_dir:
+            self._create_output_dir()
+
+    def _get_input_dirs(self):
+        'It returns the directories for the inputs'
+        inputs_def = self._analysis_def['inputs']
+        input_dirs = {}
+        for input_kind, input_def in inputs_def.items():
+            project_dir = self._project_settings['General_settings']['project_path']
+            backbone_dir = os.path.join(project_dir,
+                                   BACKBONE_DIRECTORIES[input_def['directory']])
+            input_dirs[input_kind] = backbone_dir
+        return input_dirs
 
     def _get_input_fpaths(self):
         'It returns a dict with the inputs files'
         inputs_def = self._analysis_def['inputs']
         input_files = {}
+        input_dirs = self._get_input_dirs()
         for input_kind, input_def in inputs_def.items():
-            project_dir = self._project_settings['General_settings']['project_path']
-            backbone_dir = os.path.join(project_dir,
-                                   BACKBONE_DIRECTORIES[input_def['directory']])
+            backbone_dir = input_dirs[input_kind]
             fpaths = os.listdir(backbone_dir)
 
             #we want full paths
             fpaths = [os.path.join(backbone_dir, path) for path in fpaths]
 
-            if input_def['file_kinds'] == 'sequence_files':
+            if ('file_kinds' in input_def and
+                                   input_def['file_kinds'] == 'sequence_files'):
                 fpaths = filter(_is_sequence_file, fpaths)
             input_files[input_kind] = fpaths
         return input_files
@@ -220,8 +233,7 @@ class MiraAssemblyAnalyzer(Analyzer):
 
     def _create_assembly_dir(self, result_dir):
         'It returns a directory for this analysis'
-        assembly_dir = os.path.split(result_dir.rstrip('/'))[0]
-        assembly_dir = os.path.join(assembly_dir,
+        assembly_dir = os.path.join(result_dir,
                                     time.strftime("%Y%m%d_%H%M", time.gmtime()))
         os.mkdir(assembly_dir)
         return assembly_dir
@@ -230,12 +242,12 @@ class MiraAssemblyAnalyzer(Analyzer):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
         output_dir = self._get_output_dir()
-
+        proj_name = self._project_settings['General_settings']['project_name']
         #we need an assembly dir for this run
         #in this case every assembly is done in a new directory
-        assembly_dir = self._create_assembly_dir(output_dir)
-
         #the directory for this assembly
+        assembly_dir = self._create_assembly_dir(output_dir)
+        mira_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
 
         os.chdir(assembly_dir)
         #with technologies have we used?
@@ -244,7 +256,7 @@ class MiraAssemblyAnalyzer(Analyzer):
         for fpath in self._get_input_fpaths()['reads']:
             fname = os.path.split(fpath)[-1]
             mira_input_fname = os.path.join(assembly_dir, fname)
-            os.symlink(fname, mira_input_fname)
+            os.symlink(fpath, mira_input_fname)
             if '454' in fname:
                 techs.add('454')
             elif 'sanger' in fname:
@@ -257,10 +269,10 @@ class MiraAssemblyAnalyzer(Analyzer):
         job.extend(techs)
         job = ','.join(job)
         job = '-job=' + job
-        project_name = self._project_settings['General_settings']['project_name']
 
-        cmd = ['mira', '-project=%s' % project_name, '-fasta', job]
 
+        cmd = ['mira', '-project=%s' % proj_name, '-fasta', job]
+        cmd.append('-OUT:rld=yes')
         for tech in techs:
             tech_str = '%s_settings' % tech
             if tech_str in settings:
@@ -270,13 +282,62 @@ class MiraAssemblyAnalyzer(Analyzer):
         stdout = open(os.path.join(assembly_dir, 'stdout.txt'), 'w')
         stderr = open(os.path.join(assembly_dir, 'stderr.txt'), 'w')
         retcode = call(cmd, stdout=stdout, stderr=stderr)[-1]
+        if retcode:
+            raise RuntimeError(open(stdout.name).read())
 
         #remove the log directory
+        mirachkpt_dir = os.path.join(mira_dir,  "%s_d_chkpt" % proj_name)
+        if os.path.exists(mirachkpt_dir):
+            shutil.rmtree(mirachkpt_dir)
 
-        #link the results to the result directory
-        return retcode
+        #results
+        mira_results_dir = os.path.join(mira_dir, '%s_d_results' % proj_name)
+        results_dir = os.path.join(assembly_dir,
+                                   BACKBONE_DIRECTORIES['each_assembly_result'])
+        os.mkdir(results_dir)
+        mira_basename = '%s_out' % proj_name
+        file_exts = (('.ace', '.ace'),
+                     ('.caf', '.caf'),
+                     ('.unpadded.fasta', '.fasta'),
+                     ('.unpadded.fasta.qual', '.qual'))
+        for mira_ext, result_ext in file_exts:
+            mira_fpath = os.path.join(mira_results_dir,
+                                      mira_basename + mira_ext)
+            res_fpath = os.path.join(results_dir,
+                                     'contigs' + result_ext)
+            os.symlink(mira_fpath, res_fpath)
 
+        mira_info_dir = os.path.join(mira_dir, '%s_d_info' % proj_name)
+        os.symlink(mira_info_dir,
+                   os.path.join(results_dir, 'info'))
 
+class LastAssemblyAnalyzer(Analyzer):
+    'It chooses the latest assembly as the result'
+
+    def __init__(self, project_settings, analysis_definition):
+        'The init'
+        Analyzer.__init__(self, project_settings, analysis_definition,
+                          create_output_dir=False)
+
+    def run(self):
+        '''It runs the analysis. It checks if the analysis'''
+        inputs = self._get_input_dirs()
+        dirs = os.listdir(inputs['assemblies_dir'])
+        def _is_assembly_dir(fname):
+            'It returns true for the assemblies dir'
+            if fname[0] == '2'and fname[-1].isdigit():
+                return True
+            else:
+                return False
+        dirs = sorted(filter(_is_assembly_dir,dirs))
+        latest_dir = dirs[-1]
+        latest_dir = os.path.join(inputs['assemblies_dir'],
+                                  latest_dir,
+                                  BACKBONE_DIRECTORIES['each_assembly_result'])
+        output_dir = self._get_output_dir()
+        if os.path.exists(output_dir):
+            os.remove(output_dir)
+        os.symlink(latest_dir, output_dir)
 
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
@@ -303,9 +364,18 @@ ANALYSIS_DEFINITIONS = {
                 {'directory': 'assembly_input',
                  'file_kinds': 'sequence_files'}
             },
-         'output':{'directory': 'assembly_result'},
+         'output':{'directory': 'assemblies'},
          'analyzer': MiraAssemblyAnalyzer,
         },
+    'select_last_assembly':
+        {'inputs':{
+            'assemblies_dir':
+                {'directory': 'assemblies'}
+            },
+         'output':{'directory': 'assembly_result'},
+         'analyzer': LastAssemblyAnalyzer,
+        },
+
 }
 
 BACKBONE_DIRECTORIES = {
@@ -313,7 +383,9 @@ BACKBONE_DIRECTORIES = {
     'original_reads': 'reads/original',
     'cleaned_reads': 'reads/cleaned',
     'assembly_input': 'assembly/input',
+    'assemblies': 'assembly',
     'assembly_result': 'assembly/result',
+    'each_assembly_result': 'result'
                         }
 
 def do_analysis(kind, project_settings=None, analysis_config=None):
