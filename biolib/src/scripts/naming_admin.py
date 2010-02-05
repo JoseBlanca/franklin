@@ -147,11 +147,11 @@ def _get_names_from_db(database, project_name=None):
     'It show the names in the database'
     engine   = sqlalchemy.create_engine( 'sqlite:///%s'  % database)
     naming = DbNamingSchema(engine, project_name, feature_kind=None)
-    toprint  = " Project | Project Code | Name | Feature | date              | description \n"
-    toprint += "-------------------------------------------------------\n"
+    toprint  = " Project | Project Code |    Name    | Feature | date              | description \n"
+    toprint += "-------------------------------------------------------------\n"
     for name in naming.get_names_from_db():
         date = name['date']
-        toprint += ' %s |   %s   | %s | %s |%d/%d/%d %d:%d:%d | %s\n' % \
+        toprint += ' %s |     %s     | %s |   %s  |%d/%d/%d %d:%d:%d | %s\n' % \
                 (name['project'], name['project_code'], name['name'],
                  name['feature_type'], date.year, date.month, date.day,
                  date.hour, date.minute, date.second, name['description'])

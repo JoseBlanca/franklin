@@ -348,18 +348,22 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     except OSError:
         raise OSError('No such file or directory, executable was ' + cmd[0])
     if stdin is None:
-        stdout, stderr = process.communicate()
+        stdout_str, stderr_str = process.communicate()
     else:
 #        a = stdin.read()
 #        print a
 #        stdout, stderr = subprocess.Popen.stdin = stdin
 #        print stdin.read()
-        stdout, stderr = process.communicate(stdin)
+        stdout_str, stderr_str = process.communicate(stdin)
     retcode = process.returncode
     if raise_on_error:
         if retcode:
-            raise RuntimeError(stderr)
-    return stdout, stderr, retcode
+            raise RuntimeError(stderr_str)
+    if stdout != subprocess.PIPE:
+        stdout.flush()
+    if stderr != subprocess.PIPE:
+        stderr.flush()
+    return stdout_str, stderr_str, retcode
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     '''It returns masked sequence (StrinIO) for the given sequence.

@@ -9,15 +9,31 @@ from biolib.utils.seqio_utils import guess_seq_file_format, seqio, cat
 from biolib.pipelines.pipelines import seq_pipeline_runner
 from biolib.utils.cmd_utils import call
 from configobj import ConfigObj
+from biolib.mapping import map_reads
 
-def _is_sequence_file(fpath):
-    'It returns true if the function is a sequence'
+def _is_file_kind(fpath, extensions):
+    'It returns True if the file has one of the given extensions'
     ext = os.path.splitext(fpath)[-1].strip('.')
-    if ext in ('fasta', 'fastq', 'sfastq', 'qual'):
+    if ext in extensions:
         return True
     else:
         return False
 
+def _is_sequence_file(fpath):
+    'It returns true if the function is a sequence'
+    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq'))
+
+def _is_sequence_or_qual_file(fpath):
+    'It returns true if the function is a sequence or quality file'
+    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq', 'qual'))
+
+def _select_file(kind, fpaths):
+    'It returns the fpath that correpond to the given file kind'
+    if kind == 'contigs':
+        fpaths = filter(_is_sequence_file, fpaths)
+        fpaths = filter(lambda x: BACKBONE_BASENAMES['contigs'] in x, fpaths)
+    assert len(fpaths) == 1
+    return fpaths[0]
 
 class Analyzer(object):
     '''This class performs an analysis.
@@ -58,9 +74,13 @@ class Analyzer(object):
             #we want full paths
             fpaths = [os.path.join(backbone_dir, path) for path in fpaths]
 
-            if ('file_kinds' in input_def and
-                                   input_def['file_kinds'] == 'sequence_files'):
-                fpaths = filter(_is_sequence_file, fpaths)
+            if 'file_kinds' in input_def:
+                if input_def['file_kinds'] == 'sequence_files':
+                    fpaths = filter(_is_sequence_file, fpaths)
+                elif input_def['file_kinds'] == 'sequence_or_qual_files':
+                    fpaths = filter(_is_sequence_or_qual_file, fpaths)
+            if 'file' in input_def:
+                fpaths = _select_file(input_def['file'], fpaths)
             input_files[input_kind] = fpaths
         return input_files
 
@@ -85,6 +105,13 @@ class Analyzer(object):
         output_dir = self._get_output_dir()
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
+
+    def _create_timestamped_output_dir(self):
+        'It returns a directory for this analysis'
+        timed_dir = os.path.join(self._get_output_dir(),
+                                    time.strftime("%Y%m%d_%H%M", time.gmtime()))
+        os.mkdir(timed_dir)
+        return timed_dir
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -231,22 +258,15 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
 class MiraAssemblyAnalyzer(Analyzer):
     'It assembles the cleaned reads'
 
-    def _create_assembly_dir(self, result_dir):
-        'It returns a directory for this analysis'
-        assembly_dir = os.path.join(result_dir,
-                                    time.strftime("%Y%m%d_%H%M", time.gmtime()))
-        os.mkdir(assembly_dir)
-        return assembly_dir
-
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-        output_dir = self._get_output_dir()
+
         proj_name = self._project_settings['General_settings']['project_name']
         #we need an assembly dir for this run
         #in this case every assembly is done in a new directory
         #the directory for this assembly
-        assembly_dir = self._create_assembly_dir(output_dir)
+        assembly_dir = self._create_timestamped_output_dir()
         mira_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
 
         os.chdir(assembly_dir)
@@ -304,14 +324,15 @@ class MiraAssemblyAnalyzer(Analyzer):
             mira_fpath = os.path.join(mira_results_dir,
                                       mira_basename + mira_ext)
             res_fpath = os.path.join(results_dir,
-                                     'contigs' + result_ext)
+                                     BACKBONE_BASENAMES['contigs'] + result_ext)
             if os.path.exists(mira_fpath):
                 os.symlink(mira_fpath, res_fpath)
-            
+
 
         mira_info_dir = os.path.join(mira_dir, '%s_d_info' % proj_name)
         if os.path.exists(mira_info_dir):
-            os.symlink(mira_info_dir, os.path.join(results_dir, 'info'))
+            os.symlink(mira_info_dir, os.path.join(results_dir,
+                                                  BACKBONE_DIRECTORIES['info']))
 
 class LastAssemblyAnalyzer(Analyzer):
     'It chooses the latest assembly as the result'
@@ -341,6 +362,52 @@ class LastAssemblyAnalyzer(Analyzer):
             os.remove(output_dir)
         os.symlink(latest_dir, output_dir)
 
+class SetAssemblyAsReferenceAnalyzer(Analyzer):
+    'It sets the reference assembly as mapping reference'
+    def run(self):
+        '''It runs the analysis.'''
+        contigs_fpath = self._get_input_fpaths()['contigs']
+        contigs_ext = os.path.splitext(contigs_fpath)[-1]
+        reference_dir = self._get_output_dir()
+        reference_fpath = os.path.join(reference_dir,
+                        BACKBONE_BASENAMES['mapping_reference'] + contigs_ext)
+        os.symlink(contigs_fpath, reference_fpath)
+
+def _get_basename(fpath):
+    'It returns the base name without path and extension'
+    return os.path.splitext(os.path.basename(fpath))[0]
+
+class MappingAnalyzer(Analyzer):
+    'It performs the mapping of the sequences to the reference'
+    def run(self):
+        '''It runs the analysis.'''
+        settings = self._project_settings['Mappers']
+        inputs = self._get_input_fpaths()
+        reads_fpaths = inputs['reads']
+        reference_fpath = inputs['reference']
+        output_dir = self._create_timestamped_output_dir()
+        output_dir = os.path.join(output_dir,
+                                  BACKBONE_DIRECTORIES['each_mapping_result'])
+        os.makedirs(output_dir)
+
+        for read_fpath in reads_fpaths:
+            read_info = _scrape_info_from_fname(read_fpath)
+            platform = read_info['pt']
+            #which mapper are we using for this platform
+            mapper = settings['mapper_for_%s' % platform]
+            out_bam = os.path.join(output_dir,
+                                   _get_basename(read_fpath) + '.bam')
+            mapping_parameters = {}
+            if platform in ('454', 'sanger'):
+                mapping_parameters['reads_length'] = 'long'
+            else:
+                mapping_parameters['reads_length'] = 'short'
+            map_reads(mapper,
+                      reads_fpath=read_fpath,
+                      reference_fpath=reference_fpath,
+                      out_bam_fpath=out_bam,
+                      parameters = mapping_parameters)
+
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
         {'inputs':{
@@ -364,7 +431,7 @@ ANALYSIS_DEFINITIONS = {
         {'inputs':{
             'reads':
                 {'directory': 'assembly_input',
-                 'file_kinds': 'sequence_files'}
+                 'file_kinds': 'sequence_or_qual_files'}
             },
          'output':{'directory': 'assemblies'},
          'analyzer': MiraAssemblyAnalyzer,
@@ -377,7 +444,28 @@ ANALYSIS_DEFINITIONS = {
          'output':{'directory': 'assembly_result'},
          'analyzer': LastAssemblyAnalyzer,
         },
+    'set_assembly_as_reference':
+        {'inputs':{
+            'contigs':
+                {'directory': 'assembly_result',
+                 'file': 'contigs'},
+            },
+         'output':{'directory': 'mapping_reference'},
+         'analyzer': SetAssemblyAsReferenceAnalyzer,
+        },
+    'mapping':
+        {'inputs':{
+            'reads':
+                {'directory': 'cleaned_reads',
+                 'file_kinds': 'sequence_files'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
 
+            },
+         'output':{'directory': 'mappings'},
+         'analyzer': MappingAnalyzer,
+        },
 }
 
 BACKBONE_DIRECTORIES = {
@@ -387,8 +475,17 @@ BACKBONE_DIRECTORIES = {
     'assembly_input': 'assembly/input',
     'assemblies': 'assembly',
     'assembly_result': 'assembly/result',
-    'each_assembly_result': 'result'
+    'each_assembly_result': 'result',
+    'mappings': 'mapping',
+    'mapping_result': 'mapping/result',
+    'mapping_reference': 'mapping/reference',
+    'each_mapping_result': 'result/by_library',
+    'info':'info',
                         }
+BACKBONE_BASENAMES = {
+    'contigs':'contigs',
+    'mapping_reference':'reference',
+}
 
 def do_analysis(kind, project_settings=None, analysis_config=None):
     'It does one of the predefined analyses'

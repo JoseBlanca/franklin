@@ -41,9 +41,16 @@ def create_project(name, directory=None):
     config['Cleaning']['lucy_settings'] = '/path/to/some/file'
 
     config['Mira'] = {}
-    config['Mira']['job_options'] = ['denovo' ,'est']
+    config['Mira']['job_options'] = ['denovo', 'est']
     config['Mira']['454_settings'] = ['-LR:mxti=no']
     config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30']
+
+    config['Mappers'] = {}
+    config['Mappers']['mapper_for_454'] = 'bwa'
+    config['Mappers']['mapper_for_illumina'] = 'bwa'
+    config['Mappers']['mapper_for_solid'] = 'bwa'
+    config['Mappers']['mapper_for_sanger'] = 'bwa'
+
     config.write()
 
     return settings_path
