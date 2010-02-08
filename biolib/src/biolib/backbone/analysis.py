@@ -43,24 +43,50 @@ class Analyzer(object):
     It checks if the the analysis is already done, looking to the output
     directory
     '''
-    def __init__(self, project_settings, analysis_definition,
-                 create_output_dir=True):
+    def __init__(self, project_settings, analysis_definition):
         'The init'
         self._project_settings = project_settings
         self._analysis_def = analysis_definition
-        if create_output_dir:
-            self._create_output_dir()
+        self._timestamped_dir = None
 
+    def _get_project_name(self):
+        'It returns the name of the project'
+        return self._project_settings['General_settings']['project_name']
     def _get_input_dirs(self):
         'It returns the directories for the inputs'
-        inputs_def = self._analysis_def['inputs']
-        input_dirs = {}
-        for input_kind, input_def in inputs_def.items():
-            project_dir = self._project_settings['General_settings']['project_path']
-            backbone_dir = os.path.join(project_dir,
-                                   BACKBONE_DIRECTORIES[input_def['directory']])
-            input_dirs[input_kind] = backbone_dir
-        return input_dirs
+        return self._get_io_dirs('inputs')
+
+    def _get_output_dirs(self, timestamped=False):
+        'It returns the directories for the output'
+        return self._get_io_dirs('outputs', timestamped)
+
+    def _get_io_dirs(self, stream_kind, timestamped=False):
+        'It returns the inputs or outputs directories'
+        stream_defs = self._analysis_def[stream_kind]
+        dirs = {}
+        project_dir = self._project_settings['General_settings']['project_path']
+        for kind, stream_def in stream_defs.items():
+            output_dir = BACKBONE_DIRECTORIES[stream_def['directory']]
+            if timestamped:
+                if self._timestamped_dir:
+                    time_bit = self._timestamped_dir
+                else:
+                    time_bit = time.strftime("%Y%m%d_%H%M", time.gmtime())
+                    self._timestamped_dir = time_bit
+            else:
+                time_bit = ''
+            if isinstance(output_dir, tuple):
+                pre_time_bit, post_time_bit = output_dir
+            else:
+                pre_time_bit = output_dir
+                post_time_bit = ''
+
+            timed_dir = os.path.join(project_dir,
+                                     pre_time_bit,
+                                     time_bit,
+                                     post_time_bit)
+            dirs[kind] = timed_dir
+        return dirs
 
     def _get_input_fpaths(self):
         'It returns a dict with the inputs files'
@@ -92,37 +118,40 @@ class Analyzer(object):
         'It runs the analysis'
         raise NotImplementedError
 
-    def _get_output_dir(self):
-        'It returns the path for the output dir'
-        dir_kind = self._analysis_def['output']['directory']
-        project_dir = self._project_settings['General_settings']['project_path']
-        output_dir = os.path.join(project_dir,
-                                  BACKBONE_DIRECTORIES[dir_kind])
-        return output_dir
+    def _get_timestamped_output_dirs(self):
+        'It returns the path for the output dir in each timestamped result'
+        analysis_dir = self._get_input_dirs()['analyses_dir']
 
-    def _create_output_dir(self):
-        'It creates the output directory if it does not exists'
-        output_dir = self._get_output_dir()
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        def _is_timestamped_dir(fname):
+            'It returns true for the timestamped directories'
+            if fname[0] == '2'and fname[-1].isdigit():
+                return True
+            else:
+                return False
+        dir_names = filter(_is_timestamped_dir, os.listdir(analysis_dir))
+        #for each timestamped dir there is a /result directory, this should
+        #be part of the dir_name
+        result_dir_kind = self._analysis_def['outputs']['result']['directory']
+        result_dir = BACKBONE_DIRECTORIES[result_dir_kind][1]
+        dir_names = [os.path.join(dname, result_dir) for dname in dir_names]
 
-    def _create_timestamped_output_dir(self):
-        'It returns a directory for this analysis'
-        timed_dir = os.path.join(self._get_output_dir(),
-                                    time.strftime("%Y%m%d_%H%M", time.gmtime()))
-        os.mkdir(timed_dir)
-        return timed_dir
+        dirs = [os.path.join(analysis_dir, dname) for dname in dir_names]
+        return sorted(dirs)
+
+
+    def _create_output_dirs(self, timestamped=False):
+        'It creates the output directories if they do not exists'
+        output_dirs = self._get_output_dirs(timestamped)
+        for kind, output_dir in output_dirs.items():
+            if ('create' in self._analysis_def['outputs'][kind] and
+                not self._analysis_def['outputs'][kind]['create']):
+                continue
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+        return output_dirs
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
-    def _get_output_fpath(self, input_fpath):
-        'It returns the output files for the analysis'
-        ouput_dir_kind = self._analysis_def['output']['directory']
-        project_path = self._project_settings['General_settings']['project_path']
-        output_dir = os.path.join(project_path,
-                                  BACKBONE_DIRECTORIES[ouput_dir_kind])
-        fname = os.path.split(input_fpath)[-1]
-        return  os.path.join(output_dir, fname)
 
     def _guess_cleaning_pipepile(self, file_info):
         'It returns the pipeline suited to clean the given file'
@@ -165,10 +194,11 @@ class CleanReadsAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-        inputs   = self._get_input_fpaths()['reads']
-
-        for input_fpath in inputs:
-            output_fpath = self._get_output_fpath(input_fpath)
+        input_fpaths   = self._get_input_fpaths()['reads']
+        output_dir =  self._create_output_dirs()['reads']
+        for input_fpath in input_fpaths:
+            fname = os.path.split(input_fpath)[-1]
+            output_fpath = os.path.join(output_dir, fname)
             if os.path.exists(output_fpath):
                 continue
             file_info = _scrape_info_from_fname(input_fpath)
@@ -218,9 +248,11 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         files_sanger.extend(files_sanger_without_qual)
 
         #all files should be fasta and fasta.qual
-        for ext, files in (('_in.454', files_454), ('_in.sanger', files_sanger)):
-            base_name = os.path.join(self._get_output_dir(),
-                                   self._project_settings['General_settings']['project_name'] + ext)
+        output_dir = self._create_output_dirs()['assembly_input']
+        project_name = self._get_project_name()
+        for ext, files in (('_in.454', files_454),
+                           ('_in.sanger', files_sanger)):
+            base_name = os.path.join(output_dir, project_name + ext)
             fasta_fpath = base_name + '.fasta'
             qual_fpath = base_name + '.fasta.qual'
             if os.path.exists(fasta_fpath) or not files:
@@ -262,11 +294,12 @@ class MiraAssemblyAnalyzer(Analyzer):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
 
-        proj_name = self._project_settings['General_settings']['project_name']
+        proj_name = self._get_project_name()
         #we need an assembly dir for this run
         #in this case every assembly is done in a new directory
         #the directory for this assembly
-        assembly_dir = self._create_timestamped_output_dir()
+        output_dirs = self._create_output_dirs(timestamped=True)
+        assembly_dir = output_dirs['analysis']
         mira_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
 
         os.chdir(assembly_dir)
@@ -312,9 +345,7 @@ class MiraAssemblyAnalyzer(Analyzer):
 
         #results
         mira_results_dir = os.path.join(mira_dir, '%s_d_results' % proj_name)
-        results_dir = os.path.join(assembly_dir,
-                                   BACKBONE_DIRECTORIES['each_assembly_result'])
-        os.mkdir(results_dir)
+        results_dir = output_dirs['result']
         mira_basename = '%s_out' % proj_name
         file_exts = (('.ace', '.ace'),
                      ('.caf', '.caf'),
@@ -334,30 +365,18 @@ class MiraAssemblyAnalyzer(Analyzer):
             os.symlink(mira_info_dir, os.path.join(results_dir,
                                                   BACKBONE_DIRECTORIES['info']))
 
-class LastAssemblyAnalyzer(Analyzer):
+class LastAnalysisAnalyzer(Analyzer):
     'It chooses the latest assembly as the result'
-
-    def __init__(self, project_settings, analysis_definition):
-        'The init'
-        Analyzer.__init__(self, project_settings, analysis_definition,
-                          create_output_dir=False)
 
     def run(self):
         '''It runs the analysis. It checks if the analysis'''
-        inputs = self._get_input_dirs()
-        dirs = os.listdir(inputs['assemblies_dir'])
-        def _is_assembly_dir(fname):
-            'It returns true for the assemblies dir'
-            if fname[0] == '2'and fname[-1].isdigit():
-                return True
-            else:
-                return False
-        dirs = sorted(filter(_is_assembly_dir,dirs))
+        return self._select_last_analysis()
+
+    def _select_last_analysis(self):
+        '''It select the last analysis from a directory with timestamped results'''
+        dirs = self._get_timestamped_output_dirs()
         latest_dir = dirs[-1]
-        latest_dir = os.path.join(inputs['assemblies_dir'],
-                                  latest_dir,
-                                  BACKBONE_DIRECTORIES['each_assembly_result'])
-        output_dir = self._get_output_dir()
+        output_dir = self._get_output_dirs()['result']
         if os.path.exists(output_dir):
             os.remove(output_dir)
         os.symlink(latest_dir, output_dir)
@@ -368,9 +387,9 @@ class SetAssemblyAsReferenceAnalyzer(Analyzer):
         '''It runs the analysis.'''
         contigs_fpath = self._get_input_fpaths()['contigs']
         contigs_ext = os.path.splitext(contigs_fpath)[-1]
-        reference_dir = self._get_output_dir()
+        reference_dir = self._create_output_dirs()['result']
         reference_fpath = os.path.join(reference_dir,
-                        BACKBONE_BASENAMES['mapping_reference'] + contigs_ext)
+                          BACKBONE_BASENAMES['mapping_reference'] + contigs_ext)
         os.symlink(contigs_fpath, reference_fpath)
 
 def _get_basename(fpath):
@@ -385,10 +404,7 @@ class MappingAnalyzer(Analyzer):
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
         reference_fpath = inputs['reference']
-        output_dir = self._create_timestamped_output_dir()
-        output_dir = os.path.join(output_dir,
-                                  BACKBONE_DIRECTORIES['each_mapping_result'])
-        os.makedirs(output_dir)
+        output_dir = self._create_output_dirs(timestamped=True)['result']
 
         for read_fpath in reads_fpaths:
             read_info = _scrape_info_from_fname(read_fpath)
@@ -415,7 +431,7 @@ ANALYSIS_DEFINITIONS = {
                 {'directory': 'original_reads',
                  'file_kinds': 'sequence_files'}
             },
-         'output':{'directory': 'cleaned_reads'},
+         'outputs':{'reads':{'directory': 'cleaned_reads'}},
          'analyzer': CleanReadsAnalyzer,
         },
     'prepare_mira_assembly':
@@ -424,7 +440,7 @@ ANALYSIS_DEFINITIONS = {
                 {'directory': 'cleaned_reads',
                  'file_kinds': 'sequence_files'}
             },
-         'output':{'directory': 'assembly_input'},
+         'outputs':{'assembly_input':{'directory': 'assembly_input'}},
          'analyzer': PrepareMiraAssemblyAnalyzer,
         },
     'mira_assembly':
@@ -433,24 +449,25 @@ ANALYSIS_DEFINITIONS = {
                 {'directory': 'assembly_input',
                  'file_kinds': 'sequence_or_qual_files'}
             },
-         'output':{'directory': 'assemblies'},
+         'outputs':{
+                    'analysis':  {'directory': 'assemblies'},
+                    'result':  {'directory': 'assembly_result'},
+                    },
          'analyzer': MiraAssemblyAnalyzer,
         },
     'select_last_assembly':
-        {'inputs':{
-            'assemblies_dir':
-                {'directory': 'assemblies'}
-            },
-         'output':{'directory': 'assembly_result'},
-         'analyzer': LastAssemblyAnalyzer,
+        {'inputs':{'analyses_dir':{'directory': 'assemblies'}},
+         'outputs':{'result':{'directory': 'assembly_result',
+                              'create': False}},
+         'analyzer': LastAnalysisAnalyzer,
         },
     'set_assembly_as_reference':
         {'inputs':{
-            'contigs':
-                {'directory': 'assembly_result',
-                 'file': 'contigs'},
-            },
-         'output':{'directory': 'mapping_reference'},
+                   'contigs':
+                            {'directory': 'assembly_result',
+                             'file': 'contigs'},
+                   },
+         'outputs':{'result':{'directory': 'mapping_reference'}},
          'analyzer': SetAssemblyAsReferenceAnalyzer,
         },
     'mapping':
@@ -463,9 +480,16 @@ ANALYSIS_DEFINITIONS = {
                 'file': 'mapping_reference'},
 
             },
-         'output':{'directory': 'mappings'},
+         'outputs':{'result':{'directory': 'mappings_by_library'}},
          'analyzer': MappingAnalyzer,
         },
+    'select_last_mapping':
+        {'inputs':{'analyses_dir':{'directory': 'mappings'}},
+         'outputs':{'result':{'directory': 'mapping_result',
+                              'create':False}},
+         'analyzer': LastAnalysisAnalyzer,
+        },
+
 }
 
 BACKBONE_DIRECTORIES = {
@@ -473,13 +497,12 @@ BACKBONE_DIRECTORIES = {
     'original_reads': 'reads/original',
     'cleaned_reads': 'reads/cleaned',
     'assembly_input': 'assembly/input',
-    'assemblies': 'assembly',
-    'assembly_result': 'assembly/result',
-    'each_assembly_result': 'result',
-    'mappings': 'mapping',
-    'mapping_result': 'mapping/result',
+    'assemblies': ('assembly', ''),
+    'assembly_result': ('assembly', 'result'),
+    'mappings': ('mapping', ''),
+    'mapping_result': ('mapping', 'result'),
     'mapping_reference': 'mapping/reference',
-    'each_mapping_result': 'result/by_library',
+    'mappings_by_library': ('mapping', 'result/by_library'),
     'info':'info',
                         }
 BACKBONE_BASENAMES = {

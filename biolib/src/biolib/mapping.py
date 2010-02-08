@@ -32,7 +32,6 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
 
     temp_dir = NamedTemporaryDir()
     if reads_length == 'short':
-        print 'short'
         cmd = ['bwa', 'aln', reference_fpath, reads_fpath]
         sai_fhand = open(os.path.join(temp_dir.name, 'output.sai'), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
@@ -41,7 +40,6 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
         ali_fhand = open(os.path.join(temp_dir.name, 'output.ali'), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     elif reads_length == 'long':
-        print 'long'
         cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath]
         ali_fhand = open(os.path.join(temp_dir.name, 'output.ali'), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
