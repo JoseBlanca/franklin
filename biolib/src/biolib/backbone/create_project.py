@@ -51,6 +51,8 @@ def create_project(name, directory=None):
     config['Mappers']['mapper_for_solid'] = 'bwa'
     config['Mappers']['mapper_for_sanger'] = 'bwa'
 
+    config['Snvs'] = {}
+    config['Snvs']['snv_pipeline'] = ''
     config.write()
 
     return settings_path

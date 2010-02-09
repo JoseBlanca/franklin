@@ -9,6 +9,7 @@ from biolib.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from biolib.backbone.create_project import create_project
 from biolib.backbone.analysis import do_analysis, BACKBONE_DIRECTORIES
 from configobj import ConfigObj
+from os.path import join, exists
 
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAAT
@@ -57,17 +58,17 @@ class TestBackbone(unittest.TestCase):
     'It tests the backbone'
 
     @staticmethod
-    def test_create_project():
+    def xtest_create_project():
         'We can create a project'
         test_dir = NamedTemporaryDir()
         settings_path = create_project(directory=test_dir.name,
                                        name='backbone')
 
-        assert settings_path == os.path.join(test_dir.name,
+        assert settings_path == join(test_dir.name,
                                 'backbone', BACKBONE_DIRECTORIES['config_file'])
         settings = ConfigObj(settings_path)
         assert settings['General_settings']['project_name'] == 'backbone'
-        project_path = os.path.join(test_dir.name, 'backbone')
+        project_path = join(test_dir.name, 'backbone')
         assert settings['General_settings']['project_path'] == project_path
         test_dir.close()
 
@@ -78,50 +79,49 @@ class TestBackbone(unittest.TestCase):
         project_name = 'backbone'
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name)
-        project_dir = os.path.join(test_dir.name, project_name)
+        project_dir = join(test_dir.name, project_name)
         #setup the original reads
-        reads_dir = os.path.join(project_dir, 'reads')
-        original_reads_dir = os.path.join(reads_dir, 'original')
+        reads_dir = join(project_dir, 'reads')
+        original_reads_dir = join(reads_dir, 'original')
         os.mkdir(reads_dir)
         os.mkdir(original_reads_dir)
 
         #print original_reads_dir
-        fpath_454 = os.path.join(original_reads_dir, 'pt_454.sfastq')
-        fpath_ill = os.path.join(original_reads_dir, 'pt_illumina.sfastq')
+        fpath_454 = join(original_reads_dir, 'pt_454.sfastq')
+        fpath_ill = join(original_reads_dir, 'pt_illumina.sfastq')
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
         do_analysis(project_settings=settings_path, kind='clean_reads')
-        cleaned_dir = os.path.join(project_dir, 'reads', 'cleaned')
-        assert os.path.exists(cleaned_dir)
-        cleaned_454 = os.path.join(cleaned_dir, os.path.basename(fpath_454))
-        assert os.path.exists(cleaned_454)
+        cleaned_dir = join(project_dir, 'reads', 'cleaned')
+        assert exists(cleaned_dir)
+        cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
+        assert exists(cleaned_454)
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')
-        assembly_input = os.path.join(project_dir, 'assembly', 'input')
-        assert os.path.exists(assembly_input)
-        mira_in_454 = os.path.join(assembly_input, 'backbone_in.454.fasta')
-        mira_in_qul = os.path.join(assembly_input, 'backbone_in.454.fasta.qual')
-        assert os.path.exists(mira_in_454)
-        assert os.path.exists(mira_in_qul)
-
+        assembly_input = join(project_dir, 'assembly', 'input')
+        assert exists(assembly_input)
+        mira_in_454 = join(assembly_input, 'backbone_in.454.fasta')
+        mira_in_qul = join(assembly_input, 'backbone_in.454.fasta.qual')
+        assert exists(mira_in_454)
+        assert exists(mira_in_qul)
 
         do_analysis(project_settings=settings_path, kind='mira_assembly')
-        assembly_dir = os.path.join(project_dir, 'assembly')
+        assembly_dir = join(project_dir, 'assembly')
         singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
-        assert os.path.exists(os.path.join(assembly_dir, singular_assembly_dir,
+        assert exists(join(assembly_dir, singular_assembly_dir,
                                            'stderr.txt'))
 
         do_analysis(project_settings=settings_path, kind='select_last_assembly')
-        assem_result_dir = os.path.join(assembly_dir, 'result')
-        assert os.path.exists(assem_result_dir)
-        assert os.path.exists(os.path.join(assem_result_dir, 'info'))
+        assem_result_dir = join(assembly_dir, 'result')
+        assert exists(assem_result_dir)
+        assert exists(join(assem_result_dir, 'info'))
 
         #mira does not do any contig
-        result_dir = os.path.join(assembly_dir, 'result')
-        open(os.path.join(result_dir, 'contigs.fasta'), 'w')
-        open(os.path.join(result_dir, 'contigs.qual'), 'w')
+        result_dir = join(assembly_dir, 'result')
+        open(join(result_dir, 'contigs.fasta'), 'w')
+        open(join(result_dir, 'contigs.qual'), 'w')
         do_analysis(project_settings=settings_path,
                     kind='set_assembly_as_reference')
         test_dir.close()
@@ -129,15 +129,15 @@ class TestBackbone(unittest.TestCase):
 
     @staticmethod
     def test_mapping_analysis():
-        'We can clean the reads'
+        'We can map the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name)
-        project_dir = os.path.join(test_dir.name, project_name)
+        project_dir = join(test_dir.name, project_name)
         #setup the original reads
-        reads_dir = os.path.join(project_dir, 'reads')
-        clean_reads_dir = os.path.join(reads_dir, 'cleaned')
+        reads_dir = join(project_dir, 'reads')
+        clean_reads_dir = join(reads_dir, 'cleaned')
         os.mkdir(reads_dir)
         os.mkdir(clean_reads_dir)
 
@@ -163,21 +163,45 @@ class TestBackbone(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
-        fpath_sanger = os.path.join(clean_reads_dir, 'lb_hola.pt_sanger.fastq')
-        fpath_solexa = os.path.join(clean_reads_dir,
+        fpath_sanger = join(clean_reads_dir, 'lb_hola.pt_sanger.fastq')
+        fpath_solexa = join(clean_reads_dir,
                                     'lb_hola.pt_illumina.sfastq')
         open(fpath_sanger, 'w').write(sanger)
         open(fpath_solexa, 'w').write(solexa)
 
         #the reference
-        reference_dir = os.path.join(project_dir, 'mapping/reference')
+        reference_dir = join(project_dir, 'mapping/reference')
         os.makedirs(reference_dir)
-        reference_fpath = os.path.join(reference_dir, 'reference.fasta')
+        reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(os.path.join(DATA_DIR, 'blast/arabidopsis_genes')):
+        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
             out.write(line)
 
         do_analysis(project_settings=settings_path, kind='mapping')
+        mapping_dir = join(project_dir, 'mapping')
+        singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
+        singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
+        assert exists(join(singular_mapping_dir, 'result',
+                                    'by_readgroup', 'lb_hola.pt_illumina.bam'))
+        do_analysis(project_settings=settings_path, kind='select_last_mapping')
+        result_dir = join(mapping_dir, 'result')
+        assert exists(result_dir)
+        result_dir_by_lib = join(result_dir, 'by_readgroup')
+        assert exists(result_dir_by_lib)
+
+        do_analysis(project_settings=settings_path, kind='merge_bam')
+        assert exists(join(result_dir, 'merged.bam'))
+
+        do_analysis(project_settings=settings_path, kind='bam_to_pileup')
+        pileup_dir = join(result_dir, 'pileups')
+        assert exists(pileup_dir)
+        assert exists(join(pileup_dir, 'lb_hola.pt_illumina.pileup'))
+
+        do_analysis(project_settings=settings_path, kind='pileup_to_snvs')
+        assert  exists(join (project_dir, 'annotations', 'snvs', 'all.snvs'))
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

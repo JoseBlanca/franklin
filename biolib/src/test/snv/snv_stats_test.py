@@ -3,6 +3,7 @@ Created on 08/10/2009
 
 @author: jose
 '''
+from tempfile import NamedTemporaryFile
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of biolib.
@@ -33,8 +34,9 @@ class TestSnvStats(unittest.TestCase):
         'It tests the reference variability distribution'
         seq1 = 'A' * 100
         seq2 = 'T' * 100
-        reference_fhand = StringIO('>hola\n' + seq1 + '\n>caracola\n' + seq2 +
-                                   '\n')
+        reference_fhand = NamedTemporaryFile()
+        reference_fhand.write('>hola\n' + seq1 + '\n>caracola\n' + seq2 + '\n')
+        reference_fhand.flush()
         seq_var = Snv(reference='hola', location=3, per_lib_info=[])
         seq_var2 = Snv(reference='hola', location=4, per_lib_info=[])
         seq_var3 = Snv(reference='caracola', location=2, per_lib_info=[])

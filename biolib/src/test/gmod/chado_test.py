@@ -287,7 +287,8 @@ class AddLibraryToChado(unittest.TestCase):
         add_project_to_naming_database(naming_engine, name='my_project',
                                        code='my', description='a test project')
         #the real naming stuff
-        naming = DbNamingSchema(naming_engine, project='my_project')
+        naming = DbNamingSchema(naming_engine, project='my_project',
+                                feature_kind='library')
         naming = FileNamingSchema(fhand, naming)
 
         #now we add the libraries to the file

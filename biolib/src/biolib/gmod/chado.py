@@ -118,8 +118,7 @@ def _library_to_chado_dict(parsed_library, naming):
     cvtermname = parsed_library['cvtermname']
     genus      = parsed_library['genus']
     specie     = parsed_library['specie']
-    uniquename = naming.get_uniquename(name=parsed_library['name'],
-                                       kind='library')
+    uniquename = naming.get_uniquename(name=parsed_library['name'])
     library_attrs = {'organism_id':{'genus': genus, 'species':specie},
                      'type_id'    :{'cv_id'    :{'name':cvname},
                                     'name'     : cvtermname},
@@ -135,8 +134,7 @@ def _libraryprop_to_chado_dict(parsed_library, naming):
     specie     = parsed_library['specie']
 
     for cvnamep, cvtermnamep, value  in parsed_library['properties']:
-        uniquename  = naming.get_uniquename(name=parsed_library['name'],
-                                       kind='library')
+        uniquename  = naming.get_uniquename(name=parsed_library['name'])
         libraryprop_attrs = {'library_id':{
                                'organism_id':{'genus': genus, 'species':specie},
                                'uniquename':uniquename,

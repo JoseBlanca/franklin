@@ -20,11 +20,10 @@ Created on 2009 mar 25
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-
+from Bio import SeqIO
 from biolib.utils.seqio_utils import temp_fasta_file
 from biolib.utils.cmd_utils import call
 from biolib.seq.seqs import SeqWithQuality
-from biolib.utils.seqio_utils import FileSequenceIndex
 from biolib.utils.collections_ import item_context_iter
 
 SNP = 0
@@ -448,7 +447,7 @@ def snvs_in_file(snv_fhand, ref_fhand=None):
 
 def add_reference_to_svns(snvs, ref_fhand):
     'It adds the reference to the svn, it yields the complete svn'
-    references_index = FileSequenceIndex(ref_fhand)
+    references_index = SeqIO.index(ref_fhand.name, 'fasta')
     for snv in snvs:
         snv.reference = references_index[snv.reference]
         yield snv

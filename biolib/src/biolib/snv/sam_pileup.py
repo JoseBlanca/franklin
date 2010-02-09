@@ -19,8 +19,7 @@ Created on 22/09/2009
 
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
-
-from biolib.utils.seqio_utils import FileSequenceIndex
+from Bio import SeqIO
 from biolib.utils.collections_ import item_context_iter
 from biolib.snv.snv import (SNP, INSERTION, DELETION, INVARIANT, Snv,
                             aggregate_alleles)
@@ -261,7 +260,7 @@ def _alleles_in_pileups(line_in_pileups):
 def snvs_in_sam_pileups(pileups, libraries, references=None, min_num=None):
     '''It yields Snvs from the given pileups'''
     if references is not None:
-        references_index = FileSequenceIndex(references)
+        references_index = SeqIO.index(references.name, 'fasta')
 
     # check if the pileups are well formed
     for pileup in pileups:

@@ -22,8 +22,7 @@ Created on 2009 uzt 30
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-
-from biolib.utils.seqio_utils import FileSequenceIndex
+from Bio import SeqIO
 from biolib.snv.snv import (cap_enzymes, SNP, reference_variability,
                             get_reference_name, aggregate_alleles)
 from biolib.seq.seq_analysis import infer_introns_for_cdna
@@ -63,7 +62,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                                            genomic_seqs_fhand):
     '''It returns a filter that removes snv in a region that give more than one
     match or more than one match_parts'''
-    genomic_seqs_index = FileSequenceIndex(genomic_seqs_fhand, 'fasta')
+    genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name, 'fasta')
     parameters = {'database': genomic_db, 'program':'blastn'}
     blast_runner = create_runner(tool='blast', parameters=parameters)
     blast_parser = get_alignment_parser('blast')
@@ -127,7 +126,7 @@ def create_close_to_intron_filter(distance, genomic_db,
 
     genomic_seqs_index = None
     if genomic_seqs_fhand:
-        genomic_seqs_index = FileSequenceIndex(genomic_seqs_fhand, 'fasta')
+        genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name, 'fasta')
 
     def close_to_intron_filter(snv):
         'The filter'

@@ -10,6 +10,12 @@ from biolib.pipelines.pipelines import seq_pipeline_runner
 from biolib.utils.cmd_utils import call
 from configobj import ConfigObj
 from biolib.mapping import map_reads
+from biolib.utils.misc_utils import NamedTemporaryDir
+from tempfile import NamedTemporaryFile
+from biolib.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam, sam2bam,
+                        sort_bam_sam)
+from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
+from biolib.pipelines.pipelines import pipeline_runner
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -32,6 +38,10 @@ def _select_file(kind, fpaths):
     if kind == 'contigs':
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['contigs'] in x, fpaths)
+    elif  kind == 'mapping_reference':
+        fpaths = filter(_is_sequence_file, fpaths)
+        fpaths = filter(lambda x: BACKBONE_BASENAMES['mapping_reference'] in x,
+                        fpaths)
     assert len(fpaths) == 1
     return fpaths[0]
 
@@ -105,6 +115,10 @@ class Analyzer(object):
                     fpaths = filter(_is_sequence_file, fpaths)
                 elif input_def['file_kinds'] == 'sequence_or_qual_files':
                     fpaths = filter(_is_sequence_or_qual_file, fpaths)
+                elif input_def['file_kinds'] == 'bam':
+                    fpaths = filter(lambda x: x.endswith('.bam'), fpaths)
+                elif input_def['file_kinds'] == 'pileup':
+                    fpaths = filter(lambda x: x.endswith('.pileup'), fpaths)
             if 'file' in input_def:
                 fpaths = _select_file(input_def['file'], fpaths)
             input_files[input_kind] = fpaths
@@ -424,6 +438,103 @@ class MappingAnalyzer(Analyzer):
                       out_bam_fpath=out_bam,
                       parameters = mapping_parameters)
 
+class MergeBamAnalyzer(Analyzer):
+    'It performs the merge of various bams into only one'
+    def run(self):
+        '''It runs the analysis.'''
+#        settings = self._project_settings['Mappers']
+        inputs          = self._get_input_fpaths()
+        bam_fpaths      = inputs['bams']
+        reference_fpath = inputs['reference']
+
+        output_dir      = self._create_output_dirs()['result']
+        merged_bam_fpath = os.path.join(output_dir,
+                                       BACKBONE_BASENAMES['merged_bam'])
+        # First we need to create the sam with added tags and headers
+        temp_dir = NamedTemporaryDir()
+        for bam_fpath in bam_fpaths:
+            bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
+            temp_sam     =  NamedTemporaryFile(prefix='%s.' % bam_basename,
+                                               suffix='.sam')
+            sam_fpath    = os.path.join(temp_dir.name, bam_basename + '.sam')
+            bam2sam(bam_fpath, temp_sam.name)
+            add_header_and_tags_to_sam(temp_sam, open(sam_fpath, 'w'))
+
+        # Once the headers are ready we are going to merge
+        sams = []
+        for file_ in os.listdir(temp_dir.name):
+            if file_.endswith('.sam'):
+                sams.append(open(os.path.join(temp_dir.name, file_)))
+
+        temp_sam = NamedTemporaryFile(suffix='.bam')
+        merge_sam(sams, temp_sam, open(reference_fpath))
+
+        # Convert sam into a bam,(Temporary)
+        temp_bam = NamedTemporaryFile(suffix='.bam')
+        sam2bam(temp_sam.name, temp_bam.name)
+
+        # finally we need to order the bam
+        sort_bam_sam(temp_bam.name, merged_bam_fpath)
+
+class BamToPileupAnalyzer(Analyzer):
+    'It performs the merge of various bams into only one'
+    def run(self):
+        '''It runs the analysis.'''
+#        settings = self._project_settings['Mappers']
+        inputs          = self._get_input_fpaths()
+        bam_fpaths      = inputs['bams']
+        reference_fpath = inputs['reference']
+
+        output_dir      = self._create_output_dirs()['result']
+
+        for bam_fpath in bam_fpaths:
+            bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
+            pileup_fpath = os.path.join(output_dir, bam_basename + '.pileup')
+            #multiple alignment
+            cmd = ['samtools', 'pileup', '-f', reference_fpath, bam_fpath]
+            stdout = call(cmd, raise_on_error=True)[0]
+            pileup = open(pileup_fpath, 'w')
+            pileup.write(stdout)
+            pileup.close()
+
+class PileupToSnvAnalyzer(Analyzer):
+    'It performs the merge of various bams into only one'
+    def run(self):
+        '''It runs the analysis.'''
+        settings        = self._project_settings['Snvs']
+        pipeline        = settings['snv_pipeline']
+        inputs          = self._get_input_fpaths()
+        pileup_fpaths   = inputs['pileups']
+        output_dir      = self._create_output_dirs()['result']
+        output_file     = os.path.join(output_dir,
+                                       BACKBONE_BASENAMES['snv_result'])
+
+        pileup_fhands = []
+        libraries     = []
+        for pileup_fpath in pileup_fpaths:
+            pileup_fhands.append(open(pileup_fpath, 'w'))
+            file_info  =  _scrape_info_from_fname(pileup_fpath)
+            libraries.append(file_info['lb'])
+
+        #extract snvs from pileups
+        seq_vars_with_context = snv_contexts_in_sam_pileup(pileup_fhands,
+                                                           libraries=libraries)
+        # Filter using a pipeline
+        if pipeline:
+            seq_vars_with_context = pipeline_runner(pipeline,
+                                                    seq_vars_with_context)
+        #remove context to the snv iterator
+        seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
+
+        # Write result dir
+        out_fhand = open(output_file, 'w')
+        for snv in seq_vars:
+            if snv is not None:
+                out_fhand.write(repr(snv))
+
+
+
+
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
         {'inputs':{
@@ -480,7 +591,7 @@ ANALYSIS_DEFINITIONS = {
                 'file': 'mapping_reference'},
 
             },
-         'outputs':{'result':{'directory': 'mappings_by_library'}},
+         'outputs':{'result':{'directory': 'mappings_by_readgroup'}},
          'analyzer': MappingAnalyzer,
         },
     'select_last_mapping':
@@ -488,6 +599,42 @@ ANALYSIS_DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result',
                               'create':False}},
          'analyzer': LastAnalysisAnalyzer,
+        },
+    'merge_bam':
+        {'inputs':{
+            'bams':
+                {'directory': 'mappings_by_readgroup',
+                 'file_kinds': 'bam'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
+            },
+         'outputs':{'result':{'directory': 'mapping_result'}},
+         'analyzer': MergeBamAnalyzer,
+        },
+    'bam_to_pileup':
+        {'inputs':{
+            'bams':
+                {'directory': 'mappings_by_readgroup',
+                 'file_kinds': 'bam'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
+            },
+         'outputs':{'result':{'directory': 'pileups'}},
+         'analyzer': BamToPileupAnalyzer,
+        },
+    'pileup_to_snvs':
+        {'inputs':{
+            'pileups':
+                {'directory': 'mappings_by_readgroup',
+                 'file_kinds': 'pileup'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
+            },
+         'outputs':{'result':{'directory': 'snvs'}},
+         'analyzer': PileupToSnvAnalyzer,
         },
 
 }
@@ -502,12 +649,16 @@ BACKBONE_DIRECTORIES = {
     'mappings': ('mapping', ''),
     'mapping_result': ('mapping', 'result'),
     'mapping_reference': 'mapping/reference',
-    'mappings_by_library': ('mapping', 'result/by_library'),
+    'mappings_by_readgroup': ('mapping', 'result/by_readgroup'),
+    'pileups':'mapping/result/pileups',
+    'snvs':'annotations/snvs',
     'info':'info',
                         }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',
     'mapping_reference':'reference',
+    'merged_bam':'merged.bam',
+    'snv_result':'all.snvs',
 }
 
 def do_analysis(kind, project_settings=None, analysis_config=None):

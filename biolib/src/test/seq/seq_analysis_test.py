@@ -27,8 +27,7 @@ from biolib.seq.seq_analysis import (infer_introns_for_cdna,
                                      est2genome_parser,
                                      build_sequence_clusters)
 from biolib.utils.misc_utils import DATA_DIR
-from biolib.utils.seqio_utils import FileSequenceIndex
-
+from Bio import SeqIO
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
     @staticmethod
@@ -237,7 +236,7 @@ class IntronTest(unittest.TestCase):
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq1 = SeqWithQuality(seq = Seq(seq))
         genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome2')
-        genomic_seqs_index = FileSequenceIndex(open(genomic_db), 'fasta')
+        genomic_seqs_index = SeqIO.index(genomic_db, 'fasta')
         introns = infer_introns_for_cdna(seq1, genomic_db,
                                          genomic_seqs_index=genomic_seqs_index)
         assert introns == [478, 572, 613]

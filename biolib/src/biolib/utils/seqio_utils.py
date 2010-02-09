@@ -298,43 +298,6 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
                                 annotations=annotations)
         yield seqrec
 
-class FileSequenceIndex(object):
-    'It indexes sequence files and it returns seq records'
-    def __init__(self, fhand, format=None):
-        '''It creates the index.
-
-        If the format is not given it will be guessed
-        '''
-        if format is None:
-            format = guess_seq_file_format(fhand)
-        self._format = format
-        patterns = {
-                    'fasta': {'item_start_patterns':['^>'],
-                              'key_patterns':['^>([^ \t\n]+)']},
-                    'qual': {'item_start_patterns':['^>'],
-                              'key_patterns':['^>([^ \t\n]+)']},
-                    }
-        item_start_patterns = patterns[format]['item_start_patterns']
-        key_patterns        = patterns[format]['key_patterns']
-        self._index = FileIndex(fhand, item_start_patterns=item_start_patterns,
-                                key_patterns=key_patterns)
-    def __getitem__(self, name):
-        'It returns a sequence record'
-        seq_content = StringIO.StringIO(self._index[name])
-        if self._format in ('fasta', 'qual'):
-            if self._format == 'fasta':
-                name, description, seq = get_content_from_fasta(seq_content)
-                qual = None
-            else:
-                name, description, qual = get_content_from_fasta(seq_content,
-                                                                kind='qual')
-                seq = UnknownSeq(length=len(qual))
-            seqrec = SeqWithQuality(seq=seq, qual=qual)
-            if name is not None:
-                seqrec.name = name
-            if description is not None:
-                seqrec.description = description
-            return seqrec
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     '''It writes the given sequences in the given files.

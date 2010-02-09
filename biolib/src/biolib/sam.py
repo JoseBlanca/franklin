@@ -66,6 +66,11 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
         rgid_.append(value)
     rgid = "+".join(rgid_)
 
+    # a proper sam with RG needs a SM key
+    if not _check_tag_in_RG('SM', append_to_header):
+        append_to_header.append('SM:%s' % rgid)
+
+
     new_sam_fhand.write('@RG\tID:%s\t' % rgid)
     new_sam_fhand.write("\t".join(append_to_header) + " \n")
 
@@ -78,6 +83,15 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
         if not line.startswith('@'):
             line = line + "\t" + 'RG:Z:%s' % rgid
             new_sam_fhand.write(line + '\n')
+    new_sam_fhand.flush()
+
+def _check_tag_in_RG(tag, tags_to_append):
+    'It check if the given tag is in the tags to append'
+    for tag_to_append in tags_to_append:
+        key = tag_to_append.split()[0]
+        if key.upper() == tag.upper():
+            return True
+    return False
 
 def merge_sam(infiles, outfile, reference):
     'It merges a list of sam files'
