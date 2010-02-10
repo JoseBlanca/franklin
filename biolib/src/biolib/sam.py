@@ -12,6 +12,8 @@ from tempfile import NamedTemporaryFile
 from biolib.utils.cmd_utils import call
 from biolib.utils.seqio_utils import seqs_in_file
 
+
+
 PICARDPATH = '/usr/local/biology/picard'
 
 def bam2sam(bampath, sampath=None):
