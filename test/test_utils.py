@@ -17,6 +17,7 @@ Mock objects to have outside projects independence
 # You should have received a copy of the GNU Affero General Public License
 # along with biolib. If not, see <http://www.gnu.org/licenses/>.
 
+
 def _complement(seq):
     '''It complements the given sequence'''
     compdict = { 'a':'t', 'c':'g', 'g':'c', 't':'a', 'u':'t',
