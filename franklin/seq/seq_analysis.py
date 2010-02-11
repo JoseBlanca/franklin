@@ -173,11 +173,11 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     #we run est2genome
     cmd = ['est2genome', cdna_file.name, similar_seq_file.name,
            '-sbegin2', str(start), '-send2', str(end), '-stdout', '-auto']
-    # Sometimes est2genome fails randomly, so we repeat the call once
-    try:
-        stdout, stderr, retcode = call(cmd)
-    except OSError:
-        stdout, stderr, retcode = call(cmd)
+#    # Sometimes est2genome fails randomly, so we repeat the call once
+#    try:
+#        stdout, stderr, retcode = call(cmd)
+#    except OSError:
+    stdout, stderr, retcode = call(cmd)
 
     if retcode:
         msg = 'There was an error running est2genome: ' + stderr

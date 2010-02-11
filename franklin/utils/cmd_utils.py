@@ -315,6 +315,14 @@ def create_runner(tool, parameters=None, environment=None):
         return returns
     return run_cmd_for_sequence
 
+def _which_binary(binary):
+    'It return the full path of the binary if exists'
+    abs_binary = call(['which', binary], raise_on_error=True)[0]
+    if abs_binary[0]  == '/':
+        return abs_binary
+    else:
+        return None
+
 def call(cmd, environment=None, stdin=None, raise_on_error=False,
          stdout=None, stderr=None):
     'It calls a command and it returns stdout, stderr and retcode'
@@ -341,12 +349,23 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         for key, value in environment.items():
             new_env[key] = value
         environment = new_env
-    try:
-        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
-                                   env=environment, stdin=pstdin,
-                                   preexec_fn=subprocess_setup)
-    except OSError:
-        raise OSError('No such file or directory, executable was ' + cmd[0])
+
+    binary = _which_binary(cmd[0])
+    if binary is None:
+        raise OSError('No such file or directory, executable was ' + cmd[0]))
+    else:
+        #remove binary for a absolute path binary
+        cmd.pop(0)
+        cmd.insert(0, binary)
+
+        try:
+            process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                       env=environment, stdin=pstdin,
+                                       preexec_fn=subprocess_setup)
+        except OSError:
+            process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                       env=environment, stdin=pstdin,
+                                       preexec_fn=subprocess_setup)
     if stdin is None:
         stdout_str, stderr_str = process.communicate()
     else:
