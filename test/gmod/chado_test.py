@@ -5,19 +5,19 @@ Created on 2009 eka 5
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from StringIO import StringIO
@@ -25,17 +25,17 @@ import sqlalchemy
 from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
                         UniqueConstraint)
 from sqlalchemy.orm import sessionmaker
-from biolib.gmod.chado import (add_csv_to_chado, add_libraries_to_chado,
+from franklin.gmod.chado import (add_csv_to_chado, add_libraries_to_chado,
                                CHADO_MAPPING_DEFINITIONS)
-from biolib.db.db_utils import DbMap, setup_mapping
-import os, biolib
+from franklin.db.db_utils import DbMap, setup_mapping
+import os, franklin
 from tempfile import NamedTemporaryFile
-from biolib.db.naming import (create_naming_database,
+from franklin.db.naming import (create_naming_database,
                                   add_project_to_naming_database,
                                   DbNamingSchema, FileNamingSchema)
 
 
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 def create_chado_example():
     '''It creates a chado mini schema with only two tables and one relaion

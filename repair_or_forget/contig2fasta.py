@@ -7,7 +7,7 @@ Created on 2009 mai 13
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.contig_io import contig_to_fasta
+from franklin.contig_io import contig_to_fasta
 import sys
 
 def main():

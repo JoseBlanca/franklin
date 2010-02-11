@@ -6,9 +6,9 @@ format
 Created on 2009 mai 4
 @author: peio
 '''
-from biolib.seqvariation import (seqvars_in_contigs, seqvar_summary)
-from biolib.contig_io import get_parser
-from biolib.pipelines import pipeline_runner
+from franklin.seqvariation import (seqvars_in_contigs, seqvar_summary)
+from franklin.contig_io import get_parser
+from franklin.pipelines import pipeline_runner
 
 from optparse import OptionParser
 from os.path import basename

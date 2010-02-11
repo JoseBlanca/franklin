@@ -4,13 +4,13 @@ Created on 15/09/2009
 @author: peio
 '''
 import unittest
-from biolib.libassemble import (check_and_fix_config,
+from franklin.libassemble import (check_and_fix_config,
                                 prepare_files_to_load_in_bank)
-from biolib.utils.misc_utils import NamedTemporaryDir
-import biolib
+from franklin.utils.misc_utils import NamedTemporaryDir
+import franklin
 import os.path
 
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 class AssembleToReferenceTest(unittest.TestCase):
     'This class tests functions in assemble to reference'

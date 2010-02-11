@@ -5,8 +5,8 @@ alignment. It preprares the sequences, format them and do the actual alignment
 '''
 from optparse import OptionParser
 import os
-from biolib.contig_io import contig_to_fasta
-from biolib.biolib_cmd_utils import call
+from franklin.contig_io import contig_to_fasta
+from franklin.biolib_cmd_utils import call
 
 def main():
     '''main section '''

@@ -13,7 +13,7 @@ from optparse import OptionParser
 '''
 from optparse import OptionParser
 import sys, sqlalchemy, os
-from biolib.db.naming import (create_naming_database, project_in_database,
+from franklin.db.naming import (create_naming_database, project_in_database,
                               add_project_to_naming_database, DbNamingSchema,
                               change_names_in_files, FileNamingSchema)
 

@@ -5,24 +5,24 @@ Created on 26/10/2009
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from StringIO import StringIO
 
-from biolib.gff import write_gff
+from franklin.gff import write_gff
 
 class GffOutTest(unittest.TestCase):
     'It tests the gff writer'

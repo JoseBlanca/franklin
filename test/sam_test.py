@@ -8,10 +8,10 @@ from tempfile import NamedTemporaryFile
 from test.utils.misc_utils_test import NamedTemporariDirTest
 import unittest, os
 
-from biolib.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
 
-from biolib.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
+from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                         add_header_and_tags_to_sam)
 
 class SamTest(unittest.TestCase):

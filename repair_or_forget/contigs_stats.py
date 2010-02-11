@@ -7,8 +7,8 @@
 '''
 
 from optparse import OptionParser
-from biolib.contig_io import get_parser
-#from biolib.SeqVariation import contig_to_read_list
+from franklin.contig_io import get_parser
+#from franklin.SeqVariation import contig_to_read_list
 import matplotlib.pyplot as plt
 
 def contig_stats(contig, data_dict):

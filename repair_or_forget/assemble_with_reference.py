@@ -17,7 +17,7 @@ It needs a configuration file.There is a configuration file in data directory
 '''
 
 from optparse import OptionParser
-from biolib.libassemble import (check_and_fix_config, load_seqs_in_bank)
+from franklin.libassemble import (check_and_fix_config, load_seqs_in_bank)
 
 def parse_options():
     'It parses the command line arguments'
@@ -43,10 +43,10 @@ def set_parameters():
         steps = [int(step) for step in options.steps.split(',')]
     return cfile, steps
 def prepare_env():
-    from biolib.utils.misc_utils import NamedTemporaryDir
+    from franklin.utils.misc_utils import NamedTemporaryDir
     import os
-    import biolib
-    data_dir = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+    import franklin
+    data_dir = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
     temp_dir = NamedTemporaryDir()
     ref_fhand  = open(os.path.join(data_dir, 'seq.fasta'), 'r')

@@ -18,13 +18,13 @@ get a 3-D distribution plot. To get that you should chose the --incompat option.
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
@@ -33,10 +33,10 @@ get a 3-D distribution plot. To get that you should chose the --incompat option.
 # along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from biolib.statistics import draw_scatter
-from biolib.alignment_search_result import (BlastParser,
+from franklin.statistics import draw_scatter
+from franklin.alignment_search_result import (BlastParser,
                                                        alignment_results_scores)
-from biolib.statistics import create_distribution
+from franklin.statistics import create_distribution
 
 import numpy
 import pylab

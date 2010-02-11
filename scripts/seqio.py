@@ -2,7 +2,7 @@
 'It inputs and ouputs sequences, usually to change their format'
 
 from optparse import OptionParser
-from biolib.utils.seqio_utils import seqio
+from franklin.utils.seqio_utils import seqio
 
 def parse_options():
     'It parses the command line arguments'

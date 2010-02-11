@@ -4,27 +4,27 @@ Created on 2009 eka 19
 @author: peio
 '''
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from biolib.snv.snv_miner import SnvDb, create_snp_miner_database
+from franklin.snv.snv_miner import SnvDb, create_snp_miner_database
 
-from biolib.snv.snv import Snv, INVARIANT, SNP
+from franklin.snv.snv import Snv, INVARIANT, SNP
 import sqlalchemy
 
-#from biolib.db.naming import (create_naming_database,
+#from franklin.db.naming import (create_naming_database,
 #                                  FileNamingSchema)
 
 LIBRARY_FILE = '''format-version:1

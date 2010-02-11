@@ -7,11 +7,11 @@ Created on 2009 eka 9
 @author: peio
 '''
 from optparse import OptionParser
-from biolib.gmod.chado import (add_csv_to_chado, load_ontology,
+from franklin.gmod.chado import (add_csv_to_chado, load_ontology,
                                add_libraries_to_chado)
-from biolib.db.db_utils import  connect_database
-from biolib.utils.cmd_utils import call
-from biolib.db.naming import DbNamingSchema, FileNamingSchema
+from franklin.db.db_utils import  connect_database
+from franklin.utils.cmd_utils import call
+from franklin.db.naming import DbNamingSchema, FileNamingSchema
 import os
 
 

@@ -5,7 +5,7 @@ Created on 19/01/2010
 @author: peio
 '''
 import sys
-from biolib.utils.cmd_utils import call
+from franklin.utils.cmd_utils import call
 
 def run_blast():
     'It runs one of the blast+ programs'

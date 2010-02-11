@@ -1,29 +1,29 @@
 '''A samtools pileup parser.'''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os, StringIO
 
-import biolib
-from biolib.snv.sam_pileup import (_is_seq_var, _locations_in_pileups,
+import franklin
+from franklin.snv.sam_pileup import (_is_seq_var, _locations_in_pileups,
                                    snvs_in_sam_pileups, _check_pileup)
-from biolib.snv.snv import INVARIANT, SNP
-from biolib.statistics import calculate_read_coverage
+from franklin.snv.snv import INVARIANT, SNP
+from franklin.statistics import calculate_read_coverage
 
-DATA_DIR = os.path.join(os.path.split(biolib.__path__[0])[0], 'data')
+DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 REFERENCES='''>SGN-U562678
 ATATATATATATATATATAT

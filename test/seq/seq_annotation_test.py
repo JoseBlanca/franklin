@@ -4,24 +4,24 @@ Created on 15/01/2010
 @author: peio
 '''
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, unittest
-from biolib.utils.misc_utils import DATA_DIR
-from biolib.seq.seqs import SeqWithQuality
-from biolib.seq.seq_annotation import (create_microsatelite_annotator,
+from franklin.utils.misc_utils import DATA_DIR
+from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seq_annotation import (create_microsatelite_annotator,
                                        create_ortholog_annotator,
                                        create_description_annotator,
                                        create_orf_annotator)

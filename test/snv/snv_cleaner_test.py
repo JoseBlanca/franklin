@@ -4,25 +4,25 @@ Created on 2009 uzt 30
 @author: peio
 '''
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
 from StringIO import StringIO
 
-from biolib.snv.snv import SNP, DELETION, INVARIANT, Snv, COMPLEX
-from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
+from franklin.snv.snv import SNP, DELETION, INVARIANT, Snv, COMPLEX
+from franklin.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_seqvar_filter,
                                        create_cap_enzyme_filter,
                                        create_high_variable_region_filter,
@@ -39,15 +39,15 @@ from biolib.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_close_to_intron_filter,
                                        create_reference_filter,
                                        create_unique_contiguous_region_filter)
-from biolib.snv.sam_pileup import snv_contexts_in_sam_pileup
-from biolib.pipelines.pipelines import pipeline_runner
+from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
+from franklin.pipelines.pipelines import pipeline_runner
 
-from biolib.pipelines.snv_pipeline_steps import (snp_filter_is_variable_in_some,
+from franklin.pipelines.snv_pipeline_steps import (snp_filter_is_variable_in_some,
                                             snp_filter_is_variable_in_aggregate,
                                             snp_filter_by_kind,
                                             snp_filter_reference_not_in_list)
-from biolib.seq.seqs import SeqWithQuality, Seq
-from biolib.utils.misc_utils import DATA_DIR
+from franklin.seq.seqs import SeqWithQuality, Seq
+from franklin.utils.misc_utils import DATA_DIR
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'

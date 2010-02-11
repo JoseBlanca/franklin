@@ -4,31 +4,31 @@ Created on 2009 uzt 28
 @author: peio
 '''
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
 import unittest
 import StringIO, tempfile
 
-from biolib.seq.seqs import SeqWithQuality
-from biolib.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
+from franklin.seq.seqs import SeqWithQuality
+from franklin.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, quess_seq_type, cat,
                                       seqio, write_seqs_in_file)
 from Bio.Seq import  Seq
 from Bio.SeqFeature import FeatureLocation
-from biolib.seq.seqs import SeqFeature
+from franklin.seq.seqs import SeqFeature
 
 class GuessFormatSeqFileTest(unittest.TestCase):
     'It tests that we can guess the format of a sequence file'

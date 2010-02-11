@@ -5,27 +5,27 @@ Created on 2009 mai 22
 '''
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
 import StringIO
-from biolib.utils.misc_utils import (xml_itemize, _get_xml_tail,
+from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                      _get_xml_header, NamedTemporaryDir,
                                      FileIndex, split_long_sequences)
-from biolib.utils.collections_ import FileCachedList
-from biolib.seq.seqs import SeqWithQuality
+from franklin.utils.collections_ import FileCachedList
+from franklin.seq.seqs import SeqWithQuality
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''

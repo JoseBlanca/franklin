@@ -5,9 +5,9 @@ Created on 26/01/2010
 '''
 import unittest, os.path, shutil
 
-from biolib.utils.misc_utils import NamedTemporaryDir, DATA_DIR
-from biolib.backbone.create_project import create_project
-from biolib.backbone.analysis import do_analysis, BACKBONE_DIRECTORIES
+from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.backbone.create_project import create_project
+from franklin.backbone.analysis import do_analysis, BACKBONE_DIRECTORIES
 from configobj import ConfigObj
 from os.path import join, exists
 

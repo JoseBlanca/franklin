@@ -5,9 +5,9 @@ Created on 2009 uzt 6
 '''
 import unittest, os
 
-from biolib.seq.seqs import SeqWithQuality
-from biolib.utils.seqio_utils import temp_fasta_file
-from biolib.seq.seq_cleaner import (create_vector_striper_by_alignment,
+from franklin.seq.seqs import SeqWithQuality
+from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
                                 create_striper_by_quality_trimpoly,
@@ -21,7 +21,7 @@ from biolib.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_masker_for_words)
-from biolib.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import DATA_DIR
 
 
 class SeqCleanerTest(unittest.TestCase):

@@ -1,17 +1,17 @@
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
-# This file is part of biolib.
-# biolib is free software: you can redistribute it and/or modify
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
-# biolib is distributed in the hope that it will be useful,
+# franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
 # You should have received a copy of the GNU Affero General Public License
-# along with biolib. If not, see <http://www.gnu.org/licenses/>.
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 '''
 This scripts groups the sequences looking at the words they have.
@@ -20,9 +20,9 @@ This scripts groups the sequences looking at the words they have.
 '''
 from optparse import OptionParser
 import sys, itertools
-from biolib.biolib_seqio_utils import seqs_in_file
-from biolib.statistics import create_distribution
-from biolib.words import cluster_seqs_by_words, filter_low_abundant_words
+from franklin.biolib_seqio_utils import seqs_in_file
+from franklin.statistics import create_distribution
+from franklin.words import cluster_seqs_by_words, filter_low_abundant_words
 
 def parse_options():
     'It parses the command line arguments'

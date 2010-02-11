@@ -14,9 +14,9 @@ Created on 07/01/2010
 from optparse import OptionParser
 import os, re
 from tempfile import NamedTemporaryFile
-from biolib.utils.misc_utils import NamedTemporaryDir
-from biolib.utils.cmd_utils import call
-from biolib.sam import (add_header_and_tags_to_sam, merge_sam, sort_bam_sam, bam2sam,
+from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.cmd_utils import call
+from franklin.sam import (add_header_and_tags_to_sam, merge_sam, sort_bam_sam, bam2sam,
                         sam2bam)
 
 def parse_options():

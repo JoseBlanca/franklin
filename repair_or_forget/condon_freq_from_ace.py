@@ -3,8 +3,8 @@
 It returns a matrix with the codon frecuency, giving a caf file with est
 '''
 from optparse import OptionParser
-from biolib.contig_io import get_parser
-from biolib.biolib_cmd_utils import get_best_orf
+from franklin.contig_io import get_parser
+from franklin.biolib_cmd_utils import get_best_orf
 
 def main():
     '''The main fucntion '''
