@@ -21,7 +21,8 @@ This module provides utilities to run external commands into franklin
 
 import unittest
 
-from franklin.utils.cmd_utils import _process_parameters, create_runner
+from franklin.utils.cmd_utils import (_process_parameters, create_runner,
+                                      _which_binary)
 from franklin.seq.seqs import SeqWithQuality
 from franklin.utils.misc_utils import DATA_DIR
 import os
@@ -68,6 +69,8 @@ class ProcessParametersTest(unittest.TestCase):
         params = {}
         cmd_params = _process_parameters(params, param_def)
         assert cmd_params == ['-c', '1.0', '2.0']
+
+        assert _which_binary('est2genome') == '/usr/bin/est2genome'
 
 
 class RunnerFactorytest(unittest.TestCase):

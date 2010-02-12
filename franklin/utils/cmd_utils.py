@@ -317,9 +317,11 @@ def create_runner(tool, parameters=None, environment=None):
 
 def _which_binary(binary):
     'It return the full path of the binary if exists'
-    abs_binary = call(['which', binary], raise_on_error=True)[0]
-    if abs_binary[0]  == '/':
-        return abs_binary
+    stdout  = subprocess.PIPE
+    process = subprocess.Popen(['/bin/which', binary], stdout=stdout)
+    stdout  = process.communicate()[0]
+    if stdout[0]  == '/':
+        return stdout.strip()
     else:
         return None
 
@@ -369,10 +371,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     if stdin is None:
         stdout_str, stderr_str = process.communicate()
     else:
-#        a = stdin.read()
-#        print a
-#        stdout, stderr = subprocess.Popen.stdin = stdin
-#        print stdin.read()
+        stdout, stderr = subprocess.Popen.stdin = stdin
         stdout_str, stderr_str = process.communicate(stdin)
     retcode = process.returncode
     if raise_on_error:
