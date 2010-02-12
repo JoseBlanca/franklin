@@ -7,7 +7,7 @@ Created on 25/03/2009
 
 import os
 
-PACKAGE_DIR = 'biolib'
+PACKAGE_DIR = 'franklin'
 SCRIPTS_DIR = 'scripts'
 
 def fullsplit(path, result=None):
@@ -59,7 +59,7 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
 from setuptools import setup
 setup(
     # basic package data
-    name = "biolib",
+    name = "franklin",
     version = "0.0.1",
     author='Jose Blanca, Peio Ziarsolo',
     author_email='jblanca@btc.upv.es',
@@ -68,7 +68,7 @@ setup(
     packages=packages,
     package_dir={'':'.'},
     #py_modules = modules,
-    package_data={'biolib': ['data/*']},
+    package_data={'franklin': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj'],
     scripts=scripts,
 )
