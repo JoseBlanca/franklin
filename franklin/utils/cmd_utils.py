@@ -352,7 +352,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
 
     binary = _which_binary(cmd[0])
     if binary is None:
-        raise OSError('No such file or directory, executable was ' + cmd[0]))
+        raise OSError('No such file or directory, executable was ' + cmd[0])
     else:
         #remove binary for a absolute path binary
         cmd.pop(0)
