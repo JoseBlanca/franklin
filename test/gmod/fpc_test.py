@@ -16,15 +16,12 @@ Created on 23/09/2009
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
-# You should have received a copy of the GNU Affero General Public License
+# You should have received a copy of the GNU Affero General <<<<<<Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os, tempfile
-
-import franklin
+import unittest, os
 from franklin.gmod.fpc import FPCMap
-
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
+from franklin.utils.misc_utils import DATA_DIR
 
 class TestFPC(unittest.TestCase):
     'It tests the fpc functionality'

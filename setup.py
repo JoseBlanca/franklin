@@ -53,8 +53,9 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
     for filename in filenames:
         if filename == '__init__.py':
             continue
-        elif filename.endswith('.py'):
+        elif filename.endswith('.py') or filename == 'blast+':
             scripts.append(os.path.join(dirpath, filename))
+
 
 from setuptools import setup
 setup(
@@ -69,6 +70,7 @@ setup(
     package_dir={'':'.'},
     #py_modules = modules,
     package_data={'franklin': ['data/*']},
-    requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj'],
+    requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
+              'multiprocessing'],
     scripts=scripts,
 )

@@ -331,7 +331,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
-    def test_repeatmasking():
+    def xtest_repeatmasking():
         'It test that we can mask a repeat element using repeat masker'
         mask_repeats_by_repeatmasker = \
                  create_masker_repeats_by_repeatmasker(species='eudicotyledons')
