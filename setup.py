@@ -69,6 +69,7 @@ setup(
     package_dir={'':'.'},
     #py_modules = modules,
     package_data={'franklin': ['data/*']},
-    requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj'],
+    requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
+              'multiprocessing'],
     scripts=scripts,
 )

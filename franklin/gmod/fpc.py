@@ -31,35 +31,21 @@ def fpcgff2_parser(fhand):
 
         feature['id']      = name
         feature['name']    = name
-        feature['parents'] = []
 
-        if type_ == 'Chromosome':
+        if type_ in ('Chromosome','contig', 'marker'):
             pass
-        elif type_ == 'contig':
-            # Add his parent
-            feature['parents'].append(feature['seqid'])
 
         elif type_ == 'BAC':
             contig_name = 'ctg%d' % int(annotations['Contig_hit'])
 
-            # add its parents
-            feature['parents'].append(contig_name)
-
             if 'Marker_hit' in annotations:
                 feature['marker_hit'] = annotations['Marker_hit']
 
-        elif type_ == 'marker':
-            items = annotations['Contig_hit'].split('-')
-            contig = items[0].strip()
-            feature['parents'].append(contig)
-            bacs = items[1].strip(')').split('(')[1].split()
-            feature['parents'].extend(bacs)
-
         else:
             raise ValueError('Unknown feature type: %s' % type_)
+
         del feature['attributes']
-        if not feature['parents']:
-            del feature['parents']
+
         yield feature
 
 class FPCMap(object):
