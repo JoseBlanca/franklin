@@ -7,7 +7,7 @@ Created on 2009 uzt 28
 import tempfile, StringIO, math
 from uuid import uuid4
 
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, UNKNOWN_ID, UNKNOWN_NAME
 from franklin.utils.misc_utils import FileIndex
 
 from Bio import SeqIO
@@ -48,8 +48,17 @@ def get_seq_name(seq):
     except AttributeError:
         name = None
     #the SeqRecord default
-    if name == "<unknown name>":
+    if name == UNKNOWN_NAME:
         name = None
+
+    if name is None:
+        try:
+            name = seq.id
+        except AttributeError:
+            name = None
+    if name == UNKNOWN_ID:
+        name = None
+
     if name is None:
         name  = str(uuid4())
     return name

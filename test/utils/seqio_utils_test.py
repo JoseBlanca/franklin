@@ -25,7 +25,7 @@ import StringIO, tempfile
 from franklin.seq.seqs import SeqWithQuality
 from franklin.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
                                       temp_fasta_file, quess_seq_type, cat,
-                                      seqio, write_seqs_in_file)
+                                      seqio, write_seqs_in_file, get_seq_name)
 from Bio.Seq import  Seq
 from Bio.SeqFeature import FeatureLocation
 from franklin.seq.seqs import SeqFeature
@@ -272,6 +272,19 @@ class TestReprIn_Out(unittest.TestCase):
         seq0 = seqs.next()
         assert repr(seq0) == repr(seq1)
 
+class TestGetSeqName(unittest.TestCase):
+    'It tests that we can get a sequence name'
+    @staticmethod
+    def test_get_seq_name():
+        'It tests that we can get a sequence name'
+        #with no name attribute -> uuid
+        assert len(get_seq_name('AA')) > 10
+        seq = SeqWithQuality(id='seqid', name='seqname', seq=Seq('ATGAT'))
+        assert get_seq_name(seq) == 'seqname'
+        seq = SeqWithQuality(id='seqid', seq=Seq('ATGAT'))
+        assert get_seq_name(seq) == 'seqid'
+        seq = SeqWithQuality(seq=Seq('ATGAT'))
+        assert  len(get_seq_name(seq)) > 10
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
