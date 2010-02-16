@@ -352,7 +352,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         for key, value in environment.items():
             new_env[key] = value
         environment = new_env
-    print cmd[0]
+
     binary = _which_binary(cmd[0])
     if binary is None:
         raise OSError('No such file or directory, executable was ' + cmd[0])
