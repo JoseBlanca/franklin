@@ -320,6 +320,7 @@ def _which_binary(binary):
     stdout  = subprocess.PIPE
     process = subprocess.Popen(['/bin/which', binary], stdout=stdout)
     stdout  = process.communicate()[0]
+
     if stdout[0]  == '/':
         return stdout.strip()
     else:
@@ -351,7 +352,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         for key, value in environment.items():
             new_env[key] = value
         environment = new_env
-
+    print cmd[0]
     binary = _which_binary(cmd[0])
     if binary is None:
         raise OSError('No such file or directory, executable was ' + cmd[0])
@@ -371,7 +372,6 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     if stdin is None:
         stdout_str, stderr_str = process.communicate()
     else:
-        stdout, stderr = subprocess.Popen.stdin = stdin
         stdout_str, stderr_str = process.communicate(stdin)
     retcode = process.returncode
     if raise_on_error:
