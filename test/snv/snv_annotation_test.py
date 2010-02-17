@@ -59,6 +59,30 @@ class TestSnvAnnotation(unittest.TestCase):
 
         assert calculate_snv_kind(feat) == INVARIANT
 
+        alleles = {('A', DELETION): {'read_names':['r1']}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        seq.features.append(feat)
+        assert calculate_snv_kind(feat) == DELETION
+
+        alleles = {('A', INVARIANT): {'read_names':['r1']},
+                   ('A', INSERTION): {'read_names':['r1']},
+                   ('A', INSERTION): {'read_names':['r1']},
+                   ('A', DELETION): {'read_names':['r1']}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        seq.features.append(feat)
+        assert calculate_snv_kind(feat) == INDEL
+
+        alleles = {('A', INVARIANT): {'read_names':['r1']},
+                   ('A', SNP): {'read_names':['r1']},
+                   ('A', INSERTION): {'read_names':['r1']},
+                   ('A', DELETION): {'read_names':['r1']}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        seq.features.append(feat)
+        assert calculate_snv_kind(feat) == COMPLEX
+
     @staticmethod
     def test_sort_alleles():
         'It tests that we can get the alleles'
@@ -103,6 +127,40 @@ class TestSnvAnnotation(unittest.TestCase):
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert set(['HinfI', 'TscAI']) == set(enzymes)
+
+        # With a deletion
+        reference = SeqWithQuality(seq='ATGATGATGgaaattcATGATGATGTGGGAT',
+                                   name='ref')
+        alleles = {('A', DELETION): None,
+                   ('A', INVARIANT): None}
+
+        feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
+                           qualifiers={'alleles':alleles})
+        enzymes = calculate_cap_enzymes(feat1, reference, True)
+        assert 'EcoRI' in enzymes
+
+        #with an insertion
+        seq = 'ATGATGATG' + 'gaattc' + 'ATGATGATGTGGGAT'
+        reference = SeqWithQuality(seq=seq, name='ref')
+        alleles = {('A', INSERTION): None,
+                   ('A', INVARIANT): None}
+
+        feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
+                           qualifiers={'alleles':alleles})
+        enzymes = calculate_cap_enzymes(feat1, reference, True)
+        assert 'EcoRI' in enzymes
+
+        #with only one allele
+        reference = SeqWithQuality(seq='Actgacttactgtca', name='ref')
+        alleles = {('C', SNP): None}
+
+        feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
+                           qualifiers={'alleles':alleles})
+        enzymes = calculate_cap_enzymes(feat1, reference, True)
+        assert [] == enzymes
+
+
+
 
 
 if __name__ == "__main__":
