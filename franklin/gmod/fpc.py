@@ -36,8 +36,6 @@ def fpcgff2_parser(fhand):
             pass
 
         elif type_ == 'BAC':
-            contig_name = 'ctg%d' % int(annotations['Contig_hit'])
-
             if 'Marker_hit' in annotations:
                 feature['marker_hit'] = annotations['Marker_hit']
 

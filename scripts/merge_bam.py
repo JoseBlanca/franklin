@@ -12,7 +12,7 @@ Created on 07/01/2010
 '''
 
 from optparse import OptionParser
-import os, re
+import os
 from tempfile import NamedTemporaryFile
 from franklin.utils.misc_utils import NamedTemporaryDir
 from franklin.utils.cmd_utils import call
@@ -93,15 +93,13 @@ def main():
     work_dir, output, reference = set_parameters()
 
     # make a working tempfir
-    temp_dir_ = NamedTemporaryDir()
-    tempdir   = temp_dir_.name
-    temp_dir = "%s/tmp" % work_dir
+    temp_dir = NamedTemporaryDir()
 
     # add readgroup tag to each alignment in bam
-    add_header_and_tags_bams(work_dir, temp_dir)
+    add_header_and_tags_bams(work_dir, temp_dir.name)
 
     # Prepare files to merge
-    sams = get_opened_sams_from_dir(temp_dir)
+    sams = get_opened_sams_from_dir(temp_dir.name)
     temp_sam = NamedTemporaryFile()
 
     # merge all the sam in one
@@ -117,7 +115,7 @@ def main():
     # and make and index of the bam
     call(['samtools', 'index', output], raise_on_error=True)
 
-    #temp_dir.close()
+    temp_dir.close()
 
 if __name__ == '__main__':
     main()
