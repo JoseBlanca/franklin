@@ -131,7 +131,16 @@ RUNNER_DEFINITIONS = {
                                     'files_format':['fasta']}},
                'output':{'dna':{'option':STDOUT, 'files_format':['fasta']},
                          'protein':{'option': '-t', 'files_format':['fasta']}}
-               }
+               },
+    'remap':{'binary':'remap',
+             'parameters':{'enzymes':{'default':'all', 'option' : '-enzymes'},
+                          'sitelen' :{'default':'4', 'option':'-sitelen' },
+                          'stdout'  :{'default':'', 'option':'-stdout' },
+                          'auto'    :{'default':'', 'option':'-auto' },},
+             'output':{'remap':{'option':'-outfile', 'files':['map']}},
+             'input':{'sequence':{'option': '-sequence',
+                                  'files_format':['fasta']}}
+            },
     }
 
 def _process_parameters(parameters, parameters_def):
@@ -276,7 +285,8 @@ def create_runner(tool, parameters=None, environment=None):
         _prepare_output_files(runner_data['output'])
         cmd, stdin = _build_cmd(cmd_param, runner_data)
 
-#        print runner_data['input']
+        #print ' '.join(cmd)
+        #raw_input()
 
         stdout, stderr, retcode = call(cmd, stdin=stdin,
                                        environment=environment)
@@ -355,7 +365,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
 
     binary = _which_binary(cmd[0])
     if binary is None:
-        raise OSError('No such file or directory, executable was ' + cmd[0])
+        raise OSError('The binary was not found: ' + cmd[0])
     else:
         #remove binary for a absolute path binary
         cmd.pop(0)

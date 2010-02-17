@@ -122,6 +122,12 @@ class SeqWithQuality(SeqRecord):
         toprint += ")"
         return toprint
 
+    def get_features(self, kind):
+        'It yields the features that match the given kind'
+        for feature in self.features:
+            if feature.type == kind:
+                yield feature
+
 class SeqFeature(BioSeqFeature):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''
