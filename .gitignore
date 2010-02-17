@@ -1,2 +1,4 @@
 /.pydevproject
 *.pyc
+franklin.egg-info/
+
