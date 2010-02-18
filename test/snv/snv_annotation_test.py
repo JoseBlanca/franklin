@@ -28,6 +28,8 @@ from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX,
+                                         _remove_bad_quality_alleles,
+                                         _add_default_sanger_quality,
                                          calculate_snv_kind,
                                          sorted_alleles,
                                          calculate_maf_frequency,
@@ -82,6 +84,35 @@ class TestSnvAnnotation(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == COMPLEX
+
+    @staticmethod
+    def test_bad_allele_removal():
+        'It tests that we can get rid of the alleles with not enough quality'
+        min_quality = 45
+        default_sanger_quality = 25
+
+        alleles = {('A', SNP): {'qualities':[29, 22],
+                                'orientations':[True, True]}}
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 0
+
+        alleles = {('A', SNP): {'qualities':[29, 22],
+                                'orientations':[True, True]}}
+        _remove_bad_quality_alleles(alleles, min_quality=32)
+        assert len(alleles) == 1
+
+        alleles = {('A', SNP): {'qualities':[23, 22],
+                                'orientations':[True, False]}}
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 1
+
+        alleles = {('A', SNP): {'qualities':[20, 22, None],
+                                'orientations':[True, True, False],
+                                'read_groups':['rg1', 'rg1', 'rg1']}}
+        _add_default_sanger_quality(alleles, default_sanger_quality,
+                                    read_groups_info={'rg1':{'PL':'sanger'}})
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 1
 
     @staticmethod
     def test_sort_alleles():
