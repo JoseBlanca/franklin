@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 from franklin.pipelines.pipelines import  (configure_pipeline,
                                          seq_pipeline_runner,
-                                         pipeline_runner)
+                                         _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
 
 
@@ -90,7 +90,7 @@ class PipelineTests(unittest.TestCase):
 
         seq_iter = seqs_in_file(seq_fhand, qual_fhand)
 
-        filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration)
+        filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration)
 
         seq_list = list(filtered_seq_iter)
         assert 'ATCGCGAtcgggggg' in str(seq_list[0].seq)

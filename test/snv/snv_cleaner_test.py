@@ -40,7 +40,7 @@ from franklin.snv.snv_cleaner import (#create_major_allele_freq_filter,
                                        create_reference_filter,
                                        create_unique_contiguous_region_filter)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
-from franklin.pipelines.pipelines import pipeline_runner
+from franklin.pipelines.pipelines import _pipeline_builder
 
 from franklin.pipelines.snv_pipeline_steps import (snp_filter_is_variable_in_some,
                                             snp_filter_is_variable_in_aggregate,
@@ -434,7 +434,7 @@ ref1     4      A      1       ,       a'''
         pipeline.append(snp_filter_reference_not_in_list)
         config['reference_list_filter'] = {'references':['ref1']}
 
-        snv_contexts = pipeline_runner(pipeline, snv_contexts, config)
+        snv_contexts = _pipeline_builder(pipeline, snv_contexts, config)
 
         snv_contexts = list(snv_contexts)
         #in lib3 the G is read just twice
@@ -450,7 +450,7 @@ ref1     4      A      1       ,       a'''
         snv_contexts = list(snv_contexts_in_sam_pileup([pileup3,
                                                         pileup2, pileup1],
                                         libraries=['lib3', 'lib2', 'lib1']))
-        snv_contexts = pipeline_runner('snp_basic', snv_contexts)
+        snv_contexts = _pipeline_builder('snp_basic', snv_contexts)
         snv_contexts = list(snv_contexts)
         #in lib3 the G is read just twice
         snv0 = snv_contexts[0][0]

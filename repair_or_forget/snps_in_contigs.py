@@ -8,7 +8,7 @@ Created on 2009 mai 4
 '''
 from franklin.seqvariation import (seqvars_in_contigs, seqvar_summary)
 from franklin.contig_io import get_parser
-from franklin.pipelines import pipeline_runner
+from franklin.pipelines import _pipeline_builder
 
 from optparse import OptionParser
 from os.path import basename
@@ -64,11 +64,11 @@ def main():
 
     #clean and filter non valid contigs/read regions
     contigs = parser.contigs()
-    contigs = pipeline_runner('contig_clean', contigs)
+    contigs = _pipeline_builder('contig_clean', contigs)
 
     # perform the search and snp filtering
     seq_var_iter = seqvars_in_contigs(contigs)
-    seq_var_iter = pipeline_runner('snp_clean', seq_var_iter)
+    seq_var_iter = _pipeline_builder('snp_clean', seq_var_iter)
 
     for seq_var in seq_var_iter:
         print seqvar_summary(seq_var)

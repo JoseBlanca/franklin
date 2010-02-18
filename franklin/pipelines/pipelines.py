@@ -1,8 +1,8 @@
 '''This module holds some utilities to build sequence cleaning pipelines.
 
 Several pipelines are defined and they can be run using the function
-pipeline_runner. A pipeline consists of a list of several steps that a run
-sequentially by the pipeline_runner. It is very easy to create new pipeline
+_pipeline_builder. A pipeline consists of a list of several steps that a run
+sequentially by the _pipeline_builder. It is very easy to create new pipeline
 because they're just a list of dicts that include the name of a function. For
 instance there are pipelines defined to clean short and long sequences, to
 mask them using repeat masker, etc.
@@ -86,7 +86,7 @@ def _get_func_tools(processes):
     filter_ = ifilter
     return {'map': map_, 'filter': filter_}
 
-def pipeline_runner(pipeline, items, configuration=None, processes=False):
+def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     '''It runs all the analysis for the given pipeline.
 
     It takes one or two input files and one or two output files. (Fasta files
@@ -181,7 +181,7 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     #run the pipeline
-    filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration,
+    filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration,
                                         processes)
 
     # write result

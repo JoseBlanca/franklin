@@ -26,7 +26,7 @@ Created on 30/09/2009
 from optparse import OptionParser
 import sys
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
-from franklin.pipelines.pipelines import pipeline_runner
+from franklin.pipelines.pipelines import _pipeline_builder
 
 
 def parse_options():
@@ -78,7 +78,7 @@ def main():
 
     #filter/clean seq_vars
     if pipeline is not None:
-        seq_vars_with_context = pipeline_runner(pipeline, seq_vars_with_context)
+        seq_vars_with_context = _pipeline_builder(pipeline, seq_vars_with_context)
     #remove context to the snv iterator
     #print seq_vars_with_context.next()
 

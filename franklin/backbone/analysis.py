@@ -15,7 +15,7 @@ from tempfile import NamedTemporaryFile
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam, sam2bam,
                         sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
-from franklin.pipelines.pipelines import pipeline_runner
+from franklin.pipelines.pipelines import _pipeline_builder
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -521,7 +521,7 @@ class PileupToSnvAnalyzer(Analyzer):
                                                            libraries=libraries)
         # Filter using a pipeline
         if pipeline:
-            seq_vars_with_context = pipeline_runner(pipeline,
+            seq_vars_with_context = _pipeline_builder(pipeline,
                                                     seq_vars_with_context)
         #remove context to the snv iterator
         seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
