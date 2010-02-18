@@ -4,14 +4,13 @@ Created on 2009 uzt 28
 @author: peio
 '''
 
-import tempfile, StringIO, math
+import tempfile, math
 from uuid import uuid4
 
 from franklin.seq.seqs import SeqWithQuality, UNKNOWN_ID, UNKNOWN_NAME
-from franklin.utils.misc_utils import FileIndex
+from franklin.pipelines.writers import BIOPYTHON_FORMATS, SequenceWriter
 
 from Bio import SeqIO
-from Bio.Seq import UnknownSeq
 
 def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
@@ -218,18 +217,7 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
-#the translation between our formats and the biopython formats
-BIOPYTHON_FORMATS = {'fasta': 'fasta',
-                     'fastq': 'fastq',
-                     'sfastq':'fastq',
-                     'fastq-sanger': 'fastq',
-                     'ifastq': 'fastq-illumina',
-                     'fastq-illumina': 'fastq-illumina',
-                     'fastq-solexa': 'fastq-solexa',
-                     'genbank': 'genbank',
-                     'gb': 'genbank',
-                     'embl': 'embl',
-                     'qual': 'qual',}
+
 
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
@@ -307,24 +295,15 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
                                 annotations=annotations)
         yield seqrec
 
-
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
     '''It writes the given sequences in the given files.
 
     The seqs can be an iterartor or a list of Biopython SeqRecords or
     SeqWithQualities'''
+    writer = SequenceWriter(fhand=seq_fhand, qual_fhand=qual_fhand,
+                            format=format)
     for seq in seqs:
-        if format == 'repr':
-            seq_fhand.write(repr(seq) + '\n')
-        else:
-            if ('phred_quality' not in seq.letter_annotations or
-                not seq.letter_annotations['phred_quality']):
-                qual = [30] * len(seq.seq)
-                seq.letter_annotations['phred_quality'] = qual
-            SeqIO.write([seq], seq_fhand, BIOPYTHON_FORMATS[format])
-            if qual_fhand and format == 'fasta':
-                SeqIO.write([seq], qual_fhand, 'qual')
-
+        writer.write(seq)
 
 def seqio(in_seq_fhand, out_seq_fhand, out_format,
           in_qual_fhand=None, out_qual_fhand=None, in_format=None):

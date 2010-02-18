@@ -43,6 +43,7 @@ from franklin.utils.seqio_utils import (seqs_in_file, write_fasta_file,
                                       guess_seq_file_format)
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNVPIPELINES
+from franklin.pipelines.writers import SequenceWriter
 
 
 # Join the pipelines in PIPELINE
@@ -184,9 +185,11 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration,
                                         processes)
 
-    # write result
-    if file_format == 'fasta':
-        write_fasta_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual)
-    else:
-        write_seqs_in_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual,
-                           file_format)
+    seq_writer = SequenceWriter(fhand=out_fhand_seq,
+                                qual_fhand=out_fhand_qual,
+                                file_format=file_format)
+    writers = [seq_writer]
+
+    for sequence in filtered_seq_iter:
+        for writer in writers:
+            writer.write(sequence)

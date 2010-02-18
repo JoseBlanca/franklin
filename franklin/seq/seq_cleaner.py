@@ -26,10 +26,11 @@ from tempfile import NamedTemporaryFile
 from itertools import tee
 
 import franklin
-from franklin.utils.cmd_utils import  create_runner, run_repeatmasker_for_sequence
+from franklin.utils.cmd_utils import (create_runner,
+                                      run_repeatmasker_for_sequence)
 from franklin.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
                                       fasta_str)
-from franklin.seq.seqs import copy_seq_with_quality
+from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 
@@ -203,8 +204,9 @@ def create_masker_for_low_complexity():
             return None
         fhand = mask_low_complex_by_seq(sequence)['sequence']
         #pylint:disable-msg=W0612
-        name, desc, seq = get_content_from_fasta(fhand)
-        return copy_seq_with_quality(sequence, seq=seq)
+        seq = get_content_from_fasta(fhand)[-1]
+        return copy_seq_with_quality(sequence, seq=Seq(seq,
+                                                       sequence.seq.alphabet))
     return mask_low_complexity
 
 def create_masker_for_polia():
@@ -231,11 +233,10 @@ def create_masker_for_words(words):
         'It performs the masker for each sequence'
         if sequence is None:
             return None
-        seq = str(sequence.seq)
-        seq_class = seq.__class__
+        seq = sequence.seq
         for word in words:
-            seq = seq.replace(word, word.lower())
-            seq = seq_class(seq)
+            seq = str(seq).replace(word, word.lower())
+        seq = Seq(seq, sequence.seq.alphabet)
         return copy_seq_with_quality(sequence, seq=seq)
     return word_masker
 
@@ -283,13 +284,13 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
     if not trim:
         new_sequence  += str_seq[:end3].lower()
     new_sequence += str_seq[end3:end5]
-    if not trim:
-        new_sequence += str_seq[end5:].lower()
+
     if trim:
         return sequence[end3:end5]
     else:
-        seq_class = sequence.seq.__class__
-        return copy_seq_with_quality(sequence, seq=seq_class(new_sequence))
+        new_sequence += str_seq[end5:].lower()
+        return copy_seq_with_quality(sequence, seq=Seq(new_sequence,
+                                                       sequence.seq.alphabet))
 
 def create_striper_by_quality_lucy():
     'It creates a function that removes bad quality regions using lucy'
@@ -325,10 +326,10 @@ def create_striper_by_quality_lucy():
         #we run lucy
         run_lucy_for_seq = create_runner(tool='lucy')
         #pylint: disable-msg=W0612
-        seq_out_fhand, qual_out_fhand = run_lucy_for_seq(sequence)
+        seq_out_fhand = run_lucy_for_seq(sequence)[0]
 
         #from the output we know where to strip the seq
-        name, description, seq = get_content_from_fasta(seq_out_fhand)
+        description = get_content_from_fasta(seq_out_fhand)[1]
 
         #lucy can consider that the seq is low qual and return an empty file
         if description is None:
@@ -364,8 +365,7 @@ def create_striper_by_quality_lucy2(vector=None):
         run_lucy_for_seqs = create_runner(tool='lucy')
     else:
         run_lucy_for_seqs = create_runner(tool='lucy',
-                                          parameters={'vector':vector},
-                                          multiseq=True)
+                                          parameters={'vector':vector})
 
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.
@@ -452,7 +452,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
         '''
         if sequence is None:
             return None
-        #
+
         # first we are going to align he sequence with the vectors
         alignment_fhand = aligner_(sequence)[aligner]
         # We need to parse the result
@@ -647,6 +647,7 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
         seq_fhand = run_repeatmasker_for_sequence(sequence, species)
         #pylint: disable-msg=W0612
         masked_seq = get_content_from_fasta(seq_fhand)[2]
-        return copy_seq_with_quality(sequence, seq=masked_seq)
+        return copy_seq_with_quality(sequence, seq=Seq(masked_seq,
+                                                       sequence.seq.alphabet))
     return mask_repeats_by_repeatmasker
 
