@@ -28,8 +28,9 @@ from itertools import tee
 import franklin
 from franklin.utils.cmd_utils import (create_runner,
                                       run_repeatmasker_for_sequence)
-from franklin.utils.seqio_utils import (get_content_from_fasta, seqs_in_file,
-                                      fasta_str)
+from franklin.seq.writers import fasta_str
+from franklin.seq.readers import seqs_in_file
+from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)

@@ -38,12 +38,12 @@ modify the sequences.
 import  logging
 from itertools import imap, ifilter
 import multiprocessing
-from franklin.utils.seqio_utils import (seqs_in_file, write_fasta_file,
-                                      write_seqs_in_file,
-                                      guess_seq_file_format)
+from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNVPIPELINES
-from franklin.pipelines.writers import SequenceWriter
+from franklin.seq.readers import guess_seq_file_format
+from franklin.seq.writers import SequenceWriter
+from franklin.snv.writers import VariantCallFormatWriter
 
 
 # Join the pipelines in PIPELINE
@@ -134,7 +134,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         if type_ == 'mapper':
             filtered_items = imap(cleaner_function, items)
         elif type_ == 'filter':
-            filtered_items   = ifilter(cleaner_function, items)
+            filtered_items   = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
             filtered_items, fhand_outs = cleaner_function(items)
             temp_bulk_files.append(fhand_outs)
@@ -164,6 +164,9 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     If the checkpoints are requested an intermediate file for every step will be
     created.
     '''
+    if file_format is None:
+        file_format = guess_seq_file_format(io_fhands['in_seq'])
+
     # Here we extract our input/output files
     in_fhand_seqs  = io_fhands['in_seq']
     if 'in_qual' in io_fhands:
@@ -175,19 +178,31 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         out_fhand_qual = io_fhands['out_qual']
     else:
         out_fhand_qual = None
-    #which is the file format?
-    if file_format is None:
-        file_format = guess_seq_file_format(in_fhand_seqs)
-    # Here starts the analysis
-    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
-    #run the pipeline
-    filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration,
+    # Here the SeqRecord generator is created
+    sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
+
+    functs = _get_func_tools(processes)
+
+    #We add the annotations to the SeqRecords
+    #bam_reader = create_reader_bam(bam_fhand='/home/jose/personal/devel/franklin/data/samtools/seqs.bam')
+    #readers = [bam_reader]
+    #for reader in readers:
+    #    sequences = functs['map'](reader, sequences)
+
+    # the pipeline that will process the generator is build
+    filtered_seq_iter = _pipeline_builder(pipeline, sequences, configuration,
                                         processes)
 
+    # The SeqRecord generator is consumed
     seq_writer = SequenceWriter(fhand=out_fhand_seq,
                                 qual_fhand=out_fhand_qual,
                                 file_format=file_format)
+    #vcf_writer = VariantCallFormatWriter(vcf_fhand=open('/home/jose/snvs.vcf',
+    #                                                    'w'),
+    #                                     reference_name=in_fhand_seqs.name)
+
+    #writers = [seq_writer, vcf_writer]
     writers = [seq_writer]
 
     for sequence in filtered_seq_iter:

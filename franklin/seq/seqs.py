@@ -19,6 +19,8 @@ Created on 2009 mar 27
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+from uuid import uuid4
+
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq as BioSeq
 from Bio.SeqFeature import SeqFeature as BioSeqFeature
@@ -59,6 +61,28 @@ def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
     for annot, value in let_annot.items():
         new_seq.letter_annotations[annot] = value
     return new_seq
+
+def get_seq_name(seq):
+    'Given a sequence and its default name it returns its name'
+    try:
+        name = seq.name
+    except AttributeError:
+        name = None
+    #the SeqRecord default
+    if name == UNKNOWN_NAME:
+        name = None
+
+    if name is None:
+        try:
+            name = seq.id
+        except AttributeError:
+            name = None
+    if name == UNKNOWN_ID:
+        name = None
+
+    if name is None:
+        name  = str(uuid4())
+    return name
 
 UNKNOWN_NAME = "<unknown name>"
 UNKNOWN_ID = "<unknown id>"

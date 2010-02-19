@@ -5,8 +5,8 @@ Created on 2009 uzt 6
 '''
 import unittest, os
 
-from franklin.seq.seqs import SeqWithQuality
-from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.seqs import SeqWithQuality, Seq
+from franklin.seq.writers import temp_fasta_file
 from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
@@ -81,6 +81,7 @@ class SeqCleanerTest(unittest.TestCase):
     def test_mask_low_complexity():
         'It test mask_low_complexity function'
         seq = 'TCGCATCGATCATCGCAGATCGACTGATCGATCGATCGGGGGGGGGGGGGGGGGGGGGGGG'
+        seq = Seq(seq)
         qual = [30] * 61
         desc = 'hola'
         seq1 = SeqWithQuality(seq=seq, qual=qual, description=desc)
@@ -94,7 +95,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'GGGAAACCCCCCGTTTCCCCCCCCGCGCGCCTTTTCGGGGAAAATTTTTTTTTGTTCCCCCCG'
         seq += 'GAAAAAAAAATATTTCTCCTGCGGGGCCCCCGCGAAGAAAAAAGAAAAAAAAAAAGAGGAGGA'
         seq += 'GGGGGGGGGGGGCGAAAATATAGTTTGG'
-        seq1 = SeqWithQuality(seq=seq)
+        seq1 = SeqWithQuality(seq=Seq(seq))
         masked_seq = mask_low_complexity(seq1)
         expected =  'GGGGGTTTCTTAAATTCGCCTGGAGATTTCATtcggggggggggttctccccaggggg'
         expected += 'gggtggggAAaccccccgtttccccccccgcgcgccttttcggggaaaattttttttt'
@@ -108,6 +109,7 @@ class SeqCleanerTest(unittest.TestCase):
     def test_mask_polya():
         'It test mask_polyA function'
         seq = 'TCGCATCGATCATCGCAGATCGACTGATCGATCGATCAAAAAAAAAAAAAAAAAAAAAAA'
+        seq = Seq(seq)
         seq1 = SeqWithQuality(seq=seq, description='hola')
         mask_polya = create_masker_for_polia()
         masked_seq = mask_polya(seq1)
@@ -345,10 +347,11 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'ATTGTGACTGATTCGATGCTATTGCAAACGTTTTGATTGTGTGATCGTGATGCATGCTAGT'
         seq += 'CTGATCGAGTCTGATCGTAGTCTAGTCGTAGTCGATGTCGATTTATCGTAGTCGATGCTAG'
         seq += 'TCTAGTCTAGTCTACTAGTCTAGTCATGCTAGTCGAGTCGAT'
+        seq = Seq(seq)
         seqrec  = SeqWithQuality(name='seq', seq=seq, description='hola')
         masked_seq = mask_repeats_by_repeatmasker(seqrec)
         masked_str = str(masked_seq.seq)
-        assert seq[0:10].lower() in masked_str
+        assert str(seq[0:10]).lower() in masked_str
         assert 'tggcctcaacacgat' in masked_str
         assert 'CGTTTGACTT'      in masked_str
         assert masked_seq.description == 'hola'
@@ -360,6 +363,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'TGCATCAGATGCATGAAATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGA'
         seq += 'TCTAGTCTAGTCTATGATGCATCAGCTACGATGATCATGTCATGTCGATGTCTAGTCTAGTCT'
         seq += 'AGTGAGTCACTGACTAGATCATGACATCGATACTAGTC'
+        seq = Seq(seq)
         seqrec  = SeqWithQuality(name='seq', seq=seq)
         masked_seq = mask_repeats_by_repeatmasker(seqrec)
 
@@ -370,8 +374,8 @@ class SeqCleanerTest(unittest.TestCase):
     def test_word_masking():
         'It test the word masking'
         words = ['AA', 'AT', 'CG']
-        seq1 = SeqWithQuality(seq='AACTGTA')
-        seq2 = SeqWithQuality(seq='ATCGTTTT')
+        seq1 = SeqWithQuality(seq=Seq('AACTGTA'))
+        seq2 = SeqWithQuality(seq=Seq('ATCGTTTT'))
         word_masker = create_masker_for_words(words)
         seq1_masked = word_masker(seq1)
         assert str(seq1_masked.seq) == 'aaCTGTA'

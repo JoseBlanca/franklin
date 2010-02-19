@@ -22,11 +22,12 @@ Created on 2009 uzt 28
 import unittest
 import StringIO, tempfile
 
-from franklin.seq.seqs import SeqWithQuality
-from franklin.utils.seqio_utils import (seqs_in_file, guess_seq_file_format,
-                                      temp_fasta_file, quess_seq_type, cat,
-                                      seqio, write_seqs_in_file, get_seq_name)
-from Bio.Seq import  Seq
+from franklin.seq.seqs import SeqWithQuality, get_seq_name, Seq
+from franklin.seq.readers import (seqs_in_file, guess_seq_file_format,
+                                  guess_seq_type)
+from franklin.seq.writers import temp_fasta_file, write_seqs_in_file
+from franklin.utils.seqio_utils import cat, seqio
+
 from Bio.SeqFeature import FeatureLocation
 from franklin.seq.seqs import SeqFeature
 
@@ -59,11 +60,9 @@ class GuessSeqFileTypeTest(unittest.TestCase):
         'It test that we can guess the format for the sequence files'
         seqs = '>fasta\nACTAG\n>fasta\nACTAG\n>fasta\nACTAG\n>fasta\nACTAG\n'
         fhand = StringIO.StringIO(seqs)
-        assert quess_seq_type(fhand, 'fasta', 6) == 'short_seqs'
+        assert guess_seq_type(fhand, 'fasta', 6) == 'short_seqs'
         fhand = StringIO.StringIO(seqs)
-        assert quess_seq_type(fhand, 'fasta', 3) == 'long_seqs'
-
-
+        assert guess_seq_type(fhand, 'fasta', 3) == 'long_seqs'
 
 class SeqsInFileTests(unittest.TestCase):
     'It test that we can get seqrecords out of a seq file.'
@@ -207,14 +206,16 @@ class TestSeqio(unittest.TestCase):
         fcontent += ';;;;;\n'
         fhand = StringIO.StringIO(fcontent)
 
-        out_seq_fhand = StringIO.StringIO()
-        out_qual_fhand = StringIO.StringIO()
+        out_seq_fhand = tempfile.NamedTemporaryFile(suffix='.fasta')
+        out_qual_fhand = tempfile.NamedTemporaryFile(suffix='.qual')
         seqio(in_seq_fhand=fhand, in_format='fastq',
               out_seq_fhand=out_seq_fhand, out_qual_fhand=out_qual_fhand,
               out_format='fasta')
-        assert out_seq_fhand.getvalue() == '>seq1\nCCCT\n>SRR001666.1\nGTTGC\n'
+        result = '>seq1\nCCCT\n>SRR001666.1\nGTTGC\n'
+        assert open(out_seq_fhand.name).read() == result
+
         qual = '>seq1\n26 26 18 26\n>SRR001666.1\n26 26 26 26 26\n'
-        assert out_qual_fhand.getvalue() == qual
+        assert open(out_qual_fhand.name).read() == qual
 
     @staticmethod
     def test_fastq_to_fastq_solexa():
@@ -257,7 +258,7 @@ class TestReprIn_Out(unittest.TestCase):
     @staticmethod
     def test_repr():
         'It test seqs in file read and write with repr'
-        fhand = StringIO.StringIO()
+        fhand = tempfile.NamedTemporaryFile(suffix='.repr')
         seq1 = SeqWithQuality(id='seqid', name='seqname',
                          description='seqdescription', seq=Seq('ATGAT'))
         seq1.letter_annotations["phred_quality"] = [40, 40, 38, 30, 30]
@@ -267,7 +268,7 @@ class TestReprIn_Out(unittest.TestCase):
                                 type='orthologs',
                                 qualifiers={'arabidposys':['arab1', 'arab2']})
         seq1.features.append(seqfeature)
-        write_seqs_in_file([seq1], fhand, format='repr')
+        write_seqs_in_file(seqs=[seq1], seq_fhand=fhand, format='repr')
         seqs = seqs_in_file(fhand)
         seq0 = seqs.next()
         assert repr(seq0) == repr(seq1)

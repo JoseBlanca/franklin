@@ -24,7 +24,7 @@ from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.snv.snv_annotation import create_snv_annotator
-from franklin.utils.seqio_utils import seqs_in_file
+from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX,

@@ -5,7 +5,8 @@ Created on 29/01/2010
 '''
 
 import os, tempfile, time, shutil
-from franklin.utils.seqio_utils import guess_seq_file_format, seqio, cat
+from franklin.utils.seqio_utils import seqio, cat
+from franklin.seq.readers import guess_seq_file_format
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.utils.cmd_utils import call
 from configobj import ConfigObj

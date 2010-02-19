@@ -347,6 +347,7 @@ class ChangeNameTest(unittest.TestCase):
         'It test that we can change the name in the fasta files.'
         fhand_in  = open(os.path.join(DATA_DIR, 'solexa.fastq'))
         fhand_out = StringIO('')
+        fhand_out = NamedTemporaryFile(suffix='.fasta')
         engine    = sqlalchemy.create_engine('sqlite:///:memory:')
 
         create_naming_database(engine)
@@ -355,7 +356,7 @@ class ChangeNameTest(unittest.TestCase):
         naming    = DbNamingSchema(engine, 'test_project', feature_kind='EST')
 
         change_names_in_files(fhand_in, fhand_out, naming, 'fastq')
-        assert fhand_out.getvalue()[:8] == '@myES000'
+        assert open(fhand_out.name).read()[:8] == '@myES000'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

@@ -25,8 +25,7 @@ Created on 15/01/2010
 from franklin.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
 from franklin.utils.cmd_utils import  create_runner
-from franklin.utils.seqio_utils import get_seq_name
-from franklin.seq.seqs import SeqFeature
+from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.seqio_utils import get_content_from_fasta
 
 from Bio.SeqFeature import  FeatureLocation

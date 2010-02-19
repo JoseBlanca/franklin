@@ -20,7 +20,7 @@ Created on 26/11/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import create_runner, call
-from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from franklin.utils.collections_ import list_consecutive_pairs_iter

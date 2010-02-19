@@ -26,8 +26,7 @@ from collections import defaultdict
 
 from Bio.SeqFeature import FeatureLocation
 
-from franklin.seq.seqs import SeqFeature, SeqWithQuality
-from franklin.utils.seqio_utils import get_seq_name
+from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
 from franklin.utils.cmd_utils import call, create_runner
 from copy import copy
 
@@ -78,16 +77,15 @@ def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
     allele_info['read_groups'].append(read_group)
     allele_info['orientations'].append(not(is_reverse))
     allele_info['qualities'].append(qual)
-    allele_info['mapping_qualities'].append(qual)
-
+    allele_info['mapping_qualities'].append(mapping_quality)
 
 def _get_read_group_info(bam):
     'It returns a dict witht the read group info: platform, lb, etc'
     rg_info = {}
-    for rg in bam.header['RG']:
-        name = rg['ID']
-        del rg['ID']
-        rg_info[name] = rg
+    for read_group in bam.header['RG']:
+        name = read_group['ID']
+        del read_group['ID']
+        rg_info[name] = read_group
     return rg_info
 
 def _snvs_in_bam(bam, reference, min_quality=45, default_sanger_quality=25):
@@ -123,7 +121,11 @@ def _snvs_in_bam(bam, reference, min_quality=45, default_sanger_quality=25):
                 current_deletion = current_deletions[read_name]
                 if current_deletion[1]:
                     allele = DELETION_ALLELE * current_deletion[0]
-                    qual = None
+                    #in the deletion case the quality is the lowest of the
+                    #bases that embrace the deletion
+                    qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
+                    qual1 = _qualities_to_phred(aligned_read.qual[read_pos + 1])
+                    qual = min((qual0, qual1))
                     is_reverse = bool(aligned_read.is_reverse)
                     kind = DELETION
                     current_deletion[1] = False #we have returned it already
@@ -174,6 +176,7 @@ def _snvs_in_bam(bam, reference, min_quality=45, default_sanger_quality=25):
         if len(alleles) > 1:
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
+                   'reference_allele':ref_allele,
                    'alleles':alleles}
 
 def _add_default_sanger_quality(alleles, default_sanger_quality,
@@ -208,6 +211,7 @@ def _remove_bad_quality_alleles(alleles, min_quality):
         if allele[1] == DELETION:
             continue
         qual = _calculate_allele_quality(allele_info)
+        allele_info['quality'] = qual
         if qual < min_quality:
             del alleles[allele]
 
