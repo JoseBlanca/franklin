@@ -97,7 +97,7 @@ class VariantCallFormatWriter(object):
         #AF allele frequency for each ALT allele in the same order as listed:
         reference_allele = qualifiers['reference_allele'], INVARIANT
         if reference_allele in alleles:
-            ref_count = alleles[reference_allele]
+            ref_count = len(alleles[reference_allele]['read_names'])
         else:
             ref_count = 0
         total_count = sum(acounts) + ref_count
@@ -107,12 +107,11 @@ class VariantCallFormatWriter(object):
 
         #MQ RMS mapping quality, e.g. MQ=52
         #BQ RMS base quality at this position
-        for kind, strfmt in (('mapping_qualities', 'AF=%f'),
+        for kind, strfmt in (('mapping_qualities', 'MQ=%f'),
                              ('qualities', 'BQ=%f')):
             quals = []
             for allele_info in alleles.values():
-                for this_quals in allele_info[kind]:
-                    quals.extend(this_quals)
+                quals.extend(allele_info[kind])
             if quals:
                 toprint_items.append(strfmt % self._root_mean_square(quals))
         if toprint_items:
@@ -144,11 +143,12 @@ class VariantCallFormatWriter(object):
     def _write_snv(self, sequence, snv):
         'Given an snv feature it writes a line in the vcf'
         items = [] #items to write
-        items.append(get_seq_name(sequence.id))
+        items.append(get_seq_name(sequence))
         items.append(str(snv.location.start.position))
         id_ = snv.id
-        if id_ != "<unknown id>":
+        if id_ == "<unknown id>":
             id_ = '.'
+        items.append(id_)
         qualifiers = snv.qualifiers
         ref_seq = qualifiers['reference_allele']
         items.append(ref_seq)
@@ -159,4 +159,4 @@ class VariantCallFormatWriter(object):
                                           alternative_alleles))
         items.append(self._create_filters(qualifiers))
         items.append(self._create_info(qualifiers, alternative_alleles))
-        self._fhand('%s\n' % '\t'.join(items))
+        self._fhand.write('%s\n' % '\t'.join(items))

@@ -35,19 +35,19 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import  logging
+import logging, os
 from itertools import imap, ifilter
 import multiprocessing
 from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
-from franklin.pipelines.snv_pipeline_steps import SNVPIPELINES
+from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
 from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import SequenceWriter
 from franklin.snv.writers import VariantCallFormatWriter
 
 
 # Join the pipelines in PIPELINE
-PIPELINES = dict(SEQPIPELINES.items() + SNVPIPELINES.items())
+PIPELINES = dict(SEQPIPELINES.items() + SNV_PIPELINES.items())
 
 
 def configure_pipeline(pipeline, configuration):
@@ -150,6 +150,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
 
     return items
 
+WRITERS = {'sequence': SequenceWriter,
+           'vcf': VariantCallFormatWriter}
 
 def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
                         processes=False):
@@ -173,38 +175,39 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         in_fhand_qual  = io_fhands['in_qual']
     else:
         in_fhand_qual  = None
-    out_fhand_seq  = io_fhands['out_seq']
-    if 'out_qual' in io_fhands:
-        out_fhand_qual = io_fhands['out_qual']
-    else:
-        out_fhand_qual = None
 
     # Here the SeqRecord generator is created
     sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
-
-    functs = _get_func_tools(processes)
-
-    #We add the annotations to the SeqRecords
-    #bam_reader = create_reader_bam(bam_fhand='/home/jose/personal/devel/franklin/data/samtools/seqs.bam')
-    #readers = [bam_reader]
-    #for reader in readers:
-    #    sequences = functs['map'](reader, sequences)
 
     # the pipeline that will process the generator is build
     filtered_seq_iter = _pipeline_builder(pipeline, sequences, configuration,
                                         processes)
 
+    #which outputs do we want?
+    writers = []
+    for output, fhand in io_fhands['outputs'].items():
+        writer_klass = WRITERS[output]
+        if output == 'sequence':
+            if 'quality' in io_fhands['outputs']:
+                qual_fhand = io_fhands['outputs']['quality']
+            else:
+                qual_fhand = None
+            writer = writer_klass(fhand=fhand,
+                                     qual_fhand=qual_fhand,
+                                     file_format=file_format)
+        elif output == 'quality':
+            pass
+        elif output == 'repr':
+            file_format = 'repr'
+            writer = writer_klass(fhand=fhand, file_format='repr')
+        elif output == 'vcf':
+            ref_name = os.path.basename(io_fhands['in_seq'].name)
+            writer = writer_klass(fhand=fhand, reference_name=ref_name)
+        else:
+            writer = writer_klass(fhand)
+        writers.append(writer)
+
     # The SeqRecord generator is consumed
-    seq_writer = SequenceWriter(fhand=out_fhand_seq,
-                                qual_fhand=out_fhand_qual,
-                                file_format=file_format)
-    #vcf_writer = VariantCallFormatWriter(vcf_fhand=open('/home/jose/snvs.vcf',
-    #                                                    'w'),
-    #                                     reference_name=in_fhand_seqs.name)
-
-    #writers = [seq_writer, vcf_writer]
-    writers = [seq_writer]
-
     for sequence in filtered_seq_iter:
         for writer in writers:
             writer.write(sequence)

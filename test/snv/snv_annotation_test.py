@@ -18,6 +18,7 @@ Created on 16/02/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
+from tempfile import NamedTemporaryFile
 import unittest, os
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
@@ -35,6 +36,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          calculate_maf_frequency,
                                          calculate_snv_variability,
                                          calculate_cap_enzymes)
+from franklin.pipelines.pipelines import seq_pipeline_runner
 
 class TestSnvAnnotation(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs'
@@ -48,7 +50,8 @@ class TestSnvAnnotation(unittest.TestCase):
         annotator = create_snv_annotator(bam_fhand=bam_fhand)
 
         for seq in seqs_in_file(seq_fhand):
-            annotator(seq)
+            seq = annotator(seq)
+            print seq.features
 
     @staticmethod
     def test_snv_kind():
@@ -190,6 +193,31 @@ class TestSnvAnnotation(unittest.TestCase):
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert [] == enzymes
 
+class TestSnvPipeline(unittest.TestCase):
+    'It tests the annotation of SeqRecords with snvs using the pipeline'
+
+    @staticmethod
+    def test_snv_annotation_bam():
+        'It tests the annotation of SeqRecords with snvs'
+        pipeline = 'snv_bam_annotator'
+
+        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+
+        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
+
+        io_fhands = {}
+        io_fhands['in_seq']   = seq_fhand
+        io_fhands['outputs'] = {'sequence': NamedTemporaryFile(),
+                                'vcf': NamedTemporaryFile(),}
+
+        processes = 2
+        seq_pipeline_runner(pipeline, configuration, io_fhands)
+
+        result_seq = open(io_fhands['outputs']['sequence'].name).read()
+        vcf = open(io_fhands['outputs']['vcf'].name).read()
+        print vcf
 
 
 

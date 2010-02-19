@@ -88,7 +88,7 @@ def _get_read_group_info(bam):
         rg_info[name] = read_group
     return rg_info
 
-def _snvs_in_bam(bam, reference, min_quality=45, default_sanger_quality=25):
+def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
     'It yields the snv information for every snv in the given reference'
 
     read_groups_info = _get_read_group_info(bam)
@@ -237,7 +237,7 @@ def _calculate_allele_quality(allele_info):
                     total_qual += independent_quals[2] / 4.0
     return total_qual
 
-def create_snv_annotator(bam_fhand):
+def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -249,16 +249,19 @@ def create_snv_annotator(bam_fhand):
 
     def annotate_snps(sequence):
         'It annotates the snvs found in the sequence'
-        for snv in _snvs_in_bam(bam, reference=sequence):
+        for snv in _snvs_in_bam(bam, reference=sequence,
+                                min_quality=min_quality,
+                                default_sanger_quality=default_sanger_quality):
             location = snv['ref_position']
             type_ = 'snv'
-            qualifiers = {'alleles':snv['alleles']}
+            qualifiers = {'alleles':snv['alleles'],
+                          'reference_allele':snv['reference_allele']}
             feat = SeqFeature(location=FeatureLocation(location, location),
                               type=type_,
                               qualifiers=qualifiers)
             sequence.features.append(feat)
+        return sequence
     return annotate_snps
-
 
 def calculate_snv_kind(feature):
     'It returns the snv kind for the given feature'

@@ -42,14 +42,12 @@ class SequenceWriter(object):
 
     def write(self, sequence):
         'It writes one sequence to the given file'
+        if sequence is None:
+            return
         format_ = self._format
         if format_ == 'repr':
             self._fhand.write(repr(sequence) + '\n')
         else:
-            if ('phred_quality' not in sequence.letter_annotations or
-                not sequence.letter_annotations['phred_quality']):
-                qual = [30] * len(sequence.seq)
-                sequence.letter_annotations['phred_quality'] = qual
             SeqIO.write([sequence], self._fhand, BIOPYTHON_FORMATS[format_])
             if self._qual_fhand and format_ == 'fasta':
                 SeqIO.write([sequence], self._qual_fhand, 'qual')
