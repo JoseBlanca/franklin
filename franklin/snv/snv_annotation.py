@@ -61,7 +61,7 @@ def _qualities_to_phred(quality):
 
 def _get_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
-    allele = aligned_read.seq[index].lower()
+    allele = aligned_read.seq[index].upper()
     qual   = _qualities_to_phred(aligned_read.qual[index])
     return allele, qual, bool(aligned_read.is_reverse)
 
@@ -100,7 +100,7 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
         alleles = {}
         ref_pos = column.pos
         ref_id =  bam.getrname(column.tid)
-        ref_allele = reference_seq[ref_pos].lower()
+        ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
             aligned_read = pileup_read.alignment
 
@@ -208,8 +208,6 @@ def _remove_bad_quality_alleles(alleles, min_quality):
     'It adds the quality to the alleles dict and it removes the bad alleles'
 
     for allele, allele_info in alleles.items():
-        if allele[1] == DELETION:
-            continue
         qual = _calculate_allele_quality(allele_info)
         allele_info['quality'] = qual
         if qual < min_quality:

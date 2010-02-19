@@ -39,6 +39,15 @@ class VariantCallFormatWriter(object):
                                        datetime.date.today().strftime('%Y%m%d'))
         fhand.write('##source=franklin\n')
         fhand.write('##reference=%s\n' % reference_name)
+
+        fhand.write('##INFO=NS,1,Integer,"Number of Samples With Data"\n')
+        fhand.write('##INFO=AF,-1,Float,"Allele Frequency"\n')
+        fhand.write('##INFO=AC,-1,Integer,"Allele Count"\n')
+        fhand.write('##INFO=MQ,-1,Float,"RMS Mapping Quality"\n')
+        fhand.write('##INFO=BQ,-1,Float,"RMS Base Quality"\n')
+        ##FILTER=q10,"Quality below 10"
+        ##FILTER=s50,"Less than 50% of samples have data"
+
         fhand.write('%s\n' % '\t'.join(('#CHROM', 'POS', 'ID', 'REF', 'ALT',
                                         'QUAL', 'FILTER',  'INFO')))
 
@@ -61,7 +70,7 @@ class VariantCallFormatWriter(object):
             elif kind == INSERTION:
                 str_allele = 'I%s' % allele[0]
             elif kind == DELETION:
-                str_allele = 'I%d' % len(allele[0])
+                str_allele = 'D%d' % len(allele[0])
             str_alleles.append(str_allele)
             alternative_alleles.append(allele)
         if str_alleles:
