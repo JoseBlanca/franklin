@@ -59,7 +59,7 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
     for item in prefix:
         try:
             key, value = item.split('_', 1)
-            if key.upper() not in ['SM', 'LB', 'PL_']:
+            if key.upper() not in ['SM', 'LB', 'PL']:
                 continue
         except ValueError:
             continue
