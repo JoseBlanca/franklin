@@ -18,13 +18,13 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, unittest
+from franklin.seq.seq_annotation import create_microsatelite_annotator, \
+    create_ortholog_annotator, create_description_annotator, create_orf_annotator, \
+    create_cdna_intron_annotator
+from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.seq.seqs import SeqWithQuality
-from franklin.seq.seq_annotation import (create_microsatelite_annotator,
-                                       create_ortholog_annotator,
-                                       create_description_annotator,
-                                       create_orf_annotator)
+import os
+import unittest
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -88,6 +88,30 @@ class AnnotationTests(unittest.TestCase):
         assert len(seq1.features) == 1
         assert seq1.features[0].type == 'orf'
 
+
+    @staticmethod
+    def test_intron_annotator():
+        'We can annotate introns in cdnas comparing with genomic'
+        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
+        seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
+        seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
+        seq += 'TTACAGGCAGAGGTGTAATTCAGATATGGTGCCTGCCAGATCTCATTCAAAAAGATATAATTG'
+        seq += 'TGAAAGAAGATTATTTTGCTCAGGTTAACAAAAAACCGTATAGAAATTTGACAAGAAGTGAAG'
+        seq += 'CAGGTACGGGAGAAGTATCTGGACCTCAAAAACCAAGAGGAAGACCAAAAAAGAACCCTGGTA'
+        seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
+        seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
+        seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
+        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq))
+        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+        intron_annotator = create_cdna_intron_annotator(genomic_db=genomic_db,
+                                            genomic_seqs_fhand=open(genomic_db))
+        intron_annotator(seq)
+        intron_feat= seq.features[0]
+        assert intron_feat.location.start.position == 478
+        assert intron_feat.type == 'intron'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

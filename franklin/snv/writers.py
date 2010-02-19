@@ -57,7 +57,8 @@ class VariantCallFormatWriter(object):
         for snv in sequence.get_features(kind='snv'):
             self._write_snv(sequence, snv)
 
-    def _create_alternative_alleles(self, alleles):
+    @staticmethod
+    def _create_alternative_alleles(alleles):
         'It returns the ALT part on the vcf'
         str_alleles = []
         alternative_alleles = []
@@ -84,7 +85,8 @@ class VariantCallFormatWriter(object):
         #TODO
         return '.'
 
-    def _root_mean_square(self, numbers):
+    @staticmethod
+    def _root_mean_square(numbers):
         'It returns the root mean square for the given numbers'
         power2 = lambda x: math.pow(x, 2)
         return math.sqrt(sum(map(power2, numbers)) / len(numbers))
@@ -128,7 +130,8 @@ class VariantCallFormatWriter(object):
         else:
             return '.'
 
-    def _create_quality(self, alleles, alternative_alleles):
+    @staticmethod
+    def _create_quality(alleles, alternative_alleles):
         '''It returns the quality for this snv
 
         QUAL phred-scaled quality score for the assertion made in ALT. i.e. give
