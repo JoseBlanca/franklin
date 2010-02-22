@@ -11,22 +11,6 @@ from Bio import SeqIO
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.writers import write_seqs_in_file
 
-def xappend_to_fasta(seq, seq_fhand, qual_fhand=None):
-    'It appends a SeqWithQuality to a fasta file. fhands must be in w mode'
-    name        = seq.name
-    sequence    = seq.seq
-    description = seq.description
-    #write seq fasta
-    seq_fasta = fasta_str(sequence, name, description)
-    seq_fhand.write(seq_fasta)
-    #write qual fasta
-    if qual_fhand is not None:
-        qual = [str(q) for q in seq.qual]
-        qual_fasta = fasta_str(" ".join(qual), name, description)
-        qual_fhand.write(qual_fasta)
-
-
-
 def parse_fasta(seq_fhand, qual_fhand=None):
     '''It returns the fasta file content giving a file hanler'''
     qual = None
