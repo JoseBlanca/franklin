@@ -58,7 +58,7 @@ class TestBackbone(unittest.TestCase):
     'It tests the backbone'
 
     @staticmethod
-    def xtest_create_project():
+    def test_create_project():
         'We can create a project'
         test_dir = NamedTemporaryDir()
         settings_path = create_project(directory=test_dir.name,
@@ -73,7 +73,7 @@ class TestBackbone(unittest.TestCase):
         test_dir.close()
 
     @staticmethod
-    def xtest_cleaning_analysis():
+    def test_cleaning_analysis():
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
@@ -163,9 +163,9 @@ class TestBackbone(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
-        fpath_sanger = join(clean_reads_dir, 'lb_hola.pt_sanger.fastq')
+        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.fastq')
         fpath_solexa = join(clean_reads_dir,
-                                    'lb_hola.pt_illumina.sfastq')
+                                    'lb_hola.pl_illumina.sfastq')
         open(fpath_sanger, 'w').write(sanger)
         open(fpath_solexa, 'w').write(solexa)
 
@@ -182,7 +182,7 @@ class TestBackbone(unittest.TestCase):
         singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
         singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
         assert exists(join(singular_mapping_dir, 'result',
-                                    'by_readgroup', 'lb_hola.pt_illumina.bam'))
+                                    'by_readgroup', 'lb_hola.pl_illumina.bam'))
         do_analysis(project_settings=settings_path, kind='select_last_mapping')
         result_dir = join(mapping_dir, 'result')
         assert exists(result_dir)
@@ -195,13 +195,37 @@ class TestBackbone(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='bam_to_pileup')
         pileup_dir = join(result_dir, 'pileups')
         assert exists(pileup_dir)
-        assert exists(join(pileup_dir, 'lb_hola.pt_illumina.pileup'))
+        assert exists(join(pileup_dir, 'lb_hola.pl_illumina.pileup'))
 
         do_analysis(project_settings=settings_path, kind='pileup_to_snvs')
         assert  exists(join (project_dir, 'annotations', 'snvs', 'all.snvs'))
 
+    @staticmethod
+    def test_wsg_asembly_analysis():
+        'We can assembly with wsg'
+        test_dir = NamedTemporaryDir()
+        proj_name = 'backbone'
+        project_dir = join(test_dir.name, proj_name)
+        settings_path = create_project(directory=test_dir.name, name=proj_name)
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        clean_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(reads_dir)
+        os.mkdir(clean_reads_dir)
 
-
+        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.sfastq')
+        open(fpath_sanger, 'w').write(READS_454)
+        fpath_sanger3 = join(clean_reads_dir, 'lb_hola2.pl_sanger.fasta')
+        open(fpath_sanger3, 'w').write('>seq\nAAAAAAA\n>seq2\nTTTT\n')
+        fpath_sanger2 = join(clean_reads_dir, 'lb_caracola.pl_sanger.sfastq')
+        open(fpath_sanger2, 'w').write(READS_454)
+        do_analysis(project_settings=settings_path, kind='prepare_wsg_assembly')
+        result_dir =join(project_dir, 'assembly', 'input')
+        assert exists(result_dir)
+        frg_fpath = join(result_dir, 'all_seq.frg')
+        assert exists(frg_fpath)
+        # This dos not work because of the  input data
+        #do_analysis(project_settings=settings_path, kind='wsg_assembly')
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

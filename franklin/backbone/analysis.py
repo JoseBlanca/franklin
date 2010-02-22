@@ -4,14 +4,17 @@ Created on 29/01/2010
 @author: jose
 '''
 
-import os, tempfile, time, shutil
-from franklin.utils.seqio_utils import guess_seq_file_format, seqio, cat
-from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.utils.cmd_utils import call
-from configobj import ConfigObj
-from franklin.mapping import map_reads
-from franklin.utils.misc_utils import NamedTemporaryDir
+import os, time, shutil
 from tempfile import NamedTemporaryFile
+from configobj import ConfigObj
+
+from franklin.utils.cmd_utils import call
+from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.seqio_utils import (guess_seq_file_format, seqio, cat,
+                                        seqs_in_file, write_seqs_in_file,
+                                        quess_seq_type)
+from franklin.pipelines.pipelines import seq_pipeline_runner
+from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam, sam2bam,
                         sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
@@ -119,6 +122,8 @@ class Analyzer(object):
                     fpaths = filter(lambda x: x.endswith('.bam'), fpaths)
                 elif input_def['file_kinds'] == 'pileup':
                     fpaths = filter(lambda x: x.endswith('.pileup'), fpaths)
+                elif input_def['file_kinds'] == 'frg_file':
+                    fpaths = filter(lambda x: x.endswith('.frg'), fpaths)
             if 'file' in input_def:
                 fpaths = _select_file(input_def['file'], fpaths)
             input_files[input_kind] = fpaths
@@ -236,6 +241,97 @@ def _scrape_info_from_fname(fpath):
         file_info[key] = value
     return file_info
 
+class PrepareWSGAssemblyAnalyzer(Analyzer):
+    '''It collects the cleaned reads to use by wsg. Wsg only uses reads with quality,
+    so be will dismiss these sequences'''
+
+    def run(self):
+        '''It runs the analysis. It checks if the analysis is already done per
+        input file'''
+
+        # TODO
+        # Now we need to convert all the fastq in fasta and qual. If fasta
+        #without qual, we need to give it a quality from settings. It can change
+        # if people in celera get fastqToCA to work.
+        tempdir = NamedTemporaryDir()
+        tempdir_name = tempdir.name
+        fasta_qual_files = []
+        for seqfile in self._get_input_fpaths()['reads']:
+            basename = os.path.splitext(os.path.basename(seqfile))[0]
+            fasta_fhand = open(os.path.join(tempdir_name,
+                                            basename + '.fasta'), 'w')
+            qual_fhand  = open(os.path.join(tempdir_name,
+                                            basename + '.qual'), 'w')
+            fasta_qual_files.append((fasta_fhand.name, qual_fhand.name))
+
+            file_format = guess_seq_file_format(open(seqfile))
+            seqs = seqs_in_file(open(seqfile), format=file_format)
+
+            write_seqs_in_file(seqs,  seq_fhand=fasta_fhand,
+                               qual_fhand=qual_fhand,
+                               format='fasta')
+
+        # once we have the fasta and qual files, we need to convert them to WSG
+        # format FRG. For fasta convertTo
+
+        for fasta_fpath, qual_fpath in fasta_qual_files:
+            file_info = _scrape_info_from_fname(fasta_fpath)
+            library   = file_info['lb']
+            platform  = file_info['pl']
+
+            cmd = ['convert-fasta-to-v2.pl', '-noobt', '-l', library, '-s',
+                   fasta_fpath, '-q', qual_fpath]
+
+            if platform == '454':
+                cmd.append('-454')
+            stdout = call(cmd, raise_on_error=True)[0]
+            basename  = os.path.splitext(os.path.basename(fasta_fpath))[0]
+            frg_fpath = os.path.join(tempdir.name, basename + '.frg')
+            frg_fhand = open(frg_fpath, 'w')
+            frg_fhand.write(stdout)
+            frg_fhand.close()
+
+        # Finally we do a cat of all the frg files ant write it to real output
+        # dir
+        output_dir = self._create_output_dirs()['assembly_input']
+        frg_fhands = []
+        for frg in os.listdir(tempdir.name):
+            if frg.endswith('.frg'):
+                frg_fhands.append(open(os.path.join(tempdir.name, frg)))
+        final_frg = os.path.join(output_dir, BACKBONE_BASENAMES['merged_frg'])
+        cat(frg_fhands, open(final_frg, 'w'))
+        tempdir.close()
+
+class WSGAssemblyAnalyzer(Analyzer):
+    'It assembles the cleaned reads using WSG assembler'
+
+    def run(self):
+        '''It runs the analysis.'''
+        proj_name = self._get_project_name()
+        #we need an assembly dir for this run
+        #in this case every assembly is done in a new directory
+        #the directory for this assembly
+        output_dirs = self._create_output_dirs(timestamped=True)
+        assembly_dir = output_dirs['analysis']
+        wsg_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
+
+        frgs = self._get_input_fpaths()['frgs']
+
+        stdout = open(os.path.join(assembly_dir, 'stdout.txt'), 'w')
+        stderr = open(os.path.join(assembly_dir, 'stderr.txt'), 'w')
+        cmd = ['runCA', '-d', wsg_dir, '-p', proj_name]
+        cmd.extend(frgs)
+        print ' '.join(cmd)
+        raw_input()
+        retcode = call(cmd, stdout=stdout, stderr=stderr)[-1]
+        if retcode:
+            raise RuntimeError(open(stdout.name).read())
+
+        # symlinks result to result dir
+        fname = '%s.asm' % proj_name
+        asm_result_fpath = os.path.join(output_dirs['analysis'], fname)
+        os.symlink(asm_result_fpath, os.path.join(output_dirs['result'], fname))
+
 class PrepareMiraAssemblyAnalyzer(Analyzer):
     'It assembles the cleaned reads'
 
@@ -282,8 +378,8 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         for file_ in files:
             #are we dealing with a fastq file (with qual)
             if 'fastq' in os.path.splitext(file_.name)[-1]:
-                qual = tempfile.NamedTemporaryFile(suffix='.qual')
-                fasta = tempfile.NamedTemporaryFile(suffix='.fasta')
+                qual  = NamedTemporaryFile(suffix='.qual')
+                fasta = NamedTemporaryFile(suffix='.fasta')
                 seqio(in_seq_fhand=file_, out_seq_fhand=fasta,
                         out_qual_fhand=qual, out_format='fasta')
             else:
@@ -422,7 +518,7 @@ class MappingAnalyzer(Analyzer):
 
         for read_fpath in reads_fpaths:
             read_info = _scrape_info_from_fname(read_fpath)
-            platform = read_info['pt']
+            platform = read_info['pl']
             #which mapper are we using for this platform
             mapper = settings['mapper_for_%s' % platform]
             out_bam = os.path.join(output_dir,
@@ -545,6 +641,27 @@ ANALYSIS_DEFINITIONS = {
          'outputs':{'reads':{'directory': 'cleaned_reads'}},
          'analyzer': CleanReadsAnalyzer,
         },
+    'prepare_wsg_assembly':
+        {'inputs':{
+            'reads':
+                {'directory': 'cleaned_reads',
+                 'file_kinds': 'sequence_files'}
+            },
+         'outputs':{'assembly_input':{'directory': 'assembly_input'}},
+         'analyzer': PrepareWSGAssemblyAnalyzer,
+        },
+    'wsg_assembly':
+        {'inputs':{
+            'frgs':
+                {'directory': 'assembly_input',
+                 'file_kinds': 'frg_file'}
+            },
+         'outputs':{
+                    'analysis':  {'directory': 'assemblies'},
+                    'result':  {'directory': 'assembly_result'},
+                    },
+         'analyzer': WSGAssemblyAnalyzer,
+        },
     'prepare_mira_assembly':
         {'inputs':{
             'reads':
@@ -659,6 +776,7 @@ BACKBONE_BASENAMES = {
     'mapping_reference':'reference',
     'merged_bam':'merged.bam',
     'snv_result':'all.snvs',
+    'merged_frg':'all_seq.frg',
 }
 
 def do_analysis(kind, project_settings=None, analysis_config=None):

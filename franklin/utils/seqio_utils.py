@@ -4,14 +4,11 @@ Created on 2009 uzt 28
 @author: peio
 '''
 
-import tempfile, StringIO, math
+import tempfile, math
 from uuid import uuid4
 
 from franklin.seq.seqs import SeqWithQuality, UNKNOWN_ID, UNKNOWN_NAME
-from franklin.utils.misc_utils import FileIndex
-
 from Bio import SeqIO
-from Bio.Seq import UnknownSeq
 
 def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
@@ -308,7 +305,8 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
         yield seqrec
 
 
-def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
+def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
+                       default_qual=25):
     '''It writes the given sequences in the given files.
 
     The seqs can be an iterartor or a list of Biopython SeqRecords or
@@ -319,11 +317,14 @@ def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
         else:
             if ('phred_quality' not in seq.letter_annotations or
                 not seq.letter_annotations['phred_quality']):
-                qual = [30] * len(seq.seq)
+                qual = [default_qual] * len(seq.seq)
                 seq.letter_annotations['phred_quality'] = qual
             SeqIO.write([seq], seq_fhand, BIOPYTHON_FORMATS[format])
             if qual_fhand and format == 'fasta':
                 SeqIO.write([seq], qual_fhand, 'qual')
+    seq_fhand.flush()
+    if qual_fhand:
+        qual_fhand.flush()
 
 
 def seqio(in_seq_fhand, out_seq_fhand, out_format,
