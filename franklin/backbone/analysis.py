@@ -4,27 +4,19 @@ Created on 29/01/2010
 @author: jose
 '''
 
-<<<<<<< HEAD:franklin/backbone/analysis.py
-import os, time, shutil
-from tempfile import NamedTemporaryFile
-=======
-import os, tempfile, time, shutil
-from franklin.utils.seqio_utils import seqio, cat
-from franklin.seq.readers import guess_seq_file_format
-from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.utils.cmd_utils import call
->>>>>>> eca8a27bb926a449615db9f3f298cd41e9f084a7:franklin/backbone/analysis.py
-from configobj import ConfigObj
 
+import os, time, shutil
+from configobj import ConfigObj
+from tempfile import NamedTemporaryFile
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir
-from franklin.utils.seqio_utils import (guess_seq_file_format, seqio, cat,
-                                        seqs_in_file, write_seqs_in_file,
-                                        quess_seq_type)
+from franklin.utils.seqio_utils import (seqio, cat, seqs_in_file,
+                                        write_seqs_in_file)
+from franklin.seq.readers import guess_seq_file_format
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.mapping import map_reads
-from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam, sam2bam,
-                        sort_bam_sam)
+from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
+                          sam2bam, sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
 from franklin.pipelines.pipelines import _pipeline_builder
 
@@ -231,7 +223,7 @@ class CleanReadsAnalyzer(Analyzer):
             file_info = _scrape_info_from_fname(input_fpath)
             pipeline = self._guess_cleaning_pipepile(file_info)
             iofhands = {'in_seq':open(input_fpath),
-                        'out_seq': open(output_fpath, 'w')}
+                        'outputs':{'sequence': open(output_fpath, 'w')}}
             configuration = self.create_cleaning_configuration(
                                                        platform=file_info['pt'])
             seq_pipeline_runner(pipeline, configuration, iofhands,
@@ -546,7 +538,9 @@ class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
     def run(self):
         '''It runs the analysis.'''
-#        settings = self._project_settings['Mappers']
+        settings = self._project_settings
+        project_path = settings['General_settings']['project_path']
+        os.chdir(project_path)
         inputs          = self._get_input_fpaths()
         bam_fpaths      = inputs['bams']
         reference_fpath = inputs['reference']
@@ -570,7 +564,7 @@ class MergeBamAnalyzer(Analyzer):
             if file_.endswith('.sam'):
                 sams.append(open(os.path.join(temp_dir.name, file_)))
 
-        temp_sam = NamedTemporaryFile(suffix='.bam')
+        temp_sam = NamedTemporaryFile(suffix='.sam')
         merge_sam(sams, temp_sam, open(reference_fpath))
 
         # Convert sam into a bam,(Temporary)
@@ -578,6 +572,9 @@ class MergeBamAnalyzer(Analyzer):
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
+        print temp_bam.name, merged_bam_fpath
+        print
+        raw_input()
         sort_bam_sam(temp_bam.name, merged_bam_fpath)
 
 class BamToPileupAnalyzer(Analyzer):

@@ -386,7 +386,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     retcode = process.returncode
     if raise_on_error:
         if retcode:
-            raise RuntimeError(stderr_str)
+            raise RuntimeError(stderr_str, stdout_str)
     if stdout != subprocess.PIPE:
         stdout.flush()
     if stderr != subprocess.PIPE:

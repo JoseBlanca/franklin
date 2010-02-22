@@ -111,13 +111,13 @@ class PipelineTests(unittest.TestCase):
         io_fhands = {}
         io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
-        io_fhands['out_seq']  = NamedTemporaryFile()
-        io_fhands['out_qual'] = NamedTemporaryFile()
-
+        io_fhands['outputs']  = {}
+        io_fhands['outputs']['sequence'] = NamedTemporaryFile()
+        io_fhands['outputs']['quality']  = NamedTemporaryFile()
         seq_pipeline_runner(pipeline, configuration, io_fhands)
-        io_fhands['out_seq'].seek(0)
+        io_fhands['outputs']['sequence'].seek(0)
 
-        result_seq = io_fhands['out_seq'].read()
+        result_seq = io_fhands['outputs']['sequence'].read()
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq
@@ -135,15 +135,16 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
-        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
-        io_fhands['out_seq']  = NamedTemporaryFile()
-        io_fhands['out_qual'] = NamedTemporaryFile()
+        io_fhands['in_seq']  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        io_fhands['outputs'] = {}
+        io_fhands['outputs']['sequence']  = NamedTemporaryFile()
+        io_fhands['outputs']['quality'] = NamedTemporaryFile()
 
         seq_pipeline_runner(pipeline, configuration, io_fhands, processes=2)
-        io_fhands['out_seq'].seek(0)
+        io_fhands['outputs']['sequence'].seek(0)
 
-        result_seq = io_fhands['out_seq'].read()
+        result_seq = io_fhands['outputs']['sequence'].read()
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq

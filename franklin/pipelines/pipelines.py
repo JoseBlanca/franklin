@@ -186,26 +186,27 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     #which outputs do we want?
     writers = []
     for output, fhand in io_fhands['outputs'].items():
-        writer_klass = WRITERS[output]
-        if output == 'sequence':
-            if 'quality' in io_fhands['outputs']:
-                qual_fhand = io_fhands['outputs']['quality']
-            else:
-                qual_fhand = None
-            writer = writer_klass(fhand=fhand,
-                                     qual_fhand=qual_fhand,
-                                     file_format=file_format)
-        elif output == 'quality':
+        if output == 'quality':
             pass
-        elif output == 'repr':
-            file_format = 'repr'
-            writer = writer_klass(fhand=fhand, file_format='repr')
-        elif output == 'vcf':
-            ref_name = os.path.basename(io_fhands['in_seq'].name)
-            writer = writer_klass(fhand=fhand, reference_name=ref_name)
         else:
-            writer = writer_klass(fhand)
-        writers.append(writer)
+            writer_klass = WRITERS[output]
+            if output == 'sequence':
+                if 'quality' in io_fhands['outputs']:
+                    qual_fhand = io_fhands['outputs']['quality']
+                else:
+                    qual_fhand = None
+                writer = writer_klass(fhand=fhand,
+                                         qual_fhand=qual_fhand,
+                                         file_format=file_format)
+            elif output == 'repr':
+                file_format = 'repr'
+                writer = writer_klass(fhand=fhand, file_format='repr')
+            elif output == 'vcf':
+                ref_name = os.path.basename(io_fhands['in_seq'].name)
+                writer = writer_klass(fhand=fhand, reference_name=ref_name)
+            else:
+                writer = writer_klass(fhand)
+            writers.append(writer)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:

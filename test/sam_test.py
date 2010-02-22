@@ -12,7 +12,7 @@ from franklin.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
-                        add_header_and_tags_to_sam)
+                        add_header_and_tags_to_sam, sort_bam_sam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -126,6 +126,32 @@ SGN-E40000	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGG
         sam3	=	NamedTemporaryFile()
         merge_sam(infiles=[sam1,	sam2],	outfile=sam3,	reference=reference)
         print	open(sam3.name).read()
+
+    @staticmethod
+    def test_sort_bam():
+        'It test that we can sort bams using picard'
+        #sort sam
+        sam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.sam')
+        sorted_samfhand = NamedTemporaryFile(suffix='.sam')
+        sort_bam_sam(sam_fpath, sorted_samfhand.name)
+
+        #sort bam
+        bam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.bam')
+        sorted_bamfhand = NamedTemporaryFile(suffix='.bam')
+        sort_bam_sam(bam_fpath, sorted_bamfhand.name)
+
+        #sort bam to sam
+        bam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.bam')
+        sorted_samfhand = NamedTemporaryFile(suffix='.sam')
+        sort_bam_sam(bam_fpath, sorted_samfhand.name)
+
+        #sort sam
+        sam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.sam')
+        sorted_bamfhand = NamedTemporaryFile(suffix='.bam')
+        sort_bam_sam(sam_fpath, sorted_bamfhand.name)
+
+
+
 
 #    temp_file = NamedTemporaryDir()
 #    split_by_read_group(sam3,	temp_file.name)

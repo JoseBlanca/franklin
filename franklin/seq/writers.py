@@ -52,20 +52,22 @@ class SequenceWriter(object):
             if self._qual_fhand and format_ == 'fasta':
                 SeqIO.write([sequence], self._qual_fhand, 'qual')
 
-def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta'):
+def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
+                       default_quality=25):
     '''It writes the given sequences in the given files.
 
     The seqs can be an iterartor or a list of Biopython SeqRecords or
     SeqWithQualities'''
     if format == 'fasta':
-        _write_fasta_file(seqs, seq_fhand, qual_fhand)
+        _write_fasta_file(seqs, seq_fhand, default_quality,
+                          fhand_qual=qual_fhand)
     else:
         writer = SequenceWriter(fhand=seq_fhand, qual_fhand=qual_fhand,
                                 file_format=format)
         for seq in seqs:
             writer.write(seq)
 
-def _write_fasta_file(seqs, fhand_seq, fhand_qual=None):
+def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
     '''Given a Seq and its default name it returns a fasta file in a
     temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
     file'''
@@ -84,9 +86,14 @@ def _write_fasta_file(seqs, fhand_seq, fhand_qual=None):
         if fhand_qual is not None:
             try:
                 quality = seq.letter_annotations["phred_quality"]
-            except AttributeError:
-                msg = 'Sequence must have a phred_quality letter annotation'
-                raise AttributeError(msg)
+            except (AttributeError, KeyError):
+                if default_quality:
+                    quality = [default_quality] * len(seq)
+                else:
+                    msg = 'Sequence must have a phred_quality letter annotation'
+                    raise AttributeError(msg)
+
+
             if quality is not None:
                 quality = [str(qual) for qual in quality]
                 fhand_qual.write(fasta_str(' '.join(quality), name))
@@ -144,7 +151,7 @@ def temp_fasta_file(seqs, write_qual=False):
         fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
     else:
         fhand_qual = None
-    _write_fasta_file(seqs, fhand_seq, fhand_qual)
+    _write_fasta_file(seqs, fhand_seq, fhand_qual=fhand_qual)
 
     if write_qual:
         return fhand_seq, fhand_qual

@@ -163,7 +163,7 @@ class TestBackbone(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
-        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.fastq')
+        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.sfastq')
         fpath_solexa = join(clean_reads_dir,
                                     'lb_hola.pl_illumina.sfastq')
         open(fpath_sanger, 'w').write(sanger)
@@ -199,7 +199,7 @@ class TestBackbone(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='pileup_to_snvs')
         assert  exists(join (project_dir, 'annotations', 'snvs', 'all.snvs'))
-
+        test_dir.close()
     @staticmethod
     def test_wsg_asembly_analysis():
         'We can assembly with wsg'
