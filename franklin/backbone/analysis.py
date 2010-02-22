@@ -572,9 +572,6 @@ class MergeBamAnalyzer(Analyzer):
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
-        print temp_bam.name, merged_bam_fpath
-        print
-        raw_input()
         sort_bam_sam(temp_bam.name, merged_bam_fpath)
 
 class BamToPileupAnalyzer(Analyzer):
