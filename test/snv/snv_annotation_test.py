@@ -18,21 +18,25 @@ Created on 16/02/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
+from tempfile import NamedTemporaryFile
 import unittest, os
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.snv.snv_annotation import create_snv_annotator
-from franklin.utils.seqio_utils import seqs_in_file
+from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX,
+                                         _remove_bad_quality_alleles,
+                                         _add_default_sanger_quality,
                                          calculate_snv_kind,
                                          sorted_alleles,
                                          calculate_maf_frequency,
                                          calculate_snv_variability,
                                          calculate_cap_enzymes)
+from franklin.pipelines.pipelines import seq_pipeline_runner
 
 class TestSnvAnnotation(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs'
@@ -43,10 +47,12 @@ class TestSnvAnnotation(unittest.TestCase):
         bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
 
-        annotator = create_snv_annotator(bam_fhand=bam_fhand)
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30)
 
-        for seq in seqs_in_file(seq_fhand):
-            annotator(seq)
+        expected_snvs = [1, 3]
+        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
+            seq = annotator(seq)
+            assert expected == len(seq.features)
 
     @staticmethod
     def test_snv_kind():
@@ -82,6 +88,35 @@ class TestSnvAnnotation(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == COMPLEX
+
+    @staticmethod
+    def test_bad_allele_removal():
+        'It tests that we can get rid of the alleles with not enough quality'
+        min_quality = 45
+        default_sanger_quality = 25
+
+        alleles = {('A', SNP): {'qualities':[29, 22],
+                                'orientations':[True, True]}}
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 0
+
+        alleles = {('A', SNP): {'qualities':[29, 22],
+                                'orientations':[True, True]}}
+        _remove_bad_quality_alleles(alleles, min_quality=32)
+        assert len(alleles) == 1
+
+        alleles = {('A', SNP): {'qualities':[23, 22],
+                                'orientations':[True, False]}}
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 1
+
+        alleles = {('A', SNP): {'qualities':[20, 22, None],
+                                'orientations':[True, True, False],
+                                'read_groups':['rg1', 'rg1', 'rg1']}}
+        _add_default_sanger_quality(alleles, default_sanger_quality,
+                                    read_groups_info={'rg1':{'PL':'sanger'}})
+        _remove_bad_quality_alleles(alleles, min_quality)
+        assert len(alleles) == 1
 
     @staticmethod
     def test_sort_alleles():
@@ -159,8 +194,35 @@ class TestSnvAnnotation(unittest.TestCase):
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert [] == enzymes
 
+class TestSnvPipeline(unittest.TestCase):
+    'It tests the annotation of SeqRecords with snvs using the pipeline'
 
+    @staticmethod
+    def test_snv_annotation_bam():
+        'It tests the annotation of SeqRecords with snvs'
+        pipeline = 'snv_bam_annotator'
 
+        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+
+        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
+                                               'min_quality':30}}
+
+        io_fhands = {}
+        io_fhands['in_seq']   = seq_fhand
+        io_fhands['outputs'] = {'sequence': NamedTemporaryFile(),
+                                'vcf': NamedTemporaryFile(),}
+
+        processes = 2
+        seq_pipeline_runner(pipeline, configuration, io_fhands)
+
+        result_seq = open(io_fhands['outputs']['sequence'].name).read()
+        vcf = open(io_fhands['outputs']['vcf'].name).read()
+        assert '66' in vcf
+        assert '55' in vcf
+        assert 'D2' in vcf
+        assert 'IAA' in vcf
 
 
 if __name__ == "__main__":

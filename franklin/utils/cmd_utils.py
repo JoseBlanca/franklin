@@ -20,13 +20,13 @@ This module provides utilities to run external commands into franklin
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-from franklin.utils.seqio_utils import temp_fasta_file, temp_qual_file
+from franklin.seq.writers import temp_fasta_file, temp_qual_file
 from franklin.utils.misc_utils import NamedTemporaryDir
 
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy
 
-# Runner definitions, Define here the parameters of the prgrams you want to
+# Runner definitions, Define here the parameters of the programs you want to
 # use with this class
 STDOUT   = 'stdout'
 ARGUMENT = 'argument'

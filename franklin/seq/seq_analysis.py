@@ -20,12 +20,51 @@ Created on 26/11/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import create_runner, call
-from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from franklin.utils.collections_ import list_consecutive_pairs_iter
-from franklin.seq.seq_annotation import get_hit_pairs_fom_blast
+from franklin.alignment_search_result import BlastParser
 from tempfile import NamedTemporaryFile
+
+def get_orthologs(blast1_fhand, blast2_fhand):
+    '''It return orthologs from two pools. It needs the xml otput blast of the
+    pools'''
+    # First we have to get hist from the first blast. We will put the in a set
+    blast1_hits = set()
+    for hits in get_hit_pairs_fom_blast(blast1_fhand):
+        blast1_hits.add(hits)
+
+    # Know we will see if the hits in the second blast in the first too
+    for hits in get_hit_pairs_fom_blast(blast2_fhand):
+        hits = (hits[1], hits[0])
+        if hits in blast1_hits:
+            yield hits
+
+def get_hit_pairs_fom_blast(blast1_fhand, filters=None):
+    'It return a iterator with query subjetc tuples of the hist in the blast'
+
+    blasts = BlastParser(fhand=blast1_fhand)
+    if filters is None:
+        filters = [{'kind'           : 'best_scores',
+                    'score_key'      : 'expect',
+                    'max_score_value': 1e-4,
+                    'score_tolerance': 10}]
+    filtered_results = FilteredAlignmentResults(match_filters=filters,
+                                                results=blasts)
+    for match in filtered_results:
+        try:
+            query =  match['query'].id
+        except AttributeError:
+            query =  match['query'].name
+        for match_hit in match['matches']:
+            try:
+                subject =  match_hit['subject'].id
+            except AttributeError:
+                subject =  match_hit['subject'].name
+            yield(query, subject)
+
+
 def _infer_introns_from_matches(alignments):
     'Given a match with several match parts it returns the introns'
     try:
@@ -152,16 +191,19 @@ def _infer_introns_for_cdna_blast(sequence, genomic_db):
     return introns
 
 def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                                            genomic_seqs_index):
+                                       genomic_seqs_index, similar_sequence):
     'It infers the intron location in the cdna using est2genome'
 
-    #first we want to know where is the most similar seq in the genomic_db
-    #this will speed up things
-    similar_seqs = look_for_similar_sequences(sequence, database=genomic_db,
-                                              blast_program='blastn')
-    if not similar_seqs:
-        return []
-    similar_seq = similar_seqs[0]
+    if not similar_sequence:
+        #first we want to know where is the most similar seq in the genomic_db
+        #this will speed up things
+        similar_seqs = look_for_similar_sequences(sequence, database=genomic_db,
+                                                  blast_program='blastn')
+        if not similar_seqs:
+            return []
+        similar_seq = similar_seqs[0]
+    else:
+        similar_seq = similar_sequence
     start = similar_seq['subject_start']
     end   = similar_seq['subject_end']
     similar_seq = genomic_seqs_index[similar_seq['name']]
@@ -211,16 +253,21 @@ def est2genome_parser(output):
             result['genomic']['introns'].append(genomic)
     return result
 
-def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
-                           method='est2genome'):
+def infer_introns_for_cdna(sequence, genomic_db=None, genomic_seqs_index=None,
+                           method='est2genome', similar_sequence=None):
     '''Doing a blast with the sequences against the genomic db it infers the
-    positions of introns'''
+    positions of introns.
+
+    It a similar sequence dict (as returned by similar_sequences_for_blast) is
+    given, the blast won't be done.
+    '''
     if method == 'blast':
         print 'The blast method for looking for introns is not well tested'
         return _infer_introns_for_cdna_blast(sequence, genomic_db)
     else:
         return _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                                  genomic_seqs_index)
+                                                  genomic_seqs_index,
+                                                  similar_sequence)
 
 
 

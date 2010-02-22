@@ -4,27 +4,14 @@ Created on 2009 uzt 28
 @author: peio
 '''
 
-import tempfile, math
-from uuid import uuid4
-
-from franklin.seq.seqs import SeqWithQuality, UNKNOWN_ID, UNKNOWN_NAME
+import math
+from franklin.seq.seqs import SeqWithQuality
 from Bio import SeqIO
 
-def fasta_str(seq, name, description=None):
-    'Given a sequence it returns a string with the fasta'
-    fasta_str_ = ['>']
-    fasta_str_.append(name)
-    if description is not None:
-        fasta_str_.append(' %s' % description)
-    fasta_str_.append('\n')
-    try:
-        fasta_str_.append(str(seq.seq).strip())
-    except AttributeError:
-        fasta_str_.append(str(seq).strip())
-    fasta_str_.append('\n')
-    return ''.join(fasta_str_)
+from franklin.seq.readers import seqs_in_file
+from franklin.seq.writers import write_seqs_in_file
 
-def append_to_fasta(seq, seq_fhand, qual_fhand=None):
+def xappend_to_fasta(seq, seq_fhand, qual_fhand=None):
     'It appends a SeqWithQuality to a fasta file. fhands must be in w mode'
     name        = seq.name
     sequence    = seq.seq
@@ -38,106 +25,7 @@ def append_to_fasta(seq, seq_fhand, qual_fhand=None):
         qual_fasta = fasta_str(" ".join(qual), name, description)
         qual_fhand.write(qual_fasta)
 
-def get_seq_name(seq):
-    'Given a sequence and its default name it returns its name'
-    try:
-        name = seq.name
-    except AttributeError:
-        name = None
-    #the SeqRecord default
-    if name == UNKNOWN_NAME:
-        name = None
 
-    if name is None:
-        try:
-            name = seq.id
-        except AttributeError:
-            name = None
-    if name == UNKNOWN_ID:
-        name = None
-
-    if name is None:
-        name  = str(uuid4())
-    return name
-
-def write_fasta_file(seqs, fhand_seq, fhand_qual=None):
-    '''Given a Seq and its default name it returns a fasta file in a
-    temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
-    file'''
-    try:
-        # Is seqs an seq or an iter??
-        #pylint:disable-msg=W0104
-        seqs.name
-        seqs = [seqs]
-        #pylint:disable-msg=W0704
-    except AttributeError:
-        pass
-
-    for seq in seqs:
-        name = get_seq_name(seq)
-
-        if fhand_qual is not None:
-            try:
-                quality = seq.letter_annotations["phred_quality"]
-            except AttributeError:
-                msg = 'Sequence must have a phred_quality letter annotation'
-                raise AttributeError(msg)
-            if quality is not None:
-                quality = [str(qual) for qual in quality]
-                fhand_qual.write(fasta_str(' '.join(quality), name))
-            else:
-                raise AttributeError('Quality can not be empty')
-        try:
-            desc = seq.description
-        except AttributeError:
-            desc = None
-        if desc == "<unknown description>":
-            desc = None
-        fhand_seq.write(fasta_str(seq, name, desc))
-
-    fhand_seq.flush()
-    fhand_seq.seek(0)
-
-    if fhand_qual is not None:
-        fhand_qual.flush()
-        fhand_qual.seek(0)
-
-def temp_qual_file(seqs):
-    'Given a qual seq it return a temporary qual fasta file'
-    fhand_qual = tempfile.NamedTemporaryFile(suffix='.qual')
-    for seq in seqs:
-        name    = get_seq_name(seq)
-        quality = seq.letter_annotations["phred_quality"]
-
-        quality = [str(qual) for qual in quality]
-        fhand_qual.write('>%s\n%s\n' % (name , ' '.join(quality)))
-
-    fhand_qual.flush()
-    fhand_qual.seek(0)
-    return fhand_qual
-
-def temp_fasta_file(seqs, write_qual=False):
-    '''Given a Seq and its default name it returns a fasta file in a
-    temporary file. If the seq is a SeqWithQuality you can ask a qual fasta
-    file'''
-    fhand_seq = tempfile.NamedTemporaryFile(suffix='.fasta')
-    if write_qual:
-        fhand_qual = tempfile.NamedTemporaryFile(suffix='.fasta')
-    else:
-        fhand_qual = None
-    write_fasta_file(seqs, fhand_seq, fhand_qual)
-
-    if write_qual:
-        return fhand_seq, fhand_qual
-    else:
-        return fhand_seq
-
-def create_temp_fasta_files(seq1, seq2):
-    'It returns two temporal fasta files.'
-    #we create two temp files
-    fileh1 = temp_fasta_file(seq1)
-    fileh2 = temp_fasta_file(seq2)
-    return fileh1, fileh2
 
 def parse_fasta(seq_fhand, qual_fhand=None):
     '''It returns the fasta file content giving a file hanler'''

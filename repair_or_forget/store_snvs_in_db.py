@@ -25,7 +25,7 @@ import sqlalchemy, os
 from optparse import OptionParser
 from franklin.snv.sam_pileup import seqvars_in_sam_pileup
 from franklin.snv.snp_miner import SnvDb, create_snp_miner_database
-from franklin.pipelines import pipeline_runner
+from franklin.pipelines import _pipeline_builder
 from franklin.collections_ import RequiredPosition
 
 def parse_options():
@@ -90,7 +90,7 @@ def main():
                                                library=library)
     # filter using pipeline
     if pipeline is not None:
-        snvs_with_context = pipeline_runner(pipeline, snvs_with_context)
+        snvs_with_context = _pipeline_builder(pipeline, snvs_with_context)
 
     # remove context
     snvs = (snv[0] for snv in snvs_with_context if snv is not None)

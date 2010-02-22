@@ -22,7 +22,7 @@ can also return None if no sequence is left after the filtering process.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import create_runner
-from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from franklin.seq.seq_analysis import look_for_similar_sequences

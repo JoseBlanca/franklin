@@ -22,16 +22,16 @@ from __future__ import division
 
 import pysam
 import os
-
+from collections import defaultdict
 
 from Bio.SeqFeature import FeatureLocation
 
-from franklin.seq.seqs import SeqFeature, SeqWithQuality
-from franklin.utils.seqio_utils import get_seq_name
+from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
 from franklin.utils.cmd_utils import call, create_runner
 from copy import copy
 
 DELETION_ALLELE = '-'
+N_ALLLELES = ('n', '?')
 
 SNP = 0
 INSERTION = 1
@@ -46,10 +46,23 @@ COMMON_ENZYMES = ['ecori', 'smai', 'bamhi', 'alui', 'bglii',
                   'haeiii', 'xhoi', 'kpni', 'scai', 'banii',
                   'hinfi', 'drai', 'apai', 'asp718']
 
+def _qualities_to_phred(quality):
+    'It transforms a qual chrs into a phred quality'
+    if quality is None:
+        return None
+    phred_qual = []
+    for char in quality:
+        phred_qual.append(ord(char) - 33)
+    if quality[0] == 93:  #the character used for unknown qualities
+        phred_qual = None
+    else:
+        phred_qual = sum(phred_qual) / len(phred_qual)
+    return phred_qual
+
 def _get_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
-    allele = aligned_read.seq[index].lower()
-    qual   = aligned_read.qual[index]
+    allele = aligned_read.seq[index].upper()
+    qual   = _qualities_to_phred(aligned_read.qual[index])
     return allele, qual, bool(aligned_read.is_reverse)
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
@@ -64,10 +77,21 @@ def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
     allele_info['read_groups'].append(read_group)
     allele_info['orientations'].append(not(is_reverse))
     allele_info['qualities'].append(qual)
-    allele_info['mapping_qualities'].append(qual)
+    allele_info['mapping_qualities'].append(mapping_quality)
 
-def _snvs_in_bam(bam, reference):
+def _get_read_group_info(bam):
+    'It returns a dict witht the read group info: platform, lb, etc'
+    rg_info = {}
+    for read_group in bam.header['RG']:
+        name = read_group['ID']
+        del read_group['ID']
+        rg_info[name] = read_group
+    return rg_info
+
+def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
     'It yields the snv information for every snv in the given reference'
+
+    read_groups_info = _get_read_group_info(bam)
 
     current_deletions = {}
     reference_id = get_seq_name(reference)
@@ -76,7 +100,7 @@ def _snvs_in_bam(bam, reference):
         alleles = {}
         ref_pos = column.pos
         ref_id =  bam.getrname(column.tid)
-        ref_allele = reference_seq[ref_pos].lower()
+        ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
             aligned_read = pileup_read.alignment
 
@@ -97,9 +121,13 @@ def _snvs_in_bam(bam, reference):
                 current_deletion = current_deletions[read_name]
                 if current_deletion[1]:
                     allele = DELETION_ALLELE * current_deletion[0]
-                    qual = None
+                    #in the deletion case the quality is the lowest of the
+                    #bases that embrace the deletion
+                    qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
+                    qual1 = _qualities_to_phred(aligned_read.qual[read_pos + 1])
+                    qual = min((qual0, qual1))
                     is_reverse = bool(aligned_read.is_reverse)
-                    kind = 'deletion'
+                    kind = DELETION
                     current_deletion[1] = False #we have returned it already
                 #we count how many positions should be skip until this read
                 #has now deletion again
@@ -135,13 +163,79 @@ def _snvs_in_bam(bam, reference):
                 _add_allele(alleles, allele, kind, read_name, read_group,
                             is_reverse, qual, read_mapping_qual)
 
+        #remove N
+        _remove_alleles_n(alleles)
+
+        #add default sanger qualities to the sanger reads with no quality
+        _add_default_sanger_quality(alleles, default_sanger_quality,
+                                    read_groups_info)
+
+        #remove bad quality alleles
+        _remove_bad_quality_alleles(alleles, min_quality)
+
         if len(alleles) > 1:
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
+                   'reference_allele':ref_allele,
                    'alleles':alleles}
 
+def _add_default_sanger_quality(alleles, default_sanger_quality,
+                                read_groups_info):
+    'It adds default sanger qualities to the sanger reads with no quality'
 
-def create_snv_annotator(bam_fhand):
+    for allele, allele_info in alleles.items():
+        if allele[1] == DELETION:
+            continue
+        for index, (qual, rg) in enumerate(zip(allele_info['qualities'],
+                                             allele_info['read_groups'])):
+            try:
+                if qual is None and read_groups_info[rg]['PL'] == 'sanger':
+                    allele_info['qualities'][index] = default_sanger_quality
+            except KeyError:
+                if 'PL' not in read_groups_info[rg]:
+                    msg = 'The bam file has no platforms for the read groups'
+                    raise KeyError(msg)
+                else:
+                    raise
+
+def _remove_alleles_n(alleles):
+    'It deletes the aleles that are N'
+    for allele in alleles:
+        if allele[0] in N_ALLLELES:
+            del alleles[allele]
+
+def _remove_bad_quality_alleles(alleles, min_quality):
+    'It adds the quality to the alleles dict and it removes the bad alleles'
+
+    for allele, allele_info in alleles.items():
+        qual = _calculate_allele_quality(allele_info)
+        allele_info['quality'] = qual
+        if qual < min_quality:
+            del alleles[allele]
+
+def _calculate_allele_quality(allele_info):
+    'It returns the quality for the given allele'
+    #we gather all qualities for independent groups
+    quals = defaultdict(list)
+    for qual, orientation in zip(allele_info['qualities'],
+                                 allele_info['orientations']):
+        quals[orientation].append(qual)
+
+    #we sort all qualities
+    for independent_quals in quals.values():
+        independent_quals.sort(lambda x, y: int(y - x))
+
+    total_qual = 0
+    for independent_quals in quals.values():
+        if independent_quals:
+            total_qual += independent_quals[0]
+            if len(independent_quals) > 1:
+                total_qual += independent_quals[1] / 4.0
+                if len(independent_quals) > 2:
+                    total_qual += independent_quals[2] / 4.0
+    return total_qual
+
+def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -153,16 +247,19 @@ def create_snv_annotator(bam_fhand):
 
     def annotate_snps(sequence):
         'It annotates the snvs found in the sequence'
-        for snv in _snvs_in_bam(bam, reference=sequence):
+        for snv in _snvs_in_bam(bam, reference=sequence,
+                                min_quality=min_quality,
+                                default_sanger_quality=default_sanger_quality):
             location = snv['ref_position']
             type_ = 'snv'
-            qualifiers = {'alleles':snv['alleles']}
+            qualifiers = {'alleles':snv['alleles'],
+                          'reference_allele':snv['reference_allele']}
             feat = SeqFeature(location=FeatureLocation(location, location),
                               type=type_,
                               qualifiers=qualifiers)
             sequence.features.append(feat)
+        return sequence
     return annotate_snps
-
 
 def calculate_snv_kind(feature):
     'It returns the snv kind for the given feature'

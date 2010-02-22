@@ -5,6 +5,23 @@ Created on 03/12/2009
 
 @author: peio
 '''
+
+from franklin.snv.snv_annotation import create_snv_annotator
+
+snv_bam_annotator = {'function':create_snv_annotator,
+                     'arguments':{'bam_fhand':None, 'min_quality':45,
+                                  'default_sanger_quality':25},
+                     'type':'mapper',
+                     'name':'snv_bam_annotator',
+                     'comment': 'It annotates the snvs from a bam file'}
+
+################################################################################
+# PIPELINES
+################################################################################
+
+SNV_PIPELINES = {'snv_bam_annotator': [snv_bam_annotator]}
+
+
 from franklin.snv.snv_cleaner import (create_cap_enzyme_filter,
                                     create_snv_close_to_limit_filter,
                                     create_high_variable_region_filter,
@@ -130,12 +147,3 @@ snv_filter_by_reference = {'function':create_reference_filter,
                            'name':'reference_filter',
                            'comment': 'It filters by snv.refernce properties'}
 
-################################################################################
-# PIPELINES
-################################################################################
-
-SNVPIPELINES = {'snp_basic'  : [snp_remove_alleles_n,
-                                snp_no_baq_quality_alleles_agg,
-                                snp_no_bad_quality_alleles_per_lib,
-                                snp_filter_is_variable_in_some],
-                }

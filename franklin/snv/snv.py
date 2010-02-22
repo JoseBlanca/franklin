@@ -21,7 +21,7 @@ Created on 2009 mar 25
 
 import copy
 from Bio import SeqIO
-from franklin.utils.seqio_utils import temp_fasta_file
+from franklin.seq.writers import temp_fasta_file
 from franklin.utils.cmd_utils import call
 from franklin.seq.seqs import SeqWithQuality
 from franklin.utils.collections_ import item_context_iter

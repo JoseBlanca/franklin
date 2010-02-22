@@ -1,8 +1,8 @@
 '''This module holds some utilities to build sequence cleaning pipelines.
 
 Several pipelines are defined and they can be run using the function
-pipeline_runner. A pipeline consists of a list of several steps that a run
-sequentially by the pipeline_runner. It is very easy to create new pipeline
+_pipeline_builder. A pipeline consists of a list of several steps that a run
+sequentially by the _pipeline_builder. It is very easy to create new pipeline
 because they're just a list of dicts that include the name of a function. For
 instance there are pipelines defined to clean short and long sequences, to
 mask them using repeat masker, etc.
@@ -35,18 +35,19 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import  logging
+import logging, os
 from itertools import imap, ifilter
 import multiprocessing
-from franklin.utils.seqio_utils import (seqs_in_file, write_fasta_file,
-                                      write_seqs_in_file,
-                                      guess_seq_file_format)
+from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
-from franklin.pipelines.snv_pipeline_steps import SNVPIPELINES
+from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
+from franklin.seq.readers import guess_seq_file_format
+from franklin.seq.writers import SequenceWriter
+from franklin.snv.writers import VariantCallFormatWriter
 
 
 # Join the pipelines in PIPELINE
-PIPELINES = dict(SEQPIPELINES.items() + SNVPIPELINES.items())
+PIPELINES = dict(SEQPIPELINES.items() + SNV_PIPELINES.items())
 
 
 def configure_pipeline(pipeline, configuration):
@@ -86,7 +87,7 @@ def _get_func_tools(processes):
     filter_ = ifilter
     return {'map': map_, 'filter': filter_}
 
-def pipeline_runner(pipeline, items, configuration=None, processes=False):
+def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     '''It runs all the analysis for the given pipeline.
 
     It takes one or two input files and one or two output files. (Fasta files
@@ -133,7 +134,7 @@ def pipeline_runner(pipeline, items, configuration=None, processes=False):
         if type_ == 'mapper':
             filtered_items = imap(cleaner_function, items)
         elif type_ == 'filter':
-            filtered_items   = ifilter(cleaner_function, items)
+            filtered_items   = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
             filtered_items, fhand_outs = cleaner_function(items)
             temp_bulk_files.append(fhand_outs)
@@ -149,6 +150,8 @@ def pipeline_runner(pipeline, items, configuration=None, processes=False):
 
     return items
 
+WRITERS = {'sequence': SequenceWriter,
+           'vcf': VariantCallFormatWriter}
 
 def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
                         processes=False):
@@ -163,30 +166,48 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     If the checkpoints are requested an intermediate file for every step will be
     created.
     '''
+    if file_format is None:
+        file_format = guess_seq_file_format(io_fhands['in_seq'])
+
     # Here we extract our input/output files
     in_fhand_seqs  = io_fhands['in_seq']
     if 'in_qual' in io_fhands:
         in_fhand_qual  = io_fhands['in_qual']
     else:
         in_fhand_qual  = None
-    out_fhand_seq  = io_fhands['out_seq']
-    if 'out_qual' in io_fhands:
-        out_fhand_qual = io_fhands['out_qual']
-    else:
-        out_fhand_qual = None
-    #which is the file format?
-    if file_format is None:
-        file_format = guess_seq_file_format(in_fhand_seqs)
-    # Here starts the analysis
-    seq_iter = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
-    #run the pipeline
-    filtered_seq_iter = pipeline_runner(pipeline, seq_iter, configuration,
+    # Here the SeqRecord generator is created
+    sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
+
+    # the pipeline that will process the generator is build
+    filtered_seq_iter = _pipeline_builder(pipeline, sequences, configuration,
                                         processes)
 
-    # write result
-    if file_format == 'fasta':
-        write_fasta_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual)
-    else:
-        write_seqs_in_file(filtered_seq_iter, out_fhand_seq, out_fhand_qual,
-                           file_format)
+    #which outputs do we want?
+    writers = []
+    for output, fhand in io_fhands['outputs'].items():
+        writer_klass = WRITERS[output]
+        if output == 'sequence':
+            if 'quality' in io_fhands['outputs']:
+                qual_fhand = io_fhands['outputs']['quality']
+            else:
+                qual_fhand = None
+            writer = writer_klass(fhand=fhand,
+                                     qual_fhand=qual_fhand,
+                                     file_format=file_format)
+        elif output == 'quality':
+            pass
+        elif output == 'repr':
+            file_format = 'repr'
+            writer = writer_klass(fhand=fhand, file_format='repr')
+        elif output == 'vcf':
+            ref_name = os.path.basename(io_fhands['in_seq'].name)
+            writer = writer_klass(fhand=fhand, reference_name=ref_name)
+        else:
+            writer = writer_klass(fhand)
+        writers.append(writer)
+
+    # The SeqRecord generator is consumed
+    for sequence in filtered_seq_iter:
+        for writer in writers:
+            writer.write(sequence)

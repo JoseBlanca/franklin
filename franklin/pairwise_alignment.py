@@ -1,5 +1,5 @@
 'Blast utilities'
-from franklin.utils.seqio_utils import create_temp_fasta_files, temp_fasta_file
+from franklin.seq.writers import create_temp_fasta_files, temp_fasta_file
 from franklin.utils.cmd_utils import call
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia

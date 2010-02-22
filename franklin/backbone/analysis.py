@@ -4,8 +4,16 @@ Created on 29/01/2010
 @author: jose
 '''
 
+<<<<<<< HEAD:franklin/backbone/analysis.py
 import os, time, shutil
 from tempfile import NamedTemporaryFile
+=======
+import os, tempfile, time, shutil
+from franklin.utils.seqio_utils import seqio, cat
+from franklin.seq.readers import guess_seq_file_format
+from franklin.pipelines.pipelines import seq_pipeline_runner
+from franklin.utils.cmd_utils import call
+>>>>>>> eca8a27bb926a449615db9f3f298cd41e9f084a7:franklin/backbone/analysis.py
 from configobj import ConfigObj
 
 from franklin.utils.cmd_utils import call
@@ -18,7 +26,7 @@ from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam, sam2bam,
                         sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
-from franklin.pipelines.pipelines import pipeline_runner
+from franklin.pipelines.pipelines import _pipeline_builder
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -617,7 +625,7 @@ class PileupToSnvAnalyzer(Analyzer):
                                                            libraries=libraries)
         # Filter using a pipeline
         if pipeline:
-            seq_vars_with_context = pipeline_runner(pipeline,
+            seq_vars_with_context = _pipeline_builder(pipeline,
                                                     seq_vars_with_context)
         #remove context to the snv iterator
         seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
