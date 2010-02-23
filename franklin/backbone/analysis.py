@@ -176,17 +176,17 @@ class CleanReadsAnalyzer(Analyzer):
         'It returns the pipeline suited to clean the given file'
         if file_info['format'] == 'fasta':
             return 'sanger_without_qual'
-        elif file_info['pt'] == 'illumina':
+        elif file_info['pl'] == 'illumina':
             return 'solexa'
-        elif file_info['pt'] == '454':
+        elif file_info['pl'] == '454':
             return 'sanger_with_qual'
-        elif file_info['pt'] == 'sanger':
+        elif file_info['pl'] == 'sanger':
             return 'sanger_with_qual'
         else:
             raise ValueError('Unable to guess the cleaning pipeline: %s' %
                              str(file_info))
 
-    def create_cleaning_configuration(self, platform):
+    def create_cleaning_configuration(self, platform, library=None):
         'It returns the pipeline configuration looking at the project settings'
         settings = self._project_settings['Cleaning']
         configuration = {}
@@ -207,7 +207,19 @@ class CleanReadsAnalyzer(Analyzer):
             configuration['remove_adaptors'] = {}
             configuration['remove_adaptors']['vectors'] = adaptors_file
 
-        #TODO lucy settings
+        # lucy settings.
+
+        lucy_settings = settings['lucy_settings']
+        if os.path.exists(lucy_settings):
+            lucy_settings_dir = os.path.dirname
+            lucy_libraries = eval(open(lucy_settings).read())
+            if library in lucy_libraries:
+                vector = os.path.join(lucy_settings_dir,
+                                      lucy_libraries[library]['vector_file'])
+                splice = os.path.join(lucy_settings_dir,
+                                      lucy_libraries[library]['splice_file'])
+                configuration['lucy']['vector'] = [vector, splice]
+        print configuration
         return configuration
 
     def run(self):
@@ -225,7 +237,8 @@ class CleanReadsAnalyzer(Analyzer):
             iofhands = {'in_seq':open(input_fpath),
                         'outputs':{'sequence': open(output_fpath, 'w')}}
             configuration = self.create_cleaning_configuration(
-                                                       platform=file_info['pt'])
+                                                       platform=file_info['pl'],
+                                                       library=file_info['lb'])
             seq_pipeline_runner(pipeline, configuration, iofhands,
                                 file_info['format'])
         return
@@ -345,9 +358,9 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         for fpath in self._get_input_fpaths()['reads']:
             fhand = open(fpath)
             fname = os.path.split(fpath)[-1]
-            if 'pt_454' in fname.lower():
+            if 'pl_454' in fname.lower():
                 files_454.append(fhand)
-            elif 'pt_sanger' in fname.lower():
+            elif 'pl_sanger' in fname.lower():
                 format_ = guess_seq_file_format(fhand)
                 if format_ == 'fasta':
                     files_sanger_without_qual.append(fhand)

@@ -21,6 +21,7 @@ def create_project(name, directory=None):
 
     #create the settings
     settings_path = os.path.join(project_path, 'backbone.conf')
+    config_data = os.path.join(project_path, 'config_data')
 
     config = ConfigObj()
     config.filename = os.path.join(project_path,
@@ -38,11 +39,12 @@ def create_project(name, directory=None):
     comments.append('adaptors_file_illumina = /some/adaptors/fasta/file')
     config['Cleaning'].comments = {'vector_database':comments}
 
-    config['Cleaning']['lucy_settings'] = '/path/to/some/file'
+    lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
+    config['Cleaning']['lucy_settings'] = lucy_settings
 
     config['Mira'] = {}
-    config['Mira']['job_options'] = ['denovo', 'est']
-    config['Mira']['454_settings'] = ['-LR:mxti=no']
+    config['Mira']['job_options']     = ['denovo', 'est']
+    config['Mira']['454_settings']    = ['-LR:mxti=no']
     config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30']
 
     config['Mappers'] = {}

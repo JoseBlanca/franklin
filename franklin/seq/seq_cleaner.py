@@ -367,6 +367,7 @@ def create_striper_by_quality_lucy2(vector=None):
     else:
         run_lucy_for_seqs = create_runner(tool='lucy',
                                           parameters={'vector':vector})
+    print vector
 
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.

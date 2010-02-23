@@ -73,6 +73,40 @@ class TestBackbone(unittest.TestCase):
         test_dir.close()
 
     @staticmethod
+    def xtest_cleaning_analysis_lucy():
+        'We can clean the reads'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name)
+        project_dir = join(test_dir.name, project_name)
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        original_reads_dir = join(reads_dir, 'original')
+        os.mkdir(reads_dir)
+        os.mkdir(original_reads_dir)
+
+        os.makedirs(join(project_dir, 'config_data', 'lucy'))
+        lucy_settings = join(project_dir, 'config_data', 'lucy', 'lucy.conf')
+        luc_c = open(lucy_settings, 'w')
+        luc_c.write(repr({'ps':{'vector_file':'' , 'splice_file':''}}))
+        luc_c.flush()
+
+        #print original_reads_dir
+        fpath_454 = join(original_reads_dir, 'pl_454.lb_ps.sfastq')
+        fpath_ill = join(original_reads_dir, 'pl_illumina.lb_psi.sfastq')
+        open(fpath_454, 'w').write(READS_454)
+        open(fpath_ill, 'w').write(READS_ILL)
+        do_analysis(project_settings=settings_path, kind='clean_reads')
+        cleaned_dir = join(project_dir, 'reads', 'cleaned')
+        assert exists(cleaned_dir)
+
+        cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
+        assert exists(cleaned_454)
+        raw_input()
+
+
+    @staticmethod
     def test_cleaning_analysis():
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
@@ -87,8 +121,8 @@ class TestBackbone(unittest.TestCase):
         os.mkdir(original_reads_dir)
 
         #print original_reads_dir
-        fpath_454 = join(original_reads_dir, 'pt_454.sfastq')
-        fpath_ill = join(original_reads_dir, 'pt_illumina.sfastq')
+        fpath_454 = join(original_reads_dir, 'pl_454.lb_a.sfastq')
+        fpath_ill = join(original_reads_dir, 'pl_illumina.lb_b.sfastq')
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
