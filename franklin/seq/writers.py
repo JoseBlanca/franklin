@@ -30,14 +30,9 @@ class SequenceWriter(object):
     'It writes sequences one by one'
     def __init__(self, fhand, file_format, qual_fhand=None):
         'It inits the class'
-        open(fhand.name, 'w')
-        self._fhand = open(fhand.name, 'a')
 
-        if qual_fhand is not None:
-            open(qual_fhand.name, 'w')
-            qual_fhand = open(qual_fhand.name, 'a')
+        self._fhand = fhand
         self._qual_fhand = qual_fhand
-
         self._format = file_format
 
     def write(self, sequence):
@@ -51,6 +46,9 @@ class SequenceWriter(object):
             SeqIO.write([sequence], self._fhand, BIOPYTHON_FORMATS[format_])
             if self._qual_fhand and format_ == 'fasta':
                 SeqIO.write([sequence], self._qual_fhand, 'qual')
+        self._fhand.flush()
+        if self._qual_fhand:
+            self._qual_fhand.flush()
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
                        default_quality=25):

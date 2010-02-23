@@ -29,13 +29,13 @@ def set_parameters():
     else:
         action = options.action
 
-    if options.settings_fpath is None:
+    if options.settings is None:
         if os.path.exists('backbone.conf'):
             settings_fpath = os.path.abspath('backbone.conf')
         else:
             parser.error('Settings file path is mandatory')
     else:
-        settings_fpath = options.settings_fpath
+        settings_fpath = options.settings
 
     return action, settings_fpath
 
