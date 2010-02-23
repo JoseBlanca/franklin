@@ -219,7 +219,6 @@ class CleanReadsAnalyzer(Analyzer):
                 splice = os.path.join(lucy_settings_dir,
                                       lucy_libraries[library]['splice_file'])
                 configuration['lucy']['vector'] = [vector, splice]
-        print configuration
         return configuration
 
     def run(self):
