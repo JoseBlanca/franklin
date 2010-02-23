@@ -1,3 +1,5 @@
 /.pydevproject
 *.pyc
 /franklin.egg-info
+/build
+/dist
