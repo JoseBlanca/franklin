@@ -84,6 +84,7 @@ def _get_func_tools(processes):
             processes = None    #number determined by cpu_count
         pool = multiprocessing.Pool(processes)
         map_ = pool.imap_unordered
+        raise RuntimeError('Multiprocessing not supported yet')
     filter_ = ifilter
     return {'map': map_, 'filter': filter_}
 
@@ -132,7 +133,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
             cleaner_function = function_factory(**arguments) #IGNORE:W0142
 
         if type_ == 'mapper':
-            filtered_items = imap(cleaner_function, items)
+            filtered_items = functs['map'](cleaner_function, items)
         elif type_ == 'filter':
             filtered_items   = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
