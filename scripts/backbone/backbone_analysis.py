@@ -30,8 +30,8 @@ def set_parameters():
         action = options.action
 
     if options.settings_fpath is None:
-        if os.path.exists('settings.py'):
-            settings_fpath = os.path.abspath('settings.py')
+        if os.path.exists('backbone.conf'):
+            settings_fpath = os.path.abspath('backbone.conf')
         else:
             parser.error('Settings file path is mandatory')
     else:

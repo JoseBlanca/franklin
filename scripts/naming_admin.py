@@ -97,7 +97,7 @@ def _parse_project_option(options, parser, action):
         project_name = options.projectname
     if action == 'change_name':
         if options.projectcode is None:
-            parser.error('project Code is mndatory for action: %s' % action)
+            parser.error('project Code is mandatory for action: %s' % action)
         else:
             code = options.projectcode
         description = options.projectdesc
@@ -121,7 +121,7 @@ def _parse_database_option(options, parser, action):
     if action == 'change_name':
         database = options.database
     elif options.database is None:
-        parser.error('type of tag to change is mandatory')
+        parser.error('Database required for this action')
     else:
         database = options.database
     return database

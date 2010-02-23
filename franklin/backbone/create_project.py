@@ -12,7 +12,7 @@ def create_project(name, directory=None):
     'It creates the files that define a project'
     if not directory:
         directory = os.getcwd()
-    project_path = os.path.join(directory, name)
+    project_path = os.path.join(os.path.abspath(directory), name)
     if os.path.exists(project_path):
         raise ValueError('Directory already exists: ' + project_path)
 
