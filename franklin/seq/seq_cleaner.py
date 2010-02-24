@@ -367,7 +367,6 @@ def create_striper_by_quality_lucy2(vector=None):
     else:
         run_lucy_for_seqs = create_runner(tool='lucy',
                                           parameters={'vector':vector})
-    print vector
 
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.
@@ -422,7 +421,6 @@ def create_vector_striper_by_alignment(vectors, aligner):
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
     #depending on the aligner program we need different parameters and filters
-
     parameters = {'exonerate': {'target':vectors},
                   'blast'    : {'database': vectors, 'program':'blastn'},
                   'blast+'    : {'database': vectors, 'program':'blastn'}}
@@ -465,6 +463,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
                                               results=alignment_result)
 
         alignment_matches = _get_non_matched_locations(alignments)
+        alignment_fhand.close()
         return _get_longest_non_matched_seq_region(sequence, alignment_matches)
 
     return strip_vector_by_alignment

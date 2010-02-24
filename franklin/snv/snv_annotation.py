@@ -391,6 +391,8 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
     result2_fhand = remap_runner(seq2)['remap']
     enzymes1 = _parse_remap_output(result1_fhand)
     enzymes2 = _parse_remap_output(result2_fhand)
+    result1_fhand.close()
+    result2_fhand.close()
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
     return enzymes
@@ -400,7 +402,8 @@ def _parse_remap_output(remap_output):
      that cut there'''
     section = ''
     enzymes = []
-    for line in open(remap_output.name):
+    remap_fhand = open(remap_output.name)
+    for line in remap_fhand:
         line = line.strip()
         if line.isspace() or len(line) < 2:
             continue
@@ -413,5 +416,6 @@ def _parse_remap_output(remap_output):
         if line.startswith('# Enzymes that cut'):
             section = 'cut'
             continue
+    remap_fhand.close()
     return enzymes
 

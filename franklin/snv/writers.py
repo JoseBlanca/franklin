@@ -26,8 +26,10 @@ class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name):
         'It inits the class'
-        open(fhand.name, 'w')
-        self._fhand = open(fhand.name, 'a')
+        #open(fhand.name, 'w')
+        #self._fhand = open(fhand.name, 'a')
+        # The fhand is as it arrives
+        self._fhand = fhand
 
         self._write_header(reference_name)
 

@@ -7,7 +7,9 @@ from franklin.backbone.analysis import do_analysis
 from optparse import OptionParser
 import os
 
-ACTION_MSG = ''
+ACTION_MSG = '''Posible analysis to run: clean_reads, prepare_mira_assembly,
+mira_assembly, select_last_assembly, set_assembly_as_reference, mapping,
+select_last_mapping, merge_bam'''
 
 
 def parse_options():

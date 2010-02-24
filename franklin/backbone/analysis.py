@@ -212,7 +212,9 @@ class CleanReadsAnalyzer(Analyzer):
         lucy_settings = settings['lucy_settings']
         if os.path.exists(lucy_settings):
             lucy_settings_dir = os.path.dirname
-            lucy_libraries = eval(open(lucy_settings).read())
+            lucy_settinhs_fhand = open(lucy_settings)
+            lucy_libraries = eval(lucy_settinhs_fhand.read())
+            lucy_settinhs_fhand.close()
             if library in lucy_libraries:
                 vector = os.path.join(lucy_settings_dir,
                                       lucy_libraries[library]['vector_file'])
@@ -232,21 +234,26 @@ class CleanReadsAnalyzer(Analyzer):
             if os.path.exists(output_fpath):
                 continue
             file_info = _scrape_info_from_fname(input_fpath)
+            input_fhand  = open(input_fpath)
+            output_fhand  = open(output_fpath, 'w')
             pipeline = self._guess_cleaning_pipepile(file_info)
-            iofhands = {'in_seq':open(input_fpath),
-                        'outputs':{'sequence': open(output_fpath, 'w')}}
+            iofhands = {'in_seq':input_fhand,
+                        'outputs':{'sequence': output_fhand }}
             configuration = self.create_cleaning_configuration(
                                                        platform=file_info['pl'],
                                                        library=file_info['lb'])
             seq_pipeline_runner(pipeline, configuration, iofhands,
                                 file_info['format'])
+            input_fhand.close()
+            output_fhand.close()
         return
 
 def _scrape_info_from_fname(fpath):
     'It guess pipeline taking into account the platform and the file format'
     file_info = {}
-    file_info['format'] = guess_seq_file_format(open(fpath, 'r'))
-
+    fhand = open(fpath)
+    file_info['format'] = guess_seq_file_format(fhand)
+    fhand.close()
     fname = os.path.splitext(os.path.split(fpath)[-1])[0]
     for item in fname.split('.'):
         key, value     = item.split('_', 1)
@@ -269,6 +276,7 @@ class PrepareWSGAssemblyAnalyzer(Analyzer):
         tempdir_name = tempdir.name
         fasta_qual_files = []
         for seqfile in self._get_input_fpaths()['reads']:
+            seqfhand = open(seqfile)
             basename = os.path.splitext(os.path.basename(seqfile))[0]
             fasta_fhand = open(os.path.join(tempdir_name,
                                             basename + '.fasta'), 'w')
@@ -276,12 +284,15 @@ class PrepareWSGAssemblyAnalyzer(Analyzer):
                                             basename + '.qual'), 'w')
             fasta_qual_files.append((fasta_fhand.name, qual_fhand.name))
 
-            file_format = guess_seq_file_format(open(seqfile))
-            seqs = seqs_in_file(open(seqfile), format=file_format)
+            file_format = guess_seq_file_format(seqfhand)
+            seqs = seqs_in_file(seqfhand, format=file_format)
 
             write_seqs_in_file(seqs,  seq_fhand=fasta_fhand,
                                qual_fhand=qual_fhand,
                                format='fasta')
+            fasta_fhand.close()
+            qual_fhand.close()
+            seqfhand.close()
 
         # once we have the fasta and qual files, we need to convert them to WSG
         # format FRG. For fasta convertTo
@@ -312,6 +323,10 @@ class PrepareWSGAssemblyAnalyzer(Analyzer):
                 frg_fhands.append(open(os.path.join(tempdir.name, frg)))
         final_frg = os.path.join(output_dir, BACKBONE_BASENAMES['merged_frg'])
         cat(frg_fhands, open(final_frg, 'w'))
+
+        #close all files
+        for frg_fhand in frg_fhands:
+            frg_fhand.close()
         tempdir.close()
 
 class WSGAssemblyAnalyzer(Analyzer):
@@ -333,11 +348,15 @@ class WSGAssemblyAnalyzer(Analyzer):
         stderr = open(os.path.join(assembly_dir, 'stderr.txt'), 'w')
         cmd = ['runCA', '-d', wsg_dir, '-p', proj_name]
         cmd.extend(frgs)
-        print ' '.join(cmd)
+        #print ' '.join(cmd)
         raw_input()
         retcode = call(cmd, stdout=stdout, stderr=stderr)[-1]
         if retcode:
-            raise RuntimeError(open(stdout.name).read())
+            stdout.flush()
+            stdout.seek(0)
+            raise RuntimeError(stdout.read())
+        stdout.close()
+        stderr.close()
 
         # symlinks result to result dir
         fname = '%s.asm' % proj_name
@@ -365,6 +384,7 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
                     files_sanger_without_qual.append(fhand)
                 elif format_ == 'fastq':
                     files_sanger_with_qual.append(fhand)
+
         #fastq are processed before
         files_sanger = files_sanger_with_qual[:]
         files_sanger.extend(files_sanger_without_qual)
@@ -382,6 +402,12 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
             fasta_fhand = open(fasta_fpath, 'w')
             qual_fhand = open(qual_fpath, 'w')
             self._cat_to_fasta(files, fasta_fhand, qual_fhand)
+            fasta_fhand.close()
+            qual_fhand.close()
+
+        # close all files
+        for file_ in files_454 + files_sanger:
+            file_.close()
 
     @staticmethod
     def _files_to_temp_fasta(files):
@@ -458,8 +484,12 @@ class MiraAssemblyAnalyzer(Analyzer):
         stderr = open(os.path.join(assembly_dir, 'stderr.txt'), 'w')
         retcode = call(cmd, stdout=stdout, stderr=stderr)[-1]
         if retcode:
-            raise RuntimeError(open(stdout.name).read())
+            stdout.flush()
+            stdout.seek(0)
+            raise RuntimeError(stdout.read())
 
+        stdout.close()
+        stderr.close()
         #remove the log directory
         mirachkpt_dir = os.path.join(mira_dir,  "%s_d_chkpt" % proj_name)
         if os.path.exists(mirachkpt_dir):
@@ -568,7 +598,9 @@ class MergeBamAnalyzer(Analyzer):
                                                suffix='.sam')
             sam_fpath    = os.path.join(temp_dir.name, bam_basename + '.sam')
             bam2sam(bam_fpath, temp_sam.name)
-            add_header_and_tags_to_sam(temp_sam, open(sam_fpath, 'w'))
+            sam_fhand = open(sam_fpath, 'w')
+            add_header_and_tags_to_sam(temp_sam, sam_fhand)
+            sam_fhand.close()
 
         # Once the headers are ready we are going to merge
         sams = []
@@ -577,14 +609,21 @@ class MergeBamAnalyzer(Analyzer):
                 sams.append(open(os.path.join(temp_dir.name, file_)))
 
         temp_sam = NamedTemporaryFile(suffix='.sam')
-        merge_sam(sams, temp_sam, open(reference_fpath))
+        reference_fhand = open(reference_fpath)
+        merge_sam(sams, temp_sam, reference_fhand)
+        reference_fhand.close()
 
+        # close files
+        for sam in sams:
+            sam.close()
         # Convert sam into a bam,(Temporary)
         temp_bam = NamedTemporaryFile(suffix='.bam')
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
         sort_bam_sam(temp_bam.name, merged_bam_fpath)
+        temp_bam.close()
+        temp_sam.close()
 
 class BamToPileupAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'

@@ -70,6 +70,7 @@ class TestBackbone(unittest.TestCase):
         assert settings['General_settings']['project_name'] == 'backbone'
         project_path = join(test_dir.name, 'backbone')
         assert settings['General_settings']['project_path'] == project_path
+        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -158,6 +159,7 @@ class TestBackbone(unittest.TestCase):
         open(join(result_dir, 'contigs.qual'), 'w')
         do_analysis(project_settings=settings_path,
                     kind='set_assembly_as_reference')
+        os.chdir('/tmp')
         test_dir.close()
 
 
@@ -233,6 +235,7 @@ class TestBackbone(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='pileup_to_snvs')
         assert  exists(join (project_dir, 'annotations', 'snvs', 'all.snvs'))
+        os.chdir('/tmp')
         test_dir.close()
     @staticmethod
     def test_wsg_asembly_analysis():
@@ -260,7 +263,8 @@ class TestBackbone(unittest.TestCase):
         assert exists(frg_fpath)
         # This dos not work because of the  input data
         #do_analysis(project_settings=settings_path, kind='wsg_assembly')
-
+        os.chdir('/tmp')
+        test_dir.close()
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -203,7 +203,11 @@ def _get_mktemp_fpaths(num_fpaths):
     'It returns the name of some temp file'
     fpaths = []
     for index in range(num_fpaths):
-        fpaths.append(tempfile.mkstemp()[1])
+        fhand, fpath = tempfile.mkstemp()
+        # We use here mkstemp because we only need the path, but in order to
+        # not have too much open files we have to manualy close the fhand
+        os.close(fhand)
+        fpaths.append(fpath)
     for fpath in fpaths:
         os.remove(fpath)
     return fpaths
@@ -290,6 +294,13 @@ def create_runner(tool, parameters=None, environment=None):
 
         stdout, stderr, retcode = call(cmd, stdin=stdin,
                                        environment=environment)
+
+
+        for key, value in runner_data['input'].items():
+            for key2,value2 in value.items():
+                if key2 == 'fhands':
+                    for fhand in value2:
+                        fhand.close()
 
         # there is a error
         if retcode:
@@ -427,7 +438,9 @@ def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     #we store the output file in a StringIO because the temp dir is going to
     #disapear
     #raw_input()
-    result = StringIO.StringIO(open(out_seq_fname).read())
+    resul_fhand = open(out_seq_fname)
+    result = StringIO.StringIO(resul_fhand.read())
+    resul_fhand.close()
 
     #we go to the old pwd and we close the temp dir
     os.chdir(old_pwd)

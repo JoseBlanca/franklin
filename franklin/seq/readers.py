@@ -66,6 +66,9 @@ def guess_seq_file_format(fhand):
 
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
+    seq_fhand.seek(0)
+    if qual_fhand is not None:
+        qual_fhand.seek(0)
     if format is None:
         format = guess_seq_file_format(seq_fhand)
     if format == 'repr':
@@ -99,8 +102,9 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
     if qual_fhand is not None:
         qual_fhand.seek(0)
     #if the format is None maybe the file is empty
-    if format is None and not open(seq_fhand.name).readline():
+    if format is None and not seq_fhand.readline():
         raise StopIteration
+    seq_fhand.seek(0)
 
     seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[format])
     if qual_fhand is None:
