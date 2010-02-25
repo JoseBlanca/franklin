@@ -90,7 +90,7 @@ class TestBackbone(unittest.TestCase):
         os.makedirs(join(project_dir, 'config_data', 'lucy'))
         lucy_settings = join(project_dir, 'config_data', 'lucy', 'lucy.conf')
         luc_c = open(lucy_settings, 'w')
-        luc_c.write(repr({'ps':{'vector_file':'' , 'splice_file':''}}))
+        luc_c.write(repr({'ps':{'vector_file':'tmp' , 'splice_file':'tmp'}}))
         luc_c.flush()
 
         #print original_reads_dir

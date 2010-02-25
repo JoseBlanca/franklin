@@ -211,7 +211,7 @@ class CleanReadsAnalyzer(Analyzer):
 
         lucy_settings = settings['lucy_settings']
         if os.path.exists(lucy_settings):
-            lucy_settings_dir = os.path.dirname
+            lucy_settings_dir = os.path.dirname(lucy_settings)
             lucy_settinhs_fhand = open(lucy_settings)
             lucy_libraries = eval(lucy_settinhs_fhand.read())
             lucy_settinhs_fhand.close()
@@ -220,7 +220,8 @@ class CleanReadsAnalyzer(Analyzer):
                                       lucy_libraries[library]['vector_file'])
                 splice = os.path.join(lucy_settings_dir,
                                       lucy_libraries[library]['splice_file'])
-                configuration['lucy']['vector'] = [vector, splice]
+                configuration['strip_lucy'] = {}
+                configuration['strip_lucy']['vector'] = [vector, splice]
         return configuration
 
     def run(self):
