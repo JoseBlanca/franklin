@@ -42,10 +42,20 @@ def _add_filter_result(snv, filter_name, result, threshold=None):
     qualifiers = snv.qualifiers
     if 'filters' not in qualifiers:
         qualifiers['filters'] = {}
-    res = {'result': result}
-    if threshold is not None:
-        res['threshold'] = threshold
-    qualifiers['filters'][filter_name] = res
+    if filter_name not in qualifiers['filters']:
+        qualifiers['filters'][filter_name] = {}
+    qualifiers['filters'][filter_name][threshold] = result
+
+def _get_filter_result(snv, filter_name, threshold=None):
+    'It gets the result of a filter. Returns None if the filter is not done'
+    qualifiers = snv.qualifiers
+    if 'filters' not in qualifiers:
+        return None
+    try:
+        result = qualifiers['filters'][filter_name][threshold]
+        return result
+    except KeyError:
+        return None
 
 def create_unique_contiguous_region_filter(distance, genomic_db,
                                            genomic_seqs_fhand):
@@ -70,7 +80,14 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
         discontiguous'''
         if sequence is None:
             return None
+
         for snv in sequence.get_features(kind='snv'):
+            # Check if it is already done
+            previous_result = _get_filter_result(snv, 'uniq_contiguous',
+                                                 threshold=distance)
+            if previous_result is not None:
+                continue
+
             #we make a blast
             #with the sequence around the snv
             location = snv.location.start.position
@@ -110,7 +127,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                 else:
                     result = False
 
-            _add_filter_result(snv, 'uniq_contiguous', result)
+            _add_filter_result(snv, 'uniq_contiguous', result, distance)
 
     return unique_contiguous_region_filter
 
@@ -124,6 +141,11 @@ def create_close_to_intron_filter(distance):
         if sequence is None:
             return None
         for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'close_to_intron',
+                                                 threshold=distance)
+            if previous_result is not None:
+                continue
+
             location = snv.location.start.position
             result = True
             for intron in sequence.get_features(kind='intron'):
@@ -132,3 +154,72 @@ def create_close_to_intron_filter(distance):
             _add_filter_result(snv, 'close_to_intron', result,
                                threshold=distance)
     return close_to_intron_filter
+
+def create_high_variable_region_filter(max_variability, window=None):
+    'It returns a filter that filters snvs by region variability.'
+
+
+    def high_variable_region_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        snvs = list(sequence.get_features(kind='snv'))
+        for snv in sequence.get_features(kind='snv'):
+            threshold = (max_variability, window)
+            previous_result = _get_filter_result(snv, 'high_variable_reg',
+                                                 threshold=threshold)
+            if previous_result is not None:
+                continue
+            if window is None:
+                snv_num      = len(snvs)
+                total_length = len(sequence)
+            else:
+                total_length = window
+                snv_num = _snvs_in_window(snv, snvs, window)
+            variability = (snv_num/float(total_length)) * 100
+            if variability > max_variability:
+                result = True
+            else:
+                result = False
+            _add_filter_result(snv, 'high_variable_reg', result,
+                               threshold=threshold)
+    return high_variable_region_filter
+
+def _snvs_in_window(snv, snvs, window):
+    'it gets all the snvs  in a window taking a snv as reference'
+    num_of_snvs = 0
+    location = int(str(snv.location.start))
+    left_margin  = location - (window /2)
+    rigth_margin = location + (window /2)
+    for snv in snvs:
+        location = int(str(snv.location.start))
+        if location > left_margin and location < rigth_margin:
+            num_of_snvs += 1
+    return num_of_snvs
+
+
+#def create_close_to_seqvar_filter(distance):
+#    '''It returns a filter that filters snv by the proximity to other snvs.
+#
+#    If the snv has another snv closer than DISTANCE, then this snv is
+#    filtered out'''
+#    def close_to_snv_filter(sequence):
+#        'The filter'
+#        if sequence is None:
+#            return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

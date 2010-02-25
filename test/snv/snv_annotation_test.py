@@ -216,7 +216,7 @@ class TestSnvPipeline(unittest.TestCase):
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
 
-        open(io_fhands['outputs']['sequence'].name).read()
+#        sequences = open(io_fhands['outputs']['sequence'].name).read()
         vcf = open(io_fhands['outputs']['vcf'].name).read()
         assert '66' in vcf
         assert '55' in vcf

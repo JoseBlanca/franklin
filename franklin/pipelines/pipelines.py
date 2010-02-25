@@ -184,30 +184,52 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     filtered_seq_iter = _pipeline_builder(pipeline, sequences, configuration,
                                         processes)
 
-    #which outputs do we want?
     writers = []
-    for output, fhand in io_fhands['outputs'].items():
-        if output == 'quality':
-            pass
+    output_type = io_fhands['outputs']
+    if 'sequence' in output_type:
+        if 'quality' in io_fhands['outputs']:
+            qual_fhand = io_fhands['outputs']['quality']
         else:
-            writer_klass = WRITERS[output]
-            if output == 'sequence':
-                if 'quality' in io_fhands['outputs']:
-                    qual_fhand = io_fhands['outputs']['quality']
-                else:
-                    qual_fhand = None
-                writer = writer_klass(fhand=fhand,
-                                         qual_fhand=qual_fhand,
-                                         file_format=file_format)
-            elif output == 'repr':
-                file_format = 'repr'
-                writer = writer_klass(fhand=fhand, file_format='repr')
-            elif output == 'vcf':
-                ref_name = os.path.basename(io_fhands['in_seq'].name)
-                writer = writer_klass(fhand=fhand, reference_name=ref_name)
-            else:
-                writer = writer_klass(fhand)
-            writers.append(writer)
+            qual_fhand = None
+        writers.append(SequenceWriter(fhand=io_fhands['outputs']['sequence'],
+                                      qual_fhand=qual_fhand,
+                                      file_format=file_format))
+    if 'repr' in output_type:
+        fhand = io_fhands['outputs']['repr']
+        writers.append(SequenceWriter(fhand=fhand, file_format='repr'))
+
+    if 'vcf' in output_type:
+        ref_name = os.path.basename(io_fhands['in_seq'].name)
+        fhand = io_fhands['outputs']['vcf']
+        writers.append(VariantCallFormatWriter(fhand=fhand,
+                                               reference_name=ref_name))
+
+
+
+#    #which outputs do we want?
+#    writers = []
+#    for output, fhand in io_fhands['outputs'].items():
+#        if output == 'quality':
+#            pass
+#        else:
+#            writer_klass = WRITERS[output]
+#            if output == 'sequence':
+#                if 'quality' in io_fhands['outputs']:
+#                    qual_fhand = io_fhands['outputs']['quality']
+#                else:
+#                    qual_fhand = None
+#                writer = writer_klass(fhand=fhand,
+#                                         qual_fhand=qual_fhand,
+#                                         file_format=file_format)
+#            elif output == 'repr':
+#                file_format = 'repr'
+#                writer = writer_klass(fhand=fhand, file_format='repr')
+#            elif output == 'vcf':
+#                ref_name = os.path.basename(io_fhands['in_seq'].name)
+#                writer = writer_klass(fhand=fhand, reference_name=ref_name)
+#            else:
+#                writer = writer_klass(fhand)
+#            writers.append(writer)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
