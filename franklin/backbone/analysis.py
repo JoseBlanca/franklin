@@ -5,7 +5,7 @@ Created on 29/01/2010
 '''
 
 
-import os, time, shutil
+import os, time, shutil, itertools
 from configobj import ConfigObj
 from tempfile import NamedTemporaryFile
 from franklin.utils.cmd_utils import call
@@ -19,6 +19,9 @@ from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
 from franklin.pipelines.pipelines import _pipeline_builder
+from franklin.statistics import seq_distrib
+
+
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -65,6 +68,11 @@ class Analyzer(object):
     def _get_project_name(self):
         'It returns the name of the project'
         return self._project_settings['General_settings']['project_name']
+
+    def _get_project_path(self):
+        'It return the project path'
+        return self._project_settings['General_settings']['project_path']
+
     def _get_input_dirs(self):
         'It returns the directories for the inputs'
         return self._get_io_dirs('inputs')
@@ -260,6 +268,56 @@ def _scrape_info_from_fname(fpath):
         key, value     = item.split('_', 1)
         file_info[key] = value
     return file_info
+
+#class ReadsStatsAnalyzer(Analyzer):
+#    '''It calculates stats for original and cleaned reads.
+#    It calculates the distribution between both type off reads'''
+#
+#    def run(self):
+#        'It runs the analysis'
+#        clean_fpaths    = self._get_input_fpaths()['cleaned_reads']
+#        original_fpaths = self._get_input_fpaths()['original_reads']
+#
+#        for fpath in clean_fpaths + original_fpaths:
+#            self._do_seq_stats(fpath)
+#
+#        # now the difference between the cleaned and the original
+#        for clean_fpath in clean_fpaths:
+#            original_fpath = os.path.join(self._get_project_path(),
+#                                         BACKBONE_DIRECTORIES['original_reads'],
+#                                         os.path.basename(clean_fpath))
+#            if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
+#                self._do_diff_seq_stats(clean_fpath, original_fpath)
+#
+#
+#    @staticmethod
+#    def _do_distrib(analysis, seqs, fpath):
+#        stats_dir, basename = os.path.split(fpath)
+#        stats_dir = os.path.join(stats_dir, BACKBONE_DIRECTORIES['stats'])
+#        basename = os.path.splitext(basename)[0]
+#
+#        plot_fhand   = open(os.path.join(stats_dir, basename + '.png'), 'w')
+#        distrib_fhand =open(os.path.join(stats_dir, basename + '.dat'), 'w')
+#
+#        seq_distrib(sequences=seqs, kind=analysis,
+#                    distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
+#                    low_memory=True)
+#
+#    def _do_seq_stats(self, fpath):
+#        'It performs all kind of stats for a fpath'
+#        seqs = seqs_in_file(open(fpath))
+#        for analysis in  ['seq_length_distrib', 'qual_distrib']:
+#            seqs, seqs2 = itertools.tee(seqs, 2)
+#            self._do_distrib(analysis, seqs2, fpath)
+#
+#
+#
+#
+#
+#    def _do_diff_seq_stats(self, ):
+#        pass
+
+
 
 class PrepareWSGAssemblyAnalyzer(Analyzer):
     '''It collects the cleaned reads to use by wsg. Wsg only uses reads with quality,
@@ -716,6 +774,19 @@ ANALYSIS_DEFINITIONS = {
                     },
          'analyzer': WSGAssemblyAnalyzer,
         },
+    'clean_read_stats':
+        {'inputs':{
+            'original_reads':
+                {'directory': 'original_reads',
+                 'file_kinds': 'sequence_files'},
+            'cleaned_reads':
+                {'directory': 'cleaned_reads',
+                 'file_kinds': 'sequence_files'}
+                },
+         'outputs':{'original_reads':{'directory': 'stats'},
+                    'clean_reads':{'directory': 'stats'}},
+         'analyzer': ReadsStatsAnalyzer,
+        },
     'prepare_mira_assembly':
         {'inputs':{
             'reads':
@@ -824,6 +895,7 @@ BACKBONE_DIRECTORIES = {
     'pileups':'mapping/result/pileups',
     'snvs':'annotations/snvs',
     'info':'info',
+    'stats': 'stats'
                         }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',

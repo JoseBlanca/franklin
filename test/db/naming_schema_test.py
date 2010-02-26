@@ -32,9 +32,9 @@ EXAMPLES = {'fasta':('''
 ATCGTAGTCAGTTCAGTCTATGCTAGT
 >carcola
 ATGCGTAGCTAGTCGTAGTCTAGTCAT''','''
->myES000001
+>myES00000001
 ATCGTAGTCAGTTCAGTCTATGCTAGT
->myES000002
+>myES00000002
 ATGCGTAGCTAGTCGTAGTCTAGTCAT'''),
 'caf': ('''
 Sequence : contig1
@@ -139,10 +139,10 @@ class DbNamingSchemaTest(unittest.TestCase):
                                        description='a test project')
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
-        assert naming.get_uniquename() == 'myES000001'
-        assert naming.get_uniquename() == 'myES000002'
+        assert naming.get_uniquename() == 'myES00000001'
+        assert naming.get_uniquename() == 'myES00000002'
         naming.kind = 'transcribed_cluster'
-        assert naming.get_uniquename() == 'myTC000001'
+        assert naming.get_uniquename() == 'myTC00000001'
         naming.commit()
 
     @staticmethod
@@ -153,8 +153,8 @@ class DbNamingSchemaTest(unittest.TestCase):
         add_project_to_naming_database(engine, name='Melo', code='ME',
                                        description='Melonomics Ests')
         naming = DbNamingSchema(engine, project='Melo', feature_kind='EST')
-        assert naming.get_uniquename() == 'MEES000001'
-        assert naming.get_uniquename() == 'MEES000002'
+        assert naming.get_uniquename() == 'MEES00000001'
+        assert naming.get_uniquename() == 'MEES00000002'
         naming.commit(description='Initial')
 
     @staticmethod
@@ -166,12 +166,12 @@ class DbNamingSchemaTest(unittest.TestCase):
                                        description='a test project')
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
-        assert naming.get_uniquename() == 'myES000001'
+        assert naming.get_uniquename() == 'myES00000001'
         naming.commit()
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
 
-        assert naming.get_uniquename() == 'myES000002'
+        assert naming.get_uniquename() == 'myES00000002'
 
     @staticmethod
     def test_rollback():
@@ -182,11 +182,11 @@ class DbNamingSchemaTest(unittest.TestCase):
                                        description='a test project')
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
-        assert naming.get_uniquename() == 'myES000001'
+        assert naming.get_uniquename() == 'myES00000001'
 
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
-        assert naming.get_uniquename() == 'myES000001'
+        assert naming.get_uniquename() == 'myES00000001'
 
     @staticmethod
     def test_project_in_database():
@@ -213,15 +213,15 @@ class FileNamingSchemaTest(unittest.TestCase):
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
         naming = FileNamingSchema(fhand, naming)
-        assert naming.get_uniquename(name='hola') == 'myES000001'
-        assert naming.get_uniquename(name='hola') == 'myES000001'
-        assert naming.get_uniquename(name='caracol') == 'myES000002'
+        assert naming.get_uniquename(name='hola') == 'myES00000001'
+        assert naming.get_uniquename(name='hola') == 'myES00000001'
+        assert naming.get_uniquename(name='caracol') == 'myES00000002'
         naming.commit()
         fhand.seek(0)
         naming = FileNamingSchema(fhand)
         naming.kind = 'EST'
-        assert naming.get_uniquename(name='hola') == 'myES000001'
-        assert naming.get_uniquename(name='caracol') == 'myES000002'
+        assert naming.get_uniquename(name='hola') == 'myES00000001'
+        assert naming.get_uniquename(name='caracol') == 'myES00000002'
         try:
             assert naming.get_uniquename(name='pascual')
             self.fail()
@@ -239,9 +239,9 @@ class FileNamingSchemaTest(unittest.TestCase):
         naming = DbNamingSchema(engine, project='my_project',
                                 feature_kind='EST')
         naming = FileNamingSchema(fhand, naming)
-        assert naming.get_uniquename(name='hola') == 'myES000001'
+        assert naming.get_uniquename(name='hola') == 'myES00000001'
         naming.commit()
-        assert naming.get_uniquename(name='caracol') == 'myES000002'
+        assert naming.get_uniquename(name='caracol') == 'myES00000002'
 
         naming = FileNamingSchema(fhand, feature_kind='EST')
         try:
@@ -288,9 +288,9 @@ class FileNamingSchemaTest(unittest.TestCase):
         naming.get_uniquename()
         naming.commit()
         names = list(naming.get_names_from_db())
-        assert names[0]['name'] == 'myES000001'
+        assert names[0]['name'] == 'myES00000001'
         assert names[-1]['project'] == 'my_project'
-        assert names[-1]['name'] == 'myES000002'
+        assert names[-1]['name'] == 'myES00000002'
         assert len(names) == 2
         naming.revert_last_name()
 
@@ -298,7 +298,7 @@ class FileNamingSchemaTest(unittest.TestCase):
                                 feature_kind='EST')
         names = list(naming.get_names_from_db())
         assert len(names) == 1
-        assert names[-1]['name'] == 'myES000001'
+        assert names[-1]['name'] == 'myES00000001'
 
 class ChangeNameTest(unittest.TestCase):
     '''It test that we can modify the names/accs in different kind of files'''
@@ -356,8 +356,8 @@ class ChangeNameTest(unittest.TestCase):
 
         change_names_in_files(fhand_in, fhand_out, naming, 'fastq')
         output = open(fhand_out.name).read()
-        assert "@myES000001" in output
-        assert "@myES000003" in output
+        assert "@myES00000001" in output
+        assert "@myES00000003" in output
 
         assert open(fhand_out.name).read()[:8] == '@myES000'
 
