@@ -774,19 +774,19 @@ ANALYSIS_DEFINITIONS = {
                     },
          'analyzer': WSGAssemblyAnalyzer,
         },
-    'clean_read_stats':
-        {'inputs':{
-            'original_reads':
-                {'directory': 'original_reads',
-                 'file_kinds': 'sequence_files'},
-            'cleaned_reads':
-                {'directory': 'cleaned_reads',
-                 'file_kinds': 'sequence_files'}
-                },
-         'outputs':{'original_reads':{'directory': 'stats'},
-                    'clean_reads':{'directory': 'stats'}},
-         'analyzer': ReadsStatsAnalyzer,
-        },
+#    'clean_read_stats':
+#        {'inputs':{
+#            'original_reads':
+#                {'directory': 'original_reads',
+#                 'file_kinds': 'sequence_files'},
+#            'cleaned_reads':
+#                {'directory': 'cleaned_reads',
+#                 'file_kinds': 'sequence_files'}
+#                },
+#         'outputs':{'original_reads':{'directory': 'stats'},
+#                    'clean_reads':{'directory': 'stats'}},
+#         'analyzer': ReadsStatsAnalyzer,
+#        },
     'prepare_mira_assembly':
         {'inputs':{
             'reads':

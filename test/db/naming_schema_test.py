@@ -25,7 +25,6 @@ from franklin.db.naming import (change_names_in_files,
                               FileNamingSchema,
                               add_project_to_naming_database,
                               project_in_database)
-from datetime import datetime
 
 EXAMPLES = {'fasta':('''
 >hola
