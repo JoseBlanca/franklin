@@ -203,7 +203,7 @@ class DbNamingSchema(object):
         else:
             #it's the first time we're using this type in this database
             #we add one row to the last_name table
-            last_name = self._project.code + self._get_type_code() + '00000000'
+            last_name = self._project.code + self._get_type_code() + '000000'
         code_gen = _CodeGenerator(last_name[4:])
         self._code_generators[self.kind] = code_gen
         return code_gen
