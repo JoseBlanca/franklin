@@ -64,8 +64,10 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
+
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
+    # look if seq_fhand is a list or not
     seq_fhand.seek(0)
     if qual_fhand is not None:
         qual_fhand.seek(0)

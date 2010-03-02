@@ -1,7 +1,7 @@
 '''
-Created on 29/01/2010
+Created on 01/03/2010
 
-@author: jose
+@author: peio
 '''
 
 
@@ -19,8 +19,8 @@ from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam)
 from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
 from franklin.pipelines.pipelines import _pipeline_builder
-from franklin.statistics import seq_distrib
-
+from franklin.statistics import (seq_distrib, general_seq_statistics,
+                                 seq_distrib_diff)
 
 
 def _is_file_kind(fpath, extensions):
@@ -235,8 +235,8 @@ class CleanReadsAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-        input_fpaths   = self._get_input_fpaths()['reads']
-        output_dir =  self._create_output_dirs()['reads']
+        input_fpaths = self._get_input_fpaths()['reads']
+        output_dir   =  self._create_output_dirs()['reads']
         for input_fpath in input_fpaths:
             fname = os.path.split(input_fpath)[-1]
             output_fpath = os.path.join(output_dir, fname)
@@ -269,54 +269,138 @@ def _scrape_info_from_fname(fpath):
         file_info[key] = value
     return file_info
 
-#class ReadsStatsAnalyzer(Analyzer):
-#    '''It calculates stats for original and cleaned reads.
-#    It calculates the distribution between both type off reads'''
-#
-#    def run(self):
-#        'It runs the analysis'
-#        clean_fpaths    = self._get_input_fpaths()['cleaned_reads']
-#        original_fpaths = self._get_input_fpaths()['original_reads']
-#
-#        for fpath in clean_fpaths + original_fpaths:
-#            self._do_seq_stats(fpath)
-#
-#        # now the difference between the cleaned and the original
-#        for clean_fpath in clean_fpaths:
-#            original_fpath = os.path.join(self._get_project_path(),
-#                                         BACKBONE_DIRECTORIES['original_reads'],
-#                                         os.path.basename(clean_fpath))
-#            if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
-#                self._do_diff_seq_stats(clean_fpath, original_fpath)
-#
-#
-#    @staticmethod
-#    def _do_distrib(analysis, seqs, fpath):
-#        stats_dir, basename = os.path.split(fpath)
-#        stats_dir = os.path.join(stats_dir, BACKBONE_DIRECTORIES['stats'])
-#        basename = os.path.splitext(basename)[0]
-#
-#        plot_fhand   = open(os.path.join(stats_dir, basename + '.png'), 'w')
-#        distrib_fhand =open(os.path.join(stats_dir, basename + '.dat'), 'w')
-#
-#        seq_distrib(sequences=seqs, kind=analysis,
-#                    distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
-#                    low_memory=True)
-#
-#    def _do_seq_stats(self, fpath):
-#        'It performs all kind of stats for a fpath'
-#        seqs = seqs_in_file(open(fpath))
-#        for analysis in  ['seq_length_distrib', 'qual_distrib']:
-#            seqs, seqs2 = itertools.tee(seqs, 2)
-#            self._do_distrib(analysis, seqs2, fpath)
-#
-#
-#
-#
-#
-#    def _do_diff_seq_stats(self, ):
-#        pass
 
+class ReadsStatsAnalyzer(Analyzer):
+    '''It calculates stats for original and cleaned reads.
+    It calculates the distribution between both type off reads'''
+
+    def run(self):
+        'It runs the analysis'
+        self._create_output_dirs()['original_reads']
+        self._create_output_dirs()['cleaned_reads']
+
+        clean_fpaths    = self._get_input_fpaths()['cleaned_reads']
+        original_fpaths = self._get_input_fpaths()['original_reads']
+        reads = {'cleaned': clean_fpaths, 'original': original_fpaths}
+
+        # first per file stats
+        for seq_type, fpaths in reads.items():
+            for fpath in fpaths:
+                stats_dir = self._get_stats_dir(seq_type)
+                basename  = self._get_basename(fpath)
+                seqs = seqs_in_file(open(fpath))
+                self._do_seq_stats(seqs, basename, stats_dir)
+
+        # now the difference between the cleaned and the original per file
+        for clean_fpath in reads['cleaned']:
+            original_fpath = os.path.join(self._get_project_path(),
+                                         BACKBONE_DIRECTORIES['original_reads'],
+                                         os.path.basename(clean_fpath))
+            if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
+                stats_dir = self._get_stats_dir('cleaned')
+                basename  = self._get_basename(clean_fpath)
+
+                clean_seqs    = seqs_in_file(open(clean_fpath))
+                original_seqs = seqs_in_file(open(original_fpath))
+
+                self._do_diff_seq_stats(clean_seqs, original_seqs, basename,
+                                        stats_dir)
+
+        # stats per seq file. All files together
+        clean_seqs    = self._seqs_in_files(clean_fpaths)
+        original_seqs = self._seqs_in_files(original_fpaths)
+        clean_seqs, clean_seqs2       = itertools.tee(clean_seqs, 2)
+        original_seqs, original_seqs2 = itertools.tee(original_seqs, 2)
+
+        all_reads = {'cleaned': clean_seqs, 'original': original_seqs}
+        basename  = 'global'
+        for seqtype, seqs in all_reads.items():
+            stats_dir = self._get_stats_dir(seqtype)
+            self._do_seq_stats(seqs, basename, stats_dir)
+
+        # global stats. Diff fistributions
+        stats_dir = self._get_stats_dir('cleaned')
+        self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
+                                stats_dir)
+
+    @staticmethod
+    def _get_basename(fpath):
+        'It gets the basename of the file and the stats'
+        return os.path.splitext(os.path.basename(fpath))[0]
+
+    def _get_stats_dir(self, seqtype):
+        'It gets the stats dir for each seqtype'
+        return os.path.join(self._get_project_path(),
+                             BACKBONE_DIRECTORIES['%s_reads_stats' % seqtype])
+    @staticmethod
+    def _seqs_in_files(fpaths):
+        'It yields seqrecored from a list of files'
+        for fpath in fpaths:
+            for seq in seqs_in_file(open(fpath)):
+                yield seq
+
+    def _do_seq_stats(self, seqs, basename, stats_dir):
+        'It performs all kind of stats for a fpath'
+        # Some distributions
+        for analysis in  ['seq_length_distrib', 'qual_distrib']:
+            analysis_basename = '%s.%s' % (basename, analysis)
+            seqs, seqs2 = itertools.tee(seqs, 2)
+            self._do_distrib(seqs2, analysis, analysis_basename, stats_dir)
+
+        # now general stats
+        analysis_basename = '%s.general_stats' % basename
+        self._do_general_stats(seqs, analysis_basename, stats_dir)
+
+    def _do_general_stats(self, seqs, basename, stats_dir):
+        'It performs the  general stats analysis'
+        general_fpath = os.path.join(self._get_project_path(), stats_dir,
+                                     basename + '.dat')
+        if os.path.exists(general_fpath):
+            return
+
+        general_fhand = open(general_fpath, 'w')
+        stats = general_seq_statistics(seqs)
+        for key, value in stats.items():
+            if value is not None:
+                to_print = '%-19s : %d\n' % (key, value)
+                general_fhand.write(to_print)
+
+    def _do_distrib(self, seqs, analysis, basename, stats_dir):
+        'I actually do the distrib'
+        plot_fpath    = os.path.join(stats_dir, basename + '.png')
+        distrib_fpath = os.path.join(stats_dir, basename + '.dat')
+        if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):
+            return
+
+        plot_fhand    = open(plot_fpath, 'w')
+        distrib_fhand = open(distrib_fpath, 'w')
+
+        seq_distrib(sequences=seqs, kind=analysis,
+                    distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
+                    low_memory=True)
+
+    def _do_diff_seq_stats(self, seqs1, seqs2, basename, stats_dir):
+        'It performs the differential distribution'
+
+        for analysis in ['seq_length_distrib', 'qual_distrib']:
+            seqs1, seqs1_use = itertools.tee(seqs1, 2)
+            seqs2, seqs2_use = itertools.tee(seqs2, 2)
+            analysis_basename = '%s.diff_%s' % (basename, analysis)
+            self._do_diff_distrib(seqs1_use, seqs2_use, analysis,
+                                  analysis_basename, stats_dir)
+
+    def _do_diff_distrib(self, clean_seqs, original_seqs, analysis, basename,
+                         stats_dir):
+        'It performs the differential distribution'
+        plot_fpath    = os.path.join(stats_dir, basename + '.png')
+        distrib_fpath = os.path.join(stats_dir, basename + '.dat')
+
+        if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):
+            return
+
+        seq_distrib_diff(clean_seqs, original_seqs, analysis,
+                         distrib_fhand=open(plot_fpath, 'w'),
+                         plot_fhand=open(distrib_fpath, 'w'))
 
 
 class PrepareWSGAssemblyAnalyzer(Analyzer):
@@ -742,7 +826,6 @@ class PileupToSnvAnalyzer(Analyzer):
 
 
 
-
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
         {'inputs':{
@@ -774,19 +857,19 @@ ANALYSIS_DEFINITIONS = {
                     },
          'analyzer': WSGAssemblyAnalyzer,
         },
-#    'clean_read_stats':
-#        {'inputs':{
-#            'original_reads':
-#                {'directory': 'original_reads',
-#                 'file_kinds': 'sequence_files'},
-#            'cleaned_reads':
-#                {'directory': 'cleaned_reads',
-#                 'file_kinds': 'sequence_files'}
-#                },
-#         'outputs':{'original_reads':{'directory': 'stats'},
-#                    'clean_reads':{'directory': 'stats'}},
-#         'analyzer': ReadsStatsAnalyzer,
-#        },
+    'clean_read_stats':
+        {'inputs':{
+            'original_reads':
+                {'directory': 'original_reads',
+                 'file_kinds': 'sequence_files'},
+            'cleaned_reads':
+                {'directory': 'cleaned_reads',
+                 'file_kinds': 'sequence_files'}
+                },
+         'outputs':{'original_reads':{'directory':'original_reads_stats'},
+                    'cleaned_reads'   :{'directory':'cleaned_reads_stats'}},
+         'analyzer': ReadsStatsAnalyzer,
+        },
     'prepare_mira_assembly':
         {'inputs':{
             'reads':
@@ -895,7 +978,8 @@ BACKBONE_DIRECTORIES = {
     'pileups':'mapping/result/pileups',
     'snvs':'annotations/snvs',
     'info':'info',
-    'stats': 'stats'
+    'original_reads_stats': 'reads/original/stats',
+    'cleaned_reads_stats': 'reads/cleaned/stats'
                         }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',

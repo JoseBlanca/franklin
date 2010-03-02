@@ -104,7 +104,7 @@ class TestBackbone(unittest.TestCase):
 
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
-        raw_input()
+
 
 
     @staticmethod
@@ -132,6 +132,15 @@ class TestBackbone(unittest.TestCase):
         assert exists(cleaned_dir)
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
+
+        do_analysis(project_settings=settings_path, kind='clean_read_stats')
+        clean_stats_dir = join(cleaned_dir, 'stats')
+        original_stats_dir = join(original_reads_dir, 'stats')
+        assert exists(clean_stats_dir)
+        assert exists(original_stats_dir)
+        assert exists(join(clean_stats_dir, 'global.diff_qual_distrib.png'))
+        assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.dat'))
+
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')
