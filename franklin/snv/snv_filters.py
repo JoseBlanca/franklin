@@ -27,6 +27,9 @@ from franklin.alignment_search_result import (FilteredAlignmentResults,
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                        similar_sequences_for_blast)
 from franklin.seq.readers import guess_seq_file_format
+from franklin.snv.snv_annotation import (calculate_maf_frequency,
+                                         snvs_in_window, calculate_snv_kind,
+                                         calculate_cap_enzymes)
 
 FILTER_DESCRIPTIONS = {
     'uniq_contiguous':
@@ -35,7 +38,10 @@ FILTER_DESCRIPTIONS = {
     'close_to_intron':
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
-         }
+    'High_variable_region':
+        {'id': 'HVR%2d',
+    'description':'The snv is in a region with more than %2d % of variability'},
+    }
 
 def _add_filter_result(snv, filter_name, result, threshold=None):
     'It adds the filter to the SeqFeature qualifiers'
@@ -158,13 +164,12 @@ def create_close_to_intron_filter(distance):
 def create_high_variable_region_filter(max_variability, window=None):
     'It returns a filter that filters snvs by region variability.'
 
-
     def high_variable_region_filter(sequence):
         'The filter'
         if sequence is None:
             return None
         snvs = list(sequence.get_features(kind='snv'))
-        for snv in sequence.get_features(kind='snv'):
+        for snv in snvs:
             threshold = (max_variability, window)
             previous_result = _get_filter_result(snv, 'high_variable_reg',
                                                  threshold=threshold)
@@ -175,7 +180,7 @@ def create_high_variable_region_filter(max_variability, window=None):
                 total_length = len(sequence)
             else:
                 total_length = window
-                snv_num = _snvs_in_window(snv, snvs, window)
+                snv_num = snvs_in_window(snv, snvs, window)
             variability = (snv_num/float(total_length)) * 100
             if variability > max_variability:
                 result = True
@@ -185,41 +190,125 @@ def create_high_variable_region_filter(max_variability, window=None):
                                threshold=threshold)
     return high_variable_region_filter
 
-def _snvs_in_window(snv, snvs, window):
-    'it gets all the snvs  in a window taking a snv as reference'
-    num_of_snvs = 0
-    location = int(str(snv.location.start))
-    left_margin  = location - (window /2)
-    rigth_margin = location + (window /2)
-    for snv in snvs:
-        location = int(str(snv.location.start))
-        if location > left_margin and location < rigth_margin:
-            num_of_snvs += 1
-    return num_of_snvs
-
-
-#def create_close_to_seqvar_filter(distance):
-#    '''It returns a filter that filters snv by the proximity to other snvs.
-#
-#    If the snv has another snv closer than DISTANCE, then this snv is
-#    filtered out'''
-#    def close_to_snv_filter(sequence):
-#        'The filter'
-#        if sequence is None:
-#            return False
 
 
 
+def create_close_to_snv_filter(proximity):
+    '''It returns a filter that filters snv by the proximity to other snvs.
+
+    If the snv has another snv closer than DISTANCE, then this snv is
+    filtered out'''
+    def close_to_snv_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        snvs = list(sequence.get_features(kind='snv'))
+        for snv in snvs:
+            previous_result = _get_filter_result(snv, 'close_to_snv',
+                                                 threshold=proximity)
+            if previous_result is not None:
+                continue
+
+            num_snvs = snvs_in_window(snv, snvs, proximity * 2)
+            if num_snvs > 1:
+                result = True
+            else:
+                result = False
+
+            _add_filter_result(snv, 'close_to_snv', result,
+                               threshold=proximity)
+    return close_to_snv_filter
+
+def create_snv_close_to_limit_filter(distance):
+    '''This function is a function factory. This function is a filter than
+     return true if those snvs are or not closer to the limit than max_distance
+     '''
+    def snv_close_to_reference_limit(sequence):
+        '''True if the snv variation is close to the contig limits.
+
+        It checks if the snv is not within the range covered by the
+        consensus and if it's close to one of its limits. In both cases it will
+        return True.
+        '''
+        if sequence is None:
+            return None
+        snvs = list(sequence.get_features(kind='snv'))
+        for snv in snvs:
+            previous_result = _get_filter_result(snv, 'close_to_limit',
+                                                 threshold=distance)
+            if previous_result is not None:
+                continue
+            location = int(str(snv.location.start))
+            if location < distance or location + distance > len(sequence):
+                result = True
+            else:
+                result = False
+            _add_filter_result(snv, 'close_to_limit', result,
+                               threshold=distance)
+    return  snv_close_to_reference_limit
+
+
+def create_major_allele_freq_filter(frequency):
+    'It filters the snv in a seq by the frecuency of the more frecuent allele'
+    def major_allele_freq_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'close_to_limit',
+                                                 threshold=frequency)
+            if previous_result is not None:
+                continue
+            maf = calculate_maf_frequency(snv)
+            if maf > frequency:
+                result = True
+            else:
+                result = False
+            _add_filter_result(snv, 'maf', result,
+                               threshold=frequency)
+
+    return major_allele_freq_filter
 
 
 
+def create_kind_filter(kind):
+    'It filters the snv by its kind'
+    def kind_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'by_kind', threshold=kind)
+            if previous_result is not None:
+                continue
 
+            kind_ = calculate_snv_kind(snv)
+            if kind  == kind_:
+                result = True
+            else:
+                result = False
+            _add_filter_result(snv, 'by_kind', result, threshold=kind)
+    return kind_filter
 
-
-
-
-
-
+def create_cap_enzyme_filter(all_enzymes):
+    'It filters the snv looking if it is detectable by rstriction enzymes'
+    def cap_enzyme_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'cap_enzymes',
+                                                 threshold=all_enzymes)
+            if previous_result is not None:
+                continue
+            enzymes = calculate_cap_enzymes(snv, sequence,
+                                            all_enzymes=all_enzymes)
+            if len(enzymes) != 0:
+                result = True
+            else:
+                result = False
+            _add_filter_result(snv, 'cap_enzymes', result, threshold=all_enzymes)
+    return cap_enzyme_filter
 
 
 

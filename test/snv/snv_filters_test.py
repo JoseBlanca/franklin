@@ -24,10 +24,15 @@ from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
-from franklin.snv.snv_annotation import INVARIANT, SNP
+from franklin.snv.snv_annotation import INVARIANT, SNP, INDEL, DELETION
 from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_close_to_intron_filter,
-                                      create_high_variable_region_filter)
+                                      create_high_variable_region_filter,
+                                      create_close_to_snv_filter,
+                                      create_snv_close_to_limit_filter,
+                                      create_major_allele_freq_filter,
+                                      create_kind_filter,
+                                      create_cap_enzyme_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -154,7 +159,115 @@ class SeqVariationFilteringTest(unittest.TestCase):
             result = snv.qualifiers['filters']['high_variable_reg'][threshold]
             assert result == expected
 
+    @staticmethod
+    def test_close_to_seqvar_filter():
+        'It tests that we can detect snvs by its proximity to another snv'
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
+                          qualifiers={})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
+                          qualifiers={})
+        seq_str = 'AATATA'
+        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+                             features = [snv1, snv2, snv3])
+        proximity = 3
 
+        filter_ =  create_close_to_snv_filter(proximity)
+        filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'),
+                                 [False, True, True]):
+            result = snv.qualifiers['filters']['close_to_snv'][proximity]
+            assert result == expected
+
+    @staticmethod
+    def test_close_to_limit_filter():
+        'It tests that we can detect snvs close to the limit'
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
+                          qualifiers={})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
+                          qualifiers={})
+        seq_str = 'AATATA'
+        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+                             features = [snv1, snv2, snv3])
+        distance = 2
+
+        filter_ =  create_snv_close_to_limit_filter(distance)
+        filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'),
+                                 [True, False, True]):
+            result = snv.qualifiers['filters']['close_to_limit'][distance]
+            assert result == expected
+
+    @staticmethod
+    def test_major_allele_freq_filter_snv():
+        'It test the first allele percent filter'
+        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
+                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={'alleles':alleles})
+        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
+                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
+                          qualifiers={'alleles':alleles})
+
+        seq_str = 'AATATA'
+        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+                             features = [snv1, snv2])
+        frecuency = 0.6
+        filter_ =  create_major_allele_freq_filter(frecuency)
+        filter_(seq)
+
+        for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
+            result = snv.qualifiers['filters']['maf'][frecuency]
+            assert result == expected
+
+    @staticmethod
+    def test_kind_filter():
+        'It test the kind filter'
+        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
+                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={'alleles':alleles})
+        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
+                 ('T', INDEL)      :{'read_names':['r1', 'r2']}}
+
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
+                          qualifiers={'alleles':alleles})
+
+        seq_str = 'AATATA'
+        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+                             features = [snv1, snv2])
+        kind    = SNP
+        filter_ = create_kind_filter(kind)
+        filter_(seq)
+
+        for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
+            result = snv.qualifiers['filters']['by_kind'][kind]
+            assert result == expected
+
+    @staticmethod
+    def test_cap_enzyme_filter():
+        'It test the cap enzyme filter'
+        seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
+
+        alleles = {('A', INVARIANT):{},
+                   ('A', DELETION) :{}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles})
+        seq = SeqWithQuality(seq=seq, name='ref',features=[snv] )
+
+        all_enzymes = True
+        filter_ = create_cap_enzyme_filter(all_enzymes)
+        filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'), [True]):
+            result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
+            assert result == expected
 
 
 if __name__ == "__main__":

@@ -94,28 +94,28 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
     read_groups_info = _get_read_group_info(bam)
 
     current_deletions = {}
-    reference_id = get_seq_name(reference)
-    reference_seq = reference.seq
+    reference_id      = get_seq_name(reference)
+    reference_seq     = reference.seq
     for column in bam.pileup(reference=reference_id):
-        alleles = {}
-        ref_pos = column.pos
-        ref_id =  bam.getrname(column.tid)
+        alleles    = {}
+        ref_pos    = column.pos
+        ref_id     = bam.getrname(column.tid)
         ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
-            aligned_read = pileup_read.alignment
+            aligned_read      = pileup_read.alignment
 
-            read_group = aligned_read.opt('RG')
-            read_name = aligned_read.qname
+            read_group        = aligned_read.opt('RG')
+            read_name         = aligned_read.qname
             read_mapping_qual = aligned_read.mapq
 
-            read_pos = pileup_read.qpos
+            read_pos          = pileup_read.qpos
 
-            allele = None
-            qual = None
+            allele     = None
+            qual       = None
             is_reverse = None
-            kind = None
-            start = None
-            end = None
+            kind       = None
+            start      = None
+            end        = None
             #which is the allele for this read in this position?
             if read_name in current_deletions:
                 current_deletion = current_deletions[read_name]
@@ -125,9 +125,9 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
                     #bases that embrace the deletion
                     qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
                     qual1 = _qualities_to_phred(aligned_read.qual[read_pos + 1])
-                    qual = min((qual0, qual1))
+                    qual  = min((qual0, qual1))
                     is_reverse = bool(aligned_read.is_reverse)
-                    kind = DELETION
+                    kind       = DELETION
                     current_deletion[1] = False #we have returned it already
                 #we count how many positions should be skip until this read
                 #has now deletion again
@@ -299,6 +299,18 @@ def sorted_alleles(feature):
         allele_info['kind'] = allele[1]
         alleles_list.append(allele_info)
     return sorted(alleles_list, _cmp_by_read_num)
+
+def snvs_in_window(snv, snvs, window):
+    'it gets all the snvs  in a window taking a snv as reference'
+    num_of_snvs = 0
+    location = int(str(snv.location.start))
+    left_margin  = location - (window /2)
+    rigth_margin = location + (window /2)
+    for snv in snvs:
+        location = int(str(snv.location.start))
+        if location > left_margin and location < rigth_margin:
+            num_of_snvs += 1
+    return num_of_snvs
 
 def calculate_maf_frequency(feature):
     'It returns the most frequent allele frequency'

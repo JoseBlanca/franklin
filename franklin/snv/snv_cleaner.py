@@ -34,7 +34,7 @@ from franklin.alignment_search_result import (FilteredAlignmentResults,
 SEQUENCE_FILTERS = {'aligner': seq_filters.create_aligner_filter,
                     'similar_seqs': seq_filters.create_similar_seqs_filter}
 
-def create_reference_filter(seq_filter, filter_args):
+def xcreate_reference_filter(seq_filter, filter_args):
     '''It filters the all snv that have a reference that is filtered by the
     given sequence filter'''
     seq_filter = SEQUENCE_FILTERS[seq_filter](**filter_args)
@@ -58,7 +58,7 @@ def create_reference_filter(seq_filter, filter_args):
             return result
     return snv_filter
 
-def create_unique_contiguous_region_filter(distance, genomic_db,
+def xcreate_unique_contiguous_region_filter(distance, genomic_db,
                                            genomic_seqs_fhand):
     '''It returns a filter that removes snv in a region that give more than one
     match or more than one match_parts'''
@@ -115,7 +115,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
 
     return unique_contiguous_region_filter
 
-def create_close_to_intron_filter(distance, genomic_db,
+def xcreate_close_to_intron_filter(distance, genomic_db,
                                   genomic_seqs_fhand=None):
     '''It returns a filter that filters snv by the proximity to introns.
 
@@ -152,7 +152,7 @@ def create_close_to_intron_filter(distance, genomic_db,
     return close_to_intron_filter
 
 #filters
-def create_high_variable_region_filter(max_variability, window=None):
+def xcreate_high_variable_region_filter(max_variability, window=None):
     'It creates a filter that filters seq_vars from high variable regions'
     def high_variable_region_filter(snv):
         'The filter'
@@ -166,7 +166,7 @@ def create_high_variable_region_filter(max_variability, window=None):
             return True
     return high_variable_region_filter
 
-def create_close_to_seqvar_filter(distance):
+def xcreate_close_to_seqvar_filter(distance):
     '''It returns a filter that filters snv by the proximity to other snvs.
 
     If the snv has another snv closer than DISTANCE, then this snv is
@@ -186,7 +186,7 @@ def create_close_to_seqvar_filter(distance):
         return True
     return close_to_snv_filter
 
-def create_snv_close_to_limit_filter(max_distance):
+def xcreate_snv_close_to_limit_filter(max_distance):
     '''This function is a function factory. These functions are filters than
      return true if those seqvars ar not clser to the limita than max_distance
      '''
@@ -220,7 +220,7 @@ def create_snv_close_to_limit_filter(max_distance):
 
 
 #cleaners
-def create_major_allele_freq_filter(frequency, libraries=None):
+def xcreate_major_allele_freq_filter(frequency, libraries=None):
     '''It creates a cleaner in which the alleles from each library are removed
     if the most abundant allele frequency is bigger than the given one'''
     def major_allele_freq_cleaner(snv):
@@ -243,7 +243,7 @@ def create_major_allele_freq_filter(frequency, libraries=None):
 
     return major_allele_freq_cleaner
 
-def create_bad_quality_reads_cleaner(qual_treshold):
+def xcreate_bad_quality_reads_cleaner(qual_treshold):
     '''This function is a factory function that giving a seqvar removes bad
     quality reads from it'''
     def bad_quality_reads_cleaner(snv):
@@ -332,7 +332,7 @@ def create_is_variable_in_aggregate_filter(libraries=None):
         return False
     return is_variable_filter
 
-def create_kind_filter(kinds):
+def xcreate_kind_filter(kinds):
     'This filter filters by kind. It only passes snps or complex snv kinds'
     def kind_filter(snv):
         'The filter'
@@ -344,7 +344,7 @@ def create_kind_filter(kinds):
         return False
     return kind_filter
 
-def create_min_qual_per_lib_allele_cleaner(min_quality=70, default_quality=25):
+def xcreate_min_qual_per_lib_allele_cleaner(min_quality=70, default_quality=25):
     '''This function factory remove alleles that have not enough reads with good
     quality reads'''
     def qual_per_library_cleaner(snv):
@@ -379,7 +379,7 @@ def create_min_qual_per_lib_allele_cleaner(min_quality=70, default_quality=25):
             return None
     return qual_per_library_cleaner
 
-def create_alleles_n_cleaner():
+def xcreate_alleles_n_cleaner():
     '''This function factory removes alleles that composed by N'''
     def alleles_n_cleaner(snv):
         'The cleaner'
@@ -406,7 +406,7 @@ def create_alleles_n_cleaner():
             return (snv.copy(per_lib_info=new_library_alleles), context)
     return alleles_n_cleaner
 
-def create_cap_enzyme_filter(all_enzymes):
+def xcreate_cap_enzyme_filter(all_enzymes):
     '''This funtion is a factory function that creates a function that look
     if the seqvar is differently afected by some enzymes'''
     def enzymes_filter(snv):
@@ -481,7 +481,7 @@ def _alleles_with_required_quality(alleles, min_quality, default_quality):
             ok_alleles.append((allele['allele'], allele['kind']))
     return ok_alleles
 
-def create_aggregate_allele_qual_cleaner(min_quality=45, default_quality=25):
+def xcreate_aggregate_allele_qual_cleaner(min_quality=45, default_quality=25):
     'It removes alleles with at least min quality.'
     def allele_qual_cleaner(snv):
         'It removes the alleles which have not enough quality'
