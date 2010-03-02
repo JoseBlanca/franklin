@@ -122,8 +122,7 @@ class PipelineTests(unittest.TestCase):
         #are we keeping the description?
         assert 'mdust' in result_seq
 
-    @staticmethod
-    def test_seq_pipeline_parallel_run():
+    def test_seq_pipeline_parallel_run(self):
         'It tests that the pipeline runs ok'
         pipeline = 'sanger_with_qual'
 
@@ -141,13 +140,18 @@ class PipelineTests(unittest.TestCase):
         io_fhands['outputs']['sequence']  = NamedTemporaryFile()
         io_fhands['outputs']['quality'] = NamedTemporaryFile()
 
-        seq_pipeline_runner(pipeline, configuration, io_fhands, processes=2)
-        io_fhands['outputs']['sequence'].seek(0)
+        try:
+            seq_pipeline_runner(pipeline, configuration, io_fhands,
+                                processes=2)
+            self.fail()
+        except RuntimeError:
+            pass
+        #io_fhands['outputs']['sequence'].seek(0)
 
-        result_seq = io_fhands['outputs']['sequence'].read()
-        assert result_seq.count('>') == 6
+        #result_seq = io_fhands['outputs']['sequence'].read()
+        #assert result_seq.count('>') == 6
         #are we keeping the description?
-        assert 'mdust' in result_seq
+        #assert 'mdust' in result_seq
 
 
 if __name__ == "__main__":

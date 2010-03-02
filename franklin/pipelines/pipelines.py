@@ -37,7 +37,6 @@ modify the sequences.
 
 import logging, os
 from itertools import imap, ifilter
-import multiprocessing
 from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
@@ -80,6 +79,7 @@ def _get_func_tools(processes):
         map_ = imap
     else:
         #multiprocessing
+        import multiprocessing
         if not isinstance(processes, int):
             processes = None    #number determined by cpu_count
         pool = multiprocessing.Pool(processes)
@@ -105,33 +105,38 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     # configuration parameters
     pipeline_steps = configure_pipeline(pipeline, configuration)
 
-    # List of temporary files created by the bulk processors.
-    # we need to keep them until the analysis is done because some seq_iters
-    # may depend on them
-    temp_bulk_files = []
-
-    #are we multiprocessing?
-    functs = _get_func_tools(processes)
-
-    for analisis_step in pipeline_steps:
-        function_factory  = analisis_step['function']
-        type_     = analisis_step['type']
-        if analisis_step['arguments']:
-            arguments = analisis_step['arguments']
+    #we create all the cleaner functions
+    cleaner_functions = {}
+    for analysis_step in pipeline_steps:
+        function_factory  = analysis_step['function']
+        if analysis_step['arguments']:
+            arguments = analysis_step['arguments']
         else:
             arguments = None
 
-        msg = "Performing: %s" % analisis_step['comment']
+        msg = "Performing: %s" % analysis_step['comment']
         logging.info(msg)
-        #print (msg)
 
-        # Crete function adding parameters if they need them
+        # Create function adding parameters if they need them
         if arguments is None:
             cleaner_function = function_factory()
         else:
             #pylint:disable-msg=W0142
             cleaner_function = function_factory(**arguments) #IGNORE:W0142
+        cleaner_functions[analysis_step['name']] = cleaner_function
 
+    #are we multiprocessing?
+    functs = _get_func_tools(processes)
+
+    # List of temporary files created by the bulk processors.
+    # we need to keep them until the analysis is done because some seq_iters
+    # may depend on them
+    temp_bulk_files = []
+
+    #now use use the cleaner functions using the mapper functions
+    for analysis_step in pipeline_steps:
+        cleaner_function = cleaner_functions[analysis_step['name']]
+        type_     = analysis_step['type']
         if type_ == 'mapper':
             filtered_items = functs['map'](cleaner_function, items)
         elif type_ == 'filter':
@@ -139,11 +144,9 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         elif type_ == 'bulk_processor':
             filtered_items, fhand_outs = cleaner_function(items)
             temp_bulk_files.append(fhand_outs)
-
         items = filtered_items
 
-        #more logging
-        msg = "Finished: %s" % analisis_step['comment']
+        msg = "Analysis step prepared: %s" % analysis_step['comment']
         logging.info(msg)
 
     temp_bulk_files = None
@@ -203,33 +206,6 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         fhand = io_fhands['outputs']['vcf']
         writers.append(VariantCallFormatWriter(fhand=fhand,
                                                reference_name=ref_name))
-
-
-
-#    #which outputs do we want?
-#    writers = []
-#    for output, fhand in io_fhands['outputs'].items():
-#        if output == 'quality':
-#            pass
-#        else:
-#            writer_klass = WRITERS[output]
-#            if output == 'sequence':
-#                if 'quality' in io_fhands['outputs']:
-#                    qual_fhand = io_fhands['outputs']['quality']
-#                else:
-#                    qual_fhand = None
-#                writer = writer_klass(fhand=fhand,
-#                                         qual_fhand=qual_fhand,
-#                                         file_format=file_format)
-#            elif output == 'repr':
-#                file_format = 'repr'
-#                writer = writer_klass(fhand=fhand, file_format='repr')
-#            elif output == 'vcf':
-#                ref_name = os.path.basename(io_fhands['in_seq'].name)
-#                writer = writer_klass(fhand=fhand, reference_name=ref_name)
-#            else:
-#                writer = writer_klass(fhand)
-#            writers.append(writer)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
