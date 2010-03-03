@@ -32,7 +32,8 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_snv_close_to_limit_filter,
                                       create_major_allele_freq_filter,
                                       create_kind_filter,
-                                      create_cap_enzyme_filter)
+                                      create_cap_enzyme_filter,
+                                      create_is_variable_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -204,13 +205,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_major_allele_freq_filter_snv():
         'It test the first allele percent filter'
-        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
-                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
+                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
 
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
                           qualifiers={'alleles':alleles})
-        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
-                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
+                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
                           qualifiers={'alleles':alleles})
@@ -229,13 +230,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_kind_filter():
         'It test the kind filter'
-        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
-                 ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
+                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
 
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
                           qualifiers={'alleles':alleles})
-        alleles={('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
-                 ('T', INDEL)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
+                   ('T', INDEL)      :{'read_names':['r1', 'r2']}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
                           qualifiers={'alleles':alleles})
@@ -260,7 +261,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                    ('A', DELETION) :{}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
-        seq = SeqWithQuality(seq=seq, name='ref',features=[snv] )
+        seq = SeqWithQuality(seq=seq, name='ref', features=[snv] )
 
         all_enzymes = True
         filter_ = create_cap_enzyme_filter(all_enzymes)
@@ -268,6 +269,31 @@ class SeqVariationFilteringTest(unittest.TestCase):
         for snv, expected in zip(seq.get_features(kind='snv'), [True]):
             result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
             assert result == expected
+
+    @staticmethod
+    def test_is_variable_filter():
+        'It tets variable filter function'
+        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2']},
+                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3']}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles})
+        seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
+
+        seq = SeqWithQuality(seq=seq, name='ref', features=[snv])
+
+        kind     = 'read_groups'
+        groups   = ['rg1']
+        in_union = False
+
+        parameters = (kind, groups, in_union)
+        filter_ = create_is_variable_filter(*parameters)
+        filter_(seq)
+        tgroups = tuple(groups)
+        tparameters = (kind, tgroups, in_union)
+        for snv, expected in zip(seq.get_features(kind='snv'), [True]):
+            result = snv.qualifiers['filters']['is_variable'][tparameters]
+            assert result == expected
+
 
 
 if __name__ == "__main__":
