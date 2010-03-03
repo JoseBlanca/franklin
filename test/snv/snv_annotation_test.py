@@ -35,7 +35,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          sorted_alleles,
                                          calculate_maf_frequency,
                                          calculate_snv_variability,
-                                         calculate_cap_enzymes)
+                                         calculate_cap_enzymes,
+                                         variable_in_read_groups)
 from franklin.pipelines.pipelines import seq_pipeline_runner
 
 class TestSnvAnnotation(unittest.TestCase):
@@ -222,6 +223,19 @@ class TestSnvPipeline(unittest.TestCase):
         assert '55' in vcf
         assert 'D2' in vcf
         assert 'IAA' in vcf
+
+    @staticmethod
+    def test_variable_in_read_group():
+        'It test variable_in_reaggroups function'
+
+        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2']},
+                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3']}}
+
+        feature = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                             qualifiers={'alleles':alleles})
+        assert variable_in_read_groups(feature, ['rg1'])
+        assert not variable_in_read_groups(feature, ['rg2', 'rg3'])
+        assert variable_in_read_groups(feature, ['rg2', 'rg3'], in_union=True)
 
 
 if __name__ == "__main__":

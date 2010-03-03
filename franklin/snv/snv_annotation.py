@@ -431,3 +431,68 @@ def _parse_remap_output(remap_output):
     remap_fhand.close()
     return enzymes
 
+def variable_in_read_groups(feature, read_groups, in_union=False,
+                            in_all_read_groups=True):
+    '''It looks if a snv is variable in each of the given readgroups.
+    Or if it is variable in the aggregates of the given readgroups'''
+    return _variable_in_groupping('read_groups', feature, items=read_groups,
+                                  in_union=in_union,
+                                  in_all_read_groups=in_all_read_groups)
+def variable_in_samples(feature, samples, in_union=False,
+                        in_all_samples=True):
+    '''It looks if a snv is variable in each of the given samples.
+    Or if it is variable in the aggregates of the given samples'''
+    return _variable_in_groupping('samples', feature, items=samples,
+                                  in_union=in_union,
+                                  in_all_read_groups=in_all_samples)
+def variable_in_libraries(feature, libraries, in_union=False,
+                          in_all_libraries=True):
+    '''It looks if a snv is variable in each of the given library.
+    Or if it is variable in the aggregates of the given library'''
+    return _variable_in_groupping('libraries', feature, items=libraries,
+                                  in_union=in_union,
+                                  in_all_read_groups=in_all_libraries)
+
+def _variable_in_groupping(key, feature, items, in_union,
+                           in_all_read_groups=True):
+    'It looks if the given snv is variable for the given key/items'
+
+    alleles = _get_alleles_for_read_group(feature.qualifiers['alleles'],
+                                          items, key)
+    if in_union:
+        alleles = _aggregate_alleles(alleles)
+
+    #if we'd like to consider alleles with one allele different than the
+    #reference
+    # or len(allele_list) == 1 and allele_list[0][1] != INVARIANT
+    variable_in_read_groups_ = []
+    for allele_list in alleles.values():
+        variable_in_read_groups_.append(True if len(allele_list) > 1 else False)
+
+    if in_all_read_groups:
+        return all(variable_in_read_groups_)
+    else:
+        return any(variable_in_read_groups_)
+
+def _aggregate_alleles(alleles):
+    'It joins all alleles for the read groups into one'
+    aggregate = set()
+    for allele_list in alleles.values():
+        aggregate = aggregate.union(allele_list)
+    return {None: aggregate}
+
+def _get_alleles_for_read_group(alleles, read_groups, group_kind='read_groups'):
+    '''It get the alleles from the given items of type:key, separated by items.
+    For example, if you give key rg and items rg1, rg2, it will return
+    alleles separated in rg1 and rg2 '''
+
+    alleles_for_read_groups = {}
+    for allele, alleles_info in alleles.items():
+        for read_group in alleles_info[group_kind]:
+            if read_group not in read_groups:
+                continue
+            if not read_group in alleles_for_read_groups:
+                alleles_for_read_groups[read_group] = []
+            alleles_for_read_groups[read_group].append(allele)
+    return alleles_for_read_groups
+
