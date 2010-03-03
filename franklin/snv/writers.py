@@ -22,6 +22,8 @@ import datetime, math
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
 
+#http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
+
 class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name):
