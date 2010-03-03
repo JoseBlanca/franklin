@@ -33,7 +33,8 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_major_allele_freq_filter,
                                       create_kind_filter,
                                       create_cap_enzyme_filter,
-                                      create_is_variable_filter)
+                                      create_is_variable_filter,
+                                      get_filter_description)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -294,6 +295,43 @@ class SeqVariationFilteringTest(unittest.TestCase):
             result = snv.qualifiers['filters']['is_variable'][tparameters]
             assert result == expected
 
+    @staticmethod
+    def test_get_filter_description():
+        'It tets get_filter_description function'
+        filter_name = 'close_to_intron'
+        parameters  = 30
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name == 'I30'
+        assert desc == 'An intron is located closer than 30 base pairs'
+
+        filter_name = 'maf'
+        parameters  = 0.6
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+
+        assert name == 'maf0.60'
+        assert desc == 'The more frequent alleles is more frequent than 0.60'
+
+        filter_name = 'by_kind'
+        parameters  = SNP
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        filter_name = 'is_variable'
+        kind = 'read_groups'
+        groups = ['rg1', 'rg2']
+        in_union = True
+        parameters  = (kind, tuple(groups), in_union)
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name == 'vrg'
+        descrip  = "Filters by read_groups with those items: ('rg1', 'rg2')."
+        descrip +=' Aggregated:True'
+        assert desc == descrip
 
 
 if __name__ == "__main__":

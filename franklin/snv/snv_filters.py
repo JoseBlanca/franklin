@@ -44,7 +44,81 @@ FILTER_DESCRIPTIONS = {
     'High_variable_region':
         {'id': 'HVR%2d',
     'description':'The snv is in a region with more than %2d % of variability'},
+    'close_to_snv':
+        {'id':'cs%2d',
+         'description':'The snv is closer than %d nucleotides to another snv'},
+    'close_to_limit':
+        {'id':'cs%2d',
+       'description':'The snv is closer than %d nucleotides to sequence limit'},
+    'maf':
+        {'id':'maf%.2f',
+         'description':'The more frequent alleles is more frequent than %.2f'},
+    'by_kind':
+        {'id':'vk%s',
+         'description':'It filters if it is of kind: %s'},
+    'cap_enzymes':
+        {'id':'ce',
+         'description':'Enzymes that recognize different snp alleles: %s'},
+    'is_variable':
+        {'id':'v%s',
+        'description':'Filters by %s with those items: %s. Aggregated:%s'}
     }
+
+def get_filter_description(filter_name, parameters, filter_descriptions):
+    'It returns the short id and the description'
+    if (filter_name, parameters) in filter_descriptions:
+        return filter_descriptions[filter_name, parameters]
+    id_  = FILTER_DESCRIPTIONS[filter_name]['id']
+    desc = FILTER_DESCRIPTIONS[filter_name]['description']
+
+    if filter_name == 'by_kind':
+        short_name,description = _get_nd_kind(id_, desc, parameters)
+    elif filter_name == 'cap_enzymes':
+        short_name,description = _get_nd_ce(id_, desc, parameters)
+    elif filter_name == 'is_variable':
+        short_name,description = _get_nd_iv(id_, desc, parameters)
+    else:
+        if '%' in id_:
+            short_name  = id_  % parameters
+        else:
+            short_name  = id_
+        if '%' in desc:
+            description  = desc  % parameters
+        else:
+            description  = desc
+
+    return short_name, description
+
+def _get_nd_iv(id_, desc, parameters):
+    'It returns the name and id of the snv filter for by is_variable filter'
+    groups = {'libraries':'lb', 'read_groups':'rg', 'samples':'sm'}
+    short_name = id_ % groups[parameters[0]]
+    description = desc % parameters
+
+    return short_name, description
+
+def _get_nd_kind(id_, desc, parameters):
+    'It returns the name and id of the snv filter for by kind filter'
+    vkinds = {0:'snp', 1:'insertion', 2:'deletion', 3:'invariant', 4:'indel',
+              5:'complex'}
+    kind = vkinds[parameters]
+    short_name = id_ % kind[0]
+    description = desc % kind
+    return short_name, description
+
+def _get_nd_ce(id_, desc, parameters):
+    'It returns the name and id of the snv filter for cap_enzyme filter'
+    if parameters:
+        enzymes = 'All'
+        booltag = 't'
+    else:
+        enzymes = 'Most Comercial'
+        booltag = 'f'
+
+    short_name = id_ % booltag
+    description = desc % enzymes
+
+    return short_name, description
 
 def _add_filter_result(snv, filter_name, result, threshold=None):
     'It adds the filter to the SeqFeature qualifiers'
@@ -258,7 +332,7 @@ def create_major_allele_freq_filter(frequency):
         if sequence is None:
             return None
         for snv in sequence.get_features(kind='snv'):
-            previous_result = _get_filter_result(snv, 'close_to_limit',
+            previous_result = _get_filter_result(snv, 'maf',
                                                  threshold=frequency)
             if previous_result is not None:
                 continue
@@ -271,8 +345,6 @@ def create_major_allele_freq_filter(frequency):
                                threshold=frequency)
 
     return major_allele_freq_filter
-
-
 
 def create_kind_filter(kind):
     'It filters the snv by its kind'

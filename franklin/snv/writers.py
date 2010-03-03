@@ -21,6 +21,7 @@ Created on 19/02/2010
 import datetime, math
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
+from franklin.snv.snv_filters import get_filter_description
 
 #http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
 
@@ -83,10 +84,22 @@ class VariantCallFormatWriter(object):
             str_alleles = '.'
         return str_alleles, alternative_alleles
 
-    def _create_filters(self, qualifiers):
+    def _create_filters(self, qualifiers, filter_descriptions):
         'It returns the FILTER part on the vcf'
-        #TODO
-        return '.'
+        filter_strs = []
+        for name, filters_data in qualifiers['filters'].items():
+            for parameters, result in filters_data.items():
+                if not result:
+                    continue
+                short_name, description = get_filter_description(name,
+                                                                 parameters,
+                                                            filter_descriptions)
+                filter_strs.append(short_name)
+                filter_descriptions[name, parameters] = short_name, description
+        if not filter_strs:
+            return '.'
+        else:
+            return ';'.join(filter_strs)
 
     @staticmethod
     def _root_mean_square(numbers):
