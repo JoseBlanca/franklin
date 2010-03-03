@@ -289,7 +289,12 @@ class ReadsStatsAnalyzer(Analyzer):
                 stats_dir = self._get_stats_dir(seq_type)
                 basename  = self._get_basename(fpath)
                 seqs = seqs_in_file(open(fpath))
-                self._do_seq_stats(seqs, basename, stats_dir)
+                file_format = guess_seq_file_format(open(fpath))
+                analyses = ['seq_length_distrib', 'qual_distrib']
+                if file_format == 'fasta':
+                    analyses =  ['seq_length_distrib']
+
+                self._do_seq_stats(seqs, basename, stats_dir, analyses)
 
         # now the difference between the cleaned and the original per file
         for clean_fpath in reads['cleaned']:
@@ -316,7 +321,8 @@ class ReadsStatsAnalyzer(Analyzer):
         basename  = 'global'
         for seqtype, seqs in all_reads.items():
             stats_dir = self._get_stats_dir(seqtype)
-            self._do_seq_stats(seqs, basename, stats_dir)
+            analyses = ['seq_length_distrib', 'qual_distrib']
+            self._do_seq_stats(seqs, basename, stats_dir, analyses)
 
         # global stats. Diff fistributions
         stats_dir = self._get_stats_dir('cleaned')
@@ -339,10 +345,10 @@ class ReadsStatsAnalyzer(Analyzer):
             for seq in seqs_in_file(open(fpath)):
                 yield seq
 
-    def _do_seq_stats(self, seqs, basename, stats_dir):
+    def _do_seq_stats(self, seqs, basename, stats_dir, analyses):
         'It performs all kind of stats for a fpath'
         # Some distributions
-        for analysis in  ['seq_length_distrib', 'qual_distrib']:
+        for analysis in analyses:
             analysis_basename = '%s.%s' % (basename, analysis)
             seqs, seqs2 = itertools.tee(seqs, 2)
             self._do_distrib(seqs2, analysis, analysis_basename, stats_dir)
@@ -371,13 +377,19 @@ class ReadsStatsAnalyzer(Analyzer):
         distrib_fpath = os.path.join(stats_dir, basename + '.dat')
         if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):
             return
+        try:
+            plot_fhand    = open(plot_fpath, 'w')
+            distrib_fhand = open(distrib_fpath, 'w')
 
-        plot_fhand    = open(plot_fpath, 'w')
-        distrib_fhand = open(distrib_fpath, 'w')
-
-        seq_distrib(sequences=seqs, kind=analysis,
+            seq_distrib(sequences=seqs, kind=analysis,
                     distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
                     low_memory=True)
+        except TypeError:
+            plot_fhand.close()
+            distrib_fhand.close()
+            os.remove(plot_fpath)
+            os.remove(distrib_fpath)
+            raise
 
     def _do_diff_seq_stats(self, seqs1, seqs2, basename, stats_dir):
         'It performs the differential distribution'
