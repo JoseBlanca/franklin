@@ -118,7 +118,7 @@ def merge_sam(infiles, outfile, reference):
             else:
                 break
 
-    #join and writhe both header parts
+    #join and write both header parts
     ref_header.extend(headers)
     for header in ref_header:
         outfile.write('\t'.join(header))
@@ -130,8 +130,6 @@ def merge_sam(infiles, outfile, reference):
         for line in input_:
             if line.startswith('@'):
                 continue
-            #outfile.write('\t'.join(line.split()))
-            #outfile.write('\n')
             outfile.write(line)
     outfile.flush()
 
