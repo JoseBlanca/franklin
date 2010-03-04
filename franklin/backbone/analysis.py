@@ -14,6 +14,7 @@ from franklin.utils.seqio_utils import (seqio, cat, seqs_in_file,
                                         write_seqs_in_file)
 from franklin.seq.readers import guess_seq_file_format
 from franklin.pipelines.pipelines import seq_pipeline_runner
+from franklin.pipelines.seq_pipeline_steps import annotate_cdna_introns
 from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam)
@@ -170,10 +171,6 @@ class Analyzer(object):
                 fpaths = _select_file(input_def['file'], fpaths)
             input_files[input_kind] = fpaths
         return input_files
-
-    def get_output_fpaths(self):
-        'It returns the output files for the analysis'
-        raise NotImplementedError
 
     def run(self):
         'It runs the analysis'
@@ -453,8 +450,8 @@ class ReadsStatsAnalyzer(Analyzer):
 
 
 class PrepareWSGAssemblyAnalyzer(Analyzer):
-    '''It collects the cleaned reads to use by wsg. Wsg only uses reads with quality,
-    so be will dismiss these sequences'''
+    '''It collects the cleaned reads to use by wsg. Wsg only uses reads with
+    quality, so be will dismiss these sequences'''
 
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
@@ -889,6 +886,41 @@ class WriteAnnotationAnalyzer(Analyzer):
                                 configuration=None,
                                 io_fhands=io_fhands)
 
+class AnnotateIntronsAnalyzer(Analyzer):
+    'It annotates the introns in cdna sequences'
+
+    def run(self):
+        'It runs the analysis.'
+        output_dir   = self._create_output_dirs()['result']
+        inputs       = self._get_input_fpaths()
+        repr_fpaths  = inputs['repr']
+        seqs_fpaths  = inputs['input']
+        seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
+
+        pipeline = [annotate_cdna_introns]
+
+        settings = self._project_settings
+        if 'Cdna_intron_annotation' not in settings:
+            msg = 'You should set up genomic_db and genomic_seqs in settings'
+            raise RuntimeError(msg)
+        genomic_db = settings['Cdna_intron_annotation']['genomic_db']
+        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
+        configuration = {'annnoatate_cdna_introns': {'genomic_db':genomic_db,
+                                       'genomic_seqs_fhand':open(genomic_seqs)}}
+
+        for seq_fpath in seqs_fpaths:
+            temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
+                                           delete=False)
+            io_fhands = {'in_seq': open(seq_fpath),
+                         'outputs':{'repr':temp_repr}}
+            seq_pipeline_runner(pipeline, configuration=configuration,
+                                io_fhands=io_fhands)
+            temp_repr.close()
+            repr_fpath = os.path.join(output_dir,
+                                      _get_basename(seq_fpath) + '.repr')
+            shutil.move(temp_repr.name, repr_fpath)
+
+
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
         {'inputs':{
@@ -1014,6 +1046,17 @@ ANALYSIS_DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': SnvCallerAnalyzer},
+    'annotate_introns':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': AnnotateIntronsAnalyzer},
     'write_annotation':
         {'inputs':{
             'repr':

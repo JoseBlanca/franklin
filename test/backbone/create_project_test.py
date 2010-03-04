@@ -304,6 +304,43 @@ class TestBackbone(unittest.TestCase):
         os.chdir('/tmp')
         test_dir.close()
 
+    @staticmethod
+    def test_cdna_intron_annoation_analysis():
+        'We can annotate introns'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+        config = {'Cdna_intron_annotation':{'genomic_db': genomic_db,
+                                            'genomic_seqs':genomic_db}}
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                      configuration=config)
+        project_dir = join(test_dir.name, project_name)
+        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
+        seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
+        seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
+        seq += 'TTACAGGCAGAGGTGTAATTCAGATATGGTGCCTGCCAGATCTCATTCAAAAAGATATAATTG'
+        seq += 'TGAAAGAAGATTATTTTGCTCAGGTTAACAAAAAACCGTATAGAAATTTGACAAGAAGTGAAG'
+        seq += 'CAGGTACGGGAGAAGTATCTGGACCTCAAAAACCAAGAGGAAGACCAAAAAAGAACCCTGGTA'
+        seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
+        seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
+        seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
+        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+
+        #create some seqs to annotate
+        fasta = '>seq\n%s\n' % seq
+        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
+        fhand.write(fasta)
+        fhand.close()
+        do_analysis(project_settings=settings_path, kind='annotate_introns')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        assert "type='intron'" in  open(repr_fpath).read()
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

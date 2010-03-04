@@ -13,6 +13,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_masker_for_low_complexity,
                                     create_masker_repeats_by_repeatmasker,
                                     create_masker_for_words)
+from franklin.seq.seq_annotation import create_cdna_intron_annotator
 from franklin.seq.seq_filters import create_length_filter
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -94,6 +95,14 @@ mask_words = {'function'  : create_masker_for_words,
               'name'      : 'word_masker',
               'comment'   : 'It mask the given words in a sequence'
               }
+
+annotate_cdna_introns = {'function': create_cdna_intron_annotator,
+                        'arguments':{'genomic_db':None,
+                                     'genomic_seqs_fhand':None},
+                        'type':'mapper' ,
+                        'name':'annnoatate_cdna_introns',
+            'comment': 'It annotates introns comparing with a reference genome'}
+
 
 ################################################################################
 # PIPELINES
