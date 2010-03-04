@@ -87,6 +87,8 @@ class VariantCallFormatWriter(object):
     def _create_filters(self, qualifiers, filter_descriptions):
         'It returns the FILTER part on the vcf'
         filter_strs = []
+        if 'filters' not in qualifiers:
+            return '.'
         for name, filters_data in qualifiers['filters'].items():
             for parameters, result in filters_data.items():
                 if not result:

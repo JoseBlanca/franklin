@@ -207,18 +207,18 @@ class TestSnvPipeline(unittest.TestCase):
         bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
 
-        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        #univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
                                                'min_quality':30}}
 
         io_fhands = {}
         io_fhands['in_seq']   = seq_fhand
         io_fhands['outputs'] = {'sequence': NamedTemporaryFile(),
-                                'vcf': NamedTemporaryFile(),}
+                                'vcf': NamedTemporaryFile()}
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
 
-#        sequences = open(io_fhands['outputs']['sequence'].name).read()
+        #sequences = open(io_fhands['outputs']['sequence'].name).read()
         vcf = open(io_fhands['outputs']['vcf'].name).read()
         assert '66' in vcf
         assert '55' in vcf
