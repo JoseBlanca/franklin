@@ -208,6 +208,12 @@ class Analyzer(object):
                 os.makedirs(output_dir)
         return output_dirs
 
+    @staticmethod
+    def _get_basename(fpath):
+        'It gets the basename of the file and the stats'
+        return os.path.splitext(os.path.basename(fpath))[0]
+
+
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
 
@@ -362,11 +368,6 @@ class ReadsStatsAnalyzer(Analyzer):
         stats_dir = self._get_stats_dir('cleaned')
         self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
                                 stats_dir)
-
-    @staticmethod
-    def _get_basename(fpath):
-        'It gets the basename of the file and the stats'
-        return os.path.splitext(os.path.basename(fpath))[0]
 
     def _get_stats_dir(self, seqtype):
         'It gets the stats dir for each seqtype'
@@ -814,54 +815,6 @@ class MergeBamAnalyzer(Analyzer):
         temp_bam.close()
         temp_sam.close()
 
-def _get_basename(fpath):
-    'It returns the basename for the given path'
-    return os.path.splitext(os.path.basename(fpath))[0]
-
-def _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths):
-    'It returns for every file the repr or the seq file'
-    repr_fpaths = dict([(_get_basename(fpath), fpath) for fpath in repr_fpaths])
-    new_seq_fpaths = []
-    for fpath in seqs_fpaths:
-        basename = _get_basename(fpath)
-        if basename in repr_fpaths:
-            new_seq_fpaths.append(repr_fpaths[basename])
-        else:
-            new_seq_fpaths.append(fpath)
-    return new_seq_fpaths
-
-class SnvCallerAnalyzer(Analyzer):
-    'It performs the calling of the snvs in a bam file'
-
-    def run(self):
-        'It runs the analysis.'
-        output_dir   = self._create_output_dirs()['result']
-        inputs       = self._get_input_fpaths()
-        repr_fpaths  = inputs['repr']
-        seqs_fpaths  = inputs['input']
-        seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-        merged_bam   = inputs['merged_bam']
-
-        pipeline = 'snv_bam_annotator'
-        bam_fhand = open(merged_bam)
-        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
-        settings = self._project_settings
-        if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
-            min_quality = settings['Snvs']['min_quality']
-            configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
-
-        for seq_fpath in seqs_fpaths:
-            temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
-                                           delete=False)
-            io_fhands = {'in_seq': open(seq_fpath),
-                         'outputs':{'repr':temp_repr}}
-            seq_pipeline_runner(pipeline, configuration=configuration,
-                                io_fhands=io_fhands)
-            temp_repr.close()
-            repr_fpath = os.path.join(output_dir,
-                                      _get_basename(seq_fpath) + '.repr')
-            shutil.move(temp_repr.name, repr_fpath)
-
 class WriteAnnotationAnalyzer(Analyzer):
     'It writes all the output annoation files'
     def run(self):
@@ -886,27 +839,20 @@ class WriteAnnotationAnalyzer(Analyzer):
                                 configuration=None,
                                 io_fhands=io_fhands)
 
-class AnnotateIntronsAnalyzer(Analyzer):
+class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
 
-    def run(self):
-        'It runs the analysis.'
+    def _get_inputs_and_prepare_outputs(self):
+        'It creates the output dir and it returns the inputs'
         output_dir   = self._create_output_dirs()['result']
         inputs       = self._get_input_fpaths()
+        return inputs, output_dir
+
+    def _run_annotation(self, pipeline, configuration, inputs, output_dir):
+        'It runs the analysis.'
         repr_fpaths  = inputs['repr']
         seqs_fpaths  = inputs['input']
-        seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-
-        pipeline = [annotate_cdna_introns]
-
-        settings = self._project_settings
-        if 'Cdna_intron_annotation' not in settings:
-            msg = 'You should set up genomic_db and genomic_seqs in settings'
-            raise RuntimeError(msg)
-        genomic_db = settings['Cdna_intron_annotation']['genomic_db']
-        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
-        configuration = {'annnoatate_cdna_introns': {'genomic_db':genomic_db,
-                                       'genomic_seqs_fhand':open(genomic_seqs)}}
+        seqs_fpaths  = self._get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
 
         for seq_fpath in seqs_fpaths:
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
@@ -919,6 +865,64 @@ class AnnotateIntronsAnalyzer(Analyzer):
             repr_fpath = os.path.join(output_dir,
                                       _get_basename(seq_fpath) + '.repr')
             shutil.move(temp_repr.name, repr_fpath)
+
+    def _get_seq_or_repr_fpath(self, seqs_fpaths, repr_fpaths):
+        'It returns for every file the repr or the seq file'
+        repr_fpaths = dict([(self._get_basename(fpath),
+                                               fpath) for fpath in repr_fpaths])
+        new_seq_fpaths = []
+        for fpath in seqs_fpaths:
+            basename = _get_basename(fpath)
+            if basename in repr_fpaths:
+                new_seq_fpaths.append(repr_fpaths[basename])
+            else:
+                new_seq_fpaths.append(fpath)
+        return new_seq_fpaths
+
+
+class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
+    'It annotates the introns in cdna sequences'
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        pipeline = [annotate_cdna_introns]
+
+        settings = self._project_settings
+        if 'Cdna_intron_annotation' not in settings:
+            msg = 'You should set up genomic_db and genomic_seqs in settings'
+            raise RuntimeError(msg)
+        genomic_db = settings['Cdna_intron_annotation']['genomic_db']
+        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
+        configuration = {'annnoatate_cdna_introns': {'genomic_db':genomic_db,
+                                       'genomic_seqs_fhand':open(genomic_seqs)}}
+
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
+
+class SnvCallerAnalyzer(AnnotationAnalyzer):
+    'It performs the calling of the snvs in a bam file'
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs       = self._get_input_fpaths()
+        merged_bam   = inputs['merged_bam']
+
+        pipeline = 'snv_bam_annotator'
+        bam_fhand = open(merged_bam)
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
+        settings = self._project_settings
+        if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
+            min_quality = settings['Snvs']['min_quality']
+            configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
+
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
 
 
 ANALYSIS_DEFINITIONS = {
