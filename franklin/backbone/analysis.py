@@ -33,11 +33,11 @@ def _is_file_kind(fpath, extensions):
 
 def _is_sequence_file(fpath):
     'It returns true if the function is a sequence'
-    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq'))
+    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq', 'repr'))
 
 def _is_sequence_or_qual_file(fpath):
     'It returns true if the function is a sequence or quality file'
-    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq', 'qual'))
+    return _is_file_kind(fpath,  ('fasta', 'fastq', 'sfastq', 'repr', 'qual'))
 
 def _select_file(kind, fpaths):
     'It returns the fpath that correpond to the given file kind'
@@ -834,17 +834,16 @@ def _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths):
     return new_seq_fpaths
 
 class SnvCallerAnalyzer(Analyzer):
-    'It performs the callingof the snvs in a bam file'
+    'It performs the calling of the snvs in a bam file'
 
     def run(self):
         'It runs the analysis.'
-        self._create_output_dirs()
+        output_dir   = self._create_output_dirs()['result']
         inputs       = self._get_input_fpaths()
         repr_fpaths  = inputs['repr']
         seqs_fpaths  = inputs['input']
         seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
         merged_bam   = inputs['merged_bam']
-        output_dir   = self._create_output_dirs()['result']
 
         pipeline = 'snv_bam_annotator'
         bam_fhand = open(merged_bam)
@@ -866,6 +865,29 @@ class SnvCallerAnalyzer(Analyzer):
                                       _get_basename(seq_fpath) + '.repr')
             shutil.move(temp_repr.name, repr_fpath)
 
+class WriteAnnotationAnalyzer(Analyzer):
+    'It writes all the output annoation files'
+    def run(self):
+        'It runs the analysis.'
+        output_dir   = self._create_output_dirs()['result']
+        inputs       = self._get_input_fpaths()
+        repr_fpaths  = inputs['repr']
+
+        output_files = ['vcf']
+        for seq_fpath in repr_fpaths:
+            outputs = {}
+            for output_kind in output_files:
+                output_fpath = os.path.join(output_dir,
+                                   _get_basename(seq_fpath) + '.' + output_kind)
+                if os.path.exists(output_fpath):
+                    os.remove(output_fpath)
+                output_fhand = open(output_fpath, 'a')
+                outputs[output_kind] = output_fhand
+            io_fhands = {'in_seq': open(seq_fpath),
+                         'outputs': outputs}
+            seq_pipeline_runner(pipeline=None,
+                                configuration=None,
+                                io_fhands=io_fhands)
 
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
@@ -992,6 +1014,14 @@ ANALYSIS_DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': SnvCallerAnalyzer},
+    'write_annotation':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_result'}},
+         'analyzer': WriteAnnotationAnalyzer},
 }
 
 BACKBONE_DIRECTORIES = {
@@ -1012,6 +1042,7 @@ BACKBONE_DIRECTORIES = {
     'cleaned_reads_stats': 'reads/cleaned/stats',
     'annotation_repr':'annotations/repr',
     'annotation_input':'annotations/input',
+    'annotation_result':'annotations/result',
                        }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',

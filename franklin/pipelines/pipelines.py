@@ -101,6 +101,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     '''
     if configuration is None:
         configuration = {}
+    if pipeline is None:
+        return items
     # We configure the pipeline depending on the sequences type and
     # configuration parameters
     pipeline_steps = configure_pipeline(pipeline, configuration)

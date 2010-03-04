@@ -60,6 +60,7 @@ def create_project(name, directory=None, configuration=None):
     config['Snvs']['snv_pipeline'] = ''
 
     #overwrite with the configuration given
+    outputs = ['vcf']
     for section, config_info in configuration.items():
         for key, value in config_info.items():
             if not section in config:

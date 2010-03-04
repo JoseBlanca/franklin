@@ -269,6 +269,10 @@ class TestBackbone(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'reference.repr')
         assert "type='snv'" in  open(repr_fpath).read()
 
+        do_analysis(project_settings=settings_path, kind='write_annotation')
+        vcf_fpath = join(project_dir, 'annotations', 'result', 'reference.vcf')
+        assert 'AT5G19860.1' in open(vcf_fpath).read()
+
         test_dir.close()
 
     @staticmethod
