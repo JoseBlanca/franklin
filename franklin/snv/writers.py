@@ -57,9 +57,9 @@ class VariantCallFormatWriter(object):
 
     def write(self, sequence):
         'It writes the snvs present in the given sequence as SeqFeatures'
-
+        filter_descriptions = {}
         for snv in sequence.get_features(kind='snv'):
-            self._write_snv(sequence, snv)
+            self._write_snv(sequence, snv, filter_descriptions)
 
     @staticmethod
     def _create_alternative_alleles(alleles):
@@ -168,7 +168,7 @@ class VariantCallFormatWriter(object):
             phred = -10 * math.log10(prob)
         return '%i' % phred
 
-    def _write_snv(self, sequence, snv):
+    def _write_snv(self, sequence, snv, filter_descriptions):
         'Given an snv feature it writes a line in the vcf'
         items = [] #items to write
         items.append(get_seq_name(sequence))
@@ -185,6 +185,7 @@ class VariantCallFormatWriter(object):
         items.append(toprint_af)
         items.append(self._create_quality(qualifiers['alleles'],
                                           alternative_alleles))
-        items.append(self._create_filters(qualifiers))
+
+        items.append(self._create_filters(qualifiers, filter_descriptions))
         items.append(self._create_info(qualifiers, alternative_alleles))
         self._fhand.write('%s\n' % '\t'.join(items))

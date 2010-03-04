@@ -330,7 +330,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                             filter_descriptions)
         assert name == 'vrg'
         descrip  = "Filters by read_groups with those items: ('rg1', 'rg2')."
-        descrip +=' Aggregated:True'
+        descrip += ' Aggregated:True'
         assert desc == descrip
 
 

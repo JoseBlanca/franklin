@@ -431,29 +431,7 @@ def _parse_remap_output(remap_output):
     remap_fhand.close()
     return enzymes
 
-def variable_in_read_groups(feature, read_groups, in_union=False,
-                            in_all_read_groups=True):
-    '''It looks if a snv is variable in each of the given readgroups.
-    Or if it is variable in the aggregates of the given readgroups'''
-    return _variable_in_groupping('read_groups', feature, items=read_groups,
-                                  in_union=in_union,
-                                  in_all_read_groups=in_all_read_groups)
-def variable_in_samples(feature, samples, in_union=False,
-                        in_all_samples=True):
-    '''It looks if a snv is variable in each of the given samples.
-    Or if it is variable in the aggregates of the given samples'''
-    return _variable_in_groupping('samples', feature, items=samples,
-                                  in_union=in_union,
-                                  in_all_read_groups=in_all_samples)
-def variable_in_libraries(feature, libraries, in_union=False,
-                          in_all_libraries=True):
-    '''It looks if a snv is variable in each of the given library.
-    Or if it is variable in the aggregates of the given library'''
-    return _variable_in_groupping('libraries', feature, items=libraries,
-                                  in_union=in_union,
-                                  in_all_read_groups=in_all_libraries)
-
-def _variable_in_groupping(key, feature, items, in_union,
+def variable_in_groupping(key, feature, items, in_union=False,
                            in_all_read_groups=True):
     'It looks if the given snv is variable for the given key/items'
 

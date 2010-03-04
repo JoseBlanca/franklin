@@ -24,7 +24,6 @@ from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.snv.snv_annotation import create_snv_annotator
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
@@ -36,7 +35,9 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          calculate_maf_frequency,
                                          calculate_snv_variability,
                                          calculate_cap_enzymes,
-                                         variable_in_read_groups)
+                                         create_snv_annotator,
+                                         variable_in_groupping)
+
 from franklin.pipelines.pipelines import seq_pipeline_runner
 
 class TestSnvAnnotation(unittest.TestCase):
@@ -233,9 +234,11 @@ class TestSnvPipeline(unittest.TestCase):
 
         feature = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                              qualifiers={'alleles':alleles})
-        assert variable_in_read_groups(feature, ['rg1'])
-        assert not variable_in_read_groups(feature, ['rg2', 'rg3'])
-        assert variable_in_read_groups(feature, ['rg2', 'rg3'], in_union=True)
+        assert variable_in_groupping('read_groups', feature, ['rg1'])
+        assert not variable_in_groupping('read_groups',
+                                         feature, ['rg2', 'rg3'])
+        assert variable_in_groupping('read_groups', feature, ['rg2', 'rg3'],
+                                     in_union=True)
 
 
 if __name__ == "__main__":

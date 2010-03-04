@@ -307,9 +307,12 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 clean_seqs    = seqs_in_file(open(clean_fpath))
                 original_seqs = seqs_in_file(open(original_fpath))
-
+                file_format = guess_seq_file_format(open(clean_fpath))
+                analyses = ['seq_length_distrib', 'qual_distrib']
+                if file_format == 'fasta':
+                    analyses =  ['seq_length_distrib']
                 self._do_diff_seq_stats(clean_seqs, original_seqs, basename,
-                                        stats_dir)
+                                        stats_dir, analyses)
 
         # stats per seq file. All files together
         clean_seqs    = self._seqs_in_files(clean_fpaths)
@@ -391,10 +394,10 @@ class ReadsStatsAnalyzer(Analyzer):
             os.remove(distrib_fpath)
             raise
 
-    def _do_diff_seq_stats(self, seqs1, seqs2, basename, stats_dir):
+    def _do_diff_seq_stats(self, seqs1, seqs2, basename, stats_dir, analyses):
         'It performs the differential distribution'
 
-        for analysis in ['seq_length_distrib', 'qual_distrib']:
+        for analysis in analyses:
             seqs1, seqs1_use = itertools.tee(seqs1, 2)
             seqs2, seqs2_use = itertools.tee(seqs2, 2)
             analysis_basename = '%s.diff_%s' % (basename, analysis)

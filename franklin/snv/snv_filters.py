@@ -30,9 +30,8 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
-                                         variable_in_read_groups,
-                                         variable_in_libraries,
-                                         variable_in_samples)
+                                         variable_in_groupping)
+
 
 FILTER_DESCRIPTIONS = {
     'uniq_contiguous':
@@ -386,14 +385,10 @@ def create_cap_enzyme_filter(all_enzymes):
     return cap_enzyme_filter
 
 
-def create_is_variable_filter(group_kind, groups, in_union=False):
+def create_is_variable_filter(group_kind, groups, in_union=False,
+                              in_all_read_groups=True):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
-
-    checkers = {'read_groups': variable_in_read_groups,
-               'samples'     : variable_in_samples,
-               'libraries'   : variable_in_libraries}
-    checker = checkers[group_kind]
 
     parameters = (group_kind, tuple(groups), in_union)
 
@@ -406,7 +401,8 @@ def create_is_variable_filter(group_kind, groups, in_union=False):
                                                  threshold=parameters)
             if previous_result is not None:
                 continue
-            result     = checker(snv, groups, in_union)
+            result =  variable_in_groupping(group_kind, snv, groups, in_union,
+                                          in_all_read_groups=in_all_read_groups)
 
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)
 
