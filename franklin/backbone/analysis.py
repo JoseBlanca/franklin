@@ -50,6 +50,9 @@ def _select_file(kind, fpaths):
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['mapping_reference'] in x,
                         fpaths)
+    elif kind == 'merged_bam':
+        fpaths = filter(lambda x: BACKBONE_BASENAMES['merged_bam'] in x,
+                        fpaths)
     if not fpaths:
         raise RuntimeError('No file found for %s' % kind)
     assert len(fpaths) == 1
@@ -814,61 +817,44 @@ class MergeBamAnalyzer(Analyzer):
         temp_bam.close()
         temp_sam.close()
 
-class BamToPileupAnalyzer(Analyzer):
-    'It performs the merge of various bams into only one'
+def _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths):
+    'It returns for every file the repr or the seq file'
+    get_basename = lambda x: os.path.splitext(os.path.basename(x))[0]
+    repr_fpaths = dict([(get_basename(fpath), fpath) for fpath in repr_fpaths])
+    new_seq_fpaths = []
+    for fpath in seqs_fpaths:
+        basename = get_basename(fpath)
+        if basename in repr_fpaths:
+            new_seq_fpaths.append(repr_fpaths[basename])
+        else:
+            new_seq_fpaths.append(repr_fpaths[fpath])
+    return new_seq_fpaths
+
+class SnvCallerAnalyzer(Analyzer):
+    'It performs the callingof the snvs in a bam file'
+
     def run(self):
-        '''It runs the analysis.'''
-#        settings = self._project_settings['Mappers']
-        inputs          = self._get_input_fpaths()
-        bam_fpaths      = inputs['bams']
-        reference_fpath = inputs['reference']
+        'It runs the analysis.'
+        self._create_output_dirs()
+        inputs       = self._get_input_fpaths()
+        repr_fpaths  = inputs['repr']
+        seqs_fpaths  = inputs['input']
+        seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
+        merged_bam   = input['merged_bam']
 
-        output_dir      = self._create_output_dirs()['result']
+        pipeline = 'snv_bam_annotator'
+        bam_fhand = open(merged_bam)
 
-        for bam_fpath in bam_fpaths:
-            bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
-            pileup_fpath = os.path.join(output_dir, bam_basename + '.pileup')
-            #multiple alignment
-            cmd = ['samtools', 'pileup', '-f', reference_fpath, bam_fpath]
-            stdout = call(cmd, raise_on_error=True)[0]
-            pileup = open(pileup_fpath, 'w')
-            pileup.write(stdout)
-            pileup.close()
+        for seq_fpath in seqs_fpaths:
+            temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
+                                           delete=False)
+            configuration = {'bam_fhand':bam_fhand}
+            io_fhands = {'in_seq': open(seq_fpath),
+                         'outputs':{'repr':temp_repr}}
+            seq_pipeline_runner(pipeline, configuration, io_fhands)
+            temp_repr.close()
+            shutil.move(temp_repr.name, seq_fpath)
 
-class PileupToSnvAnalyzer(Analyzer):
-    'It performs the merge of various bams into only one'
-    def run(self):
-        '''It runs the analysis.'''
-        settings        = self._project_settings['Snvs']
-        pipeline        = settings['snv_pipeline']
-        inputs          = self._get_input_fpaths()
-        pileup_fpaths   = inputs['pileups']
-        output_dir      = self._create_output_dirs()['result']
-        output_file     = os.path.join(output_dir,
-                                       BACKBONE_BASENAMES['snv_result'])
-
-        pileup_fhands = []
-        libraries     = []
-        for pileup_fpath in pileup_fpaths:
-            pileup_fhands.append(open(pileup_fpath, 'w'))
-            file_info  =  _scrape_info_from_fname(pileup_fpath)
-            libraries.append(file_info['lb'])
-
-        #extract snvs from pileups
-        seq_vars_with_context = snv_contexts_in_sam_pileup(pileup_fhands,
-                                                           libraries=libraries)
-        # Filter using a pipeline
-        if pipeline:
-            seq_vars_with_context = _pipeline_builder(pipeline,
-                                                    seq_vars_with_context)
-        #remove context to the snv iterator
-        seq_vars = (snv[0] for snv in seq_vars_with_context if snv is not None)
-
-        # Write result dir
-        out_fhand = open(output_file, 'w')
-        for snv in seq_vars:
-            if snv is not None:
-                out_fhand.write(repr(snv))
 
 
 
@@ -983,31 +969,20 @@ ANALYSIS_DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': MergeBamAnalyzer,
         },
-    'bam_to_pileup':
+    'call_snv':
         {'inputs':{
-            'bams':
-                {'directory': 'mappings_by_readgroup',
-                 'file_kinds': 'bam'},
-            'reference':
-                {'directory': 'mapping_reference',
-                'file': 'mapping_reference'},
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'merged_bam':
+                {'directory':'mapping_result',
+                 'file': 'merged_bam'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'pileups'}},
-         'analyzer': BamToPileupAnalyzer,
-        },
-    'pileup_to_snvs':
-        {'inputs':{
-            'pileups':
-                {'directory': 'mappings_by_readgroup',
-                 'file_kinds': 'pileup'},
-            'reference':
-                {'directory': 'mapping_reference',
-                'file': 'mapping_reference'},
-            },
-         'outputs':{'result':{'directory': 'snvs'}},
-         'analyzer': PileupToSnvAnalyzer,
-        },
-
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': SnvCallerAnalyzer},
 }
 
 BACKBONE_DIRECTORIES = {
@@ -1025,8 +1000,10 @@ BACKBONE_DIRECTORIES = {
     'snvs':'annotations/snvs',
     'info':'info',
     'original_reads_stats': 'reads/original/stats',
-    'cleaned_reads_stats': 'reads/cleaned/stats'
-                        }
+    'cleaned_reads_stats': 'reads/cleaned/stats',
+    'annotation_repr':'annotation/repr',
+    'annotation_input':'annotations/input',
+                       }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',
     'mapping_reference':'reference',

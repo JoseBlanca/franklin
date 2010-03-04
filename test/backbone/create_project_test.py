@@ -3,7 +3,7 @@ Created on 26/01/2010
 
 @author: jose
 '''
-import unittest, os.path, shutil
+import unittest, os.path
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
@@ -104,8 +104,6 @@ class TestBackbone(unittest.TestCase):
 
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
-
-
 
     @staticmethod
     def test_cleaning_analysis():
@@ -237,14 +235,13 @@ class TestBackbone(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='merge_bam')
         assert exists(join(result_dir, 'merged.bam'))
 
-        do_analysis(project_settings=settings_path, kind='bam_to_pileup')
-        pileup_dir = join(result_dir, 'pileups')
-        assert exists(pileup_dir)
-        assert exists(join(pileup_dir, 'lb_hola.pl_illumina.pileup'))
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+        os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
+        do_analysis(project_settings=settings_path, kind='call_snv')
 
-        do_analysis(project_settings=settings_path, kind='pileup_to_snvs')
-        assert  exists(join (project_dir, 'annotations', 'snvs', 'all.snvs'))
-        os.chdir('/tmp')
+
+
         test_dir.close()
     @staticmethod
     def test_wsg_asembly_analysis():
@@ -266,7 +263,7 @@ class TestBackbone(unittest.TestCase):
         fpath_sanger2 = join(clean_reads_dir, 'lb_caracola.pl_sanger.sfastq')
         open(fpath_sanger2, 'w').write(READS_454)
         do_analysis(project_settings=settings_path, kind='prepare_wsg_assembly')
-        result_dir =join(project_dir, 'assembly', 'input')
+        result_dir = join(project_dir, 'assembly', 'input')
         assert exists(result_dir)
         frg_fpath = join(result_dir, 'all_seq.frg')
         assert exists(frg_fpath)
@@ -274,6 +271,7 @@ class TestBackbone(unittest.TestCase):
         #do_analysis(project_settings=settings_path, kind='wsg_assembly')
         os.chdir('/tmp')
         test_dir.close()
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
