@@ -41,6 +41,8 @@ def _is_sequence_or_qual_file(fpath):
 
 def _select_file(kind, fpaths):
     'It returns the fpath that correpond to the given file kind'
+    if not fpaths:
+        raise RuntimeError('No fpaths given, so no selection possible')
     if kind == 'contigs':
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['contigs'] in x, fpaths)
@@ -48,6 +50,8 @@ def _select_file(kind, fpaths):
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['mapping_reference'] in x,
                         fpaths)
+    if not fpaths:
+        raise RuntimeError('No file found for %s' % kind)
     assert len(fpaths) == 1
     return fpaths[0]
 
