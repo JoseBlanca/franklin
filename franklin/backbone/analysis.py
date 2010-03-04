@@ -817,17 +817,20 @@ class MergeBamAnalyzer(Analyzer):
         temp_bam.close()
         temp_sam.close()
 
+def _get_basename(fpath):
+    'It returns the basename for the given path'
+    return os.path.splitext(os.path.basename(fpath))[0]
+
 def _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths):
     'It returns for every file the repr or the seq file'
-    get_basename = lambda x: os.path.splitext(os.path.basename(x))[0]
-    repr_fpaths = dict([(get_basename(fpath), fpath) for fpath in repr_fpaths])
+    repr_fpaths = dict([(_get_basename(fpath), fpath) for fpath in repr_fpaths])
     new_seq_fpaths = []
     for fpath in seqs_fpaths:
-        basename = get_basename(fpath)
+        basename = _get_basename(fpath)
         if basename in repr_fpaths:
             new_seq_fpaths.append(repr_fpaths[basename])
         else:
-            new_seq_fpaths.append(repr_fpaths[fpath])
+            new_seq_fpaths.append(fpath)
     return new_seq_fpaths
 
 class SnvCallerAnalyzer(Analyzer):
@@ -840,22 +843,28 @@ class SnvCallerAnalyzer(Analyzer):
         repr_fpaths  = inputs['repr']
         seqs_fpaths  = inputs['input']
         seqs_fpaths  = _get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-        merged_bam   = input['merged_bam']
+        merged_bam   = inputs['merged_bam']
+        output_dir   = self._create_output_dirs()['result']
 
         pipeline = 'snv_bam_annotator'
         bam_fhand = open(merged_bam)
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
+        settings = self._project_settings
+        if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
+            min_quality = settings['Snvs']['min_quality']
+            configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
 
         for seq_fpath in seqs_fpaths:
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
-            configuration = {'bam_fhand':bam_fhand}
             io_fhands = {'in_seq': open(seq_fpath),
                          'outputs':{'repr':temp_repr}}
-            seq_pipeline_runner(pipeline, configuration, io_fhands)
+            seq_pipeline_runner(pipeline, configuration=configuration,
+                                io_fhands=io_fhands)
             temp_repr.close()
-            shutil.move(temp_repr.name, seq_fpath)
-
-
+            repr_fpath = os.path.join(output_dir,
+                                      _get_basename(seq_fpath) + '.repr')
+            shutil.move(temp_repr.name, repr_fpath)
 
 
 ANALYSIS_DEFINITIONS = {
@@ -1001,7 +1010,7 @@ BACKBONE_DIRECTORIES = {
     'info':'info',
     'original_reads_stats': 'reads/original/stats',
     'cleaned_reads_stats': 'reads/cleaned/stats',
-    'annotation_repr':'annotation/repr',
+    'annotation_repr':'annotations/repr',
     'annotation_input':'annotations/input',
                        }
 BACKBONE_BASENAMES = {

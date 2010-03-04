@@ -176,7 +176,8 @@ class TestBackbone(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         settings_path = create_project(directory=test_dir.name,
-                                       name=project_name)
+                                       name=project_name,
+                                      configuration={'Snvs':{'min_quality':20}})
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
@@ -191,7 +192,27 @@ class TestBackbone(unittest.TestCase):
         solexa =  '@seq2\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
-        solexa += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa =  '@seq14\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa =  '@seq15\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa =  '@seq12\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa =  '@seq13\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa =  '@seq16\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
 
         sanger  = '>seq3\n'
         sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
@@ -202,6 +223,12 @@ class TestBackbone(unittest.TestCase):
         sanger += '>seq4\n'
         sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
         sanger += 'CTATATATTCTAATGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+        sanger += '>seq5\n'
+        sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sanger += 'CTATATATTCTAAAGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
         sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
@@ -239,10 +266,11 @@ class TestBackbone(unittest.TestCase):
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
         do_analysis(project_settings=settings_path, kind='call_snv')
-
-
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'reference.repr')
+        assert "type='snv'" in  open(repr_fpath).read()
 
         test_dir.close()
+
     @staticmethod
     def test_wsg_asembly_analysis():
         'We can assembly with wsg'

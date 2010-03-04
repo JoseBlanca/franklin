@@ -62,7 +62,10 @@ def _qualities_to_phred(quality):
 def _get_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
     allele = aligned_read.seq[index].upper()
-    qual   = _qualities_to_phred(aligned_read.qual[index])
+    if aligned_read.qual:
+        qual = _qualities_to_phred(aligned_read.qual[index])
+    else:
+        qual = None
     return allele, qual, bool(aligned_read.is_reverse)
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
@@ -123,9 +126,13 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
                     allele = DELETION_ALLELE * current_deletion[0]
                     #in the deletion case the quality is the lowest of the
                     #bases that embrace the deletion
-                    qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
-                    qual1 = _qualities_to_phred(aligned_read.qual[read_pos + 1])
-                    qual  = min((qual0, qual1))
+                    if aligned_read.qual:
+                        qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
+                        qual1 = aligned_read.qual[read_pos + 1]
+                        qual1 = _qualities_to_phred(qual1)
+                        qual  = min((qual0, qual1))
+                    else:
+                        qual = None
                     is_reverse = bool(aligned_read.is_reverse)
                     kind       = DELETION
                     current_deletion[1] = False #we have returned it already
@@ -184,8 +191,6 @@ def _add_default_sanger_quality(alleles, default_sanger_quality,
     'It adds default sanger qualities to the sanger reads with no quality'
 
     for allele, allele_info in alleles.items():
-        if allele[1] == DELETION:
-            continue
         for index, (qual, rg) in enumerate(zip(allele_info['qualities'],
                                              allele_info['read_groups'])):
             try:

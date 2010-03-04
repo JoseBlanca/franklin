@@ -8,8 +8,10 @@ import os
 from configobj import ConfigObj
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 
-def create_project(name, directory=None):
+def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
+    if configuration is None:
+        configuration = {}
     if not directory:
         directory = os.getcwd()
     project_path = os.path.join(os.path.abspath(directory), name)
@@ -56,6 +58,14 @@ def create_project(name, directory=None):
 
     config['Snvs'] = {}
     config['Snvs']['snv_pipeline'] = ''
+
+    #overwrite with the configuration given
+    for section, config_info in configuration.items():
+        for key, value in config_info.items():
+            if not section in config:
+                config[section] = {}
+            config[section][key] = value
+
     config.write()
 
     return settings_path
