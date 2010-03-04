@@ -28,6 +28,7 @@ def create_project(name, directory=None):
                                    BACKBONE_DIRECTORIES['config_file'])
 
     config['General_settings'] = {}
+    config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
 

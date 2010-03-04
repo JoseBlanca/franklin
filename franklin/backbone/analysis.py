@@ -5,7 +5,7 @@ Created on 01/03/2010
 '''
 
 
-import os, time, shutil, itertools
+import os, time, shutil, itertools, tempfile
 from configobj import ConfigObj
 from tempfile import NamedTemporaryFile
 from franklin.utils.cmd_utils import call
@@ -41,6 +41,8 @@ def _is_sequence_or_qual_file(fpath):
 
 def _select_file(kind, fpaths):
     'It returns the fpath that correpond to the given file kind'
+    if not fpaths:
+        raise RuntimeError('No fpaths given, so no selection possible')
     if kind == 'contigs':
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['contigs'] in x, fpaths)
@@ -48,6 +50,8 @@ def _select_file(kind, fpaths):
         fpaths = filter(_is_sequence_file, fpaths)
         fpaths = filter(lambda x: BACKBONE_BASENAMES['mapping_reference'] in x,
                         fpaths)
+    if not fpaths:
+        raise RuntimeError('No file found for %s' % kind)
     assert len(fpaths) == 1
     return fpaths[0]
 
@@ -64,6 +68,33 @@ class Analyzer(object):
         self._project_settings = project_settings
         self._analysis_def = analysis_definition
         self._timestamped_dir = None
+        self._old_tmpdir = tempfile.gettempdir()
+        self._setup_tempdir()
+
+    @staticmethod
+    def _set_tmp(tmpdir):
+        'It sets the tmpdir'
+        if tmpdir is None:
+            raise NotImplementedError
+        else:
+            if not os.path.exists(tmpdir):
+                os.makedirs(tmpdir)
+            tempfile.tempdir = tmpdir
+            os.environ['TMPDIR'] = tmpdir
+
+    def _setup_tempdir(self):
+        'It prepares tempfile to use the given tempdir from the settings'
+
+        self._old_tempdir = tempfile.tempdir
+        try:
+            tmpdir = self._project_settings['General_settings']['tmpdir']
+        except KeyError:
+            return
+        self._set_tmp(tmpdir)
+
+    def __del__(self):
+        'Some clean up'
+        self._set_tmp(self._old_tmpdir)
 
     def _get_project_name(self):
         'It returns the name of the project'

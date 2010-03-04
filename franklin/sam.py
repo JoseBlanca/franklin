@@ -59,14 +59,13 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
     for item in prefix:
         try:
             key, value = item.split('_', 1)
-            if key.upper() not in ['SM', 'LB', 'PL']:
+            if key.upper() not in ['LB', 'PL']:
                 continue
         except ValueError:
             continue
-
         append_to_header.append('%s:%s' % (key.upper(), value))
         rgid_.append(value)
-    rgid = "+".join(rgid_)
+    rgid = "_".join(rgid_)
 
     # a proper sam with RG needs a SM key
     if not _check_tag_in_RG('SM', append_to_header):
@@ -119,7 +118,7 @@ def merge_sam(infiles, outfile, reference):
             else:
                 break
 
-    #join and writhe both header parts
+    #join and write both header parts
     ref_header.extend(headers)
     for header in ref_header:
         outfile.write('\t'.join(header))
@@ -131,8 +130,6 @@ def merge_sam(infiles, outfile, reference):
         for line in input_:
             if line.startswith('@'):
                 continue
-            #outfile.write('\t'.join(line.split()))
-            #outfile.write('\n')
             outfile.write(line)
     outfile.flush()
 
