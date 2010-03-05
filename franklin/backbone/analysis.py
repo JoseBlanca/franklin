@@ -22,7 +22,16 @@ from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
 from franklin.pipelines.pipelines import _pipeline_builder
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
-
+from franklin.pipelines.snv_pipeline_steps import (
+                                            unique_contiguous_region_filter,
+                                            close_to_intron_filter,
+                                            high_variable_region_filter,
+                                            close_to_snv_filter,
+                                            close_to_limit_filter,
+                                            major_allele_freq_filter,
+                                            kind_filter,
+                                            cap_enzyme_filter,
+                                            is_variable_filter)
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -366,8 +375,9 @@ class ReadsStatsAnalyzer(Analyzer):
 
         # global stats. Diff fistributions
         stats_dir = self._get_stats_dir('cleaned')
+        analyses  = ['seq_length_distrib', 'qual_distrib']
         self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
-                                stats_dir)
+                                stats_dir, analyses)
 
     def _get_stats_dir(self, seqtype):
         'It gets the stats dir for each seqtype'
@@ -851,7 +861,10 @@ class AnnotationAnalyzer(Analyzer):
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
         repr_fpaths  = inputs['repr']
-        seqs_fpaths  = inputs['input']
+        try:
+            seqs_fpaths  = inputs['input']
+        except KeyError:
+            seqs_fpaths = []
         seqs_fpaths  = self._get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
 
         for seq_fpath in seqs_fpaths:
@@ -868,13 +881,15 @@ class AnnotationAnalyzer(Analyzer):
 
     def _get_seq_or_repr_fpath(self, seqs_fpaths, repr_fpaths):
         'It returns for every file the repr or the seq file'
-        repr_fpaths = dict([(self._get_basename(fpath),
+        repr_fpaths_ = dict([(self._get_basename(fpath),
                                                fpath) for fpath in repr_fpaths])
+        if not seqs_fpaths:
+            return repr_fpaths
         new_seq_fpaths = []
         for fpath in seqs_fpaths:
             basename = _get_basename(fpath)
-            if basename in repr_fpaths:
-                new_seq_fpaths.append(repr_fpaths[basename])
+            if basename in repr_fpaths_:
+                new_seq_fpaths.append(repr_fpaths_[basename])
             else:
                 new_seq_fpaths.append(fpath)
         return new_seq_fpaths
@@ -908,7 +923,6 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
-        inputs       = self._get_input_fpaths()
         merged_bam   = inputs['merged_bam']
 
         pipeline = 'snv_bam_annotator'
@@ -923,6 +937,61 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=output_dir)
+
+
+class SnvFilterAnalyzer(AnnotationAnalyzer):
+    'It performs the filtering analysis of the snvs'
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+
+        pipeline, configuration = self._get_snv_filter_specs()
+
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
+    def _get_snv_filter_specs(self):
+        'It gets the pipeline and configuration from settings'
+        configuration = {}
+        settings = self._project_settings['snv_filters']
+        for filter_data in settings.values():
+            if not filter_data['use']:
+                continue
+            name   = filter_data['name']
+            filter_config = {}
+            for argument, value in filter_data.items():
+                if argument == 'use' or argument == 'name':
+                    continue
+                filter_config[argument] = value
+
+            configuration[name] =  filter_config
+        pipeline = self._get_pipeline_from_step_name(configuration.keys())
+
+        return pipeline, configuration
+
+    def _get_pipeline_from_step_name(self, names):
+        'It gets the pipeline steps from filter_names'
+        translator = {'uniq_contiguous' : unique_contiguous_region_filter,
+                      'close_to_intron':close_to_intron_filter,
+                      'high_variable_region': high_variable_region_filter,
+                      'close_to_snv':close_to_snv_filter,
+                      'close_to_limit': close_to_limit_filter,
+                      'maf': major_allele_freq_filter,
+                      'by_kind' : kind_filter,
+                      'cap_enzyme': cap_enzyme_filter,
+                      'is_variable_in_rg': is_variable_filter,
+                      'is_variable_in_lb': is_variable_filter,
+                      'is_variable_in_sm': is_variable_filter}
+        pipeline = []
+        for name in names:
+            pipeline.append(translator[name])
+        return pipeline
+
+
+
+
 
 
 ANALYSIS_DEFINITIONS = {
@@ -1036,7 +1105,7 @@ ANALYSIS_DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': MergeBamAnalyzer,
         },
-    'call_snv':
+    'annotate_snv':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -1050,6 +1119,15 @@ ANALYSIS_DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': SnvCallerAnalyzer},
+    'filter_snvs':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': SnvFilterAnalyzer},
+
     'annotate_introns':
         {'inputs':{
             'repr':
@@ -1069,6 +1147,7 @@ ANALYSIS_DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_result'}},
          'analyzer': WriteAnnotationAnalyzer},
+
 }
 
 BACKBONE_DIRECTORIES = {
@@ -1110,7 +1189,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None):
     if not analysis_config:
         analysis_config = {}
 
-    settings = ConfigObj(project_settings)
+    settings = ConfigObj(project_settings, unrepr=True)
     analysis_def = ANALYSIS_DEFINITIONS[kind]
 
     analyzer_klass = analysis_def['analyzer']

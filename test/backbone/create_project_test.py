@@ -66,7 +66,7 @@ class TestBackbone(unittest.TestCase):
 
         assert settings_path == join(test_dir.name,
                                 'backbone', BACKBONE_DIRECTORIES['config_file'])
-        settings = ConfigObj(settings_path)
+        settings = ConfigObj(settings_path, unrepr=True)
         assert settings['General_settings']['project_name'] == 'backbone'
         project_path = join(test_dir.name, 'backbone')
         assert settings['General_settings']['project_path'] == project_path
@@ -265,14 +265,19 @@ class TestBackbone(unittest.TestCase):
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
-        do_analysis(project_settings=settings_path, kind='call_snv')
+        do_analysis(project_settings=settings_path, kind='annotate_snv')
         repr_fpath = join(project_dir, 'annotations', 'repr', 'reference.repr')
         assert "type='snv'" in  open(repr_fpath).read()
 
+        do_analysis(project_settings=settings_path, kind='filter_snvs')
+
         do_analysis(project_settings=settings_path, kind='write_annotation')
         vcf_fpath = join(project_dir, 'annotations', 'result', 'reference.vcf')
-        assert 'AT5G19860.1' in open(vcf_fpath).read()
+        vcf = open(vcf_fpath).read()
+        assert 'vks' in vcf
+        assert 'AT5G19860.1' in vcf
 
+        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -338,9 +343,11 @@ class TestBackbone(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path, kind='annotate_introns')
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
-        assert "type='intron'" in  open(repr_fpath).read()
 
+        assert "type='intron'" in  open(repr_fpath).read()
+        os.chdir('/tmp')
+        test_dir.close()
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
     unittest.main()

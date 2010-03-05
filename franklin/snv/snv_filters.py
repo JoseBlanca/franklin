@@ -40,7 +40,7 @@ FILTER_DESCRIPTIONS = {
     'close_to_intron':
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
-    'High_variable_region':
+    'high_variable_region':
         {'id': 'HVR%2d',
     'description':'The snv is in a region with more than %2d % of variability'},
     'close_to_snv':
@@ -210,6 +210,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                     result = False
 
             _add_filter_result(snv, 'uniq_contiguous', result, distance)
+        return sequence
 
     return unique_contiguous_region_filter
 
@@ -235,6 +236,7 @@ def create_close_to_intron_filter(distance):
                     result = False
             _add_filter_result(snv, 'close_to_intron', result,
                                threshold=distance)
+        return sequence
     return close_to_intron_filter
 
 def create_high_variable_region_filter(max_variability, window=None):
@@ -264,13 +266,14 @@ def create_high_variable_region_filter(max_variability, window=None):
                 result = False
             _add_filter_result(snv, 'high_variable_reg', result,
                                threshold=threshold)
+        return sequence
     return high_variable_region_filter
 
 
 
 
-def create_close_to_snv_filter(proximity):
-    '''It returns a filter that filters snv by the proximity to other snvs.
+def create_close_to_snv_filter(distance):
+    '''It returns a filter that filters snv by the distance to other snvs.
 
     If the snv has another snv closer than DISTANCE, then this snv is
     filtered out'''
@@ -281,18 +284,19 @@ def create_close_to_snv_filter(proximity):
         snvs = list(sequence.get_features(kind='snv'))
         for snv in snvs:
             previous_result = _get_filter_result(snv, 'close_to_snv',
-                                                 threshold=proximity)
+                                                 threshold=distance)
             if previous_result is not None:
                 continue
 
-            num_snvs = snvs_in_window(snv, snvs, proximity * 2)
+            num_snvs = snvs_in_window(snv, snvs, distance * 2)
             if num_snvs > 1:
                 result = True
             else:
                 result = False
 
             _add_filter_result(snv, 'close_to_snv', result,
-                               threshold=proximity)
+                               threshold=distance)
+        return sequence
     return close_to_snv_filter
 
 def create_snv_close_to_limit_filter(distance):
@@ -321,6 +325,7 @@ def create_snv_close_to_limit_filter(distance):
                 result = False
             _add_filter_result(snv, 'close_to_limit', result,
                                threshold=distance)
+        return sequence
     return  snv_close_to_reference_limit
 
 
@@ -342,7 +347,7 @@ def create_major_allele_freq_filter(frequency):
                 result = False
             _add_filter_result(snv, 'maf', result,
                                threshold=frequency)
-
+        return sequence
     return major_allele_freq_filter
 
 def create_kind_filter(kind):
@@ -362,6 +367,7 @@ def create_kind_filter(kind):
             else:
                 result = False
             _add_filter_result(snv, 'by_kind', result, threshold=kind)
+        return sequence
     return kind_filter
 
 def create_cap_enzyme_filter(all_enzymes):
@@ -382,6 +388,7 @@ def create_cap_enzyme_filter(all_enzymes):
             else:
                 result = False
             _add_filter_result(snv, 'cap_enzymes', result, threshold=all_enzymes)
+        return sequence
     return cap_enzyme_filter
 
 
@@ -405,5 +412,6 @@ def create_is_variable_filter(group_kind, groups, in_union=False,
                                           in_all_read_groups=in_all_read_groups)
 
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)
+        return sequence
 
     return is_variable_filter
