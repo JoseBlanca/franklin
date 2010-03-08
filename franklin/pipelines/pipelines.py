@@ -213,3 +213,12 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     for sequence in filtered_seq_iter:
         for writer in writers:
             writer.write(sequence)
+
+    # variant_call writer needs to close the writer
+    for writer in writers:
+        if 'close' in dir(writer):
+            writer.close()
+
+
+
+

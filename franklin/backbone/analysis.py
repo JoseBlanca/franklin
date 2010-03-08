@@ -669,9 +669,13 @@ class MiraAssemblyAnalyzer(Analyzer):
         job = ','.join(job)
         job = '-job=' + job
 
-
         cmd = ['mira', '-project=%s' % proj_name, '-fasta', job]
+        if 'general_settings' in settings:
+            general_settings = settings['general_settings']
+            cmd.extend(general_settings)
+
         cmd.append('-OUT:rld=yes')
+
         for tech in techs:
             tech_str = '%s_settings' % tech
             if tech_str in settings:

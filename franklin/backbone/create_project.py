@@ -50,8 +50,11 @@ def create_project(name, directory=None, configuration=None):
 
     config['Mira'] = {}
     config['Mira']['job_options']     = ['denovo', 'est']
-    config['Mira']['454_settings']    = ['-LR:mxti=no']
-    config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30']
+    config['Mira']['general_settings'] = ['-AS:sd=1']
+    config['Mira']['454_settings']    = ['-LR:mxti=no', '-CO:rodirs=5',
+                                         '-AL:mrs=80']
+    config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30',
+                                         '-CO:rodirs=5','-AL:mrs=80']
 
     config['Mappers'] = {}
     config['Mappers']['mapper_for_454'] = 'bwa'
