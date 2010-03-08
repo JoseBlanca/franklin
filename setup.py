@@ -60,7 +60,6 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
             scripts.append(os.path.join(dirpath, filename))
 
 
-
 setup(
     # basic package data
     name = "franklin",
@@ -73,7 +72,8 @@ setup(
     packages=packages,
     package_dir={'':'.'},
     #py_modules = modules,
-    package_data={'': ['data/*']},
+
+    package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
               'multiprocessing'],
     scripts=scripts,

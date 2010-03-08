@@ -25,7 +25,8 @@ remove_vectors = {'function':create_vector_striper_by_alignment,
                   'comment': 'Remove vector using vector db'}
 
 remove_adaptors = {'function':create_vector_striper_by_alignment,
-       'arguments':{'vectors':os.path.join(DATA_DIR, 'standar_solexa_adaptors'),
+       'arguments':{'vectors':os.path.join(DATA_DIR,
+                                           'standar_solexa_adaptors.fasta'),
                      'aligner':'exonerate'},
        'type': 'mapper',
        'name': 'remove_adaptors',
