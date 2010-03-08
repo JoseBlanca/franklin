@@ -17,7 +17,8 @@ from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.pipelines.seq_pipeline_steps import annotate_cdna_introns
 from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam, add_default_qualities_to_sam)
+                          sam2bam, sort_bam_sam, add_default_qualities_to_sam,
+                          create_bam_index)
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
 from franklin.pipelines.snv_pipeline_steps import (
@@ -886,7 +887,6 @@ class AnnotationAnalyzer(Analyzer):
         except KeyError:
             seqs_fpaths = []
         seqs_fpaths  = self._get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-
         for seq_fpath in seqs_fpaths:
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
@@ -944,6 +944,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         'It runs the analysis.'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         merged_bam   = inputs['merged_bam']
+        create_bam_index(merged_bam)
+
+
 
         pipeline = 'snv_bam_annotator'
         bam_fhand = open(merged_bam)

@@ -196,3 +196,18 @@ def add_default_qualities_to_sam(in_fhand, out_fhand, default_sanger_quality):
                 items[10] = default_qual * len(items[9])
                 line = sep.join(items)
         out_fhand.write(line)
+
+
+def create_bam_index(bam_fpath):
+    'It creates an index of the bam if it does not exist'
+    index_fpath = bam_fpath + '.bai'
+
+    if os.path.exists(index_fpath):
+        return
+    cmd = ['samtools', 'index', bam_fpath]
+    call(cmd, raise_on_error=True)
+
+
+
+
+

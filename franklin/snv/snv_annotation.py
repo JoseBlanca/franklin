@@ -99,9 +99,12 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
     current_deletions = {}
     reference_id      = get_seq_name(reference)
     reference_seq     = reference.seq
+    reference_len     = len(reference_seq)
     for column in bam.pileup(reference=reference_id):
         alleles    = {}
         ref_pos    = column.pos
+        if ref_pos >= reference_len:
+            continue
         ref_id     = bam.getrname(column.tid)
         ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
