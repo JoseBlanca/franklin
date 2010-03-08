@@ -13,7 +13,7 @@ from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
-                          guess_picard_path)
+                          add_default_qualities_to_sam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -157,22 +157,21 @@ SGN-E40000	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGG
         sorted_bamfhand = NamedTemporaryFile(suffix='.bam')
         sort_bam_sam(sam_fpath, sorted_bamfhand.name)
 
-
-
-
-#    temp_file = NamedTemporaryDir()
-#    split_by_read_group(sam3,	temp_file.name)
-#    new_sams  = os.listdir(temp_file.name)
-
-
-
-
-
-
-
-
-
+    @staticmethod
+    def test_add_qualities():
+        'It test that we can add default qualities to the sanger reads'
+        sam_fhand = StringIO('''@SQ\tSN:SGN-U576692\tLN:1714
+@SQ\tSN:SGN-U572743\tLN:833
+@RG\tID:g1\tLB:g1\tSM:g1\tPL:sanger
+@RG\tID:g3\tLB:g3\tSM:g3\tPL:sanger
+SGN-E200000\t0\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATCTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
+SGN-E40000\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
+''')
+        out_fhand = StringIO()
+        add_default_qualities_to_sam(sam_fhand, out_fhand, 20)
+        line = out_fhand.getvalue().splitlines()[4]
+        assert 'GGATGATCTTAGAG\t55555555555555\t' in line
 
 if	__name__	==	"__main__":
-	#import	sys;sys.argv	=	['',	'Test.testName']
-	unittest.main()
+    #import	sys;sys.argv	=	['',	'SamTest.test_add_qualities']
+    unittest.main()

@@ -156,3 +156,43 @@ def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
     cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
            'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
+
+def add_default_qualities_to_sam(in_fhand, out_fhand, default_sanger_quality):
+    '''It adds the default qualities to the reads that do not have one.
+
+    The quality should be given as a phred integer
+    '''
+    in_fhand.seek(0)
+    sep = '\t'
+    sanger_read_groups = set()
+    default_qual = chr(int(default_sanger_quality) + 33)
+    for line in in_fhand:
+        if line[:3] == '@RG':
+            items = line.split(sep)
+            rg_id = None
+            platform = None
+            for item in items:
+                if item.startswith('PL:'):
+                    platform = item[3:].strip().lower()
+                elif item.startswith('ID:'):
+                    rg_id = item[3:].strip()
+            if platform == 'sanger':
+                sanger_read_groups.add(rg_id)
+        elif line[0] == '@':
+            pass
+        else:
+            items = line.split(sep)
+            if items[10] == '*': #empty quality
+                rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
+                if rg_id:
+                    rg_id = rg_id[0].strip().replace('RG:Z:', '')
+                else:
+                    msg = 'Read group is required to add default qualities'
+                    raise RuntimeError(msg)
+                if rg_id not in sanger_read_groups:
+                    msg = 'Platform for read group %s is not sanger' % rg_id
+                    raise RuntimeError(msg)
+                #here we set the default qual
+                items[10] = default_qual * len(items[9])
+                line = sep.join(items)
+        out_fhand.write(line)
