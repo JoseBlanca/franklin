@@ -12,7 +12,8 @@ from franklin.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
-                        add_header_and_tags_to_sam, sort_bam_sam)
+                          add_header_and_tags_to_sam, sort_bam_sam,
+                          guess_picard_path)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'

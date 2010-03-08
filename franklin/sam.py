@@ -7,34 +7,48 @@ Created on 05/01/2010
 @author: peio
 '''
 import os
-from tempfile import NamedTemporaryFile
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.seqio_utils import seqs_in_file
 
+def guess_picard_path():
+    'It returns the picard path using locate'
+    a_picard_jar = 'SortSam.jar'
+    cmd = ['locate', a_picard_jar]
+    stdout = call(cmd, raise_on_error=True)[0]
+    picard_path = None
+    for line in stdout.splitlines():
+        if a_picard_jar in line:
+            picard_path = line.replace(a_picard_jar, '')
+            picard_path = picard_path.strip()
+            break
+    if not picard_path:
+        msg =  'Picard was not found in your system and it is required to '
+        msg += 'process sam files'
+        raise RuntimeError(msg)
+    return picard_path
 
-
-PICARDPATH = '/usr/local/biology/picard'
-
-def bam2sam(bampath, sampath=None):
+def bam2sam(bam_path, sam_path=None):
     '''It converts between bam and sam. It sampath is not given, it return
     sam content'''
-    cmd = ['samtools', 'view', '-h', bampath]
-    if sampath:
-        cmd.extend(['-o', sampath])
+    cmd = ['samtools', 'view', '-h', bam_path]
+    if sam_path:
+        cmd.extend(['-o', sam_path])
     sam = call(cmd, raise_on_error=True)
     return sam
 
-def sam2bam(sampath, bampath):
+def sam2bam(sam_path, bam_path):
     'It converts between bam and sam.'
-    cmd = ['samtools', 'view', '-bth', '-o', bampath, sampath]
+    cmd = ['samtools', 'view', '-bth', '-o', bam_path, sam_path]
     call(cmd, raise_on_error=True)
 
-def bamsam_converter(input_, output_):
+def bamsam_converter(input_fhand, output_fhand, picard_path=None):
     'Converts between sam and bam'
-    picard_jar = os.path.join(PICARDPATH, 'SamFormatConverter.jar')
-    cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_,
-           'OUTPUT=' + output_]
+    if picard_path is None:
+        picard_path = guess_picard_path()
+    picard_jar = os.path.join(picard_path, 'SamFormatConverter.jar')
+    cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_fhand,
+           'OUTPUT=' + output_fhand]
     call(cmd, raise_on_error=True)
 
 def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
@@ -133,12 +147,12 @@ def merge_sam(infiles, outfile, reference):
             outfile.write(line)
     outfile.flush()
 
-def sort_bam_sam(infile, outfile, sort_method='coordinate'):
+def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
+                 sort_method='coordinate'):
     'It sorts a bam file using picard'
-    picard_sort_jar = os.path.join(PICARDPATH, 'SortSam.jar')
-    cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  infile,
-           'OUTPUT=' + outfile, 'SORT_ORDER=' + sort_method]
+    if picard_path is None:
+        picard_path = guess_picard_path()
+    picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
+    cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
+           'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
-
-
-
