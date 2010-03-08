@@ -6,6 +6,9 @@ Created on 25/03/2009
 #taken from django-tagging
 
 import os
+#from setuptools import setup
+from distutils.core import setup
+
 
 PACKAGE_DIR = 'franklin'
 SCRIPTS_DIR = 'scripts'
@@ -57,7 +60,6 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
             scripts.append(os.path.join(dirpath, filename))
 
 
-from setuptools import setup
 setup(
     # basic package data
     name = "franklin",
@@ -66,10 +68,12 @@ setup(
     author_email='jblanca@btc.upv.es',
     description='Some genomics related classes',
     # package structure
+    include_package_data = True,
     packages=packages,
     package_dir={'':'.'},
     #py_modules = modules,
-    package_data={'franklin': ['data/*']},
+
+    package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
               'multiprocessing'],
     scripts=scripts,

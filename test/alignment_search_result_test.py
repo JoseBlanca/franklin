@@ -16,7 +16,6 @@ ssaha2, etc. that align one sequence against a database.'''
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import franklin
 from franklin.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults,
                                             alignment_results_scores,
@@ -30,8 +29,7 @@ import os
 from StringIO import StringIO
 from tempfile import NamedTemporaryFile
 from Bio.Seq import UnknownSeq
-
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
+from franklin.utils.misc_utils import DATA_DIR
 
 def _check_sequence(sequence, expected):
     'It matches a sequence against an expected result'

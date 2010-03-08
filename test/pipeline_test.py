@@ -27,7 +27,7 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
                                          _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
 
-
+from franklin.utils.misc_utils import DATA_DIR
 
 ADAPTORS = '''>adaptor1
 atcgatcgatagcatacgat
@@ -47,10 +47,6 @@ ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATCATCGACTGCATCGATGA
 >seq6
 AACCGTTTGACTTACGATATTTGCCCATTGTGATTCTAGTCGATTTGCATAACGTGTACGTATCGGTATTGTGACTGATTCGATGCTATTGCAAACAGTTTTGATTGTGTGATCGTGATGCATGCTAGTCTGATCGAGTCTGATCGTAGTCTAGTCGTAGTCGATGTCGATTTATCAGTAGTCGATGCTAGTCTAGTCTAGTCTACTAGTCTAGTCATGCTAGTCGAGTCGAT
 '''
-
-
-
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 class PipelineTests(unittest.TestCase):
     'It test pipeline related functions'
