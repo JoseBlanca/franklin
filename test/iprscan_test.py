@@ -19,14 +19,13 @@ Created on 2009 mai 21
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os, franklin
+import unittest, os
 from franklin.iprscan import xml_iprscan_parser_iter
-
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
+from franklin.utils.misc_utils import DATA_DIR
 
 class IprsacnTest(unittest.TestCase):
     '''It test all functions in iprscan parser '''
-    
+
     @staticmethod
     def test_iprscan_parse():
         '''Tests iprscan parser '''
@@ -38,9 +37,9 @@ class IprsacnTest(unittest.TestCase):
             assert  protein_result['id'] in protein_ids
             cont += 1
         assert cont == 3
-        
-        
-        
+
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']
     unittest.main()

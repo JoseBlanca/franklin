@@ -6,7 +6,9 @@ Created on 25/03/2009
 #taken from django-tagging
 
 import os
-from setuptools import setup
+#from setuptools import setup
+from distutils.core import setup
+
 
 PACKAGE_DIR = 'franklin'
 SCRIPTS_DIR = 'scripts'
@@ -71,7 +73,7 @@ setup(
     packages=packages,
     package_dir={'':'.'},
     #py_modules = modules,
-    package_data={'franklin': ['data/*']},
+    package_data={'': ['data/*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
               'multiprocessing'],
     scripts=scripts,

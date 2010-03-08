@@ -22,8 +22,7 @@ Created on 2009 eka 1
 from franklin.db.databases_info import DatabasesInfo
 import unittest
 import os
-import franklin
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
+from franklin.utils.misc_utils import DATA_DIR
 
 class DatabasesInfoTest(unittest.TestCase):
     '''It tests the databases info utiliti '''
@@ -42,11 +41,11 @@ class DatabasesInfoTest(unittest.TestCase):
         url = db_info.url_syntax('AGI_Loc', '123')
         assert url is None
     @staticmethod
-    def test_last_db():  
+    def test_last_db():
         '''It teste the last db in the file '''
         db_info = DatabasesInfo(os.path.join(DATA_DIR, 'GO.xrf_abbs'))
         assert db_info.dictionary['ASPGD_REF']
-        
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
