@@ -32,12 +32,14 @@ class VariantCallFormatWriter(object):
         open(fhand.name, 'w')
         self._fhand = open(fhand.name, 'a')
         # The fhand is as it arrives
-
+        self._header = []
         self._write_header(reference_name)
 
     def _write_header(self, reference_name):
         'It writes the header of the vcf file'
         fhand = self._fhand
+        self._header.append('##format=VCFv3.3')
+        self._header.append('')
         fhand.write('##format=VCFv3.3\n')
         fhand.write('##fileDate=%s\n' %
                                        datetime.date.today().strftime('%Y%m%d'))
@@ -60,7 +62,7 @@ class VariantCallFormatWriter(object):
         filter_descriptions = {}
         for snv in sequence.get_features(kind='snv'):
             self._write_snv(sequence, snv, filter_descriptions)
-
+        self._fhand.flush()
     @staticmethod
     def _create_alternative_alleles(alleles):
         'It returns the ALT part on the vcf'
@@ -170,6 +172,7 @@ class VariantCallFormatWriter(object):
             phred = -10 * math.log10(prob)
         return '%i' % phred
 
+
     def _write_snv(self, sequence, snv, filter_descriptions):
         'Given an snv feature it writes a line in the vcf'
         items = [] #items to write
@@ -187,7 +190,8 @@ class VariantCallFormatWriter(object):
         items.append(toprint_af)
         items.append(self._create_quality(qualifiers['alleles'],
                                           alternative_alleles))
-
-        items.append(self._create_filters(qualifiers, filter_descriptions))
+        filters = self._create_filters(qualifiers, filter_descriptions)
+        #self._add_filter_definition(filters)
+        items.append(filters)
         items.append(self._create_info(qualifiers, alternative_alleles))
         self._fhand.write('%s\n' % '\t'.join(items))

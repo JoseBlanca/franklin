@@ -270,7 +270,8 @@ class TestBackbone(unittest.TestCase):
         assert "type='snv'" in  open(repr_fpath).read()
 
         do_analysis(project_settings=settings_path, kind='filter_snvs')
-
+        print project_dir
+        print raw_input()
         do_analysis(project_settings=settings_path, kind='write_annotation')
         vcf_fpath = join(project_dir, 'annotations', 'result', 'reference.vcf')
         vcf = open(vcf_fpath).read()
