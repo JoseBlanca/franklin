@@ -373,8 +373,8 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         for key, value in environment.items():
             new_env[key] = value
         environment = new_env
-
     binary = _which_binary(cmd[0])
+
     if binary is None:
         raise OSError('The binary was not found: ' + cmd[0])
     else:

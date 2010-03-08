@@ -59,8 +59,8 @@ def _select_file(kind, fpaths):
         fpaths = filter(lambda x: BACKBONE_BASENAMES['mapping_reference'] in x,
                         fpaths)
     elif kind == 'merged_bam':
-        fpaths = filter(lambda x: BACKBONE_BASENAMES['merged_bam'] in x,
-                        fpaths)
+        fpaths = filter(lambda x: BACKBONE_BASENAMES['merged_bam'] == \
+                                                    os.path.basename(x),fpaths)
     if not fpaths:
         raise RuntimeError('No file found for %s' % kind)
     assert len(fpaths) == 1
@@ -1008,11 +1008,6 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
         for name in names:
             pipeline.append(translator[name])
         return pipeline
-
-
-
-
-
 
 ANALYSIS_DEFINITIONS = {
     'clean_reads':

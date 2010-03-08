@@ -3,19 +3,22 @@
 This script is used to run any of the backbone analysis.
 '''
 
-from franklin.backbone.analysis import do_analysis
+from franklin.backbone.analysis import do_analysis, ANALYSIS_DEFINITIONS
+
 from optparse import OptionParser
 import os
 
-ACTION_MSG = '''Posible analysis to run: clean_reads, prepare_mira_assembly,
-mira_assembly, select_last_assembly, set_assembly_as_reference, mapping,
-select_last_mapping, merge_bam'''
 
+def _get_available_analyses():
+    'It return available analyses'
+    analyses = ANALYSIS_DEFINITIONS.keys()
+    return ", ".join(analyses)
 
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
-    parser.add_option('-a', '--action', dest='action',  help=ACTION_MSG)
+    msg = 'Posible analyses to run: %s' % _get_available_analyses()
+    parser.add_option('-a', '--action', dest='action',  help=msg)
     parser.add_option('-s', '--settings', dest='settings',
                       help='Settings file path')
     return parser
