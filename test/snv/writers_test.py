@@ -37,8 +37,10 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         fhand = NamedTemporaryFile(mode='a')
         writer = VariantCallFormatWriter(fhand, 'ref1')
         writer.write(seq)
+        writer.close()
         vcf = open(fhand.name).read()
         assert 'vks' in vcf
+        assert '##FILTER=vks' in vcf
 
 
 if __name__ == "__main__":

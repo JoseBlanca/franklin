@@ -18,6 +18,7 @@ Created on 19/02/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+from tempfile import NamedTemporaryFile
 import datetime, math
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
@@ -29,40 +30,58 @@ class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name):
         'It inits the class'
+        # The fhand is as it arrives
         open(fhand.name, 'w')
         self._fhand = open(fhand.name, 'a')
-        # The fhand is as it arrives
+
+        self._temp_fhand = NamedTemporaryFile(mode='a')
+        self._filter_descriptions = {}
         self._header = []
-        self._write_header(reference_name)
+        self._get_pre_header(reference_name)
 
-    def _write_header(self, reference_name):
+
+    def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
-        fhand = self._fhand
-        self._header.append('##format=VCFv3.3')
-        self._header.append('')
-        fhand.write('##format=VCFv3.3\n')
-        fhand.write('##fileDate=%s\n' %
-                                       datetime.date.today().strftime('%Y%m%d'))
-        fhand.write('##source=franklin\n')
-        fhand.write('##reference=%s\n' % reference_name)
-
-        fhand.write('##INFO=NS,1,Integer,"Number of Samples With Data"\n')
-        fhand.write('##INFO=AF,-1,Float,"Allele Frequency"\n')
-        fhand.write('##INFO=AC,-1,Integer,"Allele Count"\n')
-        fhand.write('##INFO=MQ,-1,Float,"RMS Mapping Quality"\n')
-        fhand.write('##INFO=BQ,-1,Float,"RMS Base Quality"\n')
+        header = self._header
+        header.append('##format=VCFv3.3')
+        header.append('##fileDate=%s' %
+                                      datetime.date.today().strftime('%Y%m%d'))
+        header.append('##source=franklin')
+        header.append('##reference=%s' % reference_name)
+        header.append('##INFO=NS,1,Integer,"Number of Samples With Data"')
+        header.append('##INFO=AF,-1,Float,"Allele Frequency"')
+        header.append('##INFO=AC,-1,Integer,"Allele Count"')
+        header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
+        header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
         ##FILTER=q10,"Quality below 10"
         ##FILTER=s50,"Less than 50% of samples have data"
 
-        fhand.write('%s\n' % '\t'.join(('#CHROM', 'POS', 'ID', 'REF', 'ALT',
-                                        'QUAL', 'FILTER',  'INFO')))
+    def close(self):
+        'It merges the header and the snv data'
+        # Append the data spec  to the header
+        fhand = self._fhand
+        self._add_filters_to_header()
+        self._header.append('%s\n' % '\t'.join(('#CHROM', 'POS', 'ID', 'REF',
+                                               'ALT', 'QUAL', 'FILTER',
+                                               'INFO')))
+        fhand.write('\n'.join(self._header))
+        for line in open(self._temp_fhand.name):
+            fhand.write(line)
+        fhand.close()
+
+    def _add_filters_to_header(self):
+        'It adds the used filter tag to the header'
+        for name, desc in self._filter_descriptions.values():
+            filter_desc = '##FILTER=%s,"%s"' % (name, desc)
+            self._header.append(filter_desc)
+
 
     def write(self, sequence):
         'It writes the snvs present in the given sequence as SeqFeatures'
-        filter_descriptions = {}
         for snv in sequence.get_features(kind='snv'):
-            self._write_snv(sequence, snv, filter_descriptions)
-        self._fhand.flush()
+            self._write_snv(sequence, snv)
+        self._temp_fhand.flush()
+
     @staticmethod
     def _create_alternative_alleles(alleles):
         'It returns the ALT part on the vcf'
@@ -86,7 +105,7 @@ class VariantCallFormatWriter(object):
             str_alleles = '.'
         return str_alleles, alternative_alleles
 
-    def _create_filters(self, qualifiers, filter_descriptions):
+    def _create_filters(self, qualifiers):
         'It returns the FILTER part on the vcf'
         filter_strs = []
         if 'filters' not in qualifiers:
@@ -97,9 +116,9 @@ class VariantCallFormatWriter(object):
                     continue
                 short_name, description = get_filter_description(name,
                                                                  parameters,
-                                                            filter_descriptions)
+                                                            self._filter_descriptions)
                 filter_strs.append(short_name)
-                filter_descriptions[name, parameters] = short_name, description
+                self._filter_descriptions[name, parameters] = short_name, description
         if not filter_strs:
             return '.'
         else:
@@ -173,7 +192,7 @@ class VariantCallFormatWriter(object):
         return '%i' % phred
 
 
-    def _write_snv(self, sequence, snv, filter_descriptions):
+    def _write_snv(self, sequence, snv):
         'Given an snv feature it writes a line in the vcf'
         items = [] #items to write
         items.append(get_seq_name(sequence))
@@ -190,8 +209,8 @@ class VariantCallFormatWriter(object):
         items.append(toprint_af)
         items.append(self._create_quality(qualifiers['alleles'],
                                           alternative_alleles))
-        filters = self._create_filters(qualifiers, filter_descriptions)
+        filters = self._create_filters(qualifiers)
         #self._add_filter_definition(filters)
         items.append(filters)
         items.append(self._create_info(qualifiers, alternative_alleles))
-        self._fhand.write('%s\n' % '\t'.join(items))
+        self._temp_fhand.write('%s\n' % '\t'.join(items))
