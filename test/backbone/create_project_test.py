@@ -177,7 +177,10 @@ class TestBackbone(unittest.TestCase):
         project_name = 'backbone'
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
-                                      configuration={'Snvs':{'min_quality':20}})
+                                      configuration={
+                                                    'Snvs':{'min_quality':20},
+                                'Sam_processing':{'add_default_qualities':True},
+                                })
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
@@ -233,7 +236,7 @@ class TestBackbone(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
-        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.sfastq')
+        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.fasta')
         fpath_solexa = join(clean_reads_dir,
                                     'lb_hola.pl_illumina.sfastq')
         open(fpath_sanger, 'w').write(sanger)

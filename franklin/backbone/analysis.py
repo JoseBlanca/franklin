@@ -17,9 +17,7 @@ from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.pipelines.seq_pipeline_steps import annotate_cdna_introns
 from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam)
-from franklin.snv.sam_pileup import snv_contexts_in_sam_pileup
-from franklin.pipelines.pipelines import _pipeline_builder
+                          sam2bam, sort_bam_sam, add_default_qualities_to_sam)
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
 from franklin.pipelines.snv_pipeline_steps import (
@@ -791,6 +789,14 @@ class MergeBamAnalyzer(Analyzer):
         merged_bam_fpath = os.path.join(output_dir,
                                        BACKBONE_BASENAMES['merged_bam'])
         # First we need to create the sam with added tags and headers
+
+        #Do we have to add the default qualities to the sam file?
+        add_qualities = ('Sam_processing' in settings and
+                       'add_default_qualities' in settings['Sam_processing'] and
+                       settings['Sam_processing']['add_default_qualities'])
+        if add_qualities:
+            default_sanger_quality = settings['Other_settings']['default_sanger_quality']
+            default_sanger_quality = int(default_sanger_quality)
         temp_dir = NamedTemporaryDir()
         for bam_fpath in bam_fpaths:
             bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
@@ -800,13 +806,23 @@ class MergeBamAnalyzer(Analyzer):
             bam2sam(bam_fpath, temp_sam.name)
             sam_fhand = open(sam_fpath, 'w')
             add_header_and_tags_to_sam(temp_sam, sam_fhand)
+            temp_sam.close()
             sam_fhand.close()
+            if add_qualities:
+                temp_sam2 = NamedTemporaryFile(prefix='%s.' % bam_basename,
+                                               suffix='.sam', delete=False)
+                add_default_qualities_to_sam(open(sam_fhand.name), temp_sam2,
+                                             default_sanger_quality)
+                temp_sam2.flush()
+                shutil.move(temp_sam2.name, sam_fhand.name)
+
+                temp_sam2.close()
+
+        get_sam_fpaths = lambda dir_: [os.path.join(dir_, fname) for fname in os.listdir(dir_) if fname.endswith('.sam')]
 
         # Once the headers are ready we are going to merge
-        sams = []
-        for file_ in os.listdir(temp_dir.name):
-            if file_.endswith('.sam'):
-                sams.append(open(os.path.join(temp_dir.name, file_)))
+        sams = get_sam_fpaths(temp_dir.name)
+        sams = [open(sam) for sam in sams]
 
         temp_sam = NamedTemporaryFile(suffix='.sam')
         reference_fhand = open(reference_fpath)

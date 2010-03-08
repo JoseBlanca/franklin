@@ -34,6 +34,9 @@ def create_project(name, directory=None, configuration=None):
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
 
+    config['Other_settings'] = {}
+    config['Other_settings']['default_sanger_quality'] = 20
+
     config['Cleaning'] = {}
     config['Cleaning']['vector_database'] = 'UniVec'
     comments = []
@@ -55,6 +58,9 @@ def create_project(name, directory=None, configuration=None):
     config['Mappers']['mapper_for_illumina'] = 'bwa'
     config['Mappers']['mapper_for_solid'] = 'bwa'
     config['Mappers']['mapper_for_sanger'] = 'bwa'
+
+    config['Sam_processing'] = {}
+    config['Sam_processing']['add_default_qualities'] = False
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}
