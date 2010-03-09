@@ -69,18 +69,21 @@ def _get_allele_from_read(aligned_read, index):
     return allele, qual, bool(aligned_read.is_reverse)
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
-                mapping_quality):
+                mapping_quality, readgroup_info):
     'It adds one allele to the alleles dict'
     key = (allele, kind)
     if key not in alleles:
         alleles[key] = {'read_names':[], 'read_groups':[], 'orientations':[],
-                       'qualities':[], 'mapping_qualities':[]}
+                       'qualities':[], 'mapping_qualities':[], 'samples':[],
+                       'libraries': []}
     allele_info = alleles[key]
     allele_info['read_names'].append(read_name)
     allele_info['read_groups'].append(read_group)
     allele_info['orientations'].append(not(is_reverse))
     allele_info['qualities'].append(qual)
     allele_info['mapping_qualities'].append(mapping_quality)
+    allele_info['libraries'].append(readgroup_info[read_group]['LB'])
+    allele_info['samples'].append(readgroup_info[read_group]['SM'])
 
 def _get_read_group_info(bam):
     'It returns a dict witht the read group info: platform, lb, etc'
@@ -160,7 +163,8 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
 
             if allele is not None:
                 _add_allele(alleles, allele, kind, read_name, read_group,
-                            is_reverse, qual, read_mapping_qual)
+                            is_reverse, qual, read_mapping_qual,
+                            read_groups_info)
 
             #is there an insertion after this column
             if indel_length > 0:
@@ -171,7 +175,8 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
                                                               slice(start, end))
                 kind = INSERTION
                 _add_allele(alleles, allele, kind, read_name, read_group,
-                            is_reverse, qual, read_mapping_qual)
+                            is_reverse, qual, read_mapping_qual,
+                            read_groups_info)
 
         #remove N
         _remove_alleles_n(alleles)
@@ -193,7 +198,7 @@ def _add_default_sanger_quality(alleles, default_sanger_quality,
                                 read_groups_info):
     'It adds default sanger qualities to the sanger reads with no quality'
 
-    for allele, allele_info in alleles.items():
+    for allele_info in alleles.values():
         for index, (qual, rg) in enumerate(zip(allele_info['qualities'],
                                              allele_info['read_groups'])):
             try:

@@ -54,6 +54,7 @@ class TestSnvAnnotation(unittest.TestCase):
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
+            print seq.features
             assert expected == len(seq.features)
 
     @staticmethod
@@ -217,7 +218,7 @@ class TestSnvPipeline(unittest.TestCase):
                                 'vcf': NamedTemporaryFile()}
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
-        
+
         #sequences = open(io_fhands['outputs']['sequence'].name).read()
         vcf = open(io_fhands['outputs']['vcf'].name).read()
         assert '66' in vcf
