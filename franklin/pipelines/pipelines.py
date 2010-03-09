@@ -64,10 +64,8 @@ def configure_pipeline(pipeline, configuration):
 
     # set the configuration in the pipeline
     for step in seq_pipeline:
-        step_name = step['name']
         name_in_config = get_name_in_config(step)
         if name_in_config in configuration:
-            print step_name, name_in_config
             for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
 

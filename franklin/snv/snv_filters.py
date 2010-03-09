@@ -211,6 +211,8 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                         result = True
                     else:
                         result = False
+
+            blast_fhand.close()
             _add_filter_result(snv, 'uniq_contiguous', result, distance)
         return sequence
 

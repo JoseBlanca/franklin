@@ -416,8 +416,11 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
     result2_fhand = remap_runner(seq2)['remap']
     enzymes1 = _parse_remap_output(result1_fhand)
     enzymes2 = _parse_remap_output(result2_fhand)
+
+    # close and remove open and unused files
     result1_fhand.close()
     result2_fhand.close()
+
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
     return enzymes

@@ -216,10 +216,10 @@ def _prepare_output_files(outputs):
     'It prepares inputs taking into account the format'
     for key, value in outputs.items():
         if 'files_format' in value:
-            fhands = _get_mktemp_fpaths(len(value['files_format']))
+            fpaths = _get_mktemp_fpaths(len(value['files_format']))
         else:
-            fhands = _get_mktemp_fpaths(1)
-        outputs[key]['fpaths'] = fhands
+            fpaths = _get_mktemp_fpaths(1)
+        outputs[key]['fpaths'] = fpaths
 
 def _build_cmd(cmd_params, runner_def):
     'It bulds the cmd line using  the command definitions'
@@ -254,6 +254,13 @@ def _build_cmd(cmd_params, runner_def):
     cmd.extend(cmd_params)
     cmd.extend(cmd_args_end)
     return cmd, stdin
+
+class DisposableFile(file):
+    'A file that remove the file when closed'
+    def close(self):
+        'This close removes the file when called'
+        file.close(self)
+        os.remove(self.name)
 
 def create_runner(tool, parameters=None, environment=None):
     ''''It creates a runner class.
@@ -328,7 +335,7 @@ def create_runner(tool, parameters=None, environment=None):
             if values['option'] == STDOUT:
                 fhands = StringIO.StringIO(stdout)
             else:
-                fhands = [open(fpath) for fpath in values['fpaths']]
+                fhands = [DisposableFile(fpath) for fpath in values['fpaths']]
                 if len(fhands) == 1:
                     fhands = fhands[0]
 
