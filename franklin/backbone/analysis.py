@@ -983,18 +983,22 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             if not filter_data['use']:
                 continue
             name   = filter_data['name']
+            if 'step_name' in filter_data:
+                step_name = filter_data['step_name']
+            else:
+                step_name = name
             filter_config = {}
             for argument, value in filter_data.items():
                 if argument == 'use' or argument == 'name':
                     continue
                 filter_config[argument] = value
-
+            filter_config['step_name'] = step_name
             configuration[name] =  filter_config
-        pipeline = self._get_pipeline_from_step_name(configuration.keys())
+        pipeline = self._get_pipeline_from_step_name(configuration)
 
         return pipeline, configuration
 
-    def _get_pipeline_from_step_name(self, names):
+    def _get_pipeline_from_step_name(self, configuration):
         'It gets the pipeline steps from filter_names'
         translator = {'uniq_contiguous' : unique_contiguous_region_filter,
                       'close_to_intron':close_to_intron_filter,
@@ -1004,12 +1008,16 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                       'maf': major_allele_freq_filter,
                       'by_kind' : kind_filter,
                       'cap_enzyme': cap_enzyme_filter,
-                      'is_variable_in_rg': is_variable_filter,
-                      'is_variable_in_lb': is_variable_filter,
-                      'is_variable_in_sm': is_variable_filter}
+                      'is_variable': is_variable_filter,}
         pipeline = []
-        for name in names:
-            pipeline.append(translator[name])
+        for name in configuration:
+            step_name = configuration[name]['step_name']
+            #we have to remove the step name from the configuration because this
+            #dict will be used as **kargs
+            del configuration[name]['step_name']
+            step = translator[step_name]
+            step['name_in_config'] = name
+            pipeline.append(step)
         return pipeline
 
 ANALYSIS_DEFINITIONS = {
