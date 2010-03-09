@@ -241,8 +241,11 @@ def create_close_to_intron_filter(distance):
         return sequence
     return close_to_intron_filter
 
-def create_high_variable_region_filter(max_variability, window=None):
+def create_high_variable_region_filter(max_variability, window=0):
     'It returns a filter that filters snvs by region variability.'
+
+    if window == 0:
+        window = None
 
     def high_variable_region_filter(sequence):
         'The filter'
