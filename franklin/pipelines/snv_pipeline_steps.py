@@ -27,14 +27,13 @@ snv_bam_annotator = {'function':create_snv_annotator,
 unique_contiguous_region_filter = {
           'function':create_unique_contiguous_region_filter,
           'arguments':{'distance':60, 'genomic_db':None,
-                        'genomic_seqs_fhand':None},
+                        'genomic_seqs_fpath':None},
           'type':'filter',
           'name':'uniq_contiguous',
           'comment': 'A blast in the near region gave several matches'}
 
 close_to_intron_filter = {'function':create_close_to_intron_filter,
-          'arguments':{'distance':60, 'genomic_db':None,
-                       'genomic_seqs_fhand':None},
+          'arguments':{'distance':60},
           'type':'filter',
           'name':'close_to_intron',
           'comment': 'An intron is located closer than N base pairs'}
@@ -55,7 +54,7 @@ close_to_snv_filter = {
 
 close_to_limit_filter = {
           'function':create_snv_close_to_limit_filter ,
-          'arguments':{'max_distance':12},
+          'arguments':{'distance':12},
           'type':'filter',
           'name':'close_to_limit',
           'comment':'The snv is closer than N nucleotides to sequence limit'}

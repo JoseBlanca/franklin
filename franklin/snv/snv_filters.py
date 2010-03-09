@@ -140,7 +140,7 @@ def _get_filter_result(snv, filter_name, threshold=None):
         return None
 
 def create_unique_contiguous_region_filter(distance, genomic_db,
-                                           genomic_seqs_fhand):
+                                           genomic_seqs_fpath):
     '''It returns a filter that removes snv in a region that give more than one
     match or more than one match_parts'''
     parameters = {'database': genomic_db, 'program':'blastn'}
@@ -154,6 +154,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                 'min_length_bp'  : 20,
                }
               ]
+    genomic_seqs_fhand = open(genomic_seqs_fpath)
     genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name,
                                      guess_seq_file_format(genomic_seqs_fhand))
 
@@ -187,28 +188,29 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             #are there any similar sequences?
             try:
                 alignment = alignments.next()
+                result = False
             except StopIteration:
                 #if there is no similar sequence we assume that is unique
                 result = True
-            #how many matches, it should be only one
-            num_hits = len(alignment['matches'])
+            if not result:
+                #how many matches, it should be only one
+                num_hits = len(alignment['matches'])
 
-            if num_hits > 1:
-                result = False
-            else:
-                #how many match parts have the first match?
-                #we could do it with the blast result, but blast is not very
-                #good aligning, so we realign with est2genome
-                blast_fhand.seek(0)
-                sim_seqs = similar_sequences_for_blast(blast_fhand)
-                introns = infer_introns_for_cdna(sequence=seq_fragment,
-                                          genomic_seqs_index=genomic_seqs_index,
-                                          similar_sequence=sim_seqs[0])
-                if not introns:
-                    result = True
-                else:
+                if num_hits > 1:
                     result = False
-
+                else:
+                    #how many match parts have the first match?
+                    #we could do it with the blast result, but blast is not very
+                    #good aligning, so we realign with est2genome
+                    blast_fhand.seek(0)
+                    sim_seqs = similar_sequences_for_blast(blast_fhand)
+                    introns = infer_introns_for_cdna(sequence=seq_fragment,
+                                          genomic_seqs_index=genomic_seqs_index,
+                                              similar_sequence=sim_seqs[0])
+                    if not introns:
+                        result = True
+                    else:
+                        result = False
             _add_filter_result(snv, 'uniq_contiguous', result, distance)
         return sequence
 
