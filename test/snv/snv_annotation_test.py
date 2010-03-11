@@ -217,7 +217,7 @@ class TestSnvPipeline(unittest.TestCase):
                                 'vcf': NamedTemporaryFile()}
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
-        
+
         #sequences = open(io_fhands['outputs']['sequence'].name).read()
         vcf = open(io_fhands['outputs']['vcf'].name).read()
         assert '66' in vcf

@@ -57,11 +57,16 @@ def configure_pipeline(pipeline, configuration):
     else:
         seq_pipeline = pipeline
 
+    # This is done to be able to use the same step more than once. For that we
+    # need to have indexed the configuration in different names but knowing wich
+    # is the pipeline step
+    get_name_in_config = lambda x: x.get('name_in_config', x['name'])
+
     # set the configuration in the pipeline
     for step in seq_pipeline:
-        step_name = step['name']
-        if step_name in configuration:
-            for key, value in configuration[step_name].items():
+        name_in_config = get_name_in_config(step)
+        if name_in_config in configuration:
+            for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
 
     # Here I check that none of the arguments have a none value
