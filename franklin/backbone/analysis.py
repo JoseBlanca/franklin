@@ -17,7 +17,7 @@ from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.pipelines.seq_pipeline_steps import annotate_cdna_introns
 from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam, add_default_qualities_to_sam,
+                          sam2bam, sort_bam_sam, standardize_sam,
                           create_bam_index)
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
@@ -796,6 +796,7 @@ class MergeBamAnalyzer(Analyzer):
         # First we need to create the sam with added tags and headers
 
         #Do we have to add the default qualities to the sam file?
+        #do we have characters different from ACTGN?
         add_qualities = ('Sam_processing' in settings and
                        'add_default_qualities' in settings['Sam_processing'] and
                        settings['Sam_processing']['add_default_qualities'])
@@ -813,15 +814,17 @@ class MergeBamAnalyzer(Analyzer):
             add_header_and_tags_to_sam(temp_sam, sam_fhand)
             temp_sam.close()
             sam_fhand.close()
-            if add_qualities:
-                temp_sam2 = NamedTemporaryFile(prefix='%s.' % bam_basename,
-                                               suffix='.sam', delete=False)
-                add_default_qualities_to_sam(open(sam_fhand.name), temp_sam2,
-                                             default_sanger_quality)
-                temp_sam2.flush()
-                shutil.move(temp_sam2.name, sam_fhand.name)
+            #the standardization
+            temp_sam2 = NamedTemporaryFile(prefix='%s.' % bam_basename,
+                                           suffix='.sam', delete=False)
+            standardize_sam(open(sam_fhand.name), temp_sam2,
+                            default_sanger_quality,
+                            add_def_qual=add_qualities,
+                            only_std_char=True)
+            temp_sam2.flush()
+            shutil.move(temp_sam2.name, sam_fhand.name)
 
-                temp_sam2.close()
+            temp_sam2.close()
 
         get_sam_fpaths = lambda dir_: [os.path.join(dir_, fname) for fname in os.listdir(dir_) if fname.endswith('.sam')]
 

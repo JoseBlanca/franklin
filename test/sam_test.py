@@ -13,7 +13,7 @@ from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
-                          add_default_qualities_to_sam)
+                          standardize_sam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -168,7 +168,7 @@ SGN-E200000\t0\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATCTTAGAG\t*\tAS:i
 SGN-E40000\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
 ''')
         out_fhand = StringIO()
-        add_default_qualities_to_sam(sam_fhand, out_fhand, 20)
+        standardize_sam(sam_fhand, out_fhand, 20, add_def_qual=True)
         line = out_fhand.getvalue().splitlines()[4]
         assert 'GGATGATCTTAGAG\t55555555555555\t' in line
 
