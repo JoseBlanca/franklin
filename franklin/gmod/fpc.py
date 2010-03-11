@@ -31,8 +31,8 @@ def fpcgff2_parser(fhand):
 
         feature['id']      = name
         feature['name']    = name
-
-        if type_ in ('Chromosome','contig', 'marker'):
+        if type_ in ('Chromosome','contig', 'marker', 'frameworkmarker',
+                     'placementmarker'):
             pass
 
         elif type_ == 'BAC':
