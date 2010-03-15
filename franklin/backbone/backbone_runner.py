@@ -6,15 +6,19 @@ Created on 12/03/2010
 
 import os
 from configobj import ConfigObj
-from franklin.backbone.analysis import ANALYSIS_DEFINITIONS
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
-from franklin.backbone.annotation import SPECIFICATIONS
 
+from franklin.backbone.annotation import DEFINITIONS as annot_defs
+from franklin.backbone.cleaning import DEFINITIONS as clean_defs
+from franklin.backbone.assembling import DEFINITIONS as assembly_defs
+from franklin.backbone.mapping import DEFINITIONS as mapp_defs
+
+DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs]
 
 def get_analysis_especifications():
     'It groups all the especification'
     specifications = {}
-    for spec in [SPECIFICATIONS, ANALYSIS_DEFINITIONS]:
+    for spec in DEFINITIONS:
         for key, value in spec.items():
             specifications[key] = value
     return specifications

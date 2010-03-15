@@ -8,7 +8,7 @@ import unittest, os.path
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
-from franklin.backbone.core import do_analysis
+from franklin.backbone.backbone_runner import do_analysis
 
 from configobj import ConfigObj
 from os.path import join, exists

@@ -3,7 +3,8 @@
 This script is used to run any of the backbone analysis.
 '''
 
-from franklin.backbone.core import do_analysis, get_analysis_especifications
+from franklin.backbone.backbone_runner import (do_analysis,
+                                               get_analysis_especifications)
 
 from optparse import OptionParser
 import os

@@ -261,7 +261,7 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             pipeline.append(step)
         return pipeline
 
-SPECIFICATIONS = {
+DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
             'repr':
