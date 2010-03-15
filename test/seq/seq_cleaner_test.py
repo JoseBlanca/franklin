@@ -7,6 +7,7 @@ import unittest, os
 
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
+from franklin.seq.readers import seqs_in_file
 from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_for_polia,
                                 create_masker_for_low_complexity,
@@ -21,6 +22,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_masker_for_words)
+
 from franklin.utils.misc_utils import DATA_DIR
 
 
@@ -236,6 +238,26 @@ class SeqCleanerTest(unittest.TestCase):
         assert seq.endswith('CGAGATCAGCAGCATCAGC')
         assert len(seqs) == 2
         assert seqs[1].description == 'desc2'
+
+        # now we test the sequence with adaptors
+        vector_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_vector.fasta')
+        splice_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_splice.fasta')
+
+        lucy_striper = create_striper_by_quality_lucy2(vector=[vector_fpath,
+                                                               splice_fpath])
+        seq_fhand = open(os.path.join(DATA_DIR, 'lucy',
+                                      'seq_with_adaptor1.fastq'))
+        seq_iter = lucy_striper(seqs_in_file(seq_fhand ,format='fastq'))[0]
+        print seq_iter.next()
+
+
+
+
+
+
+
+
+
 
     @staticmethod
     def test_strip_vector_align_exonera():

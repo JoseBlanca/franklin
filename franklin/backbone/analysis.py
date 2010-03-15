@@ -4,9 +4,9 @@ Created on 01/03/2010
 @author: peio
 '''
 
-
+from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
+                                              BACKBONE_BASENAMES)
 import os, time, shutil, itertools, tempfile
-from configobj import ConfigObj
 from tempfile import NamedTemporaryFile
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir
@@ -14,11 +14,9 @@ from franklin.utils.seqio_utils import (seqio, cat, seqs_in_file,
                                         write_seqs_in_file)
 from franklin.seq.readers import guess_seq_file_format
 from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.pipelines.seq_pipeline_steps import annotate_cdna_introns
 from franklin.mapping import map_reads
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam, standardize_sam,
-                          create_bam_index)
+                          sam2bam, sort_bam_sam, standardize_sam)
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
 from franklin.pipelines.snv_pipeline_steps import (
@@ -31,6 +29,8 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             kind_filter,
                                             cap_enzyme_filter,
                                             is_variable_filter)
+
+
 
 def _is_file_kind(fpath, extensions):
     'It returns True if the file has one of the given extensions'
@@ -308,7 +308,7 @@ def _scrape_info_from_fname(fpath):
     fhand = open(fpath)
     file_info['format'] = guess_seq_file_format(fhand)
     fhand.close()
-    fname = os.path.splitext(os.path.split(fpath)[-1])[0]
+    fname = os.path.splitext(os.path.basename(fpath))[0]
     for item in fname.split('.'):
         key, value     = item.split('_', 1)
         file_info[key] = value
@@ -773,11 +773,12 @@ class MappingAnalyzer(Analyzer):
                 mapping_parameters['reads_length'] = 'long'
             else:
                 mapping_parameters['reads_length'] = 'short'
-            map_reads(mapper,
-                      reads_fpath=read_fpath,
-                      reference_fpath=reference_fpath,
-                      out_bam_fpath=out_bam,
-                      parameters = mapping_parameters)
+            if not os.path.exists(out_bam):
+                map_reads(mapper,
+                          reads_fpath=read_fpath,
+                          reference_fpath=reference_fpath,
+                          out_bam_fpath=out_bam,
+                          parameters = mapping_parameters)
 
 class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
@@ -844,184 +845,15 @@ class MergeBamAnalyzer(Analyzer):
         temp_bam = NamedTemporaryFile(suffix='.bam')
         sam2bam(temp_sam.name, temp_bam.name)
 
+        print "Stopped"
+        raw_input()
         # finally we need to order the bam
         sort_bam_sam(temp_bam.name, merged_bam_fpath)
         temp_bam.close()
         temp_sam.close()
 
-class WriteAnnotationAnalyzer(Analyzer):
-    'It writes all the output annoation files'
-    def run(self):
-        'It runs the analysis.'
-        output_dir   = self._create_output_dirs()['result']
-        inputs       = self._get_input_fpaths()
-        repr_fpaths  = inputs['repr']
-
-        output_files = ['vcf']
-        for seq_fpath in repr_fpaths:
-            outputs = {}
-            for output_kind in output_files:
-                output_fpath = os.path.join(output_dir,
-                                   _get_basename(seq_fpath) + '.' + output_kind)
-                if os.path.exists(output_fpath):
-                    os.remove(output_fpath)
-                output_fhand = open(output_fpath, 'a')
-                outputs[output_kind] = output_fhand
-            io_fhands = {'in_seq': open(seq_fpath),
-                         'outputs': outputs}
-            seq_pipeline_runner(pipeline=None,
-                                configuration=None,
-                                io_fhands=io_fhands)
-
-class AnnotationAnalyzer(Analyzer):
-    'It annotates the introns in cdna sequences'
-
-    def _get_inputs_and_prepare_outputs(self):
-        'It creates the output dir and it returns the inputs'
-        output_dir   = self._create_output_dirs()['result']
-        inputs       = self._get_input_fpaths()
-        return inputs, output_dir
-
-    def _run_annotation(self, pipeline, configuration, inputs, output_dir):
-        'It runs the analysis.'
-        repr_fpaths  = inputs['repr']
-        try:
-            seqs_fpaths  = inputs['input']
-        except KeyError:
-            seqs_fpaths = []
-        seqs_fpaths  = self._get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-        for seq_fpath in seqs_fpaths:
-            temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
-                                           delete=False)
-            io_fhands = {'in_seq': open(seq_fpath),
-                         'outputs':{'repr':temp_repr}}
-            seq_pipeline_runner(pipeline, configuration=configuration,
-                                io_fhands=io_fhands)
-            temp_repr.close()
-            repr_fpath = os.path.join(output_dir,
-                                      _get_basename(seq_fpath) + '.repr')
-            shutil.move(temp_repr.name, repr_fpath)
-
-    def _get_seq_or_repr_fpath(self, seqs_fpaths, repr_fpaths):
-        'It returns for every file the repr or the seq file'
-        repr_fpaths_ = dict([(self._get_basename(fpath),
-                                               fpath) for fpath in repr_fpaths])
-        if not seqs_fpaths:
-            return repr_fpaths
-        new_seq_fpaths = []
-        for fpath in seqs_fpaths:
-            basename = _get_basename(fpath)
-            if basename in repr_fpaths_:
-                new_seq_fpaths.append(repr_fpaths_[basename])
-            else:
-                new_seq_fpaths.append(fpath)
-        return new_seq_fpaths
 
 
-class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
-    'It annotates the introns in cdna sequences'
-
-    def run(self):
-        'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
-        pipeline = [annotate_cdna_introns]
-
-        settings = self._project_settings
-        if 'Cdna_intron_annotation' not in settings:
-            msg = 'You should set up genomic_db and genomic_seqs in settings'
-            raise RuntimeError(msg)
-        genomic_db = settings['Cdna_intron_annotation']['genomic_db']
-        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
-        configuration = {'annnoatate_cdna_introns': {'genomic_db':genomic_db,
-                                       'genomic_seqs_fhand':open(genomic_seqs)}}
-
-        return self._run_annotation(pipeline=pipeline,
-                                    configuration=configuration,
-                                    inputs=inputs,
-                                    output_dir=output_dir)
-
-class SnvCallerAnalyzer(AnnotationAnalyzer):
-    'It performs the calling of the snvs in a bam file'
-
-    def run(self):
-        'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
-        merged_bam   = inputs['merged_bam']
-        create_bam_index(merged_bam)
-
-
-
-        pipeline = 'snv_bam_annotator'
-        bam_fhand = open(merged_bam)
-        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
-        settings = self._project_settings
-        if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
-            min_quality = settings['Snvs']['min_quality']
-            configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
-
-        return self._run_annotation(pipeline=pipeline,
-                                    configuration=configuration,
-                                    inputs=inputs,
-                                    output_dir=output_dir)
-
-
-class SnvFilterAnalyzer(AnnotationAnalyzer):
-    'It performs the filtering analysis of the snvs'
-
-    def run(self):
-        'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
-
-        pipeline, configuration = self._get_snv_filter_specs()
-
-        return self._run_annotation(pipeline=pipeline,
-                                    configuration=configuration,
-                                    inputs=inputs,
-                                    output_dir=output_dir)
-    def _get_snv_filter_specs(self):
-        'It gets the pipeline and configuration from settings'
-        configuration = {}
-        settings = self._project_settings['snv_filters']
-        for filter_data in settings.values():
-            if not filter_data['use']:
-                continue
-            name   = filter_data['name']
-            if 'step_name' in filter_data:
-                step_name = filter_data['step_name']
-            else:
-                step_name = name
-            filter_config = {}
-            for argument, value in filter_data.items():
-                if argument == 'use' or argument == 'name':
-                    continue
-                filter_config[argument] = value
-            filter_config['step_name'] = step_name
-            configuration[name] =  filter_config
-        pipeline = self._get_pipeline_from_step_name(configuration)
-
-        return pipeline, configuration
-
-    def _get_pipeline_from_step_name(self, configuration):
-        'It gets the pipeline steps from filter_names'
-        translator = {'uniq_contiguous' : unique_contiguous_region_filter,
-                      'close_to_intron':close_to_intron_filter,
-                      'high_variable_region': high_variable_region_filter,
-                      'close_to_snv':close_to_snv_filter,
-                      'close_to_limit': close_to_limit_filter,
-                      'maf': major_allele_freq_filter,
-                      'by_kind' : kind_filter,
-                      'cap_enzyme': cap_enzyme_filter,
-                      'is_variable': is_variable_filter,}
-        pipeline = []
-        for name in configuration:
-            step_name = configuration[name]['step_name']
-            #we have to remove the step name from the configuration because this
-            #dict will be used as **kargs
-            del configuration[name]['step_name']
-            step = translator[step_name]
-            step['name_in_config'] = name
-            pipeline.append(step)
-        return pipeline
 
 ANALYSIS_DEFINITIONS = {
     'clean_reads':
@@ -1134,95 +966,55 @@ ANALYSIS_DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': MergeBamAnalyzer,
         },
-    'annotate_snv':
-        {'inputs':{
-            'repr':
-                {'directory': 'annotation_repr',
-                 'file_kinds': 'sequence_files'},
-            'merged_bam':
-                {'directory':'mapping_result',
-                 'file': 'merged_bam'},
-            'input':
-                {'directory': 'annotation_input',
-                 'file_kinds': 'sequence_files'},
-            },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
-         'analyzer': SnvCallerAnalyzer},
-    'filter_snvs':
-        {'inputs':{
-            'repr':
-                {'directory': 'annotation_repr',
-                 'file_kinds': 'sequence_files'},
-            },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
-         'analyzer': SnvFilterAnalyzer},
 
-    'annotate_introns':
-        {'inputs':{
-            'repr':
-                {'directory': 'annotation_repr',
-                 'file_kinds': 'sequence_files'},
-            'input':
-                {'directory': 'annotation_input',
-                 'file_kinds': 'sequence_files'},
-            },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
-         'analyzer': AnnotateIntronsAnalyzer},
-    'write_annotation':
-        {'inputs':{
-            'repr':
-                {'directory': 'annotation_repr',
-                 'file_kinds': 'sequence_files'},
-            },
-         'outputs':{'result':{'directory': 'annotation_result'}},
-         'analyzer': WriteAnnotationAnalyzer},
 
+
+#    'annotate_snv':
+#        {'inputs':{
+#            'repr':
+#                {'directory': 'annotation_repr',
+#                 'file_kinds': 'sequence_files'},
+#            'merged_bam':
+#                {'directory':'mapping_result',
+#                 'file': 'merged_bam'},
+#            'input':
+#                {'directory': 'annotation_input',
+#                 'file_kinds': 'sequence_files'},
+#            },
+#         'outputs':{'result':{'directory': 'annotation_repr'}},
+#         'analyzer': SnvCallerAnalyzer},
+#    'annotate_introns':
+#        {'inputs':{
+#            'repr':
+#                {'directory': 'annotation_repr',
+#                 'file_kinds': 'sequence_files'},
+#            'input':
+#                {'directory': 'annotation_input',
+#                 'file_kinds': 'sequence_files'},
+#            },
+#         'outputs':{'result':{'directory': 'annotation_repr'}},
+#         'analyzer': AnnotateIntronsAnalyzer},
+#    'write_annotation':
+#        {'inputs':{
+#            'repr':
+#                {'directory': 'annotation_repr',
+#                 'file_kinds': 'sequence_files'},
+#            },
+#         'outputs':{'result':{'directory': 'annotation_result'}},
+#         'analyzer': WriteAnnotationAnalyzer},
+#    'annotate_orthologs':
+#        {'inputs':{
+#            'repr':
+#                {'directory': 'annotation_repr',
+#                 'file_kinds': 'sequence_files'},
+#            'input':
+#                {'directory': 'annotation_input',
+#                 'file_kinds': 'sequence_files'},
+#            },
+#         'outputs':{'result':{'directory': 'annotation_repr'}},
+#         'analyzer': AnnotateOrthologsAnalyzer},
 }
 
-BACKBONE_DIRECTORIES = {
-    'config_file': 'backbone.conf',
-    'original_reads': 'reads/original',
-    'cleaned_reads': 'reads/cleaned',
-    'assembly_input': 'assembly/input',
-    'assemblies': ('assembly', ''),
-    'assembly_result': ('assembly', 'result'),
-    'mappings': ('mapping', ''),
-    'mapping_result': ('mapping', 'result'),
-    'mapping_reference': 'mapping/reference',
-    'mappings_by_readgroup': ('mapping', 'result/by_readgroup'),
-    'pileups':'mapping/result/pileups',
-    'snvs':'annotations/snvs',
-    'info':'info',
-    'original_reads_stats': 'reads/original/stats',
-    'cleaned_reads_stats': 'reads/cleaned/stats',
-    'annotation_repr':'annotations/repr',
-    'annotation_input':'annotations/input',
-    'annotation_result':'annotations/result',
-                       }
-BACKBONE_BASENAMES = {
-    'contigs':'contigs',
-    'mapping_reference':'reference',
-    'merged_bam':'merged.bam',
-    'snv_result':'all.snvs',
-    'merged_frg':'all_seq.frg',
-}
 
-def do_analysis(kind, project_settings=None, analysis_config=None):
-    'It does one of the predefined analyses'
-    if project_settings is None:
-        project_settings = os.path.join(os.getcwd(),
-                                        BACKBONE_DIRECTORIES['config_file'])
-        if not os.path.exists(project_settings):
-            raise ValueError('Settings path not given and not found')
 
-    if not analysis_config:
-        analysis_config = {}
 
-    settings = ConfigObj(project_settings, unrepr=True)
-    analysis_def = ANALYSIS_DEFINITIONS[kind]
-
-    analyzer_klass = analysis_def['analyzer']
-    analyzer = analyzer_klass(project_settings=settings,
-                        analysis_definition=analysis_def)
-
-    analyzer.run()

@@ -3,7 +3,7 @@
 This script is used to run any of the backbone analysis.
 '''
 
-from franklin.backbone.analysis import do_analysis, ANALYSIS_DEFINITIONS
+from franklin.backbone.core import do_analysis, get_analysis_especifications
 
 from optparse import OptionParser
 import os
@@ -11,7 +11,7 @@ import os
 
 def _get_available_analyses():
     'It return available analyses'
-    analyses = ANALYSIS_DEFINITIONS.keys()
+    analyses = get_analysis_especifications().keys()
     return ", ".join(analyses)
 
 def parse_options():

@@ -25,7 +25,7 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
                        parameters):
     'It maps the reads to the reference using bwa and returns a bam file'
     #the reference should have an index
-    bwt_fpath = os.path.basename(reference_fpath) + '.bwt'
+    bwt_fpath = reference_fpath + '.bwt'
     if not os.path.exists(bwt_fpath):
         create_bwa_reference(reference_fpath)
     reads_length = parameters['reads_length']
