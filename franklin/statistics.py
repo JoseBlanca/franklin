@@ -253,25 +253,19 @@ def general_seq_statistics(sequences, low_memory=True):
     has_qual = False
     if low_memory:
         lengths        = FileCachedList(int)
-        masked_lengths = FileCachedList(int)
         qualities      = FileCachedList(int)
     else:
         lengths        = []
-        masked_lengths = []
         qualities      = []
 
     n_seqs = 0
     total_len = 0
-    total_masked_len = 0
     for seq in sequences:
         n_seqs += 1
         length = len(seq)
         lengths.append(length)
         total_len += length
         #low_memory False, is just one sequence
-        masked_length = _masked_sequence_lengths([seq], low_memory=False)[0]
-        total_masked_len += masked_length
-        masked_lengths.append(masked_length)
         if seq.qual:
             has_qual = True
             qualities.extend(seq.qual)
@@ -279,7 +273,6 @@ def general_seq_statistics(sequences, low_memory=True):
     stats = {}
     stats['num_sequences']     = n_seqs
     stats['seq_length']        = total_len
-    stats['masked_seq_length'] = total_masked_len
     mean_quality     = None
     quality_variance = None
     min_quality      = None
@@ -290,9 +283,6 @@ def general_seq_statistics(sequences, low_memory=True):
                                                  stats['seq_length_average'])
         stats['min_seq_length'], stats['max_seq_length'] = \
                                                          _range(lengths.items())
-        stats['masked_seq_length_average']  = _average(masked_lengths.items())
-        stats['masked_seq_length_variance'] = _variance(masked_lengths.items(),
-                                            stats['masked_seq_length_average'])
         if has_qual:
             mean_quality     = _average(qualities.items())
             quality_variance = _variance(qualities.items(), mean_quality)
@@ -301,8 +291,6 @@ def general_seq_statistics(sequences, low_memory=True):
         stats['seq_length_average']         = numpy.average(lengths)
         stats['seq_length_variance']        = numpy.var(lengths)
         stats['min_seq_length'], stats['max_seq_length'] = _range(lengths)
-        stats['masked_seq_length_average']  = numpy.average(masked_lengths)
-        stats['masked_seq_length_variance'] = numpy.var(masked_lengths)
         if has_qual:
             mean_quality     = _average(qualities)
             quality_variance = _variance(qualities, mean_quality)

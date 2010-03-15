@@ -116,7 +116,6 @@ class StatisticsTest(unittest.TestCase):
 
         assert stats['seq_length']          == 15
         assert stats['seq_length_average']  == 3.75
-        assert stats['masked_seq_length']   == 3
         assert stats['mean_quality']        == 2.3333333333333335
         assert stats['num_sequences']       == 4
         assert stats['max_seq_length']      == 4
