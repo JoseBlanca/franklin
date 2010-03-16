@@ -7,7 +7,7 @@ Created on 2009 uzt 28
 from Bio import SeqIO
 
 from franklin.seq.seqs import SeqWithQuality
-from franklin.seq.readers import seqs_in_file
+from franklin.seq.readers import seqs_in_file, guess_seq_file_format
 from franklin.seq.writers import write_seqs_in_file
 
 def parse_fasta(seq_fhand, qual_fhand=None):
@@ -54,6 +54,8 @@ def get_content_from_fasta(fhand, kind='seq'):
 def seqio(in_seq_fhand, out_seq_fhand, out_format,
           in_qual_fhand=None, out_qual_fhand=None, in_format=None):
     'It converts format of the files'
+    if not in_format:
+        in_format = guess_seq_file_format(in_seq_fhand)
     if  in_qual_fhand is not None or out_qual_fhand is not None:
         seqs = seqs_in_file(seq_fhand=in_seq_fhand,
                             qual_fhand=in_qual_fhand,
@@ -63,6 +65,9 @@ def seqio(in_seq_fhand, out_seq_fhand, out_format,
                            format=out_format)
     else:
         SeqIO.convert(in_seq_fhand, in_format, out_seq_fhand, out_format)
+    out_seq_fhand.flush()
+    if out_qual_fhand:
+        out_qual_fhand.flush()
 
 def cat(infiles, outfile):
     'It concatenates the given files'

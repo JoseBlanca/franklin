@@ -60,7 +60,6 @@ class OrthologTest(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
-
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()
