@@ -180,6 +180,20 @@ def _fix_non_mapped_reads(items):
         #CIGAR = *
         items[5] = '*'
 
+def _add_default_quality(items, sanger_read_groups, default_qual):
+    'It adds the quality to the sanger reads that do not have it'
+    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
+    if rg_id:
+        rg_id = rg_id[0].strip().replace('RG:Z:', '')
+    else:
+        msg = 'Read group is required to add default qualities'
+        raise RuntimeError(msg)
+    if rg_id not in sanger_read_groups:
+        msg = 'Platform for read group %s is not sanger' % rg_id
+        raise RuntimeError(msg)
+    #here we set the default qual
+    items[10] = default_qual * len(items[9])
+
 def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
                    add_def_qual=False, only_std_char=True,
                    fix_non_mapped=True):
@@ -216,17 +230,8 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
             if do_qual or only_std_char:
                 #we add default qualities to the reads with no quality
                 if do_qual: #empty quality
-                    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
-                    if rg_id:
-                        rg_id = rg_id[0].strip().replace('RG:Z:', '')
-                    else:
-                        msg = 'Read group is required to add default qualities'
-                        raise RuntimeError(msg)
-                    if rg_id not in sanger_read_groups:
-                        msg = 'Platform for read group %s is not sanger' % rg_id
-                        raise RuntimeError(msg)
-                    #here we set the default qual
-                    items[10] = default_qual * len(items[9])
+                    _add_default_quality(items, sanger_read_groups,
+                                         default_qual)
                 #we change all seq characters to ACTGN
                 if only_std_char:
                     text = items[9].upper()
@@ -236,59 +241,6 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
                     _fix_non_mapped_reads(items)
                 line = sep.join(items)
         out_fhand.write(line)
-
-def standardize_sam_old(in_fhand, out_fhand, default_sanger_quality,
-                   add_def_qual=False, only_std_char=True):
-    '''It adds the default qualities to the reads that do not have one and
-    it makes sure that only ACTGN are used in the sam file reads.
-
-    The quality should be given as a phred integer
-    '''
-    only_std_char = True
-    add_def_qual = True
-    in_fhand.seek(0)
-    sep = '\t'
-    sanger_read_groups = set()
-    default_qual = chr(int(default_sanger_quality) + 33)
-    regex = re.compile(r'[^ACTGN]')
-    for line in in_fhand:
-        if line[:3] == '@RG':
-            items = line.split(sep)
-            rg_id = None
-            platform = None
-            for item in items:
-                if item.startswith('PL:'):
-                    platform = item[3:].strip().lower()
-                elif item.startswith('ID:'):
-                    rg_id = item[3:].strip()
-            if platform == 'sanger':
-                sanger_read_groups.add(rg_id)
-        elif line[0] == '@':
-            pass
-        else:
-            items = line.split(sep)
-            #quality replaced
-            do_qual = add_def_qual and items[10] == '*'
-            do_std = only_std_char
-            if do_qual or do_std:
-                if do_qual: #empty quality
-                    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
-                    if rg_id:
-                        rg_id = rg_id[0].strip().replace('RG:Z:', '')
-                    else:
-                        msg = 'Read group is required to add default qualities'
-                        raise RuntimeError(msg)
-                    if rg_id not in sanger_read_groups:
-                        msg = 'Platform for read group %s is not sanger' % rg_id
-                        raise RuntimeError(msg)
-                    #here we set the default qual
-                    items[10] = default_qual * len(items[9])
-                if do_std:
-                    text = items[9].upper()
-                    items[9] = regex.sub('N', text)
-                line = sep.join(items)
-        out_fhand.write(line)
-
 
 def create_bam_index(bam_fpath):
     'It creates an index of the bam if it does not exist'
