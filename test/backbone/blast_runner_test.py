@@ -95,8 +95,8 @@ class BlastTest(unittest.TestCase):
                            _get_basename(blast_db_fhand.name),
                            '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                           blast_program))
-        assert '<Hit_def>vec1</Hit_def>' in open(blast_fpath).read()
+        assert '<Hit_def>seq</Hit_def>' in open(blast_fpath).read()
 
 if    __name__    ==    "__main__":
-    import sys;sys.argv = ['', 'BlastTest.test_blast_seq_against_seq_db']
+    #import sys;sys.argv = ['', 'BlastTest.test_blast_seq_against_seq_db']
     unittest.main()
