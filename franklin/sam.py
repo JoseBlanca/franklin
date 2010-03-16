@@ -157,7 +157,87 @@ def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
            'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
 
+def _fix_non_mapped_reads(items):
+    'Given a list with sam line it removes MAPQ from non-mapped reads'
+    #is the read mapped?
+    flag = int(items[1])
+    if flag == 0:
+        mapped = True
+    elif flag in (20, 4):  #just a sohortcut
+        mapped = False
+    else:
+        if bin(flag)[-3] == '1':
+            mapped = False
+        else:
+            mapped = True
+    if not mapped:
+        #RNAME = *
+        items[2] = '*'
+        #POS = 0
+        items[3] = '0'
+        #MAPQ = 0
+        items[4] = '0'
+        #CIGAR = *
+        items[5] = '*'
+
 def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
+                   add_def_qual=False, only_std_char=True,
+                   fix_non_mapped=True):
+    '''It adds the default qualities to the reads that do not have one and
+    it makes sure that only ACTGN are used in the sam file reads.
+
+    The quality should be given as a phred integer
+    '''
+    in_fhand.seek(0)
+    sep = '\t'
+
+    sanger_read_groups = set()
+    default_qual = chr(int(default_sanger_quality) + 33)
+    regex = re.compile(r'[^ACTGN]')
+    for line in in_fhand:
+        #it we're adding qualities we have to keep the read group info
+        if add_def_qual and line[:3] == '@RG':
+            items = line.split(sep)
+            rg_id = None
+            platform = None
+            for item in items:
+                if item.startswith('PL:'):
+                    platform = item[3:].strip().lower()
+                elif item.startswith('ID:'):
+                    rg_id = item[3:].strip()
+            if platform == 'sanger':
+                sanger_read_groups.add(rg_id)
+        elif line[0] == '@':
+            pass
+        else:
+            items = line.split(sep)
+            #quality replaced
+            do_qual = add_def_qual and items[10] == '*'
+            if do_qual or only_std_char:
+                #we add default qualities to the reads with no quality
+                if do_qual: #empty quality
+                    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
+                    if rg_id:
+                        rg_id = rg_id[0].strip().replace('RG:Z:', '')
+                    else:
+                        msg = 'Read group is required to add default qualities'
+                        raise RuntimeError(msg)
+                    if rg_id not in sanger_read_groups:
+                        msg = 'Platform for read group %s is not sanger' % rg_id
+                        raise RuntimeError(msg)
+                    #here we set the default qual
+                    items[10] = default_qual * len(items[9])
+                #we change all seq characters to ACTGN
+                if only_std_char:
+                    text = items[9].upper()
+                    items[9] = regex.sub('N', text)
+                #we remove MAPQ from the non-mapped reads
+                if fix_non_mapped:
+                    _fix_non_mapped_reads(items)
+                line = sep.join(items)
+        out_fhand.write(line)
+
+def standardize_sam_old(in_fhand, out_fhand, default_sanger_quality,
                    add_def_qual=False, only_std_char=True):
     '''It adds the default qualities to the reads that do not have one and
     it makes sure that only ACTGN are used in the sam file reads.
@@ -208,6 +288,7 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
                     items[9] = regex.sub('N', text)
                 line = sep.join(items)
         out_fhand.write(line)
+
 
 def create_bam_index(bam_fpath):
     'It creates an index of the bam if it does not exist'

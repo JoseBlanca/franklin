@@ -132,7 +132,7 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
         sort_bam_sam(sam_fpath, sorted_bamfhand.name)
 
     @staticmethod
-    def test_add_qualities():
+    def test_standarize_sam():
         'It test that we can add default qualities to the sanger reads'
         sam_fhand = StringIO('''@SQ\tSN:SGN-U576692\tLN:1714
 @SQ\tSN:SGN-U572743\tLN:833
@@ -140,12 +140,14 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
 @RG\tID:g3\tLB:g3\tSM:g3\tPL:sanger
 SGN-E200000\t0\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATKTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
 SGN-E40000\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
+SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
 ''')
         out_fhand = StringIO()
         standardize_sam(sam_fhand, out_fhand, 20, add_def_qual=True)
-        line = out_fhand.getvalue().splitlines()[4]
-        assert 'GGATGATNTTAGAG\t55555555555555\t' in line
+        lines = out_fhand.getvalue().splitlines()
+        assert 'GGATGATNTTAGAG\t55555555555555\t' in lines[4]
+        assert lines[6].startswith('SGN-E40000\t20\t*\t0\t0\t*\t*\t0\t0\t')
 
 if	__name__	==	"__main__":
-    #import	sys;sys.argv	=	['',	'SamTest.test_add_qualities']
+    #import	sys;sys.argv	=	['',	'SamTest.test_standarize_sam']
     unittest.main()
