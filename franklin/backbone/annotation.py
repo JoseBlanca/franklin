@@ -75,14 +75,12 @@ class AnnotationAnalyzer(Analyzer):
                 new_seq_fpaths.append(fpath)
         return new_seq_fpaths
 
-
-
 class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
-    '''It annotates the orthologs for the working specie againsta the species
+    '''It annotates the orthologs for the working species against the species
     given in the configuration file'''
 
     def run(self):
-        'It runs the analysys'
+        'It runs the analysis'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         blast_settings = self._project_settings['blast']
         ortholog_settings = self._project_settings['orthologs_annotation']
@@ -99,12 +97,15 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                 else:
                     blast_program = 'blastx'
                 blastdb = blast_settings[database]['path']
+                #this could be different adding something to the settings
+                blastdb_seq_fpath = blastdb
                 blast = backbone_blast_runner(query_fpath=input_,
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db=blastdb,
                                               dbtype=db_kind)
-                reverse_blast = backbone_blast_runner(query_fpath=database,
+                reverse_blast = backbone_blast_runner(
+                                              query_fpath=blastdb_seq_fpath,
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db_seq=input_,
@@ -119,8 +120,9 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
             pipeline.append(step)
             for input_ in inputs['input']:
                 reverse_blast = ''
-                step_config = {'blast':blasts[input_]['blast'],
-                               'reverse_blast':blasts[input_]['reverse_blast'],
+                step_config = {'blast':{'blast': blasts[input_]['blast']},
+                               'reverse_blast':{'blast':
+                                               blasts[input_]['reverse_blast']},
                                'species': database}
                 configuration[input_] = {}
                 configuration[input_][database] = step_config
@@ -178,9 +180,8 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
                                     inputs=inputs,
                                     output_dir=output_dir)
 
-
 class WriteAnnotationAnalyzer(Analyzer):
-    'It writes all the output annoation files'
+    'It writes all the output annotation files'
     def run(self):
         'It runs the analysis.'
         output_dir   = self._create_output_dirs()['result']

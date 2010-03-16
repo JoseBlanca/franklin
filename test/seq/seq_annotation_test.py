@@ -33,8 +33,8 @@ class AnnotationTests(unittest.TestCase):
         'It test the ortholog annotator'
         blast_fhand  = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
         reverse_blast_fhand = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
-        blast = {'results':{'blast':blast_fhand}}
-        reverse_blast = {'results':{'blast':reverse_blast_fhand}}
+        blast = {'blast':blast_fhand}
+        reverse_blast = {'blast':reverse_blast_fhand}
         ortho_annotator = create_ortholog_annotator(blast, reverse_blast,
                                                     species='arabidopsis')
         sequence = SeqWithQuality(seq='aaa', name='melon1')
@@ -50,7 +50,8 @@ class AnnotationTests(unittest.TestCase):
         'It tests if we can get description for seqs in blasts. with mod funct'
         # test with a modifier function
         blast_fhand = open(os.path.join(DATA_DIR, 'blast2.xml'))
-        blast = {'results':{'blast':blast_fhand}, 'modifier':lambda(x):x.split('|')[2]}
+        blast = {'blast':blast_fhand,
+                 'modifier':lambda(x):x.split('|')[2]}
         descrip_annotator = create_description_annotator([blast])
         sequence = SeqWithQuality(seq='aaa', name='CUTC021854')
         sequence = descrip_annotator(sequence)

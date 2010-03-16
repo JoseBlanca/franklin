@@ -40,10 +40,17 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
     query_basename = _get_basename(query_fpath)
     blast_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_dir'])
 
-    result_dir = join(blast_dir, query_basename, _get_basename(blast_db))
+    if blast_db:
+        result_dir = join(blast_dir, query_basename, _get_basename(blast_db))
+    else:
+        result_dir = join(blast_dir, query_basename,
+                          _get_basename(blast_db_seq))
     if not exists(result_dir):
         makedirs(result_dir)
-    result_fpath = join(result_dir, BACKBONE_BASENAMES['blast_result_file'])
+
+    result_fpath = join(result_dir,
+                        '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
+                                       blast_program))
     if exists(result_fpath):
         return open(result_fpath)
 
@@ -76,8 +83,8 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
 def blast_runner(seq_fpath, blastdb, blast_type, result_fpath):
     'It runs a blast giving a file and a database path'
-    cmd = [blast_type, '-db', blastdb, '-num_alignments', '20',
-           '-num_descriptions', '20', -'evalue', '0.0001', '-outfmt', '5',
+    cmd = [blast_type, '-db', blastdb, '-num_alignments', '25',
+           '-num_descriptions', '25', -'evalue', '0.0001', '-outfmt', '5',
            '-query', seq_fpath, '-out', result_fpath]
     call(cmd, raise_on_error=True)
 

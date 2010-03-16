@@ -158,5 +158,5 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         out_bam.close()
 
 if	__name__	==	"__main__":
-    import	sys;sys.argv	=	['',	'SamTest.test_realignbam']
+    #import	sys;sys.argv	=	['',	'SamTest.test_realignbam']
     unittest.main()

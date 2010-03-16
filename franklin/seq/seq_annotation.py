@@ -39,8 +39,8 @@ from franklin.seq.readers import guess_seq_file_format
 def create_ortholog_annotator(blast, reverse_blast, species):
     '''It creates a function factory that calculates all the orthologs between
      crossed species. First it calculates all the orthologs'''
-    blast_fhand         = blast['results']['blast']
-    reverse_blast_fhand = reverse_blast['results']['blast']
+    blast_fhand         = blast['blast']
+    reverse_blast_fhand = reverse_blast['blast']
     orthologs = list(get_orthologs(blast_fhand, reverse_blast_fhand))
 
     def ortholog_annotator(sequence):
@@ -84,7 +84,7 @@ def _get_descriptions_from_blasts(blasts):
                 'max_score_value': 1e-4,
                 'score_tolerance': 10}]
     for blast in blasts:
-        blast_fhand = blast['results']['blast']
+        blast_fhand = blast['blast']
         if 'modifier' in blast:
             modifier = blast['modifier']
         else:
