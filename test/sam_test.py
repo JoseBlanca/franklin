@@ -5,7 +5,6 @@ Created on 05/01/2010
 @author: peio
 '''
 from tempfile import NamedTemporaryFile
-from test.utils.misc_utils_test import NamedTemporariDirTest
 import unittest, os
 
 from franklin.utils.misc_utils import DATA_DIR
@@ -13,7 +12,7 @@ from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
-                          standardize_sam)
+                          standardize_sam, realign_bam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -91,7 +90,7 @@ SGN-E40000	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGG
 
     @staticmethod
     def	test_readgroup_to_sam():
-        'It	test	that	we	can	add	readgroup	tah	and	header	to	a	bam'
+        'It	test that we can add the readgroup the and the header to a bam'
         sam_value	=	'''@SQ	SN:SGN-U576692	LN:1714
 @SQ	SN:SGN-U572743	LN:833
 SGN-E221403	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT	558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7	AS:i:160	XS:i:0	XF:i:3	XE:i:4	XN:i:0
@@ -148,6 +147,16 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         assert 'GGATGATNTTAGAG\t55555555555555\t' in lines[4]
         assert lines[6].startswith('SGN-E40000\t20\t*\t0\t0\t*\t*\t0\t0\t')
 
+    @staticmethod
+    def test_realignbam():
+        'It test the GATK realigner'
+        sam_test_dir = os.path.join(DATA_DIR, 'samtools')
+        bam_path = os.path.join(sam_test_dir, 'seqs.bam')
+        reference_path = os.path.join(sam_test_dir, 'reference.fasta')
+        out_bam = NamedTemporaryFile(suffix='.bam')
+        realign_bam(bam_path, reference_path, out_bam.name)
+        out_bam.close()
+
 if	__name__	==	"__main__":
-    #import	sys;sys.argv	=	['',	'SamTest.test_standarize_sam']
+    import	sys;sys.argv	=	['',	'SamTest.test_realignbam']
     unittest.main()

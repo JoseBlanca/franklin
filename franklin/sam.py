@@ -6,27 +6,40 @@ Created on 05/01/2010
 
 @author: peio
 '''
-import os, re
+import os, re, tempfile
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.seqio_utils import seqs_in_file
 
-def guess_picard_path():
-    'It returns the picard path using locate'
-    a_picard_jar = 'SortSam.jar'
-    cmd = ['locate', a_picard_jar]
+def _locate_file(fpath):
+    cmd = ['locate', fpath]
     stdout = call(cmd, raise_on_error=True)[0]
-    picard_path = None
+    found_path = None
     for line in stdout.splitlines():
-        if a_picard_jar in line:
-            picard_path = line.replace(a_picard_jar, '')
-            picard_path = picard_path.strip()
+        if fpath in line:
+            found_path = line.strip()
             break
-    if not picard_path:
-        msg =  'Picard was not found in your system and it is required to '
+    return found_path
+
+def _guess_java_install_dir(jar_fpath):
+    'It returns the dir path using locate on a jar file'
+    java_dir_path = _locate_file(jar_fpath)
+    if not java_dir_path:
+        msg =  '%s was not found in your system and it is required to '
         msg += 'process sam files'
+        msg = msg % jar_fpath
         raise RuntimeError(msg)
-    return picard_path
+    java_dir_path = java_dir_path.replace(jar_fpath, '')
+    return java_dir_path
+
+def _guess_picard_path():
+    'It returns the picard path using locate'
+    return _guess_java_install_dir('SortSam.jar')
+
+def _guess_gatk_path():
+    'It returns the GATK path using locate'
+    return _guess_java_install_dir('GenomeAnalysisTK.jar')
+
 
 def bam2sam(bam_path, sam_path=None):
     '''It converts between bam and sam. It sampath is not given, it return
@@ -45,7 +58,7 @@ def sam2bam(sam_path, bam_path):
 def bamsam_converter(input_fhand, output_fhand, picard_path=None):
     'Converts between sam and bam'
     if picard_path is None:
-        picard_path = guess_picard_path()
+        picard_path = _guess_picard_path()
     picard_jar = os.path.join(picard_path, 'SamFormatConverter.jar')
     cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_fhand,
            'OUTPUT=' + output_fhand]
@@ -151,9 +164,9 @@ def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
                  sort_method='coordinate'):
     'It sorts a bam file using picard'
     if picard_path is None:
-        picard_path = guess_picard_path()
+        picard_path = _guess_picard_path()
     picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
-    cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
+    cmd = ['java', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
            'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
 
@@ -251,7 +264,49 @@ def create_bam_index(bam_fpath):
     cmd = ['samtools', 'index', bam_fpath]
     call(cmd, raise_on_error=True)
 
+def create_picard_dict(reference_fpath, picard_path=None):
+    'It creates a picard dict if if it does not exist'
+    dict_path = os.path.splitext(reference_fpath)[0] + '.dict'
+    if os.path.exists(dict_path):
+        return
+    if picard_path is None:
+        picard_path = _guess_picard_path()
+    picard_jar = os.path.join(picard_path, 'CreateSequenceDictionary.jar')
+    cmd = ['java', '-jar', picard_jar,
+           'R=%s' % reference_fpath,
+           'O=%s' % dict_path]
+    call(cmd, raise_on_error=True)
 
+def create_sam_reference_index(reference_fpath):
+    'It creates a sam index for a reference sequence file'
+    index_fpath = reference_fpath + '.fai'
+    if os.path.exists(index_fpath):
+        return
+    cmd = ['samtools', 'faidx', reference_fpath]
+    call(cmd, raise_on_error=True)
 
+def realign_bam(bam_fpath, reference_fpath, out_bam_fpath):
+    'It realigns the bam using GATK Local realignment around indels'
+    #reference sam index
+    create_sam_reference_index(reference_fpath)
 
+    #reference picard dict
+    create_picard_dict(reference_fpath)
 
+    #bam index
+    create_bam_index(bam_fpath)
+
+    #the intervals to realign
+    gatk_path = _guess_gatk_path()
+    gatk_jar = os.path.join(gatk_path, 'GenomeAnalysisTK.jar')
+    intervals_fhand = tempfile.NamedTemporaryFile(prefix='intervals',
+                                                  suffix='.txt')
+    cmd = ['java', '-jar', gatk_jar, '-T', 'RealignerTargetCreator',
+           '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name]
+    call(cmd, raise_on_error=True)
+
+    #the realignment itself
+    cmd = ['java', '-Djava.io.tmpdir=%s', tempfile.gettempdir(),
+           '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
+           '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
+           '--output', out_bam_fpath]
