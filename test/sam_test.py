@@ -5,7 +5,6 @@ Created on 05/01/2010
 @author: peio
 '''
 from tempfile import NamedTemporaryFile
-from test.utils.misc_utils_test import NamedTemporariDirTest
 import unittest, os
 
 from franklin.utils.misc_utils import DATA_DIR
@@ -13,7 +12,7 @@ from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
-                          standardize_sam)
+                          standardize_sam, realign_bam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -91,7 +90,7 @@ SGN-E40000	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGG
 
     @staticmethod
     def	test_readgroup_to_sam():
-        'It	test	that	we	can	add	readgroup	tah	and	header	to	a	bam'
+        'It	test that we can add the readgroup the and the header to a bam'
         sam_value	=	'''@SQ	SN:SGN-U576692	LN:1714
 @SQ	SN:SGN-U572743	LN:833
 SGN-E221403	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT	558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7	AS:i:160	XS:i:0	XF:i:3	XE:i:4	XN:i:0
@@ -132,7 +131,7 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
         sort_bam_sam(sam_fpath, sorted_bamfhand.name)
 
     @staticmethod
-    def test_add_qualities():
+    def test_standarize_sam():
         'It test that we can add default qualities to the sanger reads'
         sam_fhand = StringIO('''@SQ\tSN:SGN-U576692\tLN:1714
 @SQ\tSN:SGN-U572743\tLN:833
@@ -140,12 +139,24 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
 @RG\tID:g3\tLB:g3\tSM:g3\tPL:sanger
 SGN-E200000\t0\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATKTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
 SGN-E40000\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
+SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
 ''')
         out_fhand = StringIO()
         standardize_sam(sam_fhand, out_fhand, 20, add_def_qual=True)
-        line = out_fhand.getvalue().splitlines()[4]
-        assert 'GGATGATNTTAGAG\t55555555555555\t' in line
+        lines = out_fhand.getvalue().splitlines()
+        assert 'GGATGATNTTAGAG\t55555555555555\t' in lines[4]
+        assert lines[6].startswith('SGN-E40000\t20\t*\t0\t0\t*\t*\t0\t0\t')
+
+    @staticmethod
+    def test_realignbam():
+        'It test the GATK realigner'
+        sam_test_dir = os.path.join(DATA_DIR, 'samtools')
+        bam_path = os.path.join(sam_test_dir, 'seqs.bam')
+        reference_path = os.path.join(sam_test_dir, 'reference.fasta')
+        out_bam = NamedTemporaryFile(suffix='.bam')
+        realign_bam(bam_path, reference_path, out_bam.name)
+        out_bam.close()
 
 if	__name__	==	"__main__":
-    #import	sys;sys.argv	=	['',	'SamTest.test_add_qualities']
+    #import	sys;sys.argv	=	['',	'SamTest.test_realignbam']
     unittest.main()

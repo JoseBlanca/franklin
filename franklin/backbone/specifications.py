@@ -31,5 +31,5 @@ BACKBONE_BASENAMES = {
     'merged_bam':'merged.bam',
     'snv_result':'all.snvs',
     'merged_frg':'all_seq.frg',
-    'blast_resul_file':'blastout.xml'
+    'blast_basename':'blast'
 }

@@ -128,6 +128,23 @@ class MergeBamAnalyzer(Analyzer):
         temp_bam.close()
         temp_sam.close()
 
+class RealignBamAnalyzer(Analyzer):
+    'It realigns the bam using GATK'
+    def run(self):
+        '''It runs the analysis.'''
+        settings = self._project_settings
+        project_path = settings['General_settings']['project_path']
+        os.chdir(project_path)
+        inputs    = self._get_input_fpaths()
+        bam_fpath = inputs['bams']
+
+        #get the positions to realign
+
+        #do the realignment
+
+        #replace the original bam
+
+
 DEFINITIONS = {
     'set_assembly_as_reference':
         {'inputs':{
@@ -169,5 +186,15 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': MergeBamAnalyzer,
         },
+    'realign_bam':
+        {'inputs':{
+            'bam':
+                {'directory': 'mapping_result',
+                 'file_kinds': 'bam'},
+            },
+         'outputs':{'result':{'directory': 'mapping_result'}},
+         'analyzer': RealignBamAnalyzer,
+        },
+
 }
 

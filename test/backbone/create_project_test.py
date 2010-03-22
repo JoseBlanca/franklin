@@ -4,14 +4,14 @@ Created on 26/01/2010
 @author: jose
 '''
 import unittest, os.path
+from os.path import join, exists
+
+from configobj import ConfigObj
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
-
-from configobj import ConfigObj
-from os.path import join, exists
 
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAAT
@@ -364,34 +364,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         os.chdir('/tmp')
         test_dir.close()
 
-    @staticmethod
-    def xtest_ortholog_annoation_analysis():
-        'We can annotate orthologs'
-        test_dir = NamedTemporaryDir()
-        project_name = 'backbone'
-
-
-
-        # create blast results
-        melon_tair_blastdir = join(project_name, 'blast', 'melon', 'tair')
-        os.makedirs(melon_tair_blastdir)
-        tair_melon_blastdir = join(project_name, 'blast', 'tair', 'melon')
-        os.makedirs(tair_melon_blastdir)
-        os.symlink(join(DATA_DIR, 'melon_tair.xml'), melon_tair_blastdir)
-        os.symlink(join(DATA_DIR, 'tair_melon.xml'), tair_melon_blastdir)
-
-
-        config = {'blast':{'tair': {'path':'path/to/tairdb',
-                                    'species':'arabidopsis',
-                                    'dbtype': 'nucl'}},
-                  'orthologs_annotation':{'ortholog_databases': 'tair'}
-                 }
-        settings_path = create_project(directory=test_dir.name,
-                                       name=project_name,
-                                      configuration=config)
-        do_analysis(project_settings=settings_path, kind='annotate_orthologs')
-
-
 if __name__ == "__main__":
-    import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
+    #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
     unittest.main()

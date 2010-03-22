@@ -6,27 +6,40 @@ Created on 05/01/2010
 
 @author: peio
 '''
-import os, re
+import os, re, tempfile
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.seqio_utils import seqs_in_file
 
-def guess_picard_path():
-    'It returns the picard path using locate'
-    a_picard_jar = 'SortSam.jar'
-    cmd = ['locate', a_picard_jar]
+def _locate_file(fpath):
+    cmd = ['locate', fpath]
     stdout = call(cmd, raise_on_error=True)[0]
-    picard_path = None
+    found_path = None
     for line in stdout.splitlines():
-        if a_picard_jar in line:
-            picard_path = line.replace(a_picard_jar, '')
-            picard_path = picard_path.strip()
+        if fpath in line:
+            found_path = line.strip()
             break
-    if not picard_path:
-        msg =  'Picard was not found in your system and it is required to '
+    return found_path
+
+def _guess_java_install_dir(jar_fpath):
+    'It returns the dir path using locate on a jar file'
+    java_dir_path = _locate_file(jar_fpath)
+    if not java_dir_path:
+        msg =  '%s was not found in your system and it is required to '
         msg += 'process sam files'
+        msg = msg % jar_fpath
         raise RuntimeError(msg)
-    return picard_path
+    java_dir_path = java_dir_path.replace(jar_fpath, '')
+    return java_dir_path
+
+def _guess_picard_path():
+    'It returns the picard path using locate'
+    return _guess_java_install_dir('SortSam.jar')
+
+def _guess_gatk_path():
+    'It returns the GATK path using locate'
+    return _guess_java_install_dir('GenomeAnalysisTK.jar')
+
 
 def bam2sam(bam_path, sam_path=None):
     '''It converts between bam and sam. It sampath is not given, it return
@@ -45,7 +58,7 @@ def sam2bam(sam_path, bam_path):
 def bamsam_converter(input_fhand, output_fhand, picard_path=None):
     'Converts between sam and bam'
     if picard_path is None:
-        picard_path = guess_picard_path()
+        picard_path = _guess_picard_path()
     picard_jar = os.path.join(picard_path, 'SamFormatConverter.jar')
     cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_fhand,
            'OUTPUT=' + output_fhand]
@@ -151,28 +164,66 @@ def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
                  sort_method='coordinate'):
     'It sorts a bam file using picard'
     if picard_path is None:
-        picard_path = guess_picard_path()
+        picard_path = _guess_picard_path()
     picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
-    cmd = ['java', '-Xmx2g', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
+    cmd = ['java', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
            'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
 
+def _fix_non_mapped_reads(items):
+    'Given a list with sam line it removes MAPQ from non-mapped reads'
+    #is the read mapped?
+    flag = int(items[1])
+    if flag == 0:
+        mapped = True
+    elif flag in (20, 4):  #just a sohortcut
+        mapped = False
+    else:
+        if bin(flag)[-3] == '1':
+            mapped = False
+        else:
+            mapped = True
+    if not mapped:
+        #RNAME = *
+        items[2] = '*'
+        #POS = 0
+        items[3] = '0'
+        #MAPQ = 0
+        items[4] = '0'
+        #CIGAR = *
+        items[5] = '*'
+
+def _add_default_quality(items, sanger_read_groups, default_qual):
+    'It adds the quality to the sanger reads that do not have it'
+    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
+    if rg_id:
+        rg_id = rg_id[0].strip().replace('RG:Z:', '')
+    else:
+        msg = 'Read group is required to add default qualities'
+        raise RuntimeError(msg)
+    if rg_id not in sanger_read_groups:
+        msg = 'Platform for read group %s is not sanger' % rg_id
+        raise RuntimeError(msg)
+    #here we set the default qual
+    items[10] = default_qual * len(items[9])
+
 def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
-                   add_def_qual=False, only_std_char=True):
+                   add_def_qual=False, only_std_char=True,
+                   fix_non_mapped=True):
     '''It adds the default qualities to the reads that do not have one and
     it makes sure that only ACTGN are used in the sam file reads.
 
     The quality should be given as a phred integer
     '''
-    only_std_char = True
-    add_def_qual = True
     in_fhand.seek(0)
     sep = '\t'
+
     sanger_read_groups = set()
     default_qual = chr(int(default_sanger_quality) + 33)
     regex = re.compile(r'[^ACTGN]')
     for line in in_fhand:
-        if line[:3] == '@RG':
+        #it we're adding qualities we have to keep the read group info
+        if add_def_qual and line[:3] == '@RG':
             items = line.split(sep)
             rg_id = None
             platform = None
@@ -189,23 +240,18 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
             items = line.split(sep)
             #quality replaced
             do_qual = add_def_qual and items[10] == '*'
-            do_std = only_std_char
-            if do_qual or do_std:
+            if do_qual or only_std_char:
+                #we add default qualities to the reads with no quality
                 if do_qual: #empty quality
-                    rg_id = filter(lambda x: x.startswith('RG:Z:'), items)
-                    if rg_id:
-                        rg_id = rg_id[0].strip().replace('RG:Z:', '')
-                    else:
-                        msg = 'Read group is required to add default qualities'
-                        raise RuntimeError(msg)
-                    if rg_id not in sanger_read_groups:
-                        msg = 'Platform for read group %s is not sanger' % rg_id
-                        raise RuntimeError(msg)
-                    #here we set the default qual
-                    items[10] = default_qual * len(items[9])
-                if do_std:
+                    _add_default_quality(items, sanger_read_groups,
+                                         default_qual)
+                #we change all seq characters to ACTGN
+                if only_std_char:
                     text = items[9].upper()
                     items[9] = regex.sub('N', text)
+                #we remove MAPQ from the non-mapped reads
+                if fix_non_mapped:
+                    _fix_non_mapped_reads(items)
                 line = sep.join(items)
         out_fhand.write(line)
 
@@ -218,7 +264,49 @@ def create_bam_index(bam_fpath):
     cmd = ['samtools', 'index', bam_fpath]
     call(cmd, raise_on_error=True)
 
+def create_picard_dict(reference_fpath, picard_path=None):
+    'It creates a picard dict if if it does not exist'
+    dict_path = os.path.splitext(reference_fpath)[0] + '.dict'
+    if os.path.exists(dict_path):
+        return
+    if picard_path is None:
+        picard_path = _guess_picard_path()
+    picard_jar = os.path.join(picard_path, 'CreateSequenceDictionary.jar')
+    cmd = ['java', '-jar', picard_jar,
+           'R=%s' % reference_fpath,
+           'O=%s' % dict_path]
+    call(cmd, raise_on_error=True)
 
+def create_sam_reference_index(reference_fpath):
+    'It creates a sam index for a reference sequence file'
+    index_fpath = reference_fpath + '.fai'
+    if os.path.exists(index_fpath):
+        return
+    cmd = ['samtools', 'faidx', reference_fpath]
+    call(cmd, raise_on_error=True)
 
+def realign_bam(bam_fpath, reference_fpath, out_bam_fpath):
+    'It realigns the bam using GATK Local realignment around indels'
+    #reference sam index
+    create_sam_reference_index(reference_fpath)
 
+    #reference picard dict
+    create_picard_dict(reference_fpath)
 
+    #bam index
+    create_bam_index(bam_fpath)
+
+    #the intervals to realign
+    gatk_path = _guess_gatk_path()
+    gatk_jar = os.path.join(gatk_path, 'GenomeAnalysisTK.jar')
+    intervals_fhand = tempfile.NamedTemporaryFile(prefix='intervals',
+                                                  suffix='.txt')
+    cmd = ['java', '-jar', gatk_jar, '-T', 'RealignerTargetCreator',
+           '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name]
+    call(cmd, raise_on_error=True)
+
+    #the realignment itself
+    cmd = ['java', '-Djava.io.tmpdir=%s', tempfile.gettempdir(),
+           '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
+           '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
+           '--output', out_bam_fpath]
