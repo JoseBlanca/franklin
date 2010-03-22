@@ -24,9 +24,8 @@ remove_vectors = {'function':create_vector_striper_by_alignment,
                   'comment': 'Remove vector using vector db'}
 
 remove_adaptors = {'function':create_vector_striper_by_alignment,
-       'arguments':{'vectors':os.path.join(DATA_DIR,
-                                           'standar_solexa_adaptors.fasta'),
-                     'aligner':'exonerate'},
+       'arguments':{'vectors':None, 'aligner':'exonerate'},
+                    #os.path.join(DATA_DIR, 'standar_solexa_adaptors.fasta'),
        'type': 'mapper',
        'name': 'remove_adaptors',
        'comment': 'Remove adaptors'}
@@ -101,8 +100,9 @@ mask_words = {'function'  : create_masker_for_words,
 ################################################################################
 
 SEQPIPELINES = {
-    'sanger_with_qual'   : [ strip_quality_lucy2, remove_vectors,
-                            mask_low_complexity, filter_short_seqs_sanger ],
+    'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
+                            remove_vectors, mask_low_complexity,
+                            filter_short_seqs_sanger ],
 
     'sanger_without_qual': [remove_vectors, strip_quality_by_n,
                             mask_low_complexity, filter_short_seqs_sanger],

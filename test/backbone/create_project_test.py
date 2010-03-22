@@ -112,14 +112,25 @@ class TestBackbone(unittest.TestCase):
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        settings_path = create_project(directory=test_dir.name,
-                                       name=project_name)
         project_dir = join(test_dir.name, project_name)
+        adaptors_dir = join(project_dir, 'config_data', 'adaptors')
+        adaptors_path_454 = join(adaptors_dir, '454_adaptors')
+        configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454}}
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
         original_reads_dir = join(reads_dir, 'original')
         os.mkdir(reads_dir)
         os.mkdir(original_reads_dir)
+
+        os.makedirs(adaptors_dir)
+        adap_fhand = open(adaptors_path_454, 'w')
+        adap_fhand.write('''>smart_5_cds_primer_1
+GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
+        adap_fhand.close()
 
         #print original_reads_dir
         fpath_454 = join(original_reads_dir, 'pl_454.lb_a.sfastq')
@@ -132,6 +143,7 @@ class TestBackbone(unittest.TestCase):
         assert exists(cleaned_dir)
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
+        assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in open(cleaned_454).read()
 
         do_analysis(project_settings=settings_path, kind='clean_read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')

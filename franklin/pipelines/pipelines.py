@@ -72,7 +72,10 @@ def configure_pipeline(pipeline, configuration):
     # Here I check that none of the arguments have a none value
     for step in seq_pipeline:
         for key, value in step['arguments'].items():
-            if value is None:
+            # If the step is remove_adaptors, the vectors value can be None
+            if (value is None and key == 'vectors' and
+                step['name'] != 'remove_adaptors'):
+
                 msg = 'Parameter %s in step %s from pipeline %s must be set' % \
                             (key, step['name'], pipeline)
                 raise RuntimeError(msg)
@@ -115,6 +118,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #we create all the cleaner functions
     cleaner_functions = {}
     for analysis_step in pipeline_steps:
+        if analysis_step['name'] == 'remove_adaptors':
+            print analysis_step
         function_factory  = analysis_step['function']
         if analysis_step['arguments']:
             arguments = analysis_step['arguments']

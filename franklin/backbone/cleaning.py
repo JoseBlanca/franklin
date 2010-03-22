@@ -47,12 +47,11 @@ class CleanReadsAnalyzer(Analyzer):
             adaptors_file = settings['adaptors_file_454']
         elif platform == 'illumina' and 'adaptors_file_illumina' in settings:
             adaptors_file = settings['adaptors_file_illumina']
-        if adaptors_file:
-            configuration['remove_adaptors'] = {}
-            configuration['remove_adaptors']['vectors'] = adaptors_file
+
+        configuration['remove_adaptors'] = {}
+        configuration['remove_adaptors']['vectors'] = adaptors_file
 
         # lucy settings.
-
         lucy_settings = settings['lucy_settings']
         if os.path.exists(lucy_settings):
             lucy_settings_dir = os.path.dirname(lucy_settings)

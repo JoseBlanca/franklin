@@ -21,7 +21,7 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os
+import logging, os, re
 from tempfile import NamedTemporaryFile
 from itertools import tee
 
@@ -450,8 +450,12 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
         It returns a striped sequence with the longest segment without vector.
         '''
+
         if sequence is None:
             return None
+        if vectors is None:
+            return sequence
+
 
         # first we are going to align he sequence with the vectors
         alignment_fhand = aligner_(sequence)[aligner]
@@ -652,3 +656,17 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
                                                        sequence.seq.alphabet))
     return mask_repeats_by_repeatmasker
 
+
+def create_word_remover_filter(words):
+    'It removes the given words if they are in the start of the seq'
+    compiled_regexs = [(word, re.compile(word)) for word in words]
+    def word_remover(sequence):
+        'The remover'
+        if sequence is None:
+            return None
+        for word, compiled_regex in compiled_regexs:
+            if compiled_regex.match(sequence.seq):
+                sequence = sequence[:len(word)]
+        return sequence
+
+    return word_remover
