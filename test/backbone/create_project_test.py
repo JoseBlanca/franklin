@@ -12,6 +12,7 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
+from franklin.seq.readers import seqs_in_file
 
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAAT
@@ -115,7 +116,11 @@ class TestBackbone(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
-        configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454}}
+        words = ['AATTCCC']
+        configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454,
+                                     'words_to_remove_454':words}}
+
+
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=configuration)
@@ -143,7 +148,13 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         assert exists(cleaned_dir)
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
-        assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in open(cleaned_454).read()
+        seqs = seqs_in_file(open(cleaned_454))
+        seq = seqs.next()
+
+
+        seq = seq.seq
+        assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
+        assert  seq.startswith('aattccc')
 
         do_analysis(project_settings=settings_path, kind='clean_read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')

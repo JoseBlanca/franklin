@@ -118,8 +118,6 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #we create all the cleaner functions
     cleaner_functions = {}
     for analysis_step in pipeline_steps:
-        if analysis_step['name'] == 'remove_adaptors':
-            print analysis_step
         function_factory  = analysis_step['function']
         if analysis_step['arguments']:
             arguments = analysis_step['arguments']

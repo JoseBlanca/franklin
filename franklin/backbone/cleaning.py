@@ -40,6 +40,7 @@ class CleanReadsAnalyzer(Analyzer):
             configuration['remove_vectors']['vectors'] = \
                                                      settings['vector_database']
 
+        # adaptors settings
         adaptors_file = None
         if platform == 'sanger' and 'adaptors_file_sanger' in settings:
             adaptors_file = settings['adaptors_file_sanger']
@@ -47,9 +48,21 @@ class CleanReadsAnalyzer(Analyzer):
             adaptors_file = settings['adaptors_file_454']
         elif platform == 'illumina' and 'adaptors_file_illumina' in settings:
             adaptors_file = settings['adaptors_file_illumina']
-
         configuration['remove_adaptors'] = {}
         configuration['remove_adaptors']['vectors'] = adaptors_file
+
+
+        # Words settings
+        words = None
+        if platform == 'sanger' and 'words_to_remove_sanger' in settings:
+            words = settings['words_to_remove_sanger']
+        elif platform == '454' and 'words_to_remove_454' in settings:
+            words = settings['words_to_remove_454']
+        elif platform == 'illumina' and 'words_to_remove_illumina' in settings:
+            words = settings['words_to_remove_illumina']
+
+        configuration['word_masker'] = {}
+        configuration['word_masker']['words'] = words
 
         # lucy settings.
         lucy_settings = settings['lucy_settings']

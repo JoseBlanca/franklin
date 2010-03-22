@@ -3,7 +3,6 @@ Created on 03/12/2009
 
 @author: peio
 '''
-import os
 from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_striper_by_quality,
                                     create_striper_by_quality_lucy,
@@ -12,9 +11,9 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_masker_for_polia,
                                     create_masker_for_low_complexity,
                                     create_masker_repeats_by_repeatmasker,
-                                    create_masker_for_words)
+                                    create_word_masker)
+
 from franklin.seq.seq_filters import create_length_filter
-from franklin.utils.misc_utils import DATA_DIR
 
 #pylint:disable-msg=C0103
 remove_vectors = {'function':create_vector_striper_by_alignment,
@@ -88,7 +87,7 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'comment': 'Remove seq shorter than 22 nt'}
 
 # words
-mask_words = {'function'  : create_masker_for_words,
+mask_words = {'function'  : create_word_masker,
               'arguments' : {'words':None},
               'type'      : 'mapper',
               'name'      : 'word_masker',
@@ -102,10 +101,11 @@ mask_words = {'function'  : create_masker_for_words,
 SEQPIPELINES = {
     'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
                             remove_vectors, mask_low_complexity,
-                            filter_short_seqs_sanger ],
+                            mask_words, filter_short_seqs_sanger ],
 
     'sanger_without_qual': [remove_vectors, strip_quality_by_n,
-                            mask_low_complexity, filter_short_seqs_sanger],
+                            mask_low_complexity, mask_words,
+                            filter_short_seqs_sanger],
 
     'repeatmasker'       : [mask_repeats, filter_short_seqs_sanger],
 
@@ -115,6 +115,7 @@ SEQPIPELINES = {
     'adaptors'           : [remove_adaptors, filter_short_seqs_sanger],
 
     'mask_dust'          : [mask_polia, mask_low_complexity],
+
     'word_masker'        : [mask_words, filter_short_seqs_solexa]}
 
 

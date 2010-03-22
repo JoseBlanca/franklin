@@ -43,7 +43,13 @@ def create_project(name, directory=None, configuration=None):
     comments.append('adaptors_file_454 = /some/adaptors/fasta/file')
     comments.append('adaptors_file_sanger = /some/adaptors/fasta/file')
     comments.append('adaptors_file_illumina = /some/adaptors/fasta/file')
+
+    comments.append('words_to_remove_sanger = [someword, another_word]')
+    comments.append('words_to_remove_454 = [someword, another_word]')
+    comments.append('words_to_remove_illumina = [someword, another_word]')
+
     config['Cleaning'].comments = {'vector_database':comments}
+
 
     lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
     config['Cleaning']['lucy_settings'] = lucy_settings

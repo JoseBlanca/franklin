@@ -227,19 +227,25 @@ def create_masker_for_polia():
         return _sequence_from_trimpoly(fhand, sequence, trim=False)
     return mask_polya
 
-def create_masker_for_words(words):
-    '''It creates a masker function that mask the given words that appear in the
-     sequences'''
-    def word_masker(sequence):
-        'It performs the masker for each sequence'
+
+def create_word_masker(words, beginning=True):
+    'It removes the given words if they are in the start of the seq'
+    def word_remover(sequence):
+        'The remover'
         if sequence is None:
             return None
-        seq = sequence.seq
+        str_seq = str(sequence.seq)
         for word in words:
-            seq = str(seq).replace(word, word.lower())
-        seq = Seq(seq, sequence.seq.alphabet)
-        return copy_seq_with_quality(sequence, seq=seq)
-    return word_masker
+            if beginning and str_seq.startswith(word):
+                seq = str_seq[:len(word)].lower() + str_seq[len(word):]
+                sequence = copy_seq_with_quality(sequence, seq=seq)
+            elif not beginning:
+                seq = str_seq.replace(word, word.lower())
+                sequence = copy_seq_with_quality(sequence, seq=seq)
+
+        return sequence
+
+    return word_remover
 
 def create_striper_by_quality_trimpoly():
     '''It creates a function that removes bad quality regions.
@@ -657,16 +663,4 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
     return mask_repeats_by_repeatmasker
 
 
-def create_word_remover_filter(words):
-    'It removes the given words if they are in the start of the seq'
-    compiled_regexs = [(word, re.compile(word)) for word in words]
-    def word_remover(sequence):
-        'The remover'
-        if sequence is None:
-            return None
-        for word, compiled_regex in compiled_regexs:
-            if compiled_regex.match(sequence.seq):
-                sequence = sequence[:len(word)]
-        return sequence
 
-    return word_remover

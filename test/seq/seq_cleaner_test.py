@@ -21,7 +21,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_longest_non_matched_seq_region,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
-                                create_masker_for_words)
+                                create_word_masker)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -248,14 +248,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq_fhand = open(os.path.join(DATA_DIR, 'lucy',
                                       'seq_with_adaptor1.fastq'))
         seq_iter = lucy_striper(seqs_in_file(seq_fhand ,format='fastq'))[0]
-        print seq_iter.next()
-
-
-
-
-
-
-
+        #print seq_iter.next()
 
 
 
@@ -392,17 +385,6 @@ class SeqCleanerTest(unittest.TestCase):
         masked_str = str(masked_seq.seq)
         assert  masked_str == seq
 
-    @staticmethod
-    def test_word_masking():
-        'It test the word masking'
-        words = ['AA', 'AT', 'CG']
-        seq1 = SeqWithQuality(seq=Seq('AACTGTA'))
-        seq2 = SeqWithQuality(seq=Seq('ATCGTTTT'))
-        word_masker = create_masker_for_words(words)
-        seq1_masked = word_masker(seq1)
-        assert str(seq1_masked.seq) == 'aaCTGTA'
-        seq2_masked = word_masker(seq2)
-        assert str(seq2_masked.seq) == 'atcgTTTT'
 
 class SeqSplitterTests(unittest.TestCase):
     'Here we test seq splitter functions'
@@ -479,6 +461,39 @@ class SeqSplitterTests(unittest.TestCase):
         assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
         assert str(new_seq_iter.next().seq) == 'AATTAAT'
         assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
+
+    @staticmethod
+    def test_word_masker():
+        'It test if we remove words from the beginning of the seq'
+        word = 'ATAT'
+        seq1 = word + 'tctcatcatca'.upper()
+        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+
+        remover = create_word_masker([word])
+        seq = remover(seq)
+        assert seq.seq[0] == 'a'
+
+        seq1 = 'atactctcatcatca'.upper()
+        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        seq = remover(seq)
+        assert seq.seq == seq1
+
+        word = 'CA'
+        seq1 = 'ATCATCATCATCA'
+        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        remover = create_word_masker([word], False)
+        seq = remover(seq)
+        assert seq.seq == 'ATcaTcaTcaTca'
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
