@@ -44,7 +44,7 @@ class AnnotationTests(unittest.TestCase):
         sequence = SeqWithQuality(seq='aaa', name='melon2')
         sequence = ortho_annotator(sequence)
         assert sequence.annotations['arabidopsis-orthologs'] == ['tair2']
-
+        
     @staticmethod
     def test_get_description_with_funct():
         'It tests if we can get description for seqs in blasts. with mod funct'

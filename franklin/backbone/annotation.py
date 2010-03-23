@@ -50,7 +50,7 @@ class AnnotationAnalyzer(Analyzer):
             io_fhands = {'in_seq': open(seq_fpath),
                          'outputs':{'repr':temp_repr}}
             if seq_fpath in configuration:
-                #there is a different cofiguration for every file to annotate
+                #there is a different configuration for every file to annotate
                 config = configuration[seq_fpath]
             else:
                 config = configuration
@@ -111,20 +111,25 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               blast_program=blast_program,
                                               blast_db_seq=input_,
                                               dbtype=db_kind)
-                blasts[input_] = {'blast':blast, 'reverse_blast':reverse_blast}
+                if input_ not in blasts:
+                    blasts[input_] = {}
+                blasts[input_][database] = {'blast':blast,
+                                            'reverse_blast':reverse_blast}
 
         pipeline = []
         configuration = {}
         for database in ortholog_databases:
             step = annotate_orthologs
             step['name_in_config'] = database
+            #an annotation step for every ortholog database
             pipeline.append(step)
             for input_ in inputs['input']:
                 reverse_blast = ''
-                step_config = {'blast':{'blast': blasts[input_]['blast']},
-                               'reverse_blast':{'blast':
-                                               blasts[input_]['reverse_blast']},
-                               'species': database}
+                step_config = {
+                    'blast':{'blast': blasts[input_][database]['blast']},
+                    'reverse_blast':{'blast':
+                                     blasts[input_][database]['reverse_blast']},
+                    'species': database}
                 configuration[input_] = {}
                 configuration[input_][database] = step_config
 
@@ -154,8 +159,6 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=output_dir)
-
-
 
 class SnvCallerAnalyzer(AnnotationAnalyzer):
     'It performs the calling of the snvs in a bam file'
