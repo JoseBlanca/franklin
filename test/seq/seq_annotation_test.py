@@ -18,7 +18,7 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.seq.seq_annotation import create_microsatelite_annotator, \
+from franklin.seq.seq_annotation import create_microsatellite_annotator, \
     create_ortholog_annotator, create_description_annotator, create_orf_annotator, \
     create_cdna_intron_annotator
 from franklin.seq.seqs import SeqWithQuality, Seq
@@ -66,7 +66,7 @@ class AnnotationTests(unittest.TestCase):
     def test_microsatelite_annotator():
         'It test the srrs annotator'
         seq = 'atgatgatgatgatgatgatgatgatgatggcgcgcgcgcgcgcgcgcgcgcgcgcg'
-        ssr_annot = create_microsatelite_annotator()
+        ssr_annot = create_microsatellite_annotator()
         seq1 = SeqWithQuality(seq=seq)
         ssr_annot(seq1)
         assert seq1.features[0].qualifiers['score'] == 27

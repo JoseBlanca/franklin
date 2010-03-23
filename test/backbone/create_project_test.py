@@ -15,9 +15,9 @@ from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
 
 READS_454 = '''@FKU4KFK07H6D2L
-GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAAT
+GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAATAGTCAGCATGCATGATTAGGCTAAGCCGTAAGCATAGCATGACCCCATTGGCAAAGCTAGCATGATACGACATCATTATAGCGAGAGACGCATATCGAGAATGAGCGATCAGCACATGTCAGCGAGCTACTGACTATCATATATAGCGCAGAGACGACTAGCATCGAT
 +
-CCFFFFFCC;;;FFF99;HHIHECCHHIIIFHHEEEHHHHHHIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGGFFGGBCCGFFFGG
+CCFFFFFCC;;;FFF99;HHIHECCHHIIIFHHEEEHHHHHHIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGGFFGGBCCGFFFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
 @FKU4KFK07IJEB9
 AATTCCCTTTCCGGTGATCGCCTCTCCTAGCAATGATGCAGCAAAGCCGATCATAGCAACACGGCCGACGAAGAGTTCATTCTGCTTGGTAAAACCAATGCCACCAGAAGTCCCAAAAATTCCATCTTCAACCTTCTGCTTCGGCTTCTCAACCTTCTTGGGCGGGGCTTTAGTTCTGGATTTGAACACAGCAAGAGGGTGAAACCA
 +
@@ -116,7 +116,7 @@ class TestBackbone(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
-        words = ['AATTCCC']
+        words = ['ATGAAC']
         configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454,
                                      'words_to_remove_454':words}}
 
@@ -148,13 +148,13 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         assert exists(cleaned_dir)
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
-        seqs = seqs_in_file(open(cleaned_454))
-        seq = seqs.next()
-
-
-        seq = seq.seq
+        seqs = list(seqs_in_file(open(cleaned_454)))
+        seq = seqs[0].seq
+        # It means thar the adaptor has been removed
         assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
-        assert  seq.startswith('aattccc')
+        seq = seqs[2].seq
+        # It means thar the starting word has been removed
+        assert  seq.startswith('CGCAAAAG')
 
         do_analysis(project_settings=settings_path, kind='clean_read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')
@@ -336,44 +336,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         os.chdir('/tmp')
         test_dir.close()
 
-    @staticmethod
-    def test_cdna_intron_annoation_analysis():
-        'We can annotate introns'
-        test_dir = NamedTemporaryDir()
-        project_name = 'backbone'
-        blast_db_path = os.path.join(DATA_DIR, 'blast')
-        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
-        config = {'Cdna_intron_annotation':{'genomic_db': genomic_db,
-                                            'genomic_seqs':genomic_db}}
-        settings_path = create_project(directory=test_dir.name,
-                                       name=project_name,
-                                      configuration=config)
-        project_dir = join(test_dir.name, project_name)
-        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
-        seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
-        seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
-        seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
-        seq += 'TTACAGGCAGAGGTGTAATTCAGATATGGTGCCTGCCAGATCTCATTCAAAAAGATATAATTG'
-        seq += 'TGAAAGAAGATTATTTTGCTCAGGTTAACAAAAAACCGTATAGAAATTTGACAAGAAGTGAAG'
-        seq += 'CAGGTACGGGAGAAGTATCTGGACCTCAAAAACCAAGAGGAAGACCAAAAAAGAACCCTGGTA'
-        seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
-        seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
-        seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
-        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
-        annot_input_dir = join(project_dir, 'annotations', 'input')
-        os.makedirs(annot_input_dir)
 
-        #create some seqs to annotate
-        fasta = '>seq\n%s\n' % seq
-        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
-        fhand.write(fasta)
-        fhand.close()
-        do_analysis(project_settings=settings_path, kind='annotate_introns')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
-
-        assert "type='intron'" in  open(repr_fpath).read()
-        os.chdir('/tmp')
-        test_dir.close()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']

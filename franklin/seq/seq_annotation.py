@@ -109,7 +109,7 @@ def _get_descriptions_from_blasts(blasts):
     return seq_annot
 
 
-def create_microsatelite_annotator():
+def create_microsatellite_annotator():
     'It creates a function that'
     runner = create_runner(tool='sputnik')
 
@@ -135,7 +135,8 @@ def _get_features_from_sputnik(fhand):
             end   = int(items[3]) - 1
             score = int(items[8])
             unit  = items[10]
-            yield SeqFeature(location=FeatureLocation(start, end), type='ssr',
+            yield SeqFeature(location=FeatureLocation(start, end),
+                             type='microsatellite',
                              qualifiers={'score':score, 'unit':unit,
                                          'type':ssr_type})
 def create_orf_annotator(parameters):

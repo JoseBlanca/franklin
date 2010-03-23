@@ -10,7 +10,8 @@ from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.blast_runner import backbone_blast_runner
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
-                                                 annotate_with_descriptions)
+                                                 annotate_with_descriptions,
+                                                 annotate_microsatelites)
 from franklin.sam import create_bam_index
 from franklin.pipelines.snv_pipeline_steps import (
                                             unique_contiguous_region_filter,
@@ -314,6 +315,22 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                                     inputs=inputs,
                                     output_dir=output_dir)
 
+class AnnotateMicrosateliteAnalyzer(AnnotationAnalyzer):
+    '''This class is used to annotate the microsatelites of a sequence as a
+    feature'''
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+
+        pipeline = [annotate_microsatelites]
+        configuration = {}
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
+
+
 DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
@@ -379,5 +396,16 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateDescriptionAnalyzer},
 
+    'annotate_microsatellite':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': AnnotateMicrosateliteAnalyzer},
     }
 

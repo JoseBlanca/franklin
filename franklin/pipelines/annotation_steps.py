@@ -5,7 +5,8 @@ Created on 12/03/2010
 '''
 from franklin.seq.seq_annotation import (create_cdna_intron_annotator,
                                          create_ortholog_annotator,
-                                         create_description_annotator)
+                                         create_description_annotator,
+                                         create_microsatellite_annotator)
 
 annotate_cdna_introns = {'function': create_cdna_intron_annotator,
                         'arguments':{'genomic_db':None,
@@ -24,5 +25,11 @@ annotate_orthologs = {'function': create_ortholog_annotator,
 annotate_with_descriptions = {'function': create_description_annotator,
                         'arguments':{'blasts':None},
                         'type':'mapper' ,
-                        'name':'annnoatate_descriptions',
+                        'name':'annotate_descriptions',
            'comment': 'It annotates using the first hit of the given databases'}
+
+annotate_microsatelites = {'function': create_microsatellite_annotator,
+                        'arguments':{},
+                        'type':'mapper' ,
+                        'name':'annoatate_microsatelites',
+                        'comment': 'It annotates The microsatelites'}
