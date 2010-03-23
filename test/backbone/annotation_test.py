@@ -60,6 +60,50 @@ class OrthologTest(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
+        os.chdir('/tmp')
+        test_dir.close()
+
+    @staticmethod
+    def test_description_annoation_analysis():
+        'We can annotate with description'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+
+        config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
+                                           'species':'arabidopsis',
+                                           'kind': 'nucl'}},
+                  'description_annotation':{'description_databases':
+                                                                ['arabidopsis']}
+                 }
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=config)
+        project_dir = join(test_dir.name, project_name)
+
+        melon_tair_blastdir = join(project_dir, 'annotations', 'blast',
+                                   'melon', 'tair')
+        os.makedirs(melon_tair_blastdir)
+
+        blast_fname = BACKBONE_BASENAMES['blast_basename'] + '.tblastx.xml'
+        shutil.copy(join(DATA_DIR, 'blast2.xml'),
+                   join(melon_tair_blastdir, blast_fname))
+
+        #some melon file to annotate
+        input_dir = join(project_dir, BACKBONE_DIRECTORIES['annotation_input'])
+        os.makedirs(input_dir)
+        seq1 = SeqWithQuality(Seq('A'), id='CUTC021854')
+        seq2 = SeqWithQuality(Seq('A'), id='CUTC021853')
+        write_seqs_in_file([seq1, seq2],
+                           open(join(input_dir, 'melon.fasta'), 'a'))
+
+        do_analysis(project_settings=settings_path, kind='annotate_description')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.repr')
+        result = open(repr_fpath).read()
+        assert 'ankyrin repeat family protein' in result
+
+        os.chdir('/tmp')
+        test_dir.close()
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()

@@ -9,7 +9,8 @@ from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.blast_runner import backbone_blast_runner
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
-                                                 annotate_orthologs)
+                                                 annotate_orthologs,
+                                                 annotate_with_descriptions)
 from franklin.sam import create_bam_index
 from franklin.pipelines.snv_pipeline_steps import (
                                             unique_contiguous_region_filter,
@@ -262,6 +263,54 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             pipeline.append(step)
         return pipeline
 
+class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
+    '''This class is used to annotate sequences using the first hit on the given
+    blast databases'''
+    def run(self):
+        'It runs the analysis'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        blast_settings = self._project_settings['blast']
+
+        annot_settings = self._project_settings['description_annotation']
+        description_databases = annot_settings['description_databases']
+
+        #first we need some blasts
+        project_dir = self._project_settings['General_settings']['project_path']
+        blasts = {}
+        for input_ in inputs['input']:
+            for database in description_databases:
+                db_kind = blast_settings[database]['kind']
+                if db_kind == 'nucl':
+                    blast_program = 'tblastx'
+                else:
+                    blast_program = 'blastx'
+
+                blastdb = blast_settings[database]['path']
+                blast   = backbone_blast_runner(query_fpath=input_,
+                                                project_dir=project_dir,
+                                                blast_program=blast_program,
+                                                blast_db=blastdb,
+                                                dbtype=db_kind)
+                if input_ not in blasts:
+                    blasts[input_] = []
+                blasts[input_].append({'blast':blast, 'modifier':None})
+
+        pipeline = []
+        configuration = {}
+        for database in description_databases:
+            step = annotate_with_descriptions
+            step['name_in_config'] = database
+            pipeline.append(step)
+            for input_ in inputs['input']:
+                step_config = {'blasts': blasts[input_]}
+                configuration[input_] = {}
+                configuration[input_][database] = step_config
+
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
+
 DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
@@ -315,5 +364,17 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateOrthologsAnalyzer},
+    'annotate_description':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': AnnotateDescriptionAnalyzer},
+
     }
 
