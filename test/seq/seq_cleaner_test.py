@@ -21,7 +21,8 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_longest_non_matched_seq_region,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
-                                create_word_masker)
+                                create_word_masker,
+                                create_word_remover)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -485,14 +486,17 @@ class SeqSplitterTests(unittest.TestCase):
         seq = remover(seq)
         assert seq.seq == 'ATcaTcaTcaTca'
 
+    @staticmethod
+    def test_word_remover():
+        'It test if we remove words from the beginning of the seq'
+        word = 'ATAT'
+        seq2 = 'tctcatcatca'
+        seq1 = word + seq2
+        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
-
-
-
-
-
-
-
+        remover = create_word_remover([word])
+        seq = remover(seq)
+        assert seq.seq == seq2
 
 
 if __name__ == "__main__":

@@ -247,6 +247,19 @@ def create_word_masker(words, beginning=True):
 
     return word_remover
 
+def create_word_remover(words):
+    'It removes the given words if they are in the start of the seq'
+    def word_remover(sequence):
+        'The remover'
+        if sequence is None:
+            return None
+        for word in words:
+            word = word.upper()
+            if str(sequence.seq).upper().startswith(word):
+                sequence = sequence[len(word):]
+        return sequence
+    return word_remover
+
 def create_striper_by_quality_trimpoly():
     '''It creates a function that removes bad quality regions.
 

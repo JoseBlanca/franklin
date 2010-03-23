@@ -61,8 +61,8 @@ class CleanReadsAnalyzer(Analyzer):
         elif platform == 'illumina' and 'words_to_remove_illumina' in settings:
             words = settings['words_to_remove_illumina']
 
-        configuration['word_masker'] = {}
-        configuration['word_masker']['words'] = words
+        configuration['word_remover'] = {}
+        configuration['word_remover']['words'] = words
 
         # lucy settings.
         lucy_settings = settings['lucy_settings']

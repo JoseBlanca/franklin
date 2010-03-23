@@ -79,6 +79,8 @@ def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
         pass
 
     for seq in seqs:
+        if seq is None:
+            continue
         name = get_seq_name(seq)
 
         if fhand_qual is not None:
@@ -130,6 +132,8 @@ def temp_qual_file(seqs):
     'Given a qual seq it return a temporary qual fasta file'
     fhand_qual = tempfile.NamedTemporaryFile(suffix='.qual')
     for seq in seqs:
+        if seq is None:
+            continue
         name    = get_seq_name(seq)
         quality = seq.letter_annotations["phred_quality"]
 
