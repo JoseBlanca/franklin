@@ -11,7 +11,8 @@ from franklin.backbone.blast_runner import backbone_blast_runner
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
                                                  annotate_with_descriptions,
-                                                 annotate_microsatelites)
+                                                 annotate_microsatellites,
+                                                 annotate_orfs)
 from franklin.sam import create_bam_index
 from franklin.pipelines.snv_pipeline_steps import (
                                             unique_contiguous_region_filter,
@@ -153,7 +154,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
             raise RuntimeError(msg)
         genomic_db = settings['Cdna_intron_annotation']['genomic_db']
         genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
-        configuration = {'annnoatate_cdna_introns': {'genomic_db':genomic_db,
+        configuration = {'annotate_cdna_introns': {'genomic_db':genomic_db,
                                        'genomic_seqs_fhand':open(genomic_seqs)}}
 
         return self._run_annotation(pipeline=pipeline,
@@ -315,21 +316,36 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                                     inputs=inputs,
                                     output_dir=output_dir)
 
-class AnnotateMicrosateliteAnalyzer(AnnotationAnalyzer):
-    '''This class is used to annotate the microsatelites of a sequence as a
+class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
+    '''This class is used to annotate the microsatellite of a sequence as a
     feature'''
 
     def run(self):
         'It runs the analysis.'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
 
-        pipeline = [annotate_microsatelites]
+        pipeline = [annotate_microsatellites]
         configuration = {}
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=output_dir)
 
+class AnnotateOrfAnalyzer(AnnotationAnalyzer):
+    '''This class is used to annotate the orf of a sequence as a feature'''
+
+    def run(self):
+        'It runs the analysis.'
+        matrix = self._project_settings['orf_annotation']['estscan_matrix']
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+
+        pipeline = [annotate_orfs]
+
+        configuration = {'annotate_orfs': {'parameters':{'matrix':matrix}}}
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
 
 DEFINITIONS = {
     'filter_snvs':
@@ -406,6 +422,17 @@ DEFINITIONS = {
                  'file_kinds': 'sequence_files'},
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
-         'analyzer': AnnotateMicrosateliteAnalyzer},
+         'analyzer': AnnotateMicrosatelliteAnalyzer},
+    'annotate_orf':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'analyzer': AnnotateOrfAnalyzer},
     }
 

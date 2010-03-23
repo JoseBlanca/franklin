@@ -174,6 +174,43 @@ class OrthologTest(unittest.TestCase):
         os.chdir('/tmp')
         test_dir.close()
 
+    @staticmethod
+    def test_orf_annoation_analysis():
+        'We can annotate introns'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        matrix = os.path.join(DATA_DIR, 'At.smat')
+        config =  {'orf_annotation': {'estscan_matrix':matrix}}
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=config)
+        project_dir = join(test_dir.name, project_name)
+        seq  = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
+        seq += 'GCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
+        seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
+        seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
+        seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
+        seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
+        seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTACTGGACCATG'
+        seq += 'TGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+
+        #create some seqs to annotate
+        fasta = '>seq\n%s\n' % seq
+        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
+        fhand.write(fasta)
+        fhand.close()
+        do_analysis(project_settings=settings_path,
+                    kind='annotate_orf')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        result = open(repr_fpath).read()
+        assert "type='orf'" in  result
+        os.chdir('/tmp')
+        test_dir.close()
+
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()
