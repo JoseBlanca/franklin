@@ -12,7 +12,8 @@ from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
                                                  annotate_with_descriptions,
                                                  annotate_microsatellites,
-                                                 annotate_orfs)
+                                                 annotate_orfs,
+                                                 annotate_gos)
 from franklin.sam import create_bam_index
 from franklin.pipelines.snv_pipeline_steps import (
                                             unique_contiguous_region_filter,
@@ -347,6 +348,46 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
                                     inputs=inputs,
                                     output_dir=output_dir)
 
+class AnnotateGoAnalyzer(AnnotationAnalyzer):
+    'This class is used to annotate gos using blast2go'
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        blast_settings = self._project_settings['blast']
+
+        annot_settings = self._project_settings['go_annotation']
+        go_database = annot_settings['blast_database']
+
+        #first we need some blasts
+        project_dir = self._project_settings['General_settings']['project_path']
+        blasts = {}
+        for input_ in inputs['input']:
+            db_kind = blast_settings[go_database]['kind']
+            if db_kind == 'nucl':
+                blast_program = 'blastn'
+            else:
+                blast_program = 'blastp'
+
+            blastdb = blast_settings[go_database]['path']
+            blast   = backbone_blast_runner(query_fpath=input_,
+                                            project_dir=project_dir,
+                                            blast_program=blast_program,
+                                            blast_db=blastdb,
+                                            dbtype=db_kind)
+            blasts[input_] = blast
+        # prepare pipeline
+        pipeline      = [annotate_gos]
+        configuration = {}
+        for input_ in  inputs['input']:
+            step_config = {'blast': blasts[input_]}
+            configuration[input_] = {'annotate_gos': step_config}
+
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=output_dir)
+
 DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
@@ -434,5 +475,16 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateOrfAnalyzer},
+    'annotate_go':
+        {'inputs':{
+            'repr':
+                {'directory': 'annotation_repr',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_repr'},  },
+                    #'b2g_file':{'directory':'go_files'}},
+         'analyzer': AnnotateGoAnalyzer},
     }
-

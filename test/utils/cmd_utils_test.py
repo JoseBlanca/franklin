@@ -22,10 +22,10 @@ This module provides utilities to run external commands into franklin
 import unittest
 
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
-                                      _which_binary)
+                                      _which_binary, b2gpipe_runner)
 from franklin.seq.seqs import SeqWithQuality
 from franklin.utils.misc_utils import DATA_DIR
-import os
+import os, tempfile
 
 class ProcessParametersTest(unittest.TestCase):
     'tests the parameter processing'
@@ -107,6 +107,22 @@ class RunnerFactorytest(unittest.TestCase):
         seqs = [seq1, seq1]
         result = run_lucy_for_seq(seqs)['sequence']
         assert result[0].read() == ''
+
+    @staticmethod
+    def test_run_b2g4pipe():
+        'It test the runner of b2g4pipe'
+
+        blast = os.path.join(DATA_DIR, 'blast2.xml')
+        fhand, annot_fpath = tempfile.mkstemp()
+        os.close(fhand)
+        fhand, dat_fpath = tempfile.mkstemp()
+        os.close(fhand)
+        b2gpipe_runner(blast, annot_fpath, dat_fpath)
+
+        assert os.path.exists(annot_fpath)
+        assert os.path.exists(dat_fpath)
+        os.remove(annot_fpath)
+        os.remove(dat_fpath)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

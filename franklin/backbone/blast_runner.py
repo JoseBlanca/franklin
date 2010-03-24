@@ -55,7 +55,6 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
                           _get_basename(blast_db_seq))
     if not exists(result_dir):
         makedirs(result_dir)
-
     result_fpath = join(result_dir,
                         '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                        blast_program))

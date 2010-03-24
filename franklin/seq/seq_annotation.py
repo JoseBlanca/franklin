@@ -23,6 +23,7 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import os, tempfile
 from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation
 from Bio.Alphabet import generic_dna, generic_protein
@@ -30,7 +31,7 @@ from Bio.Seq import Seq
 
 from franklin.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
-from franklin.utils.cmd_utils import  create_runner
+from franklin.utils.cmd_utils import  create_runner, b2gpipe_runner
 from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seq_analysis import infer_introns_for_cdna, get_orthologs
@@ -182,3 +183,49 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
             sequence.features.append(feature)
         return sequence
     return annotate_orf
+
+def create_go_annotator(blast, annot_fpath=None, dat_fpath=None):
+    'It annotates GOs using blast2go4pipe'
+    if annot_fpath is None:
+        fhand, annot_fpath = tempfile.mkstemp()
+        os.close(fhand)
+    b2gpipe_runner(blast, annot_fpath, dat_fpath)
+    go_annotations = _parse_b2g_output(open(annot_fpath))
+    if annot_fpath is None:
+        os.remove(annot_fpath)
+
+    def go_annotator(sequence):
+        'The annotator'
+        if sequence is None:
+            return
+        seq_name = get_seq_name(sequence)
+        if  seq_name in go_annotations:
+            sequence.annotations['GOs'] = go_annotations[seq_name]
+        return sequence
+    return go_annotator
+
+def _parse_b2g_output(annot_fhand):
+    'It parses blas2go annot file'
+    annotations = {}
+    for line in annot_fhand:
+        line = line.strip()
+        if not line:
+            continue
+        items = line.split('\t')
+        name = items[0]
+        go   = items[1]
+        if len(items) > 2:
+            go_description = items[2]
+            go = (go, go_description)
+        if name not in annotations:
+            annotations[name] = []
+        annotations[name].append(go)
+    return annotations
+
+
+
+
+
+
+
+

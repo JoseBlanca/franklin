@@ -18,13 +18,15 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.seq.seq_annotation import create_microsatellite_annotator, \
-    create_ortholog_annotator, create_description_annotator, create_orf_annotator, \
-    create_cdna_intron_annotator
+from franklin.seq.seq_annotation import (create_microsatellite_annotator,
+                                         create_ortholog_annotator,
+                                         create_description_annotator,
+                                         create_orf_annotator,
+                                         create_go_annotator,
+                                         create_cdna_intron_annotator)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
-import os
-import unittest
+import unittest, tempfile, os
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -44,7 +46,7 @@ class AnnotationTests(unittest.TestCase):
         sequence = SeqWithQuality(seq='aaa', name='melon2')
         sequence = ortho_annotator(sequence)
         assert sequence.annotations['arabidopsis-orthologs'] == ['tair2']
-        
+
     @staticmethod
     def test_get_description_with_funct():
         'It tests if we can get description for seqs in blasts. with mod funct'
@@ -55,12 +57,10 @@ class AnnotationTests(unittest.TestCase):
         descrip_annotator = create_description_annotator([blast])
         sequence = SeqWithQuality(seq='aaa', name='CUTC021854')
         sequence = descrip_annotator(sequence)
-        assert sequence.annotations['description'] == \
-                                                'ankyrin repeat family protein'
+        assert sequence.description == 'ankyrin repeat family protein'
         sequence = SeqWithQuality(seq='aaa', name='CUTC021853')
         sequence = descrip_annotator(sequence)
-        assert sequence.annotations['description'] == \
-                                                'DNA-binding protein-related'
+        assert sequence.description == 'DNA-binding protein-related'
 
     @staticmethod
     def test_microsatelite_annotator():
@@ -113,6 +113,28 @@ class AnnotationTests(unittest.TestCase):
         intron_feat= seq.features[0]
         assert intron_feat.location.start.position == 478
         assert intron_feat.type == 'intron'
+
+    @staticmethod
+    def test_go_annotator():
+        'It test the go annotator'
+        blast = os.path.join(DATA_DIR, 'blastResult.xml')
+        fhand, annot_fpath = tempfile.mkstemp()
+        os.close(fhand)
+        go_annotator = create_go_annotator(blast)#, annot_fpath)
+        seq = SeqWithQuality(name ='seq1', seq=Seq('aaaa'))
+
+        go_annotator(seq)
+        assert ('GO:0009853',
+                'ribulose- -bisphosphate carboxylase oxygenase small subunit') \
+                                                     in seq.annotations['GOs']
+
+        os.remove(annot_fpath)
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

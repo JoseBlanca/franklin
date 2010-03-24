@@ -9,36 +9,16 @@ Created on 05/01/2010
 import os, re, tempfile
 
 from franklin.utils.cmd_utils import call
+from franklin.utils.cmd_utils import  guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
-
-def _locate_file(fpath):
-    cmd = ['locate', fpath]
-    stdout = call(cmd, raise_on_error=True)[0]
-    found_path = None
-    for line in stdout.splitlines():
-        if fpath in line:
-            found_path = line.strip()
-            break
-    return found_path
-
-def _guess_java_install_dir(jar_fpath):
-    'It returns the dir path using locate on a jar file'
-    java_dir_path = _locate_file(jar_fpath)
-    if not java_dir_path:
-        msg =  '%s was not found in your system and it is required to '
-        msg += 'process sam files'
-        msg = msg % jar_fpath
-        raise RuntimeError(msg)
-    java_dir_path = java_dir_path.replace(jar_fpath, '')
-    return java_dir_path
 
 def _guess_picard_path():
     'It returns the picard path using locate'
-    return _guess_java_install_dir('SortSam.jar')
+    return guess_java_install_dir('SortSam.jar')
 
 def _guess_gatk_path():
     'It returns the GATK path using locate'
-    return _guess_java_install_dir('GenomeAnalysisTK.jar')
+    return guess_java_install_dir('GenomeAnalysisTK.jar')
 
 
 def bam2sam(bam_path, sam_path=None):

@@ -1,0 +1,1208 @@
+<?xml version="1.0"?>
+<!DOCTYPE BlastOutput PUBLIC "-//NCBI//NCBI BlastOutput/EN" "NCBI_BlastOutput.dtd">
+<BlastOutput>
+  <BlastOutput_program>blastx</BlastOutput_program>
+  <BlastOutput_version>BLASTX 2.2.23+</BlastOutput_version>
+  <BlastOutput_reference>Stephen F. Altschul, Thomas L. Madden, Alejandro A. Sch&amp;auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. Lipman (1997), &quot;Gapped BLAST and PSI-BLAST: a new generation of protein database search programs&quot;, Nucleic Acids Res. 25:3389-3402.</BlastOutput_reference>
+  <BlastOutput_db>nr</BlastOutput_db>
+  <BlastOutput_query-ID>22937</BlastOutput_query-ID>
+  <BlastOutput_query-def>seq1</BlastOutput_query-def>
+  <BlastOutput_query-len>349</BlastOutput_query-len>
+  <BlastOutput_param>
+    <Parameters>
+      <Parameters_matrix>BLOSUM62</Parameters_matrix>
+      <Parameters_expect>0.001</Parameters_expect>
+      <Parameters_gap-open>11</Parameters_gap-open>
+      <Parameters_gap-extend>1</Parameters_gap-extend>
+      <Parameters_filter>L;</Parameters_filter>
+    </Parameters>
+  </BlastOutput_param>
+<BlastOutput_iterations>
+<Iteration>
+  <Iteration_iter-num>1</Iteration_iter-num>
+  <Iteration_query-ID>22937</Iteration_query-ID>
+  <Iteration_query-def>seq1</Iteration_query-def>
+  <Iteration_query-len>349</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gi|132138|sp|P08474.1|RBS_CUCSA</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|167542|gb|AAA33131.1| ribulose bisphosphate carboxylase/oxygenase precursor peptide [Cucumis sativus]</Hit_def>
+  <Hit_accession>P08474</Hit_accession>
+  <Hit_len>189</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>134.806</Hsp_bit-score>
+      <Hsp_score>338</Hsp_score>
+      <Hsp_evalue>2.64373e-30</Hsp_evalue>
+      <Hsp_query-from>3</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>3</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>97</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>SSILSSAXVAFXNRASPAQASMGAPFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>SSILSSAAVASVNSASPAQASMVAPFTGLKSSAGFPITRKNNVDITTLASNAGKVQCMKVWPPLGLRKFETLSYLPDMSNEQLSKECDYLLRNGWVPCVEFDIGSGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>SSILSSA VA  N ASPAQASM APFTGLKS+A FP+TR  N DITTL SN G+VQ  KV PPLGL+KFETLSYLPDMSNEQL KE DYLLR GW+PC+EFDI SGFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gi|117661825|gb|ABK55670.1|</Hit_id>
+  <Hit_def>chloroplast ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Cucumis sativus]</Hit_def>
+  <Hit_accession>ABK55670</Hit_accession>
+  <Hit_len>125</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>134.42</Hsp_bit-score>
+      <Hsp_score>337</Hsp_score>
+      <Hsp_evalue>3.45281e-30</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>18</Hsp_hit-from>
+      <Hsp_hit-to>109</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>73</Hsp_identity>
+      <Hsp_positive>79</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSAGFPITRKNNVDITTLASNGGKVQCMKVWPPLGLRKFETLSYLPDMSNEQLSKECDYLLRNGWVPCVEFDIGSGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS+A FP+TR  N DITTL SNGG+VQ  KV PPLGL+KFETLSYLPDMSNEQL KE DYLLR GW+PC+EFDI SGFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>gi|255560434|ref|XP_002521232.1|</Hit_id>
+  <Hit_def>Ribulose bisphosphate carboxylase small chain 1B, chloroplast precursor, putative [Ricinus communis] &gt;gi|223539597|gb|EEF41184.1| Ribulose bisphosphate carboxylase small chain 1B, chloroplast precursor, putative [Ricinus communis]</Hit_def>
+  <Hit_accession>XP_002521232</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>129.028</Hsp_bit-score>
+      <Hsp_score>323</Hsp_score>
+      <Hsp_evalue>1.45066e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>24</Hsp_hit-from>
+      <Hsp_hit-to>115</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>70</Hsp_identity>
+      <Hsp_positive>80</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSAASFPVTRKANNDITSIASNGGRVQCMQVWPPLGKKKFETLSYLPDLTDEQLAKEVDYLLRKGWIPCLEFELEHGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSAA+FPVTR  N DIT++ SNGGRVQ  +V PPLG KKFETLSYLPD+++EQL KEVDYLLRKGWIPC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>gi|77157637|dbj|BAE46384.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Panax ginseng]</Hit_def>
+  <Hit_accession>BAE46384</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>128.642</Hsp_bit-score>
+      <Hsp_score>322</Hsp_score>
+      <Hsp_evalue>1.89462e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>69</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPVTRKVNDITSLPSNGGRVQCMKVWPPLGLKKFETLSYLPQLTQEQLSKEVDYLLRSGWVPCLEFELEHGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFPVTR  NDIT+L SNGGRVQ  KV PPLGLKKFETLSYLP ++ EQL KEVDYLLR GW+PC+EF++  GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>5</Hit_num>
+  <Hit_id>gi|132153|sp|P24007.1|RBS_PYRPY</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|218021|dbj|BAA00450.1| RuBisCO small subunit [Pyrus pyrifolia var. culta]</Hit_def>
+  <Hit_accession>P24007</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>127.872</Hsp_bit-score>
+      <Hsp_score>320</Hsp_score>
+      <Hsp_evalue>3.23174e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>29</Hsp_hit-from>
+      <Hsp_hit-to>119</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>79</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSSSAFPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSSESLAKEVDYLLRKNWVPCLEFELETGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PF GLKS++AFPVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S+E L KEVDYLLRK W+PC+EF++ +GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>6</Hit_num>
+  <Hit_id>gi|403160|gb|AAA33866.1|</Hit_id>
+  <Hit_def>ribulose 1,5-bisphosphate carboxylase small subunit [Malus x domestica x Pyrus communis]</Hit_def>
+  <Hit_accession>AAA33866</Hit_accession>
+  <Hit_len>179</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.946</Hsp_bit-score>
+      <Hsp_score>315</Hsp_score>
+      <Hsp_evalue>1.22806e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>115</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSSAFPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSTESLAKEVDYLLRKNWVPCLEFELEHGFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS++AFPVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S E L KEVDYLLRK W+PC+EF++  GFVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>7</Hit_num>
+  <Hit_id>gi|255582745|ref|XP_002532149.1|</Hit_id>
+  <Hit_def>Ribulose bisphosphate carboxylase small chain, chloroplast precursor, putative [Ricinus communis] &gt;gi|223528159|gb|EEF30223.1| Ribulose bisphosphate carboxylase small chain, chloroplast precursor, putative [Ricinus communis]</Hit_def>
+  <Hit_accession>XP_002532149</Hit_accession>
+  <Hit_len>185</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.561</Hsp_bit-score>
+      <Hsp_score>314</Hsp_score>
+      <Hsp_evalue>1.60389e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>68</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPVTRKTNTDITTLANNGGRVQCMQVWPPLGKKKFETLSYLPDLTREQLAKEVEYLLRKGWVPCLEFELEHGFVYRENARSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFPVTR TN DITTL +NGGRVQ  +V PPLG KKFETLSYLPD++ EQL KEV+YLLRKGW+PC+EF++  GFVYRE  RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>8</Hit_num>
+  <Hit_id>gi|464595|sp|Q02980.1|RBS_MALSP</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|19581|emb|CAA46475.1| ribulose bisphosphate carboxylase [Malus sp.]</Hit_def>
+  <Hit_accession>Q02980</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.561</Hsp_bit-score>
+      <Hsp_score>314</Hsp_score>
+      <Hsp_evalue>1.60389e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>29</Hsp_hit-from>
+      <Hsp_hit-to>119</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSSASPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSTESLAKEVDYLLRKNWVPCLEFELEHGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS++A PVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S E L KEVDYLLRK W+PC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>9</Hit_num>
+  <Hit_id>gi|270383720|dbj|BAI53118.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Eucalyptus globulus]</Hit_def>
+  <Hit_accession>BAI53118</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>123.635</Hsp_bit-score>
+      <Hsp_score>309</Hsp_score>
+      <Hsp_evalue>6.09479e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>65</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPVTRKSNDITSLPSNGGRVQCMQVWPPVGLKKFETLSYLPPLTPTQLAKEIDYLLRSGWVPCLEFETEKGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFPVTR +NDIT+L SNGGRVQ  +V PP+GLKKFETLSYLP ++  QL KE+DYLLR GW+PC+EF+   GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>10</Hit_num>
+  <Hit_id>gi|3914601|sp|O65194.1|RBS_MEDSA</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|3044116|gb|AAC13293.1| ribulose-1,5-bisphosphate carboxylase small subunit [Medicago sativa]</Hit_def>
+  <Hit_accession>O65194</Hit_accession>
+  <Hit_len>180</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>122.094</Hsp_bit-score>
+      <Hsp_score>305</Hsp_score>
+      <Hsp_evalue>1.77331e-26</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>64</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSAGFPVTKKTNNDITSIASNGGRVNCMQVWPPVGKKKFETLSYLPPLTEEQLAKEVEYLIRKGWIPCLEFELEKGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS+A FPVT+ TN DIT++ SNGGRV   +V PP+G KKFETLSYLP ++ EQL KEV+YL+RKGWIPC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>11</Hit_num>
+  <Hit_id>gi|154269258|gb|ABS72189.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit 1A [Corchorus olitorius]</Hit_def>
+  <Hit_accession>ABS72189</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>119.013</Hsp_bit-score>
+      <Hsp_score>297</Hsp_score>
+      <Hsp_evalue>1.5012e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPTTRKNNRDITSIASNGGRVQCMQVWPPLGKKKFETLSYLPDLTPVQLAKEVDYLLRSGWIPCLEFELEHGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFP TR  N DIT++ SNGGRVQ  +V PPLG KKFETLSYLPD++  QL KEVDYLLR GWIPC+EF++  GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>12</Hit_num>
+  <Hit_id>gi|270383722|dbj|BAI53119.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Eucalyptus globulus]</Hit_def>
+  <Hit_accession>BAI53119</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.472</Hsp_bit-score>
+      <Hsp_score>293</Hsp_score>
+      <Hsp_evalue>4.36782e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>61</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPVTRKSADITSLASNGGRVQCMQVWPPIGKKKFETLSYLPPLSREELLKEIEYLLRMNWVPCLEFELEKGFVYRDNHKSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFPVTR + DIT+L SNGGRVQ  +V PP+G KKFETLSYLP +S E+L KE++YLLR  W+PC+EF++  GFVYR+ H+SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>13</Hit_num>
+  <Hit_id>gi|24940138|emb|CAD11990.1|</Hit_id>
+  <Hit_def>rubisco small subunit [Coffea arabica] &gt;gi|24940140|emb|CAD11991.1| rubisco small subunit [Coffea arabica]</Hit_def>
+  <Hit_accession>CAD11990</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.472</Hsp_bit-score>
+      <Hsp_score>293</Hsp_score>
+      <Hsp_evalue>4.36782e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>58</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKAASSFPISKKSVDITSLATNGGRVQCMQVWPPRGLKKYETLSYLPDLTDEQLLKEIDYLIRSGWVPCLEFELEKGFVYREYHRSP</Hsp_hseq>
+      <Hsp_midline>PF GLK+A++FP+++ + DIT+L +NGGRVQ  +V PP GLKK+ETLSYLPD+++EQL KE+DYL+R GW+PC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>14</Hit_num>
+  <Hit_id>gi|116672873|gb|ABK15574.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Camellia sinensis]</Hit_def>
+  <Hit_accession>ABK15574</Hit_accession>
+  <Hit_len>176</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.087</Hsp_bit-score>
+      <Hsp_score>292</Hsp_score>
+      <Hsp_evalue>5.70455e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>21</Hsp_hit-from>
+      <Hsp_hit-to>112</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPVTRKLDTDITSLASNGGRVQCMKVWPPLGLKKFETLSYLPPLTQAQLGKEVDYLIRLGWIPCLEFSVQGGFVYREHNKSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFPVTR  + DIT+L SNGGRVQ  KV PPLGLKKFETLSYLP ++  QLGKEVDYL+R GWIPC+EF +  GFVYRE ++SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>15</Hit_num>
+  <Hit_id>gi|118487084|gb|ABK95372.1|</Hit_id>
+  <Hit_def>unknown [Populus trichocarpa] &gt;gi|118488041|gb|ABK95841.1| unknown [Populus trichocarpa]</Hit_def>
+  <Hit_accession>ABK95372</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>116.701</Hsp_bit-score>
+      <Hsp_score>291</Hsp_score>
+      <Hsp_evalue>7.45037e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPV-TRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSAAAFPVSTRKANDITSIASNGGRVQCMQVWPPTGLKKFETLSYLPDLTEEELAKEIDYLLRSKWVPCLEFELEKGWVYREHHSSP</Hsp_hseq>
+      <Hsp_midline>PF GLKSAAAFPV TR  NDIT++ SNGGRVQ  +V PP GLKKFETLSYLPD++ E+L KE+DYLLR  W+PC+EF++  G+VYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>16</Hit_num>
+  <Hit_id>gi|224077170|ref|XP_002305162.1|</Hit_id>
+  <Hit_def>predicted protein [Populus trichocarpa] &gt;gi|118486788|gb|ABK95229.1| unknown [Populus trichocarpa] &gt;gi|118486831|gb|ABK95250.1| unknown [Populus trichocarpa] &gt;gi|222848126|gb|EEE85673.1| predicted protein [Populus trichocarpa]</Hit_def>
+  <Hit_accession>XP_002305162</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>116.701</Hsp_bit-score>
+      <Hsp_score>291</Hsp_score>
+      <Hsp_evalue>7.45037e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPV-TRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSAAAFPVSTRKANDITSIASNGGRVQCMQVWPPTGLKKFETLSYLPDLTEEELAKEIDYLLRSKWVPCLEFELEKGWVYREHHSSP</Hsp_hseq>
+      <Hsp_midline>PF GLKSAAAFPV TR  NDIT++ SNGGRVQ  +V PP GLKKFETLSYLPD++ E+L KE+DYLLR  W+PC+EF++  G+VYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>17</Hit_num>
+  <Hit_id>gi|3914592|sp|Q96542.1|RBS_BETVE</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|1536889|emb|CAA69102.1| ribulose-bisphosphate carboxylase [Betula pendula]</Hit_def>
+  <Hit_accession>Q96542</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>114.39</Hsp_bit-score>
+      <Hsp_score>285</Hsp_score>
+      <Hsp_evalue>3.69758e-24</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTCLKSTSAFPVTQKTNNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSSEQLAKEVDYLLRKNLIPCLEFELEHGFVYREHNRSP</Hsp_hseq>
+      <Hsp_midline>PFT LKS +AFPVT+ TN DIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S+EQL KEVDYLLRK  IPC+EF++  GFVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>18</Hit_num>
+  <Hit_id>gi|3914585|sp|O22077.1|RBS_FAGCR</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|2588890|dbj|BAA23214.1| small subunit of ribulose-1,5-bisphosphate carboxylase/oxygenase [Fagus crenata]</Hit_def>
+  <Hit_accession>O22077</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>111.694</Hsp_bit-score>
+      <Hsp_score>278</Hsp_score>
+      <Hsp_evalue>2.3967e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPATRKSNNDITSLASNGGRVQCMKVWPPLGLQKFETLSYLPPLSIESLAKQIEYLILKGWIPCLEFELEHPFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFP TR +N DIT+L SNGGRVQ  KV PPLGL+KFETLSYLP +S E L K+++YL+ KGWIPC+EF++   FVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>19</Hit_num>
+  <Hit_id>gi|51949879|gb|AAU14862.1|</Hit_id>
+  <Hit_def>chloroplast ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Fagus sylvatica]</Hit_def>
+  <Hit_accession>AAU14862</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>110.153</Hsp_bit-score>
+      <Hsp_score>274</Hsp_score>
+      <Hsp_evalue>6.97334e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>62</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPATQKSNNDITSLASNGGRVQCMKVWPPLGLQKFETLSYLPPLSLESLAKQIEYLILKGWIPCLEFELEHPFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFP T+ +N DIT+L SNGGRVQ  KV PPLGL+KFETLSYLP +S E L K+++YL+ KGWIPC+EF++   FVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>20</Hit_num>
+  <Hit_id>gi|266892|sp|P29684.1|RBS_HEVBR</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|168217|gb|AAA33361.1| ribulose-1,5-bisphosphate carboxylase small subunit [Hevea brasiliensis]</Hit_def>
+  <Hit_accession>P29684</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>110.153</Hsp_bit-score>
+      <Hsp_score>274</Hsp_score>
+      <Hsp_evalue>6.97334e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>61</Hsp_identity>
+      <Hsp_positive>73</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPTTRKTTTDITSIASNGGRVQCMQVWPPRGKKFYETLSYLPPLTREQLAKEVEYLLRKGWVPCLEFELEHGTVYREYHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFP TR T  DIT++ SNGGRVQ  +V PP G K +ETLSYLP ++ EQL KEV+YLLRKGW+PC+EF++  G VYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>10635453</Statistics_db-num>
+      <Statistics_db-len>-667485827</Statistics_db-len>
+      <Statistics_hsp-len>0</Statistics_hsp-len>
+      <Statistics_eff-space>0</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+</BlastOutput_iterations>
+</BlastOutput>
+
+
+
+<?xml version="1.0"?>
+<!DOCTYPE BlastOutput PUBLIC "-//NCBI//NCBI BlastOutput/EN" "NCBI_BlastOutput.dtd">
+<BlastOutput>
+  <BlastOutput_program>blastx</BlastOutput_program>
+  <BlastOutput_version>BLASTX 2.2.23+</BlastOutput_version>
+  <BlastOutput_reference>Stephen F. Altschul, Thomas L. Madden, Alejandro A. Sch&amp;auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. Lipman (1997), &quot;Gapped BLAST and PSI-BLAST: a new generation of protein database search programs&quot;, Nucleic Acids Res. 25:3389-3402.</BlastOutput_reference>
+  <BlastOutput_db>nr</BlastOutput_db>
+  <BlastOutput_query-ID>5397</BlastOutput_query-ID>
+  <BlastOutput_query-def>seq1</BlastOutput_query-def>
+  <BlastOutput_query-len>349</BlastOutput_query-len>
+  <BlastOutput_param>
+    <Parameters>
+      <Parameters_matrix>BLOSUM62</Parameters_matrix>
+      <Parameters_expect>0.001</Parameters_expect>
+      <Parameters_gap-open>11</Parameters_gap-open>
+      <Parameters_gap-extend>1</Parameters_gap-extend>
+      <Parameters_filter>L;</Parameters_filter>
+    </Parameters>
+  </BlastOutput_param>
+<BlastOutput_iterations>
+<Iteration>
+  <Iteration_iter-num>1</Iteration_iter-num>
+  <Iteration_query-ID>5397</Iteration_query-ID>
+  <Iteration_query-def>seq1</Iteration_query-def>
+  <Iteration_query-len>349</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gi|132138|sp|P08474.1|RBS_CUCSA</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|167542|gb|AAA33131.1| ribulose bisphosphate carboxylase/oxygenase precursor peptide [Cucumis sativus]</Hit_def>
+  <Hit_accession>P08474</Hit_accession>
+  <Hit_len>189</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>134.806</Hsp_bit-score>
+      <Hsp_score>338</Hsp_score>
+      <Hsp_evalue>2.64373e-30</Hsp_evalue>
+      <Hsp_query-from>3</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>3</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>97</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>SSILSSAXVAFXNRASPAQASMGAPFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>SSILSSAAVASVNSASPAQASMVAPFTGLKSSAGFPITRKNNVDITTLASNAGKVQCMKVWPPLGLRKFETLSYLPDMSNEQLSKECDYLLRNGWVPCVEFDIGSGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>SSILSSA VA  N ASPAQASM APFTGLKS+A FP+TR  N DITTL SN G+VQ  KV PPLGL+KFETLSYLPDMSNEQL KE DYLLR GW+PC+EFDI SGFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gi|117661825|gb|ABK55670.1|</Hit_id>
+  <Hit_def>chloroplast ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Cucumis sativus]</Hit_def>
+  <Hit_accession>ABK55670</Hit_accession>
+  <Hit_len>125</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>134.42</Hsp_bit-score>
+      <Hsp_score>337</Hsp_score>
+      <Hsp_evalue>3.45281e-30</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>18</Hsp_hit-from>
+      <Hsp_hit-to>109</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>73</Hsp_identity>
+      <Hsp_positive>79</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSAGFPITRKNNVDITTLASNGGKVQCMKVWPPLGLRKFETLSYLPDMSNEQLSKECDYLLRNGWVPCVEFDIGSGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS+A FP+TR  N DITTL SNGG+VQ  KV PPLGL+KFETLSYLPDMSNEQL KE DYLLR GW+PC+EFDI SGFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>gi|255560434|ref|XP_002521232.1|</Hit_id>
+  <Hit_def>Ribulose bisphosphate carboxylase small chain 1B, chloroplast precursor, putative [Ricinus communis] &gt;gi|223539597|gb|EEF41184.1| Ribulose bisphosphate carboxylase small chain 1B, chloroplast precursor, putative [Ricinus communis]</Hit_def>
+  <Hit_accession>XP_002521232</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>129.028</Hsp_bit-score>
+      <Hsp_score>323</Hsp_score>
+      <Hsp_evalue>1.45066e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>24</Hsp_hit-from>
+      <Hsp_hit-to>115</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>70</Hsp_identity>
+      <Hsp_positive>80</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSAASFPVTRKANNDITSIASNGGRVQCMQVWPPLGKKKFETLSYLPDLTDEQLAKEVDYLLRKGWIPCLEFELEHGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSAA+FPVTR  N DIT++ SNGGRVQ  +V PPLG KKFETLSYLPD+++EQL KEVDYLLRKGWIPC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>gi|77157637|dbj|BAE46384.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Panax ginseng]</Hit_def>
+  <Hit_accession>BAE46384</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>128.642</Hsp_bit-score>
+      <Hsp_score>322</Hsp_score>
+      <Hsp_evalue>1.89462e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>69</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPVTRKVNDITSLPSNGGRVQCMKVWPPLGLKKFETLSYLPQLTQEQLSKEVDYLLRSGWVPCLEFELEHGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFPVTR  NDIT+L SNGGRVQ  KV PPLGLKKFETLSYLP ++ EQL KEVDYLLR GW+PC+EF++  GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>5</Hit_num>
+  <Hit_id>gi|132153|sp|P24007.1|RBS_PYRPY</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|218021|dbj|BAA00450.1| RuBisCO small subunit [Pyrus pyrifolia var. culta]</Hit_def>
+  <Hit_accession>P24007</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>127.872</Hsp_bit-score>
+      <Hsp_score>320</Hsp_score>
+      <Hsp_evalue>3.23174e-28</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>29</Hsp_hit-from>
+      <Hsp_hit-to>119</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>79</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSSSAFPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSSESLAKEVDYLLRKNWVPCLEFELETGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PF GLKS++AFPVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S+E L KEVDYLLRK W+PC+EF++ +GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>6</Hit_num>
+  <Hit_id>gi|403160|gb|AAA33866.1|</Hit_id>
+  <Hit_def>ribulose 1,5-bisphosphate carboxylase small subunit [Malus x domestica x Pyrus communis]</Hit_def>
+  <Hit_accession>AAA33866</Hit_accession>
+  <Hit_len>179</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.946</Hsp_bit-score>
+      <Hsp_score>315</Hsp_score>
+      <Hsp_evalue>1.22806e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>115</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSSAFPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSTESLAKEVDYLLRKNWVPCLEFELEHGFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS++AFPVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S E L KEVDYLLRK W+PC+EF++  GFVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>7</Hit_num>
+  <Hit_id>gi|255582745|ref|XP_002532149.1|</Hit_id>
+  <Hit_def>Ribulose bisphosphate carboxylase small chain, chloroplast precursor, putative [Ricinus communis] &gt;gi|223528159|gb|EEF30223.1| Ribulose bisphosphate carboxylase small chain, chloroplast precursor, putative [Ricinus communis]</Hit_def>
+  <Hit_accession>XP_002532149</Hit_accession>
+  <Hit_len>185</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.561</Hsp_bit-score>
+      <Hsp_score>314</Hsp_score>
+      <Hsp_evalue>1.60389e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>68</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPVTRKTNTDITTLANNGGRVQCMQVWPPLGKKKFETLSYLPDLTREQLAKEVEYLLRKGWVPCLEFELEHGFVYRENARSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFPVTR TN DITTL +NGGRVQ  +V PPLG KKFETLSYLPD++ EQL KEV+YLLRKGW+PC+EF++  GFVYRE  RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>8</Hit_num>
+  <Hit_id>gi|464595|sp|Q02980.1|RBS_MALSP</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|19581|emb|CAA46475.1| ribulose bisphosphate carboxylase [Malus sp.]</Hit_def>
+  <Hit_accession>Q02980</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>125.561</Hsp_bit-score>
+      <Hsp_score>314</Hsp_score>
+      <Hsp_evalue>1.60389e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>29</Hsp_hit-from>
+      <Hsp_hit-to>119</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSSASPVTRKSNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSTESLAKEVDYLLRKNWVPCLEFELEHGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS++A PVTR +NDIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S E L KEVDYLLRK W+PC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>9</Hit_num>
+  <Hit_id>gi|270383720|dbj|BAI53118.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Eucalyptus globulus]</Hit_def>
+  <Hit_accession>BAI53118</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>123.635</Hsp_bit-score>
+      <Hsp_score>309</Hsp_score>
+      <Hsp_evalue>6.09479e-27</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>65</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPVTRKSNDITSLPSNGGRVQCMQVWPPVGLKKFETLSYLPPLTPTQLAKEIDYLLRSGWVPCLEFETEKGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFPVTR +NDIT+L SNGGRVQ  +V PP+GLKKFETLSYLP ++  QL KE+DYLLR GW+PC+EF+   GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>10</Hit_num>
+  <Hit_id>gi|3914601|sp|O65194.1|RBS_MEDSA</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|3044116|gb|AAC13293.1| ribulose-1,5-bisphosphate carboxylase small subunit [Medicago sativa]</Hit_def>
+  <Hit_accession>O65194</Hit_accession>
+  <Hit_len>180</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>122.094</Hsp_bit-score>
+      <Hsp_score>305</Hsp_score>
+      <Hsp_evalue>1.77331e-26</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>64</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSSAGFPVTKKTNNDITSIASNGGRVNCMQVWPPVGKKKFETLSYLPPLTEEQLAKEVEYLIRKGWIPCLEFELEKGFVYRENHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS+A FPVT+ TN DIT++ SNGGRV   +V PP+G KKFETLSYLP ++ EQL KEV+YL+RKGWIPC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>11</Hit_num>
+  <Hit_id>gi|154269258|gb|ABS72189.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit 1A [Corchorus olitorius]</Hit_def>
+  <Hit_accession>ABS72189</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>119.013</Hsp_bit-score>
+      <Hsp_score>297</Hsp_score>
+      <Hsp_evalue>1.5012e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>25</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPTTRKNNRDITSIASNGGRVQCMQVWPPLGKKKFETLSYLPDLTPVQLAKEVDYLLRSGWIPCLEFELEHGFVYREHHHSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFP TR  N DIT++ SNGGRVQ  +V PPLG KKFETLSYLPD++  QL KEVDYLLR GWIPC+EF++  GFVYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>12</Hit_num>
+  <Hit_id>gi|270383722|dbj|BAI53119.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Eucalyptus globulus]</Hit_def>
+  <Hit_accession>BAI53119</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.472</Hsp_bit-score>
+      <Hsp_score>293</Hsp_score>
+      <Hsp_evalue>4.36782e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>61</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSASAFPVTRKSADITSLASNGGRVQCMQVWPPIGKKKFETLSYLPPLSREELLKEIEYLLRMNWVPCLEFELEKGFVYRDNHKSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKSA+AFPVTR + DIT+L SNGGRVQ  +V PP+G KKFETLSYLP +S E+L KE++YLLR  W+PC+EF++  GFVYR+ H+SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>13</Hit_num>
+  <Hit_id>gi|24940138|emb|CAD11990.1|</Hit_id>
+  <Hit_def>rubisco small subunit [Coffea arabica] &gt;gi|24940140|emb|CAD11991.1| rubisco small subunit [Coffea arabica]</Hit_def>
+  <Hit_accession>CAD11990</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.472</Hsp_bit-score>
+      <Hsp_score>293</Hsp_score>
+      <Hsp_evalue>4.36782e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>117</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>58</Hsp_identity>
+      <Hsp_positive>78</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>91</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKAASSFPISKKSVDITSLATNGGRVQCMQVWPPRGLKKYETLSYLPDLTDEQLLKEIDYLIRSGWVPCLEFELEKGFVYREYHRSP</Hsp_hseq>
+      <Hsp_midline>PF GLK+A++FP+++ + DIT+L +NGGRVQ  +V PP GLKK+ETLSYLPD+++EQL KE+DYL+R GW+PC+EF++  GFVYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>14</Hit_num>
+  <Hit_id>gi|116672873|gb|ABK15574.1|</Hit_id>
+  <Hit_def>ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Camellia sinensis]</Hit_def>
+  <Hit_accession>ABK15574</Hit_accession>
+  <Hit_len>176</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>117.087</Hsp_bit-score>
+      <Hsp_score>292</Hsp_score>
+      <Hsp_evalue>5.70455e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>21</Hsp_hit-from>
+      <Hsp_hit-to>112</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>76</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPVTRKLDTDITSLASNGGRVQCMKVWPPLGLKKFETLSYLPPLTQAQLGKEVDYLIRLGWIPCLEFSVQGGFVYREHNKSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFPVTR  + DIT+L SNGGRVQ  KV PPLGLKKFETLSYLP ++  QLGKEVDYL+R GWIPC+EF +  GFVYRE ++SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>15</Hit_num>
+  <Hit_id>gi|118487084|gb|ABK95372.1|</Hit_id>
+  <Hit_def>unknown [Populus trichocarpa] &gt;gi|118488041|gb|ABK95841.1| unknown [Populus trichocarpa]</Hit_def>
+  <Hit_accession>ABK95372</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>116.701</Hsp_bit-score>
+      <Hsp_score>291</Hsp_score>
+      <Hsp_evalue>7.45037e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPV-TRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSAAAFPVSTRKANDITSIASNGGRVQCMQVWPPTGLKKFETLSYLPDLTEEELAKEIDYLLRSKWVPCLEFELEKGWVYREHHSSP</Hsp_hseq>
+      <Hsp_midline>PF GLKSAAAFPV TR  NDIT++ SNGGRVQ  +V PP GLKKFETLSYLPD++ E+L KE+DYLLR  W+PC+EF++  G+VYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>16</Hit_num>
+  <Hit_id>gi|224077170|ref|XP_002305162.1|</Hit_id>
+  <Hit_def>predicted protein [Populus trichocarpa] &gt;gi|118486788|gb|ABK95229.1| unknown [Populus trichocarpa] &gt;gi|118486831|gb|ABK95250.1| unknown [Populus trichocarpa] &gt;gi|222848126|gb|EEE85673.1| predicted protein [Populus trichocarpa]</Hit_def>
+  <Hit_accession>XP_002305162</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>116.701</Hsp_bit-score>
+      <Hsp_score>291</Hsp_score>
+      <Hsp_evalue>7.45037e-25</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPV-TRXTNDITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFNGLKSAAAFPVSTRKANDITSIASNGGRVQCMQVWPPTGLKKFETLSYLPDLTEEELAKEIDYLLRSKWVPCLEFELEKGWVYREHHSSP</Hsp_hseq>
+      <Hsp_midline>PF GLKSAAAFPV TR  NDIT++ SNGGRVQ  +V PP GLKKFETLSYLPD++ E+L KE+DYLLR  W+PC+EF++  G+VYRE H SP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>17</Hit_num>
+  <Hit_id>gi|3914592|sp|Q96542.1|RBS_BETVE</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|1536889|emb|CAA69102.1| ribulose-bisphosphate carboxylase [Betula pendula]</Hit_def>
+  <Hit_accession>Q96542</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>114.39</Hsp_bit-score>
+      <Hsp_score>285</Hsp_score>
+      <Hsp_evalue>3.69758e-24</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>66</Hsp_identity>
+      <Hsp_positive>77</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTCLKSTSAFPVTQKTNNDITSIASNGGRVQCMQVWPPLGLKKFETLSYLPPLSSEQLAKEVDYLLRKNLIPCLEFELEHGFVYREHNRSP</Hsp_hseq>
+      <Hsp_midline>PFT LKS +AFPVT+ TN DIT++ SNGGRVQ  +V PPLGLKKFETLSYLP +S+EQL KEVDYLLRK  IPC+EF++  GFVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>18</Hit_num>
+  <Hit_id>gi|3914585|sp|O22077.1|RBS_FAGCR</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|2588890|dbj|BAA23214.1| small subunit of ribulose-1,5-bisphosphate carboxylase/oxygenase [Fagus crenata]</Hit_def>
+  <Hit_accession>O22077</Hit_accession>
+  <Hit_len>182</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>111.694</Hsp_bit-score>
+      <Hsp_score>278</Hsp_score>
+      <Hsp_evalue>2.3967e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>63</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPATRKSNNDITSLASNGGRVQCMKVWPPLGLQKFETLSYLPPLSIESLAKQIEYLILKGWIPCLEFELEHPFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFP TR +N DIT+L SNGGRVQ  KV PPLGL+KFETLSYLP +S E L K+++YL+ KGWIPC+EF++   FVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>19</Hit_num>
+  <Hit_id>gi|51949879|gb|AAU14862.1|</Hit_id>
+  <Hit_def>chloroplast ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit [Fagus sylvatica]</Hit_def>
+  <Hit_accession>AAU14862</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>110.153</Hsp_bit-score>
+      <Hsp_score>274</Hsp_score>
+      <Hsp_evalue>6.97334e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>62</Hsp_identity>
+      <Hsp_positive>75</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTAAFPATQKSNNDITSLASNGGRVQCMKVWPPLGLQKFETLSYLPPLSLESLAKQIEYLILKGWIPCLEFELEHPFVYRENNRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS AAFP T+ +N DIT+L SNGGRVQ  KV PPLGL+KFETLSYLP +S E L K+++YL+ KGWIPC+EF++   FVYRE +RSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>20</Hit_num>
+  <Hit_id>gi|266892|sp|P29684.1|RBS_HEVBR</Hit_id>
+  <Hit_def>RecName: Full=Ribulose bisphosphate carboxylase small chain, chloroplastic; Short=RuBisCO small subunit; Flags: Precursor &gt;gi|168217|gb|AAA33361.1| ribulose-1,5-bisphosphate carboxylase small subunit [Hevea brasiliensis]</Hit_def>
+  <Hit_accession>P29684</Hit_accession>
+  <Hit_len>183</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>110.153</Hsp_bit-score>
+      <Hsp_score>274</Hsp_score>
+      <Hsp_evalue>6.97334e-23</Hsp_evalue>
+      <Hsp_query-from>75</Hsp_query-from>
+      <Hsp_query-to>347</Hsp_query-to>
+      <Hsp_hit-from>27</Hsp_hit-from>
+      <Hsp_hit-to>118</Hsp_hit-to>
+      <Hsp_query-frame>3</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>61</Hsp_identity>
+      <Hsp_positive>73</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>92</Hsp_align-len>
+      <Hsp_qseq>PFTGLKSAAAFPVTRXTN-DITTLVSNGGRVQGXKVCPPLGLKKFETLSYLPDMSNEQLGKEVDYLLRKGWIPCIEFDIHSGFVYRETHRSP</Hsp_qseq>
+      <Hsp_hseq>PFTGLKSTSAFPTTRKTTTDITSIASNGGRVQCMQVWPPRGKKFYETLSYLPPLTREQLAKEVEYLLRKGWVPCLEFELEHGTVYREYHRSP</Hsp_hseq>
+      <Hsp_midline>PFTGLKS +AFP TR T  DIT++ SNGGRVQ  +V PP G K +ETLSYLP ++ EQL KEV+YLLRKGW+PC+EF++  G VYRE HRSP</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>10635453</Statistics_db-num>
+      <Statistics_db-len>-667485827</Statistics_db-len>
+      <Statistics_hsp-len>0</Statistics_hsp-len>
+      <Statistics_eff-space>0</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+</BlastOutput_iterations>
+</BlastOutput>
+
+
+

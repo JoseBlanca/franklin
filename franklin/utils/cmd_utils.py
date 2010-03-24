@@ -24,7 +24,26 @@ from franklin.seq.writers import temp_fasta_file, temp_qual_file
 from franklin.utils.misc_utils import NamedTemporaryDir
 
 import subprocess, signal, tempfile, os, itertools
-import StringIO, logging, copy
+import StringIO, logging, copy, shutil
+
+def _locate_file(fpath):
+    cmd = ['locate', fpath]
+    stdout = call(cmd, raise_on_error=True)[0]
+    found_path = None
+    for line in stdout.splitlines():
+        if fpath in line:
+            found_path = line.strip()
+            break
+    return found_path
+
+def guess_java_install_dir(jar_fpath):
+    'It returns the dir path using locate on a jar file'
+    java_dir_path = _locate_file(jar_fpath)
+    if not java_dir_path:
+        msg =  '%s was not found in your system and it is required' % jar_fpath
+        raise RuntimeError(msg)
+    java_dir_path = java_dir_path.replace(jar_fpath, '')
+    return java_dir_path
 
 # Runner definitions, Define here the parameters of the programs you want to
 # use with this class
@@ -141,7 +160,15 @@ RUNNER_DEFINITIONS = {
              'input':{'sequence':{'option': '-sequence',
                                   'files_format':['fasta']}}
             },
+#    'blast2go':{'binary':_get_b2g4p_binary(),
+#                'parameters':{'enzymes':{'default':'all', 'option' : '-enzymes'},
+#                              'sitelen' :{'default':'4', 'option':'-sitelen' }},
+#                'output':{'remap':{'option':'-out', 'files':['map']}},
+#                'input':{'blast':{'option': '-in', 'files_format':['fasta']}}
+#                }
     }
+
+
 
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
@@ -410,6 +437,26 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     if stderr != subprocess.PIPE:
         stderr.flush()
     return stdout_str, stderr_str, retcode
+
+def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None):
+    'It runs b2gpipe'
+    java_dir = guess_java_install_dir('blast2go.jar')
+    b2g_bin = os.path.join(java_dir, 'blast2go.jar')
+    tempdir = NamedTemporaryDir()
+    out_basename = os.path.join(tempdir.name, 'out')
+
+    cmd = ['java', '-jar', b2g_bin, '-in', blast.name, '-out', out_basename, '-a']
+    if prop_file is None:
+        prop_file = os.path.join(java_dir, 'b2gPipe.properties')
+        cmd.extend(['-prop', prop_file])
+
+    if dat_fpath is not None:
+        cmd.append('-d')
+    call(cmd, raise_on_error=True)
+    shutil.copy(out_basename +'.annot', annot_fpath)
+    if dat_fpath is not None:
+        shutil.copy(out_basename +'.dat', dat_fpath)
+    tempdir.close()
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     '''It returns masked sequence (StrinIO) for the given sequence.

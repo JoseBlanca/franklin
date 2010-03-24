@@ -211,6 +211,90 @@ class OrthologTest(unittest.TestCase):
         os.chdir('/tmp')
         test_dir.close()
 
+    @staticmethod
+    def test_go_annotation_analysis():
+        'We can annotate gos'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        config = {'blast':{'nr': {'path': nr_path,
+                                           'species':'nr',
+                                           'kind': 'nucl'}},
+                  'go_annotation':{'blast_database':'nr'}
+                 }
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=config)
+        project_dir = join(test_dir.name, project_name)
+        seq  = 'CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
+        seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
+        seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
+        seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
+        seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
+        seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGG'
+
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+
+        #create some seqs to annotate
+        fasta = '>seq1\n%s\n' % seq
+        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
+        fhand.write(fasta)
+        fhand.close()
+        bdir = join(project_dir, 'annotations', 'blast', 'seqs',
+                    'arabidopsis_genes+')
+        os.makedirs(bdir)
+        shutil.copy(join(DATA_DIR, 'blastResult.xml'),
+                    join(bdir, 'blast.blastn.xml'))
+
+        do_analysis(project_settings=settings_path, kind='annotate_go')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        result = open(repr_fpath).read()
+        assert 'GO:0019253' in result
+
+        print "remove this part of the test after you test it"
+        return
+
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        nr_path = '/srv/databases/blast/nr'
+        config = {'blast':{'nr': {'path': nr_path,
+                                           'species':'nr',
+                                           'kind': 'nucl'}},
+                  'go_annotation':{'blast_database':'nr'}
+                 }
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=config)
+        project_dir = join(test_dir.name, project_name)
+        seq  = 'CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
+        seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
+        seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
+        seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
+        seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
+        seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGG'
+
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+
+        #create some seqs to annotate
+        fasta = '>seq\n%s\n' % seq
+        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
+        fhand.write(fasta)
+        fhand.close()
+        bdir = join(project_dir, 'annotations', 'blast', 'seqs',
+                    'arabidopsis_genes+')
+
+        do_analysis(project_settings=settings_path, kind='annotate_go')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        result = open(repr_fpath).read()
+        print result
+
+
+
+
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()
