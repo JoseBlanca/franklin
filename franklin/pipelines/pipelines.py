@@ -219,7 +219,7 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     if 'gff' in output_type:
         default_type = None
         fhand = io_fhands['outputs']['gff']
-        writers.append(GffWriter(fhand=fhand, default_type=default_type,))
+        writers.append(GffWriter(fhand=fhand, default_type=default_type))
 
 
     # The SeqRecord generator is consumed
