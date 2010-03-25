@@ -133,17 +133,11 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
                     #in the deletion case the quality is the lowest of the
                     #bases that embrace the deletion
                     if aligned_read.qual:
-                        qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
-                        try:
-                            qual1 = aligned_read.qual[read_pos + 1]
-                            qual1 = _qualities_to_phred(qual1)
-                            qual  = min((qual0, qual1))
-                        except IndexError:
-                            print 'read name', read_name
-                            print 'read pos', read_pos
-                            print 'len qual', len(aligned_read.qual)
-                            print 'len seq', len(aligned_read.seq)
-                            print 'seq', aligned_read.seq
+                        qual0 = aligned_read.qual[read_pos - 1]
+                        qual0 = _qualities_to_phred(qual0)
+                        qual1 = aligned_read.qual[read_pos]
+                        qual1 = _qualities_to_phred(qual1)
+                        qual  = min((qual0, qual1))
                     else:
                         qual = None
                     is_reverse = bool(aligned_read.is_reverse)
@@ -165,7 +159,7 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
             #is there a deletion in the next column?
             indel_length = pileup_read.indel
             if indel_length < 0:
-                #deletion length, return this at the first oportunity
+                #deletion length, return this at the first opportunity
                 current_deletions[read_name] = [-indel_length, True]
 
             if allele is not None:

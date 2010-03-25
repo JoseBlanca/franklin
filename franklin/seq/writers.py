@@ -26,6 +26,16 @@ from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
+
+class GffWriter(object):
+    'It writes sequences in an gff style'
+    def __init__(self, fhand):
+        'It inits the class'
+
+        self._fhand = fhand
+
+    def write(self, sequence):
+        'It writes one sequence per line of the gff'
 class SequenceWriter(object):
     'It writes sequences one by one'
     def __init__(self, fhand, file_format, qual_fhand=None):
