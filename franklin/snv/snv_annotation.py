@@ -134,9 +134,16 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
                     #bases that embrace the deletion
                     if aligned_read.qual:
                         qual0 = _qualities_to_phred(aligned_read.qual[read_pos])
-                        qual1 = aligned_read.qual[read_pos + 1]
-                        qual1 = _qualities_to_phred(qual1)
-                        qual  = min((qual0, qual1))
+                        try:
+                            qual1 = aligned_read.qual[read_pos + 1]
+                            qual1 = _qualities_to_phred(qual1)
+                            qual  = min((qual0, qual1))
+                        except IndexError:
+                            print 'read name', read_name
+                            print 'read pos', read_pos
+                            print 'len qual', len(aligned_read.qual)
+                            print 'len seq', len(aligned_read.seq)
+                            print 'seq', aligned_read.seq
                     else:
                         qual = None
                     is_reverse = bool(aligned_read.is_reverse)

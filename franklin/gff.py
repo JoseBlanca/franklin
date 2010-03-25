@@ -19,7 +19,8 @@ Created on 26/10/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 def gff_parser(fhand, version):
-    'It parses a gff file and return an iterator of each line of the gff parsed'
+    '''It parses a gff file and returns an iterator of each line of the gff
+    parsed'''
 
     for line in fhand:
         line = line.strip()
