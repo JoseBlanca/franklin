@@ -112,7 +112,7 @@ class RunnerFactorytest(unittest.TestCase):
     def test_run_b2g4pipe():
         'It test the runner of b2g4pipe'
 
-        blast = os.path.join(DATA_DIR, 'blast2.xml')
+        blast = open(os.path.join(DATA_DIR, 'blast2.xml'))
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
         fhand, dat_fpath = tempfile.mkstemp()

@@ -117,16 +117,14 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_go_annotator():
         'It test the go annotator'
-        blast = os.path.join(DATA_DIR, 'blastResult.xml')
+        blast = open(os.path.join(DATA_DIR, 'blastResult.xml'))
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
         go_annotator = create_go_annotator(blast)#, annot_fpath)
         seq = SeqWithQuality(name ='seq1', seq=Seq('aaaa'))
 
         go_annotator(seq)
-        assert ('GO:0009853',
-                'ribulose- -bisphosphate carboxylase oxygenase small subunit') \
-                                                     in seq.annotations['GOs']
+        assert 'GO:0009853' in seq.annotations['GOs']
 
         os.remove(annot_fpath)
 

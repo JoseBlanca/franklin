@@ -29,13 +29,130 @@ from franklin.seq.readers import BIOPYTHON_FORMATS
 
 class GffWriter(object):
     'It writes sequences in an gff style'
-    def __init__(self, fhand):
+    def __init__(self, fhand, default_type=None, source='.'):
         'It inits the class'
 
-        self._fhand = fhand
+        self._fhand        = fhand
+        if default_type is None:
+            default_type='SO:0000001'
+        self._default_type = default_type
+        self._source       = source
+        self._write_gff_header()
+
+
+    def _write_gff_header(self):
+        'It writes the gff header'
+        self._fhand.write('##gff-version 3\n')
 
     def write(self, sequence):
-        'It writes one sequence per line of the gff'
+        'It does the real write of the features'
+        seq_feature = self._get_seq_feature(sequence)
+        self._fhand.write('\t'.join(seq_feature) + '\n')
+        #subfeature
+        for feature in self._get_sub_features(sequence):
+            self._fhand.write('\t'.join(feature) + '\n')
+
+    def _get_seq_sofa_type(self, sequence):
+        'It gets the type of the feature'
+        if 'SO' in sequence.annotations:
+            return sequence.annotations['SO']
+        else:
+            return self._default_type
+
+    @staticmethod
+    def _get_sequence_attributes(sequence):
+        '''It writes gff attributes looking in features and annotations of the
+        sequnce'''
+        attributes = ['ID=%s;name=%s' % (sequence.id, sequence.name)]
+
+        if sequence.description != "<unknown description>":
+            attributes.append('description=%s' % sequence.description)
+
+        if 'GOs' in sequence.annotations:
+            gos = ','.join(sequence.annotations['GOs'])
+            attributes.append('Ontology_term=%s' % gos)
+
+        #orthologs
+        orthologs = []
+        for annot in sequence.annotations:
+            if 'orthologs' in annot:
+                specie = annot.split('-')[0]
+                for ortholog_names  in sequence.annotations[annot]:
+                    orthologs.append('%s:%s' % (specie, ortholog_names))
+        if orthologs:
+            attributes.append('orthologs=%s' % ",".join(orthologs))
+
+        return ';'.join(attributes)
+
+    def _get_seq_feature(self, sequence):
+        'It gets the gff section of the sequence. The parent'
+        seqid      = sequence.id
+        source     = self._source
+        type_      = self._get_seq_sofa_type(sequence)
+        start      = '1'
+        end        = str(len(sequence))
+        score      = '.'
+        strand     = '.'
+        phase      = '.'
+        attributes = self._get_sequence_attributes(sequence)
+
+        return  [seqid, source, type_, start, end, score, strand, phase,
+                attributes]
+
+    def _get_sub_features(self, sequence):
+        'It gets the features of the sequence feature'
+        srr_cont, intron_cont, orf_cont, snv_cont = 0, 0, 0, 0
+        for feature in sequence.features:
+            kind = feature.type
+            if kind == 'microsatellite':
+                srr_cont += 1
+                source = 'sputnik'
+                type_      = 'SO:0000289'
+                score      = str(feature.qualifiers['score'])
+                attributes = self._get_subfeature_attributes(sequence.id,
+                                                             sequence.name,
+                                                             kind, srr_cont)
+            elif kind == 'intron':
+                intron_cont +=1
+                source     = 'est2genome'
+                type_      = 'SO:0000188'
+                score      = '.'
+                attributes = self._get_subfeature_attributes(sequence.id,
+                                                             sequence.name,
+                                                             kind, intron_cont)
+            elif kind == 'orf':
+                orf_cont += 1
+                source     = 'estscan'
+                type_      = 'SO:0000236'
+                score      = '.'
+                attributes = self._get_subfeature_attributes(sequence.id,
+                                                             sequence.name,
+                                                             kind, intron_cont)
+            elif kind == 'snv':
+                snv_cont += 1
+                source     = 'franklin'
+                type_      = 'SO:0001483'
+                score      = '.'
+                attributes = self._get_subfeature_attributes(sequence.id,
+                                                             sequence.name,
+                                                             kind, snv_cont)
+
+            seqid      = sequence.id
+            start      = str(feature.location.start)
+            end        = str(feature.location.end)
+            strand     = '.'
+            phase      = '.'
+
+            yield [seqid, source, type_, start, end, score, strand,
+                           phase, attributes]
+
+    @staticmethod
+    def _get_subfeature_attributes(id, name, kind, num):
+        '''It gets the attribute section of a sequence's  subfeature'''
+        return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
+
+
+
 class SequenceWriter(object):
     'It writes sequences one by one'
     def __init__(self, fhand, file_format, qual_fhand=None):

@@ -49,7 +49,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         distance = 60
         filter_ = create_unique_contiguous_region_filter(distance=distance,
                                                          genomic_db=genomic_db,
-                                            genomic_seqs_fhand=open(genomic_db))
+                                            genomic_seqs_fpath=genomic_db)
         #an snv in an unique region
         seq  = 'CTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGATTGTTTC'
         seq += 'TTCATTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATATCTGTTGAA'

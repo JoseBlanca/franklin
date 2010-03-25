@@ -19,7 +19,6 @@ Created on 2009 uzt 30
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
-import franklin
 from tempfile import NamedTemporaryFile
 
 from franklin.pipelines.pipelines import  (configure_pipeline,
@@ -58,7 +57,8 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':'hola'}}
         pipeline      = configure_pipeline(pipeline, configuration)
 
-        assert pipeline[0]['arguments']['vectors'] == 'Univec'
+        assert pipeline[0]['arguments']['vectors'] == 'hola'
+        assert pipeline[2]['arguments']['vectors'] == 'Univec'
 
         # Now it should fail because one of the arguments is Not set
         configuration = {'remove_vectors': {'vectors':'Univec'}}

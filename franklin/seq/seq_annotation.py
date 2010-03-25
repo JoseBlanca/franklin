@@ -214,9 +214,6 @@ def _parse_b2g_output(annot_fhand):
         items = line.split('\t')
         name = items[0]
         go   = items[1]
-        if len(items) > 2:
-            go_description = items[2]
-            go = (go, go_description)
         if name not in annotations:
             annotations[name] = []
         annotations[name].append(go)
