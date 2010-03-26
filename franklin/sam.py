@@ -21,14 +21,14 @@ def _guess_gatk_path():
     return guess_java_install_dir('GenomeAnalysisTK.jar')
 
 
-def bam2sam(bam_path, sam_path=None):
-    '''It converts between bam and sam. It sampath is not given, it return
-    sam content'''
-    cmd = ['samtools', 'view', '-h', bam_path]
-    if sam_path:
-        cmd.extend(['-o', sam_path])
-    sam = call(cmd, raise_on_error=True)
-    return sam
+def bam2sam(bam_path, sam_path, header=False):
+    '''It converts between bam and sam.'''
+    cmd = ['samtools', 'view']
+    if header:
+        cmd.append('-h')
+    cmd.append(bam_path)
+    cmd.extend(['-o', sam_path])
+    call(cmd, raise_on_error=True)
 
 def sam2bam(sam_path, bam_path):
     'It converts between bam and sam.'

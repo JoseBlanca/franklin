@@ -22,7 +22,7 @@ class SamTest(unittest.TestCase):
         'It test bam2sam function'
         bampath = os.path.join(DATA_DIR, 'seq.bam')
         sampath = NamedTemporaryFile(suffix='.sam').name
-        bam2sam(bampath, sampath)
+        bam2sam(bampath, sampath, header=True)
         assert 'SN:SGN-U572743' in open(sampath).readline()
 
     @staticmethod
@@ -30,7 +30,7 @@ class SamTest(unittest.TestCase):
         'It test sam2bam function'
         bampath = os.path.join(DATA_DIR, 'seq.bam')
         sampath = NamedTemporaryFile(suffix='.sam').name
-        bam2sam(bampath, sampath)
+        bam2sam(bampath, sampath, header=True)
         assert 'SN:SGN-U572743' in open(sampath).readline()
 
         newbam = NamedTemporaryFile(suffix='.bam')

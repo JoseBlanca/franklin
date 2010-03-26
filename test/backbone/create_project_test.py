@@ -69,7 +69,6 @@ class TestBackbone(unittest.TestCase):
 
         assert settings_path == join(test_dir.name,
                                 'backbone', BACKBONE_DIRECTORIES['config_file'])
-        print open(settings_path).read()
         settings = ConfigObj(settings_path, unrepr=True)
         assert settings['General_settings']['project_name'] == 'backbone'
         project_path = join(test_dir.name, 'backbone')
