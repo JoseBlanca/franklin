@@ -150,19 +150,38 @@ def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
            'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
     call(cmd, raise_on_error=True)
 
-def _fix_non_mapped_reads(items):
-    'Given a list with sam line it removes MAPQ from non-mapped reads'
-    #is the read mapped?
-    flag = int(items[1])
+def guess_mapped(flag):
+    'Giving the flag, guess if the read is mapped or not'
+    non_mapped_flags = set()
     if flag == 0:
         mapped = True
-    elif flag in (20, 4):  #just a sohortcut
+    elif flag in non_mapped_flags:  #just a sohortcut
         mapped = False
     else:
         if bin(flag)[-3] == '1':
             mapped = False
+            non_mapped_flags.add(flag)
         else:
             mapped = True
+    return mapped
+
+
+def _fix_non_mapped_reads(items):
+    'Given a list with sam line it removes MAPQ from non-mapped reads'
+    #is the read mapped?
+    flag = int(items[1])
+    mapped = guess_mapped(flag)
+#    non_mapped_flags = set()
+#    if flag == 0:
+#        mapped = True
+#    elif flag in non_mapped_flags:  #just a sohortcut
+#        mapped = False
+#    else:
+#        if bin(flag)[-3] == '1':
+#            mapped = False
+#            non_mapped_flags.add(flag)
+#        else:
+#            mapped = True
     if not mapped:
         #RNAME = *
         items[2] = '*'
