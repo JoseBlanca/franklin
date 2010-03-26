@@ -74,7 +74,21 @@ def create_project(name, directory=None, configuration=None):
 
     config['Annotation'] = {}
     config['Annotation']['description_databases'] = ['somedb']
+    config['Annotation']['orthologs_databases'] = {}
     config['Annotation']['orthologs_databases'] = ['somedb']
+    config['Annotation']['Cdna_intron_annotation'] = {}
+    config['Annotation']['Cdna_intron_annotation']['genomic_db'] = 'path_to_blastdb'
+    config['Annotation']['Cdna_intron_annotation']['genomic_seqs'] = 'path_to_seqs'
+    config['Annotation']['orf_annotation'] = {}
+    config['Annotation']['orf_annotation']['estscan_matrix'] = 'path to estscan matrix'
+    config['Annotation']['go_annotation'] = {}
+    config['Annotation']['go_annotation']['blast_database'] = 'nr'
+
+
+
+
+
+
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}

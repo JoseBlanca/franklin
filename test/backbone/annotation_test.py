@@ -27,8 +27,9 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
                                     'species':'arabidopsis',
                                     'kind': 'nucl'}},
-                  'orthologs_annotation':{'ortholog_databases': ['arabidopsis']}
-                 }
+                  'Annotation':{'orthologs_annotation':{'ortholog_databases':
+                                                             ['arabidopsis']}
+                 }}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -72,8 +73,9 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'arabidopsis': {'path': arab_blastdb,
                                            'species':'arabidopsis',
                                            'kind': 'nucl'}},
-                  'description_annotation':{'description_databases':
-                                                                ['arabidopsis']}
+                  'Annotation':{'description_annotation':{
+                                                    'description_databases':
+                                                              ['arabidopsis']}}
                  }
 
         settings_path = create_project(directory=test_dir.name,
@@ -106,8 +108,9 @@ class OrthologTest(unittest.TestCase):
         project_name = 'backbone'
         blast_db_path = os.path.join(DATA_DIR, 'blast')
         genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
-        config = {'Cdna_intron_annotation':{'genomic_db': genomic_db,
-                                            'genomic_seqs':genomic_db}}
+        config = {'Annotation':
+                        {'Cdna_intron_annotation':{'genomic_db': genomic_db,
+                                                   'genomic_seqs':genomic_db}}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                       configuration=config)
@@ -176,11 +179,11 @@ class OrthologTest(unittest.TestCase):
 
     @staticmethod
     def test_orf_annoation_analysis():
-        'We can annotate introns'
+        'We can annotate orfs'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         matrix = os.path.join(DATA_DIR, 'At.smat')
-        config =  {'orf_annotation': {'estscan_matrix':matrix}}
+        config =  {'Annotation':{'orf_annotation': {'estscan_matrix':matrix}}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -220,8 +223,8 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
                                            'kind': 'nucl'}},
-                  'go_annotation':{'blast_database':'nr'}
-                 }
+                  'Annotation':{'go_annotation':{'blast_database':'nr'}
+                 }}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -262,7 +265,7 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
                                            'kind': 'nucl'}},
-                  'go_annotation':{'blast_database':'nr'}
+                  'Annotation':{'go_annotation':{'blast_database':'nr'}}
                  }
 
         settings_path = create_project(directory=test_dir.name,

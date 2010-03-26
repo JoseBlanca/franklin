@@ -87,7 +87,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
         'It runs the analysis'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         blast_settings = self._project_settings['blast']
-        ortholog_settings = self._project_settings['orthologs_annotation']
+        settings = self._project_settings['Annotation']
+        ortholog_settings = settings['orthologs_annotation']
         ortholog_databases = ortholog_settings['ortholog_databases']
 
         #first we need some blasts
@@ -149,7 +150,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         pipeline = [annotate_cdna_introns]
 
-        settings = self._project_settings
+        settings = self._project_settings['Annotation']
         if 'Cdna_intron_annotation' not in settings:
             msg = 'You should set up genomic_db and genomic_seqs in settings'
             raise RuntimeError(msg)
@@ -277,7 +278,8 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         blast_settings = self._project_settings['blast']
 
-        annot_settings = self._project_settings['description_annotation']
+        settings = self._project_settings['Annotation']
+        annot_settings = settings['description_annotation']
         description_databases = annot_settings['description_databases']
 
         #first we need some blasts
@@ -337,7 +339,7 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        matrix = self._project_settings['orf_annotation']['estscan_matrix']
+        matrix = self._project_settings['Annotation']['orf_annotation']['estscan_matrix']
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
 
         pipeline = [annotate_orfs]
@@ -356,8 +358,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         blast_settings = self._project_settings['blast']
 
-        annot_settings = self._project_settings['go_annotation']
-        go_database = annot_settings['blast_database']
+        annot_settings = self._project_settings['Annotation']
+        go_settings = annot_settings['go_annotation']
+        go_database = go_settings['blast_database']
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
