@@ -74,8 +74,8 @@ def create_project(name, directory=None, configuration=None):
 
     config['Annotation'] = {}
     config['Annotation']['description_databases'] = ['somedb']
-    config['Annotation']['orthologs_databases'] = {}
-    config['Annotation']['orthologs_databases'] = ['somedb']
+    config['Annotation']['ortholog_databases'] = {}
+    config['Annotation']['ortholog_databases'] = ['somedb']
     config['Annotation']['Cdna_intron_annotation'] = {}
     config['Annotation']['Cdna_intron_annotation']['genomic_db'] = 'path_to_blastdb'
     config['Annotation']['Cdna_intron_annotation']['genomic_seqs'] = 'path_to_seqs'
@@ -84,14 +84,14 @@ def create_project(name, directory=None, configuration=None):
     config['Annotation']['go_annotation'] = {}
     config['Annotation']['go_annotation']['blast_database'] = 'nr'
 
-    config['Blast'] = {}
-    config['Blast']['nr'] = {}
-    config['Blast']['nr']['path'] = "Path_to_nr database"
-    config['Blast']['nr']['species'] = 'all'
-    config['Blast']['nr']['kind'] = 'nucl'
+    config['blast'] = {}
+    config['blast']['nr'] = {}
+    config['blast']['nr']['path'] = "Path_to_nr database"
+    config['blast']['nr']['species'] = 'all'
+    config['blast']['nr']['kind'] = 'nucl'
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
-    config['Blast'].comments = {'nr':comments}
+    config['blast'].comments = {'nr':comments}
 
 
 

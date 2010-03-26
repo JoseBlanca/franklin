@@ -27,9 +27,8 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
                                     'species':'arabidopsis',
                                     'kind': 'nucl'}},
-                  'Annotation':{'orthologs_annotation':{'ortholog_databases':
-                                                             ['arabidopsis']}
-                 }}
+                  'Annotation':{'ortholog_databases':['arabidopsis']}
+                 }
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -261,7 +260,7 @@ class OrthologTest(unittest.TestCase):
 
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        nr_path = '/srv/databases/blast/nr'
+        nr_path = '/srv/databases/blast/nr+'
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
                                            'kind': 'nucl'}},
