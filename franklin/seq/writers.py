@@ -104,6 +104,12 @@ class GffWriter(object):
         srr_cont, intron_cont, orf_cont, snv_cont = 0, 0, 0, 0
         for feature in sequence.features:
             kind = feature.type
+            seqid      = sequence.id
+            start      = str(feature.location.start)
+            end        = str(feature.location.end)
+            strand     = '.'
+            phase      = '.'
+            score      = '.'
             if kind == 'microsatellite':
                 srr_cont += 1
                 source = 'sputnik'
@@ -116,7 +122,6 @@ class GffWriter(object):
                 intron_cont +=1
                 source     = 'est2genome'
                 type_      = 'SO:0000188'
-                score      = '.'
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, intron_cont)
@@ -124,7 +129,8 @@ class GffWriter(object):
                 orf_cont += 1
                 source     = 'estscan'
                 type_      = 'SO:0000236'
-                score      = '.'
+                strand = feature.qualifiers['strand']
+                strand = '+' if strand == 'forward' else '-'
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, intron_cont)
@@ -132,16 +138,10 @@ class GffWriter(object):
                 snv_cont += 1
                 source     = 'franklin'
                 type_      = 'SO:0001483'
-                score      = '.'
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, snv_cont)
 
-            seqid      = sequence.id
-            start      = str(feature.location.start)
-            end        = str(feature.location.end)
-            strand     = '.'
-            phase      = '.'
 
             yield [seqid, source, type_, start, end, score, strand,
                            phase, attributes]

@@ -84,9 +84,14 @@ def create_project(name, directory=None, configuration=None):
     config['Annotation']['go_annotation'] = {}
     config['Annotation']['go_annotation']['blast_database'] = 'nr'
 
-
-
-
+    config['Blast'] = {}
+    config['Blast']['nr'] = {}
+    config['Blast']['nr']['path'] = "Path_to_nr database"
+    config['Blast']['nr']['species'] = 'all'
+    config['Blast']['nr']['kind'] = 'nucl'
+    comments = []
+    comments.append('Add as much blast databases as you need. Here a example')
+    config['Blast'].comments = {'nr':comments}
 
 
 

@@ -153,12 +153,22 @@ def create_orf_annotator(parameters):
         prot_fhand = results['protein']
         description, seq = get_content_from_fasta(dna_fhand)[1:]
         pep = get_content_from_fasta(prot_fhand)[-1]
-        start, end = description.split()[-2:]
-        start, end = int(start), int(end)
+        # If there is no description, ther is no org
+        if description is None:
+            return sequence
+
+        items = description.split()
+        start = int(items[1])
+        end   = int(items[2])
         seq = Seq(seq, generic_dna)
         pep = Seq(pep, generic_protein)
+        qualifiers =  {'dna':seq, 'pep':pep}
+        if len(items) > 3:
+            qualifiers['strand'] = 'reverse'
+        else:
+            qualifiers['strand'] = 'forward'
         feature = SeqFeature(location=FeatureLocation(start, end), type='orf',
-                             qualifiers={'dna':seq, 'pep':pep})
+                             qualifiers=qualifiers)
         sequence.features.append(feature)
         return sequence
     return annotate_orf
