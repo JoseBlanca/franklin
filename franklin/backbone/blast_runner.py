@@ -45,6 +45,9 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
     if blast_db is None and blast_db_seq is None:
         raise RuntimeError('It needs a blast database or seqfile')
 
+    #create a logger
+    logger = logging.getLogger("franklin")
+
     query_basename = _get_basename(query_fpath)
     blast_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_dir'])
 
@@ -59,6 +62,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
                         '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                        blast_program))
     if exists(result_fpath):
+        logger.info('Using the stored blast result %s' % result_fpath)
         return open(result_fpath)
 
     #the input file should be fasta
@@ -84,9 +88,11 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
                 seqio(in_seq_fhand=open(blast_db_seq),
                       out_seq_fhand=open(db_seq_fpath, 'w'),
                       out_format='fasta')
+            logger.info('Formatting the database %s' % db_seq_fpath)
             makeblastdb(db_seq_fpath, dbtype=dbtype)
         blast_db = db_seq_fpath
 
+    logger.info('Running the blast %s' % result_fpath)
     blast_runner(query_fpath, blast_db, blast_program, result_fpath)
 
     if fasta_query_fhand:

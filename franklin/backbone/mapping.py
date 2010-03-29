@@ -33,6 +33,7 @@ class MappingAnalyzer(Analyzer):
     'It performs the mapping of the sequences to the reference'
     def run(self):
         '''It runs the analysis.'''
+        self._log({'analysis_started':True})
         settings = self._project_settings['Mappers']
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
@@ -57,11 +58,13 @@ class MappingAnalyzer(Analyzer):
                           reference_fpath=reference_fpath,
                           out_bam_fpath=out_bam,
                           parameters = mapping_parameters)
+        self._log({'analysis_finished':True})
 
 class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
     def run(self):
         '''It runs the analysis.'''
+        self._log({'analysis_started':True})
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
@@ -127,11 +130,13 @@ class MergeBamAnalyzer(Analyzer):
         sort_bam_sam(temp_bam.name, merged_bam_fpath)
         temp_bam.close()
         temp_sam.close()
+        self._log({'analysis_finished':True})
 
 class RealignBamAnalyzer(Analyzer):
     'It realigns the bam using GATK'
     def run(self):
         '''It runs the analysis.'''
+        self._log({'analysis_started':True})
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
@@ -154,6 +159,7 @@ class RealignBamAnalyzer(Analyzer):
             out_bam_fpath = os.path.join(output_dir,
                                          os.path.split(bam_fpath)[-1])
             shutil.move(temp_bam_fpath, out_bam_fpath)
+        self._log({'analysis_finished':True})
 
 DEFINITIONS = {
     'set_assembly_as_reference':
@@ -207,6 +213,4 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': RealignBamAnalyzer,
         },
-
 }
-

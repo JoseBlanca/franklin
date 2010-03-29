@@ -3,7 +3,7 @@ Created on 01/03/2010
 
 @author: peio
 '''
-import os, time, tempfile
+import os, time, tempfile, logging
 
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
@@ -210,6 +210,32 @@ class Analyzer(object):
         'It gets the basename of the file and the stats'
         return os.path.splitext(os.path.basename(fpath))[0]
 
+    _analysis_messages = {
+        'AnnotateIntronsAnalyzer': 'Annotating introns',
+        'AnnotateDescriptionAnalyzer': 'Annotating descriptions',
+        'AnnotateGoAnalyze': 'Annotating GO terms',
+        'AnnotateMicrosatelliteAnalyzer': 'Annotating Microsatellites',
+        'AnnotateOrfAnalyzer': 'Annotating ORFs',
+        'AnnotateOrthologsAnalyzer': 'Annotating Orthologs',
+                          }
+
+    def _log(self, messages):
+        'It logs the analysis'
+        #create logger
+        logger = logging.getLogger("franklin")
+        #which analysis is running?
+        class_name = self.__class__.__name__
+        class_name = class_name.split('.')[-1]
+        if class_name in self._analysis_messages:
+            analysis_message = self._analysis_messages[class_name]
+        else:
+            analysis_message = class_name
+        if 'analysis_started' in messages:
+            logger.info(analysis_message)
+            logger.info('Analysis started')
+        elif 'analysis_finished' in messages:
+            logger.info('Analysis finished')
+
 class LastAnalysisAnalyzer(Analyzer):
     'It chooses the latest assembly as the result'
 
@@ -219,6 +245,7 @@ class LastAnalysisAnalyzer(Analyzer):
 
     def _select_last_analysis(self):
         '''It select the last analysis from a directory with timestamped results'''
+        self._log({'analysis_started':True})
         dirs = self._get_timestamped_output_dirs()
         latest_dir = dirs[-1]
         output_dir = self._get_output_dirs()['result']

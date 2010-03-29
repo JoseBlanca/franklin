@@ -83,6 +83,7 @@ class CleanReadsAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
+        self._log({'analysis_started':True})
         input_fpaths = self._get_input_fpaths()['reads']
         output_dir   =  self._create_output_dirs()['reads']
         for input_fpath in input_fpaths:
@@ -103,6 +104,7 @@ class CleanReadsAnalyzer(Analyzer):
                                 file_info['format'])
             input_fhand.close()
             output_fhand.close()
+        self._log({'analysis_finished':True})
         return
 
 
@@ -114,6 +116,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
     def run(self):
         'It runs the analysis'
+        self._log({'analysis_started':True})
         self._create_output_dirs()['original_reads']
         self._create_output_dirs()['cleaned_reads']
 
@@ -170,6 +173,7 @@ class ReadsStatsAnalyzer(Analyzer):
         analyses  = ['seq_length_distrib', 'qual_distrib']
         self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
                                 stats_dir, analyses)
+        self._log({'analysis_finished':True})
 
     def _get_stats_dir(self, seqtype):
         'It gets the stats dir for each seqtype'

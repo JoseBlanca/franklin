@@ -22,7 +22,7 @@ class PrepareWSGAssemblyAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-
+        self._log({'analysis_started':True})
         # TODO
         # Now we need to convert all the fastq in fasta and qual. If fasta
         #without qual, we need to give it a quality from settings. It can change
@@ -83,12 +83,14 @@ class PrepareWSGAssemblyAnalyzer(Analyzer):
         for frg_fhand in frg_fhands:
             frg_fhand.close()
         tempdir.close()
+        self._log({'analysis_finished':True})
 
 class WSGAssemblyAnalyzer(Analyzer):
     'It assembles the cleaned reads using WSG assembler'
 
     def run(self):
         '''It runs the analysis.'''
+        self._log({'analysis_started':True})
         proj_name = self._get_project_name()
         #we need an assembly dir for this run
         #in this case every assembly is done in a new directory
@@ -117,6 +119,7 @@ class WSGAssemblyAnalyzer(Analyzer):
         fname = '%s.asm' % proj_name
         asm_result_fpath = os.path.join(output_dirs['analysis'], fname)
         os.symlink(asm_result_fpath, os.path.join(output_dirs['result'], fname))
+        self._log({'analysis_finished':True})
 
 class PrepareMiraAssemblyAnalyzer(Analyzer):
     'It assembles the cleaned reads'
@@ -124,7 +127,7 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-
+        self._log({'analysis_started':True})
         files_454 = []
         files_sanger_with_qual = []
         files_sanger_without_qual = []
@@ -163,6 +166,7 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         # close all files
         for file_ in files_454 + files_sanger:
             file_.close()
+        self._log({'analysis_finished':True})
 
     @staticmethod
     def _files_to_temp_fasta(files):
@@ -196,7 +200,7 @@ class MiraAssemblyAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
-
+        self._log({'analysis_started':True})
         proj_name = self._get_project_name()
         #we need an assembly dir for this run
         #in this case every assembly is done in a new directory
@@ -275,6 +279,8 @@ class MiraAssemblyAnalyzer(Analyzer):
         if os.path.exists(mira_info_dir):
             os.symlink(mira_info_dir, os.path.join(results_dir,
                                                   BACKBONE_DIRECTORIES['info']))
+        self._log({'analysis_finished':True})
+
 DEFINITIONS ={
     'prepare_wsg_assembly':
         {'inputs':{
@@ -324,6 +330,4 @@ DEFINITIONS ={
                               'create': False}},
          'analyzer': LastAnalysisAnalyzer,
         },
-
-              }
-
+   }

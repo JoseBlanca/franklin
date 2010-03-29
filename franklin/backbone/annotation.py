@@ -41,6 +41,7 @@ class AnnotationAnalyzer(Analyzer):
 
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
+        self._log({'analysis_started':True})
         repr_fpaths  = inputs['repr']
         try:
             seqs_fpaths  = inputs['input']
@@ -63,6 +64,7 @@ class AnnotationAnalyzer(Analyzer):
             repr_fpath = os.path.join(output_dir,
                                       _get_basename(seq_fpath) + '.repr')
             shutil.move(temp_repr.name, repr_fpath)
+        self._log({'analysis_finished':True})
 
     def _get_seq_or_repr_fpath(self, seqs_fpaths, repr_fpaths):
         'It returns for every file the repr or the seq file'
