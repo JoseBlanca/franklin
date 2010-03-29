@@ -21,13 +21,13 @@ Created on 16/02/2010
 from __future__ import division
 
 import pysam
-import os
 from collections import defaultdict
 
 from Bio.SeqFeature import FeatureLocation
 
 from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
-from franklin.utils.cmd_utils import call, create_runner
+from franklin.utils.cmd_utils import create_runner
+from franklin.sam import create_bam_index
 from copy import copy
 
 DELETION_ALLELE = '-'
@@ -94,7 +94,8 @@ def _get_read_group_info(bam):
         rg_info[name] = read_group
     return rg_info
 
-def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
+def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
+                 min_mapq):
     'It yields the snv information for every snv in the given reference'
 
     read_groups_info = _get_read_group_info(bam)
@@ -113,9 +114,13 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality):
         for pileup_read in column.pileups:
             aligned_read      = pileup_read.alignment
 
+            read_mapping_qual = aligned_read.mapq
+            #We ignore the reads that are likely to be missaligned
+            if read_mapping_qual < min_mapq:
+                continue
+
             read_group        = aligned_read.opt('RG')
             read_name         = aligned_read.qname
-            read_mapping_qual = aligned_read.mapq
 
             read_pos          = pileup_read.qpos
 
@@ -249,13 +254,12 @@ def _calculate_allele_quality(allele_info):
                     total_qual += independent_quals[2] / 4.0
     return total_qual
 
-def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25):
+def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
+                         min_mapq=15):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
-    index_fpath = os.path.join(bam_fhand.name, '.bai')
-    if not os.path.exists(index_fpath):
-        call(['samtools', 'index', bam_fhand.name], raise_on_error=True)
+    create_bam_index(bam_fpath=bam_fhand.name)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
 
@@ -263,7 +267,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25):
         'It annotates the snvs found in the sequence'
         for snv in _snvs_in_bam(bam, reference=sequence,
                                 min_quality=min_quality,
-                                default_sanger_quality=default_sanger_quality):
+                                default_sanger_quality=default_sanger_quality,
+                                min_mapq=min_mapq):
             location = snv['ref_position']
             type_ = 'snv'
             qualifiers = {'alleles':snv['alleles'],

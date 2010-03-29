@@ -19,7 +19,8 @@ from franklin.snv.snv_filters import (create_high_variable_region_filter,
 
 snv_bam_annotator = {'function':create_snv_annotator,
           'arguments':{'bam_fhand':None, 'min_quality':45,
-                       'default_sanger_quality':25},
+                       'default_sanger_quality':25,
+                       'min_mapq':15},
           'type':'mapper',
           'name':'snv_bam_annotator',
           'comment': 'It annotates the snvs from a bam file'}

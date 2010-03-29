@@ -94,7 +94,6 @@ def create_project(name, directory=None, configuration=None):
     config['blast'].comments = {'nr':comments}
 
 
-
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}
     config['snv_filters']['filter1']['name'] = 'uniq_contiguous'

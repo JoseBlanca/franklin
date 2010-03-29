@@ -172,8 +172,6 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         merged_bam   = inputs['merged_bam']
         create_bam_index(merged_bam)
 
-
-
         pipeline = 'snv_bam_annotator'
         bam_fhand = open(merged_bam)
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
@@ -181,6 +179,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
             min_quality = settings['Snvs']['min_quality']
             configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
+        if 'Snvs' in settings and 'min_mapq' in settings['Snvs']:
+            min_mapq = settings['Snvs']['min_mapq']
+            configuration['snv_bam_annotator']['min_mapq'] = int(min_mapq)
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
