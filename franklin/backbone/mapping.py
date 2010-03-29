@@ -12,7 +12,7 @@ from franklin.mapping import map_reads
 from franklin.utils.misc_utils import NamedTemporaryDir
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam, standardize_sam)
+                          sam2bam, sort_bam_sam, standardize_sam, realign_bam)
 
 class SetAssemblyAsReferenceAnalyzer(Analyzer):
     'It sets the reference assembly as mapping reference'
@@ -136,14 +136,24 @@ class RealignBamAnalyzer(Analyzer):
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
         inputs    = self._get_input_fpaths()
-        bam_fpath = inputs['bams']
+        bam_fpaths = inputs['bams']
+        reference_fpath = inputs['reference']
+        #usually it should be just one bam, but it migth be more than one
+        for bam_fpath in bam_fpaths:
+            #we need a temporary path
+            temp_bam = NamedTemporaryFile(suffix='.bam')
+            temp_bam_fpath = temp_bam.name
+            temp_bam.close()
 
-        #get the positions to realign
-
-        #do the realignment
-
-        #replace the original bam
-
+            #do the realigment
+            realign_bam(bam_fpath=bam_fpath,
+                        reference_fpath=reference_fpath,
+                        out_bam_fpath=temp_bam_fpath)
+            #replace the original bam
+            output_dir = self._create_output_dirs()['result']
+            out_bam_fpath = os.path.join(output_dir,
+                                         os.path.split(bam_fpath)[-1])
+            shutil.move(temp_bam_fpath, out_bam_fpath)
 
 DEFINITIONS = {
     'set_assembly_as_reference':
@@ -163,7 +173,6 @@ DEFINITIONS = {
             'reference':
                 {'directory': 'mapping_reference',
                 'file': 'mapping_reference'},
-
             },
          'outputs':{'result':{'directory': 'mappings_by_readgroup'}},
          'analyzer': MappingAnalyzer,
@@ -188,9 +197,12 @@ DEFINITIONS = {
         },
     'realign_bam':
         {'inputs':{
-            'bam':
+            'bams':
                 {'directory': 'mapping_result',
                  'file_kinds': 'bam'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
             },
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': RealignBamAnalyzer,

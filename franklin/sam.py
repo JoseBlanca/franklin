@@ -305,7 +305,8 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath):
     call(cmd, raise_on_error=True)
 
     #the realignment itself
-    cmd = ['java', '-Djava.io.tmpdir=%s', tempfile.gettempdir(),
+    cmd = ['java', '-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '--output', out_bam_fpath]
+    call(cmd, raise_on_error=True)

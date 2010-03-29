@@ -110,6 +110,9 @@ class TestBackboneMapping(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='merge_bam')
         assert exists(join(result_dir, 'merged.bam'))
 
+        #we realign the mapping using GATK
+        do_analysis(project_settings=settings_path, kind='realign_bam')
+
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
