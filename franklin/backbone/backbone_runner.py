@@ -15,7 +15,7 @@ from franklin.backbone.mapping import DEFINITIONS as mapp_defs
 
 DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs]
 
-def _get_analysis_especifications():
+def get_analysis_especifications():
     'It groups all the especification'
     specifications = {}
     for spec in DEFINITIONS:
@@ -50,7 +50,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None):
         analysis_config = {}
 
     settings = ConfigObj(project_settings, unrepr=True)
-    specifications = _get_analysis_especifications()
+    specifications = get_analysis_especifications()
     log_fpath = os.path.join(settings['General_settings']['project_path'],
                              'franklin.log')
     _configure_logging(log_fpath)

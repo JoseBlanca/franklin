@@ -26,7 +26,6 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
 
-
 def _get_basename(fpath):
     'It returns the base name without path and extension'
     return splitext(basename(fpath))[0]

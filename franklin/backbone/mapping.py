@@ -143,6 +143,14 @@ class RealignBamAnalyzer(Analyzer):
         inputs    = self._get_input_fpaths()
         bam_fpaths = inputs['bams']
         reference_fpath = inputs['reference']
+
+        #memory for the java programs
+        if ('Other_settings' in settings and
+            'java_memory' in settings['Other_settings']):
+            java_mem = settings['Other_settings']['java_memory']
+        else:
+            java_mem = None
+
         #usually it should be just one bam, but it migth be more than one
         for bam_fpath in bam_fpaths:
             #we need a temporary path
@@ -153,7 +161,8 @@ class RealignBamAnalyzer(Analyzer):
             #do the realigment
             realign_bam(bam_fpath=bam_fpath,
                         reference_fpath=reference_fpath,
-                        out_bam_fpath=temp_bam_fpath)
+                        out_bam_fpath=temp_bam_fpath,
+                        java_memory=java_mem)
             #replace the original bam
             output_dir = self._create_output_dirs()['result']
             out_bam_fpath = os.path.join(output_dir,

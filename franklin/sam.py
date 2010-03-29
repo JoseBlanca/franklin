@@ -171,17 +171,6 @@ def _fix_non_mapped_reads(items):
     #is the read mapped?
     flag = int(items[1])
     mapped = guess_mapped(flag)
-#    non_mapped_flags = set()
-#    if flag == 0:
-#        mapped = True
-#    elif flag in non_mapped_flags:  #just a sohortcut
-#        mapped = False
-#    else:
-#        if bin(flag)[-3] == '1':
-#            mapped = False
-#            non_mapped_flags.add(flag)
-#        else:
-#            mapped = True
     if not mapped:
         #RNAME = *
         items[2] = '*'
@@ -284,7 +273,14 @@ def create_sam_reference_index(reference_fpath):
     cmd = ['samtools', 'faidx', reference_fpath]
     call(cmd, raise_on_error=True)
 
-def realign_bam(bam_fpath, reference_fpath, out_bam_fpath):
+def _java_cmd(java_memory):
+    'It returns the java -Xmxim thing'
+    cmd = ['java']
+    if java_memory:
+        cmd.append('-Xmx%im' % int(java_memory))
+    return cmd
+
+def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_memory=None):
     'It realigns the bam using GATK Local realignment around indels'
     #reference sam index
     create_sam_reference_index(reference_fpath)
@@ -300,13 +296,15 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath):
     gatk_jar = os.path.join(gatk_path, 'GenomeAnalysisTK.jar')
     intervals_fhand = tempfile.NamedTemporaryFile(prefix='intervals',
                                                   suffix='.txt')
-    cmd = ['java', '-jar', gatk_jar, '-T', 'RealignerTargetCreator',
-           '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name]
+    cmd = _java_cmd(java_memory)
+    cmd.extend(['-jar', gatk_jar, '-T', 'RealignerTargetCreator',
+           '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name])
     call(cmd, raise_on_error=True)
 
     #the realignment itself
-    cmd = ['java', '-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
+    cmd = _java_cmd(java_memory)
+    cmd.extend(['-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
-           '--output', out_bam_fpath]
+           '--output', out_bam_fpath])
     call(cmd, raise_on_error=True)
