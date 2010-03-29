@@ -176,13 +176,12 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         bam_fhand = open(merged_bam)
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
         settings = self._project_settings
-        if 'Snvs' in settings and 'min_quality' in settings['Snvs']:
-            min_quality = settings['Snvs']['min_quality']
-            configuration['snv_bam_annotator']['min_quality'] = int(min_quality)
-        if 'Snvs' in settings and 'min_mapq' in settings['Snvs']:
-            min_mapq = settings['Snvs']['min_mapq']
-            configuration['snv_bam_annotator']['min_mapq'] = int(min_mapq)
-
+        if 'Snvs' in settings:
+            snv_settings = settings['Snvs']
+            for confif_param in ('min_quality', 'min_mapq', 'min_num_alleles'):
+                if confif_param in snv_settings:
+                    param_value = int(snv_settings[confif_param])
+                    configuration['snv_bam_annotator'][confif_param] = param_value
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,

@@ -95,7 +95,7 @@ def _get_read_group_info(bam):
     return rg_info
 
 def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
-                 min_mapq):
+                 min_mapq, min_num_alleles):
     'It yields the snv information for every snv in the given reference'
 
     read_groups_info = _get_read_group_info(bam)
@@ -194,7 +194,15 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
         #remove bad quality alleles
         _remove_bad_quality_alleles(alleles, min_quality)
 
-        if len(alleles) > 1:
+        #if there are a min_num number of alleles requested and there are more
+        #alleles than that
+        #OR
+        #there is some allele different than invariant
+        #a variation is yield
+        if not alleles:
+            continue
+        if ((min_num_alleles > 1 and len(alleles) >= min_num_alleles) or
+           (len(alleles) > 1 or alleles.keys()[0][1] != INVARIANT)):
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
                    'reference_allele':ref_allele,
@@ -255,7 +263,7 @@ def _calculate_allele_quality(allele_info):
     return total_qual
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
-                         min_mapq=15):
+                         min_mapq=15, min_num_alleles=1):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -268,7 +276,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
         for snv in _snvs_in_bam(bam, reference=sequence,
                                 min_quality=min_quality,
                                 default_sanger_quality=default_sanger_quality,
-                                min_mapq=min_mapq):
+                                min_mapq=min_mapq,
+                                min_num_alleles=min_num_alleles):
             location = snv['ref_position']
             type_ = 'snv'
             qualifiers = {'alleles':snv['alleles'],
