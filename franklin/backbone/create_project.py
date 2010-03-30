@@ -6,7 +6,7 @@ Created on 29/01/2010
 
 import os
 from configobj import ConfigObj
-from franklin.backbone.analysis import BACKBONE_DIRECTORIES
+from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
 def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
@@ -22,12 +22,12 @@ def create_project(name, directory=None, configuration=None):
     os.mkdir(project_path)
 
     #create the settings
-    settings_path = os.path.join(project_path, 'backbone.conf')
+    settings_path = os.path.join(project_path,
+                                 BACKBONE_DIRECTORIES['config_file'])
     config_data = os.path.join(project_path, 'config_data')
 
     config = ConfigObj(unrepr=True)
-    config.filename = os.path.join(project_path,
-                                   BACKBONE_DIRECTORIES['config_file'])
+    config.filename = os.path.join(settings_path)
 
     config['General_settings'] = {}
     config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')

@@ -4,7 +4,7 @@ Created on 12/03/2010
 @author: peio
 '''
 BACKBONE_DIRECTORIES = {
-    'config_file': 'backbone.conf',
+    'config_file': 'franklin.conf',
     'original_reads': 'reads/original',
     'cleaned_reads': 'reads/cleaned',
     'assembly_input': 'assembly/input',
