@@ -3,7 +3,7 @@ Created on 15/03/2010
 
 @author: peio
 '''
-import os, itertools
+import os, itertools, logging
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
@@ -153,14 +153,21 @@ class ReadsStatsAnalyzer(Analyzer):
                                         stats_dir, analyses)
 
         # stats per seq file. All files together
-        clean_seqs    = self._seqs_in_files(clean_fpaths)
-        original_seqs = self._seqs_in_files(original_fpaths)
-        clean_seqs, clean_seqs2       = itertools.tee(clean_seqs, 2)
-        original_seqs, original_seqs2 = itertools.tee(original_seqs, 2)
-
+        if clean_fpaths:
+            clean_seqs = self._seqs_in_files(clean_fpaths)
+            clean_seqs, clean_seqs2 = itertools.tee(clean_seqs, 2)
+        else:
+            clean_seqs, clean_seqs2 = None, None
+        if original_fpaths:
+            original_seqs = self._seqs_in_files(original_fpaths)
+            original_seqs, original_seqs2 = itertools.tee(original_seqs, 2)
+        else:
+            original_seqs, original_seqs2 = None, None
         all_reads = {'cleaned': clean_seqs, 'original': original_seqs}
         basename  = 'global'
         for seqtype, seqs in all_reads.items():
+            if seqs is None:
+                continue
             stats_dir = self._get_stats_dir(seqtype)
             analyses = ['seq_length_distrib', 'qual_distrib']
             self._do_seq_stats(seqs, basename, stats_dir, analyses)
@@ -168,8 +175,9 @@ class ReadsStatsAnalyzer(Analyzer):
         # global stats. Diff fistributions
         stats_dir = self._get_stats_dir('cleaned')
         analyses  = ['seq_length_distrib', 'qual_distrib']
-        self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
-                                stats_dir, analyses)
+        if clean_seqs2 is not None and original_seqs2 is not None:
+            self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
+                                    stats_dir, analyses)
         self._log({'analysis_finished':True})
 
     def _get_stats_dir(self, seqtype):
