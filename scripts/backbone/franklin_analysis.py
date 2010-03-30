@@ -5,7 +5,7 @@ This script is used to run any of the backbone analysis.
 
 from franklin.backbone.backbone_runner import (do_analysis,
                                                get_analysis_especifications)
-
+from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from optparse import OptionParser
 import os
 
@@ -36,10 +36,13 @@ def set_parameters():
         action = options.action
 
     if options.settings is None:
-        if os.path.exists('backbone.conf'):
-            settings_fpath = os.path.abspath('backbone.conf')
+        config_fname = BACKBONE_DIRECTORIES['config_file']
+        if os.path.exists(config_fname):
+            settings_fpath = os.path.abspath(config_fname)
         else:
-            parser.error('Settings file path is mandatory')
+            msg = 'Settings file path is mandatory if %s is not found' % \
+                                                                    config_fname
+            parser.error(msg)
     else:
         settings_fpath = options.settings
 
