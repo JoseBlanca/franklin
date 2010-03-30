@@ -195,7 +195,7 @@ def _add_default_quality(items, sanger_read_groups, default_qual):
     #here we set the default qual
     items[10] = default_qual * len(items[9])
 
-def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
+def standardize_sam(in_fhand, out_fhand, default_sanger_quality=None,
                    add_def_qual=False, only_std_char=True,
                    fix_non_mapped=True):
     '''It adds the default qualities to the reads that do not have one and
@@ -207,7 +207,10 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality,
     sep = '\t'
 
     sanger_read_groups = set()
-    default_qual = chr(int(default_sanger_quality) + 33)
+    if default_sanger_quality:
+        default_qual = chr(int(default_sanger_quality) + 33)
+    else:
+        default_qual = None
     regex = re.compile(r'[^ACTGN]')
     for line in in_fhand:
         #it we're adding qualities we have to keep the read group info

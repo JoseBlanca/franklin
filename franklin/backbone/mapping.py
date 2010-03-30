@@ -85,6 +85,8 @@ class MergeBamAnalyzer(Analyzer):
         if add_qualities:
             default_sanger_quality = settings['Other_settings']['default_sanger_quality']
             default_sanger_quality = int(default_sanger_quality)
+        else:
+            default_sanger_quality = None
         temp_dir = NamedTemporaryDir()
         for bam_fpath in bam_fpaths:
             bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
