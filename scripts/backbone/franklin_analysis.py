@@ -7,8 +7,7 @@ from franklin.backbone.backbone_runner import (do_analysis,
                                                get_analysis_especifications)
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from optparse import OptionParser
-import os
-
+import os, logging
 
 def _get_available_analyses():
     'It return available analyses'
@@ -51,7 +50,12 @@ def set_parameters():
 def main():
     'The main part'
     action, settings_fpath = set_parameters()
-    do_analysis(project_settings=settings_fpath, kind=action)
+    try:
+        do_analysis(project_settings=settings_fpath, kind=action)
+    except Exception as error:
+        logger = logging.getLogger('franklin')
+        logger.exception(error)
+        raise
 
 if __name__ == '__main__':
     main()

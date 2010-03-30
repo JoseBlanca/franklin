@@ -107,9 +107,6 @@ class CleanReadsAnalyzer(Analyzer):
         self._log({'analysis_finished':True})
         return
 
-
-
-
 class ReadsStatsAnalyzer(Analyzer):
     '''It calculates stats for original and cleaned reads.
     It calculates the distribution between both type off reads'''
@@ -224,8 +221,8 @@ class ReadsStatsAnalyzer(Analyzer):
             distrib_fhand = open(distrib_fpath, 'w')
 
             seq_distrib(sequences=seqs, kind=analysis,
-                    distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
-                    low_memory=True)
+                        distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
+                        low_memory=True)
         except TypeError:
             plot_fhand.close()
             distrib_fhand.close()
