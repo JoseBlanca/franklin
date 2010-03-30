@@ -137,13 +137,20 @@ class SeqTest(unittest.TestCase):
         assert seq.complement() #is still a Seq
 
     @staticmethod
-    def getitem():
+    def test_getitem():
         'It tests the get item method'
         seq = Seq('ACTG')
         seq2 = seq[1:3]
-        assert seq2 == 'AC'
+        assert str(seq2) == 'CT'
         assert seq2.complement() #is still a Seq
         assert seq[::-1].complement() #is still a Seq
+
+    @staticmethod
+    def test_repr():
+        'It tests that the repr works ok'
+        text = 'A' * 100
+        seq = Seq(text)
+        assert text in repr(seq)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

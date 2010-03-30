@@ -261,3 +261,9 @@ class Seq(BioSeq):
         else :
             #Return the (sub)sequence as another Seq object
             return self.__class__(self._data[index], self.alphabet)
+
+    def __repr__(self):
+        """Returns the representation of the sequence."""
+        return "%s(%s, %s)" % (self.__class__.__name__,
+                               repr(self.data),
+                               repr(self.alphabet))

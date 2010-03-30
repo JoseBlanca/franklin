@@ -109,7 +109,6 @@ def _get_descriptions_from_blasts(blasts):
                     seq_annot[query] = description.strip()
     return seq_annot
 
-
 def create_microsatellite_annotator():
     'It creates a function that'
     runner = create_runner(tool='sputnik')
@@ -123,7 +122,6 @@ def create_microsatellite_annotator():
             sequence.features.append(feature)
         return sequence
     return search_ssr
-
 
 def _get_features_from_sputnik(fhand):
     'It parses the sputnik output'
