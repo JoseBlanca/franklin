@@ -17,6 +17,7 @@ A blast runner hardly tied to backbone folder structure
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from os.path import join, exists, splitext, basename
 from os import makedirs, symlink
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
