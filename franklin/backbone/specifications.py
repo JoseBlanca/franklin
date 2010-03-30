@@ -5,6 +5,7 @@ Created on 12/03/2010
 '''
 BACKBONE_DIRECTORIES = {
     'config_file': 'franklin.conf',
+    'external_software_config': 'config_data',
     'original_reads': 'reads/original',
     'cleaned_reads': 'reads/cleaned',
     'assembly_input': 'assembly/input',

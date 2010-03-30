@@ -24,7 +24,8 @@ def create_project(name, directory=None, configuration=None):
     #create the settings
     settings_path = os.path.join(project_path,
                                  BACKBONE_DIRECTORIES['config_file'])
-    config_data = os.path.join(project_path, 'config_data')
+    config_data = os.path.join(project_path,
+                               BACKBONE_DIRECTORIES['external_software_config'])
 
     config = ConfigObj(unrepr=True)
     config.filename = os.path.join(settings_path)
