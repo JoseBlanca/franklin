@@ -39,11 +39,11 @@ class AnnotationTests(unittest.TestCase):
         reverse_blast = {'blast':reverse_blast_fhand}
         ortho_annotator = create_ortholog_annotator(blast, reverse_blast,
                                                     species='arabidopsis')
-        sequence = SeqWithQuality(seq='aaa', name='melon1')
+        sequence = SeqWithQuality(seq=Seq('aaa'), name='melon1')
         sequence = ortho_annotator(sequence)
         assert sequence.annotations['arabidopsis-orthologs'] == ['tair1']
 
-        sequence = SeqWithQuality(seq='aaa', name='melon2')
+        sequence = SeqWithQuality(seq=Seq('aaa'), name='melon2')
         sequence = ortho_annotator(sequence)
         assert sequence.annotations['arabidopsis-orthologs'] == ['tair2']
 
@@ -55,10 +55,10 @@ class AnnotationTests(unittest.TestCase):
         blast = {'blast':blast_fhand,
                  'modifier':lambda(x):x.split('|')[2]}
         descrip_annotator = create_description_annotator([blast])
-        sequence = SeqWithQuality(seq='aaa', name='CUTC021854')
+        sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021854')
         sequence = descrip_annotator(sequence)
         assert sequence.description == 'ankyrin repeat family protein'
-        sequence = SeqWithQuality(seq='aaa', name='CUTC021853')
+        sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021853')
         sequence = descrip_annotator(sequence)
         assert sequence.description == 'DNA-binding protein-related'
 
@@ -67,7 +67,7 @@ class AnnotationTests(unittest.TestCase):
         'It test the srrs annotator'
         seq = 'atgatgatgatgatgatgatgatgatgatggcgcgcgcgcgcgcgcgcgcgcgcgcg'
         ssr_annot = create_microsatellite_annotator()
-        seq1 = SeqWithQuality(seq=seq)
+        seq1 = SeqWithQuality(seq=Seq(seq))
         ssr_annot(seq1)
         assert seq1.features[0].qualifiers['score'] == 27
 
@@ -82,7 +82,7 @@ class AnnotationTests(unittest.TestCase):
         seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
         seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTACTGGACCATG'
         seq += 'TGGAAGCTGCCCATGTTTGGCTGCACCGAT'
-        seq1 = SeqWithQuality(seq=seq)
+        seq1 = SeqWithQuality(seq=Seq(seq))
         matrix_fpath = os.path.join(DATA_DIR, 'At.smat')
         annotator = create_orf_annotator(parameters={'matrix':matrix_fpath})
         annotator(seq1)
@@ -127,12 +127,6 @@ class AnnotationTests(unittest.TestCase):
         assert 'GO:0009853' in seq.annotations['GOs']
 
         os.remove(annot_fpath)
-
-
-
-
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

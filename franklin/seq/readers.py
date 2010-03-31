@@ -26,7 +26,7 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 import math
 
 from Bio import SeqIO
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, Seq
 
 #the translation between our formats and the biopython formats
 BIOPYTHON_FORMATS = {'fasta': 'fasta',
@@ -132,6 +132,7 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
             qual = None
 
         seq  = seqrec.seq
+        seq  = Seq(str(seq), seq.alphabet)
         name = seqrec.name
 
         if qual_name and qual_name != name:

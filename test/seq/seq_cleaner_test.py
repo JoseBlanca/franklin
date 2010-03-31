@@ -36,7 +36,7 @@ class SeqCleanerTest(unittest.TestCase):
         qual = [20, 20, 20, 60, 60, 60, 60, 60, 20, 20, 20, 20]
         seq  = 'ataataataata'
         desc = 'hola'
-        seq1 = SeqWithQuality(qual=qual, seq=seq, description=desc)
+        seq1 = SeqWithQuality(qual=qual, seq=Seq(seq), description=desc)
         strip_seq_by_quality = create_striper_by_quality(quality_treshold=40,
                                                          min_seq_length=2,
                                                          min_quality_bases=3)
@@ -46,12 +46,12 @@ class SeqCleanerTest(unittest.TestCase):
 
         qual = [60, 60, 60, 60, 60, 60, 60]
         seq  = 'ataataa'
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         assert  new_seq.seq == 'ataataa'
 
         qual = [60, 60, 60, 60, 60, 60, 0]
         seq  = 'ataataa'
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         assert new_seq.seq == 'ataata'
         assert new_seq.qual == [60, 60, 60, 60, 60, 60]
 
@@ -62,7 +62,7 @@ class SeqCleanerTest(unittest.TestCase):
                                                          min_seq_length=2,
                                                          min_quality_bases=3,
                                                          quality_window_width=2)
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         assert new_seq.qual == [40, 18, 10, 40, 40, 5, 8, 30, 14, 3, 40, 40, 40,
                                 11]
 
@@ -74,7 +74,7 @@ class SeqCleanerTest(unittest.TestCase):
                                                          min_seq_length=2,
                                                          min_quality_bases=3,
                                                          quality_window_width=1)
-        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=seq))
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         assert new_seq.qual == [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40]
 
 
@@ -125,6 +125,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq  = 'ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATG'
         seq += 'TCATGTCATGTCGATGTCTAGTCTAGTCTAGTGAGTCACTGACTAGATCATGACATCGANNN'
         seq += 'NNNNNNNNNNNNNNNNNNTACTAGTC'
+        seq = Seq(seq)
         qual = [10] * 150
         desc = 'hola'
         seq1 = SeqWithQuality(seq=seq, qual=qual, description=desc)
@@ -150,7 +151,7 @@ class SeqCleanerTest(unittest.TestCase):
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 00 00 00 00'
-
+        seq = Seq(seq)
         qual = qual.split()
         seqrec = SeqWithQuality(name='hola', seq=seq, qual=qual,
                                 description='caracola')
@@ -188,6 +189,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
         seq += 'ATTACGATGAT'
+        seq = Seq(seq)
         seq1 = SeqWithQuality(seq=seq, qual=quality, name='seq1')
         striped_seq = strip_seq_by_quality_lucy(seq1)
         assert len(striped_seq.qual) > 170
@@ -208,6 +210,7 @@ class SeqCleanerTest(unittest.TestCase):
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 00 00 00 00'
         qual = qual.split()
+        seq = Seq(seq)
         seqrec1 = SeqWithQuality(name='seq1', seq=seq, qual=qual,
                                   description ='desc1')
 
@@ -226,6 +229,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
         seq += 'ATTACGATGAT'
+        seq = Seq(seq)
         seqrec2 = SeqWithQuality(seq=seq, qual=quality, name='seq2',
                                  description ='desc2')
         seq_iter = iter([seqrec1, seqrec2])
@@ -248,23 +252,21 @@ class SeqCleanerTest(unittest.TestCase):
                                                                splice_fpath])
         seq_fhand = open(os.path.join(DATA_DIR, 'lucy',
                                       'seq_with_adaptor1.fastq'))
-        seq_iter = lucy_striper(seqs_in_file(seq_fhand ,format='fastq'))[0]
-        #print seq_iter.next()
-
-
+        seq_iter = lucy_striper(seqs_in_file(seq_fhand, format='fastq'))[0]
 
     @staticmethod
     def test_strip_vector_align_exonera():
         'It tests strip_vector_by_alignment'
 
-        vec1 = SeqWithQuality(name='vec1', seq='atcgatcgatagcatacgat')
-        vec2 = SeqWithQuality(name='vec2', seq='atgcatcagatcgataaaga')
+        vec1 = SeqWithQuality(name='vec1', seq=Seq('atcgatcgatagcatacgat'))
+        vec2 = SeqWithQuality(name='vec2', seq=Seq('atgcatcagatcgataaaga'))
         fhand_vectors = temp_fasta_file([vec1, vec2])
 
         strip_vector_by_alignment = \
                 create_vector_striper_by_alignment(fhand_vectors, 'exonerate')
 
         seq  = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq = Seq(seq)
         seq2 = SeqWithQuality(name='seq', seq=seq)
         seq1 = SeqWithQuality(name=seq2.name, seq=vec1.seq+seq2.seq+vec2.seq,
                               description='hola')
@@ -319,7 +321,7 @@ class SeqCleanerTest(unittest.TestCase):
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'
         seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
-        seq  = SeqWithQuality(name='seq', seq=seq1+vec1)
+        seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
         strip_vector_by_alignment = \
                             create_vector_striper_by_alignment(vector, 'blast')
         striped_seq = strip_vector_by_alignment(seq)
@@ -338,7 +340,7 @@ class SeqCleanerTest(unittest.TestCase):
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'
         seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
-        seq  = SeqWithQuality(name='seq', seq=seq1+vec1)
+        seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
         strip_vector_by_alignment = \
                             create_vector_striper_by_alignment(vector, 'blast+')
         striped_seq = strip_vector_by_alignment(seq)
@@ -397,7 +399,6 @@ class SeqSplitterTests(unittest.TestCase):
                                              {'query_start':6, 'query_end':17},
                                              {'query_start':3, 'query_end':18}]
                               }]}]
-
         locations = _get_non_matched_locations(alignments)
         assert locations[0] == (1, 10)
         assert locations[1] == (6, 17)
@@ -406,24 +407,24 @@ class SeqSplitterTests(unittest.TestCase):
     @staticmethod
     def test_unmasked_seq_location_detector():
         'it detects the location of the unmasked seq regions'
-        seq = SeqWithQuality(seq='AATTaaTTaaTTT', name='seq')
+        seq = SeqWithQuality(seq=Seq('AATTaaTTaaTTT'), name='seq')
         locations = _get_unmasked_locations(seq)
         assert locations[0] == (0, 3)
         assert locations[1] == (6, 7)
         assert locations[2] == (10, 12)
 
-        seq = SeqWithQuality(seq='AATT', name='seq')
+        seq = SeqWithQuality(seq=Seq('AATT'), name='seq')
         locations = _get_unmasked_locations(seq)
         assert locations[0] == (0, 3)
 
-        seq = SeqWithQuality(seq='aatt', name='seq')
+        seq = SeqWithQuality(seq=Seq('aatt'), name='seq')
         locations = _get_unmasked_locations(seq)
         assert not locations
 
     @staticmethod
     def test_get_longest_section_detector():
         'it test if we get the longest not matched section'
-        seq = SeqWithQuality(seq='AATTAATTAATTTCGCGCGCGCGCCC', name='seq')
+        seq = SeqWithQuality(seq=Seq('AATTAATTAATTTCGCGCGCGCGCCC'), name='seq')
         matches = ((0, 3), (6, 7), (6, 19))
         longest = _get_longest_non_matched_seq_region(seq, matches)
         assert str(longest.seq) == 'CGCGCCC'
@@ -433,7 +434,7 @@ class SeqSplitterTests(unittest.TestCase):
     def test_get_matched_regions():
         'it tests get_matched_region function'
         seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
-        seq = SeqWithQuality(seq=seq1, name='seq')
+        seq = SeqWithQuality(seq=Seq(seq1), name='seq')
         locations =  _get_unmasked_locations(seq)
 
         seq_iter = _get_matched_locations(seq, locations, 3)
@@ -451,9 +452,9 @@ class SeqSplitterTests(unittest.TestCase):
     def test_strip_masked_section():
         'It tests the strip_masked_functions'
         seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
-        seq = SeqWithQuality(seq=seq1, name='seq1')
+        seq = SeqWithQuality(seq=Seq(seq1), name='seq1')
         seq2 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
-        seq_ = SeqWithQuality(seq=seq2, name='seq2')
+        seq_ = SeqWithQuality(seq=Seq(seq2), name='seq2')
 
         seq_iter = iter([seq, seq_])
 
@@ -468,6 +469,7 @@ class SeqSplitterTests(unittest.TestCase):
         'It test if we remove words from the beginning of the seq'
         word = 'ATAT'
         seq1 = word + 'tctcatcatca'.upper()
+        seq1 = Seq(seq1)
         seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
         remover = create_word_masker([word])
@@ -475,13 +477,13 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq.seq[0] == 'a'
 
         seq1 = 'atactctcatcatca'.upper()
-        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
         seq = remover(seq)
         assert seq.seq == seq1
 
         word = 'CA'
         seq1 = 'ATCATCATCATCA'
-        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
         remover = create_word_masker([word], False)
         seq = remover(seq)
         assert seq.seq == 'ATcaTcaTcaTca'
@@ -492,6 +494,7 @@ class SeqSplitterTests(unittest.TestCase):
         word = 'ATAT'
         seq2 = 'tctcatcatca'
         seq1 = word + seq2
+        seq1 = Seq(seq1)
         seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
         remover = create_word_remover([word])

@@ -23,6 +23,7 @@ from uuid import uuid4
 
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq as BioSeq
+from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import SeqFeature as BioSeqFeature
 
 def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
@@ -96,6 +97,9 @@ class SeqWithQuality(SeqRecord):
                  letter_annotations = None, qual = None):
         if id == UNKNOWN_ID and name != UNKNOWN_NAME:
             id = name
+        #We don't want a Biopython Seq, we need our repr
+        if not isinstance(seq, Seq) and not isinstance(seq, UnknownSeq):
+            raise ValueError('seq should be a franklin Seq')
         SeqRecord.__init__(self, seq, id=id, name=name,
                            description=description, dbxrefs=dbxrefs,
                            features=features, annotations=annotations,

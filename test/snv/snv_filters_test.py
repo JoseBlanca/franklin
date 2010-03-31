@@ -130,7 +130,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={})
 
         seq_str = 'AATATA'
-        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features = [snv1, snv2, snv3])
         max_variability = 40
         filter_ = create_high_variable_region_filter(max_variability)
@@ -171,7 +171,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
                           qualifiers={})
         seq_str = 'AATATA'
-        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features = [snv1, snv2, snv3])
         proximity = 3
 
@@ -192,7 +192,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
                           qualifiers={})
         seq_str = 'AATATA'
-        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features = [snv1, snv2, snv3])
         distance = 2
 
@@ -218,7 +218,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
 
         seq_str = 'AATATA'
-        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features = [snv1, snv2])
         frecuency = 0.6
         filter_ =  create_major_allele_freq_filter(frecuency)
@@ -243,7 +243,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
 
         seq_str = 'AATATA'
-        seq = SeqWithQuality(seq=seq_str, qual=[30] * len(seq_str),
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features = [snv1, snv2])
         kind    = SNP
         filter_ = create_kind_filter(kind)
@@ -262,7 +262,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                    ('A', DELETION) :{}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
-        seq = SeqWithQuality(seq=seq, name='ref', features=[snv] )
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv] )
 
         all_enzymes = True
         filter_ = create_cap_enzyme_filter(all_enzymes)
@@ -280,7 +280,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                          qualifiers={'alleles':alleles})
         seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
 
-        seq = SeqWithQuality(seq=seq, name='ref', features=[snv])
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
         kind     = 'read_groups'
         groups   = ['rg1']

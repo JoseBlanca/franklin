@@ -238,9 +238,11 @@ def create_word_masker(words, beginning=True):
         for word in words:
             if beginning and str_seq.startswith(word):
                 seq = str_seq[:len(word)].lower() + str_seq[len(word):]
+                seq = Seq(seq)
                 sequence = copy_seq_with_quality(sequence, seq=seq)
             elif not beginning:
                 seq = str_seq.replace(word, word.lower())
+                seq = Seq(seq)
                 sequence = copy_seq_with_quality(sequence, seq=seq)
 
         return sequence

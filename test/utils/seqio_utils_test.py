@@ -176,7 +176,7 @@ class TestFastaFileUtils(unittest.TestCase):
     @staticmethod
     def test_temp_fasta_file_one_seq():
         'It test temp_fasta_file'
-        seqrec1 = SeqWithQuality(seq='ATGATAGATAGATGF', name='seq1')
+        seqrec1 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
         fhand = temp_fasta_file(seqrec1)
         content = open(fhand.name).read()
         assert content == ">seq1\nATGATAGATAGATGF\n"
@@ -184,8 +184,8 @@ class TestFastaFileUtils(unittest.TestCase):
     @staticmethod
     def test_temp_fasta_file_seq_iter():
         'It test temp_fasta_file'
-        seqrec1 = SeqWithQuality(seq='ATGATAGATAGATGF', name='seq1')
-        seqrec2 = SeqWithQuality(seq='ATGATAGATAGA', name='seq2')
+        seqrec1 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        seqrec2 = SeqWithQuality(seq=Seq('ATGATAGATAGA'), name='seq2')
         seq_iter = iter([seqrec1, seqrec2])
         fhand = temp_fasta_file(seq_iter)
         content = open(fhand.name).read()

@@ -36,12 +36,12 @@ class SeqsTest(unittest.TestCase):
         #sequence1 = Seq('aaavvttt')
 
         # First we initialice the quality in the init
-        seq1 = SeqWithQuality(name = 'seq1', seq='aaavvttt', \
+        seq1 = SeqWithQuality(name = 'seq1', seq=Seq('aaavvttt'),
                                qual=[2, 4 , 1, 4, 5, 6, 12, 34])
         assert seq1
 
         # Here we add the quality after the initialization
-        seq2 = SeqWithQuality(name = 'seq2', seq = 'aaavvttt')
+        seq2 = SeqWithQuality(name = 'seq2', seq = Seq('aaavvttt'))
         seq2.qual = [2, 4 , 1, 4, 5, 6, 12, 34]
         assert seq2
 
@@ -95,7 +95,7 @@ class SeqsTest(unittest.TestCase):
         'A SeqWithQuality can have description and annotations'
         desc = 'a short sequence'
         annots = {'type':'region', 'go':['0001', '0002'], 'database':'my'}
-        seq = SeqWithQuality(seq='A', description=desc, annotations=annots)
+        seq = SeqWithQuality(seq=Seq('A'), description=desc, annotations=annots)
         assert seq.description is desc
         assert seq.annotations is annots
 

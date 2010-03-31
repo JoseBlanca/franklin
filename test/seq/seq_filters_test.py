@@ -67,12 +67,12 @@ class TooManyAdaptorsTest(unittest.TestCase):
         seq2 = 'ATCGACTACGACATCGACTACGATACGATCAGATCAGATCGATCGACTACTA'
 
         seq = adapt1 + seq2 + adapt2
-        seq1    = SeqWithQuality(seq=seq)
+        seq1    = SeqWithQuality(seq=Seq(seq))
         filter_ = create_adaptor_matches_filter(adaptors)
         assert filter_(seq1)
 
         seq = adapt1 + seq2 + adapt2 +  seq2 + adapt1
-        seq1    = SeqWithQuality(seq=seq)
+        seq1    = SeqWithQuality(seq=Seq(seq))
         filter_ = create_adaptor_matches_filter(adaptors)
         assert not filter_(seq1)
 
@@ -87,8 +87,8 @@ class LengthFilterTest(unittest.TestCase):
         filtered_seqs = ifilter(filter_, seqs)
         assert len(list(filtered_seqs)[0]) == 300
 
-        seq1 = 'atataAGATAGATA'
-        seq2 = 'atgatgatgAAAAA'
+        seq1 = Seq('atataAGATAGATA')
+        seq2 = Seq('atgatgatgAAAAA')
 
         seqs = [SeqWithQuality(seq=seq1), SeqWithQuality(seq=seq2)]
         filter_ = create_length_filter(6, count_masked=False)
@@ -101,7 +101,7 @@ class ContaminantFilterTest(unittest.TestCase):
     def test_contaminant_filter():
         'It tests if the sequence has a contaminant'
         seq1 = 'TTGGCAATCGGTTCCTGGATTGGACTTAGACCCCTACGCATCCTCAAATACCAATACAATTGT'
-        seq  = SeqWithQuality(seq=seq1)
+        seq  = SeqWithQuality(seq=Seq(seq1))
         blastpath = os.path.join(DATA_DIR, 'blast')
         filter_by_contaminant = create_comtaminant_filter('arabidopsis_genes',
                                               environment={'BLASTDB':blastpath})

@@ -23,7 +23,7 @@ import unittest
 
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
                                       _which_binary, b2gpipe_runner)
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
 import os, tempfile
 
@@ -84,6 +84,7 @@ class RunnerFactorytest(unittest.TestCase):
                                                 'program':'blastn'},
                                           environment={'BLASTDB':blastpath})
         seq = 'AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT'
+        seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
         result = run_blast_for_seq(seq1)['blast']
         assert result.read()[0] == '<'
@@ -92,6 +93,7 @@ class RunnerFactorytest(unittest.TestCase):
         'We can create a runner class for mdust'
         run_mdust__for_seq = create_runner(tool='mdust')
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
         result = run_mdust__for_seq(seq1)['sequence']
         assert result.read()[-10:-1] == 'aaaaaaaaa'
@@ -103,6 +105,7 @@ class RunnerFactorytest(unittest.TestCase):
                                     parameters={'vector':(fastafile,fastafile)})
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         qual = [30] * len(seq)
+        seq = Seq(seq)
         seq1 = SeqWithQuality(seq, qual=qual)
         seqs = [seq1, seq1]
         result = run_lucy_for_seq(seqs)['sequence']

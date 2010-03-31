@@ -25,7 +25,7 @@ from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.readers import seqs_in_file
-from franklin.seq.seqs import SeqWithQuality, SeqFeature
+from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX,
                                          _remove_bad_quality_alleles,
@@ -156,7 +156,7 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_snv_cap():
         'It tests that we can get the enzymes that are a cap'
-        reference = SeqWithQuality(seq='Actgacttactgtca', name='ref')
+        reference = SeqWithQuality(seq=Seq('Actgacttactgtca'), name='ref')
         alleles = {('C', SNP): None,
                    ('T', INVARIANT): None}
 
@@ -166,7 +166,7 @@ class TestSnvAnnotation(unittest.TestCase):
         assert set(['HinfI', 'TscAI']) == set(enzymes)
 
         # With a deletion
-        reference = SeqWithQuality(seq='ATGATGATGgaaattcATGATGATGTGGGAT',
+        reference = SeqWithQuality(seq=Seq('ATGATGATGgaaattcATGATGATGTGGGAT'),
                                    name='ref')
         alleles = {('A', DELETION): None,
                    ('A', INVARIANT): None}
@@ -178,7 +178,7 @@ class TestSnvAnnotation(unittest.TestCase):
 
         #with an insertion
         seq = 'ATGATGATG' + 'gaattc' + 'ATGATGATGTGGGAT'
-        reference = SeqWithQuality(seq=seq, name='ref')
+        reference = SeqWithQuality(seq=Seq(seq), name='ref')
         alleles = {('A', INSERTION): None,
                    ('A', INVARIANT): None}
 
@@ -188,7 +188,7 @@ class TestSnvAnnotation(unittest.TestCase):
         assert 'EcoRI' in enzymes
 
         #with only one allele
-        reference = SeqWithQuality(seq='Actgacttactgtca', name='ref')
+        reference = SeqWithQuality(seq=Seq('Actgacttactgtca'), name='ref')
         alleles = {('C', SNP): None}
 
         feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
