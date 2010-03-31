@@ -382,7 +382,7 @@ def _which_binary(binary):
         return None
 
 def call(cmd, environment=None, stdin=None, raise_on_error=False,
-         stdout=None, stderr=None):
+         stdout=None, stderr=None, log=False):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -415,7 +415,9 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         #remove binary for a absolute path binary
         cmd.pop(0)
         cmd.insert(0, binary)
-
+        if log:
+            logger = logging.getLogger('franklin')
+            logger.info('Running command: ' + ' '.join(cmd))
         try:
             process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
                                        env=environment, stdin=pstdin,
@@ -445,7 +447,8 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None):
     tempdir = NamedTemporaryDir()
     out_basename = os.path.join(tempdir.name, 'out')
 
-    cmd = ['java', '-jar', b2g_bin, '-in', blast.name, '-out', out_basename, '-a']
+    cmd = ['java', '-jar', b2g_bin, '-in', blast.name, '-out', out_basename,
+           '-a']
     if prop_file is None:
         prop_file = os.path.join(java_dir, 'b2gPipe.properties')
         cmd.extend(['-prop', prop_file])
