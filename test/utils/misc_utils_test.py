@@ -25,7 +25,7 @@ from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                      _get_xml_header, NamedTemporaryDir,
                                      FileIndex, split_long_sequences)
 from franklin.utils.collections_ import FileCachedList
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, Seq
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
@@ -114,19 +114,16 @@ class SplitLongSequencestest(unittest.TestCase):
         sequences into  smaller sequences'''
         seq = 'atatatatatg'
         qual = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        seq_rec = SeqWithQuality(seq=seq, qual=qual)
+        seq_rec = SeqWithQuality(seq=Seq(seq), qual=qual)
         seq_iter = iter([seq_rec])
         splited_seq_iter = split_long_sequences(seq_iter, 5)
-        seq1 = splited_seq_iter.next()
-        seq2 = splited_seq_iter.next()
+        seq1, seq2 = list(splited_seq_iter)[0:2]
         assert len(seq1) == 6
         assert len(seq2) == 5
 
         seq_iter = iter([seq_rec])
         splited_seq_iter = split_long_sequences(seq_iter, 3)
-        seq1 = splited_seq_iter.next()
-        seq2 = splited_seq_iter.next()
-        seq3 = splited_seq_iter.next()
+        seq1, seq2, seq3 = list(splited_seq_iter)[0:3]
         assert len(seq1) == 4
         assert len(seq2) == 4
         assert len(seq3) == 3
