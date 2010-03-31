@@ -32,7 +32,7 @@ class XMLTest(unittest.TestCase):
 
     @staticmethod
     def test_xml_itemize():
-        '''It tests xml itemize '''
+        '''It tests xml itemize'''
         string = '<h><t><c></c><c></c></t></h>'
         xml = StringIO.StringIO(string)
         cont = 0
@@ -40,11 +40,24 @@ class XMLTest(unittest.TestCase):
             assert result == '<h><t><c></c></t></h>'
             cont += 1
         assert cont == 2
+
+    @staticmethod
+    def test_xml_itemize_by_chunks():
+        '''It tests xml itemize but with more than one item'''
+        string = '<h><t><c>1</c><c>2</c><c>3</c><c>4</c><c>5</c></t></h>'
+        xml = StringIO.StringIO(string)
+        xmls = list(xml_itemize(xml, 'c', num_items=2))
+        assert xmls[0] == '<h><t><c>1</c><c>2</c></t></h>'
+        assert xmls[1] == '<h><t><c>3</c><c>4</c></t></h>'
+        assert xmls[2] == '<h><t><c>5</c></t></h>'
+        assert len(xmls) == 3
+
     def test_no_good_xml_start_end(self):
         '''Tests if the raise an error with a bad xml file. from begining to
         end '''
         xml = StringIO.StringIO('<header><conten></content></header>')
         self.failUnlessRaises(ValueError, _get_xml_header, xml, 'content')
+
     def test_no_good_xml_end_start(self):
         '''Tests if the raise an error with a bad xml file. From end to start'''
         xml = StringIO.StringIO('<header><content><content></header>')
@@ -68,7 +81,6 @@ class NamedTemporariDirTest(unittest.TestCase):
         assert os.path.exists(dir_name)   == True
         del(temp_dir)
         assert os.path.exists(dir_name) == False
-
 
 class TestFileIndexer(unittest.TestCase):
     'It test the FileIndex class'
@@ -103,8 +115,6 @@ class TestFileIndexer(unittest.TestCase):
                           type_patterns=['(type[0-9])'])
         assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
         assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
-
-
 
 class SplitLongSequencestest(unittest.TestCase):
     'It tests sequence spliting functions'

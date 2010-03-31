@@ -19,7 +19,6 @@ Created on 2009 api 30
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-
 import tempfile, shutil
 import os, re, math
 from franklin.seq.seqs import copy_seq_with_quality
@@ -27,7 +26,6 @@ import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'franklin',
                          'data')
-
 
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
@@ -64,8 +62,6 @@ class NamedTemporaryDir(object):
         '''It removes de temp dir when instance is removed and the garbaje
         colector decides it'''
         self.close()
-
-
 
 def split_long_sequences(seq_iter, max_length):
     'It splits thequences in this iterator taht excedes the max_length permited'
@@ -123,9 +119,6 @@ def _calculate_divisions(length, splits):
         r_length += length
     return start_ends
 
-
-
-
 def get_start_end(location):
     '''It accepts an int, Location or tuple and it returns the start, end,
     forward and strand.'''
@@ -142,8 +135,6 @@ def get_start_end(location):
         start = location.start
         end = location.end
     return start, end
-
-
 
 def remove_from_orf(orf_dna, orf_prot, aminoacid='X'):
     ''' It removes an aminoaacid from dna and protein seq'''
@@ -193,6 +184,7 @@ def _get_xml_header(fhand, tag):
                 header.extend(current_tag)
                 current_tag = []
             in_tag = False
+
 def _get_xml_tail(fhand, tag):
     '''It takes the tail of the xml file '''
     in_tag = False
@@ -220,10 +212,9 @@ def _get_xml_tail(fhand, tag):
                 tail.extend(current_tag)
                 current_tag = []
             in_tag = False
-
         fhand.seek(-2, 1)
 
-def xml_itemize(fhand, tag):
+def xml_itemize(fhand, tag, num_items=1):
     '''It takes a xml file and it chunks it by the given key. It adds header if
     exists to each of the pieces. It is a generator'''
     fhand.seek(0, 2)
@@ -239,6 +230,8 @@ def xml_itemize(fhand, tag):
 
     fhand.seek(0, 0)
 
+    items_in_buffer = 0
+    buffer = []
     while True:
         if end_file <= fhand.tell():
             break
@@ -254,11 +247,19 @@ def xml_itemize(fhand, tag):
                 in_section = True
                 section.extend(current_tag)
             elif listed_tag_e == _remove_atributes_to_tag(current_tag):
-                yield  header + "".join(section) + tail
+                items_in_buffer += 1
+                buffer.extend(section)
+                if items_in_buffer >= num_items:
+                    yield  header + "".join(buffer) + tail
+                    items_in_buffer = 0
+                    buffer = []
                 section = []
                 in_section = False
             in_tag = False
             current_tag = []
+    #is there any reamining buffer
+    if buffer:
+        yield  header + "".join(buffer) + tail
 
 def get_safe_fname(directory, prefix, suffix):
     '''It looks if the name exits in this directory and adds a number to the end
@@ -504,4 +505,3 @@ class FileIndex(object):
         'It yields all the type names'
         for type_ in self._index:
             yield type_
-
