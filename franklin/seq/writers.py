@@ -204,12 +204,10 @@ def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
         #pylint:disable-msg=W0704
     except AttributeError:
         pass
-
     for seq in seqs:
         if seq is None:
             continue
         name = get_seq_name(seq)
-
         if fhand_qual is not None:
             try:
                 quality = seq.letter_annotations["phred_quality"]
@@ -219,8 +217,6 @@ def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
                 else:
                     msg = 'Sequence must have a phred_quality letter annotation'
                     raise AttributeError(msg)
-
-
             if quality is not None:
                 quality = [str(qual) for qual in quality]
                 fhand_qual.write(fasta_str(' '.join(quality), name))
@@ -235,11 +231,8 @@ def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
         fhand_seq.write(fasta_str(seq, name, desc))
 
     fhand_seq.flush()
-    fhand_seq.seek(0)
-
     if fhand_qual is not None:
         fhand_qual.flush()
-        fhand_qual.seek(0)
 
 def fasta_str(seq, name, description=None):
     'Given a sequence it returns a string with the fasta'
