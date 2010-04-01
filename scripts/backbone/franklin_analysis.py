@@ -3,11 +3,13 @@
 This script is used to run any of the backbone analysis.
 '''
 
+import os, logging, cgitb, datetime
+
 from franklin.backbone.backbone_runner import (do_analysis,
                                                get_analysis_especifications)
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from optparse import OptionParser
-import os, logging, cgitb
+
 ERROR_DIR = os.path.join(BACKBONE_DIRECTORIES['error_dir'])
 cgitb.enable(display=0, format='text', logdir=ERROR_DIR)
 
@@ -52,10 +54,13 @@ def set_parameters():
 def main():
     'The main part'
     action, settings_fpath = set_parameters()
+    logger = logging.getLogger('franklin')
     try:
+        start_time = datetime.datetime.today()
         do_analysis(project_settings=settings_fpath, kind=action)
+        time_elapsed = datetime.datetime.today() - start_time
+        logger.info('Time elapsed %s' % str(time_elapsed))
     except Exception as error:
-        logger = logging.getLogger('franklin')
         logger.exception(error)
         if not os.path.exists(ERROR_DIR):
             os.mkdir(ERROR_DIR)
