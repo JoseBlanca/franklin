@@ -7,7 +7,9 @@ from franklin.backbone.backbone_runner import (do_analysis,
                                                get_analysis_especifications)
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from optparse import OptionParser
-import os, logging
+import os, logging, cgitb
+ERROR_DIR = os.path.join(BACKBONE_DIRECTORIES['error_dir'])
+cgitb.enable(display=0, format='text', logdir=ERROR_DIR)
 
 def _get_available_analyses():
     'It return available analyses'
@@ -55,6 +57,9 @@ def main():
     except Exception as error:
         logger = logging.getLogger('franklin')
         logger.exception(error)
+        if not os.path.exists(ERROR_DIR):
+            os.mkdir(ERROR_DIR)
+        cgitb.handler()
         raise
 
 if __name__ == '__main__':

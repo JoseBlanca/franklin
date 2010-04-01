@@ -24,7 +24,8 @@ BACKBONE_DIRECTORIES = {
     'annotation_input':'annotations/input',
     'annotation_result':'annotations/result',
     'blast_dir':'annotations/blast',
-    'blast_databases':'annotations/blast/databases'
+    'blast_databases':'annotations/blast/databases',
+    'error_dir': 'franklin_errors',
                        }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',
