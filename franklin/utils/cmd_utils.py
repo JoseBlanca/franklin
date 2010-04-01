@@ -414,9 +414,11 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         #let's try with an absolute path, sometimes works
         cmd.pop(0)
         cmd.insert(0, binary)
+
         process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
-                                   env=environment, stdin=pstdin,
-                                   preexec_fn=subprocess_setup)
+                                       env=environment, stdin=pstdin,
+                                       preexec_fn=subprocess_setup)
+
     if stdin is None:
         stdout_str, stderr_str = process.communicate()
     else:
@@ -424,7 +426,9 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     retcode = process.returncode
     if raise_on_error:
         if retcode:
-            raise RuntimeError(stderr_str, stdout_str)
+            msg = 'Error running command: cmd %s\n stderr: %s\n stdout: %s' % \
+                                                (' '.join(cmd), stderr, stdout)
+            raise RuntimeError(msg)
     if stdout != subprocess.PIPE:
         stdout.flush()
     if stderr != subprocess.PIPE:

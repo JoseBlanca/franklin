@@ -21,7 +21,7 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os, re
+import logging, os
 from tempfile import NamedTemporaryFile
 from itertools import tee
 
