@@ -259,8 +259,8 @@ class ReadsStatsAnalyzer(Analyzer):
             return
 
         seq_distrib_diff(clean_seqs, original_seqs, analysis,
-                         distrib_fhand=open(plot_fpath, 'w'),
-                         plot_fhand=open(distrib_fpath, 'w'))
+                         distrib_fhand=open(distrib_fpath, 'w'),
+                         plot_fhand=open(plot_fpath, 'w'))
 
 DEFINITIONS = {
     'clean_reads':
