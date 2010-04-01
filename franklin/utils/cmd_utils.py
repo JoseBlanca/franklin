@@ -160,15 +160,7 @@ RUNNER_DEFINITIONS = {
              'input':{'sequence':{'option': '-sequence',
                                   'files_format':['fasta']}}
             },
-#    'blast2go':{'binary':_get_b2g4p_binary(),
-#                'parameters':{'enzymes':{'default':'all', 'option' : '-enzymes'},
-#                              'sitelen' :{'default':'4', 'option':'-sitelen' }},
-#                'output':{'remap':{'option':'-out', 'files':['map']}},
-#                'input':{'blast':{'option': '-in', 'files_format':['fasta']}}
-#                }
     }
-
-
 
 def _process_parameters(parameters, parameters_def):
     '''Given the parameters definition and some parameters it process the params
@@ -199,7 +191,6 @@ def _process_parameters(parameters, parameters_def):
         else:
             if value is not None:
                 bin_.append( _param_to_str(value))
-
     return bin_
 
 def _param_to_str(param):
@@ -274,7 +265,6 @@ def _build_cmd(cmd_params, runner_def):
                 cmd_params.append(parameter['option'])
                 #know we need to append the output_files
                 cmd_params.extend(fpaths)
-
 
     cmd = [bin]
     cmd.extend(cmd_args_begin)
@@ -407,25 +397,26 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         for key, value in environment.items():
             new_env[key] = value
         environment = new_env
-    binary = _which_binary(cmd[0])
 
-    if binary is None:
-        raise OSError('The binary was not found: ' + cmd[0])
-    else:
-        #remove binary for a absolute path binary
+    if log:
+        logger = logging.getLogger('franklin')
+        logger.info('Running command: ' + ' '.join(cmd))
+
+    try:
+        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                   env=environment, stdin=pstdin,
+                                   preexec_fn=subprocess_setup)
+    except OSError:
+        #if it fails let's be sure that the binary is not on the system
+        binary = _which_binary(cmd[0])
+        if binary is None:
+            raise OSError('The binary was not found: ' + cmd[0])
+        #let's try with an absolute path, sometimes works
         cmd.pop(0)
         cmd.insert(0, binary)
-        if log:
-            logger = logging.getLogger('franklin')
-            logger.info('Running command: ' + ' '.join(cmd))
-        try:
-            process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
-                                       env=environment, stdin=pstdin,
-                                       preexec_fn=subprocess_setup)
-        except OSError:
-            process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
-                                       env=environment, stdin=pstdin,
-                                       preexec_fn=subprocess_setup)
+        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                                   env=environment, stdin=pstdin,
+                                   preexec_fn=subprocess_setup)
     if stdin is None:
         stdout_str, stderr_str = process.communicate()
     else:
