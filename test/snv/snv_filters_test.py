@@ -34,10 +34,37 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_kind_filter,
                                       create_cap_enzyme_filter,
                                       create_is_variable_filter,
-                                      get_filter_description)
+                                      get_filter_description,
+                                      create_reference_in_list_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
+
+    @staticmethod
+    def test_ref_in_list_filter():
+        'We filter out the snv close to an intron'
+        snv = SeqFeature(type='snv', location=FeatureLocation(100, 100),
+                          qualifiers={})
+        seq1 = SeqWithQuality(name='seq1', seq=Seq('A'), features=[snv])
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(100, 100),
+                          qualifiers={})
+        seq2 = SeqWithQuality(name='seq2', seq=Seq('A'), features=[snv1])
+        seq_list = ['seq1']
+        filter_ = create_reference_in_list_filter(seq_list)
+
+        filter_(seq1)
+        for snv, expected in zip(seq1.get_features(kind='snv'), [True]):
+            result = snv.qualifiers['filters']['ref_not_in_list'][None]
+            assert result == expected
+
+        filter_(seq2)
+        for snv, expected in zip(seq2.get_features(kind='snv'), [False]):
+            result = snv.qualifiers['filters']['ref_not_in_list'][None]
+            assert result == expected
+
+
+
+
 
     @staticmethod
     def test_unique_contiguous_region():
@@ -332,6 +359,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         descrip  = "Filters by read_groups with those items: ('rg1', 'rg2')."
         descrip += ' Aggregated:True'
         assert desc == descrip
+
+
 
 
 if __name__ == "__main__":

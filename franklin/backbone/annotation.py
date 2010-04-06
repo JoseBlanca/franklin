@@ -24,7 +24,8 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             major_allele_freq_filter,
                                             kind_filter,
                                             cap_enzyme_filter,
-                                            is_variable_filter)
+                                            is_variable_filter,
+                                            ref_not_in_list)
 
 def _get_basename(fpath):
     'It returns the base name without path and extension'
@@ -213,6 +214,7 @@ class WriteAnnotationAnalyzer(Analyzer):
                                 configuration=None,
                                 io_fhands=io_fhands)
 
+
 class SnvFilterAnalyzer(AnnotationAnalyzer):
     'It performs the filtering analysis of the snvs'
 
@@ -242,6 +244,14 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             for argument, value in filter_data.items():
                 if argument == 'use' or argument == 'name':
                     continue
+
+                if name == 'ref_not_in_list':
+                    filter_config[argument] = []
+                    for item  in open(value):
+                        filter_config['seq_list'].append(item.strip())
+                else:
+                    filter_config[argument] = value
+
                 filter_config[argument] = value
             filter_config['step_name'] = step_name
             configuration[name] =  filter_config
@@ -259,7 +269,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                       'maf': major_allele_freq_filter,
                       'by_kind' : kind_filter,
                       'cap_enzyme': cap_enzyme_filter,
-                      'is_variable': is_variable_filter,}
+                      'is_variable': is_variable_filter,
+                      'ref_not_in_list':ref_not_in_list}
         pipeline = []
         for name in configuration:
             step_name = configuration[name]['step_name']

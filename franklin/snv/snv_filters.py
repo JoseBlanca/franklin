@@ -31,6 +31,7 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
                                          variable_in_groupping)
+from franklin.seq.seqs import get_seq_name
 
 
 FILTER_DESCRIPTIONS = {
@@ -60,7 +61,10 @@ FILTER_DESCRIPTIONS = {
          'description':'Enzymes that recognize different snp alleles: %s'},
     'is_variable':
         {'id':'v%s',
-        'description':'Filters by %s with those items: %s. Aggregated:%s'}
+        'description':'Filters by %s with those items: %s. Aggregated:%s'},
+    'ref_not_in_list':
+        {'id':'rnl',
+        'description':'Filters by given list of seq names'}
     }
 
 def get_filter_description(filter_name, parameters, filter_descriptions):
@@ -138,6 +142,29 @@ def _get_filter_result(snv, filter_name, threshold=None):
         return result
     except KeyError:
         return None
+
+def create_reference_in_list_filter(seq_list):
+    '''It filters sequences looking in a list. If the sequence is in a list it
+    passes the filter'''
+    def reference_in_list_filter(sequence):
+        "The filter"
+        if sequence is None:
+            return None
+
+        name = get_seq_name(sequence)
+        if name in seq_list:
+            result = True
+        else:
+            result = False
+
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'ref_not_in_list')
+            if previous_result is not None:
+                continue
+            _add_filter_result(snv, 'ref_not_in_list', result)
+
+    return reference_in_list_filter
+
 
 def create_unique_contiguous_region_filter(distance, genomic_db,
                                            genomic_seqs_fpath):

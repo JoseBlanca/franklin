@@ -15,7 +15,8 @@ from franklin.snv.snv_filters import (create_high_variable_region_filter,
                                       create_major_allele_freq_filter,
                                       create_kind_filter,
                                       create_cap_enzyme_filter,
-                                      create_is_variable_filter)
+                                      create_is_variable_filter,
+                                      create_reference_in_list_filter)
 
 snv_bam_annotator = {'function':create_snv_annotator,
           'arguments':{'bam_fhand':None, 'min_quality':45,
@@ -88,6 +89,12 @@ is_variable_filter  = {
           'type': 'filter',
           'name': 'is_variable',
           'comment': 'It filters by variability is selected groups'}
+ref_not_in_list = {
+          'function': create_reference_in_list_filter,
+          'arguments': {'seq_list': None},
+          'type': 'filter',
+          'name': 'ref_not_in_list',
+          'comment': 'Filters by given list of seq names'}
 
 ################################################################################
 # PIPELINES
