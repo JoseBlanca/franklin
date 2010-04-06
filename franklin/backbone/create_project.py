@@ -154,6 +154,11 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter11']['group_kind'] = 'samples'
     config['snv_filters']['filter11']['groups']     = None
 
+    config['snv_filters']['filter12'] = {}
+    config['snv_filters']['filter12']['name']       = 'ref_not_in_list'
+    config['snv_filters']['filter12']['use']        = False
+    config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
+
     #overwrite with the configuration given
     outputs = ['vcf']
     for section, config_info in configuration.items():
