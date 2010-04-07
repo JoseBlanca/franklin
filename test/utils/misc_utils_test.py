@@ -22,9 +22,9 @@ Created on 2009 mai 22
 import unittest, os
 import StringIO
 from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
-                                       _get_xml_header, NamedTemporaryDir)
+                                       _get_xml_header, NamedTemporaryDir,
+                                       VersionedPath)
 from franklin.utils.collections_ import FileCachedList
-from franklin.seq.seqs import SeqWithQuality, Seq
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
@@ -98,6 +98,42 @@ class FileCachedListTest(unittest.TestCase):
         clist.append(1)
         for index, item in enumerate(clist.items()):
             assert item == float(index)
+
+class VersionedPathTest(unittest.TestCase):
+    'It tests the versioned path class'
+    def test_basic_functionality(self):
+        'VersionedPath basic functionality'
+        tempdir = NamedTemporaryDir()
+        tempdir_name = tempdir.name
+        fnames = ['hola.txt', 'hola.0.txt', 'hola.1.txt',
+                  'adios.txt', 'adios.1.txt',
+                  'foo.txt']
+        [open(os.path.join(tempdir.name, fname), 'w') for fname in fnames]
+
+        path_str = os.path.join(tempdir.name, 'hola.txt')
+        path = VersionedPath(path_str)
+        assert str(path) == path_str
+
+        path_str_0 = os.path.join(tempdir.name, 'hola.0.txt')
+        path = VersionedPath(path_str_0)
+        assert str(path) == path_str
+        assert path.basename == 'hola'
+        assert path.directory == tempdir.name
+        assert path.extension == 'txt'
+
+        assert path.last_version == os.path.join(tempdir_name, 'hola.1.txt')
+        assert path.next_version == os.path.join(tempdir_name, 'hola.2.txt')
+
+        expected = set(('hola.1.txt', 'adios.1.txt', 'foo.txt'))
+        assert set(path.list_versiones_fnames()) == expected
+
+        try:
+            path = VersionedPath(tempdir.name)
+            self.fail()
+        except NotImplementedError:
+            pass
+
+        tempdir.close()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

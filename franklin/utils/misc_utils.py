@@ -175,3 +175,99 @@ def xml_itemize(fhand, tag, num_items=1):
     #is there any reamining buffer
     if buffer:
         yield  header + "".join(buffer) + tail
+
+class VersionedPath(object):
+    'It represents a set of versioned files as one'
+    def __init__(self, path):
+        'It inits the object'
+        if os.path.isdir(path):
+            raise NotImplementedError('Directory support not implemented')
+        self._path = os.path.abspath(path)
+        self.directory, self.basename, version, self.extension = self._get_info(self._path)
+
+    def _get_info(self, path):
+        'It returns all information about a given path'
+        directory, fname = os.path.split(path)
+        basename, ext = os.path.splitext(fname)
+        extension = ext.replace('.', '', 1)
+        match = re.search('(.*?)\.?(\d*)$', basename)
+        basename, version = match.groups()
+        version = int(version) if version else None
+        return directory, basename, version, extension
+
+    def __str__(self):
+        'It returns the string representation'
+        return os.path.join(self.directory,
+                            self.basename + '.' + self.extension)
+
+    def _get_last_version(self):
+        'It returns the path for the newest version of the file'
+        return os.path.join(self.directory,
+                            self._get_last_fname(self.list_fnames()))
+    last_version = property(_get_last_version)
+
+    def _get_next_version(self):
+        'It returns the path for the next to the newest version of the file'
+        directory, basename, version, extension = self._get_info(self.last_version)
+        version = version + 1 if version is not None else 0
+        return os.path.join(directory,
+                            self._build_fname(basename, version, extension))
+    next_version = property(_get_next_version)
+
+    def list_fnames(self):
+        'It returns the fnames found in the directory'
+        return os.listdir(self.directory)
+
+    def list_fpaths(self):
+        'It returns the fpaths found in the directory'
+        return [os.path.join(self.directory, fname) for fname in
+                self.list_fnames()]
+
+    def list_versiones_fnames(self):
+        'It returns the fnames found in the directory (one for each versioned file)'
+        fnames = os.listdir(self.directory)
+
+        versioned_fnames = {}
+        for fname in fnames:
+            basename, version, extension = self._get_info(fname)[1:]
+            if not (basename, extension) in versioned_fnames:
+                versioned_fnames[basename, extension] = version
+            else:
+                newest_version = versioned_fnames[basename, extension]
+                if newest_version is None or newest_version < version:
+                    versioned_fnames[basename, extension] = version
+        fnames = []
+        for (basename, extension), version in versioned_fnames.items():
+            fnames.append(self._build_fname(basename, version, extension))
+        return fnames
+
+    def _build_fname(self, basename, version, extension):
+        'It returns a valid fname'
+        if version is None:
+            return basename + '.' + extension
+        else:
+            return basename + '.' + str(version) + '.' + extension
+
+    def list_versiones_fpaths(self):
+        'It returns the fpaths found in the directory (one for each versioned file)'
+        return [os.path.join(self.directory, fname) for fname in
+                self.list_versiones_fnames()]
+
+    def _get_last_fname(self, fnames):
+        'It takes the last version of a versioned file'
+        regex = re.compile('(' + self.basename + ')\.(\d*).?(' + self.extension + ')$')
+        last_file    = None
+        last_version = None
+        for file_ in fnames:
+            match = regex.match(file_)
+            if match:
+                group = match.group(2)
+                if group:
+                    version = int(group)
+                    if version > last_version:
+                        last_version = int(version)
+                        last_file = file_
+                else:
+                    if last_version is None:
+                        last_file = file_
+        return last_file
