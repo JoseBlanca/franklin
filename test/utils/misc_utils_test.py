@@ -22,8 +22,7 @@ Created on 2009 mai 22
 import unittest, os
 import StringIO
 from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
-                                     _get_xml_header, NamedTemporaryDir,
-                                     FileIndex, split_long_sequences)
+                                       _get_xml_header, NamedTemporaryDir)
 from franklin.utils.collections_ import FileCachedList
 from franklin.seq.seqs import SeqWithQuality, Seq
 
@@ -81,62 +80,6 @@ class NamedTemporariDirTest(unittest.TestCase):
         assert os.path.exists(dir_name)   == True
         del(temp_dir)
         assert os.path.exists(dir_name) == False
-
-class TestFileIndexer(unittest.TestCase):
-    'It test the FileIndex class'
-
-    @staticmethod
-    def test_basic_file_index():
-        'It test the file index class basic functionality'
-        fhand = StringIO.StringIO('>key1\nhola\n>key2\ncaracola\n')
-        index = FileIndex(fhand, item_start_patterns=['>'],
-                          key_patterns=['>([^ \t\n]+)'])
-        assert index['key1'] == '>key1\nhola\n'
-        assert index['key2'] == '>key2\ncaracola\n'
-
-    @staticmethod
-    def test_with_item_types():
-        'It test the file index class basic functionality'
-        content = '>\n%key1%\ntype1\nhola\n>\n%key2%\ncaracola\ntype2\n'
-        fhand = StringIO.StringIO(content)
-        index = FileIndex(fhand, item_start_patterns=['>'],
-                          key_patterns=['%([^%]+)%'],
-                          type_patterns={'type1':['type1'], 'type2':['type2']})
-        assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
-        assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
-
-    @staticmethod
-    def test_item_types_from_file():
-        'It test the file index class basic functionality'
-        content = '>\n%key1%\ntype1\nhola\n>\n%key2%\ncaracola\ntype2\n'
-        fhand = StringIO.StringIO(content)
-        index = FileIndex(fhand, item_start_patterns=['>'],
-                          key_patterns=['%([^%]+)%'],
-                          type_patterns=['(type[0-9])'])
-        assert index['type1']['key1'] == '>\n%key1%\ntype1\nhola\n'
-        assert index['type2']['key2'] == '>\n%key2%\ncaracola\ntype2\n'
-
-class SplitLongSequencestest(unittest.TestCase):
-    'It tests sequence spliting functions'
-    @staticmethod
-    def test_split_long_sequences():
-        '''It test the function that splits sequences of an iterator with long
-        sequences into  smaller sequences'''
-        seq = 'atatatatatg'
-        qual = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        seq_rec = SeqWithQuality(seq=Seq(seq), qual=qual)
-        seq_iter = iter([seq_rec])
-        splited_seq_iter = split_long_sequences(seq_iter, 5)
-        seq1, seq2 = list(splited_seq_iter)[0:2]
-        assert len(seq1) == 6
-        assert len(seq2) == 5
-
-        seq_iter = iter([seq_rec])
-        splited_seq_iter = split_long_sequences(seq_iter, 3)
-        seq1, seq2, seq3 = list(splited_seq_iter)[0:3]
-        assert len(seq1) == 4
-        assert len(seq2) == 4
-        assert len(seq3) == 3
 
 class FileCachedListTest(unittest.TestCase):
     'It tests a list like class cached on a file'
