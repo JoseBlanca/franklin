@@ -423,9 +423,15 @@ def create_striper_by_quality_lucy2(vector=None):
             striped_seq = seq[start:end]
             # recover original description
             desc_orig = descriptions[seq.name]
-            seq_str = fasta_str(striped_seq.seq, striped_seq.name, desc_orig)
+            seq_seq = striped_seq.seq
+            seq_qual = striped_seq.qual
+            if len(seq_seq) != len(seq_qual):
+                msg = 'Malformed lucy output, name: %s, seq: %s, qual:%s' % \
+                                 (striped_seq.name, str(seq_seq), str(seq_qual))
+                raise RuntimeError(msg)
+            seq_str = fasta_str(seq_seq, striped_seq.name, desc_orig)
             striped_seq_fhand.write(seq_str)
-            stripped_qual = ' '.join([str(q_val) for q_val in striped_seq.qual])
+            stripped_qual = ' '.join([str(q_val) for q_val in seq_qual])
             qual_str = fasta_str(stripped_qual, striped_seq.name, desc_orig)
             striped_qual_fhand.write(qual_str)
         striped_seq_fhand.flush()
