@@ -252,6 +252,7 @@ def _build_cmd(cmd_params, runner_def):
         for parameter in parameters.values():
             fpaths = parameter['fpaths']
             if parameter['option'] == STDIN:
+                parameter['fhands'][0].seek(0)
                 stdin = parameter['fhands'][0].read()
             elif parameter['option'] == STDOUT:
                 pass
