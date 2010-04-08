@@ -99,6 +99,8 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter1'] = {}
     config['snv_filters']['filter1']['name'] = 'uniq_contiguous'
     config['snv_filters']['filter1']['use']  = False
+    config['snv_filters']['filter1']['genomic_db'] = 'path to blast db'
+    config['snv_filters']['filter1']['genomic_seqs_fpath'] = 'path to seqs file'
 
     config['snv_filters']['filter2'] = {}
     config['snv_filters']['filter2']['name']     = 'close_to_intron'
@@ -114,7 +116,7 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter4'] = {}
     config['snv_filters']['filter4']['name']      = 'close_to_snv'
     config['snv_filters']['filter4']['use']       = False
-    config['snv_filters']['filter4']['proximity'] = 60
+    config['snv_filters']['filter4']['distance'] = 60
 
     config['snv_filters']['filter5'] = {}
     config['snv_filters']['filter5']['name']     = 'close_to_limit'
@@ -124,7 +126,7 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter6'] = {}
     config['snv_filters']['filter6']['name']      = 'maf'
     config['snv_filters']['filter6']['use']       = False
-    config['snv_filters']['filter6']['frecuency'] = 0.8
+    config['snv_filters']['filter6']['frequency'] = 0.8
 
     config['snv_filters']['filter7'] = {}
     config['snv_filters']['filter7']['name'] = 'by_kind'
@@ -138,26 +140,29 @@ def create_project(name, directory=None, configuration=None):
 
     config['snv_filters']['filter9'] = {}
     config['snv_filters']['filter9']['name']       = 'is_variable_in_rg'
+    config['snv_filters']['filter9']['step_name']  = 'is_variable'
     config['snv_filters']['filter9']['use']        = False
     config['snv_filters']['filter9']['group_kind'] = 'read_groups'
-    config['snv_filters']['filter9']['groups']     = None
+    config['snv_filters']['filter9']['groups']     = []
 
     config['snv_filters']['filter10'] = {}
     config['snv_filters']['filter10']['name']       = 'is_variable_in_lb'
+    config['snv_filters']['filter10']['step_name']  = 'is_variable'
     config['snv_filters']['filter10']['use']        = False
     config['snv_filters']['filter10']['group_kind'] = 'libraries'
-    config['snv_filters']['filter10']['groups']     = None
+    config['snv_filters']['filter10']['groups']     = []
 
     config['snv_filters']['filter11'] = {}
     config['snv_filters']['filter11']['name']       = 'is_variable_in_sm'
+    config['snv_filters']['filter11']['step_name']  = 'is_variable'
     config['snv_filters']['filter11']['use']        = False
     config['snv_filters']['filter11']['group_kind'] = 'samples'
-    config['snv_filters']['filter11']['groups']     = None
+    config['snv_filters']['filter11']['groups']     = []
 
     config['snv_filters']['filter12'] = {}
     config['snv_filters']['filter12']['name']       = 'ref_not_in_list'
     config['snv_filters']['filter12']['use']        = False
-    config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
+    config['snv_filters']['filter12']['list_path']  = 'path_to_file_with_list'
 
     #overwrite with the configuration given
     outputs = ['vcf']

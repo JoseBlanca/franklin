@@ -103,7 +103,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv1 = SeqFeature(type='snv', location=FeatureLocation(100, 100),
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
-        filter_(seq)
+        seq = filter_(seq)
         assert not seq.features[0].qualifiers['filters'][filter_id][distance]
 
         #a sequence with one hit but two hsps, but a contiguous region according
@@ -116,8 +116,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv1 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
-        filter_(seq)
-        filter_(seq)
+        seq = filter_(seq)
+        seq = filter_(seq)
         assert seq.features[0].qualifiers['filters'][filter_id][distance]
     @staticmethod
     def test_close_to_intron_filter():
