@@ -180,14 +180,17 @@ class VersionedPath(object):
     'It represents a set of versioned files as one'
     def __init__(self, path):
         'It inits the object'
-        if os.path.isdir(path):
-            raise NotImplementedError('Directory support not implemented')
         self._path = os.path.abspath(path)
-        self.directory, self.basename, version, self.extension = self._get_info(self._path)
+        if os.path.isdir(path):
+            self.directory = path
+            self.basename, version, self.extension = None, None, None
+        else:
+            self.directory, self.basename, version, self.extension = self._get_info(self._path)
 
-    def _get_info(self, path):
+    @staticmethod
+    def _get_info(fpath):
         'It returns all information about a given path'
-        directory, fname = os.path.split(path)
+        directory, fname = os.path.split(fpath)
         basename, ext = os.path.splitext(fname)
         extension = ext.replace('.', '', 1)
         match = re.search('(.*?)\.?(\d*)$', basename)
@@ -199,11 +202,13 @@ class VersionedPath(object):
         'It returns the string representation'
         return os.path.join(self.directory,
                             self.basename + '.' + self.extension)
+    def __repr__(self):
+        'It returns the string representation'
+        return '%s(%s)' % (self.__class__.__name__ , str(self))
 
     def _get_last_version(self):
         'It returns the path for the newest version of the file'
-        return os.path.join(self.directory,
-                            self._get_last_fname(self.list_fnames()))
+        return os.path.join(self.directory, self._get_last_fname())
     last_version = property(_get_last_version)
 
     def _get_next_version(self):
@@ -214,17 +219,16 @@ class VersionedPath(object):
                             self._build_fname(basename, version, extension))
     next_version = property(_get_next_version)
 
+    def list_fpaths(self):
+        'It returns the fpaths found in the directory'
+        return [os.path.join(self.directory, fname) for fname in
+                                                     os.listdir(self.directory)]
     def list_fnames(self):
         'It returns the fnames found in the directory'
         return os.listdir(self.directory)
 
-    def list_fpaths(self):
-        'It returns the fpaths found in the directory'
-        return [os.path.join(self.directory, fname) for fname in
-                self.list_fnames()]
-
-    def list_versiones_fnames(self):
-        'It returns the fnames found in the directory (one for each versioned file)'
+    def list_fpaths_versioned(self):
+        'It returns the fpaths found in the directory (one for each versioned file)'
         fnames = os.listdir(self.directory)
 
         versioned_fnames = {}
@@ -236,10 +240,16 @@ class VersionedPath(object):
                 newest_version = versioned_fnames[basename, extension]
                 if newest_version is None or newest_version < version:
                     versioned_fnames[basename, extension] = version
-        fnames = []
+        paths = []
         for (basename, extension), version in versioned_fnames.items():
-            fnames.append(self._build_fname(basename, version, extension))
-        return fnames
+            fname = self._build_fname(basename, version, extension)
+            fpath = os.path.join(self.directory, fname)
+            paths.append(fpath)
+        return paths
+
+    def list_paths_versioned(self):
+        'It returns the fpaths found in the directory (one for each versioned file)'
+        return [self.__class__(fpath) for fpath in self.list_fpaths_versioned()]
 
     def _build_fname(self, basename, version, extension):
         'It returns a valid fname'
@@ -248,17 +258,13 @@ class VersionedPath(object):
         else:
             return basename + '.' + str(version) + '.' + extension
 
-    def list_versiones_fpaths(self):
-        'It returns the fpaths found in the directory (one for each versioned file)'
-        return [os.path.join(self.directory, fname) for fname in
-                self.list_versiones_fnames()]
-
-    def _get_last_fname(self, fnames):
+    def _get_last_fname(self):
         'It takes the last version of a versioned file'
         regex = re.compile('(' + self.basename + ')\.(\d*).?(' + self.extension + ')$')
         last_file    = None
         last_version = None
-        for file_ in fnames:
+        #what happens if there is nothing in the directory
+        for file_ in os.listdir(self.directory):
             match = regex.match(file_)
             if match:
                 group = match.group(2)
@@ -270,4 +276,17 @@ class VersionedPath(object):
                 else:
                     if last_version is None:
                         last_file = file_
-        return last_file
+        if last_file is None:
+            return self._build_fname(self.basename, None, self.extension)
+        else:
+            return last_file
+
+    def __eq__(self, path):
+        'The equality between two paths'
+        dir1, basename1, ver1, ext1 = self._get_info(self._path)
+        dir2, basename2, ver2, ext2 = self._get_info(str(path))
+        return dir1 == dir2 and basename1 == basename2 and ext1 == ext2
+
+    def __hash__(self):
+        'It returns the hash'
+        return hash(str(self))

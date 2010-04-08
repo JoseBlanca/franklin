@@ -121,19 +121,28 @@ class VersionedPathTest(unittest.TestCase):
         assert path.directory == tempdir.name
         assert path.extension == 'txt'
 
-        assert path.last_version == os.path.join(tempdir_name, 'hola.1.txt')
-        assert path.next_version == os.path.join(tempdir_name, 'hola.2.txt')
+        assert path.last_version == VersionedPath(os.path.join(tempdir_name,
+                                                               'hola.1.txt'))
+        assert path.next_version == VersionedPath(os.path.join(tempdir_name,
+                                                               'hola.2.txt'))
 
-        expected = set(('hola.1.txt', 'adios.1.txt', 'foo.txt'))
-        assert set(path.list_versiones_fnames()) == expected
+        fpaths = [os.path.join(tempdir_name, fname) for fname in ('hola.1.txt',
+                                                                  'adios.1.txt',
+                                                                  'foo.txt')]
+        expected_paths = set(fpaths)
+        versioned_paths = set(path.list_fpaths_versioned())
+        assert versioned_paths == expected_paths
 
-        try:
-            path = VersionedPath(tempdir.name)
-            self.fail()
-        except NotImplementedError:
-            pass
+        path = VersionedPath(tempdir_name)
+        versioned_paths = set(path.list_fpaths_versioned())
+        assert versioned_paths == expected_paths
 
         tempdir.close()
+
+        #in an empty dir
+        path = VersionedPath('hola.txt')
+        assert path.last_version.endswith('hola.txt')
+        assert path.next_version.endswith('hola.0.txt')
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
