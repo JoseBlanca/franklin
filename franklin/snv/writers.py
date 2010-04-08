@@ -38,7 +38,7 @@ class VariantCallFormatWriter(object):
         self._temp_fhand = NamedTemporaryFile(mode='a')
         self._filter_descriptions = {}
         self._header = []
-        self._genotype_grouping_key = 'samples'
+        self._genotype_grouping_key = 'read_groups'
         self._genotype_groups = OrderedDict()
         self._get_pre_header(reference_name)
 
@@ -55,7 +55,7 @@ class VariantCallFormatWriter(object):
         header.append('##INFO=AC,-1,Integer,"Allele Count"')
         header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
         header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
-        header.append('##FORMAT=MG,.,String,"Sample mix genotype"')
+        header.append('##FORMAT=RG,.,String,"Read group Genotype genotype"')
         header.append('##FORMAT=AC,.,String,"Allele count"')
 
     def close(self):
@@ -65,7 +65,7 @@ class VariantCallFormatWriter(object):
         self._add_filters_to_header()
         line_items = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER',
                       'INFO', 'FORMAT']
-        line_items.extend(self._genotype_groups.keys())
+        line_items.extend([group.upper() for group in self._genotype_groups.keys()])
         num_items_per_line = len(line_items)
         self._header.append('%s\n' % '\t'.join(line_items))
         fhand.write('\n'.join(self._header))
@@ -211,7 +211,7 @@ class VariantCallFormatWriter(object):
 
         items = []
         #the format
-        items.append('MG:AC')
+        items.append('RG:AC')
 
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = [(reference_allele, INVARIANT)]

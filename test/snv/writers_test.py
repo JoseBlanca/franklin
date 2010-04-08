@@ -15,14 +15,14 @@ class VariantCallFormatWriterTest(unittest.TestCase):
 
     def test_basic(self):
         seq_str = 'AAA'
-        alleles = {('A', SNP):{'read_groups': ['hola_illumina'],
+        alleles = {('A', SNP):{'read_groups': ['hola_illumina', 'hola2'],
                                'samples': ['individual1', 'individual2'],
                                'read_names': ['seq16', 'seq17'],
                                'orientations': [True, False],
                                'qualities': [57.0, 35.0],
                                'quality': 57.0,
                                'mapping_qualities': [37, 0]},
-                   ('T', INVARIANT):{'read_groups': ['hola_illumina'],
+                   ('T', INVARIANT):{'read_groups': ['sanger'],
                                      'samples': ['individual2'],
                                      'read_names': ['seq16'],
                                      'orientations': [True],
@@ -62,7 +62,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         vcf = open(fhand.name).read()
         assert 'vks' in vcf
         assert '##FILTER=vks' in vcf
-        assert '0|2:1,1' in vcf
+        assert '1|2:1,1' in vcf
         assert '.:.' in vcf
 
 if __name__ == "__main__":
