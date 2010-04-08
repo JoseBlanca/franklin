@@ -23,6 +23,7 @@ import datetime, math
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
+from franklin.utils.misc_utils import OrderedDict
 
 #http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
 
@@ -37,8 +38,9 @@ class VariantCallFormatWriter(object):
         self._temp_fhand = NamedTemporaryFile(mode='a')
         self._filter_descriptions = {}
         self._header = []
+        self._genotype_grouping_key = 'samples'
+        self._genotype_groups = OrderedDict()
         self._get_pre_header(reference_name)
-
 
     def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
@@ -53,20 +55,29 @@ class VariantCallFormatWriter(object):
         header.append('##INFO=AC,-1,Integer,"Allele Count"')
         header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
         header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
-        ##FILTER=q10,"Quality below 10"
-        ##FILTER=s50,"Less than 50% of samples have data"
+        header.append('##FORMAT=MG,.,String,"Sample mix genotype"')
+        header.append('##FORMAT=AC,.,String,"Allele count"')
 
     def close(self):
         'It merges the header and the snv data'
         # Append the data spec  to the header
         fhand = self._fhand
         self._add_filters_to_header()
-        self._header.append('%s\n' % '\t'.join(('#CHROM', 'POS', 'ID', 'REF',
-                                               'ALT', 'QUAL', 'FILTER',
-                                               'INFO')))
+        line_items = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER',
+                      'INFO', 'FORMAT']
+        line_items.extend(self._genotype_groups.keys())
+        num_items_per_line = len(line_items)
+        self._header.append('%s\n' % '\t'.join(line_items))
         fhand.write('\n'.join(self._header))
         for line in open(self._temp_fhand.name):
-            fhand.write(line)
+            #fix the missing genotype groups
+            line = line.strip()
+            line = line.split()
+            num_items = len(line)
+            line.extend(['.:.'] * (num_items_per_line - num_items))
+            line = '\t'.join(line)
+            #\fix the missing genotype groups
+            fhand.write(line + '\n')
         fhand.close()
 
     def _add_filters_to_header(self):
@@ -116,9 +127,10 @@ class VariantCallFormatWriter(object):
                     continue
                 short_name, description = get_filter_description(name,
                                                                  parameters,
-                                                            self._filter_descriptions)
+                                                      self._filter_descriptions)
                 filter_strs.append(short_name)
-                self._filter_descriptions[name, parameters] = short_name, description
+                self._filter_descriptions[name, parameters] = (short_name,
+                                                               description)
         if not filter_strs:
             return '.'
         else:
@@ -181,16 +193,60 @@ class VariantCallFormatWriter(object):
         permitted to be a floating point so to enable higher resolution for low
         confidence calls if desired. (Numeric, Missing Value: -1)'''
 
-        phreds = [ alleles[allele]['quality'] for allele in alternative_alleles]
-        if len(phreds) == 1:
-            phred = phreds[0]
+        if alternative_alleles:
+            phreds = [alleles[allele]['quality'] for allele in alternative_alleles]
+            if len(phreds) == 1:
+                phred = phreds[0]
+            else:
+                inv_phred = lambda phred: math.pow(10, (-phred/10))
+                probs = map(inv_phred, phreds[:2])
+                prob = probs[0] * probs[1]
+                phred = -10 * math.log10(prob)
         else:
-            inv_phred = lambda phred: math.pow(10, (-phred/10))
-            probs = map(inv_phred, phreds[:2])
-            prob = probs[0] * probs[1]
-            phred = -10 * math.log10(prob)
+            phred = alleles.values()[0]['quality']
         return '%i' % phred
 
+    def _create_genotypes(self, alleles, reference_allele, alternative_alleles):
+        'It returns the genotype section for this snv'
+
+        items = []
+        #the format
+        items.append('MG:AC')
+
+        #a map from alleles to allele index (0 for reference, etc)
+        alleles_index = [(reference_allele, INVARIANT)]
+        alleles_index.extend(alternative_alleles)
+        alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
+
+        #now we need the alleles for every sample
+        grouping_key = self._genotype_grouping_key
+        alleles_by_group = {}
+        for allele, allele_info in alleles.items():
+            #we need the index for the allele
+            allele_index = alleles_index[allele]
+            for group in allele_info[grouping_key]:
+                if group not in self._genotype_groups:
+                    self._genotype_groups[group] = True
+                if group not in alleles_by_group:
+                    alleles_by_group[group] = {}
+                if allele_index not in alleles_by_group[group]:
+                    alleles_by_group[group][allele_index] = 0
+                alleles_by_group[group][allele_index] += 1
+
+        #now we can build the info for every sample
+        for group in self._genotype_groups.keys():
+            allele_counts = alleles_by_group.get(group, {None: None})
+            alleles, counts = [], []
+            for allele, count in allele_counts.items():
+                allele = str(allele) if allele is not None else '.'
+                alleles.append(str(allele))
+                count = str(count) if count is not None else '.'
+                counts.append(count)
+            mix_genotype = '|'.join(alleles)
+            allele_counts = ','.join(counts)
+            items.append('%s:%s' % (mix_genotype, allele_counts))
+
+        return '\t'.join(items)
 
     def _write_snv(self, sequence, snv):
         'Given an snv feature it writes a line in the vcf'
@@ -210,7 +266,9 @@ class VariantCallFormatWriter(object):
         items.append(self._create_quality(qualifiers['alleles'],
                                           alternative_alleles))
         filters = self._create_filters(qualifiers)
-        #self._add_filter_definition(filters)
         items.append(filters)
         items.append(self._create_info(qualifiers, alternative_alleles))
+        items.append(self._create_genotypes(qualifiers['alleles'],
+                                            qualifiers['reference_allele'],
+                                            alternative_alleles))
         self._temp_fhand.write('%s\n' % '\t'.join(items))
