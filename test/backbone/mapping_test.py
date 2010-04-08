@@ -20,12 +20,24 @@ class TestBackboneMapping(unittest.TestCase):
         'We can map the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
+        blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
+                                  'genomic_db':blastdb_seq,
+                                  'genomic_seqs_fpath':blastdb_seq},
+                       'filter12':{'name':'ref_not_in_list', 'use':True,
+                                'list_path':os.path.join(DATA_DIR, 'cos_list')},
+                       'filter10':{'name': 'variable_in_sm',
+                                   'step_name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['hola']}}
+
+        configuration = {'Snvs':{'min_quality':20},
+                       'Sam_processing':{'add_default_qualities':True},
+                       'snv_filters':snv_filters}
+
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
-                                      configuration={
-                                                    'Snvs':{'min_quality':20},
-                                'Sam_processing':{'add_default_qualities':True},
-                                })
+                                      configuration=configuration)
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
@@ -87,6 +99,12 @@ class TestBackboneMapping(unittest.TestCase):
         open(fpath_sanger, 'w').write(sanger)
         open(fpath_solexa, 'w').write(solexa)
 
+        fpath_sanger2 = join(clean_reads_dir, 'lb_adios.pl_sanger.fasta')
+        fpath_solexa2 = join(clean_reads_dir,
+                                    'lb_adios.pl_illumina.sfastq')
+        open(fpath_sanger2, 'w').write(sanger)
+        open(fpath_solexa2, 'w').write(solexa)
+
         #the reference
         reference_dir = join(project_dir, 'mapping/reference')
         os.makedirs(reference_dir)
@@ -132,7 +150,9 @@ class TestBackboneMapping(unittest.TestCase):
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.1.repr')
-        assert "type='snv'" in  open(repr_fpath).read()
+        result =  open(repr_fpath).read()
+        print result
+        assert "type='snv'" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',
                     silent=True)

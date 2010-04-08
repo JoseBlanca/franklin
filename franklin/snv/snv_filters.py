@@ -162,7 +162,7 @@ def create_reference_in_list_filter(seq_list):
             if previous_result is not None:
                 continue
             _add_filter_result(snv, 'ref_not_in_list', result)
-
+        return sequence
     return reference_in_list_filter
 
 
@@ -231,9 +231,12 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                     #good aligning, so we realign with est2genome
                     blast_fhand.seek(0)
                     sim_seqs = similar_sequences_for_blast(blast_fhand)
+                    sim_seq = sim_seqs[0] if sim_seqs else None
+
                     introns = infer_introns_for_cdna(sequence=seq_fragment,
                                           genomic_seqs_index=genomic_seqs_index,
-                                              similar_sequence=sim_seqs[0])
+                                              similar_sequence=sim_seq,
+                                              genomic_db=genomic_db)
                     if not introns:
                         result = True
                     else:
