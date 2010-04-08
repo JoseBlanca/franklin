@@ -193,9 +193,9 @@ class VersionedPath(object):
         directory, fname = os.path.split(fpath)
         basename, ext = os.path.splitext(fname)
         extension = ext.replace('.', '', 1)
-        match = re.search('(.*?)\.?(\d*)$', basename)
+        match = re.search('(.*?)(\.\d+)?$', basename)
         basename, version = match.groups()
-        version = int(version) if version else None
+        version = int(version.lstrip('.')) if version else None
         return directory, basename, version, extension
 
     def __str__(self):

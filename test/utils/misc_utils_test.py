@@ -144,6 +144,10 @@ class VersionedPathTest(unittest.TestCase):
         assert path.last_version.endswith('hola.txt')
         assert path.next_version.endswith('hola.0.txt')
 
+        path = VersionedPath('pl_illumina.sm_rp_75_59_uc82.sfastq')
+        assert path.last_version.endswith('pl_illumina.sm_rp_75_59_uc82.sfastq')
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
