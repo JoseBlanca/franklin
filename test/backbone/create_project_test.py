@@ -195,35 +195,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         os.chdir('/tmp')
         test_dir.close()
 
-    @staticmethod
-    def test_wsg_asembly_analysis():
-        'We can assembly with wsg'
-        test_dir = NamedTemporaryDir()
-        proj_name = 'backbone'
-        project_dir = join(test_dir.name, proj_name)
-        settings_path = create_project(directory=test_dir.name, name=proj_name)
-        #setup the original reads
-        reads_dir = join(project_dir, 'reads')
-        clean_reads_dir = join(reads_dir, 'cleaned')
-        os.mkdir(reads_dir)
-        os.mkdir(clean_reads_dir)
-
-        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.sfastq')
-        open(fpath_sanger, 'w').write(READS_454)
-        fpath_sanger3 = join(clean_reads_dir, 'lb_hola2.pl_sanger.fasta')
-        open(fpath_sanger3, 'w').write('>seq\nAAAAAAA\n>seq2\nTTTT\n')
-        fpath_sanger2 = join(clean_reads_dir, 'lb_caracola.pl_sanger.sfastq')
-        open(fpath_sanger2, 'w').write(READS_454)
-        do_analysis(project_settings=settings_path, kind='prepare_wsg_assembly')
-        result_dir = join(project_dir, 'assembly', 'input')
-        assert exists(result_dir)
-        frg_fpath = join(result_dir, 'all_seq.frg')
-        assert exists(frg_fpath)
-        # This dos not work because of the  input data
-        #do_analysis(project_settings=settings_path, kind='wsg_assembly')
-        os.chdir('/tmp')
-        test_dir.close()
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
     unittest.main()

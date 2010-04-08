@@ -95,34 +95,49 @@ class TestBackboneMapping(unittest.TestCase):
         for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
             out.write(line)
 
-        do_analysis(project_settings=settings_path, kind='mapping')
+        do_analysis(project_settings=settings_path, kind='mapping', silent=True)
         mapping_dir = join(project_dir, 'mapping')
         singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
         singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
         assert exists(join(singular_mapping_dir, 'result',
                                     'by_readgroup', 'lb_hola.pl_illumina.bam'))
-        do_analysis(project_settings=settings_path, kind='select_last_mapping')
+        do_analysis(project_settings=settings_path, kind='select_last_mapping',
+                    silent=True)
         result_dir = join(mapping_dir, 'result')
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
+        f1 = open(join(result_dir, 'merged.bam'), 'w')
+        f1.close()
+        do_analysis(project_settings=settings_path, kind='merge_bam',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.0.bam'))
 
-        do_analysis(project_settings=settings_path, kind='merge_bam')
-        assert exists(join(result_dir, 'merged.bam'))
 
         #we realign the mapping using GATK
-        do_analysis(project_settings=settings_path, kind='realign_bam')
+        do_analysis(project_settings=settings_path, kind='realign_bam',
+                    silent=True)
 
+        assert exists(join(result_dir, 'merged.1.bam'))
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
-        do_analysis(project_settings=settings_path, kind='annotate_snv')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'reference.repr')
+        do_analysis(project_settings=settings_path, kind='annotate_snv',
+                    silent=True)
+        repr_fpath = join(project_dir, 'annotations', 'repr',
+                          'reference.0.repr')
         assert "type='snv'" in  open(repr_fpath).read()
 
-        do_analysis(project_settings=settings_path, kind='filter_snvs')
-        do_analysis(project_settings=settings_path, kind='write_annotation')
-        vcf_fpath = join(project_dir, 'annotations', 'result', 'reference.vcf')
+        do_analysis(project_settings=settings_path, kind='filter_snvs',
+                    silent=True)
+        repr_fpath = join(project_dir, 'annotations', 'repr',
+                          'reference.1.repr')
+        assert "type='snv'" in  open(repr_fpath).read()
+
+        do_analysis(project_settings=settings_path, kind='write_annotation',
+                    silent=True)
+        vcf_fpath = join(project_dir, 'annotations', 'result',
+                         'reference.vcf')
         vcf = open(vcf_fpath).read()
         assert 'vks' in vcf
         assert 'AT5G19860.1' in vcf

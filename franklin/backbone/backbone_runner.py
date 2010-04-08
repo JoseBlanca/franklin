@@ -38,7 +38,7 @@ def _configure_logging(log_fpath):
     console_hand.setFormatter(formatter)
     logger.addHandler(console_hand)
 
-def do_analysis(kind, project_settings=None, analysis_config=None):
+def do_analysis(kind, project_settings=None, analysis_config=None, silent=False):
     'It does one of the predefined analyses'
     if project_settings is None:
         project_settings = os.path.join(os.getcwd(),
@@ -51,13 +51,16 @@ def do_analysis(kind, project_settings=None, analysis_config=None):
 
     settings = ConfigObj(project_settings, unrepr=True)
     specifications = get_analysis_especifications()
-    log_fpath = os.path.join(settings['General_settings']['project_path'],
-                             'franklin.log')
-    _configure_logging(log_fpath)
+
+    if silent:
+        log_fpath = os.path.join(settings['General_settings']['project_path'],
+                                 'franklin.log')
+        _configure_logging(log_fpath)
+
     analysis_def = specifications[kind]
 
     analyzer_klass = analysis_def['analyzer']
     analyzer = analyzer_klass(project_settings=settings,
-                        analysis_definition=analysis_def)
+                        analysis_definition=analysis_def, silent=silent)
 
     analyzer.run()

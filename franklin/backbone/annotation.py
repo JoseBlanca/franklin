@@ -26,10 +26,7 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             cap_enzyme_filter,
                                             is_variable_filter,
                                             ref_not_in_list)
-
-def _get_basename(fpath):
-    'It returns the base name without path and extension'
-    return os.path.splitext(os.path.basename(fpath))[0]
+from franklin.utils.misc_utils import VersionedPath
 
 class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
@@ -48,8 +45,9 @@ class AnnotationAnalyzer(Analyzer):
             seqs_fpaths  = inputs['input']
         except KeyError:
             seqs_fpaths = []
-        seqs_fpaths  = self._get_seq_or_repr_fpath(seqs_fpaths, repr_fpaths)
-        for seq_fpath in seqs_fpaths:
+        seqs_paths  = self._get_seq_or_repr_path(seqs_fpaths, repr_fpaths)
+        for seq_path in seqs_paths:
+            seq_fpath = seq_path.last_version
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
             io_fhands = {'in_seq': open(seq_fpath),
@@ -62,25 +60,25 @@ class AnnotationAnalyzer(Analyzer):
             seq_pipeline_runner(pipeline, configuration=config,
                                 io_fhands=io_fhands)
             temp_repr.close()
-            repr_fpath = os.path.join(output_dir,
-                                      _get_basename(seq_fpath) + '.repr')
+            repr_path = VersionedPath(os.path.join(output_dir,
+                                                   seq_path.basename + '.repr'))
+            repr_fpath = repr_path.next_version
             shutil.move(temp_repr.name, repr_fpath)
         self._log({'analysis_finished':True})
 
-    def _get_seq_or_repr_fpath(self, seqs_fpaths, repr_fpaths):
+    def _get_seq_or_repr_path(self, seqs_paths, repr_paths):
         'It returns for every file the repr or the seq file'
-        repr_fpaths_ = dict([(self._get_basename(fpath),
-                                               fpath) for fpath in repr_fpaths])
-        if not seqs_fpaths:
-            return repr_fpaths
-        new_seq_fpaths = []
-        for fpath in seqs_fpaths:
-            basename = _get_basename(fpath)
-            if basename in repr_fpaths_:
-                new_seq_fpaths.append(repr_fpaths_[basename])
+        repr_paths_ = dict([(path.basename, path) for path in repr_paths])
+        if not seqs_paths:
+            return repr_paths
+        new_seq_paths = []
+        for path in seqs_paths:
+            basename = path.basename
+            if basename in repr_paths_:
+                new_seq_paths.append(repr_paths_[basename])
             else:
-                new_seq_fpaths.append(fpath)
-        return new_seq_fpaths
+                new_seq_paths.append(path)
+        return new_seq_paths
 
 class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
     '''It annotates the orthologs for the working species against the species
@@ -106,7 +104,7 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                 blastdb = blast_settings[database]['path']
                 #this could be different adding something to the settings
                 blastdb_seq_fpath = blastdb
-                blast = backbone_blast_runner(query_fpath=input_,
+                blast = backbone_blast_runner(query_fpath=input_.last_version,
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db=blastdb,
@@ -115,7 +113,7 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               query_fpath=blastdb_seq_fpath,
                                               project_dir=project_dir,
                                               blast_program=blast_program,
-                                              blast_db_seq=input_,
+                                              blast_db_seq=input_.last_version,
                                               dbtype=db_kind)
                 if input_ not in blasts:
                     blasts[input_] = {}
@@ -173,10 +171,10 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         'It runs the analysis.'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         merged_bam   = inputs['merged_bam']
-        create_bam_index(merged_bam)
+        create_bam_index(merged_bam.last_version)
 
         pipeline = 'snv_bam_annotator'
-        bam_fhand = open(merged_bam)
+        bam_fhand = open(merged_bam.last_version)
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
         settings = self._project_settings
         if 'Snvs' in settings:
@@ -196,19 +194,19 @@ class WriteAnnotationAnalyzer(Analyzer):
         'It runs the analysis.'
         output_dir   = self._create_output_dirs()['result']
         inputs       = self._get_input_fpaths()
-        repr_fpaths  = inputs['repr']
+        repr_paths  = inputs['repr']
 
         output_files = ['vcf', 'gff']
-        for seq_fpath in repr_fpaths:
+        for seq_path in repr_paths:
             outputs = {}
             for output_kind in output_files:
                 output_fpath = os.path.join(output_dir,
-                                   _get_basename(seq_fpath) + '.' + output_kind)
+                                          seq_path.basename + '.' + output_kind)
                 if os.path.exists(output_fpath):
                     os.remove(output_fpath)
                 output_fhand = open(output_fpath, 'a')
                 outputs[output_kind] = output_fhand
-            io_fhands = {'in_seq': open(seq_fpath),
+            io_fhands = {'in_seq': open(seq_path.last_version),
                          'outputs': outputs}
             seq_pipeline_runner(pipeline=None,
                                 configuration=None,
@@ -246,13 +244,12 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                     continue
 
                 if name == 'ref_not_in_list':
-                    filter_config[argument] = []
+                    filter_config['seq_list'] = []
                     for item  in open(value):
                         filter_config['seq_list'].append(item.strip())
                 else:
                     filter_config[argument] = value
 
-                filter_config[argument] = value
             filter_config['step_name'] = step_name
             configuration[name] =  filter_config
         pipeline = self._get_pipeline_from_step_name(configuration)
@@ -298,6 +295,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         project_dir = self._project_settings['General_settings']['project_path']
         blasts = {}
         for input_ in inputs['input']:
+            input_fpath = input_.last_version
             for database in description_databases:
                 db_kind = blast_settings[database]['kind']
                 if db_kind == 'nucl':
@@ -306,14 +304,14 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                     blast_program = 'blastx'
 
                 blastdb = blast_settings[database]['path']
-                blast   = backbone_blast_runner(query_fpath=input_,
+                blast   = backbone_blast_runner(query_fpath=input_fpath,
                                                 project_dir=project_dir,
                                                 blast_program=blast_program,
                                                 blast_db=blastdb,
                                                 dbtype=db_kind)
                 if input_ not in blasts:
-                    blasts[input_] = []
-                blasts[input_].append({'blast':blast, 'modifier':None})
+                    blasts[input_fpath] = []
+                blasts[input_fpath].append({'blast':blast, 'modifier':None})
 
         pipeline = []
         configuration = {}
@@ -322,9 +320,10 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
             step['name_in_config'] = database
             pipeline.append(step)
             for input_ in inputs['input']:
-                step_config = {'blasts': blasts[input_]}
-                configuration[input_] = {}
-                configuration[input_][database] = step_config
+                input_fpath = input_.last_version
+                step_config = {'blasts': blasts[input_fpath]}
+                configuration[input_fpath] = {}
+                configuration[input_fpath][database] = step_config
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
@@ -385,18 +384,20 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 blast_program = 'blastp'
 
             blastdb = blast_settings[go_database]['path']
-            blast   = backbone_blast_runner(query_fpath=input_,
+            input_fpath = input_.last_version
+            blast   = backbone_blast_runner(query_fpath=input_fpath,
                                             project_dir=project_dir,
                                             blast_program=blast_program,
                                             blast_db=blastdb,
                                             dbtype=db_kind)
-            blasts[input_] = blast
+            blasts[input_fpath] = blast
         # prepare pipeline
         pipeline      = [annotate_gos]
         configuration = {}
         for input_ in  inputs['input']:
-            step_config = {'blast': blasts[input_]}
-            configuration[input_] = {'annotate_gos': step_config}
+            input_fpath = input_.last_version
+            step_config = {'blast': blasts[input_fpath]}
+            configuration[input_fpath] = {'annotate_gos': step_config}
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,

@@ -57,7 +57,7 @@ class OrthologTest(unittest.TestCase):
                            open(join(input_dir, 'melon.fasta'), 'a'))
 
         do_analysis(project_settings=settings_path, kind='annotate_orthologs')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
         os.chdir('/tmp')
@@ -93,7 +93,7 @@ class OrthologTest(unittest.TestCase):
                            open(join(input_dir, 'melon.fasta'), 'a'))
 
         do_analysis(project_settings=settings_path, kind='annotate_description')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
 
@@ -134,7 +134,7 @@ class OrthologTest(unittest.TestCase):
         fhand.write(fasta)
         fhand.close()
         do_analysis(project_settings=settings_path, kind='annotate_introns')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
 
         assert "type='intron'" in  open(repr_fpath).read()
         os.chdir('/tmp')
@@ -170,7 +170,7 @@ class OrthologTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path,
                     kind='annotate_microsatellite')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='microsatellite'" in  result
         os.chdir('/tmp')
@@ -207,7 +207,7 @@ class OrthologTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path,
                     kind='annotate_orf')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='orf'" in  result
         os.chdir('/tmp')
@@ -251,7 +251,7 @@ class OrthologTest(unittest.TestCase):
                     join(bdir, 'blast.blastn.xml'))
 
         do_analysis(project_settings=settings_path, kind='annotate_go')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
+        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
 

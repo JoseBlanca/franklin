@@ -84,14 +84,15 @@ class CleanReadsAnalyzer(Analyzer):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
         self._log({'analysis_started':True})
-        input_fpaths = self._get_input_fpaths()['reads']
+        input_paths = self._get_input_fpaths()['reads']
         output_dir   =  self._create_output_dirs()['reads']
-        for input_fpath in input_fpaths:
+        for input_path in input_paths:
+            input_fpath = str(input_path)
             fname = os.path.split(input_fpath)[-1]
             output_fpath = os.path.join(output_dir, fname)
             if os.path.exists(output_fpath):
                 continue
-            file_info = scrape_info_from_fname(input_fpath)
+            file_info = scrape_info_from_fname(input_path)
             input_fhand  = open(input_fpath)
             output_fhand  = open(output_fpath, 'w')
             pipeline = self._guess_cleaning_pipepile(file_info)
@@ -117,15 +118,16 @@ class ReadsStatsAnalyzer(Analyzer):
         self._create_output_dirs()['original_reads']
         self._create_output_dirs()['cleaned_reads']
 
-        clean_fpaths    = self._get_input_fpaths()['cleaned_reads']
-        original_fpaths = self._get_input_fpaths()['original_reads']
-        reads = {'cleaned': clean_fpaths, 'original': original_fpaths}
+        clean_paths    = self._get_input_fpaths()['cleaned_reads']
+        original_paths = self._get_input_fpaths()['original_reads']
+        reads = {'cleaned': clean_paths, 'original': original_paths}
 
         # first per file stats
-        for seq_type, fpaths in reads.items():
-            for fpath in fpaths:
+        for seq_type, paths in reads.items():
+            for path in paths:
                 stats_dir = self._get_stats_dir(seq_type)
-                basename  = self._get_basename(fpath)
+                basename  = path.basename
+                fpath = path.last_version
                 seqs = seqs_in_file(open(fpath))
                 file_format = guess_seq_file_format(open(fpath))
                 analyses = ['seq_length_distrib', 'qual_distrib']
@@ -135,13 +137,13 @@ class ReadsStatsAnalyzer(Analyzer):
                 self._do_seq_stats(seqs, basename, stats_dir, analyses)
 
         # now the difference between the cleaned and the original per file
-        for clean_fpath in reads['cleaned']:
+        for clean_path in reads['cleaned']:
             original_fpath = os.path.join(self._get_project_path(),
                                          BACKBONE_DIRECTORIES['original_reads'],
-                                         os.path.basename(clean_fpath))
+                                         clean_path.basename)
+            clean_fpath = clean_path.last_version
             if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
                 stats_dir = self._get_stats_dir('cleaned')
-                basename  = self._get_basename(clean_fpath)
 
                 clean_seqs    = seqs_in_file(open(clean_fpath))
                 original_seqs = seqs_in_file(open(original_fpath))
@@ -149,16 +151,19 @@ class ReadsStatsAnalyzer(Analyzer):
                 analyses = ['seq_length_distrib', 'qual_distrib']
                 if file_format == 'fasta':
                     analyses =  ['seq_length_distrib']
-                self._do_diff_seq_stats(clean_seqs, original_seqs, basename,
+                self._do_diff_seq_stats(clean_seqs, original_seqs,
+                                        clean_path.basename,
                                         stats_dir, analyses)
 
         # stats per seq file. All files together
-        if clean_fpaths:
+        if clean_paths:
+            clean_fpaths = [path.last_version for path in clean_paths]
             clean_seqs = self._seqs_in_files(clean_fpaths)
             clean_seqs, clean_seqs2 = itertools.tee(clean_seqs, 2)
         else:
             clean_seqs, clean_seqs2 = None, None
-        if original_fpaths:
+        if original_paths:
+            original_fpaths = [path.last_version for path in original_paths]
             original_seqs = self._seqs_in_files(original_fpaths)
             original_seqs, original_seqs2 = itertools.tee(original_seqs, 2)
         else:

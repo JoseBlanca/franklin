@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
                                         LastAnalysisAnalyzer)
 from franklin.mapping import map_reads
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam)
@@ -18,12 +18,12 @@ class SetAssemblyAsReferenceAnalyzer(Analyzer):
     'It sets the reference assembly as mapping reference'
     def run(self):
         '''It runs the analysis.'''
-        contigs_fpath = self._get_input_fpaths()['contigs']
-        contigs_ext = os.path.splitext(contigs_fpath)[-1]
+        contigs_path = self._get_input_fpaths()['contigs']
+        contigs_ext = contigs_path.extension
         reference_dir = self._create_output_dirs()['result']
         reference_fpath = os.path.join(reference_dir,
                           BACKBONE_BASENAMES['mapping_reference'] + contigs_ext)
-        os.symlink(contigs_fpath, reference_fpath)
+        os.symlink(contigs_path.last_version, reference_fpath)
 
 def _get_basename(fpath):
     'It returns the base name without path and extension'
@@ -43,20 +43,20 @@ class MappingAnalyzer(Analyzer):
         for read_fpath in reads_fpaths:
             read_info = scrape_info_from_fname(read_fpath)
             platform = read_info['pl']
-            #which mapper are we using for this platform
+            #which maper are we using for this platform
             mapper = settings['mapper_for_%s' % platform]
-            out_bam = os.path.join(output_dir,
-                                   _get_basename(read_fpath) + '.bam')
+            out_bam_fpath = os.path.join(output_dir,
+                                         read_fpath.basename + '.bam')
             mapping_parameters = {}
             if platform in ('454', 'sanger'):
                 mapping_parameters['reads_length'] = 'long'
             else:
                 mapping_parameters['reads_length'] = 'short'
-            if not os.path.exists(out_bam):
+            if not os.path.exists(out_bam_fpath):
                 map_reads(mapper,
-                          reads_fpath=read_fpath,
-                          reference_fpath=reference_fpath,
-                          out_bam_fpath=out_bam,
+                          reads_fpath=read_fpath.last_version,
+                          reference_fpath=reference_fpath.last_version,
+                          out_bam_fpath=out_bam_fpath,
                           parameters = mapping_parameters)
         self._log({'analysis_finished':True})
 
@@ -69,13 +69,14 @@ class MergeBamAnalyzer(Analyzer):
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
         inputs          = self._get_input_fpaths()
-        bam_fpaths      = inputs['bams']
-        reference_fpath = inputs['reference']
+        bam_paths      = inputs['bams']
+        reference_path = inputs['reference']
 
         output_dir      = self._create_output_dirs()['result']
-        merged_bam_fpath = os.path.join(output_dir,
-                                       BACKBONE_BASENAMES['merged_bam'])
-        # First we need to create the sam with added tags and headers
+        merged_bam_path = VersionedPath(os.path.join(output_dir,
+                                        BACKBONE_BASENAMES['merged_bam']))
+
+        merged_bam_fpath = merged_bam_path.next_version
 
         #Do we have to add the default qualities to the sam file?
         #do we have characters different from ACTGN?
@@ -88,13 +89,14 @@ class MergeBamAnalyzer(Analyzer):
         else:
             default_sanger_quality = None
         temp_dir = NamedTemporaryDir()
-        for bam_fpath in bam_fpaths:
-            bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]
+        for bam_path in bam_paths:
+            bam_basename = bam_path.basename
             temp_sam     =  NamedTemporaryFile(prefix='%s.' % bam_basename,
                                                suffix='.sam')
             sam_fpath    = os.path.join(temp_dir.name, bam_basename + '.sam')
-            bam2sam(bam_fpath, temp_sam.name)
+            bam2sam(bam_path.last_version, temp_sam.name)
             sam_fhand = open(sam_fpath, 'w')
+            # First we need to create the sam with added tags and headers
             add_header_and_tags_to_sam(temp_sam, sam_fhand)
             temp_sam.close()
             sam_fhand.close()
@@ -117,7 +119,7 @@ class MergeBamAnalyzer(Analyzer):
         sams = [open(sam) for sam in sams]
 
         temp_sam = NamedTemporaryFile(suffix='.sam')
-        reference_fhand = open(reference_fpath)
+        reference_fhand = open(reference_path.last_version)
         merge_sam(sams, temp_sam, reference_fhand)
         reference_fhand.close()
 
@@ -143,8 +145,9 @@ class RealignBamAnalyzer(Analyzer):
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
         inputs    = self._get_input_fpaths()
-        bam_fpaths = inputs['bams']
-        reference_fpath = inputs['reference']
+        bam_path = inputs['bam']
+        bam_fpath = bam_path.last_version
+        reference_path = inputs['reference']
 
         #memory for the java programs
         if ('Other_settings' in settings and
@@ -153,23 +156,19 @@ class RealignBamAnalyzer(Analyzer):
         else:
             java_mem = None
 
-        #usually it should be just one bam, but it migth be more than one
-        for bam_fpath in bam_fpaths:
-            #we need a temporary path
-            temp_bam = NamedTemporaryFile(suffix='.bam')
-            temp_bam_fpath = temp_bam.name
-            temp_bam.close()
+        #we need a temporary path
+        temp_bam = NamedTemporaryFile(suffix='.bam')
+        temp_bam_fpath = temp_bam.name
+        temp_bam.close()
 
-            #do the realigment
-            realign_bam(bam_fpath=bam_fpath,
-                        reference_fpath=reference_fpath,
-                        out_bam_fpath=temp_bam_fpath,
-                        java_memory=java_mem)
-            #replace the original bam
-            output_dir = self._create_output_dirs()['result']
-            out_bam_fpath = os.path.join(output_dir,
-                                         os.path.split(bam_fpath)[-1])
-            shutil.move(temp_bam_fpath, out_bam_fpath)
+        #do the realigment
+        realign_bam(bam_fpath=bam_fpath,
+                    reference_fpath=reference_path.last_version,
+                    out_bam_fpath=temp_bam_fpath,
+                    java_memory=java_mem)
+        #a new version for the original bam
+        out_bam_fpath = bam_path.next_version
+        shutil.move(temp_bam_fpath, out_bam_fpath)
         self._log({'analysis_finished':True})
 
 DEFINITIONS = {
@@ -214,9 +213,9 @@ DEFINITIONS = {
         },
     'realign_bam':
         {'inputs':{
-            'bams':
+            'bam':
                 {'directory': 'mapping_result',
-                 'file_kinds': 'bam'},
+                 'file': 'merged_bam'},
             'reference':
                 {'directory': 'mapping_reference',
                 'file': 'mapping_reference'},
