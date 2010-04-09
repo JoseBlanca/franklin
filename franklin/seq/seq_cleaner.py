@@ -403,7 +403,6 @@ def create_striper_by_quality_lucy2(vector=None):
         #now we run lucy
         sequences, sequences_copy = tee(sequences, 2)
         seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)['sequence']
-
         # we need to preserve the original description field.
         descriptions = _extract_name_description(sequences_copy)
 
@@ -434,6 +433,10 @@ def create_striper_by_quality_lucy2(vector=None):
             stripped_qual = ' '.join([str(q_val) for q_val in seq_qual])
             qual_str = fasta_str(stripped_qual, striped_seq.name, desc_orig)
             striped_qual_fhand.write(qual_str)
+        seq_out_fhand.close()
+        qual_out_fhand.close()
+        #os.remove(seq_out_fhand.name)
+        #os.remove(qual_out_fhand.name)
         striped_seq_fhand.flush()
         striped_qual_fhand.flush()
         seq_iter = seqs_in_file(striped_seq_fhand, striped_qual_fhand)
