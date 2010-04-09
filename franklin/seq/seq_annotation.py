@@ -151,6 +151,8 @@ def create_orf_annotator(parameters):
         prot_fhand = results['protein']
         description, seq = get_content_from_fasta(dna_fhand)[1:]
         pep = get_content_from_fasta(prot_fhand)[-1]
+        prot_fhand.close()
+        dna_fhand.close()
         # If there is no description, ther is no org
         if description is None:
             return sequence
