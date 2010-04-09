@@ -313,7 +313,7 @@ def create_runner(tool, parameters=None, environment=None):
         _prepare_output_files(runner_data['output'])
         cmd, stdin = _build_cmd(cmd_param, runner_data)
 
-        print ' '.join(cmd)
+        #print ' '.join(cmd)
         #raw_input()
 
         stdout, stderr, retcode = call(cmd, stdin=stdin,
