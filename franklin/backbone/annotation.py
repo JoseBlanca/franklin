@@ -88,7 +88,7 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
         'It runs the analysis'
         inputs, output_dir = self._get_inputs_and_prepare_outputs()
         blast_settings = self._project_settings['blast']
-        settings = self._project_settings['Annotation']
+        settings = self._project_settings['Annotation']['ortholog_annotation']
         ortholog_databases = settings['ortholog_databases']
 
         #first we need some blasts

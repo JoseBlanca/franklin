@@ -19,7 +19,7 @@ class OrthologTest(unittest.TestCase):
     'It test the ortholog analysis'
 
     @staticmethod
-    def test_ortholog_annoation_analysis():
+    def test_ortholog_annotation_analysis():
         'We can annotate orthologs'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
@@ -27,7 +27,8 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
                                     'species':'arabidopsis',
                                     'kind': 'nucl'}},
-                  'Annotation':{'ortholog_databases':['arabidopsis']}
+                  'Annotation':{'ortholog_annotation':{'ortholog_databases':
+                                                       ['arabidopsis']}}
                  }
 
         settings_path = create_project(directory=test_dir.name,
