@@ -64,7 +64,7 @@ class OrthologTest(unittest.TestCase):
         test_dir.close()
 
     @staticmethod
-    def test_description_annoation_analysis():
+    def test_description_annotation_analysis():
         'We can annotate with description'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
