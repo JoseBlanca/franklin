@@ -142,9 +142,8 @@ RUNNER_DEFINITIONS = {
                        },
                'output':{'sputnik':{'option':STDOUT}}
                },
-    'estscan':{'binary':'ESTScan',
-               'parameters':{ 'matrix':{'option':'-M'},
-                             'translate':{'option':'-t', 'default':''}},
+    'estscan':{'binary':'estscan',
+               'parameters':{ 'matrix':{'option':'-M'}},
                'input':{'sequence':{'option':ARGUMENT,
                                     'arg_before_params':False,
                                     'files_format':['fasta']}},
@@ -314,7 +313,7 @@ def create_runner(tool, parameters=None, environment=None):
         _prepare_output_files(runner_data['output'])
         cmd, stdin = _build_cmd(cmd_param, runner_data)
 
-        #print ' '.join(cmd)
+        print ' '.join(cmd)
         #raw_input()
 
         stdout, stderr, retcode = call(cmd, stdin=stdin,
