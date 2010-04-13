@@ -21,7 +21,8 @@ def _get_available_analyses():
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
-    msg = 'Possible analyses to run: %s' % _get_available_analyses()
+    msg  = 'Possible analyses to run(You can run more than one analysis. '
+    msg += 'list with commas): %s' % _get_available_analyses()
     parser.add_option('-a', '--action', dest='action',  help=msg)
     parser.add_option('-s', '--settings', dest='settings',
                       help='Settings file path')
@@ -36,7 +37,7 @@ def set_parameters():
     if options.action is None:
         parser.error('Action is mandatory')
     else:
-        action = options.action
+        actions = options.action.split(',')
 
     if options.settings is None:
         config_fname = BACKBONE_DIRECTORIES['config_file']
@@ -49,17 +50,20 @@ def set_parameters():
     else:
         settings_fpath = options.settings
 
-    return action, settings_fpath
+    return actions, settings_fpath
 
 def main():
     'The main part'
-    action, settings_fpath = set_parameters()
+    actions, settings_fpath = set_parameters()
     logger = logging.getLogger('franklin')
+
+
     try:
-        start_time = datetime.datetime.today()
-        do_analysis(project_settings=settings_fpath, kind=action)
-        time_elapsed = datetime.datetime.today() - start_time
-        logger.info('Time elapsed %s' % str(time_elapsed))
+        for action in actions:
+            start_time = datetime.datetime.today()
+            do_analysis(project_settings=settings_fpath, kind=action)
+            time_elapsed = datetime.datetime.today() - start_time
+            logger.info('Time elapsed %s' % str(time_elapsed))
     except Exception as error:
         logger.exception(error)
         if not os.path.exists(ERROR_DIR):
