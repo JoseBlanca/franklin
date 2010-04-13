@@ -19,7 +19,7 @@ A blast runner hardly tied to backbone folder structure
 
 import logging
 from os.path import join, exists, splitext, basename
-from os import makedirs, symlink
+from os import makedirs, symlink, remove
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.cmd_utils import call
@@ -93,7 +93,11 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
         blast_db = db_seq_fpath
 
     logger.info('Running the blast %s' % result_fpath)
-    blast_runner(query_fpath, blast_db, blast_program, result_fpath)
+    try:
+        blast_runner(query_fpath, blast_db, blast_program, result_fpath)
+    except RuntimeError:
+        if exists(result_fpath):
+            remove(result_fpath)
 
     if fasta_query_fhand:
         fasta_query_fhand.close()

@@ -26,16 +26,16 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             cap_enzyme_filter,
                                             is_variable_filter,
                                             ref_not_in_list)
-from franklin.utils.misc_utils import VersionedPath
+from franklin.utils.misc_utils import VersionedPath, xml_itemize
 
 class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
 
     def _get_inputs_and_prepare_outputs(self):
         'It creates the output dir and it returns the inputs'
-        output_dir   = self._create_output_dirs()['result']
+        output_dirs   = self._create_output_dirs()
         inputs       = self._get_input_fpaths()
-        return inputs, output_dir
+        return inputs, output_dirs
 
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
@@ -86,7 +86,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         blast_settings = self._project_settings['blast']
         settings = self._project_settings['Annotation']['ortholog_annotation']
         ortholog_databases = settings['ortholog_databases']
@@ -147,7 +148,8 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         pipeline = [annotate_cdna_introns]
 
         settings = self._project_settings['Annotation']
@@ -169,7 +171,8 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         merged_bam   = inputs['merged_bam']
         create_bam_index(merged_bam.last_version)
 
@@ -218,8 +221,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
-
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         pipeline, configuration = self._get_snv_filter_specs()
 
         return self._run_annotation(pipeline=pipeline,
@@ -284,7 +287,8 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
     blast databases'''
     def run(self):
         'It runs the analysis'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         blast_settings = self._project_settings['blast']
 
         settings = self._project_settings['Annotation']
@@ -312,7 +316,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                 if input_ not in blasts:
                     blasts[input_fpath] = []
                 blasts[input_fpath].append({'blast':blast, 'modifier':None})
-
+        #print blasts
         pipeline = []
         configuration = {}
         for database in description_databases:
@@ -324,7 +328,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                 step_config = {'blasts': blasts[input_fpath]}
                 configuration[input_fpath] = {}
                 configuration[input_fpath][database] = step_config
-
+        #print configuration
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
@@ -336,7 +340,8 @@ class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
 
         pipeline = [annotate_microsatellites]
         configuration = {}
@@ -351,8 +356,8 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         matrix = self._project_settings['Annotation']['orf_annotation']['estscan_matrix']
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
-
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
         pipeline = [annotate_orfs]
 
         configuration = {'annotate_orfs': {'parameters':{'matrix':matrix}}}
@@ -366,7 +371,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
     def run(self):
         'It runs the analysis.'
-        inputs, output_dir = self._get_inputs_and_prepare_outputs()
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        output_dir = output_dirs['result']
+        go_dir = output_dirs['b2g_dir']
         blast_settings = self._project_settings['blast']
 
         annot_settings = self._project_settings['Annotation']
@@ -375,6 +382,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
+        chop_big_xml, num_items = True, 1000
         blasts = {}
         for input_ in inputs['input']:
             db_kind = blast_settings[go_database]['kind']
@@ -390,19 +398,37 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             blast_program=blast_program,
                                             blast_db=blastdb,
                                             dbtype=db_kind)
+
+            if chop_big_xml:
+                chopped_blast = NamedTemporaryFile()
+                for blast_parts in xml_itemize(blast, 'Iteration', num_items):
+                    chopped_blast.write(blast_parts)
+                chopped_blast.flush()
+                blast = chopped_blast
+
             blasts[input_fpath] = blast
         # prepare pipeline
         pipeline      = [annotate_gos]
         configuration = {}
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
-            step_config = {'blast': blasts[input_fpath]}
+            dat_fpath = os.path.join(go_dir, input_.basename + '.dat')
+            #dat_path = VersionedPath(dat_fpath)
+            #dat_fpath = dat_path.next_version
+
+            step_config = {'blast': blasts[input_fpath],
+                           'dat_fpath': dat_fpath}
             configuration[input_fpath] = {'annotate_gos': step_config}
 
-        return self._run_annotation(pipeline=pipeline,
+        result = self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=output_dir)
+        #remove the temporal files
+        for input_ in  inputs['input']:
+            blasts[input_fpath].close()
+        return result
+
 
 DEFINITIONS = {
     'filter_snvs':
@@ -500,7 +526,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'},  },
-                    #'b2g_file':{'directory':'go_files'}},
+         'outputs':{'result':{'directory': 'annotation_repr'},
+                    'b2g_dir':{'directory':'go_files'}},
          'analyzer': AnnotateGoAnalyzer},
     }

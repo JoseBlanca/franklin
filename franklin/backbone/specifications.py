@@ -26,6 +26,7 @@ BACKBONE_DIRECTORIES = {
     'blast_dir':'annotations/blast',
     'blast_databases':'annotations/blast/databases',
     'error_dir': 'franklin_errors',
+    'go_files': 'annotations/go_files',
                        }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',

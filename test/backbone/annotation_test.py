@@ -255,7 +255,8 @@ class OrthologTest(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
-
+        assert os.path.exists(os.path.join(project_dir, 'annotations',
+                                           'go_files', 'seqs.dat'))
         print "remove this part of the test after you test it"
         return
 
