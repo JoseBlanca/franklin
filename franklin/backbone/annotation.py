@@ -389,7 +389,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             if db_kind == 'nucl':
                 blast_program = 'blastn'
             else:
-                blast_program = 'blastp'
+                blast_program = 'blastx'
 
             blastdb = blast_settings[go_database]['path']
             input_fpath = input_.last_version
