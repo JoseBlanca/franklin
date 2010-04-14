@@ -23,7 +23,7 @@ def get_analysis_especifications():
             specifications[key] = value
     return specifications
 
-def _configure_logging(log_fpath):
+def _configure_logging(log_fpath, silent):
     'It prepares the logging infraestructure'
     logger = logging.getLogger('franklin')
     logger.setLevel(logging.INFO)
@@ -34,9 +34,10 @@ def _configure_logging(log_fpath):
     log_hand.setFormatter(formatter)
     logger.addHandler(log_hand)
     #create console handler and set level to info
-    console_hand = logging.StreamHandler()
-    console_hand.setFormatter(formatter)
-    logger.addHandler(console_hand)
+    if not silent:
+        console_hand = logging.StreamHandler()
+        console_hand.setFormatter(formatter)
+        logger.addHandler(console_hand)
 
 def do_analysis(kind, project_settings=None, analysis_config=None, silent=False):
     'It does one of the predefined analyses'
@@ -52,10 +53,10 @@ def do_analysis(kind, project_settings=None, analysis_config=None, silent=False)
     settings = ConfigObj(project_settings, unrepr=True)
     specifications = get_analysis_especifications()
 
-    if silent:
-        log_fpath = os.path.join(settings['General_settings']['project_path'],
+
+    log_fpath = os.path.join(settings['General_settings']['project_path'],
                                  'franklin.log')
-        _configure_logging(log_fpath)
+    _configure_logging(log_fpath, silent)
 
     analysis_def = specifications[kind]
 

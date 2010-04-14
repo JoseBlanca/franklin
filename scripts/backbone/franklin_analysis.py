@@ -57,7 +57,6 @@ def main():
     actions, settings_fpath = set_parameters()
     logger = logging.getLogger('franklin')
 
-
     try:
         for action in actions:
             start_time = datetime.datetime.today()
