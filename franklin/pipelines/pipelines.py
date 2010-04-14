@@ -41,7 +41,7 @@ from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
 from franklin.seq.readers import guess_seq_file_format
-from franklin.seq.writers import SequenceWriter, GffWriter
+from franklin.seq.writers import SequenceWriter, GffWriter, SsrWriter
 from franklin.snv.writers import VariantCallFormatWriter
 
 
@@ -220,6 +220,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         default_type = None
         fhand = io_fhands['outputs']['gff']
         writers.append(GffWriter(fhand=fhand, default_type=default_type))
+
+    if 'ssr' in output_type:
+        fhand = io_fhands['outputs']['ssr']
+        writers.append(SsrWriter(fhand=fhand))
 
 
     # The SeqRecord generator is consumed

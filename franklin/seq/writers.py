@@ -27,6 +27,33 @@ from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
 
+
+class SsrWriter(object):
+    'It writes the srr annotation into a file'
+
+    def __init__(self, fhand):
+        'It initiates the class'
+        self._fhand = fhand
+        header = 'Seqname\tstart\tend\tlength\tscore\tkind\tunit\tnum repeats\n'
+        header += '----------------------------------------------------------\n'
+        self._fhand.write(header)
+
+    def write(self, sequence):
+        'It does the real write of the features'
+        seq_name = get_seq_name(sequence)
+        for ssr in sequence.get_features(kind='microsatellite'):
+            start =  int(str(ssr.location.start))
+            end   =  int(str(ssr.location.end))
+            score = ssr.qualifiers['score']
+            kind  = ssr.qualifiers['type']
+            unit  = ssr.qualifiers['unit']
+            length = end - start
+            num_repeats = length / len(unit)
+            self._fhand.write('%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\n' % (seq_name,
+                                                        start, end, length,
+                                                        score, kind, unit,
+                                                        num_repeats))
+
 class GffWriter(object):
     'It writes sequences in an gff style'
     def __init__(self, fhand, default_type=None, source='.'):

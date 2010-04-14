@@ -6,13 +6,33 @@ Created on 25/03/2010
 import unittest
 from StringIO import StringIO
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.seq.writers import GffWriter
+from franklin.seq.writers import GffWriter, SsrWriter
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 class WriterTest(unittest.TestCase):
     'It test all writers for seqs'
 
-    def test_gff_writer(self):
+    @staticmethod
+    def test_ssr_writer():
+        'It test ssr writer'
+        srr_feature = SeqFeature(FeatureLocation(ExactPosition(0),
+                                                 ExactPosition(29)),
+                                                 type='microsatellite',
+                                                 qualifiers={'score': 27,
+                                                       'type': 'trinucleotide',
+                                                       'unit': 'ATC'})
+        features = [srr_feature]
+        seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
+                             id='seq1', name='seq1', description='Some desc',
+                             dbxrefs=[], features=features, annotations={})
+        fhand = StringIO()
+        ssrwriter = SsrWriter(fhand)
+        ssrwriter.write(seq)
+        result = fhand.getvalue()
+        print result
+        assert "seq1\t0\t29\t29\t27\ttrinucleotide\tATC" in result
+    @staticmethod
+    def test_gff_writer():
         'it tests gff writer'
         srr_feature = SeqFeature(FeatureLocation(ExactPosition(0),
                                                  ExactPosition(29)),
@@ -28,7 +48,8 @@ class WriterTest(unittest.TestCase):
                                                  ExactPosition(471)),
                                                  type='orf',
                                         qualifiers={'pep': Seq('MASSILSSAXVA'),
-                                                    'dna': Seq('ATGGCTTCATCC')})
+                                                    'dna': Seq('ATGGCTTCATCC'),
+                                                    'strand':'forward'})
         alleles = {('A', 0): {'read_names':['r1']}}
         snv = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})

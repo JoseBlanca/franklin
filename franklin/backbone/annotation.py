@@ -199,7 +199,7 @@ class WriteAnnotationAnalyzer(Analyzer):
         inputs       = self._get_input_fpaths()
         repr_paths  = inputs['repr']
 
-        output_files = ['vcf', 'gff']
+        output_files = ['vcf', 'gff', 'ssr']
         for seq_path in repr_paths:
             outputs = {}
             for output_kind in output_files:
