@@ -451,9 +451,9 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None):
     if dat_fpath is not None:
         cmd.append('-d')
     call(cmd, raise_on_error=True)
-    shutil.copy(out_basename +'.annot', annot_fpath)
+    shutil.move(out_basename +'.annot', annot_fpath)
     if dat_fpath is not None:
-        shutil.copy(out_basename +'.dat', dat_fpath)
+        shutil.move(out_basename +'.dat', dat_fpath)
     tempdir.close()
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
