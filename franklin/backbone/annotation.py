@@ -379,6 +379,12 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         annot_settings = self._project_settings['Annotation']
         go_settings = annot_settings['go_annotation']
         go_database = go_settings['blast_database']
+
+        if 'create_dat_file' in go_settings:
+            create_dat  = go_settings['create_dat_file']
+        else:
+            create_dat  = None
+
         if 'java_memory' in  go_settings:
             java_memory = go_settings['java_memory']
         else:
@@ -417,9 +423,13 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         # prepare pipeline
         pipeline      = [annotate_gos]
         configuration = {}
+
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
-            dat_fpath = os.path.join(go_dir, input_.basename + '.dat')
+            if create_dat:
+                dat_fpath = os.path.join(go_dir, input_.basename + '.dat')
+            else:
+                dat_fpath = None
             #dat_path = VersionedPath(dat_fpath)
             #dat_fpath = dat_path.next_version
 

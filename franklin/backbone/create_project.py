@@ -86,6 +86,7 @@ def create_project(name, directory=None, configuration=None):
     config['Annotation']['go_annotation'] = {}
     config['Annotation']['go_annotation']['blast_database'] = 'nr'
     config['Annotation']['go_annotation']['java_memory'] = 2048
+    config['Annotation']['go_annotation']['create_dat_file'] = False
     config['blast'] = {}
     config['blast']['nr'] = {}
     config['blast']['nr']['path'] = "Path_to_nr database"
