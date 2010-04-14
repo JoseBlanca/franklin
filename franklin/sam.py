@@ -8,8 +8,7 @@ Created on 05/01/2010
 '''
 import os, re, tempfile
 
-from franklin.utils.cmd_utils import call
-from franklin.utils.cmd_utils import  guess_java_install_dir
+from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 
 def _guess_picard_path():
@@ -276,12 +275,6 @@ def create_sam_reference_index(reference_fpath):
     cmd = ['samtools', 'faidx', reference_fpath]
     call(cmd, raise_on_error=True)
 
-def _java_cmd(java_memory):
-    'It returns the java -Xmxim thing'
-    cmd = ['java']
-    if java_memory:
-        cmd.append('-Xmx%im' % int(java_memory))
-    return cmd
 
 def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_memory=None):
     'It realigns the bam using GATK Local realignment around indels'
@@ -299,13 +292,13 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_memory=None):
     gatk_jar = os.path.join(gatk_path, 'GenomeAnalysisTK.jar')
     intervals_fhand = tempfile.NamedTemporaryFile(prefix='intervals',
                                                   suffix='.txt')
-    cmd = _java_cmd(java_memory)
+    cmd = java_cmd(java_memory)
     cmd.extend(['-jar', gatk_jar, '-T', 'RealignerTargetCreator',
            '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name])
     call(cmd, raise_on_error=True)
 
     #the realignment itself
-    cmd = _java_cmd(java_memory)
+    cmd = java_cmd(java_memory)
     cmd.extend(['-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,

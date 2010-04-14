@@ -435,15 +435,16 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         stderr.flush()
     return stdout_str, stderr_str, retcode
 
-def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None):
+def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None,
+                   java_memory=None):
     'It runs b2gpipe'
     java_dir = guess_java_install_dir('blast2go.jar')
     b2g_bin = os.path.join(java_dir, 'blast2go.jar')
     tempdir = NamedTemporaryDir()
     out_basename = os.path.join(tempdir.name, 'out')
+    cmd = java_cmd(java_memory)
+    cmd.extend(['-jar', b2g_bin, '-in', blast.name, '-out', out_basename, '-a'])
 
-    cmd = ['java', '-jar', b2g_bin, '-in', blast.name, '-out', out_basename,
-           '-a']
     if prop_file is None:
         prop_file = os.path.join(java_dir, 'b2gPipe.properties')
         cmd.extend(['-prop', prop_file])
@@ -455,6 +456,13 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_file=None):
     if dat_fpath is not None:
         shutil.move(out_basename +'.dat', dat_fpath)
     tempdir.close()
+
+def java_cmd(java_memory):
+    'It returns the java -Xmxim thing'
+    cmd = ['java']
+    if java_memory:
+        cmd.append('-Xmx%im' % int(java_memory))
+    return cmd
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     '''It returns masked sequence (StrinIO) for the given sequence.

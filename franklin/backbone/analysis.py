@@ -58,7 +58,7 @@ class Analyzer(object):
     It checks if the the analysis is already done, looking to the output
     directory
     '''
-    def __init__(self, project_settings, analysis_definition, silent):
+    def __init__(self, project_settings, analysis_definition, silent=False):
         'The init'
         self._project_settings = project_settings
         self._analysis_def = analysis_definition

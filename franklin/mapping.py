@@ -31,22 +31,25 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     reads_length = parameters['reads_length']
 
     temp_dir = NamedTemporaryDir()
+    output_ali = 'output.ali'
+    bam_file_bam = 'bam_file.bam'
+    output_sai = 'output.sai'
     if reads_length == 'short':
         cmd = ['bwa', 'aln', reference_fpath, reads_fpath]
-        sai_fhand = open(os.path.join(temp_dir.name, 'output.sai'), 'wb')
+        sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
         cmd = ['bwa', 'samse', reference_fpath, sai_fhand.name, reads_fpath]
-        ali_fhand = open(os.path.join(temp_dir.name, 'output.ali'), 'w')
+        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     elif reads_length == 'long':
         cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath]
-        ali_fhand = open(os.path.join(temp_dir.name, 'output.ali'), 'w')
+        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:
         raise ValueError('Reads length: short or long')
     # From sam to Bam
-    unsorted_bam = os.path.join(temp_dir.name, 'bam_file.bam')
+    unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
     cmd = ['samtools', 'view' , '-bt', reference_fpath, '-o', unsorted_bam,
            ali_fhand.name]
     call(cmd, raise_on_error=True)
@@ -54,6 +57,12 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     bam_basename = os.path.splitext(bam_fpath)[0]
     cmd = ['samtools', 'sort', unsorted_bam, bam_basename]
     call(cmd, raise_on_error=True)
+
+    # remove files to avoid problems with shutil rmtree
+    for file_ in (output_ali, bam_file_bam, output_sai):
+        fpath = os.path.join(temp_dir.name, file_)
+        if os.path.exists(fpath):
+            os.remove(fpath)
 
     temp_dir.close()
 

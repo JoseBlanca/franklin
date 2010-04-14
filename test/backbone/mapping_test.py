@@ -151,7 +151,6 @@ class TestBackboneMapping(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.1.repr')
         result =  open(repr_fpath).read()
-        print result
         assert "type='snv'" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',

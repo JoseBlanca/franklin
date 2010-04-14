@@ -379,6 +379,10 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         annot_settings = self._project_settings['Annotation']
         go_settings = annot_settings['go_annotation']
         go_database = go_settings['blast_database']
+        if 'java_memory' in  go_settings:
+            java_memory = go_settings['java_memory']
+        else:
+            java_memory = None
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
@@ -387,7 +391,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         for input_ in inputs['input']:
             db_kind = blast_settings[go_database]['kind']
             if db_kind == 'nucl':
-                blast_program = 'blastn'
+                blast_program = 'tblastx'
             else:
                 blast_program = 'blastx'
 
@@ -400,11 +404,14 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             dbtype=db_kind)
 
             if chop_big_xml:
-                chopped_blast = NamedTemporaryFile()
+                #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
+                chopped_blast = NamedTemporaryFile(suffix='.xml')
                 for blast_parts in xml_itemize(blast, 'Iteration', num_items):
                     chopped_blast.write(blast_parts)
                 chopped_blast.flush()
                 blast = chopped_blast
+            #print "Itemized done"
+            #raw_input()
 
             blasts[input_fpath] = blast
         # prepare pipeline
@@ -417,7 +424,8 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             #dat_fpath = dat_path.next_version
 
             step_config = {'blast': blasts[input_fpath],
-                           'dat_fpath': dat_fpath}
+                           'dat_fpath': dat_fpath,
+                           'java_memory':java_memory}
             configuration[input_fpath] = {'annotate_gos': step_config}
 
         result = self._run_annotation(pipeline=pipeline,
