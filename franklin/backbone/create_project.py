@@ -72,7 +72,6 @@ def create_project(name, directory=None, configuration=None):
     config['Sam_processing'] = {}
     config['Sam_processing']['add_default_qualities'] = False
 
-
     config['Annotation'] = {}
     config['Annotation']['description_annotation'] = {}
     config['Annotation']['description_annotation']['description_databases'] = ['somedb']
@@ -87,6 +86,11 @@ def create_project(name, directory=None, configuration=None):
     config['Annotation']['go_annotation']['blast_database'] = 'nr'
     config['Annotation']['go_annotation']['java_memory'] = 2048
     config['Annotation']['go_annotation']['create_dat_file'] = False
+    config['Annotation']['output'] = {}
+    config['Annotation']['output']['gff'] = True
+    config['Annotation']['output']['ssr'] = True
+    config['Annotation']['output']['vcf'] = True
+
     config['blast'] = {}
     config['blast']['nr'] = {}
     config['blast']['nr']['path'] = "Path_to_nr database"

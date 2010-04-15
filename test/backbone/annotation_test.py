@@ -57,7 +57,8 @@ class OrthologTest(unittest.TestCase):
         write_seqs_in_file([seq1, seq2],
                            open(join(input_dir, 'melon.fasta'), 'a'))
 
-        do_analysis(project_settings=settings_path, kind='annotate_orthologs')
+        do_analysis(project_settings=settings_path, kind='annotate_orthologs',
+                    silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
@@ -93,7 +94,8 @@ class OrthologTest(unittest.TestCase):
         write_seqs_in_file([seq1, seq2],
                            open(join(input_dir, 'melon.fasta'), 'a'))
 
-        do_analysis(project_settings=settings_path, kind='annotate_description')
+        do_analysis(project_settings=settings_path, kind='annotate_description',
+                    silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
@@ -134,7 +136,8 @@ class OrthologTest(unittest.TestCase):
         fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
         fhand.write(fasta)
         fhand.close()
-        do_analysis(project_settings=settings_path, kind='annotate_introns')
+        do_analysis(project_settings=settings_path, kind='annotate_introns',
+                    silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
 
         assert "type='intron'" in  open(repr_fpath).read()
@@ -170,10 +173,18 @@ class OrthologTest(unittest.TestCase):
         fhand.write(fasta)
         fhand.close()
         do_analysis(project_settings=settings_path,
-                    kind='annotate_microsatellite')
+                    kind='annotate_microsatellite', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='microsatellite'" in  result
+
+        do_analysis(project_settings=settings_path, kind='write_annotation',
+                    silent=True)
+        ssr_fpath = join(project_dir, 'annotations', 'result', 'seqs.ssr')
+        assert os.path.exists(ssr_fpath)
+        assert "Seqname"  in open(ssr_fpath).read()
+
+
         os.chdir('/tmp')
         test_dir.close()
 
@@ -207,7 +218,7 @@ class OrthologTest(unittest.TestCase):
         fhand.write(fasta)
         fhand.close()
         do_analysis(project_settings=settings_path,
-                    kind='annotate_orf')
+                    kind='annotate_orf', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='orf'" in  result
@@ -223,7 +234,8 @@ class OrthologTest(unittest.TestCase):
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
                                            'kind': 'nucl'}},
-                  'Annotation':{'go_annotation':{'blast_database':'nr'}
+                  'Annotation':{'go_annotation':{'blast_database':'nr',
+                                                 'create_dat_file':True}
                  }}
 
         settings_path = create_project(directory=test_dir.name,
@@ -249,11 +261,13 @@ class OrthologTest(unittest.TestCase):
                     'arabidopsis_genes+')
         os.makedirs(bdir)
         shutil.copy(join(DATA_DIR, 'blastResult.xml'),
-                    join(bdir, 'blast.blastn.xml'))
+                    join(bdir, 'blast.tblastx.xml'))
 
-        do_analysis(project_settings=settings_path, kind='annotate_go')
+        do_analysis(project_settings=settings_path, kind='annotate_go',
+                    silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
+        print result
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'go_files', 'seqs.dat'))
