@@ -31,6 +31,7 @@ class WriterTest(unittest.TestCase):
         result = fhand.getvalue()
         print result
         assert "seq1\t0\t29\t29\t27\ttrinucleotide\tATC" in result
+
     @staticmethod
     def test_gff_writer():
         'it tests gff writer'
