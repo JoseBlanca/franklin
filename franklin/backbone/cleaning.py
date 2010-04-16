@@ -53,13 +53,14 @@ class CleanReadsAnalyzer(Analyzer):
 
         #edge_remover
         left, right = None, None
-        for (pl_side, length) in settings['edge_removal'].items():
-            er_platform, side = pl_side.split('_')
-            if er_platform == platform:
-                if side == 'left':
-                    left = length
-                if side == 'right':
-                    right = length
+        if 'edge_removal' in settings:
+            for (pl_side, length) in settings['edge_removal'].items():
+                er_platform, side = pl_side.split('_')
+                if er_platform == platform:
+                    if side == 'left':
+                        left = length
+                    if side == 'right':
+                        right = length
         configuration['edge_removal'] = {}
         configuration['edge_removal']['left_length']  = left
         configuration['edge_removal']['right_length'] = right
