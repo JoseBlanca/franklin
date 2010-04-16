@@ -61,8 +61,8 @@ class CleanReadsAnalyzer(Analyzer):
                 if side == 'right':
                     right = length
         configuration['edge_removal'] = {}
-        configuration['edge_removal']['left']  = left
-        configuration['edge_removal']['right'] = right
+        configuration['edge_removal']['left_length']  = left
+        configuration['edge_removal']['right_length'] = right
 
         # Words settings
         words = None

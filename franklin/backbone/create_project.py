@@ -39,6 +39,7 @@ def create_project(name, directory=None, configuration=None):
     config['Other_settings']['default_sanger_quality'] = 20
 
     config['Cleaning'] = {}
+
     config['Cleaning']['vector_database'] = 'UniVec'
     comments = []
     comments.append('adaptors_file_454 = /some/adaptors/fasta/file')
@@ -48,6 +49,7 @@ def create_project(name, directory=None, configuration=None):
     comments.append('words_to_remove_sanger = [someword, another_word]')
     comments.append('words_to_remove_454 = [someword, another_word]')
     comments.append('words_to_remove_illumina = [someword, another_word]')
+    config['Cleaning'].comments = {'vector_database':comments}
 
     config['Cleaning']['edge_removal'] = {}
     config['Cleaning']['edge_removal']['454_left']       = None
@@ -56,10 +58,6 @@ def create_project(name, directory=None, configuration=None):
     config['Cleaning']['edge_removal']['sanger_right']   = None
     config['Cleaning']['edge_removal']['illumina_left']  = None
     config['Cleaning']['edge_removal']['illumina_right'] = None
-
-
-    config['Cleaning'].comments = {'vector_database':comments}
-
 
     lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
     config['Cleaning']['lucy_settings'] = lucy_settings

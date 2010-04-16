@@ -22,7 +22,8 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_word_masker,
-                                create_word_remover)
+                                create_word_remover,
+                                create_edge_stripper)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -501,6 +502,16 @@ class SeqSplitterTests(unittest.TestCase):
         seq = remover(seq)
         assert seq.seq == seq2
 
+    @staticmethod
+    def test_edge_stripper():
+        'It test if we remove edges of the seq'
+        seq1 = 'gggtctcatcatcaggg'
+        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+
+        edge_stripperr = create_edge_stripper(left_length=3, right_length=3)
+        seq = edge_stripperr(seq)
+        print seq.seq
+        #assert seq.seq == 'tctcatcatca'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
