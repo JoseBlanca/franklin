@@ -58,12 +58,6 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     cmd = ['samtools', 'sort', unsorted_bam, bam_basename]
     call(cmd, raise_on_error=True)
 
-    # remove files to avoid problems with shutil rmtree
-    for file_ in (output_ali, bam_file_bam, output_sai):
-        fpath = os.path.join(temp_dir.name, file_)
-        if os.path.exists(fpath):
-            os.remove(fpath)
-
     temp_dir.close()
 
 
