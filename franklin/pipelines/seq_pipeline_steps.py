@@ -88,7 +88,7 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'comment': 'Remove seq shorter than 22 nt'}
 
 edge_remover = {'function':create_edge_stripper,
-                  'arguments':{'left_length':None, 'right_length':None},
+                  'arguments':{},
                   'type': 'mapper',
                   'name': 'edge_stripper',
                   'comment': 'Strip given edge lengths. Both sides'}
@@ -108,10 +108,11 @@ remove_words = {'function'  : create_word_remover,
 SEQPIPELINES = {
     'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
                             remove_vectors, mask_low_complexity,
-                            remove_words, filter_short_seqs_sanger ],
+                            remove_words, edge_remover,
+                            filter_short_seqs_sanger],
 
     'sanger_without_qual': [remove_vectors, strip_quality_by_n,
-                            mask_low_complexity, remove_words,
+                            mask_low_complexity, remove_words, edge_remover,
                             filter_short_seqs_sanger],
 
     'repeatmasker'       : [mask_repeats, filter_short_seqs_sanger],
