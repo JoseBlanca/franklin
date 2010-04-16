@@ -49,6 +49,15 @@ def create_project(name, directory=None, configuration=None):
     comments.append('words_to_remove_454 = [someword, another_word]')
     comments.append('words_to_remove_illumina = [someword, another_word]')
 
+    config['Cleaning']['edge_removal'] = {}
+    config['Cleaning']['edge_removal']['454_left']       = None
+    config['Cleaning']['edge_removal']['454_right']      = None
+    config['Cleaning']['edge_removal']['sanger_left']    = None
+    config['Cleaning']['edge_removal']['sanger_right']   = None
+    config['Cleaning']['edge_removal']['illumina_left']  = None
+    config['Cleaning']['edge_removal']['illumina_right'] = None
+
+
     config['Cleaning'].comments = {'vector_database':comments}
 
 
