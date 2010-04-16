@@ -11,7 +11,8 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_masker_for_polia,
                                     create_masker_for_low_complexity,
                                     create_masker_repeats_by_repeatmasker,
-                                    create_word_remover)
+                                    create_word_remover,
+                                    create_edge_stripper)
 
 from franklin.seq.seq_filters import create_length_filter
 
@@ -86,6 +87,11 @@ filter_short_seqs_solexa = {'function': create_length_filter,
                             'name':'remove_short',
                             'comment': 'Remove seq shorter than 22 nt'}
 
+edge_remover = {'function':create_edge_stripper,
+                  'arguments':{'left_length':None, 'right_length':None},
+                  'type': 'mapper',
+                  'name': 'edge_stripper',
+                  'comment': 'Strip given edge lengths. Both sides'}
 # words
 remove_words = {'function'  : create_word_remover,
               'arguments' : {'words':None},
@@ -93,6 +99,7 @@ remove_words = {'function'  : create_word_remover,
               'name'      : 'word_remover',
       'comment'   : 'It removes  the given words in the beginning of a sequence'
               }
+
 
 ################################################################################
 # PIPELINES

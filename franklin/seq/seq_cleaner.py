@@ -39,6 +39,17 @@ from franklin.alignment_search_result import (FilteredAlignmentResults,
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 
+def create_edge_stripper(left_length=None,right_length=None):
+    'It removes num of letters from seq.'
+    def edge_stripper(sequence):
+        'The real cleaner'
+        if sequence is None:
+            return None
+        if left_length is None and right_length is None:
+            return sequence
+        return sequence[left_length:right_length]
+    return edge_stripper
+
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
                               min_seq_length=None, quality_window_width=None):
     '''It returns a function that given a sequence it returns a trimmed sequence
