@@ -90,7 +90,7 @@ filter_short_seqs_solexa = {'function': create_length_filter,
 edge_remover = {'function':create_edge_stripper,
                   'arguments':{},
                   'type': 'mapper',
-                  'name': 'edge_stripper',
+                  'name': 'edge_removal',
                   'comment': 'Strip given edge lengths. Both sides'}
 # words
 remove_words = {'function'  : create_word_remover,
