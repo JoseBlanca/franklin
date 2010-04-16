@@ -22,7 +22,8 @@ class SetAssemblyAsReferenceAnalyzer(Analyzer):
         contigs_ext = contigs_path.extension
         reference_dir = self._create_output_dirs()['result']
         reference_fpath = os.path.join(reference_dir,
-                          BACKBONE_BASENAMES['mapping_reference'] + contigs_ext)
+                          BACKBONE_BASENAMES['mapping_reference'] + '.' + \
+                                                                    contigs_ext)
         if os.path.exists(reference_fpath):
             os.remove(reference_fpath)
         os.symlink(contigs_path.last_version, reference_fpath)
