@@ -145,7 +145,7 @@ class MiraAssemblyAnalyzer(Analyzer):
         if retcode:
             stdout.flush()
             stdout.seek(0)
-            raise RuntimeError(stdout.read())
+            raise RuntimeError(open(stdout.name).read())
 
         stdout.close()
         stderr.close()
