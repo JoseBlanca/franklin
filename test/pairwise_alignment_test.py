@@ -17,7 +17,7 @@
 
 import unittest
 from franklin.pairwise_alignment import bl2seq, water
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, Seq
 
 class Bl2seqTest(unittest.TestCase):
     'It tests the bl2seq function'
@@ -28,8 +28,8 @@ class Bl2seqTest(unittest.TestCase):
                'tcatgcgtagtctatcgtagtcgtagtgctgtatgcgagctgatgctgatgcgtg'
         seq2 = 'aaacgttggtatgctgatgctatgtgcatgtgcgtatgcgtatgctgagtcgtat' + \
                'tcatgcgtagtctatcgtagtcgtagtgctgtatgcgagctgatgatcgtatgtt'
-        result = bl2seq(SeqWithQuality(seq1, name='seq1'),
-                       SeqWithQuality(seq2, name='seq2'))
+        result = bl2seq(SeqWithQuality(Seq(seq1), name='seq1'),
+                       SeqWithQuality(Seq(seq2), name='seq2'))
         #we check only one hsp
         result = result[0]
         assert isinstance(result['evalue'], float)
@@ -46,8 +46,8 @@ class Bl2seqTest(unittest.TestCase):
                'tcatgcgtagtctatcgtagtcgtagtgctgtatgcgagctgatgctgatgcgtg'
         seq2 = 'aacgttggtatgctgatgctatgtgcatgtgcgtatgcgtatgctgagtcgtat' + \
                'tcatgcgtagtctatcgtagtcgtagtgctgtatgcgagctgatgatcgtatgtt'
-        result = water(SeqWithQuality(seq1, name='seq1'),
-                       SeqWithQuality(seq2, name='seq2'))
+        result = water(SeqWithQuality(Seq(seq1), name='seq1'),
+                       SeqWithQuality(Seq(seq2), name='seq2'))
         assert isinstance(result['score'], float)
         name1, name2 = sorted(result['alignment'].keys())
         assert result['alignment'][name1]['start'] > \
