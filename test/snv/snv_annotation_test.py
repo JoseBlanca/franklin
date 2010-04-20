@@ -56,6 +56,24 @@ class TestSnvAnnotation(unittest.TestCase):
             seq = annotator(seq)
             assert expected == len(seq.features)
 
+    def test_snv_remove_edges(self):
+        'It test that ww do not annotate snv in the edges'
+        'It tests the annotation of SeqRecords with snvs'
+        edge_remove_settings = {'454':(30, None),
+                                'sanger':(None, None)}
+
+
+        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         read_edge_conf=edge_remove_settings)
+        seqs = seqs_in_file(seq_fhand)
+        seqs.next()
+        seq = seqs.next()
+        seq = annotator(seq)
+        assert len(seq.features) == 2
+
     @staticmethod
     def test_snv_kind():
         'It tests that we can infer the snv kind given a seqrecord with an snv'
@@ -242,5 +260,5 @@ class TestSnvPipeline(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
     unittest.main()

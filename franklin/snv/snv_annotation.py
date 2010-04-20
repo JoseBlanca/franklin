@@ -94,9 +94,21 @@ def _get_read_group_info(bam):
         rg_info[name] = read_group
     return rg_info
 
+def _normalize_read_edge_conf(read_edge_conf):
+    'It returns a dict with all valid keys'
+    platforms = ('454', 'sanger', 'illumina')
+    if read_edge_conf is None:
+        read_edge_conf = {}
+    for platform in platforms:
+        if platform not in read_edge_conf:
+            read_edge_conf[platform] = (None, None)
+    return read_edge_conf
+
 def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
-                 min_mapq, min_num_alleles):
+                 min_mapq, min_num_alleles, read_edge_conf=None):
     'It yields the snv information for every snv in the given reference'
+
+    read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     read_groups_info = _get_read_group_info(bam)
 
@@ -107,11 +119,13 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     for column in bam.pileup(reference=reference_id):
         alleles    = {}
         ref_pos    = column.pos
+
         if ref_pos >= reference_len:
             continue
         ref_id     = bam.getrname(column.tid)
         ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
+            #for each read in the column we add its allele to the alleles dict
             aligned_read      = pileup_read.alignment
 
             read_mapping_qual = aligned_read.mapq
@@ -119,10 +133,18 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
             if read_mapping_qual < min_mapq:
                 continue
 
-            read_group        = aligned_read.opt('RG')
-            read_name         = aligned_read.qname
+            read_group = aligned_read.opt('RG')
+            read_name  = aligned_read.qname
+            platform   = read_groups_info[read_group]['PL']
 
-            read_pos          = pileup_read.qpos
+            read_pos = pileup_read.qpos
+            edge_left, edge_right = read_edge_conf[platform]
+
+            #if we're in the edge region to be ignored we continue to the next
+            #read, because there's no allele to add for this one.
+            if ((edge_left  is not None and edge_left >= read_pos) or
+                (edge_right is not None and edge_right <= read_pos)):
+                continue
 
             allele     = None
             qual       = None
@@ -263,7 +285,7 @@ def _calculate_allele_quality(allele_info):
     return total_qual
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
-                         min_mapq=15, min_num_alleles=1):
+                         min_mapq=15, min_num_alleles=1, read_edge_conf=None):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -277,7 +299,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 min_quality=min_quality,
                                 default_sanger_quality=default_sanger_quality,
                                 min_mapq=min_mapq,
-                                min_num_alleles=min_num_alleles):
+                                min_num_alleles=min_num_alleles,
+                                read_edge_conf=read_edge_conf):
             location = snv['ref_position']
             type_ = 'snv'
             qualifiers = {'alleles':snv['alleles'],
