@@ -105,6 +105,14 @@ def create_project(name, directory=None, configuration=None):
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
 
+    config['Snvs'] = {}
+    config['Snvs']['edge_removal'] = {}
+    config['Snvs']['edge_removal']['454_left']       = None
+    config['Snvs']['edge_removal']['454_right']      = None
+    config['Snvs']['edge_removal']['sanger_left']    = None
+    config['Snvs']['edge_removal']['sanger_right']   = None
+    config['Snvs']['edge_removal']['illumina_left']  = None
+    config['Snvs']['edge_removal']['illumina_right'] = None
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}

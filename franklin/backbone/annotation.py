@@ -182,6 +182,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         settings = self._project_settings
         if 'Snvs' in settings:
             snv_settings = settings['Snvs']
+            # read egde conf
+            read_edge_conf = self._configure_read_edge_conf(snv_settings)
+            configuration['snv_bam_annotator']['read_edge_conf'] = read_edge_conf
             for confif_param in ('min_quality', 'min_mapq', 'min_num_alleles'):
                 if confif_param in snv_settings:
                     param_value = int(snv_settings[confif_param])
@@ -190,6 +193,20 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=output_dir)
+
+    @staticmethod
+    def _configure_read_edge_conf(snv_settings):
+        '''It takes from the settings the edges to take into account in snv
+        caller'''
+        read_edge_conf = {}
+        if 'edge_removal' in snv_settings:
+            for pl_side, edge in snv_settings['edge_removal'].items():
+                platform, side = pl_side.split('_')
+                if platform not in read_edge_conf:
+                    read_edge_conf[platform] = (None, None)
+                side = 0 if side == 'left' else 1
+                read_edge_conf[platform][side] = edge
+        return read_edge_conf
 
 class WriteAnnotationAnalyzer(Analyzer):
     'It writes all the output annotation files'
