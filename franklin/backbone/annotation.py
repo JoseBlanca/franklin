@@ -203,7 +203,7 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
             for pl_side, edge in snv_settings['edge_removal'].items():
                 platform, side = pl_side.split('_')
                 if platform not in read_edge_conf:
-                    read_edge_conf[platform] = (None, None)
+                    read_edge_conf[platform] = [None, None]
                 side = 0 if side == 'left' else 1
                 read_edge_conf[platform][side] = edge
         return read_edge_conf
