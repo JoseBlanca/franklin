@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usage &mdash; franklin v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="franklin v0.1 documentation" href="index.html" />
+    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="prev" title="Description" href="introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="architecture.html" title="Architecture"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Description"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">franklin v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>The main ideas to consider when using franklin are: project and analysis. A <em>project</em> is a directory (with its subdirectories) that includes a configuration file and all input and output files. An <em>analysis</em> takes some inputs from the project and creates some outputs. franklin knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/.</p>
+<p>The configuration parameters required for every analysis are stored in the configuration file (franklin.conf) located in the project directory. A sample of this configuration file is created by franklin when a new project is created. This file should be tweaked to adapt the analyses to your requirements before running them.</p>
+<p>franklin has only two main executables: franklin_create_project.py and franklin_analysis.py. The first one is used to create a project from scratch and the second one to run all analyses.</p>
+<div class="section" id="creating-a-new-project">
+<h2>Creating a new project<a class="headerlink" href="#creating-a-new-project" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>$ franklin_create_project.py -p project_name
+$ ls -l project_name
+total 4
+-rw-r--r-- 1 jose jose 2479 abr 16 09:30 franklin.conf</pre>
+</div>
+<p>This command will create a new directory named project_name with a file named franklin.conf in it. These are the two hallmarks that define a franklin <em>project</em>, the directory and the configuration file.</p>
+</div>
+<div class="section" id="running-an-analysis">
+<h2>Running an analysis<a class="headerlink" href="#running-an-analysis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>$ franklin_analysis.py -a analysis_name</pre>
+</div>
+<p>This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.</p>
+</div>
+<div class="section" id="available-analyses">
+<h2>Available analyses<a class="headerlink" href="#available-analyses" title="Permalink to this headline">¶</a></h2>
+<p>The available analyses are:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="45%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">analysis</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><a class="reference internal" href="#clean-reads"><em>Cleaning sequence reads</em></a></td>
+<td>sequence reads cleaning</td>
+</tr>
+<tr><td><a class="reference internal" href="#mira-assembly"><em>Mira assembly</em></a></td>
+<td>Assembly reads into a contig set with  mira</td>
+</tr>
+<tr><td>mapping</td>
+<td>bwa read mapping against a reference sequence</td>
+</tr>
+<tr><td>bam realignment</td>
+<td>GATK bam realignment</td>
+</tr>
+<tr><td>SNP calling</td>
+<td>SNP annotation from a bam file</td>
+</tr>
+<tr><td>ORF annotation</td>
+<td>ESTScan ORF annotation</td>
+</tr>
+<tr><td>ortholog annotation</td>
+<td>reciprocal blast based ortholog annotation</td>
+</tr>
+<tr><td>description annotation</td>
+<td>description blast based annotation</td>
+</tr>
+<tr><td>SSR annotation</td>
+<td>microsatellite sputnik based annotation</td>
+</tr>
+<tr><td>cdna intron annotation</td>
+<td>est2genome cDNA based annotation</td>
+</tr>
+<tr><td>GO annotation</td>
+<td>blast2go  annotation</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="naming-conventions">
+<h2>Naming conventions<a class="headerlink" href="#naming-conventions" title="Permalink to this headline">¶</a></h2>
+<p>The franklin usage is heavily based on directory and file name conventions. If the input files are not located where franklin expects to find them or they have non-standard file names the analysis will fail.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">file or directory type</th>
+<th class="head">location</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>configuration file</td>
+<td>franklin.conf</td>
+</tr>
+<tr><td>log file</td>
+<td>franklin.log</td>
+</tr>
+<tr><td>raw reads</td>
+<td>/reads/original/</td>
+</tr>
+<tr><td>clean reads</td>
+<td>/reads/cleaned/</td>
+</tr>
+<tr><td>assemblies</td>
+<td>/assembly/</td>
+</tr>
+<tr><td>assembly input</td>
+<td>/assembly/input/</td>
+</tr>
+<tr><td>assembly output</td>
+<td>/assembly/result/</td>
+</tr>
+<tr><td>mappings</td>
+<td>/mapping/</td>
+</tr>
+<tr><td>mapping output</td>
+<td>/mapping/result/</td>
+</tr>
+<tr><td>annotations</td>
+<td>/annotations/</td>
+</tr>
+<tr><td>annotation input</td>
+<td>/annotations/input/</td>
+</tr>
+<tr><td>annotation output</td>
+<td>/annotation/result/</td>
+</tr>
+<tr><td>error logs</td>
+<td>/franklin_errors/</td>
+</tr>
+</tbody>
+</table>
+<p>Sequence files should be fasta or sanger fastq, fasta for the ones without quality and fastq for the ones with quality. The file extension should reflect the sequence file format, fasta and sfastq.</p>
+<p>The sequence file names for the reads should define several tags: lb (library), sm (sample) and pl (platform/technology). This convention is required if a mapping analysis is to be done with this sequence files. These tags follow the sam file header <a class="reference external" href="http://samtools.sourceforge.net/SAM1.pdf">specification</a>. An example of some valid sequence file names is:</p>
+<div class="highlight-python"><pre>$ ls reads/original/
+lb_mos.pl_illumina.sm_mos.sfastq  lb_pep.pl_illumina.sm_pep.sfastq
+lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
+</div>
+</div>
+<div class="section" id="cleaning-sequence-reads">
+<span id="clean-reads"></span><h2>Cleaning sequence reads<a class="headerlink" href="#cleaning-sequence-reads" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="introduction">
+<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
+<p>franklin can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in franklin that are used depending on the platform and on the quality availability:</p>
+<dl class="docutils">
+<dt>long reads with quality</dt>
+<dd>for sanger and 454 sequences with quality information</dd>
+<dt>long reads without quality</dt>
+<dd>for sanger reads without quality information</dd>
+<dt>solexa</dt>
+<dd>for short illumina reads</dd>
+</dl>
+<p>A collection of cleaning steps are available that compose each one of these pipelines. These steps are:</p>
+<dl class="docutils">
+<dt>adaptor removal</dt>
+<dd>Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is exonerate. If a match is found this section of the read is removed.</dd>
+<dt>precise vector removal</dt>
+<dd>If the vector and cloning site is known lucy can be used to remove the vector in a precise way.</dd>
+<dt>bad quality trimming</dt>
+<dd>There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise franklin does the job (illumina).</dd>
+<dt>general vector removal</dt>
+<dd>The reads are compared against the Univec database using blast to look for remaining vectors.</dd>
+<dt>low complexity masking</dt>
+<dd>The regions with a low complexity are masked by using mdust</dd>
+<dt>word removal</dt>
+<dd>If we know that some particular sequence appear at the beginning of the read we can remove it using this module</dd>
+<dt>edge removal</dt>
+<dd>After all the other modules are run we can delete a fixed amount of bases from the sequence extremes</dd>
+<dt>short sequence filtering</dt>
+<dd>When the process for one sequence is completed a minimum length criteria is applied.</dd>
+</dl>
+<p>The pipelines are:</p>
+<dl class="docutils">
+<dt>long reads with quality</dt>
+<dd>adaptor removal, precise vector removal, bad quality trimming, general vector removal, low complexity masking, word removal, edge removal, and short sequence filtering</dd>
+<dt>long reads without quality</dt>
+<dd>general vector removal, bad quality trimming, low complexity masking, word removal, edge removal, and short sequence filtering</dd>
+<dt>solexa</dt>
+<dd>adaptor removal, bad quality trimming,  and short sequence filtering</dd>
+</dl>
+</div>
+<div class="section" id="input-and-output-files">
+<h3>Input and output files<a class="headerlink" href="#input-and-output-files" title="Permalink to this headline">¶</a></h3>
+<p>The reads to be cleaned should be in the project directory under /reads/original/. The <a class="reference internal" href="#naming-conventions">naming conventions</a> should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/original, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.</p>
+</div>
+<div class="section" id="configuration-parameters">
+<h3>Configuration parameters<a class="headerlink" href="#configuration-parameters" title="Permalink to this headline">¶</a></h3>
+<p>The configuration for the cleaning analysis is found in the Cleaning section on the franklin.conf file. The parameters are:</p>
+<dl class="docutils">
+<dt>vector_database</dt>
+<dd>The blast database that will be used to look for clonning vectors.</dd>
+<dt>adaptors_file_454</dt>
+<dd>A path to a fasta file containing the adaptors used to build the 454 library. They will be removed from the cleanend reads.</dd>
+<dt>adaptors_file_sanger</dt>
+<dd>Idem for the sanger sequences</dd>
+<dt>adaptors_file_illumina</dt>
+<dd>Idem for the illumina sequences</dd>
+<dt>words_to_remove_454</dt>
+<dd>A list of words to be removed if they are found at the start of the 454 sequences.</dd>
+<dt>words_to_remove_sanger</dt>
+<dd>Idem for the sanger sequences</dd>
+<dt>words_to_remove_illumina</dt>
+<dd>Idem for the illumina sequences</dd>
+<dt>edge_removal -&gt; 454_left</dt>
+<dd>A fixed number of bases to be removed from the left edge of the 454 reads.</dd>
+<dt>edge_removal -&gt; 454_right</dt>
+<dd>Idem for the right edge of the 454 reads</dd>
+<dt>edge_removal -&gt; sanger_left</dt>
+<dd>Idem for the left edge of the sanger reads</dd>
+<dt>edge_removal -&gt; sanger_right</dt>
+<dd>Idem for the right edge of the sanger reads</dd>
+<dt>edge_removal -&gt; illumina_left</dt>
+<dd>Idem for the left edge of the illumina reads</dd>
+<dt>edge_removal -&gt; illumina_right</dt>
+<dd>Idem for the right edge of the illumina reads</dd>
+<dt>lucy_settings</dt>
+<dd>A path to a lucy settings file with the splice and vectors files to be used by lucy</dd>
+</dl>
+</div>
+<div class="section" id="lucy-settings">
+<h3>lucy settings<a class="headerlink" href="#lucy-settings" title="Permalink to this headline">¶</a></h3>
+<p>The lucy settings file should have the following format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&#39;library1&#39;</span><span class="p">:{</span><span class="s">&#39;vector_file&#39;</span><span class="p">:</span><span class="s">&#39;lib1_vector.fasta&#39;</span><span class="p">,</span> <span class="s">&#39;splice_file&#39;</span><span class="p">:</span><span class="s">&#39;lib1_splice.fasta&#39;</span><span class="p">},</span>
+ <span class="s">&#39;library2&#39;</span><span class="p">:{</span><span class="s">&#39;vector_file&#39;</span><span class="p">:</span><span class="s">&#39;lib2_vector.fasta&#39;</span><span class="p">,</span> <span class="s">&#39;splice_file&#39;</span><span class="p">:</span><span class="s">&#39;lib2_splice.fasta&#39;</span><span class="p">},}</span>
+</pre></div>
+</div>
+<p>In this file the paths to the vector and splice files for lucy should be stated for every library to be cleaned by lucy. The library name will be scraped from the read sequence file (that should follow the <a class="reference internal" href="#naming-conventions">naming conventions</a>. The vector file is just a fasta file, the information to be set in the splice file should is explained in the lucy man page.</p>
+</div>
+</div>
+<div class="section" id="mira-assembly">
+<span id="id1"></span><h2>Mira assembly<a class="headerlink" href="#mira-assembly" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>Introduction<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference external" href="http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=Main_Page">mira</a> assembler is used to create a set of contigs with the sequence reads. The reads can come from 454, sanger and illumina sequencing. Hybrid assembly are possible. For mira configuration details refer to its documentation.</p>
+</div>
+<div class="section" id="id3">
+<h3>Input and output files<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the <a class="reference internal" href="#naming-conventions">naming conventions</a>.</p>
+</div>
+<div class="section" id="id4">
+<h3>Configuration parameters<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>The default configuration is tailored to EST assemblies. To modify the mira command line parameters you should go to the mira section in the franklin.conf file. The options are:</p>
+<dl class="docutils">
+<dt>job_options</dt>
+<dd>The mira job options parameter. By default they are: denovo, est</dd>
+<dt>general settings</dt>
+<dd>The parameters that affect all platforms.</dd>
+<dt>454_settings</dt>
+<dd>The parameters that affect the 454 reads.</dd>
+<dt>sanger_settings</dt>
+<dd>The parameters that affect the sanger reads.</dd>
+</dl>
+</div>
+<div class="section" id="running-the-analysis">
+<h3>Running the analysis<a class="headerlink" href="#running-the-analysis" title="Permalink to this headline">¶</a></h3>
+<p>The mira assembly analysis is divided into three franklin analyses: prepare_mira_assembly, mira_assembly and select_last_assembly.</p>
+<p>The analysis prepare_mira_assembly will create the files required as input by mira in the directory assembly/input/. These files will be created taking the reads from reads/cleaned/.</p>
+<p>The mira_assembly analysis runs mira and creates the contigs. The files created by this analysis will be located at a timestamped directory located in assembly/. Several assemblies could be created with different parameters and each one would go into a different timestamped directory. Inside these directories a result subdirectory is created with the relevant result files.</p>
+<p>The select_last_assembly will just make a soft link named assembly/result that points to the result subdirectory located in the latest timestamped assembly.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Usage</a><ul>
+<li><a class="reference external" href="#creating-a-new-project">Creating a new project</a></li>
+<li><a class="reference external" href="#running-an-analysis">Running an analysis</a></li>
+<li><a class="reference external" href="#available-analyses">Available analyses</a></li>
+<li><a class="reference external" href="#naming-conventions">Naming conventions</a></li>
+<li><a class="reference external" href="#cleaning-sequence-reads">Cleaning sequence reads</a><ul>
+<li><a class="reference external" href="#introduction">Introduction</a></li>
+<li><a class="reference external" href="#input-and-output-files">Input and output files</a></li>
+<li><a class="reference external" href="#configuration-parameters">Configuration parameters</a></li>
+<li><a class="reference external" href="#lucy-settings">lucy settings</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#mira-assembly">Mira assembly</a><ul>
+<li><a class="reference external" href="#id2">Introduction</a></li>
+<li><a class="reference external" href="#id3">Input and output files</a></li>
+<li><a class="reference external" href="#id4">Configuration parameters</a></li>
+<li><a class="reference external" href="#running-the-analysis">Running the analysis</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="introduction.html"
+                                  title="previous chapter">Description</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="architecture.html"
+                                  title="next chapter">Architecture</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/using_franklin.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="architecture.html" title="Architecture"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Description"
+             >previous</a> |</li>
+        <li><a href="index.html">franklin v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Jose Blanca.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>
