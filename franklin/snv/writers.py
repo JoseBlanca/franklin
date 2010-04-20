@@ -252,7 +252,7 @@ class VariantCallFormatWriter(object):
         'Given an snv feature it writes a line in the vcf'
         items = [] #items to write
         items.append(get_seq_name(sequence))
-        items.append(str(snv.location.start.position))
+        items.append(str(int(snv.location.start.position) + 1))
         id_ = snv.id
         if id_ == "<unknown id>":
             id_ = '.'
