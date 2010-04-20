@@ -221,6 +221,7 @@ class OrthologTest(unittest.TestCase):
                     kind='annotate_orf', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
+        print result
         assert "type='orf'" in  result
         os.chdir('/tmp')
         test_dir.close()

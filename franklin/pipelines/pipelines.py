@@ -225,6 +225,9 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         fhand = io_fhands['outputs']['ssr']
         writers.append(SsrWriter(fhand=fhand))
 
+    if 'orf' in output_type:
+        fhand, pep_fhand = io_fhands['outputs']['ssr']
+        writers.append(SsrWriter(fhand=fhand, pep_fhand=pep_fhand))
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
@@ -233,6 +236,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
 
     # We need to close fhands and remove void files. SOme of the writers needs
     # to close in order to work finish its work
+
+    # sequence writer could have a qual fhand
+    # orf writer has a pep_fhand
+    unusual_fhands = ['pep_fhand', 'qual_fhand']
     for writer in writers:
         if 'close' in dir(writer):
             writer.close()
@@ -240,10 +247,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         writer.fhand.close()
         if not writer.num_features and os.path.exists(fpath):
             os.remove(fpath)
-        # sequence writer could have a qual fhand
-        if 'qual_fhand' in dir(writer) and writer.qual_fhand is not None:
-            qual_fpath = fpath = writer.qual_fhand.name
-            writer.qual_fhand.close()
-            if not writer.num_features and os.path.exists(qual_fpath):
-                os.remove(qual_fpath)
+        for unusual_fhand in unusual_fhands:
+            if unusual_fhand in dir(writer):
+                unusual_fpath = writer.unusual_fhand.name
+                writer.unusual_fhand.close()
+                if not writer.num_features and os.path.exists(unusual_fpath):
+                    os.remove(unusual_fpath)
 

@@ -3,15 +3,43 @@ Created on 25/03/2010
 
 @author: peio
 '''
+from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
 import unittest, os
 from StringIO import StringIO
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.seq.writers import GffWriter, SsrWriter
+from franklin.seq.writers import GffWriter, SsrWriter, OrfWriter
 from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 class WriterTest(unittest.TestCase):
     'It test all writers for seqs'
+
+
+    @staticmethod
+    def test_orf_writer():
+        'It test ssr writer'
+        qualifiers = {'pep': Seq('LHPFSHPPXWPLX', ProteinAlphabet()),
+                      'dna': Seq('ATGGCTTCATCCATTCTCTCATCCGCCG', DNAAlphabet()),
+                      'strand': 'reverse'}
+        orf_feature = SeqFeature(FeatureLocation(ExactPosition(61),
+                                                 ExactPosition(471)),
+                                                 type='orf',
+                                                 qualifiers=qualifiers)
+
+        features = [orf_feature]
+        seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
+                             id='seq1', name='seq1', description='Some desc',
+                             dbxrefs=[], features=features, annotations={})
+        fhand = NamedTemporaryFile(mode='a')
+        pep_fhand = NamedTemporaryFile(mode='a')
+        orfwriter = OrfWriter(fhand, pep_fhand)
+        orfwriter.write(seq)
+        seq_result = open(fhand.name).read()
+        pep_result = open(pep_fhand.name).read()
+        assert 'ATGGCTTCATCCATTCTCTCATCCGCCG' in seq_result
+        assert 'LHPFSHPPXWPLX' in pep_result
+
+
 
     @staticmethod
     def test_ssr_writer():

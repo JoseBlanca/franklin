@@ -26,8 +26,33 @@ from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
+class OrfWriter(object):
+    'It writes the orf annotation into a file'
+    def __init__(self, fhand, pep_fhand):
+        'It initiates the class'
+        self.fhand = fhand
+        self.pep_fhand = pep_fhand
+        self.num_features = 0
+
+    def write(self, sequence):
+        'It does the real write of the features'
+        for orf in sequence.get_features(kind='orf'):
+            self.num_features += 1
+            name   = get_seq_name(sequence)
+            start  = int(str(orf.location.start)) + 1
+            end    = int(str(orf.location.end)) + 1
+            strand = orf.qualifiers['strand']
+            seq_content = '>%s_orf_seq start=%d end=%d strand=%s\n%s\n' % \
+                               (name, start, end, strand, orf.qualifiers['dna'])
+            pep_content = '>%s_orf_pep start=%d end=%d strand=%s\n%s\n' % \
+                               (name, start, end, strand, orf.qualifiers['pep'])
+            self.fhand.write(seq_content)
+            self.pep_fhand.write(pep_content)
+            self.fhand.flush()
+            self.pep_fhand.flush()
+
 class SsrWriter(object):
-    'It writes the srr annotation into a file'
+    'It writes the microsatellite annotation into a file'
 
     def __init__(self, fhand):
         'It initiates the class'
