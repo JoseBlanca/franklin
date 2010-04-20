@@ -267,7 +267,6 @@ class OrthologTest(unittest.TestCase):
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
-        print result
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'go_files', 'seqs.dat'))

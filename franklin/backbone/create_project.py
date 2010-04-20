@@ -64,7 +64,8 @@ def create_project(name, directory=None, configuration=None):
 
     config['Mira'] = {}
     config['Mira']['job_options']     = ['denovo', 'est']
-    config['Mira']['general_settings'] = ['-AS:sd=1']
+    config['Mira']['general_settings'] = ['-AS:sd=1',
+                                          '-OUT:sssip=yes:stsip=yes']
     config['Mira']['454_settings']    = ['-LR:mxti=no', '-CO:rodirs=5',
                                          '-AL:mrs=80']
     config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30',
@@ -93,10 +94,7 @@ def create_project(name, directory=None, configuration=None):
     config['Annotation']['go_annotation']['blast_database'] = 'nr'
     config['Annotation']['go_annotation']['java_memory'] = 2048
     config['Annotation']['go_annotation']['create_dat_file'] = False
-    config['Annotation']['output'] = {}
-    config['Annotation']['output']['gff'] = True
-    config['Annotation']['output']['ssr'] = True
-    config['Annotation']['output']['vcf'] = True
+
 
     config['blast'] = {}
     config['blast']['nr'] = {}

@@ -198,14 +198,8 @@ class WriteAnnotationAnalyzer(Analyzer):
         output_dir   = self._create_output_dirs()['result']
         inputs       = self._get_input_fpaths()
         repr_paths   = inputs['repr']
-        anottation_outs = self._project_settings['Annotation']['output']
-        # get output file formats from config
-        output_files = []
-        for file_format, do_write in anottation_outs.items():
-            if do_write:
-                output_files.append(file_format)
 
-        #output_files = ['vcf', 'gff', 'ssr']
+        output_files = ['vcf', 'gff', 'ssr']
         for seq_path in repr_paths:
             outputs = {}
             for output_kind in output_files:
