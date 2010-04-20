@@ -3,7 +3,7 @@ Created on 05/03/2010
 
 @author: peio
 '''
-import unittest
+import unittest, os
 from franklin.seq.seqs import  SeqFeature, SeqWithQuality, Seq
 from Bio.SeqFeature import FeatureLocation
 from franklin.snv.snv_annotation import SNP, INVARIANT

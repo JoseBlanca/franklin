@@ -20,64 +20,66 @@ feature) to the file.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import tempfile
+import tempfile, os
 
 from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
-
-
 
 class SsrWriter(object):
     'It writes the srr annotation into a file'
 
     def __init__(self, fhand):
         'It initiates the class'
-        self._fhand = fhand
+        self.fhand = fhand
         header = 'Seqname\tstart\tend\tlength\tscore\tkind\tunit\tnum repeats\n'
         header += '----------------------------------------------------------\n'
-        self._fhand.write(header)
+        self.fhand.write(header)
+        self.num_features = 0
 
     def write(self, sequence):
         'It does the real write of the features'
         seq_name = get_seq_name(sequence)
         for ssr in sequence.get_features(kind='microsatellite'):
+            self.num_features += 1
             start =  int(str(ssr.location.start))
             end   =  int(str(ssr.location.end))
             score = ssr.qualifiers['score']
             kind  = ssr.qualifiers['type']
             unit  = ssr.qualifiers['unit']
-            length = end - start
+            length = end - start +1
             num_repeats = length / len(unit)
-            self._fhand.write('%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\n' % (seq_name,
+            self.fhand.write('%s\t%d\t%d\t%d\t%d\t%s\t%s\t%d\n' % (seq_name,
                                                         start, end, length,
                                                         score, kind, unit,
                                                         num_repeats))
+            self.fhand.flush()
 
 class GffWriter(object):
     'It writes sequences in an gff style'
     def __init__(self, fhand, default_type=None, source='.'):
         'It inits the class'
+        self.fhand = fhand
+        self.num_features = 0
 
-        self._fhand        = fhand
         if default_type is None:
-            default_type='SO:0000001'
+            default_type = 'SO:0000001'
         self._default_type = default_type
         self._source       = source
         self._write_gff_header()
 
-
     def _write_gff_header(self):
         'It writes the gff header'
-        self._fhand.write('##gff-version 3\n')
+        self.fhand.write('##gff-version 3\n')
 
     def write(self, sequence):
         'It does the real write of the features'
         seq_feature = self._get_seq_feature(sequence)
-        self._fhand.write('\t'.join(seq_feature) + '\n')
+        self.fhand.write('\t'.join(seq_feature) + '\n')
         #subfeature
         for feature in self._get_sub_features(sequence):
-            self._fhand.write('\t'.join(feature) + '\n')
+            self.num_features += 1
+            self.fhand.write('\t'.join(feature) + '\n')
 
     def _get_seq_sofa_type(self, sequence):
         'It gets the type of the feature'
@@ -184,25 +186,27 @@ class SequenceWriter(object):
     'It writes sequences one by one'
     def __init__(self, fhand, file_format, qual_fhand=None):
         'It inits the class'
-
-        self._fhand = fhand
+        self.fhand = fhand
         self._qual_fhand = qual_fhand
         self._format = file_format
+        self.num_features = 0
 
     def write(self, sequence):
         'It writes one sequence to the given file'
+        self.num_features += 1
         if sequence is None:
             return
         format_ = self._format
         if format_ == 'repr':
-            self._fhand.write(repr(sequence) + '\n')
+            self.fhand.write(repr(sequence) + '\n')
         else:
-            SeqIO.write([sequence], self._fhand, BIOPYTHON_FORMATS[format_])
+            SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])
             if self._qual_fhand and format_ == 'fasta':
                 SeqIO.write([sequence], self._qual_fhand, 'qual')
-        self._fhand.flush()
+        self.fhand.flush()
         if self._qual_fhand:
             self._qual_fhand.flush()
+
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
                        default_quality=25):

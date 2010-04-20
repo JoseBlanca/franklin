@@ -231,7 +231,19 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         for writer in writers:
             writer.write(sequence)
 
-    # variant_call writer needs to close the writer
+    # We need to close fhands and remove void files. SOme of the writers needs
+    # to close in order to work finish its work
     for writer in writers:
         if 'close' in dir(writer):
             writer.close()
+        fpath = writer.fhand.name
+        writer.fhand.close()
+        if not writer.num_features and os.path.exists(fpath):
+            os.remove(fpath)
+        # sequence writer could have a qual fhand
+        if 'qual_fhand' in dir(writer) and writer.qual_fhand is not None:
+            qual_fpath = fpath = writer.qual_fhand.name
+            writer.qual_fhand.close()
+            if not writer.num_features and os.path.exists(qual_fpath):
+                os.remove(qual_fpath)
+

@@ -3,10 +3,11 @@ Created on 25/03/2010
 
 @author: peio
 '''
-import unittest
+import unittest, os
 from StringIO import StringIO
 from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.seq.writers import GffWriter, SsrWriter
+from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 class WriterTest(unittest.TestCase):
@@ -25,12 +26,11 @@ class WriterTest(unittest.TestCase):
         seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
                              id='seq1', name='seq1', description='Some desc',
                              dbxrefs=[], features=features, annotations={})
-        fhand = StringIO()
+        fhand = NamedTemporaryFile(mode='a')
         ssrwriter = SsrWriter(fhand)
         ssrwriter.write(seq)
-        result = fhand.getvalue()
-        print result
-        assert "seq1\t0\t29\t29\t27\ttrinucleotide\tATC" in result
+        result = open(fhand.name).read()
+        assert "seq1\t0\t29\t30\t27\ttrinucleotide\tATC" in result
 
     @staticmethod
     def test_gff_writer():

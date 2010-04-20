@@ -19,7 +19,7 @@ Created on 19/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from tempfile import NamedTemporaryFile
-import datetime, math
+import datetime, math, os
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
@@ -33,7 +33,7 @@ class VariantCallFormatWriter(object):
         'It inits the class'
         # The fhand is as it arrives
         open(fhand.name, 'w')
-        self._fhand = open(fhand.name, 'a')
+        self.fhand = open(fhand.name, 'a')
 
         self._temp_fhand = NamedTemporaryFile(mode='a')
         self._filter_descriptions = {}
@@ -41,6 +41,7 @@ class VariantCallFormatWriter(object):
         self._genotype_grouping_key = 'read_groups'
         self._genotype_groups = OrderedDict()
         self._get_pre_header(reference_name)
+        self.num_features = 0
 
     def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
@@ -61,7 +62,7 @@ class VariantCallFormatWriter(object):
     def close(self):
         'It merges the header and the snv data'
         # Append the data spec  to the header
-        fhand = self._fhand
+        fhand = self.fhand
         self._add_filters_to_header()
         line_items = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER',
                       'INFO', 'FORMAT']
@@ -78,7 +79,7 @@ class VariantCallFormatWriter(object):
             line = '\t'.join(line)
             #\fix the missing genotype groups
             fhand.write(line + '\n')
-        fhand.close()
+        fhand.flush()
 
     def _add_filters_to_header(self):
         'It adds the used filter tag to the header'
@@ -86,12 +87,11 @@ class VariantCallFormatWriter(object):
             filter_desc = '##FILTER=%s,"%s"' % (name, desc)
             self._header.append(filter_desc)
 
-
     def write(self, sequence):
         'It writes the snvs present in the given sequence as SeqFeatures'
         for snv in sequence.get_features(kind='snv'):
+            self.num_features += 1
             self._write_snv(sequence, snv)
-        self._temp_fhand.flush()
 
     @staticmethod
     def _create_alternative_alleles(alleles):
@@ -272,3 +272,4 @@ class VariantCallFormatWriter(object):
                                             qualifiers['reference_allele'],
                                             alternative_alleles))
         self._temp_fhand.write('%s\n' % '\t'.join(items))
+        self._temp_fhand.flush()
