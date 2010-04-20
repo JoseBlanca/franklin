@@ -221,8 +221,17 @@ class OrthologTest(unittest.TestCase):
                     kind='annotate_orf', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
-        print result
         assert "type='orf'" in  result
+        do_analysis(project_settings=settings_path, kind='write_annotation',
+                    silent=True)
+        seq_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_seq.fasta')
+        pep_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_pep.fasta')
+
+        assert 'ATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCT' in open(seq_fpath).read()
+        assert 'QASMGAPFTGLKSAAAFPVTRXTNDITTLVSNG' in open(pep_fpath).read()
+
+
+
         os.chdir('/tmp')
         test_dir.close()
 
