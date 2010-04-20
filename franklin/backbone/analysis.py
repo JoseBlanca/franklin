@@ -4,7 +4,7 @@ Created on 01/03/2010
 @author: peio
 '''
 import os, time, tempfile, logging, re
-
+import franklin
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
@@ -218,6 +218,7 @@ class Analyzer(object):
                 analysis_message = class_name
             if 'analysis_started' in messages:
                 logger.info(analysis_message)
+                logger.info('Franklin VERSION: %s' % str(franklin.VERSION))
                 logger.info('Analysis started')
             elif 'analysis_finished' in messages:
                 logger.info('Analysis finished')
