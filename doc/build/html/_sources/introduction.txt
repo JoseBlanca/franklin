@@ -62,7 +62,7 @@ GO annotation           blast_, blast2go_
 .. _lucy: http://lucy.sourceforge.net/
 .. _exonerate: http://www.ebi.ac.uk/~guy/exonerate/
 .. _blast: http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
-.. _ Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
+.. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
 .. _mdust: http://compbio.dfci.harvard.edu/tgi/software/
 .. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
 .. _ESTScan: http://estscan.sourceforge.net/
