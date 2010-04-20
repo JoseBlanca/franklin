@@ -270,48 +270,6 @@ class OrthologTest(unittest.TestCase):
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'go_files', 'seqs.dat'))
-        print "remove this part of the test after you test it"
-        return
-
-        test_dir = NamedTemporaryDir()
-        project_name = 'backbone'
-        nr_path = '/srv/databases/blast/nr+'
-        config = {'blast':{'nr': {'path': nr_path,
-                                           'species':'nr',
-                                           'kind': 'nucl'}},
-                  'Annotation':{'go_annotation':{'blast_database':'nr'}}
-                 }
-
-        settings_path = create_project(directory=test_dir.name,
-                                       name=project_name,
-                                       configuration=config)
-        project_dir = join(test_dir.name, project_name)
-        seq  = 'CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
-        seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
-        seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
-        seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
-        seq += 'AAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACATTCACAGT'
-        seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGG'
-
-        annot_input_dir = join(project_dir, 'annotations', 'input')
-        os.makedirs(annot_input_dir)
-
-        #create some seqs to annotate
-        fasta = '>seq\n%s\n' % seq
-        fhand = open(os.path.join(annot_input_dir, 'seqs.fasta'), 'w')
-        fhand.write(fasta)
-        fhand.close()
-        bdir = join(project_dir, 'annotations', 'blast', 'seqs',
-                    'arabidopsis_genes+')
-
-        do_analysis(project_settings=settings_path, kind='annotate_go')
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.repr')
-        result = open(repr_fpath).read()
-        print result
-
-
-
-
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()
