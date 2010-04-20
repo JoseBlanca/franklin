@@ -39,8 +39,8 @@ analysis                                    description
 ========================================    =================================================
 :ref:`clean-reads`                          sequence reads cleaning
 :ref:`mira-assembly`                        Assembly reads into a contig set with  mira
-mapping                                     bwa read mapping against a reference sequence
-bam realignment                             GATK bam realignment
+:ref:`mapping`                              bwa read mapping against a reference sequence
+:ref:`bam-realignment`                      GATK bam realignment
 SNP calling                                 SNP annotation from a bam file
 ORF annotation                              ESTScan ORF annotation
 ortholog annotation                         reciprocal blast based ortholog annotation
@@ -244,4 +244,58 @@ The analysis prepare_mira_assembly will create the files required as input by mi
 The mira_assembly analysis runs mira and creates the contigs. The files created by this analysis will be located at a timestamped directory located in assembly/. Several assemblies could be created with different parameters and each one would go into a different timestamped directory. Inside these directories a result subdirectory is created with the relevant result files.
 
 The select_last_assembly will just make a soft link named assembly/result that points to the result subdirectory located in the latest timestamped assembly.
+
+
+.. _mapping:
+
+Mapping
+-------
+
+Introduction
+____________
+
+A set of read files can be mapped against a reference genome. For the mapping franklin uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.
+
+Input and output files
+______________________
+
+The read files should be located in reads/cleaned/ and should follow the `naming conventions`_. It is very important to set in the read file names the library, sample and platforms, otherwise the realignment and the SNP calling will fail. The reference genome should be located in mapping/reference as a fasta file.
+
+Once bwa is finished a timestamped mapping directory will contain a result/by_readgroup subdirectory with one bam file for each input read file. Every one of such bam files is considered to be a read group. After the mapping is finished a merge_bam analysis can be done. That analysis will merged all bam files located in result/by_reagroup and will create an unique bam file in result/merged_bam. This bam file will contain as many read groups as bam files are merged. Every read group will retain the information about the library, sample and platform.
+
+Running the analysis
+____________________
+
+The analysis is run in divided in three franklin analysis:
+
+mapping
+  It maps the reads with bwa creating one bam for every input file
+
+select_last_mapping
+  It creates a soft link from mapping/result to mapping/last_timestamped_mapping/result
+
+merge_bam
+  It merges all bam files located in mapping/result/by_readgroup into mapping/result/merged.bam. The obtained bam will comply not only with the samtools standard but also with the picard and GATK requirements.
+
+
+.. _bam-realignment:
+
+Bam realignment
+---------------
+
+Introduction
+____________
+
+This analysis does a `GATK <http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit>`_ `realignment <http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels>`_. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.
+
+Input and output files
+______________________
+
+The only one input file should be mapping/result/merged.bam. This bam file contains all the reads mapped to the reference genome. The output file will be also mapping/result/merged.bam (a versioned copy).
+
+Running the analysis
+____________________
+
+The corresponding franklin is realign_bam.
+
 

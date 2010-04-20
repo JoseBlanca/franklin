@@ -85,10 +85,10 @@ total 4
 <tr><td><a class="reference internal" href="#mira-assembly"><em>Mira assembly</em></a></td>
 <td>Assembly reads into a contig set with  mira</td>
 </tr>
-<tr><td>mapping</td>
+<tr><td><a class="reference internal" href="#mapping"><em>Mapping</em></a></td>
 <td>bwa read mapping against a reference sequence</td>
 </tr>
-<tr><td>bam realignment</td>
+<tr><td><a class="reference internal" href="#bam-realignment"><em>Bam realignment</em></a></td>
 <td>GATK bam realignment</td>
 </tr>
 <tr><td>SNP calling</td>
@@ -299,6 +299,45 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <p>The select_last_assembly will just make a soft link named assembly/result that points to the result subdirectory located in the latest timestamped assembly.</p>
 </div>
 </div>
+<div class="section" id="mapping">
+<span id="id5"></span><h2>Mapping<a class="headerlink" href="#mapping" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h3>Introduction<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>A set of read files can be mapped against a reference genome. For the mapping franklin uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.</p>
+</div>
+<div class="section" id="id7">
+<h3>Input and output files<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<p>The read files should be located in reads/cleaned/ and should follow the <a class="reference internal" href="#naming-conventions">naming conventions</a>. It is very important to set in the read file names the library, sample and platforms, otherwise the realignment and the SNP calling will fail. The reference genome should be located in mapping/reference as a fasta file.</p>
+<p>Once bwa is finished a timestamped mapping directory will contain a result/by_readgroup subdirectory with one bam file for each input read file. Every one of such bam files is considered to be a read group. After the mapping is finished a merge_bam analysis can be done. That analysis will merged all bam files located in result/by_reagroup and will create an unique bam file in result/merged_bam. This bam file will contain as many read groups as bam files are merged. Every read group will retain the information about the library, sample and platform.</p>
+</div>
+<div class="section" id="id8">
+<h3>Running the analysis<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<p>The analysis is run in divided in three franklin analysis:</p>
+<dl class="docutils">
+<dt>mapping</dt>
+<dd>It maps the reads with bwa creating one bam for every input file</dd>
+<dt>select_last_mapping</dt>
+<dd>It creates a soft link from mapping/result to mapping/last_timestamped_mapping/result</dd>
+<dt>merge_bam</dt>
+<dd>It merges all bam files located in mapping/result/by_readgroup into mapping/result/merged.bam. The obtained bam will comply not only with the samtools standard but also with the picard and GATK requirements.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="bam-realignment">
+<span id="id9"></span><h2>Bam realignment<a class="headerlink" href="#bam-realignment" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h3>Introduction<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<p>This analysis does a <a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit">GATK</a> <a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels">realignment</a>. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.</p>
+</div>
+<div class="section" id="id11">
+<h3>Input and output files<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<p>The only one input file should be mapping/result/merged.bam. This bam file contains all the reads mapped to the reference genome. The output file will be also mapping/result/merged.bam (a versioned copy).</p>
+</div>
+<div class="section" id="id12">
+<h3>Running the analysis<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<p>The corresponding franklin is realign_bam.</p>
+</div>
+</div>
 </div>
 
 
@@ -326,6 +365,18 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <li><a class="reference external" href="#id3">Input and output files</a></li>
 <li><a class="reference external" href="#id4">Configuration parameters</a></li>
 <li><a class="reference external" href="#running-the-analysis">Running the analysis</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#mapping">Mapping</a><ul>
+<li><a class="reference external" href="#id6">Introduction</a></li>
+<li><a class="reference external" href="#id7">Input and output files</a></li>
+<li><a class="reference external" href="#id8">Running the analysis</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#bam-realignment">Bam realignment</a><ul>
+<li><a class="reference external" href="#id10">Introduction</a></li>
+<li><a class="reference external" href="#id11">Input and output files</a></li>
+<li><a class="reference external" href="#id12">Running the analysis</a></li>
 </ul>
 </li>
 </ul>
