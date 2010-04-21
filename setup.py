@@ -62,7 +62,7 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
 setup(
     # basic package data
     name = "franklin",
-    version = franklin.VERSION,
+    version = franklin.__version__,
     author='Jose Blanca, Peio Ziarsolo',
     author_email='jblanca@btc.upv.es',
     description='Some genomics related classes',

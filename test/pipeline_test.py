@@ -105,18 +105,20 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
-        io_fhands['in_seq']   = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['in_qual']  = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
-        io_fhands['outputs']  = {}
-        io_fhands['outputs']['sequence'] = NamedTemporaryFile()
-        io_fhands['outputs']['quality']  = NamedTemporaryFile()
+        io_fhands['in_seq']  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        io_fhands['outputs'] = {}
+        io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
+        io_fhands['outputs']['quality']  = NamedTemporaryFile(delete=False)
         seq_pipeline_runner(pipeline, configuration, io_fhands)
-        io_fhands['outputs']['sequence'].seek(0)
-
-        result_seq = io_fhands['outputs']['sequence'].read()
+        result_seq = open(io_fhands['outputs']['sequence'].name).read()
+#        io_fhands['outputs']['sequence'].seek(0)
+#        result_seq = io_fhands['outputs']['sequence'].read()
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq
+        os.remove(io_fhands['outputs']['sequence'].name)
+        os.remove(io_fhands['outputs']['quality'].name)
 
     def test_seq_pipeline_parallel_run(self):
         'It tests that the pipeline runs ok'

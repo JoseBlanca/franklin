@@ -41,7 +41,7 @@ from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
 from franklin.seq.readers import guess_seq_file_format
-from franklin.seq.writers import SequenceWriter, GffWriter, SsrWriter
+from franklin.seq.writers import SequenceWriter, GffWriter, SsrWriter, OrfWriter
 from franklin.snv.writers import VariantCallFormatWriter
 
 
@@ -207,6 +207,7 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         writers.append(SequenceWriter(fhand=io_fhands['outputs']['sequence'],
                                       qual_fhand=qual_fhand,
                                       file_format=file_format))
+
     if 'repr' in output_type:
         fhand = io_fhands['outputs']['repr']
         writers.append(SequenceWriter(fhand=fhand, file_format='repr'))
@@ -220,11 +221,13 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         default_type = None
         fhand = io_fhands['outputs']['gff']
         writers.append(GffWriter(fhand=fhand, default_type=default_type))
-
     if 'ssr' in output_type:
         fhand = io_fhands['outputs']['ssr']
         writers.append(SsrWriter(fhand=fhand))
 
+    if 'orf' in output_type:
+        fhand, pep_fhand = io_fhands['outputs']['orf']
+        writers.append(OrfWriter(fhand=fhand, pep_fhand=pep_fhand))
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
@@ -233,17 +236,27 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
 
     # We need to close fhands and remove void files. SOme of the writers needs
     # to close in order to work finish its work
+
+    # sequence writer could have a qual fhand
+    # orf writer has a pep_fhand
+    def _close_and_remove_file(fhand, num_features):
+        fpath = fhand.name
+        fhand.close()
+        if not num_features and os.path.exists(fpath):
+            os.remove(fpath)
+
     for writer in writers:
         if 'close' in dir(writer):
             writer.close()
-        fpath = writer.fhand.name
-        writer.fhand.close()
-        if not writer.num_features and os.path.exists(fpath):
-            os.remove(fpath)
-        # sequence writer could have a qual fhand
-        if 'qual_fhand' in dir(writer) and writer.qual_fhand is not None:
-            qual_fpath = fpath = writer.qual_fhand.name
-            writer.qual_fhand.close()
-            if not writer.num_features and os.path.exists(qual_fpath):
-                os.remove(qual_fpath)
+        _close_and_remove_file(writer.fhand, writer.num_features)
+
+        writer_name = writer.__class__.__name__
+        if 'OrfWriter' in writer_name:
+            sec_fhand = writer.pep_fhand
+        elif 'SequenceWriter' in writer_name:
+            sec_fhand = writer.qual_fhand
+        else:
+            sec_fhand = None
+        if sec_fhand:
+            _close_and_remove_file(sec_fhand, writer.num_features)
 

@@ -216,16 +216,28 @@ class WriteAnnotationAnalyzer(Analyzer):
         inputs       = self._get_input_fpaths()
         repr_paths   = inputs['repr']
 
-        output_files = ['vcf', 'gff', 'ssr']
+
+        output_files = {'vcf': ('vcf',),
+                        'orf':('orf_seq.fasta', 'orf_pep.fasta'),
+                        'ssr':('ssr',),
+                        'gff':('gff',)}
+
         for seq_path in repr_paths:
             outputs = {}
-            for output_kind in output_files:
-                output_fpath = os.path.join(output_dir,
-                                          seq_path.basename + '.' + output_kind)
-                if os.path.exists(output_fpath):
-                    os.remove(output_fpath)
-                output_fhand = open(output_fpath, 'a')
-                outputs[output_kind] = output_fhand
+            for kind, extensions in output_files.items():
+                outputs[kind] = []
+                for extension in extensions:
+                    output_fpath = os.path.join(output_dir,
+                                            seq_path.basename + '.' + extension)
+                    if os.path.exists(output_fpath):
+                        os.remove(output_fpath)
+                    output_fhand = open(output_fpath, 'a')
+                    outputs[kind].append(output_fhand)
+
+            for kind, output in outputs.items():
+                if len(output) == 1:
+                    outputs[kind] = output[0]
+
             io_fhands = {'in_seq': open(seq_path.last_version),
                          'outputs': outputs}
             seq_pipeline_runner(pipeline=None,

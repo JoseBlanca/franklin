@@ -27,12 +27,11 @@ import os, tempfile
 from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation
 from Bio.Alphabet import generic_dna, generic_protein
-from Bio.Seq import Seq
 
 from franklin.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults)
 from franklin.utils.cmd_utils import  create_runner, b2gpipe_runner
-from franklin.seq.seqs import SeqFeature, get_seq_name
+from franklin.seq.seqs import SeqFeature, get_seq_name, Seq
 from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seq_analysis import infer_introns_for_cdna, get_orthologs
 from franklin.seq.readers import guess_seq_file_format
@@ -169,6 +168,7 @@ def create_orf_annotator(parameters):
             qualifiers['strand'] = 'forward'
         feature = SeqFeature(location=FeatureLocation(start, end), type='orf',
                              qualifiers=qualifiers)
+
         sequence.features.append(feature)
         return sequence
     return annotate_orf

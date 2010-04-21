@@ -8,7 +8,7 @@ from os.path import join, exists
 
 from configobj import ConfigObj
 
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis

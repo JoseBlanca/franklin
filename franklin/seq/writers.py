@@ -26,14 +26,38 @@ from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
+class OrfWriter(object):
+    'It writes the orf annotation into a file'
+    def __init__(self, fhand, pep_fhand):
+        'It initiates the class'
+        self.fhand = fhand
+        self.pep_fhand = pep_fhand
+        self.num_features = 0
+
+    def write(self, sequence):
+        'It does the real write of the features'
+        for orf in sequence.get_features(kind='orf'):
+            self.num_features += 1
+            name   = get_seq_name(sequence)
+            start  = int(str(orf.location.start)) + 1
+            end    = int(str(orf.location.end)) + 1
+            strand = orf.qualifiers['strand']
+            seq_content = '>%s_orf_seq start=%d end=%d strand=%s\n%s\n' % \
+                               (name, start, end, strand, orf.qualifiers['dna'])
+            pep_content = '>%s_orf_pep start=%d end=%d strand=%s\n%s\n' % \
+                               (name, start, end, strand, orf.qualifiers['pep'])
+            self.fhand.write(seq_content)
+            self.pep_fhand.write(pep_content)
+            self.fhand.flush()
+            self.pep_fhand.flush()
+
 class SsrWriter(object):
-    'It writes the srr annotation into a file'
+    'It writes the microsatellite annotation into a file'
 
     def __init__(self, fhand):
         'It initiates the class'
         self.fhand = fhand
         header = 'Seqname\tstart\tend\tlength\tscore\tkind\tunit\tnum repeats\n'
-        header += '----------------------------------------------------------\n'
         self.fhand.write(header)
         self.num_features = 0
 
@@ -187,7 +211,7 @@ class SequenceWriter(object):
     def __init__(self, fhand, file_format, qual_fhand=None):
         'It inits the class'
         self.fhand = fhand
-        self._qual_fhand = qual_fhand
+        self.qual_fhand = qual_fhand
         self._format = file_format
         self.num_features = 0
 
@@ -201,11 +225,11 @@ class SequenceWriter(object):
             self.fhand.write(repr(sequence) + '\n')
         else:
             SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])
-            if self._qual_fhand and format_ == 'fasta':
-                SeqIO.write([sequence], self._qual_fhand, 'qual')
+            if self.qual_fhand and format_ == 'fasta':
+                SeqIO.write([sequence], self.qual_fhand, 'qual')
         self.fhand.flush()
-        if self._qual_fhand:
-            self._qual_fhand.flush()
+        if self.qual_fhand:
+            self.qual_fhand.flush()
 
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
