@@ -212,7 +212,7 @@ class SequenceWriter(object):
     def __init__(self, fhand, file_format, qual_fhand=None):
         'It inits the class'
         self.fhand = fhand
-        self._qual_fhand = qual_fhand
+        self.qual_fhand = qual_fhand
         self._format = file_format
         self.num_features = 0
 
@@ -226,11 +226,11 @@ class SequenceWriter(object):
             self.fhand.write(repr(sequence) + '\n')
         else:
             SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])
-            if self._qual_fhand and format_ == 'fasta':
-                SeqIO.write([sequence], self._qual_fhand, 'qual')
+            if self.qual_fhand and format_ == 'fasta':
+                SeqIO.write([sequence], self.qual_fhand, 'qual')
         self.fhand.flush()
-        if self._qual_fhand:
-            self._qual_fhand.flush()
+        if self.qual_fhand:
+            self.qual_fhand.flush()
 
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
