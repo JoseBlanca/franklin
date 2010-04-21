@@ -20,7 +20,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="franklin v0.1 documentation" href="index.html" />
-    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="next" title="Annotation" href="annotation.html" />
     <link rel="prev" title="Description" href="introduction.html" /> 
   </head>
   <body>
@@ -31,7 +31,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="architecture.html" title="Architecture"
+          <a href="annotation.html" title="Annotation"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="introduction.html" title="Description"
@@ -154,25 +154,25 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <tr><td><a class="reference internal" href="#bam-realignment"><em>Bam realignment</em></a></td>
 <td>GATK bam realignment</td>
 </tr>
-<tr><td>SNP calling</td>
+<tr><td><a class="reference external" href="annotation.html#snp-calling"><em>SNP calling</em></a></td>
 <td>SNP annotation from a bam file</td>
 </tr>
-<tr><td><a class="reference internal" href="#orf-annotation"><em>ORF annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#orf-annotation"><em>ORF annotation</em></a></td>
 <td>ESTScan ORF annotation</td>
 </tr>
-<tr><td><a class="reference internal" href="#ortholog-annotation"><em>Ortholog annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#ortholog-annotation"><em>Ortholog annotation</em></a></td>
 <td>reciprocal blast based ortholog annotation</td>
 </tr>
-<tr><td><a class="reference internal" href="#description-annotation"><em>Description annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#description-annotation"><em>Description annotation</em></a></td>
 <td>description blast based annotation</td>
 </tr>
-<tr><td><a class="reference internal" href="#ssr-annotation"><em>Microsatellite annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#ssr-annotation"><em>Microsatellite annotation</em></a></td>
 <td>microsatellite sputnik based annotation</td>
 </tr>
-<tr><td><a class="reference internal" href="#intron-annotation"><em>cDNA intron annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#intron-annotation"><em>cDNA intron annotation</em></a></td>
 <td>est2genome cDNA based annotation</td>
 </tr>
-<tr><td><a class="reference internal" href="#go-annotation"><em>GO annotation</em></a></td>
+<tr><td><a class="reference external" href="annotation.html#go-annotation"><em>GO annotation</em></a></td>
 <td>blast2go  annotation</td>
 </tr>
 </tbody>
@@ -326,82 +326,6 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <p>The corresponding franklin is realign_bam.</p>
 </div>
 </div>
-<div class="section" id="annotation">
-<h2>Annotation<a class="headerlink" href="#annotation" title="Permalink to this headline">¶</a></h2>
-<p>There are different annotation analyses for the sequences, but they all operate in a similar way, so it is worth to explain the general annotation process. The sequences to annotate should be placed in one or several files at annotations/input/. When an annotation is done the results are stored in a kind of database at annotations/repr/. There is a versioned file in annotations/repr/ for each original file set to annotate. The annotations are cumulative, so if we annotate the ORF and after that the SSRs both will be stored at annotations/repr/. At every time after an annotation the real output files can be generated running the write_annotation analysis. The output files will be found at annotations/result/. The output files are:</p>
-<ul class="simple">
-<li><a class="reference external" href="http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3">vcf</a>. It stores the SNP and indel information.</li>
-<li>DNA and pep ORF fasta files. The DNA to translate and the translation.</li>
-<li>a csv file for the SSR (microsatellite) information.</li>
-<li><a class="reference external" href="http://www.sequenceontology.org/resources/gff3.html">gff</a>. Stores all found sequence features.</li>
-<li>annot and dat files for Blast2Go.</li>
-<li>a text file with the orthologs.</li>
-</ul>
-</div>
-<div class="section" id="blast-databases">
-<span id="id10"></span><h2>Blast databases<a class="headerlink" href="#blast-databases" title="Permalink to this headline">¶</a></h2>
-<p>Several annotations make use of blast. franklin requires some data about the blast databases to be able to run. This information should be set up in the franklin.conf file on the blast section. In this section for each blast database a subsection for every database should be prepared. An example for the nr would be:</p>
-<div class="highlight-python"><pre>[blast]
-[[nr]]
-path = /absolute/path/to/blast/database
-species = 'all'  #this database is not species specific
-kind = 'prot'    #or nucl for nucleotide databases</pre>
-</div>
-</div>
-<div class="section" id="description-annotation">
-<span id="id11"></span><h2>Description annotation<a class="headerlink" href="#description-annotation" title="Permalink to this headline">¶</a></h2>
-<p>A description for the sequences can be created blasting some databases. Several blast databases can be used in a sequential way. Once a sequence has a blast hit in one of the databases, the description will be build from the description of that hit. For instance let&#8217;s imagine that we have to annotate 10 sequences with the databases swissprot and tair. Both blasts would be carried out. If we find significant hits for 5 sequences in swissprot those sequence would be already annotated and a description for the 5  remaining sequences will be look for at the second database (tair in this case). The corresponding franklin analysis is annotate_description.</p>
-<div class="section" id="id12">
-<h3>Configuration parameters<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
-<p>In the franklin.conf section Annotation, subsection description_annotation the parameter description_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::<cite>blast-databases</cite>.</p>
-</div>
-</div>
-<div class="section" id="go-annotation">
-<span id="id13"></span><h2>GO annotation<a class="headerlink" href="#go-annotation" title="Permalink to this headline">¶</a></h2>
-<p>franklin annotates the <cite>Gene Ontology &lt;http://www.geneontology.org/&gt;</cite> ontology terms by using <cite>Blast2GO &lt;http://www.blast2go.org/&gt;</cite>. Blast2GO uses the results of a blast nr search to infer the relevant GO terms for every sequence. The corresponding blast analysis is annotate_go.</p>
-<div class="section" id="output-files">
-<h3>Output files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h3>
-<p>The Blast2GO executable creates two files that can be loaded by the graphical Blast2GO interface, the annot and the dat file. Both will be present at the directory annotations/result. Be aware that generating the dat file will require quite memory.</p>
-</div>
-<div class="section" id="id14">
-<h3>Configuration parameters<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
-<p>In the franklin.conf annotation section a go_annotation subsection should be present. The parameters are:</p>
-<dl class="docutils">
-<dt>create_dat_file</dt>
-<dd>It can be set to True or False</dd>
-<dt>java_memory</dt>
-<dd>This optional parameter is especially important if the creation of the dat file is required.</dd>
-</dl>
-</div>
-</div>
-<div class="section" id="orf-annotation">
-<span id="id15"></span><h2>ORF annotation<a class="headerlink" href="#orf-annotation" title="Permalink to this headline">¶</a></h2>
-<p>To annotate the ORFs found in your sequences just run the franklin analysis annotate_orf. ESTScan will be used to look for the ORFs. The output will be (after running write_annotation) a couple of files for each input file, one for the DNA and another for the proteins.</p>
-<div class="section" id="id16">
-<h3>Configuration parameters<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
-<p>In order to run this analysis in the section orf_annotation at the franklin.conf file the estscan_matrix matrix file should be defined. This is a valid specific matrix file for ESTScan</p>
-</div>
-</div>
-<div class="section" id="microsatellite-annotation">
-<span id="ssr-annotation"></span><h2>Microsatellite annotation<a class="headerlink" href="#microsatellite-annotation" title="Permalink to this headline">¶</a></h2>
-<p>The SSRs can be annotated just by running the franklin analysis annotate_microsatellite. The result of this analysis will be shown in the gff file and in a csv microsatellite file.</p>
-</div>
-<div class="section" id="ortholog-annotation">
-<span id="id17"></span><h2>Ortholog annotation<a class="headerlink" href="#ortholog-annotation" title="Permalink to this headline">¶</a></h2>
-<p>franklin can annotate the orthologs doing a reciprocal blast search. It can be done on one or several blast databases. The franklin analysis is called ortholog_annotation. The list of orthologs will be found in annotations/result/</p>
-<div class="section" id="id18">
-<h3>Configuration parameters<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h3>
-<p>In the franklin.conf section Annotation, subsection ortholog_annotation the parameter ortholog_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::<cite>blast-databases</cite>.</p>
-</div>
-</div>
-<div class="section" id="cdna-intron-annotation">
-<span id="intron-annotation"></span><h2>cDNA intron annotation<a class="headerlink" href="#cdna-intron-annotation" title="Permalink to this headline">¶</a></h2>
-<p>When the sequences to annotate are cDNA franklin can guess where the introns were by using the analysis annotate_introns. To do it it aligns the cDNA with a genomic sequence using the emboss program est2genome. As a shortcut franklin before running est2genome with the whole genomic sequence it does a blast search to look for the relevant genome region and only after that the est2genome alignment is done.</p>
-<div class="section" id="id19">
-<h3>Configuration parameters<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h3>
-<p>In the franklin.conf section Annotation, subsection Cdna_intron_annotation the parameter genomic_db should have one blast database. The blast database used should be defined in the corresponding section, see ::<cite>blast-databases</cite>. Also in the same section the parameter genomic_seqs should have the absolute path to the fasta file with the genomic sequences that make up the employed database.</p>
-</div>
-</div>
 </div>
 
 
@@ -441,30 +365,6 @@ kind = 'prot'    #or nucl for nucleotide databases</pre>
 <li><a class="reference external" href="#id9">Running the analysis</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#annotation">Annotation</a></li>
-<li><a class="reference external" href="#blast-databases">Blast databases</a></li>
-<li><a class="reference external" href="#description-annotation">Description annotation</a><ul>
-<li><a class="reference external" href="#id12">Configuration parameters</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#go-annotation">GO annotation</a><ul>
-<li><a class="reference external" href="#output-files">Output files</a></li>
-<li><a class="reference external" href="#id14">Configuration parameters</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#orf-annotation">ORF annotation</a><ul>
-<li><a class="reference external" href="#id16">Configuration parameters</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#microsatellite-annotation">Microsatellite annotation</a></li>
-<li><a class="reference external" href="#ortholog-annotation">Ortholog annotation</a><ul>
-<li><a class="reference external" href="#id18">Configuration parameters</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#cdna-intron-annotation">cDNA intron annotation</a><ul>
-<li><a class="reference external" href="#id19">Configuration parameters</a></li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
@@ -473,8 +373,8 @@ kind = 'prot'    #or nucl for nucleotide databases</pre>
             <p class="topless"><a href="introduction.html"
                                   title="previous chapter">Description</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="architecture.html"
-                                  title="next chapter">Architecture</a></p>
+            <p class="topless"><a href="annotation.html"
+                                  title="next chapter">Annotation</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="_sources/using_franklin.txt"
@@ -504,7 +404,7 @@ kind = 'prot'    #or nucl for nucleotide databases</pre>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="architecture.html" title="Architecture"
+          <a href="annotation.html" title="Annotation"
              >next</a> |</li>
         <li class="right" >
           <a href="introduction.html" title="Description"

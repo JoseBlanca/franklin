@@ -13,6 +13,7 @@ Contents:
 
    introduction
    using_franklin
+   annotation
    architecture
 
 
