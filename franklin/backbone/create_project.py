@@ -101,7 +101,7 @@ def create_project(name, directory=None, configuration=None):
     config['blast']['nr'] = {}
     config['blast']['nr']['path'] = "Path_to_nr database"
     config['blast']['nr']['species'] = 'all'
-    config['blast']['nr']['kind'] = 'nucl'
+    config['blast']['nr']['kind'] = 'prot'
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
