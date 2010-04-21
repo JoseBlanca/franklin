@@ -26,6 +26,28 @@ from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
+class OrthologWriter(object):
+    'It writes the orthoolog annotation into a file'
+    def __init__(self, fhand):
+        'It initiates the class'
+        self.fhand = fhand
+        header = 'Spp\tseqname\torthologs\n'
+        self.fhand.write(header)
+        self.num_features = 0
+
+    def write(self, sequence):
+        'It does the real write of the features'
+        name   = get_seq_name(sequence)
+        for annot_keys, annot_values in sequence.annotations.items():
+            if 'ortholog' in annot_keys:
+                self.num_features += 1
+                spp          = annot_keys.split('-')[0]
+                orthologs    = ','.join(annot_values)
+                line_content = '%s\t%s\t%s\n' % (spp, name, orthologs)
+                self.fhand.write(line_content)
+        self.fhand.flush()
+
+
 class OrfWriter(object):
     'It writes the orf annotation into a file'
     def __init__(self, fhand, pep_fhand):

@@ -62,6 +62,14 @@ class OrthologTest(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
+        do_analysis(project_settings=settings_path, kind='write_annotation',
+                    silent=True)
+
+        ort_fpath = join(project_dir, 'annotations', 'result', 'melon.orthologs')
+        assert os.path.exists(ort_fpath)
+        assert "tair1" in open(ort_fpath).read()
+
+
         os.chdir('/tmp')
         test_dir.close()
 

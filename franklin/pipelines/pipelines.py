@@ -41,7 +41,8 @@ from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
 from franklin.seq.readers import guess_seq_file_format
-from franklin.seq.writers import SequenceWriter, GffWriter, SsrWriter, OrfWriter
+from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
+                                  OrfWriter, OrthologWriter)
 from franklin.snv.writers import VariantCallFormatWriter
 
 
@@ -228,6 +229,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     if 'orf' in output_type:
         fhand, pep_fhand = io_fhands['outputs']['orf']
         writers.append(OrfWriter(fhand=fhand, pep_fhand=pep_fhand))
+
+    if 'orthologs' in output_type:
+        fhand = io_fhands['outputs']['orthologs']
+        writers.append(OrthologWriter(fhand=fhand))
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:

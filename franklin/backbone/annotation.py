@@ -220,7 +220,8 @@ class WriteAnnotationAnalyzer(Analyzer):
         output_files = {'vcf': ('vcf',),
                         'orf':('orf_seq.fasta', 'orf_pep.fasta'),
                         'ssr':('ssr',),
-                        'gff':('gff',)}
+                        'gff':('gff',),
+                        'orthologs':('orthologs',)}
 
         for seq_path in repr_paths:
             outputs = {}
@@ -459,12 +460,12 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             input_fpath = input_.last_version
             if create_dat:
                 dat_fpath = os.path.join(result_dir, input_.basename + '.b2g.dat')
-                annot_fpath = os.path.join(result_dir, input_.basename + '.b2g.annot')
             else:
                 dat_fpath = None
+            annot_fpath = os.path.join(result_dir, input_.basename + '.b2g.annot')
+
             #dat_path = VersionedPath(dat_fpath)
             #dat_fpath = dat_path.next_version
-            print 'blast', blasts[input_fpath].name
             step_config = {'blast': blasts[input_fpath],
                            'dat_fpath': dat_fpath,
                            'annot_fpath': annot_fpath,

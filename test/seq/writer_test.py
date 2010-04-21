@@ -4,15 +4,33 @@ Created on 25/03/2010
 @author: peio
 '''
 from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
-import unittest, os
+import unittest
 from StringIO import StringIO
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.seq.writers import GffWriter, SsrWriter, OrfWriter
+from franklin.seq.writers import GffWriter, SsrWriter, OrfWriter, OrthologWriter
 from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 class WriterTest(unittest.TestCase):
     'It test all writers for seqs'
+
+
+    @staticmethod
+    def test_ortologth_writer():
+        'It test ssr writer'
+        annotations = {'arabidpsis-orthologs':['ara1', 'ara2'],
+                       'melon-orthologs':['melo1', 'melo2']}
+
+        seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
+                             id='seq1', name='seq1', description='Some desc',
+                             dbxrefs=[], features=[], annotations=annotations)
+        fhand = NamedTemporaryFile(mode='a')
+
+        ortologwriter = OrthologWriter(fhand)
+        ortologwriter.write(seq)
+        seq_result = open(fhand.name).read()
+        assert  'ara1,ara2' in seq_result
+        assert  'melo1,melo2' in seq_result
 
 
     @staticmethod
