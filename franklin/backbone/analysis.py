@@ -218,7 +218,7 @@ class Analyzer(object):
                 analysis_message = class_name
             if 'analysis_started' in messages:
                 logger.info(analysis_message)
-                logger.info('Franklin VERSION: %s' % str(franklin.VERSION))
+                logger.info('Franklin VERSION: %s' % str(franklin.__version__))
                 logger.info('Analysis started')
             elif 'analysis_finished' in messages:
                 logger.info('Analysis finished')
