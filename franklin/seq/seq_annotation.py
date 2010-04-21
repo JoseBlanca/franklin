@@ -66,7 +66,7 @@ def create_description_annotator(blasts):
             return
         name = get_seq_name(sequence)
         if name in descriptions:
-            sequence.description = descriptions[name]
+            sequence.description = 'Similar to %s' % descriptions[name]
         return sequence
     return descrition_annotator
 
