@@ -8,7 +8,7 @@ Created on 25/03/2009
 import os
 #from setuptools import setup
 from distutils.core import setup
-
+import franklin
 
 PACKAGE_DIR = 'franklin'
 SCRIPTS_DIR = 'scripts'
@@ -62,7 +62,7 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
 setup(
     # basic package data
     name = "franklin",
-    version = '0.01',
+    version = franklin.__version__,
     author='Jose Blanca, Peio Ziarsolo',
     author_email='jblanca@btc.upv.es',
     description='Some genomics related classes',

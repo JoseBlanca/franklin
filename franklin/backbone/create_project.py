@@ -64,12 +64,13 @@ def create_project(name, directory=None, configuration=None):
 
     config['Mira'] = {}
     config['Mira']['job_options']     = ['denovo', 'est']
-    config['Mira']['general_settings'] = ['-AS:sd=1',
-                                          '-OUT:sssip=yes:stsip=yes']
+    config['Mira']['general_settings'] = ['-AS:sd=1']
     config['Mira']['454_settings']    = ['-LR:mxti=no', '-CO:rodirs=5',
-                                         '-AL:mrs=80']
+                                         '-AL:mrs=80',
+                                         '-OUT:sssip=0:stsip=0']
     config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30',
-                                         '-CO:rodirs=5','-AL:mrs=80']
+                                         '-CO:rodirs=5','-AL:mrs=80',
+                                         '-OUT:sssip=0:stsip=0']
 
     config['Mappers'] = {}
     config['Mappers']['mapper_for_454'] = 'bwa'
