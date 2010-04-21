@@ -58,7 +58,6 @@ class SsrWriter(object):
         'It initiates the class'
         self.fhand = fhand
         header = 'Seqname\tstart\tend\tlength\tscore\tkind\tunit\tnum repeats\n'
-        header += '----------------------------------------------------------\n'
         self.fhand.write(header)
         self.num_features = 0
 
