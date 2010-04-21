@@ -149,7 +149,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
+        repr_dir = output_dirs['repr_dir']
         pipeline = [annotate_cdna_introns]
 
         settings = self._project_settings['Annotation']
@@ -164,7 +164,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
 
 class SnvCallerAnalyzer(AnnotationAnalyzer):
     'It performs the calling of the snvs in a bam file'
@@ -251,13 +251,13 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
+        repr_dir = output_dirs['repr_dir']
         pipeline, configuration = self._get_snv_filter_specs()
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
     def _get_snv_filter_specs(self):
         'It gets the pipeline and configuration from settings'
         configuration = {}
@@ -317,7 +317,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
+        repr_dir = output_dirs['repr_dir']
         blast_settings = self._project_settings['blast']
 
         settings = self._project_settings['Annotation']
@@ -361,7 +361,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
 
 class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
     '''This class is used to annotate the microsatellite of a sequence as a
@@ -370,14 +370,14 @@ class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
+        repr_dir = output_dirs['repr_dir']
 
         pipeline = [annotate_microsatellites]
         configuration = {}
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
 
 class AnnotateOrfAnalyzer(AnnotationAnalyzer):
     '''This class is used to annotate the orf of a sequence as a feature'''
@@ -386,14 +386,14 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
         'It runs the analysis.'
         matrix = self._project_settings['Annotation']['orf_annotation']['estscan_matrix']
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
+        repr_dir = output_dirs['repr_dir']
         pipeline = [annotate_orfs]
 
         configuration = {'annotate_orfs': {'parameters':{'matrix':matrix}}}
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
 
 class AnnotateGoAnalyzer(AnnotationAnalyzer):
     'This class is used to annotate gos using blast2go'
@@ -401,8 +401,8 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        output_dir = output_dirs['result']
-        go_dir = output_dirs['b2g_dir']
+        repr_dir = output_dirs['repr_dir']
+        result_dir = output_dirs['result']
         blast_settings = self._project_settings['blast']
 
         annot_settings = self._project_settings['Annotation']
@@ -438,6 +438,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             blast_db=blastdb,
                                             dbtype=db_kind)
 
+
             if chop_big_xml:
                 #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
                 chopped_blast = NamedTemporaryFile(suffix='.xml')
@@ -449,6 +450,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             #raw_input()
 
             blasts[input_fpath] = blast
+
         # prepare pipeline
         pipeline      = [annotate_gos]
         configuration = {}
@@ -456,21 +458,23 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
             if create_dat:
-                dat_fpath = os.path.join(go_dir, input_.basename + '.dat')
+                dat_fpath = os.path.join(result_dir, input_.basename + '.b2g.dat')
+                annot_fpath = os.path.join(result_dir, input_.basename + '.b2g.annot')
             else:
                 dat_fpath = None
             #dat_path = VersionedPath(dat_fpath)
             #dat_fpath = dat_path.next_version
-
+            print 'blast', blasts[input_fpath].name
             step_config = {'blast': blasts[input_fpath],
                            'dat_fpath': dat_fpath,
+                           'annot_fpath': annot_fpath,
                            'java_memory':java_memory}
             configuration[input_fpath] = {'annotate_gos': step_config}
 
         result = self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=output_dir)
+                                    output_dir=repr_dir)
         #remove the temporal files
         for input_ in  inputs['input']:
             blasts[input_fpath].close()
@@ -484,7 +488,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_repr',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': SnvFilterAnalyzer},
     'annotate_snv':
         {'inputs':{
@@ -509,7 +513,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateIntronsAnalyzer},
     'write_annotation':
         {'inputs':{
@@ -539,7 +543,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateDescriptionAnalyzer},
 
     'annotate_microsatellite':
@@ -551,7 +555,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateMicrosatelliteAnalyzer},
     'annotate_orf':
         {'inputs':{
@@ -562,7 +566,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateOrfAnalyzer},
     'annotate_go':
         {'inputs':{
@@ -573,7 +577,7 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'},
-                    'b2g_dir':{'directory':'go_files'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_repr'},
+                    'result':{'directory':'annotation_result'}},
          'analyzer': AnnotateGoAnalyzer},
     }

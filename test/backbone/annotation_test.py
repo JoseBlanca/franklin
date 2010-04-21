@@ -279,7 +279,9 @@ class OrthologTest(unittest.TestCase):
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
-                                           'go_files', 'seqs.dat'))
+                                           'result', 'seqs.b2g.dat'))
+        assert os.path.exists(os.path.join(project_dir, 'annotations',
+                                           'result', 'seqs.b2g.annot'))
 if    __name__    ==    "__main__":
     #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
     unittest.main()
