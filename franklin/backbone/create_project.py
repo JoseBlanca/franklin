@@ -79,7 +79,7 @@ def create_project(name, directory=None, configuration=None):
     config['Mappers']['mapper_for_sanger'] = 'bwa'
 
     config['Sam_processing'] = {}
-    config['Sam_processing']['add_default_qualities'] = False
+    config['Sam_processing']['add_default_qualities'] = True
 
     config['Annotation'] = {}
     config['Annotation']['description_annotation'] = {}
