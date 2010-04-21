@@ -46,17 +46,20 @@ class AnnotationAnalyzer(Analyzer):
         except KeyError:
             seqs_fpaths = []
         seqs_paths  = self._get_seq_or_repr_path(seqs_fpaths, repr_fpaths)
-        for seq_path in seqs_paths:
+        for seq_path, input_ in zip(seqs_paths, inputs['input']):
             seq_fpath = seq_path.last_version
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
             io_fhands = {'in_seq': open(seq_fpath),
                          'outputs':{'repr':temp_repr}}
-            if seq_fpath in configuration:
+
+            if input_.last_version in configuration:
+
                 #there is a different configuration for every file to annotate
-                config = configuration[seq_fpath]
+                config = configuration[str(input_.last_version)]
             else:
                 config = configuration
+
             seq_pipeline_runner(pipeline, configuration=config,
                                 io_fhands=io_fhands)
             temp_repr.close()
@@ -420,6 +423,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         else:
             java_memory = None
 
+        if 'prop_fpath' in go_settings:
+            prop_fpath = go_settings['prop_fpath']
+        else:
+            prop_fpath = None
+
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
         chop_big_xml, num_items = True, 1000
@@ -464,12 +472,12 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 dat_fpath = None
             annot_fpath = os.path.join(result_dir, input_.basename + '.b2g.annot')
 
-            #dat_path = VersionedPath(dat_fpath)
-            #dat_fpath = dat_path.next_version
             step_config = {'blast': blasts[input_fpath],
                            'dat_fpath': dat_fpath,
                            'annot_fpath': annot_fpath,
-                           'java_memory':java_memory}
+                           'java_memory':java_memory,
+                           'prop_fpath':prop_fpath}
+
             configuration[input_fpath] = {'annotate_gos': step_config}
 
         result = self._run_annotation(pipeline=pipeline,

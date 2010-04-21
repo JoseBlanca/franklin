@@ -251,9 +251,10 @@ class OrthologTest(unittest.TestCase):
         nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
-                                           'kind': 'nucl'}},
+                                           'kind': 'prot'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
-                                                 'create_dat_file':True}
+                                                 'create_dat_file':True,
+                                                 'java_memory':2048}
                  }}
 
         settings_path = create_project(directory=test_dir.name,
@@ -279,7 +280,7 @@ class OrthologTest(unittest.TestCase):
                     'arabidopsis_genes+')
         os.makedirs(bdir)
         shutil.copy(join(DATA_DIR, 'blastResult.xml'),
-                    join(bdir, 'blast.tblastx.xml'))
+                    join(bdir, 'blast.blastx.xml'))
 
         do_analysis(project_settings=settings_path, kind='annotate_go',
                     silent=True)
@@ -290,6 +291,9 @@ class OrthologTest(unittest.TestCase):
                                            'result', 'seqs.b2g.dat'))
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'result', 'seqs.b2g.annot'))
+        do_analysis(project_settings=settings_path, kind='annotate_go',
+                    silent=True)
+
 if    __name__    ==    "__main__":
-    #import    sys;sys.argv    =    ['',    'SamTest.test_realignbam']
+    #import sys;sys.argv = ['', 'OrthologTest.test_go_annotation_analysis']
     unittest.main()
