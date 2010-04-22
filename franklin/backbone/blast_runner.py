@@ -27,6 +27,13 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
 
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+MOCK_HANDLER = NullHandler()
+LOGGER_NAME = 'franklin'
+logging.getLogger(LOGGER_NAME).addHandler(MOCK_HANDLER)
+
 def _get_basename(fpath):
     'It returns the base name without path and extension'
     return splitext(basename(fpath))[0]
@@ -46,7 +53,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
         raise RuntimeError('It needs a blast database or seqfile')
 
     #create a logger
-    logger = logging.getLogger("franklin")
+    logger = logging.getLogger(LOGGER_NAME)
 
     query_basename = _get_basename(query_fpath)
     blast_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_dir'])
@@ -102,7 +109,7 @@ def blast_runner(seq_fpath, blast_db, blast_type, result_fpath):
 
 def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
     'It formats a blastdb when need it'
-    logger = logging.getLogger("franklin")
+    logger = logging.getLogger(LOGGER_NAME)
     #the name should be the basename of the blast_db_seq
     db_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_databases'])
     if not exists(db_dir):
@@ -138,11 +145,7 @@ def blast_runner_plust(seq_fpath, blast_db, blast_type, result_fpath):
     cmd = [blast_type, '-db', blast_db, '-num_alignments', '25',
            '-num_descriptions', '25', '-evalue', '0.0001', '-outfmt', '5',
            '-query', seq_fpath, '-out', result_fpath]
-
     call(cmd, raise_on_error=True, log=True)
-
-
-
 
 def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
     'It creates the blast db database'
@@ -150,4 +153,3 @@ def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
     if outputdb is not None:
         cmd.extend(['-out', outputdb])
     call(cmd, raise_on_error=True)
-
