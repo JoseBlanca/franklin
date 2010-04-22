@@ -7,7 +7,8 @@ import shutil, os
 from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.backbone.blast_runner import backbone_blast_runner
+from franklin.backbone.blast_runner import (backbone_blast_runner,
+                                            make_backbone_blast_db)
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
                                                  annotate_with_descriptions,
@@ -157,13 +158,20 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
         repr_dir = output_dirs['repr_dir']
         pipeline = [annotate_cdna_introns]
-
         settings = self._project_settings['Annotation']
         if 'Cdna_intron_annotation' not in settings:
             msg = 'You should set up genomic_db and genomic_seqs in settings'
             raise RuntimeError(msg)
-        genomic_db = settings['Cdna_intron_annotation']['genomic_db']
+
         genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
+        if (not 'genomic_db' in settings['Cdna_intron_annotation'] or
+            not  settings['Cdna_intron_annotation']['genomic_db']):
+            project_path = self._project_settings['General_settings']['project_path']
+            genomic_db = make_backbone_blast_db(project_path,
+                                                genomic_seqs,
+                                                dbtype='nucl')
+        else:
+            genomic_db = settings['Cdna_intron_annotation']['genomic_db']
         configuration = {'annotate_cdna_introns': {'genomic_db':genomic_db,
                                        'genomic_seqs_fhand':open(genomic_seqs)}}
 

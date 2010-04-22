@@ -74,30 +74,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     #we have to create a database in BACKBONE_DIRECTORIES['blast_databases']
     if blast_db_seq:
-        #the name should be the basename of the blast_db_seq
-        db_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_databases'])
-        if not exists(db_dir):
-            makedirs(db_dir)
-        db_seq_fpath = join(db_dir, _get_basename(blast_db_seq))
-        if not exists(db_seq_fpath):
-            #which is the name of the new databae?
-            blast_db_seq_format = guess_seq_file_format(open(blast_db_seq))
-            if blast_db_seq_format == 'fasta':
-                symlink(blast_db_seq, db_seq_fpath)
-            else:
-                seqio(in_seq_fhand=open(blast_db_seq),
-                      out_seq_fhand=open(db_seq_fpath, 'w'),
-                      out_format='fasta')
-            logger.info('Formatting the database %s' % db_seq_fpath)
-            try:
-                makeblastdb(db_seq_fpath, dbtype=dbtype)
-            except RuntimeError:
-                msg = 'Error making blastdb. db:%s\n dbtype:%s\n' % \
-                                                   (db_seq_fpath, dbtype)
-                remove(db_seq_fpath)
-                raise RuntimeError(msg)
-
-        blast_db = db_seq_fpath
+        blast_db = make_backbone_blast_db(project_dir, blast_db_seq, dbtype)
 
     logger.info('Running the blast %s' % result_fpath)
     try:
@@ -122,6 +99,33 @@ def blast_runner(seq_fpath, blast_db, blast_type, result_fpath):
            '-b', '25', '-e', '0.0001', '-m', '7',
            '-i', seq_fpath, '-o', result_fpath]
     call(cmd, raise_on_error=True, log=True)
+
+def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
+    'It formats a blastdb when need it'
+    logger = logging.getLogger("franklin")
+    #the name should be the basename of the blast_db_seq
+    db_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_databases'])
+    if not exists(db_dir):
+        makedirs(db_dir)
+    db_seq_fpath = join(db_dir, _get_basename(blast_db_seq))
+    if not exists(db_seq_fpath):
+        #which is the name of the new databae?
+        blast_db_seq_format = guess_seq_file_format(open(blast_db_seq))
+        if blast_db_seq_format == 'fasta':
+            symlink(blast_db_seq, db_seq_fpath)
+        else:
+            seqio(in_seq_fhand=open(blast_db_seq),
+                  out_seq_fhand=open(db_seq_fpath, 'w'),
+                  out_format='fasta')
+        logger.info('Formatting the database %s' % db_seq_fpath)
+        try:
+            makeblastdb(db_seq_fpath, dbtype=dbtype)
+        except RuntimeError:
+            msg = 'Error making blastdb. db:%s\n dbtype:%s\n' % \
+                                               (db_seq_fpath, dbtype)
+            remove(db_seq_fpath)
+            raise RuntimeError(msg)
+    return db_seq_fpath
 
 def makeblastdb(seq_fpath, dbtype):
     'It creates the blast db database'
