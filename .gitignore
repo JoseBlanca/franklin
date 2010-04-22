@@ -3,3 +3,4 @@
 /franklin.egg-info
 /build
 /dist
+test/backbone/formatdb.log
