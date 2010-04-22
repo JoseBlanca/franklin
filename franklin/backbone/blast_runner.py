@@ -89,15 +89,25 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
                       out_seq_fhand=open(db_seq_fpath, 'w'),
                       out_format='fasta')
             logger.info('Formatting the database %s' % db_seq_fpath)
-            makeblastdb(db_seq_fpath, dbtype=dbtype)
+            try:
+                makeblastdb(db_seq_fpath, dbtype=dbtype)
+            except RuntimeError:
+                msg = 'Error making blastdb. db:%s\n dbtype:%s\n' % \
+                                                   (db_seq_fpath, dbtype)
+                remove(db_seq_fpath)
+                raise RuntimeError(msg)
+
         blast_db = db_seq_fpath
 
     logger.info('Running the blast %s' % result_fpath)
     try:
         blast_runner(query_fpath, blast_db, blast_program, result_fpath)
-    except RuntimeError:
+    except RuntimeError as error:
         if exists(result_fpath):
             remove(result_fpath)
+            msg = '%s \n database: %s\ndatabase type: %s' % (str(error),
+                                                             blast_db, dbtype)
+        raise RuntimeError(msg)
 
     if fasta_query_fhand:
         fasta_query_fhand.close()
@@ -108,14 +118,32 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath):
     'It runs a blast giving a file and a database path'
+    cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
+           '-b', '25', '-e', '0.0001', '-m', '7',
+           '-i', seq_fpath, '-o', result_fpath]
+    call(cmd, raise_on_error=True, log=True)
+
+def makeblastdb(seq_fpath, dbtype):
+    'It creates the blast db database'
+    dbtype = 'T' if dbtype == 'prot' else 'F'
+    cmd = ['formatdb', '-i', seq_fpath, '-V', '-p', dbtype, '-o']
+    call(cmd, raise_on_error=True)
+
+def blast_runner_plust(seq_fpath, blast_db, blast_type, result_fpath):
+    'It runs a blast giving a file and a database path'
     cmd = [blast_type, '-db', blast_db, '-num_alignments', '25',
            '-num_descriptions', '25', '-evalue', '0.0001', '-outfmt', '5',
            '-query', seq_fpath, '-out', result_fpath]
-    call(cmd, raise_on_error=True)
 
-def makeblastdb(seq_fpath, dbtype, outputdb=None):
+    call(cmd, raise_on_error=True, log=True)
+
+
+
+
+def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
     'It creates the blast db database'
     cmd = ['makeblastdb', '-in', seq_fpath, '-dbtype', dbtype]
     if outputdb is not None:
         cmd.extend(['-out', outputdb])
     call(cmd, raise_on_error=True)
+

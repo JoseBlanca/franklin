@@ -64,18 +64,18 @@ RUNNER_DEFINITIONS = {
               'input':{'sequence':{'option':'-i', 'files_format':['fasta']}},
               'ignore_stderrs': ['Karlin-Altschul']
               },
-    'blast+': {'binary':'blast+',
-            'parameters': {'database' :{'required':True,  'option': '-db'},
-                   'program'  :{'required':True,  'option':'-p'},
-                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
-                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
-                   'alig_format': {'default':5, 'option':'-outfmt'}
-                            },
-            'output':{'blast+':{'option':STDOUT}},
-            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
-            'ignore_stderrs': ['Karlin-Altschul']
-              },
+#    'blast+': {'binary':'blast+',
+#            'parameters': {'database' :{'required':True,  'option': '-db'},
+#                   'program'  :{'required':True,  'option':'-p'},
+#                   'expect'   :{'default': 0.0001,'option': '-evalue'},
+#                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+#                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
+#                   'alig_format': {'default':5, 'option':'-outfmt'}
+#                            },
+#            'output':{'blast+':{'option':STDOUT}},
+#            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
+#            'ignore_stderrs': ['Karlin-Altschul']
+#              },
     'seqclean_vect':{'binary':'seqclean_vect',
                      'parameters':{'vector_db':{'required':True,'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},
@@ -366,7 +366,7 @@ def _which_binary(binary):
     process = subprocess.Popen(['/bin/which', binary], stdout=stdout)
     stdout  = process.communicate()[0]
 
-    if stdout[0]  == '/':
+    if stdout and stdout[0]  == '/':
         return stdout.strip()
     else:
         return None
@@ -424,11 +424,10 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     else:
         stdout_str, stderr_str = process.communicate(stdin)
     retcode = process.returncode
-    if raise_on_error:
-        if retcode:
-            msg = 'Error running command: cmd %s\n stderr: %s\n stdout: %s' % \
+    if raise_on_error and retcode:
+        msg = 'Error running command: %s\n stderr: %s\n stdout: %s' % \
                                                 (' '.join(cmd), stderr, stdout)
-            raise RuntimeError(msg)
+        raise RuntimeError(msg)
     if stdout != subprocess.PIPE:
         stdout.flush()
     if stderr != subprocess.PIPE:

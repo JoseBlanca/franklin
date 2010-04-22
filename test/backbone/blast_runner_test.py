@@ -56,6 +56,38 @@ class BlastTest(unittest.TestCase):
                            '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                           blast_program))
         assert '<Hit_def>vec1</Hit_def>' in open(blast_fpath).read()
+        test_dir.close()
+
+    def test_blast_seq_against_bad_db(self):
+        'We can blast a seq file against a database'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+
+        create_project(directory=test_dir.name,
+                                       name=project_name)
+        project_dir = join(test_dir.name, project_name)
+
+        #some query fasta file
+        query  = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
+        query += 'CATACCCCTGCCGAACCGCTTTTGTCA|n'
+        query_fhand = NamedTemporaryFile(mode='w')
+        query_fhand.write(query)
+        query_fhand.flush()
+
+        #the blast db
+        blast_db_fname = 'uni'
+        blast_db = join(DATA_DIR, 'blast', blast_db_fname)
+
+        blast_program = 'blastn'
+        try:
+            backbone_blast_runner(query_fpath=query_fhand.name,
+                                  project_dir=project_dir,
+                                  blast_program=blast_program,
+                                  blast_db=blast_db)
+            self.fail('RuntimeError expected')
+        except RuntimeError:
+            pass
+        test_dir.close()
 
     @staticmethod
     def test_blast_seq_against_seq_db():
@@ -95,7 +127,7 @@ class BlastTest(unittest.TestCase):
                            _get_basename(blast_db_fhand.name),
                            '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                           blast_program))
-        assert '<Hit_def>seq</Hit_def>' in open(blast_fpath).read()
+        assert '<Hit_accession>seq</Hit_accession>' in open(blast_fpath).read()
 
 if    __name__    ==    "__main__":
     #import sys;sys.argv = ['', 'BlastTest.test_blast_seq_against_seq_db']

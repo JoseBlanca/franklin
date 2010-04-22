@@ -10,18 +10,24 @@ from franklin.utils.cmd_utils import call
 def run_blast():
     'It runs one of the blast+ programs'
     args = sys.argv[1:]
+    stderr = None
+    retcode = 0
     try:
         program_index = args.index('-p') + 1
         program = args[program_index]
         del args[program_index -1]
         del args[program_index -1 ]
     except IndexError:
-        raise IndexError('wrong parameters')
+        stderr = 'wrong parameters'
+        retcode = 10
     cmd = [program]
     cmd.extend(args)
     # run the blast
-    result = call(cmd, raise_on_error=True)[0]
+    result, stderr, retcode = call(cmd, raise_on_error=False)
     sys.stdout.write(result)
+    if stderr:
+        sys.stderr.write(stderr)
+    return retcode
 
 if __name__ == '__main__':
-     run_blast()
+     sys.exit(run_blast())

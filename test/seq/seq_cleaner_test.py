@@ -333,23 +333,23 @@ class SeqCleanerTest(unittest.TestCase):
         assert vec1[4:14]  not in striped_seq
         assert vec1[-14:-4] not  in striped_seq
 
-    @staticmethod
-    def test_strip_vector_align_blast_plus():
-        'It tests strip_vector_by_alignment using blast+ and UniVec'
-        vector = os.path.join(DATA_DIR, 'blast', 'univec+')
-        vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
-        vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
-        vec1 += 'CGTCTCAACGCGCTTT'
-        seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
-        seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
-        strip_vector_by_alignment = \
-                            create_vector_striper_by_alignment(vector, 'blast+')
-        striped_seq = strip_vector_by_alignment(seq)
-        striped_seq = str(striped_seq.seq)
-        assert seq1[4:14]  in striped_seq
-        assert seq1[-14:-4]  in striped_seq
-        assert vec1[4:14]  not in striped_seq
-        assert vec1[-14:-4] not  in striped_seq
+#    @staticmethod
+#    def test_strip_vector_align_blast_plus():
+#        'It tests strip_vector_by_alignment using blast+ and UniVec'
+#        vector = os.path.join(DATA_DIR, 'blast', 'univec+')
+#        vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
+#        vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
+#        vec1 += 'CGTCTCAACGCGCTTT'
+#        seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+#        seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
+#        strip_vector_by_alignment = \
+#                            create_vector_striper_by_alignment(vector, 'blast+')
+#        striped_seq = strip_vector_by_alignment(seq)
+#        striped_seq = str(striped_seq.seq)
+#        assert seq1[4:14]  in striped_seq
+#        assert seq1[-14:-4]  in striped_seq
+#        assert vec1[4:14]  not in striped_seq
+#        assert vec1[-14:-4] not  in striped_seq
 
     @staticmethod
     def xtest_repeatmasking():
@@ -510,8 +510,7 @@ class SeqSplitterTests(unittest.TestCase):
 
         edge_stripperr = create_edge_stripper(left_length=3, right_length=3)
         seq = edge_stripperr(seq)
-        print seq.seq
-        #assert seq.seq == 'tctcatcatca'
+        assert seq.seq == 'tctcatcatca'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
