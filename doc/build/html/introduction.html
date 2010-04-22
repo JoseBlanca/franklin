@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Description &mdash; franklin v0.1 documentation</title>
+    <title>Philosophy &mdash; franklin v0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="franklin v0.1 documentation" href="index.html" />
     <link rel="next" title="Usage" href="using_franklin.html" />
-    <link rel="prev" title="Welcome to franklin’s documentation!" href="index.html" /> 
+    <link rel="prev" title="franklin’s Description" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
           <a href="using_franklin.html" title="Usage"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to franklin’s documentation!"
+          <a href="index.html" title="franklin’s Description"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">franklin v0.1 documentation</a> &raquo;</li> 
       </ul>
@@ -45,14 +45,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="description">
-<h1>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h1>
-<p>franklin is a bioinformatic application created to work on sequence analysis by using NGS (Next Generation Sequencing)  and sanger sequences. It is capable of cleaning reads, do de novo assembly or mapping against a reference and annotate SNPs, SSRs, ORFs, GO terms and sequence descriptions.
-Our laboratory is focused on transcriptomic analysis, so the tool has been used and tested on transcriptomes. Some analyses will be useful for genome analysis, but other might not be appropriate.</p>
-<p>For the analyses, in most cases, franklin uses external software like: <a class="reference external" href="http://sourceforge.net/apps/mediawiki/mira-assembler">mira</a>, <a class="reference external" href="http://bio-bwa.sourceforge.net/">bwa</a>, <a class="reference external" href="http://samtools.sourceforge.net/">samtools</a>, <a class="reference external" href="http://picard.sourceforge.net/index.shtml">picard</a>, etc.</p>
-<p>The application works on Linux so experience with that operating system is advisable when using it.</p>
-</div>
-<div class="section" id="philosophy">
+  <div class="section" id="philosophy">
 <h1>Philosophy<a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h1>
 <p>franklin is an easy to use application capable of doing in a reliable way some NGS analyses. The main design directives have been:</p>
 <blockquote>
@@ -74,8 +67,8 @@ Our laboratory is focused on transcriptomic analysis, so the tool has been used 
 <p>franklin requires several external tools to run the analyses. So before running the analyses please install them.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="26%" />
-<col width="74%" />
+<col width="31%" />
+<col width="69%" />
 </colgroup>
 <thead valign="bottom">
 <tr><th class="head">analysis</th>
@@ -83,37 +76,37 @@ Our laboratory is focused on transcriptomic analysis, so the tool has been used 
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td>read cleaning</td>
+<tr><td><a class="reference external" href="using_franklin.html#clean-reads"><em>Cleaning sequence reads</em></a></td>
 <td><a class="reference external" href="http://lucy.sourceforge.net/">lucy</a>, <a class="reference external" href="http://www.ebi.ac.uk/~guy/exonerate/">exonerate</a>, <a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a>, <a class="reference external" href="http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html">Univec</a> (database), <a class="reference external" href="http://compbio.dfci.harvard.edu/tgi/software/">mdust</a>, <a class="reference external" href="http://compbio.dfci.harvard.edu/tgi/software/">trimpoly</a></td>
 </tr>
-<tr><td>assembly</td>
+<tr><td><a class="reference external" href="using_franklin.html#mira-assembly"><em>Mira assembly</em></a></td>
 <td><a class="reference external" href="http://sourceforge.net/apps/mediawiki/mira-assembler">mira</a></td>
 </tr>
-<tr><td>mapping</td>
+<tr><td><a class="reference external" href="using_franklin.html#mapping"><em>Mapping</em></a></td>
 <td><a class="reference external" href="http://bio-bwa.sourceforge.net/">bwa</a>, <a class="reference external" href="http://samtools.sourceforge.net/">samtools</a>, <a class="reference external" href="http://picard.sourceforge.net/index.shtml">picard</a></td>
 </tr>
-<tr><td>bam realignment</td>
+<tr><td><a class="reference external" href="using_franklin.html#bam-realignment"><em>Bam realignment</em></a></td>
 <td><a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit">GATK</a></td>
 </tr>
-<tr><td>SNP calling</td>
+<tr><td><a class="reference external" href="annotation.html#snp-calling"><em>SNP calling</em></a></td>
 <td><a class="reference external" href="http://code.google.com/p/pysam/">pysam</a></td>
 </tr>
-<tr><td>ORF annotation</td>
+<tr><td><a class="reference external" href="annotation.html#orf-annotation"><em>ORF annotation</em></a></td>
 <td><a class="reference external" href="http://estscan.sourceforge.net/">ESTScan</a></td>
 </tr>
-<tr><td>ortholog annotation</td>
+<tr><td><a class="reference external" href="annotation.html#ortholog-annotation"><em>Ortholog annotation</em></a></td>
 <td><a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a></td>
 </tr>
-<tr><td>description annotation</td>
+<tr><td><a class="reference external" href="annotation.html#description-annotation"><em>Description annotation</em></a></td>
 <td><a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a></td>
 </tr>
-<tr><td>SSR annotation</td>
+<tr><td><a class="reference external" href="annotation.html#ssr-annotation"><em>Microsatellite annotation</em></a></td>
 <td>sputnik</td>
 </tr>
-<tr><td>cdna intron annotation</td>
+<tr><td><a class="reference external" href="annotation.html#intron-annotation"><em>cDNA intron annotation</em></a></td>
 <td><a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a>, <a class="reference external" href="http://emboss.sourceforge.net/">emboss</a></td>
 </tr>
-<tr><td>GO annotation</td>
+<tr><td><a class="reference external" href="annotation.html#go-annotation"><em>GO annotation</em></a></td>
 <td><a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a>, <a class="reference external" href="http://www.blast2go.org/">blast2go</a></td>
 </tr>
 </tbody>
@@ -128,14 +121,13 @@ Our laboratory is focused on transcriptomic analysis, so the tool has been used 
         <div class="sphinxsidebarwrapper">
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
-<li><a class="reference external" href="#">Description</a></li>
-<li><a class="reference external" href="#philosophy">Philosophy</a></li>
+<li><a class="reference external" href="#">Philosophy</a></li>
 <li><a class="reference external" href="#installation">Installation</a></li>
 </ul>
 
             <h4>Previous topic</h4>
             <p class="topless"><a href="index.html"
-                                  title="previous chapter">Welcome to franklin&#8217;s documentation!</a></p>
+                                  title="previous chapter">franklin&#8217;s Description</a></p>
             <h4>Next topic</h4>
             <p class="topless"><a href="using_franklin.html"
                                   title="next chapter">Usage</a></p>
@@ -171,7 +163,7 @@ Our laboratory is focused on transcriptomic analysis, so the tool has been used 
           <a href="using_franklin.html" title="Usage"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to franklin’s documentation!"
+          <a href="index.html" title="franklin’s Description"
              >previous</a> |</li>
         <li><a href="index.html">franklin v0.1 documentation</a> &raquo;</li> 
       </ul>

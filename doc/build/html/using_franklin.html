@@ -20,7 +20,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="franklin v0.1 documentation" href="index.html" />
-    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="next" title="Annotation" href="annotation.html" />
     <link rel="prev" title="Description" href="introduction.html" /> 
   </head>
   <body>
@@ -31,7 +31,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="architecture.html" title="Architecture"
+          <a href="annotation.html" title="Annotation"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="introduction.html" title="Description"
@@ -65,58 +65,9 @@ total 4
 </div>
 <p>This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.</p>
 </div>
-<div class="section" id="available-analyses">
-<h2>Available analyses<a class="headerlink" href="#available-analyses" title="Permalink to this headline">¶</a></h2>
-<p>The available analyses are:</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="45%" />
-<col width="55%" />
-</colgroup>
-<thead valign="bottom">
-<tr><th class="head">analysis</th>
-<th class="head">description</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr><td><a class="reference internal" href="#clean-reads"><em>Cleaning sequence reads</em></a></td>
-<td>sequence reads cleaning</td>
-</tr>
-<tr><td><a class="reference internal" href="#mira-assembly"><em>Mira assembly</em></a></td>
-<td>Assembly reads into a contig set with  mira</td>
-</tr>
-<tr><td><a class="reference internal" href="#mapping"><em>Mapping</em></a></td>
-<td>bwa read mapping against a reference sequence</td>
-</tr>
-<tr><td><a class="reference internal" href="#bam-realignment"><em>Bam realignment</em></a></td>
-<td>GATK bam realignment</td>
-</tr>
-<tr><td>SNP calling</td>
-<td>SNP annotation from a bam file</td>
-</tr>
-<tr><td>ORF annotation</td>
-<td>ESTScan ORF annotation</td>
-</tr>
-<tr><td>ortholog annotation</td>
-<td>reciprocal blast based ortholog annotation</td>
-</tr>
-<tr><td>description annotation</td>
-<td>description blast based annotation</td>
-</tr>
-<tr><td>SSR annotation</td>
-<td>microsatellite sputnik based annotation</td>
-</tr>
-<tr><td>cdna intron annotation</td>
-<td>est2genome cDNA based annotation</td>
-</tr>
-<tr><td>GO annotation</td>
-<td>blast2go  annotation</td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="section" id="naming-conventions">
-<h2>Naming conventions<a class="headerlink" href="#naming-conventions" title="Permalink to this headline">¶</a></h2>
+<h1>Naming conventions<a class="headerlink" href="#naming-conventions" title="Permalink to this headline">¶</a></h1>
 <p>The franklin usage is heavily based on directory and file name conventions. If the input files are not located where franklin expects to find them or they have non-standard file names the analysis will fail.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -177,10 +128,57 @@ lb_mos.pl_illumina.sm_mos.sfastq  lb_pep.pl_illumina.sm_pep.sfastq
 lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 </div>
 </div>
+<div class="section" id="available-analyses">
+<h1>Available analyses<a class="headerlink" href="#available-analyses" title="Permalink to this headline">¶</a></h1>
+<p>The available analyses are:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="45%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">analysis</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><a class="reference internal" href="#clean-reads"><em>Cleaning sequence reads</em></a></td>
+<td>sequence reads cleaning</td>
+</tr>
+<tr><td><a class="reference internal" href="#mira-assembly"><em>Mira assembly</em></a></td>
+<td>Assembly reads into a contig set with  mira</td>
+</tr>
+<tr><td><a class="reference internal" href="#mapping"><em>Mapping</em></a></td>
+<td>bwa read mapping against a reference sequence</td>
+</tr>
+<tr><td><a class="reference internal" href="#bam-realignment"><em>Bam realignment</em></a></td>
+<td>GATK bam realignment</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#snp-calling"><em>SNP calling</em></a></td>
+<td>SNP annotation from a bam file</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#orf-annotation"><em>ORF annotation</em></a></td>
+<td>ESTScan ORF annotation</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#ortholog-annotation"><em>Ortholog annotation</em></a></td>
+<td>reciprocal blast based ortholog annotation</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#description-annotation"><em>Description annotation</em></a></td>
+<td>description blast based annotation</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#ssr-annotation"><em>Microsatellite annotation</em></a></td>
+<td>microsatellite sputnik based annotation</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#intron-annotation"><em>cDNA intron annotation</em></a></td>
+<td>est2genome cDNA based annotation</td>
+</tr>
+<tr><td><a class="reference external" href="annotation.html#go-annotation"><em>GO annotation</em></a></td>
+<td>blast2go  annotation</td>
+</tr>
+</tbody>
+</table>
 <div class="section" id="cleaning-sequence-reads">
 <span id="clean-reads"></span><h2>Cleaning sequence reads<a class="headerlink" href="#cleaning-sequence-reads" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="introduction">
-<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
 <p>franklin can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in franklin that are used depending on the platform and on the quality availability:</p>
 <dl class="docutils">
 <dt>long reads with quality</dt>
@@ -218,7 +216,6 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <dt>solexa</dt>
 <dd>adaptor removal, bad quality trimming,  and short sequence filtering</dd>
 </dl>
-</div>
 <div class="section" id="input-and-output-files">
 <h3>Input and output files<a class="headerlink" href="#input-and-output-files" title="Permalink to this headline">¶</a></h3>
 <p>The reads to be cleaned should be in the project directory under /reads/original/. The <a class="reference internal" href="#naming-conventions">naming conventions</a> should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/original, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.</p>
@@ -269,16 +266,13 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 </div>
 <div class="section" id="mira-assembly">
 <span id="id1"></span><h2>Mira assembly<a class="headerlink" href="#mira-assembly" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id2">
-<h3>Introduction<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference external" href="http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=Main_Page">mira</a> assembler is used to create a set of contigs with the sequence reads. The reads can come from 454, sanger and illumina sequencing. Hybrid assembly are possible. For mira configuration details refer to its documentation.</p>
-</div>
-<div class="section" id="id3">
-<h3>Input and output files<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3>Input and output files<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the <a class="reference internal" href="#naming-conventions">naming conventions</a>.</p>
 </div>
-<div class="section" id="id4">
-<h3>Configuration parameters<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3>Configuration parameters<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <p>The default configuration is tailored to EST assemblies. To modify the mira command line parameters you should go to the mira section in the franklin.conf file. The options are:</p>
 <dl class="docutils">
 <dt>job_options</dt>
@@ -300,18 +294,15 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 </div>
 </div>
 <div class="section" id="mapping">
-<span id="id5"></span><h2>Mapping<a class="headerlink" href="#mapping" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id6">
-<h3>Introduction<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<span id="id4"></span><h2>Mapping<a class="headerlink" href="#mapping" title="Permalink to this headline">¶</a></h2>
 <p>A set of read files can be mapped against a reference genome. For the mapping franklin uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.</p>
-</div>
-<div class="section" id="id7">
-<h3>Input and output files<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id5">
+<h3>Input and output files<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p>The read files should be located in reads/cleaned/ and should follow the <a class="reference internal" href="#naming-conventions">naming conventions</a>. It is very important to set in the read file names the library, sample and platforms, otherwise the realignment and the SNP calling will fail. The reference genome should be located in mapping/reference as a fasta file.</p>
 <p>Once bwa is finished a timestamped mapping directory will contain a result/by_readgroup subdirectory with one bam file for each input read file. Every one of such bam files is considered to be a read group. After the mapping is finished a merge_bam analysis can be done. That analysis will merged all bam files located in result/by_reagroup and will create an unique bam file in result/merged_bam. This bam file will contain as many read groups as bam files are merged. Every read group will retain the information about the library, sample and platform.</p>
 </div>
-<div class="section" id="id8">
-<h3>Running the analysis<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id6">
+<h3>Running the analysis<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <p>The analysis is run in divided in three franklin analysis:</p>
 <dl class="docutils">
 <dt>mapping</dt>
@@ -324,17 +315,14 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 </div>
 </div>
 <div class="section" id="bam-realignment">
-<span id="id9"></span><h2>Bam realignment<a class="headerlink" href="#bam-realignment" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id10">
-<h3>Introduction<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h2>Bam realignment<a class="headerlink" href="#bam-realignment" title="Permalink to this headline">¶</a></h2>
 <p>This analysis does a <a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit">GATK</a> <a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels">realignment</a>. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.</p>
-</div>
-<div class="section" id="id11">
-<h3>Input and output files<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id8">
+<h3>Input and output files<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
 <p>The only one input file should be mapping/result/merged.bam. This bam file contains all the reads mapped to the reference genome. The output file will be also mapping/result/merged.bam (a versioned copy).</p>
 </div>
-<div class="section" id="id12">
-<h3>Running the analysis<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id9">
+<h3>Running the analysis<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
 <p>The corresponding franklin is realign_bam.</p>
 </div>
 </div>
@@ -351,32 +339,30 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
 <li><a class="reference external" href="#">Usage</a><ul>
 <li><a class="reference external" href="#creating-a-new-project">Creating a new project</a></li>
 <li><a class="reference external" href="#running-an-analysis">Running an analysis</a></li>
-<li><a class="reference external" href="#available-analyses">Available analyses</a></li>
+</ul>
+</li>
 <li><a class="reference external" href="#naming-conventions">Naming conventions</a></li>
+<li><a class="reference external" href="#available-analyses">Available analyses</a><ul>
 <li><a class="reference external" href="#cleaning-sequence-reads">Cleaning sequence reads</a><ul>
-<li><a class="reference external" href="#introduction">Introduction</a></li>
 <li><a class="reference external" href="#input-and-output-files">Input and output files</a></li>
 <li><a class="reference external" href="#configuration-parameters">Configuration parameters</a></li>
 <li><a class="reference external" href="#lucy-settings">lucy settings</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#mira-assembly">Mira assembly</a><ul>
-<li><a class="reference external" href="#id2">Introduction</a></li>
-<li><a class="reference external" href="#id3">Input and output files</a></li>
-<li><a class="reference external" href="#id4">Configuration parameters</a></li>
+<li><a class="reference external" href="#id2">Input and output files</a></li>
+<li><a class="reference external" href="#id3">Configuration parameters</a></li>
 <li><a class="reference external" href="#running-the-analysis">Running the analysis</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#mapping">Mapping</a><ul>
-<li><a class="reference external" href="#id6">Introduction</a></li>
-<li><a class="reference external" href="#id7">Input and output files</a></li>
-<li><a class="reference external" href="#id8">Running the analysis</a></li>
+<li><a class="reference external" href="#id5">Input and output files</a></li>
+<li><a class="reference external" href="#id6">Running the analysis</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#bam-realignment">Bam realignment</a><ul>
-<li><a class="reference external" href="#id10">Introduction</a></li>
-<li><a class="reference external" href="#id11">Input and output files</a></li>
-<li><a class="reference external" href="#id12">Running the analysis</a></li>
+<li><a class="reference external" href="#id8">Input and output files</a></li>
+<li><a class="reference external" href="#id9">Running the analysis</a></li>
 </ul>
 </li>
 </ul>
@@ -387,8 +373,8 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
             <p class="topless"><a href="introduction.html"
                                   title="previous chapter">Description</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="architecture.html"
-                                  title="next chapter">Architecture</a></p>
+            <p class="topless"><a href="annotation.html"
+                                  title="next chapter">Annotation</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="_sources/using_franklin.txt"
@@ -418,7 +404,7 @@ lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq</pre>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="architecture.html" title="Architecture"
+          <a href="annotation.html" title="Annotation"
              >next</a> |</li>
         <li class="right" >
           <a href="introduction.html" title="Description"

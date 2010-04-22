@@ -29,29 +29,8 @@ Running an analysis
 
 This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.
 
-Available analyses
-------------------
-
-The available analyses are:
-
-========================================    =================================================
-analysis                                    description
-========================================    =================================================
-:ref:`clean-reads`                          sequence reads cleaning
-:ref:`mira-assembly`                        Assembly reads into a contig set with  mira
-:ref:`mapping`                              bwa read mapping against a reference sequence
-:ref:`bam-realignment`                      GATK bam realignment
-SNP calling                                 SNP annotation from a bam file
-ORF annotation                              ESTScan ORF annotation
-ortholog annotation                         reciprocal blast based ortholog annotation
-description annotation                      description blast based annotation
-SSR annotation                              microsatellite sputnik based annotation
-cdna intron annotation                      est2genome cDNA based annotation
-GO annotation                               blast2go  annotation
-========================================    =================================================
-
 Naming conventions
-------------------
+==================
 
 The franklin usage is heavily based on directory and file name conventions. If the input files are not located where franklin expects to find them or they have non-standard file names the analysis will fail. 
 
@@ -81,14 +60,32 @@ The sequence file names for the reads should define several tags: lb (library), 
   lb_mos.pl_illumina.sm_mos.sfastq  lb_pep.pl_illumina.sm_pep.sfastq
   lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq
 
+Available analyses
+==================
+
+The available analyses are:
+
+========================================    =================================================
+analysis                                    description
+========================================    =================================================
+:ref:`clean-reads`                          sequence reads cleaning
+:ref:`mira-assembly`                        Assembly reads into a contig set with  mira
+:ref:`mapping`                              bwa read mapping against a reference sequence
+:ref:`bam-realignment`                      GATK bam realignment
+:ref:`snp-calling`                          SNP annotation from a bam file
+:ref:`orf-annotation`                       ESTScan ORF annotation
+:ref:`ortholog-annotation`                  reciprocal blast based ortholog annotation
+:ref:`description-annotation`               description blast based annotation
+:ref:`ssr-annotation`                       microsatellite sputnik based annotation
+:ref:`intron-annotation`                    est2genome cDNA based annotation
+:ref:`go-annotation`                        blast2go  annotation
+========================================    =================================================
+
 
 .. _clean-reads:
 
 Cleaning sequence reads
 -----------------------
-
-Introduction
-____________
 
 franklin can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in franklin that are used depending on the platform and on the quality availability:
 
@@ -207,9 +204,6 @@ In this file the paths to the vector and splice files for lucy should be stated 
 Mira assembly
 -------------
 
-Introduction
-____________
-
 The `mira <http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=Main_Page>`_ assembler is used to create a set of contigs with the sequence reads. The reads can come from 454, sanger and illumina sequencing. Hybrid assembly are possible. For mira configuration details refer to its documentation.
 
 Input and output files
@@ -251,9 +245,6 @@ The select_last_assembly will just make a soft link named assembly/result that p
 Mapping
 -------
 
-Introduction
-____________
-
 A set of read files can be mapped against a reference genome. For the mapping franklin uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.
 
 Input and output files
@@ -283,9 +274,6 @@ merge_bam
 Bam realignment
 ---------------
 
-Introduction
-____________
-
 This analysis does a `GATK <http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit>`_ `realignment <http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels>`_. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.
 
 Input and output files
@@ -297,5 +285,3 @@ Running the analysis
 ____________________
 
 The corresponding franklin is realign_bam.
-
-
