@@ -46,17 +46,16 @@ class AnnotationAnalyzer(Analyzer):
         except KeyError:
             seqs_fpaths = []
         seqs_paths  = self._get_seq_or_repr_path(seqs_fpaths, repr_fpaths)
-        for seq_path, input_ in zip(seqs_paths, inputs['input']):
+        for seq_path in seqs_paths:
             seq_fpath = seq_path.last_version
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
             io_fhands = {'in_seq': open(seq_fpath),
                          'outputs':{'repr':temp_repr}}
 
-            if input_.last_version in configuration:
-
+            if seq_path.basename in configuration:
                 #there is a different configuration for every file to annotate
-                config = configuration[str(input_.last_version)]
+                config = configuration[seq_path.basename]
             else:
                 config = configuration
 
@@ -113,12 +112,16 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               blast_program=blast_program,
                                               blast_db=blastdb,
                                               dbtype=db_kind)
+                if db_kind == 'nucl':
+                    blast_program = 'tblastx'
+                else:
+                    blast_program = 'tblastn'
                 reverse_blast = backbone_blast_runner(
                                               query_fpath=blastdb_seq_fpath,
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db_seq=input_.last_version,
-                                              dbtype=db_kind)
+                                              dbtype='nucl')
                 if input_ not in blasts:
                     blasts[input_] = {}
                 blasts[input_][database] = {'blast':blast,
@@ -138,8 +141,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                     'reverse_blast':{'blast':
                                      blasts[input_][database]['reverse_blast']},
                     'species': database}
-                configuration[input_] = {}
-                configuration[input_][database] = step_config
+                configuration[input_.basename] = {}
+                configuration[input_.basename][database] = step_config
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
@@ -357,10 +360,9 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
             step['name_in_config'] = database
             pipeline.append(step)
             for input_ in inputs['input']:
-                input_fpath = input_.last_version
-                step_config = {'blasts': blasts[input_fpath]}
-                configuration[input_fpath] = {}
-                configuration[input_fpath][database] = step_config
+                step_config = {'blasts': blasts[input_.last_version]}
+                configuration[input_.basename] = {}
+                configuration[input_.basename][database] = step_config
         #print configuration
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
@@ -478,7 +480,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                            'java_memory':java_memory,
                            'prop_fpath':prop_fpath}
 
-            configuration[input_fpath] = {'annotate_gos': step_config}
+            configuration[input_.basename] = {'annotate_gos': step_config}
 
         result = self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,

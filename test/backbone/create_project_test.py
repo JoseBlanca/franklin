@@ -8,7 +8,7 @@ from os.path import join, exists
 
 from configobj import ConfigObj
 
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
@@ -118,9 +118,9 @@ class TestBackbone(unittest.TestCase):
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
         words = ['ATGAAC']
-        configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454,
-                                     'words_to_remove_454':words}}
-        configuration = {'Cleaning':{'adaptors_file_454':adaptors_path_454,
+        univec = os.path.join(DATA_DIR, 'blast', 'univec')
+        configuration = {'Cleaning':{'vector_database':univec,
+                                     'adaptors_file_454':adaptors_path_454,
                                      'words_to_remove_454':words,
                                      'edge_removal':{'454_left':3,
                                                      '454_right':3}}}

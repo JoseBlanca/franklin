@@ -251,7 +251,7 @@ class OrthologTest(unittest.TestCase):
         nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr',
-                                           'kind': 'prot'}},
+                                           'kind': 'nucl'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
                                                  'java_memory':2048}
@@ -280,7 +280,7 @@ class OrthologTest(unittest.TestCase):
                     'arabidopsis_genes+')
         os.makedirs(bdir)
         shutil.copy(join(DATA_DIR, 'blastResult.xml'),
-                    join(bdir, 'blast.blastx.xml'))
+                    join(bdir, 'blast.tblastx.xml'))
 
         do_analysis(project_settings=settings_path, kind='annotate_go',
                     silent=True)
