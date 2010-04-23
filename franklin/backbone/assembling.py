@@ -103,7 +103,7 @@ class MiraAssemblyAnalyzer(Analyzer):
         output_dirs = self._create_output_dirs(timestamped=True)
         assembly_dir = output_dirs['analysis']
         mira_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
-
+        original_dir = os.getcwd()
         os.chdir(assembly_dir)
         #with technologies have we used?
         #each input file should have a link in the assembly dir
@@ -179,6 +179,7 @@ class MiraAssemblyAnalyzer(Analyzer):
             os.symlink(mira_info_dir, os.path.join(results_dir,
                                                   BACKBONE_DIRECTORIES['info']))
         self._log({'analysis_finished':True})
+        os.chdir(original_dir)
 
 DEFINITIONS ={
     'prepare_mira_assembly':
