@@ -22,7 +22,7 @@ Created on 27/10/2009
 import unittest
 from StringIO import StringIO
 
-from franklin.gmod.cmap import cmap_to_gff
+from franklin.gmod.cmap import cmap_to_gff, cmap_to_mcf
 
 class CmapTest(unittest.TestCase):
     'The cmap functionality'
@@ -71,6 +71,12 @@ class CmapTest(unittest.TestCase):
         fhand = StringIO()
         cmap_to_gff(cmap, fhand)
         #print fhand.getvalue()
+
+        fhand = StringIO()
+        cmap_to_mcf(cmap, fhand)
+        print fhand.getvalue()
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

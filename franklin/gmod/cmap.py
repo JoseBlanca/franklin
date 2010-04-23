@@ -141,3 +141,42 @@ def cmap_to_gff(data, fhand):
     gff.extend(_cmap_correspondences(marker_count, marker_id_map))
 
     write_gff(gff, fhand)
+
+def cmap_to_mcf(data, fhand):
+    'Given a dict with the cmap data and an output fhand it writes a mcf file'
+
+    for mapset in data['map_sets']:
+        fhand.write('**************************************************\n')
+        fhand.write('map: %s\n' %mapset['name'])
+        fhand.write('**************************************************\n\n')
+        for map_ in mapset['maps']:
+            fhand.write(map_['name'] + '\n')
+            markers = []
+            qtls = []
+            for feat_loc in map_['feature_locations']:
+                start = feat_loc['start']
+                if 'end' in feat_loc:
+                    end = feat_loc['end']
+                else:
+                    end = feat_loc['start']
+                if start == end:
+                    markers.append({'name':feat_loc['feature'],
+                                    'start':start})
+                else:
+                    qtls.append({'name':feat_loc['feature'],
+                                 'start':start,
+                                 'end':end})
+            #now we sort the markers
+            numeric_sort = lambda x, y: int(x['start'] - y['start'])
+            markers = sorted(markers, numeric_sort)
+            for marker in markers:
+                fhand.write('%s\t%s\n' % (marker['name'], marker['start']))
+            fhand.write('qtls\n')
+            qtls = sorted(qtls, numeric_sort)
+            for marker in qtls:
+                location = float(marker['start'] + marker['end']) / 2.0
+                location = '%.1f' % location
+                fhand.write('%s\t%s\t%s\t%s\t%s\n' % (marker['name'], location,
+                                                    location, location,
+                                                    location))
+        fhand.write('\n\n')
