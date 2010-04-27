@@ -317,7 +317,7 @@ class FileNamingSchema(object):
                 self._new_naming_dict[name] = uniquename
         return uniquename
 
-    def commit(self):
+    def commit(self, description=None):
         '''It commits the new  '''
         self._naming_schema.commit()
         self._write_dict_to_file()
