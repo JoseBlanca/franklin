@@ -1,6 +1,7 @@
 /.pydevproject
 *.pyc
 /franklin.egg-info
-/build
+doc/build
 /dist
 test/backbone/formatdb.log
+.settings
