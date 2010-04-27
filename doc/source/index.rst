@@ -1,16 +1,16 @@
-.. franklin documentation master file, created by
+.. ngs_backbone documentation master file, created by
    sphinx-quickstart on Fri Apr  9 09:16:18 2010.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 
-franklin
-======================
+ngs_backbone
+============
 
-franklin is a bioinformatic application created to work on sequence analysis by using NGS (Next Generation Sequencing)  and sanger sequences. It is capable of cleaning reads, do de novo assembly or mapping against a reference and annotate SNPs, SSRs, ORFs, GO terms and sequence descriptions.
-Our laboratory is focused on transcriptomic analysis, so the tool has been used and tested on transcriptomes. Some analyses will be useful for genome analysis, but since our work deals mainly with transcriptomes design tradeoffs in franklin reflect this. 
+ngs_backbone is a bioinformatic application created to work on sequence analysis by using NGS (Next Generation Sequencing)  and sanger sequences. It is capable of cleaning reads, do de novo assembly or mapping against a reference and annotate SNPs, SSRs, ORFs, GO terms and sequence descriptions.
+Our laboratory is focused on transcriptomic analysis, so the tool has been used and tested on transcriptomes. Some analyses will be useful for genome analysis, but since our work deals mainly with transcriptomes design tradeoffs in ngs_backbone reflect this.
 
-For the analyses, in most cases, franklin uses external software like: mira_, bwa_, samtools_, picard_, etc.
+For the analyses, in most cases, ngs_backbone uses external software like: mira_, bwa_, samtools_, picard_, etc.
 
 The application works on Linux so experience with that operating system is advisable when using it.
 
@@ -19,7 +19,7 @@ The application works on Linux so experience with that operating system is advis
    :hidden:
 
    introduction
-   using_franklin
+   using_ngs_backbone
    annotation
    architecture
 

@@ -2,43 +2,43 @@
 Usage
 =====
 
-The main ideas to consider when using franklin are: project and analysis. A *project* is a directory (with its subdirectories) that includes a configuration file and all input and output files. An *analysis* takes some inputs from the project and creates some outputs. franklin knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/.
+The main ideas to consider when using ngs_backbone are: project and analysis. A *project* is a directory (with its subdirectories) that includes a configuration file and all input and output files. An *analysis* takes some inputs from the project and creates some outputs. ngs_backbone knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/.
 
-The configuration parameters required for every analysis are stored in the configuration file (franklin.conf) located in the project directory. A sample of this configuration file is created by franklin when a new project is created. This file should be tweaked to adapt the analyses to your requirements before running them.
+The configuration parameters required for every analysis are stored in the configuration file (ngs_backbone.conf) located in the project directory. A sample of this configuration file is created by ngs_backbone when a new project is created. This file should be tweaked to adapt the analyses to your requirements before running them.
 
-franklin has only two main executables: franklin_create_project.py and franklin_analysis.py. The first one is used to create a project from scratch and the second one to run all analyses.
+ngs_backbone has only two main executables: backbone_create_project.py and backbone_analysis.py. The first one is used to create a project from scratch and the second one to run all analyses.
 
 Creating a new project
 ----------------------
 
 ::
 
-  $ franklin_create_project.py -p project_name
+  $ ngs_backbone_create_project.py -p project_name
   $ ls -l project_name
   total 4
-  -rw-r--r-- 1 jose jose 2479 abr 16 09:30 franklin.conf
+  -rw-r--r-- 1 jose jose 2479 abr 16 09:30 ngs_backbone.conf
 
-This command will create a new directory named project_name with a file named franklin.conf in it. These are the two hallmarks that define a franklin *project*, the directory and the configuration file.
+This command will create a new directory named project_name with a file named ngs_backbone.conf in it. These are the two hallmarks that define a ngs_backbone *project*, the directory and the configuration file.
 
 Running an analysis
 -------------------
 
 ::
 
-  $ franklin_analysis.py -a analysis_name
+  $ ngs_backbone_analysis.py -a analysis_name
 
 This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.
 
 Naming conventions
 ==================
 
-The franklin usage is heavily based on directory and file name conventions. If the input files are not located where franklin expects to find them or they have non-standard file names the analysis will fail. 
+The ngs_backbone usage is heavily based on directory and file name conventions. If the input files are not located where ngs_backbone expects to find them or they have non-standard file names the analysis will fail.
 
 ====================== ========================
 file or directory type location
 ====================== ========================
-configuration file     franklin.conf
-log file               franklin.log
+configuration file     ngs_backbone.conf
+log file               ngs_backbone.log
 raw reads              /reads/original/
 clean reads            /reads/cleaned/
 assemblies             /assembly/
@@ -49,7 +49,7 @@ mapping output         /mapping/result/
 annotations            /annotations/
 annotation input       /annotations/input/
 annotation output      /annotation/result/
-error logs             /franklin_errors/
+error logs             /ngs_backbone_errors/
 ====================== ========================
 
 Sequence files should be fasta or sanger fastq, fasta for the ones without quality and fastq for the ones with quality. The file extension should reflect the sequence file format, fasta and sfastq.
@@ -87,7 +87,7 @@ analysis                                    description
 Cleaning sequence reads
 -----------------------
 
-franklin can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in franklin that are used depending on the platform and on the quality availability:
+ngs_backbone can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in ngs_backbone that are used depending on the platform and on the quality availability:
 
 long reads with quality
   for sanger and 454 sequences with quality information
@@ -107,7 +107,7 @@ precise vector removal
   If the vector and cloning site is known lucy can be used to remove the vector in a precise way.
 
 bad quality trimming
-  There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise franklin does the job (illumina).
+  There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise ngs_backbone does the job (illumina).
 
 general vector removal
   The reads are compared against the Univec database using blast to look for remaining vectors.
@@ -127,10 +127,10 @@ short sequence filtering
 The pipelines are:
 
 long reads with quality
-  adaptor removal, precise vector removal, bad quality trimming, general vector removal, low complexity masking, word removal, edge removal, and short sequence filtering 
+  adaptor removal, precise vector removal, bad quality trimming, general vector removal, low complexity masking, word removal, edge removal, and short sequence filtering
 
 long reads without quality
-  general vector removal, bad quality trimming, low complexity masking, word removal, edge removal, and short sequence filtering 
+  general vector removal, bad quality trimming, low complexity masking, word removal, edge removal, and short sequence filtering
 
 solexa
   adaptor removal, bad quality trimming,  and short sequence filtering
@@ -144,7 +144,7 @@ The reads to be cleaned should be in the project directory under /reads/original
 Configuration parameters
 ________________________
 
-The configuration for the cleaning analysis is found in the Cleaning section on the franklin.conf file. The parameters are:
+The configuration for the cleaning analysis is found in the Cleaning section on the ngs_backbone.conf file. The parameters are:
 
 vector_database
   The blast database that will be used to look for clonning vectors.
@@ -160,13 +160,13 @@ adaptors_file_illumina
 
 words_to_remove_454
   A list of words to be removed if they are found at the start of the 454 sequences.
-  
+
 words_to_remove_sanger
   Idem for the sanger sequences
 
 words_to_remove_illumina
   Idem for the illumina sequences
- 
+
 edge_removal -> 454_left
   A fixed number of bases to be removed from the left edge of the 454 reads.
 
@@ -211,12 +211,12 @@ The `mira <http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=
 Input and output files
 ______________________
 
-The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the `naming conventions`_. 
+The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the `naming conventions`_.
 
 Configuration parameters
 ________________________
 
-The default configuration is tailored to EST assemblies. To modify the mira command line parameters you should go to the mira section in the franklin.conf file. The options are:
+The default configuration is tailored to EST assemblies. To modify the mira command line parameters you should go to the mira section in the ngs_backbone.conf file. The options are:
 
 job_options
   The mira job options parameter. By default they are: denovo, est
@@ -233,7 +233,7 @@ sanger_settings
 Running the analysis
 ____________________
 
-The mira assembly analysis is divided into three franklin analyses: prepare_mira_assembly, mira_assembly and select_last_assembly.
+The mira assembly analysis is divided into three ngs_backbone analyses: prepare_mira_assembly, mira_assembly and select_last_assembly.
 
 The analysis prepare_mira_assembly will create the files required as input by mira in the directory assembly/input/. These files will be created taking the reads from reads/cleaned/.
 
@@ -247,7 +247,7 @@ The select_last_assembly will just make a soft link named assembly/result that p
 Mapping
 -------
 
-A set of read files can be mapped against a reference genome. For the mapping franklin uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.
+A set of read files can be mapped against a reference genome. For the mapping ngs_backbone uses bwa with two algorithms, one for the long reads (sanger and 454) and other for the short reads (illumina). The result is a set of bam files one for each input read file or a merged bam file with all reads in it.
 
 Input and output files
 ______________________
@@ -259,7 +259,7 @@ Once bwa is finished a timestamped mapping directory will contain a result/by_re
 Running the analysis
 ____________________
 
-The analysis is run in divided in three franklin analysis:
+The analysis is run in divided in three ngs_backbone analysis:
 
 mapping
   It maps the reads with bwa creating one bam for every input file
@@ -286,4 +286,4 @@ The only one input file should be mapping/result/merged.bam. This bam file conta
 Running the analysis
 ____________________
 
-The corresponding franklin is realign_bam.
+The corresponding ngs_backbone is realign_bam.

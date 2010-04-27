@@ -17,7 +17,7 @@ There are different annotation analyses for the sequences, but they all operate 
 SNP calling
 -----------
 
-SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/results/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The franklin analysis is: annotate_snv.
+SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/results/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The ngs_backbone analysis is: annotate_snv.
 
 Configuration parameters
 ________________________
@@ -40,7 +40,7 @@ Also a subsection edge_removal inside Snvs could be defined. The parameters in t
 Blast databases
 ---------------
 
-Several annotations make use of blast. franklin requires some data about the blast databases to be able to run. This information should be set up in the franklin.conf file on the blast section. In this section for each blast database a subsection for every database should be prepared. An example for the nr would be::
+Several annotations make use of blast. ngs_backbone requires some data about the blast databases to be able to run. This information should be set up in the ngs_backbone.conf file on the blast section. In this section for each blast database a subsection for every database should be prepared. An example for the nr would be::
 
  [blast]
  [[nr]]
@@ -53,13 +53,13 @@ Several annotations make use of blast. franklin requires some data about the bla
 Description annotation
 ----------------------
 
-A description for the sequences can be created blasting some databases. Several blast databases can be used in a sequential way. Once a sequence has a blast hit in one of the databases, the description will be build from the description of that hit. For instance let's imagine that we have to annotate 10 sequences with the databases swissprot and tair. Both blasts would be carried out. If we find significant hits for 5 sequences in swissprot those sequence would be already annotated and a description for the 5  remaining sequences will be look for at the second database (tair in this case). The corresponding franklin analysis is annotate_description.
+A description for the sequences can be created blasting some databases. Several blast databases can be used in a sequential way. Once a sequence has a blast hit in one of the databases, the description will be build from the description of that hit. For instance let's imagine that we have to annotate 10 sequences with the databases swissprot and tair. Both blasts would be carried out. If we find significant hits for 5 sequences in swissprot those sequence would be already annotated and a description for the 5  remaining sequences will be look for at the second database (tair in this case). The corresponding ngs_backbone analysis is annotate_description.
 
 
 Configuration parameters
 ________________________
 
-In the franklin.conf section Annotation, subsection description_annotation the parameter description_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::`blast-databases`.
+In the ngs_backbone.conf section Annotation, subsection description_annotation the parameter description_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::`blast-databases`.
 
 
 .. _go-annotation:
@@ -67,7 +67,7 @@ In the franklin.conf section Annotation, subsection description_annotation the p
 GO annotation
 -------------
 
-franklin annotates the `Gene Ontology <http://www.geneontology.org/>` ontology terms by using `Blast2GO <http://www.blast2go.org/>`. Blast2GO uses the results of a blast nr search to infer the relevant GO terms for every sequence. The corresponding blast analysis is annotate_go.
+ngs_backbone annotates the `Gene Ontology <http://www.geneontology.org/>` ontology terms by using `Blast2GO <http://www.blast2go.org/>`. Blast2GO uses the results of a blast nr search to infer the relevant GO terms for every sequence. The corresponding blast analysis is annotate_go.
 
 Output files
 ____________
@@ -78,7 +78,7 @@ The Blast2GO executable creates two files that can be loaded by the graphical Bl
 Configuration parameters
 ________________________
 
-In the franklin.conf annotation section a go_annotation subsection should be present. The parameters are:
+In the ngs_backbone.conf annotation section a go_annotation subsection should be present. The parameters are:
 
 create_dat_file
   It can be set to True or False
@@ -92,13 +92,13 @@ java_memory
 ORF annotation
 --------------
 
-To annotate the ORFs found in your sequences just run the franklin analysis annotate_orf. ESTScan will be used to look for the ORFs. The output will be (after running write_annotation) a couple of files for each input file, one for the DNA and another for the proteins.
+To annotate the ORFs found in your sequences just run the ngs_backbone analysis annotate_orf. ESTScan will be used to look for the ORFs. The output will be (after running write_annotation) a couple of files for each input file, one for the DNA and another for the proteins.
 
 
 Configuration parameters
 ________________________
 
-In order to run this analysis in the section orf_annotation at the franklin.conf file the estscan_matrix matrix file should be defined. This is a valid specific matrix file for ESTScan
+In order to run this analysis in the section orf_annotation at the ngs_backbone.conf file the estscan_matrix matrix file should be defined. This is a valid specific matrix file for ESTScan
 
 
 .. _ssr-annotation:
@@ -106,7 +106,7 @@ In order to run this analysis in the section orf_annotation at the franklin.conf
 Microsatellite annotation
 -------------------------
 
-The SSRs can be annotated just by running the franklin analysis annotate_microsatellite. The result of this analysis will be shown in the gff file and in a csv microsatellite file.
+The SSRs can be annotated just by running the ngs_backbone analysis annotate_microsatellite. The result of this analysis will be shown in the gff file and in a csv microsatellite file.
 
 
 .. _ortholog-annotation:
@@ -114,13 +114,13 @@ The SSRs can be annotated just by running the franklin analysis annotate_microsa
 Ortholog annotation
 -------------------
 
-franklin can annotate the orthologs doing a reciprocal blast search. It can be done on one or several blast databases. The franklin analysis is called ortholog_annotation. The list of orthologs will be found in annotations/result/
+ngs_backbone can annotate the orthologs doing a reciprocal blast search. It can be done on one or several blast databases. The ngs_backbone analysis is called ortholog_annotation. The list of orthologs will be found in annotations/result/
 
 
 Configuration parameters
 ________________________
 
-In the franklin.conf section Annotation, subsection ortholog_annotation the parameter ortholog_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::`blast-databases`.
+In the ngs_backbone.conf section Annotation, subsection ortholog_annotation the parameter ortholog_databases should have a list of at least one blast database. The blast databases used should be defined in the corresponding section, see ::`blast-databases`.
 
 
 .. _intron-annotation:
@@ -128,11 +128,11 @@ In the franklin.conf section Annotation, subsection ortholog_annotation the para
 cDNA intron annotation
 ----------------------
 
-When the sequences to annotate are cDNA franklin can guess where the introns were by using the analysis annotate_introns. To do it it aligns the cDNA with a genomic sequence using the emboss program est2genome. As a shortcut franklin before running est2genome with the whole genomic sequence it does a blast search to look for the relevant genome region and only after that the est2genome alignment is done. 
+When the sequences to annotate are cDNA ngs_backbone can guess where the introns were by using the analysis annotate_introns. To do it it aligns the cDNA with a genomic sequence using the emboss program est2genome. As a shortcut ngs_backbone before running est2genome with the whole genomic sequence it does a blast search to look for the relevant genome region and only after that the est2genome alignment is done.
 
 Configuration parameters
 ________________________
 
-In the franklin.conf section Annotation, subsection Cdna_intron_annotation the parameter genomic_db should have one blast database. The blast database used should be defined in the corresponding section, see ::`blast-databases`. Also in the same section the parameter genomic_seqs should have the absolute path to the fasta file with the genomic sequences that make up the employed database.
+In the ngs_backbone.conf section Annotation, subsection Cdna_intron_annotation the parameter genomic_db should have one blast database. The blast database used should be defined in the corresponding section, see ::`blast-databases`. Also in the same section the parameter genomic_seqs should have the absolute path to the fasta file with the genomic sequences that make up the employed database.
 
 

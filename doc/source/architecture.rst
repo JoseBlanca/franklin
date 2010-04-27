@@ -2,9 +2,9 @@
 Architecture
 ============
 
-This section is intended to be read by python developers interested in fixing bugs or extending the functionality of franklin. A standard user does not need to read it.
+This section is intended to be read by python developers interested in fixing bugs or extending the functionality of ngs_backbone. A standard user does not need to read it.
 
-The franklin functionality depends heavily on Biopython and on some external tools, these are the foundations that franklin requires to do its work. The functions and classes provided by franklin itself are collected in two main packages: franklin and backbone.
+The ngs_backbone functionality depends heavily on Biopython and on some external tools, these are the foundations that ngs_backbone requires to do its work. The functions and classes provided by franklin itself are collected in two main packages: franklin and backbone.
 
 .. image:: figures/franklin_architecture.png
 

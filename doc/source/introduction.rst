@@ -2,27 +2,27 @@
 Philosophy
 ==========
 
-franklin is an easy to use application capable of doing in a reliable way some NGS analyses. The main design directives have been:
+ngs_backbone is an easy to use application capable of doing in a reliable way some NGS analyses. The main design directives have been:
 
  * analyses reproducibility
  * ease of use
  * modularity
  * standard format output
 
-By using franklin we can run a complete analysis in a reproducible way. Every analysis parameter is configured in a text file and a log file is generated as the analysis progresses. Also the analysis is easy to do, instead of running multiple scripts and programs to do an analysis only one command is required.
+By using ngs_backbone we can run a complete analysis in a reproducible way. Every analysis parameter is configured in a text file and a log file is generated as the analysis progresses. Also the analysis is easy to do, instead of running multiple scripts and programs to do an analysis only one command is required.
 
-An application like that in a fast moving field, as the NGS is, has the risk of stagnate rapidly. To avoid this pitfall special care has been taken in the design of the architecture of franklin. Everything within the application is modular and several independent layers have been differentiated within the code to facilitate the maintenance of the code. In fact before its public release franklin has gone through refactorings of several modules that have not affected the overall structure of the application.
+An application like that in a fast moving field, as the NGS is, has the risk of stagnate rapidly. To avoid this pitfall special care has been taken in the design of the architecture of ngs_backbone. Everything within the application is modular and several independent layers have been differentiated within the code to facilitate the maintenance of the code. In fact before its public release ngs_backbone has gone through refactorings of several modules that have not affected the overall structure of the application.
 
 
 
 Installation
 ============
 
-To install franklin python 2.6 and Biopython_ are required. python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing franklin. Once the tarball is downloaded you have to run the following command::
+To install ngs_backbone python 2.6 and Biopython_ are required. python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
 
   $ python setup.py install
 
-franklin requires several external tools to run the analyses. So before running the analyses please install them.
+ngs_backbone requires several external tools to run the analyses. So before running the analyses please install them.
 
 =============================  ================================================================
 analysis                       external tools required
