@@ -1,6 +1,0 @@
-max_seq_length      : 692
-seq_length_variance : 22371
-seq_length          : 200117
-min_seq_length      : 50
-num_sequences       : 440
-seq_length_average  : 454
