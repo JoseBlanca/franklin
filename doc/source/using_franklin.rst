@@ -191,7 +191,9 @@ lucy_settings
 lucy settings
 _____________
 
-The lucy settings file should have the following format::
+The lucy settings file should have the following format:
+
+::
 
   {'library1':{'vector_file':'lib1_vector.fasta', 'splice_file':'lib1_splice.fasta'},
    'library2':{'vector_file':'lib2_vector.fasta', 'splice_file':'lib2_splice.fasta'},}
