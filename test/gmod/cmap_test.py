@@ -76,8 +76,6 @@ class CmapTest(unittest.TestCase):
         cmap_to_mcf(cmap, fhand)
         print fhand.getvalue()
 
-
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
