@@ -29,6 +29,8 @@ Running an analysis
 
 This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.
 
+.. _naming:
+
 Naming conventions
 ==================
 
@@ -140,6 +142,7 @@ ______________________
 
 The reads to be cleaned should be in the project directory under /reads/original/. The `naming conventions`_ should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/original, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
 
+.. _clean-config:
 
 Configuration parameters
 ________________________

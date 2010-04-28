@@ -21,6 +21,7 @@ The application works on Linux so experience with that operating system is advis
    introduction
    using_ngs_backbone
    annotation
+   tutorials
    architecture
 
 
