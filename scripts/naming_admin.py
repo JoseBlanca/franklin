@@ -11,6 +11,22 @@ Created on 21/12/2009
 
 from optparse import OptionParser
 '''
+
+# Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
+# This file is part of project.
+# franklin is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# franklin is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
+
 from optparse import OptionParser
 import sys, sqlalchemy, os
 from franklin.db.naming import (create_naming_database, project_in_database,

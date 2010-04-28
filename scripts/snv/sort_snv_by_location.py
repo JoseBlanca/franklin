@@ -14,13 +14,7 @@
 
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
-'''
-This script sorts the snv output file and get required postions
 
-Created on 14/10/2009
-
-@author: peio
-'''
 import sys
 from optparse import OptionParser
 
