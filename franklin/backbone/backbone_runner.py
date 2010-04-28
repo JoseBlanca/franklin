@@ -73,7 +73,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None, silent=False)
 
 
     log_fpath = os.path.join(settings['General_settings']['project_path'],
-                                 'franklin.log')
+                             BACKBONE_DIRECTORIES['log_file'])
     _configure_logging(log_fpath, silent)
 
     analysis_def = specifications[kind]

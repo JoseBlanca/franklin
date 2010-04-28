@@ -20,7 +20,8 @@ Created on 12/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 BACKBONE_DIRECTORIES = {
-    'config_file': 'franklin.conf',
+    'config_file': 'backbone.conf',
+    'log_file': 'backbone.log',
     'external_software_config': 'config_data',
     'original_reads': 'reads/original',
     'cleaned_reads': 'reads/cleaned',
@@ -41,7 +42,7 @@ BACKBONE_DIRECTORIES = {
     'annotation_result':'annotations/result',
     'blast_dir':'annotations/blast',
     'blast_databases':'annotations/blast/databases',
-    'error_dir': 'franklin_errors',
+    'error_dir': 'backbone_errors',
                        }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',
