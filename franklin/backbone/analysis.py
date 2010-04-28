@@ -153,6 +153,7 @@ class Analyzer(object):
                                      pre_time_bit,
                                      time_bit,
                                      post_time_bit)
+            timed_dir = os.path.abspath(timed_dir)
             dirs[kind] = timed_dir
         return dirs
 
