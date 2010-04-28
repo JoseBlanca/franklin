@@ -1,19 +1,36 @@
 '''
+This module ispart of ngs_backbone. It perfroms analyses related to
+sequence assembly
+
 Created on 15/03/2010
 
 @author: peio
 '''
+# Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
+# This file is part of franklin.
+# franklin is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# franklin is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with franklin. If not, see <http://www.gnu.org/licenses/>.
+
+
+
 from tempfile import NamedTemporaryFile
 import os, shutil
-from franklin.utils.misc_utils import NamedTemporaryDir
-from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
-                                        LastAnalysisAnalyzer)
+from franklin.backbone.analysis import (Analyzer, LastAnalysisAnalyzer)
 from franklin.utils.cmd_utils import call
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
-from franklin.utils.seqio_utils import (seqio, cat, seqs_in_file,
-                                        write_seqs_in_file)
+from franklin.utils.seqio_utils import (seqio, cat)
 
 class PrepareMiraAssemblyAnalyzer(Analyzer):
     'It assembles the cleaned reads'
