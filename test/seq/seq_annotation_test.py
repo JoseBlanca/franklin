@@ -57,10 +57,10 @@ class AnnotationTests(unittest.TestCase):
         descrip_annotator = create_description_annotator([blast])
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021854')
         sequence = descrip_annotator(sequence)
-        assert sequence.description == 'ankyrin repeat family protein'
+        assert sequence.description == 'Similar to ankyrin repeat family protein'
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021853')
         sequence = descrip_annotator(sequence)
-        assert sequence.description == 'DNA-binding protein-related'
+        assert sequence.description == 'Similar to DNA-binding protein-related'
 
     @staticmethod
     def test_microsatelite_annotator():

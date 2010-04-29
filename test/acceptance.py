@@ -20,6 +20,7 @@ from optparse import OptionParser
 import shutil, logging, os
 from os.path import join, exists
 from franklin.backbone.backbone_runner import do_analysis
+from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 
 def test_backbone(analysis=None, analysis_dir=None):
@@ -49,7 +50,7 @@ def test_backbone(analysis=None, analysis_dir=None):
             os.mkdir(reads)
         os.symlink(join(repository_dir, 'cleaning'),
                    join(project_dir, 'reads/original'))
-        analyses = ['clean_reads', 'clean_read_stats']
+        analyses = ['clean_reads', 'read_stats']
         run_analysis(analyses, settings_path)
 
     if choice in ('assembling', None):
@@ -134,14 +135,15 @@ def run_analysis(analyses, settings_path):
     print "Test OK"
 
 def prepare_conf(project_dir, repository_dir):
-    'It prepares the franklin configuration file'
+    'It prepares the backbone configuration file'
 
     univec_database = join(DATA_DIR, 'blast', 'univec')
     estscan_matrix  = join(repository_dir, 'config_data', 'At.smat')
     tair7_seq       = join(repository_dir, 'annotation', 'tair7_genomic.fasta')
 
-    out_fhand = open(join(project_dir, 'franklin.conf'), 'w')
-    for line in open(join(repository_dir, 'franklin.conf')):
+    out_fhand = open(join(project_dir, BACKBONE_DIRECTORIES['config_file']),
+                     'w')
+    for line in open(join(repository_dir, 'backbone.conf')):
         line = line.replace('/home/jope/test_backbone', project_dir)
         if 'UniVec' in line:
             line = line.replace('UniVec', univec_database)

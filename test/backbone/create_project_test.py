@@ -176,7 +176,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         seq = seqs[2].seq
         # It means thar the starting word has been removed
         assert  seq.startswith('AAAAG')
-        do_analysis(project_settings=settings_path, kind='clean_read_stats')
+        do_analysis(project_settings=settings_path, kind='read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')
         original_stats_dir = join(original_reads_dir, 'stats')
         assert exists(clean_stats_dir)

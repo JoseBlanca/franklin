@@ -134,7 +134,6 @@ class MiraAssemblyAnalyzer(Analyzer):
                 techs.add('454')
             elif 'sanger' in fname:
                 techs.add('sanger')
-
         settings = self._project_settings['Mira']
         #job part of the command
 
@@ -142,7 +141,6 @@ class MiraAssemblyAnalyzer(Analyzer):
         job.extend(techs)
         job = ','.join(job)
         job = '-job=' + job
-
         cmd = ['mira', '-project=%s' % proj_name, '-fasta', job]
         if 'general_settings' in settings:
             general_settings = settings['general_settings']

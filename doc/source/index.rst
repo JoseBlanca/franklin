@@ -12,7 +12,11 @@ Our laboratory is focused on transcriptomic analysis, so the tool has been used 
 
 For the analyses, in most cases, ngs_backbone uses external software like: mira_, bwa_, samtools_, picard_, etc.
 
-The application works on Linux so experience with that operating system is advisable when using it.
+The application works on Linux so experience with that operating system is required when using it.
+
+ngs_backbone is free software so contributions and shared development will be welcomed.
+
+ngs_backbone is at this time beta software so it will not be bug free. It works for us and we hope that it will work for you, but if you find any problem, please inform us.
 
 .. toctree::
    :maxdepth: 2
@@ -21,6 +25,8 @@ The application works on Linux so experience with that operating system is advis
    introduction
    using_ngs_backbone
    annotation
+   tutorials
+   seqio
    architecture
 
 
