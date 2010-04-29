@@ -26,6 +26,7 @@ ngs_backbone is at this time beta software so it will not be bug free. It works 
    using_ngs_backbone
    annotation
    tutorials
+   seqio
    architecture
 
 
