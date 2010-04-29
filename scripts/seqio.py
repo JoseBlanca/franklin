@@ -29,11 +29,11 @@ def parse_options():
                       help='input quality file')
     parser.add_option('-f', '--informat', dest="informat", default=None,
                       help='input file format')
-    parser.add_option('-t', '--outseqfile', dest='outseqfile',
+    parser.add_option('-o', '--outseqfile', dest='outseqfile',
                     help='output sequence file')
-    parser.add_option('-r', '--outqualfile', dest='outqualfile', default=None,
+    parser.add_option('-l', '--outqualfile', dest='outqualfile', default=None,
                       help='output quality file')
-    parser.add_option('-e', '--outformat', dest="outformat",
+    parser.add_option('-t', '--outformat', dest="outformat",
                       help='output file format')
     return parser
 
