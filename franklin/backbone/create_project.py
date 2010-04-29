@@ -55,6 +55,7 @@ def create_project(name, directory=None, configuration=None):
 
     config['Other_settings'] = {}
     config['Other_settings']['default_sanger_quality'] = 20
+    config['Other_settings']['java_memory'] = 2048
 
     config['Cleaning'] = {}
 
@@ -70,24 +71,24 @@ def create_project(name, directory=None, configuration=None):
     config['Cleaning'].comments = {'vector_database':comments}
 
     config['Cleaning']['edge_removal'] = {}
-    config['Cleaning']['edge_removal']['454_left']       = None
-    config['Cleaning']['edge_removal']['454_right']      = None
-    config['Cleaning']['edge_removal']['sanger_left']    = None
-    config['Cleaning']['edge_removal']['sanger_right']   = None
-    config['Cleaning']['edge_removal']['illumina_left']  = None
+    config['Cleaning']['edge_removal']['454_left'] = None
+    config['Cleaning']['edge_removal']['454_right'] = None
+    config['Cleaning']['edge_removal']['sanger_left'] = None
+    config['Cleaning']['edge_removal']['sanger_right'] = None
+    config['Cleaning']['edge_removal']['illumina_left'] = None
     config['Cleaning']['edge_removal']['illumina_right'] = None
 
     lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
     config['Cleaning']['lucy_settings'] = lucy_settings
 
     config['Mira'] = {}
-    config['Mira']['job_options']     = ['denovo', 'est']
+    config['Mira']['job_options'] = ['denovo', 'est']
     config['Mira']['general_settings'] = ['-AS:sd=1']
-    config['Mira']['454_settings']    = ['-LR:mxti=no', '-CO:rodirs=5',
+    config['Mira']['454_settings'] = ['-LR:mxti=no', '-CO:rodirs=5',
                                          '-AL:mrs=80',
                                          '-OUT:sssip=0:stsip=0']
     config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30',
-                                         '-CO:rodirs=5','-AL:mrs=80',
+                                         '-CO:rodirs=5', '-AL:mrs=80',
                                          '-OUT:sssip=0:stsip=0']
 
     config['Mappers'] = {}
@@ -126,81 +127,81 @@ def create_project(name, directory=None, configuration=None):
 
     config['Snvs'] = {}
     config['Snvs']['edge_removal'] = {}
-    config['Snvs']['edge_removal']['454_left']       = None
-    config['Snvs']['edge_removal']['454_right']      = None
-    config['Snvs']['edge_removal']['sanger_left']    = None
-    config['Snvs']['edge_removal']['sanger_right']   = None
-    config['Snvs']['edge_removal']['illumina_left']  = None
+    config['Snvs']['edge_removal']['454_left'] = None
+    config['Snvs']['edge_removal']['454_right'] = None
+    config['Snvs']['edge_removal']['sanger_left'] = None
+    config['Snvs']['edge_removal']['sanger_right'] = None
+    config['Snvs']['edge_removal']['illumina_left'] = None
     config['Snvs']['edge_removal']['illumina_right'] = None
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}
     config['snv_filters']['filter1']['name'] = 'uniq_contiguous'
-    config['snv_filters']['filter1']['use']  = False
+    config['snv_filters']['filter1']['use'] = False
     config['snv_filters']['filter1']['genomic_db'] = 'path to blast db'
     config['snv_filters']['filter1']['genomic_seqs_fpath'] = 'path to seqs file'
 
     config['snv_filters']['filter2'] = {}
-    config['snv_filters']['filter2']['name']     = 'close_to_intron'
-    config['snv_filters']['filter2']['use']      = False
+    config['snv_filters']['filter2']['name'] = 'close_to_intron'
+    config['snv_filters']['filter2']['use'] = False
     config['snv_filters']['filter2']['distance'] = 30
 
     config['snv_filters']['filter3'] = {}
-    config['snv_filters']['filter3']['name']            = 'high_variable_region'
-    config['snv_filters']['filter3']['use']             = False
+    config['snv_filters']['filter3']['name'] = 'high_variable_region'
+    config['snv_filters']['filter3']['use'] = False
     config['snv_filters']['filter3']['max_variability'] = 0.6
-    config['snv_filters']['filter3']['window']          = None
+    config['snv_filters']['filter3']['window'] = None
 
     config['snv_filters']['filter4'] = {}
-    config['snv_filters']['filter4']['name']      = 'close_to_snv'
-    config['snv_filters']['filter4']['use']       = False
+    config['snv_filters']['filter4']['name'] = 'close_to_snv'
+    config['snv_filters']['filter4']['use'] = False
     config['snv_filters']['filter4']['distance'] = 60
 
     config['snv_filters']['filter5'] = {}
-    config['snv_filters']['filter5']['name']     = 'close_to_limit'
-    config['snv_filters']['filter5']['use']      = False
+    config['snv_filters']['filter5']['name'] = 'close_to_limit'
+    config['snv_filters']['filter5']['use'] = False
     config['snv_filters']['filter5']['distance'] = 60
 
     config['snv_filters']['filter6'] = {}
-    config['snv_filters']['filter6']['name']      = 'maf'
-    config['snv_filters']['filter6']['use']       = False
+    config['snv_filters']['filter6']['name'] = 'maf'
+    config['snv_filters']['filter6']['use'] = False
     config['snv_filters']['filter6']['frequency'] = 0.8
 
     config['snv_filters']['filter7'] = {}
     config['snv_filters']['filter7']['name'] = 'by_kind'
-    config['snv_filters']['filter7']['use']  = True
+    config['snv_filters']['filter7']['use'] = True
     config['snv_filters']['filter7']['kind'] = 0 # snp
 
     config['snv_filters']['filter8'] = {}
-    config['snv_filters']['filter8']['name']        = 'cap_enzyme'
-    config['snv_filters']['filter8']['use']         = False
+    config['snv_filters']['filter8']['name'] = 'cap_enzyme'
+    config['snv_filters']['filter8']['use'] = False
     config['snv_filters']['filter8']['all_enzymes'] = True
 
     config['snv_filters']['filter9'] = {}
-    config['snv_filters']['filter9']['name']       = 'is_variable_in_rg'
-    config['snv_filters']['filter9']['step_name']  = 'is_variable'
-    config['snv_filters']['filter9']['use']        = False
+    config['snv_filters']['filter9']['name'] = 'is_variable_in_rg'
+    config['snv_filters']['filter9']['step_name'] = 'is_variable'
+    config['snv_filters']['filter9']['use'] = False
     config['snv_filters']['filter9']['group_kind'] = 'read_groups'
-    config['snv_filters']['filter9']['groups']     = []
+    config['snv_filters']['filter9']['groups'] = []
 
     config['snv_filters']['filter10'] = {}
-    config['snv_filters']['filter10']['name']       = 'is_variable_in_lb'
-    config['snv_filters']['filter10']['step_name']  = 'is_variable'
-    config['snv_filters']['filter10']['use']        = False
+    config['snv_filters']['filter10']['name'] = 'is_variable_in_lb'
+    config['snv_filters']['filter10']['step_name'] = 'is_variable'
+    config['snv_filters']['filter10']['use'] = False
     config['snv_filters']['filter10']['group_kind'] = 'libraries'
-    config['snv_filters']['filter10']['groups']     = []
+    config['snv_filters']['filter10']['groups'] = []
 
     config['snv_filters']['filter11'] = {}
-    config['snv_filters']['filter11']['name']       = 'is_variable_in_sm'
-    config['snv_filters']['filter11']['step_name']  = 'is_variable'
-    config['snv_filters']['filter11']['use']        = False
+    config['snv_filters']['filter11']['name'] = 'is_variable_in_sm'
+    config['snv_filters']['filter11']['step_name'] = 'is_variable'
+    config['snv_filters']['filter11']['use'] = False
     config['snv_filters']['filter11']['group_kind'] = 'samples'
-    config['snv_filters']['filter11']['groups']     = []
+    config['snv_filters']['filter11']['groups'] = []
 
     config['snv_filters']['filter12'] = {}
-    config['snv_filters']['filter12']['name']       = 'ref_not_in_list'
-    config['snv_filters']['filter12']['use']        = False
-    config['snv_filters']['filter12']['list_path']  = 'path_to_file_with_list'
+    config['snv_filters']['filter12']['name'] = 'ref_not_in_list'
+    config['snv_filters']['filter12']['use'] = False
+    config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
     #overwrite with the configuration given
     outputs = ['vcf']

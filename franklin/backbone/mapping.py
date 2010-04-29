@@ -78,7 +78,7 @@ class MappingAnalyzer(Analyzer):
                           reads_fpath=read_fpath.last_version,
                           reference_fpath=reference_fpath.last_version,
                           out_bam_fpath=out_bam_fpath,
-                          parameters = mapping_parameters)
+                          parameters=mapping_parameters)
         self._log({'analysis_finished':True})
 
 class MergeBamAnalyzer(Analyzer):
@@ -89,11 +89,11 @@ class MergeBamAnalyzer(Analyzer):
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
-        inputs          = self._get_input_fpaths()
-        bam_paths      = inputs['bams']
+        inputs = self._get_input_fpaths()
+        bam_paths = inputs['bams']
         reference_path = inputs['reference']
 
-        output_dir      = self._create_output_dirs()['result']
+        output_dir = self._create_output_dirs()['result']
         merged_bam_path = VersionedPath(os.path.join(output_dir,
                                         BACKBONE_BASENAMES['merged_bam']))
 
@@ -104,6 +104,15 @@ class MergeBamAnalyzer(Analyzer):
         add_qualities = ('Sam_processing' in settings and
                        'add_default_qualities' in settings['Sam_processing'] and
                        settings['Sam_processing']['add_default_qualities'])
+
+        #memory for the java programs
+        if ('Other_settings' in settings and
+            'java_memory' in settings['Other_settings']):
+            java_mem = settings['Other_settings']['java_memory']
+        else:
+            java_mem = None
+
+
         if add_qualities:
             default_sanger_quality = settings['Other_settings']['default_sanger_quality']
             default_sanger_quality = int(default_sanger_quality)
@@ -112,9 +121,9 @@ class MergeBamAnalyzer(Analyzer):
         temp_dir = NamedTemporaryDir()
         for bam_path in bam_paths:
             bam_basename = bam_path.basename
-            temp_sam     =  NamedTemporaryFile(prefix='%s.' % bam_basename,
+            temp_sam = NamedTemporaryFile(prefix='%s.' % bam_basename,
                                                suffix='.sam')
-            sam_fpath    = os.path.join(temp_dir.name, bam_basename + '.sam')
+            sam_fpath = os.path.join(temp_dir.name, bam_basename + '.sam')
             bam2sam(bam_path.last_version, temp_sam.name)
             sam_fhand = open(sam_fpath, 'w')
             # First we need to create the sam with added tags and headers
@@ -152,7 +161,7 @@ class MergeBamAnalyzer(Analyzer):
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
-        sort_bam_sam(temp_bam.name, merged_bam_fpath)
+        sort_bam_sam(temp_bam.name, merged_bam_fpath, java_memory=java_mem)
         temp_bam.close()
         temp_sam.close()
         self._log({'analysis_finished':True})
@@ -165,7 +174,7 @@ class RealignBamAnalyzer(Analyzer):
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         os.chdir(project_path)
-        inputs    = self._get_input_fpaths()
+        inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
         bam_fpath = bam_path.last_version
         reference_path = inputs['reference']

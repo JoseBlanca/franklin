@@ -122,7 +122,7 @@ def merge_sam(infiles, outfile, reference):
     #first the reference part of the header
     ref_header = []
     for seq in seqs_in_file(reference):
-        name   = seq.name
+        name = seq.name
         length = len(seq)
         ref_header.append(['@SQ', 'SN:%s' % name, 'LN:%d' % length])
 
@@ -155,15 +155,16 @@ def merge_sam(infiles, outfile, reference):
             outfile.write(line)
     outfile.flush()
 
-def sort_bam_sam(in_fhand, out_fhand, picard_path= None,
-                 sort_method='coordinate'):
+def sort_bam_sam(in_fhand, out_fhand, picard_path=None,
+                 sort_method='coordinate', java_memory=None):
     'It sorts a bam file using picard'
     if picard_path is None:
         picard_path = _guess_picard_path()
+    java_cmd = java_cmd(java_memory)
     picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
-    cmd = ['java', '-jar', picard_sort_jar, 'INPUT=' +  in_fhand,
-           'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method]
-    call(cmd, raise_on_error=True)
+    java_cmd.extend(['-jar', picard_sort_jar, 'INPUT=' + in_fhand,
+           'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method])
+    call(java_cmd, raise_on_error=True)
 
 def guess_mapped(flag):
     'Giving the flag, guess if the read is mapped or not'
