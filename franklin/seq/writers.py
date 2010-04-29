@@ -105,11 +105,12 @@ class GffWriter(object):
     'It writes sequences in an gff style'
     def __init__(self, fhand, default_type=None, source='.'):
         'It inits the class'
-        self.fhand = fhand
+        self.fhand        = fhand
         self.num_features = 0
+        self._offset      = 0
 
         if default_type is None:
-            default_type = 'SO:0000001'
+            default_type = 'region' # SO:000001
         self._default_type = default_type
         self._source       = source
         self._write_gff_header()
@@ -120,12 +121,14 @@ class GffWriter(object):
 
     def write(self, sequence):
         'It does the real write of the features'
-        seq_feature = self._get_seq_feature(sequence)
+        seq_offset = self._offset
+        seq_feature = self._get_seq_feature(sequence, seq_offset)
         self.fhand.write('\t'.join(seq_feature) + '\n')
         #subfeature
-        for feature in self._get_sub_features(sequence):
+        for feature in self._get_sub_features(sequence, seq_offset):
             self.num_features += 1
             self.fhand.write('\t'.join(feature) + '\n')
+        self._offset += len(sequence)
 
     def _get_seq_sofa_type(self, sequence):
         'It gets the type of the feature'
@@ -159,13 +162,18 @@ class GffWriter(object):
 
         return ';'.join(attributes)
 
-    def _get_seq_feature(self, sequence):
+    def _get_seq_feature(self, sequence, seq_offset):
         'It gets the gff section of the sequence. The parent'
-        seqid      = sequence.id
-        source     = self._source
-        type_      = self._get_seq_sofa_type(sequence)
-        start      = '1'
-        end        = str(len(sequence))
+        seqid  = sequence.id
+        source = self._source
+        type_  = self._get_seq_sofa_type(sequence)
+        start  = 1
+        end    = len(sequence)
+        start  = str(start)
+        end    = str(end)
+        #start  = str(seq_offset + start)
+        #end    = str(seq_offset + end)
+
         score      = '.'
         strand     = '.'
         phase      = '.'
@@ -174,21 +182,25 @@ class GffWriter(object):
         return  [seqid, source, type_, start, end, score, strand, phase,
                 attributes]
 
-    def _get_sub_features(self, sequence):
+    def _get_sub_features(self, sequence, seq_offset):
         'It gets the features of the sequence feature'
         srr_cont, intron_cont, orf_cont, snv_cont = 0, 0, 0, 0
         for feature in sequence.features:
-            kind = feature.type
-            seqid      = sequence.id
-            start      = str(feature.location.start)
-            end        = str(feature.location.end)
-            strand     = '.'
-            phase      = '.'
-            score      = '.'
+            kind   = feature.type
+            seqid  = sequence.id
+            start  = int(str(feature.location.start)) + 1
+            end    = int(str(feature.location.end))   + 1
+            start  = str(start)
+            end    = str(end)
+            #start  = str(seq_offset + start)
+            #end    = str(seq_offset + end)
+            strand = '.'
+            phase  = '.'
+            score  = '.'
             if kind == 'microsatellite':
                 srr_cont += 1
                 source = 'sputnik'
-                type_      = 'SO:0000289'
+                type_      = 'microsatellite' #SO:0000289
                 score      = str(feature.qualifiers['score'])
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
@@ -196,14 +208,14 @@ class GffWriter(object):
             elif kind == 'intron':
                 intron_cont +=1
                 source     = 'est2genome'
-                type_      = 'SO:0000188'
+                type_      = 'intron' #SO:0000188
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, intron_cont)
             elif kind == 'orf':
                 orf_cont += 1
                 source     = 'estscan'
-                type_      = 'SO:0000236'
+                type_      = 'ORF' #SO:0000236
                 strand = feature.qualifiers['strand']
                 strand = '+' if strand == 'forward' else '-'
                 attributes = self._get_subfeature_attributes(sequence.id,
@@ -212,7 +224,7 @@ class GffWriter(object):
             elif kind == 'snv':
                 snv_cont += 1
                 source     = 'franklin'
-                type_      = 'SO:0001483'
+                type_      = 'SNV' #SO:0001483
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, snv_cont)
