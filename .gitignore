@@ -5,3 +5,4 @@ doc/build
 /dist
 test/backbone/formatdb.log
 .settings
+doc/source/download
