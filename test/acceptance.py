@@ -50,7 +50,7 @@ def test_backbone(analysis=None, analysis_dir=None):
             os.mkdir(reads)
         os.symlink(join(repository_dir, 'cleaning'),
                    join(project_dir, 'reads/original'))
-        analyses = ['clean_reads', 'clean_read_stats']
+        analyses = ['clean_reads', 'read_stats']
         run_analysis(analyses, settings_path)
 
     if choice in ('assembling', None):

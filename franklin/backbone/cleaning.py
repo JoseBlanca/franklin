@@ -309,7 +309,7 @@ DEFINITIONS = {
          'outputs':{'reads':{'directory': 'cleaned_reads'}},
          'analyzer': CleanReadsAnalyzer,
         },
-    'clean_read_stats':
+    'read_stats':
         {'inputs':{
             'original_reads':
                 {'directory': 'original_reads',
