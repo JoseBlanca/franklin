@@ -40,23 +40,23 @@ def guess_java_install_dir(jar_fpath):
     'It returns the dir path using locate on a jar file'
     java_dir_path = _locate_file(jar_fpath)
     if not java_dir_path:
-        msg =  '%s was not found in your system and it is required' % jar_fpath
+        msg = '%s was not found in your system and it is required' % jar_fpath
         raise RuntimeError(msg)
     java_dir_path = java_dir_path.replace(jar_fpath, '')
     return java_dir_path
 
 # Runner definitions, Define here the parameters of the programs you want to
 # use with this class
-STDOUT   = 'stdout'
+STDOUT = 'stdout'
 ARGUMENT = 'argument'
-STDIN    = 'stdin'
+STDIN = 'stdin'
 RUNNER_DEFINITIONS = {
     'blast': {'binary':'blast2',
-              'parameters': {'database' :{'required':True,  'option': '-d'},
-                             'program'  :{'required':True,  'option':'-p'},
-                             'expect'   :{'default': 0.0001,'option': '-e'},
-                             'nhitsv'   :{'default': 20,    'option':'-v'},
-                             'nhitsb'   :{'default': 20,    'option':'-b'},
+              'parameters': {'database' :{'required':True, 'option': '-d'},
+                             'program'  :{'required':True, 'option':'-p'},
+                             'expect'   :{'default': 0.0001, 'option': '-e'},
+                             'nhitsv'   :{'default': 20, 'option':'-v'},
+                             'nhitsb'   :{'default': 20, 'option':'-b'},
                              #'megablast':{'default':'T',  'option':'-n'},
                              'alig_format': {'default':7, 'option':'-m'}
                             },
@@ -77,7 +77,7 @@ RUNNER_DEFINITIONS = {
 #            'ignore_stderrs': ['Karlin-Altschul']
 #              },
     'seqclean_vect':{'binary':'seqclean_vect',
-                     'parameters':{'vector_db':{'required':True,'option':'-v'},
+                     'parameters':{'vector_db':{'required':True, 'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},
                                 'no_trash_low':{'default':None, 'option':'-M'},
                                    'no_trim_A':{'default':None, 'option':'-A'},
@@ -154,7 +154,7 @@ RUNNER_DEFINITIONS = {
              'parameters':{'enzymes':{'default':'all', 'option' : '-enzymes'},
                           'sitelen' :{'default':'4', 'option':'-sitelen' },
                           'stdout'  :{'default':'', 'option':'-stdout' },
-                          'auto'    :{'default':'', 'option':'-auto' },},
+                          'auto'    :{'default':'', 'option':'-auto' }, },
              'output':{'remap':{'option':'-outfile', 'files':['map']}},
              'input':{'sequence':{'option': '-sequence',
                                   'files_format':['fasta']}}
@@ -189,7 +189,7 @@ def _process_parameters(parameters, parameters_def):
             bin_.extend([ _param_to_str(value_) for value_ in value])
         else:
             if value is not None:
-                bin_.append( _param_to_str(value))
+                bin_.append(_param_to_str(value))
     return bin_
 
 def _param_to_str(param):
@@ -321,7 +321,7 @@ def create_runner(tool, parameters=None, environment=None):
 
 
         for key, value in runner_data['input'].items():
-            for key2,value2 in value.items():
+            for key2, value2 in value.items():
                 if key2 == 'fhands':
                     for fhand in value2:
                         fhand.close()
@@ -341,7 +341,7 @@ def create_runner(tool, parameters=None, environment=None):
 
                 logging.warning(print_name + ':' + stderr)
             else:
-                raise RuntimeError('Problem running ' + tool + ': ' + stdout +
+                raise RuntimeError('Problem running ' + tool + ': ' + stdout + 
                                stderr)
 
         # Now we are going to make this list with the files we are going to
@@ -362,11 +362,11 @@ def create_runner(tool, parameters=None, environment=None):
 
 def _which_binary(binary):
     'It return the full path of the binary if exists'
-    stdout  = subprocess.PIPE
+    stdout = subprocess.PIPE
     process = subprocess.Popen(['/bin/which', binary], stdout=stdout)
-    stdout  = process.communicate()[0]
+    stdout = process.communicate()[0]
 
-    if stdout and stdout[0]  == '/':
+    if stdout and stdout[0] == '/':
         return stdout.strip()
     else:
         return None
@@ -426,7 +426,8 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     retcode = process.returncode
     if raise_on_error and retcode:
         msg = 'Error running command: %s\n stderr: %s\n stdout: %s' % \
-                                                (' '.join(cmd), stderr, stdout)
+                                                (' '.join(cmd), stderr_str,
+                                                 stdout_str)
         raise RuntimeError(msg)
     if stdout != subprocess.PIPE:
         stdout.flush()
@@ -451,9 +452,9 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
     if dat_fpath is not None:
         cmd.append('-d')
     call(cmd, raise_on_error=True)
-    shutil.move(out_basename +'.annot', annot_fpath)
+    shutil.move(out_basename + '.annot', annot_fpath)
     if dat_fpath is not None:
-        shutil.move(out_basename +'.dat', dat_fpath)
+        shutil.move(out_basename + '.dat', dat_fpath)
     tempdir.close()
 
 def java_cmd(java_memory):
@@ -491,7 +492,7 @@ def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
     # If there are no repetitive sequences, repreatmasker does not return any
     # file
     if 'No repetitive sequences' in stderr:
-        out_seq_fname =  in_seq_fhand.name
+        out_seq_fname = in_seq_fhand.name
 
 
     #we store the output file in a StringIO because the temp dir is going to
