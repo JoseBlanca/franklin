@@ -35,6 +35,16 @@ min_num_alleles
 
 Also a subsection edge_removal inside Snvs could be defined. The parameters in this section are used to when we want to ignore the nucleotides close to the edged of the reads. This parameters are dependent on the platform and are: 454_left, 454_right, sanger_left, sanger_right, illumina_left and illumina_right.
 
+
+.. _snv-filter:
+
+SNV filtering
+-------------
+Once you have the snv annotated, you may not want all of them. Only some of then may be of your interest. ngs_backbone provide an analysis to filter snvs.
+
+Yo can find more information on how to use this analysis :doc:`here <snv_filters>`.
+
+
 .. _blast-databases:
 
 Blast databases
