@@ -22,6 +22,7 @@ from sqlalchemy import (Table, Column, Integer, String, Boolean, ForeignKey,
 from franklin.db.db_utils import setup_mapping
 
 from franklin.utils.seqio_utils import seqs_in_file, write_seqs_in_file
+from franklin.seq.seqs import get_seq_name
 from datetime import datetime
 
 def create_naming_database(engine):
@@ -67,7 +68,7 @@ def add_project_to_naming_database(engine, name, code, description=None):
     session = session_klass()
     project = row_classes['projects']()
     project.short_name = name
-    project.code       = code
+    project.code = code
     if description is not None:
         project.description = description
     session.add(project)
@@ -91,12 +92,12 @@ class _CodeGenerator(object):
     #no need for more public methods
     def __init__(self, seed):
         '''init'''
-        self._last_code  = seed
+        self._last_code = seed
         self._dictionary = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     def next(self):
         '''It return the next code '''
         last_code = self._last_code
-        length    = len(last_code)
+        length = len(last_code)
         letter_part, number_part = '', ''
         next_code = None
         for item  in last_code:
@@ -128,7 +129,7 @@ class _CodeGenerator(object):
     def _next_letter_code(self, letter):
         '''It return the nextletter code'''
         length = len(letter)
-        if letter ==  length * "Z":
+        if letter == length * "Z":
             return "A" * (length + 1)
         elif letter[-1] == "Z":
             return self._next_letter_code(letter[:-1]) + "A"
@@ -259,7 +260,7 @@ class DbNamingSchema(object):
         if self.project is None or self.kind is None:
             msg = 'Project and kind should be given to remove a name'
             raise ValueError(msg)
-        names_klass   = self._row_classes['names']
+        names_klass = self._row_classes['names']
         last_name = \
             self._session.query(names_klass).filter_by(project=self._project,
                feature_type=self.kind).order_by(names_klass.date.desc()).first()
@@ -277,9 +278,9 @@ class FileNamingSchema(object):
     '''It takes a naming file and it converts to a dict '''
     def __init__(self, fhand, naming_schema=None, feature_kind=None):
         '''The initiator '''
-        self._fhand           = fhand
-        self._naming_schema   = naming_schema
-        self._naming_dict     = {}
+        self._fhand = fhand
+        self._naming_schema = naming_schema
+        self._naming_dict = {}
         self._new_naming_dict = {}
         self._naming_file_to_dict()
         self._feature_kind = feature_kind
@@ -339,8 +340,8 @@ class FileNamingSchema(object):
         dictionary'''
         for line in open(self._fhand.name, 'r'):
             if not line.isspace():
-                items      = line.split(':')
-                name       = items[0].strip()
+                items = line.split(':')
+                name = items[0].strip()
                 uniquename = items[1].strip()
                 self._naming_dict[name] = uniquename
 
@@ -401,9 +402,10 @@ def _change_names_in_files_by_seq(fhand_in, fhand_out, naming, file_format):
     seqs = seqs_in_file(fhand_in, format=file_format)
 
     for seq in seqs:
-        new_name = naming.get_uniquename()
+        old_name = get_seq_name(seq)
+        new_name = naming.get_uniquename(old_name)
         seq.name = new_name
-        seq.id   = new_name
+        seq.id = new_name
         write_seqs_in_file([seq], fhand_out, format=file_format)
 
 def change_names_in_files(fhand_in, fhand_out, naming, file_format):
@@ -422,8 +424,8 @@ class _GeneralNameParser(object):
     '''This class parses some kind of files looking for names '''
     def __init__(self, fhand, kind):
         '''Initiator'''
-        self.fhand  = fhand
-        self.kind   = kind
+        self.fhand = fhand
+        self.kind = kind
         self.regexs = NAMES_RE[self.kind]
         self._names = {}
         self._parser()
@@ -438,7 +440,7 @@ class _GeneralNameParser(object):
                 for regex in regex_list:
                     match_obj = re.match(regex, line)
                     try:
-                        name      = match_obj.groups()[0]
+                        name = match_obj.groups()[0]
                         self._names[obj_kind].append(name)
                     #pylint: disable-msg=W0704
                     except AttributeError:
