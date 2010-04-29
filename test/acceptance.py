@@ -48,8 +48,8 @@ def test_backbone(analysis=None, analysis_dir=None):
         reads = join(project_dir,'reads')
         if not exists(reads):
             os.mkdir(reads)
-        os.symlink(join(repository_dir, 'cleaning'),
-                   join(project_dir, 'reads/original'))
+        shutil.copytree(join(repository_dir, 'cleaning'),
+                        join(project_dir, 'reads/original'))
         analyses = ['clean_reads', 'read_stats']
         run_analysis(analyses, settings_path)
 
@@ -58,8 +58,8 @@ def test_backbone(analysis=None, analysis_dir=None):
         if os.path.exists(clean_reads_dir):
             shutil.rmtree(join(project_dir, 'reads'))
         os.mkdir(join(project_dir,'reads'))
-        os.symlink(join(repository_dir, 'assembling'),
-                   join(project_dir, 'reads/cleaned'))
+        shutil.copytree(join(repository_dir, 'assembling'),
+                        join(project_dir, 'reads/cleaned'))
 
         analyses = [ 'prepare_mira_assembly', 'mira_assembly',
                      'select_last_assembly']
@@ -70,13 +70,14 @@ def test_backbone(analysis=None, analysis_dir=None):
         if os.path.exists(clean_reads_dir):
             shutil.rmtree(join(project_dir, 'reads'))
         os.mkdir(join(project_dir, 'reads'))
-        os.symlink(join(repository_dir, 'assembling'),
-                   join(project_dir, 'reads/cleaned'))
+        shutil.copytree(join(repository_dir, 'assembling'),
+                        join(project_dir, 'reads/cleaned'))
         if exists(join(project_dir, 'mapping')):
             shutil.rmtree(join(project_dir, 'mapping'))
         os.makedirs(join(project_dir, 'mapping', 'reference'))
-        os.symlink(join(repository_dir, 'mapping', 'reference.fasta'),
-                   join(project_dir, 'mapping', 'reference', 'reference.fasta'))
+        shutil.copy(join(repository_dir, 'mapping', 'reference.fasta'),
+                    join(project_dir, 'mapping', 'reference',
+                         'reference.fasta'))
 
         analyses = ['mapping', 'select_last_mapping', 'merge_bam',
                     'realign_bam']
@@ -88,15 +89,15 @@ def test_backbone(analysis=None, analysis_dir=None):
         annot_res = join(annot_dir, 'repr')
         os.mkdir(join(annot_dir, 'input'))
         os.mkdir(annot_res)
-        os.symlink(join(repository_dir, 'snvs', 'reference.fasta'),
-                   join(annot_dir, 'input', 'reference.fasta'))
+        shutil.copy(join(repository_dir, 'snvs', 'reference.fasta'),
+                    join(annot_dir, 'input', 'reference.fasta'))
 
         mapping_dir = join(project_dir, 'mapping')
         create_dir(mapping_dir)
         os.mkdir(join(mapping_dir, 'reference'))
-        os.symlink(join(repository_dir, 'snvs', 'merged.bam'),
+        shutil.copy(join(repository_dir, 'snvs', 'merged.bam'),
                    join(project_dir, 'mapping', 'merged.bam'))
-        os.symlink(join(repository_dir, 'snvs', 'reference.fasta'),
+        shutil.copy(join(repository_dir, 'snvs', 'reference.fasta'),
                    join(project_dir, 'mapping', 'reference', 'reference.fasta'))
         analyses = ['annotate_snv', 'filter_snvs']
         run_analysis(analyses, settings_path)
@@ -106,10 +107,10 @@ def test_backbone(analysis=None, analysis_dir=None):
         if exists(join(annot_dir)):
             shutil.rmtree(annot_dir)
         os.mkdir(annot_dir)
-        os.symlink(join(repository_dir, 'annotation', 'input'),
-                   join(annot_dir, 'input'))
-        os.symlink(join(repository_dir, 'annotation', 'blast'),
-                   join(annot_dir, 'blast'))
+        shutil.copytree(join(repository_dir, 'annotation', 'input'),
+                        join(annot_dir, 'input'))
+        shutil.copytree(join(repository_dir, 'annotation', 'blast'),
+                        join(annot_dir, 'blast'))
 
         analyses = ['annotate_orf', 'annotate_microsatellite',
                     'annotate_go', 'annotate_description',
@@ -156,8 +157,8 @@ def prepare_conf(project_dir, repository_dir):
     config_data = join(project_dir, 'config_data')
     if exists(config_data):
         os.remove(config_data)
-    os.symlink(join(repository_dir, 'config_data'),
-               join(project_dir, config_data))
+    shutil.copytree(join(repository_dir, 'config_data'),
+                    join(project_dir, config_data))
     return out_fhand.name
 
 def parse_options():
