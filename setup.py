@@ -74,6 +74,6 @@ setup(
 
     package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*']},
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
-              'multiprocessing'],
+              'pysam'],
     scripts=scripts,
 )
