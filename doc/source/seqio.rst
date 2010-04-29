@@ -12,15 +12,15 @@ seq_io.py is a little utility distributed with ngs_backbone that allows us to mo
     -s INSEQFILE, --inseqfile=INSEQFILE input sequence file
     -q INQUALFILE, --inqualfile=INQUALFILE input quality file
     -f INFORMAT, --informat=INFORMAT input file format
-    -t OUTSEQFILE, --outseqfile=OUTSEQFILE output sequence file
-    -r OUTQUALFILE, --outqualfile=OUTQUALFILE output quality file
-    -e OUTFORMAT, --outformat=OUTFORMAT output file format
+    -o OUTSEQFILE, --outseqfile=OUTSEQFILE output sequence file
+    -l OUTQUALFILE, --outqualfile=OUTQUALFILE output quality file
+    -t OUTFORMAT, --outformat=OUTFORMAT output file format
 
 For instance, to go from sanger fastq to fasta and qual we would do::
 
-  seqio.py -s seq.sfastq -f sfastq -t seq.fasta -r seq.qual -e fasta
+  seqio.py -s seq.sfastq -f sfastq -o seq.fasta -l seq.qual -t fasta
 
 And to do the reverse::
 
-  $ seqio.py -s seq.fasta -q seq.qual -f fasta -t seq.sfastq -e sfastq
+  $ seqio.py -s seq.fasta -q seq.qual -f fasta -o seq.sfastq -l sfastq
 
