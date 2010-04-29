@@ -20,7 +20,6 @@ Created on 26/04/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
-from Bio.SeqIO.Interfaces import SequenceWriter
 import sys
 
 def parse_options():

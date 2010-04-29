@@ -29,6 +29,7 @@ ngs_backbone is at this time beta software so it will not be bug free. It works 
    tutorials
    seqio
    architecture
+   download
 
 
 .. _mira: http://sourceforge.net/apps/mediawiki/mira-assembler
