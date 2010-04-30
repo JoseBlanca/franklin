@@ -128,6 +128,7 @@ class VariantCallFormatWriter(object):
                 short_name, description = get_filter_description(name,
                                                                  parameters,
                                                       self._filter_descriptions)
+                short_name = short_name.upper()
                 filter_strs.append(short_name)
                 self._filter_descriptions[name, parameters] = (short_name,
                                                                description)

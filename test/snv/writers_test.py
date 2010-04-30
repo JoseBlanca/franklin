@@ -80,11 +80,11 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         writer.close()
         vcf = open(fhand.name).read()
         #print vcf
-        assert 'vks' in vcf
-        assert '##FILTER=vks' in vcf
+        assert 'VKS' in vcf
+        assert '##FILTER=VKS' in vcf
         assert '1|2:1,1' in vcf
         assert '.:.' in vcf
-        assert 'HVR0.8;vks' in vcf
+        assert 'HVR0.8;VKS' in vcf
         assert 'AF=0.2,0.5' in vcf
 
 if __name__ == "__main__":
