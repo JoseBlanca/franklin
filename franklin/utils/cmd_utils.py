@@ -457,11 +457,11 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
         shutil.move(out_basename + '.dat', dat_fpath)
     tempdir.close()
 
-def java_cmd(java_memory):
+def java_cmd(java_conf):
     'It returns the java -Xmxim thing'
     cmd = ['java']
-    if java_memory:
-        cmd.append('-Xmx%im' % int(java_memory))
+    if 'java_memory' in java_conf:
+        cmd.append('-Xmx%im' % int(java_conf['java_memory']))
     return cmd
 
 def run_repeatmasker_for_sequence(sequence, species='eudicotyledons'):
