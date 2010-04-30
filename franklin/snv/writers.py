@@ -47,7 +47,7 @@ class VariantCallFormatWriter(object):
         'It writes the header of the vcf file'
         header = self._header
         header.append('##format=VCFv3.3')
-        header.append('##fileDate=%s' %
+        header.append('##fileDate=%s' % 
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
         header.append('##reference=%s' % reference_name)
@@ -162,10 +162,12 @@ class VariantCallFormatWriter(object):
             ref_count = len(alleles[reference_allele]['read_names'])
         else:
             ref_count = 0
-        total_count = sum(acounts) + ref_count
-        afreqs  = [acount/total_count for acount in acounts]
+        total_count = float(sum(acounts) + ref_count)
+        afreqs = [acount / total_count for acount in acounts]
+        print afreqs
         if afreqs:
-            toprint_items.append('AF=%s' % ','.join(map(str, acounts)))
+            toprint_items.append('AF=%s' % ','.join(map(lambda x: '%.1f' % x,
+                                                        afreqs)))
 
         #MQ RMS mapping quality, e.g. MQ=52
         #BQ RMS base quality at this position
@@ -198,7 +200,7 @@ class VariantCallFormatWriter(object):
             if len(phreds) == 1:
                 phred = phreds[0]
             else:
-                inv_phred = lambda phred: math.pow(10, (-phred/10))
+                inv_phred = lambda phred: math.pow(10, (-phred / 10))
                 probs = map(inv_phred, phreds[:2])
                 prob = probs[0] * probs[1]
                 phred = -10 * math.log10(prob)
