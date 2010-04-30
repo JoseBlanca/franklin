@@ -52,7 +52,7 @@ FILTER_DESCRIPTIONS = {
         {'id':'cs%2d',
          'description':'The snv is closer than %d nucleotides to another snv'},
     'close_to_limit':
-        {'id':'cs%2d',
+        {'id':'cl%2d',
        'description':'The snv is closer than %d nucleotides to sequence limit'},
     'maf':
         {'id':'maf%.2f',
@@ -368,7 +368,7 @@ def create_snv_close_to_limit_filter(distance):
                                                  threshold=distance)
             if previous_result is not None:
                 continue
-            location = int(str(snv.location.start))
+            location = int(snv.location.start.position)
             if location < distance or location + distance > len(sequence):
                 result = True
             else:
