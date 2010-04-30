@@ -47,7 +47,7 @@ FILTER_DESCRIPTIONS = {
          'description':'An intron is located closer than %2d base pairs'},
     'high_variable_reg':
         {'id': 'HVR%.1f',
-    'description':'The region has more than %.1f snvs per 100bp'},
+    'description':'The region has more than %.1f snvs per base'},
     'close_to_snv':
         {'id':'cs%2d',
          'description':'The snv is closer than %d nucleotides to another snv'},
@@ -309,7 +309,7 @@ def create_high_variable_region_filter(max_variability, window=0):
             else:
                 total_length = window
                 snv_num = snvs_in_window(snv, snvs, window)
-            variability = (snv_num / float(total_length)) * 100
+            variability = snv_num / float(total_length)
             if variability > max_variability:
                 result = True
             else:
