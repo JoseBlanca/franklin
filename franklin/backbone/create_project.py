@@ -149,7 +149,7 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter3'] = {}
     config['snv_filters']['filter3']['name'] = 'high_variable_region'
     config['snv_filters']['filter3']['use'] = False
-    config['snv_filters']['filter3']['max_variability'] = 0.6
+    config['snv_filters']['filter3']['max_variability'] = 0.06
     config['snv_filters']['filter3']['window'] = None
 
     config['snv_filters']['filter4'] = {}
