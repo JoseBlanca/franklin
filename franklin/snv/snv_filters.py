@@ -228,16 +228,16 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             #are there any similar sequences?
             try:
                 alignment = alignments.next()
-                result = False
+                result = True
             except StopIteration:
                 #if there is no similar sequence we assume that is unique
-                result = True
-            if not result:
+                result = False
+            if result:
                 #how many matches, it should be only one
                 num_hits = len(alignment['matches'])
 
                 if num_hits > 1:
-                    result = False
+                    result = True
                 else:
                     #how many match parts have the first match?
                     #we could do it with the blast result, but blast is not very
@@ -250,7 +250,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                                           genomic_seqs_index=genomic_seqs_index,
                                               similar_sequence=sim_seq,
                                               genomic_db=genomic_db)
-                    if not introns:
+                    if introns:
                         result = True
                     else:
                         result = False

@@ -91,7 +91,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         filter_(seq)
-        assert seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
 
         #an snv in a region with two matches
         seq = 'CCACTACAAGAGGTGGAAGAGCGAAAACTCTGTTTATTACTAGCTAGGGTTTCTATTAATGAA'
@@ -104,7 +104,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         seq = filter_(seq)
-        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert seq.features[0].qualifiers['filters'][filter_id][distance]
 
         #a sequence with one hit but two hsps, but a contiguous region according
         #to est2genome
@@ -118,7 +118,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         seq = filter_(seq)
         seq = filter_(seq)
-        assert seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
+
     @staticmethod
     def test_close_to_intron_filter():
         'We filter out the snv close to an intron'
