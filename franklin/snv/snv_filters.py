@@ -34,6 +34,10 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
 from franklin.seq.seqs import get_seq_name
 
 
+
+# In a filter TRUE result means that a snv does NOT pass the filter.
+# So it writes it to the vcf
+
 FILTER_DESCRIPTIONS = {
     'uniq_contiguous':
         {'id': 'UCR',
@@ -42,8 +46,8 @@ FILTER_DESCRIPTIONS = {
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
     'high_variable_reg':
-        {'id': 'HVR%2d',
-    'description':'The snv is in a region with more than %2d per cent of variability'},
+        {'id': 'HVR%.1f',
+    'description':'The region has more than %.1f snvs per 100bp'},
     'close_to_snv':
         {'id':'cs%2d',
          'description':'The snv is closer than %d nucleotides to another snv'},
@@ -96,7 +100,7 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
 
 def _get_nd_hrg(id_, desc, parameters):
     'It returns the name and id of the snv filter for by is_variable filter'
-    short_name = id_ % int(parameters[0])
+    short_name = id_ % parameters[0]
     description = desc % (parameters[0])
 
     return short_name, description

@@ -53,7 +53,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                'quality': 57.0,
                                'mapping_qualities': [37, 0]},
                    }
-        snv1 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(20, 20),
                          qualifiers={'alleles':alleles,
                                      'filters':{'by_kind':{SNP:True}},
                                      'reference_allele':'T'})
@@ -65,9 +65,11 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                      'quality': 57.0,
                                      'mapping_qualities': [37]},
                    }
+        filters = {'by_kind':{SNP:True},
+                   'high_variable_reg':{(0.8, 0):True}, }
         snv2 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
                          qualifiers={'alleles':alleles,
-                                     'filters':{'by_kind':{SNP:True}},
+                                     'filters':filters,
                                      'reference_allele':'T'})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30, 30, 30],
                              name='AT1G55265.1', features=[snv1, snv2])
@@ -76,10 +78,12 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         writer.write(seq)
         writer.close()
         vcf = open(fhand.name).read()
+        print vcf
         assert 'vks' in vcf
         assert '##FILTER=vks' in vcf
         assert '1|2:1,1' in vcf
         assert '.:.' in vcf
+        assert 'HVR0.8;vks' in vcf
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
