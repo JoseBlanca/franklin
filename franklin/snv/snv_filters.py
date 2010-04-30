@@ -401,7 +401,7 @@ def create_major_allele_freq_filter(frequency):
     return major_allele_freq_filter
 
 def create_kind_filter(kind):
-    'It filters the snv by its kind'
+    'It filters out the snvs with a different kind'
     def kind_filter(sequence):
         'The filter'
         if sequence is None:
@@ -412,7 +412,7 @@ def create_kind_filter(kind):
                 continue
 
             kind_ = calculate_snv_kind(snv)
-            if kind == kind_:
+            if kind != kind_:
                 result = True
             else:
                 result = False

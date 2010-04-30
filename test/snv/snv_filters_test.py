@@ -276,7 +276,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_kind_filter(kind)
         filter_(seq)
 
-        for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
+        for snv, expected in zip(seq.get_features(kind='snv'), [False, True]):
             result = snv.qualifiers['filters']['by_kind'][kind]
             assert result == expected
 

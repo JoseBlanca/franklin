@@ -55,7 +55,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                    }
         snv1 = SeqFeature(type='snv', location=FeatureLocation(20, 20),
                          qualifiers={'alleles':alleles,
-                                     'filters':{'by_kind':{SNP:True}},
+                                     'filters':{'by_kind':{SNP:False}},
                                      'reference_allele':'T'})
         alleles = {('T', INVARIANT):{'read_groups': ['hola_illumina'],
                                      'samples': ['individual4'],
