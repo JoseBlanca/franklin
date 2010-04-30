@@ -164,7 +164,6 @@ class VariantCallFormatWriter(object):
             ref_count = 0
         total_count = float(sum(acounts) + ref_count)
         afreqs = [acount / total_count for acount in acounts]
-        print afreqs
         if afreqs:
             toprint_items.append('AF=%s' % ','.join(map(lambda x: '%.1f' % x,
                                                         afreqs)))
@@ -214,11 +213,12 @@ class VariantCallFormatWriter(object):
         items = []
         #the format
         items.append('RG:AC')
-
+        #print 'alleles', alleles
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = [(reference_allele, INVARIANT)]
         alleles_index.extend(alternative_alleles)
         alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
+        #print 'alleles_index', alleles_index
 
         #now we need the alleles for every sample
         grouping_key = self._genotype_grouping_key
@@ -234,6 +234,7 @@ class VariantCallFormatWriter(object):
                 if allele_index not in alleles_by_group[group]:
                     alleles_by_group[group][allele_index] = 0
                 alleles_by_group[group][allele_index] += 1
+        #print 'alleles by group', alleles_by_group
 
         #now we can build the info for every sample
         for group in self._genotype_groups.keys():
@@ -244,9 +245,11 @@ class VariantCallFormatWriter(object):
                 alleles.append(str(allele))
                 count = str(count) if count is not None else '.'
                 counts.append(count)
+            #print group, alleles, counts
             mix_genotype = '|'.join(alleles)
             allele_counts = ','.join(counts)
             items.append('%s:%s' % (mix_genotype, allele_counts))
+        #print 'result', ' '.join(items)
 
         return '\t'.join(items)
 

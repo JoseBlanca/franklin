@@ -21,7 +21,7 @@ Created on 05/03/2010
 
 import unittest
 from franklin.seq.seqs import  SeqFeature, SeqWithQuality, Seq
-from Bio.SeqFeature import FeatureLocation
+from Bio.SeqFeature import FeatureLocation, ExactPosition
 from franklin.snv.snv_annotation import SNP, INVARIANT
 from tempfile import NamedTemporaryFile
 from franklin.snv.writers import VariantCallFormatWriter
@@ -47,7 +47,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                      'mapping_qualities': [37]},
                    ('C', SNP):{'read_groups': ['hola_illumina'],
                                'samples': ['individual3'],
-                               'read_names': ['seq16', 'seq17'],
+                               'read_names': ['seq6'],
                                'orientations': [True, False],
                                'qualities': [57.0, 35.0],
                                'quality': 57.0,
@@ -85,7 +85,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert '1|2:1,1' in vcf
         assert '.:.' in vcf
         assert 'HVR0.8;vks' in vcf
-        assert 'AF=0.4,0.4' in vcf
+        assert 'AF=0.2,0.5' in vcf
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
