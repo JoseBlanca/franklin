@@ -141,7 +141,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
 
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                [True, False, True, True]):
+                                 [False, True, False, False]):
             result = snv.qualifiers['filters']['close_to_intron'][60]
             assert result == expected
 

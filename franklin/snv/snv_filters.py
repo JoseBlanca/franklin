@@ -277,10 +277,10 @@ def create_close_to_intron_filter(distance):
                 continue
 
             location = snv.location.start.position
-            result = True
+            result = False
             for intron in sequence.get_features(kind='intron'):
                 if abs(location - intron.location.start.position) < distance:
-                    result = False
+                    result = True
             _add_filter_result(snv, 'close_to_intron', result,
                                threshold=distance)
         return sequence
