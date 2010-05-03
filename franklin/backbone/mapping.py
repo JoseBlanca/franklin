@@ -112,6 +112,11 @@ class MergeBamAnalyzer(Analyzer):
         else:
             java_mem = None
 
+        if ('Other_settings' in settings and
+            'picard_path' in settings['Other_settings']):
+            picard_path = settings['Other_settings']['picard_path']
+        else:
+            picard_path = None
 
         if add_qualities:
             default_sanger_quality = settings['Other_settings']['default_sanger_quality']
@@ -161,7 +166,9 @@ class MergeBamAnalyzer(Analyzer):
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
-        sort_bam_sam(temp_bam.name, merged_bam_fpath, java_memory=java_mem)
+        sort_bam_sam(temp_bam.name, merged_bam_fpath,
+                     java_conf={'java_memory':java_mem,
+                                'picard_path':picard_path})
         temp_bam.close()
         temp_sam.close()
         self._log({'analysis_finished':True})
@@ -180,11 +187,20 @@ class RealignBamAnalyzer(Analyzer):
         reference_path = inputs['reference']
 
         #memory for the java programs
-        if ('Other_settings' in settings and
-            'java_memory' in settings['Other_settings']):
-            java_mem = settings['Other_settings']['java_memory']
-        else:
-            java_mem = None
+        if ('Other_settings' in settings):
+            osettings = settings['Other_settings']
+            if 'java_memory' in osettings:
+                java_mem = osettings['java_memory']
+            else:
+                java_mem = None
+            if 'picard_path' in osettings:
+                picard_path = osettings['picard_path']
+            else:
+                picard_path = None
+            if 'gatk_path' in osettings:
+                gatk_path = osettings['gatk_path']
+            else:
+                gatk_path = None
 
         #we need a temporary path
         temp_bam = NamedTemporaryFile(suffix='.bam')
@@ -195,7 +211,9 @@ class RealignBamAnalyzer(Analyzer):
         realign_bam(bam_fpath=bam_fpath,
                     reference_fpath=reference_path.last_version,
                     out_bam_fpath=temp_bam_fpath,
-                    java_memory=java_mem)
+                    java_conf={'java_memory':java_mem,
+                               'picard_path':picard_path,
+                               'gatk_path':gatk_path})
         #a new version for the original bam
         out_bam_fpath = bam_path.next_version
         shutil.move(temp_bam_fpath, out_bam_fpath)

@@ -74,7 +74,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                                          genomic_db=genomic_db,
                                             genomic_seqs_fpath=genomic_db)
         #an snv in an unique region
-        seq  = 'CTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGATTGTTTC'
+        seq = 'CTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGATTGTTTC'
         seq += 'TTCATTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATATCTGTTGAA'
         seq += 'TGCAATTTACACATTGACTGAGGAACAACATGAACATGGCAGCTTTCTCAAAATTGAACCACA'
         seq += 'GAAGGCTTAAAAGCAAAGTCTTTGGAGAATCAGACTAAGCTTGAGAAAGGGTTGAAATTTATC'
@@ -87,10 +87,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         filter_(seq)
-        assert seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
 
         #an snv in a region with two matches
-        seq  = 'CCACTACAAGAGGTGGAAGAGCGAAAACTCTGTTTATTACTAGCTAGGGTTTCTATTAATGAA'
+        seq = 'CCACTACAAGAGGTGGAAGAGCGAAAACTCTGTTTATTACTAGCTAGGGTTTCTATTAATGAA'
         seq += 'AGGTTCATGTAAATATATGAAGATGGGAAGCAAGAGGTGTTCAAGGAGAAGAGGGAGTTAGAC'
         seq += 'GACCAGAAGATGGCGGTGACGTTTAGAGGGCTGGATGGTCATGTGATGGAGCAGCTTAAGGTG'
         seq += 'TATGACGTCATCTTCCAATTCGTCCCTAAGTCTCAGGAAGGTTGCGTCTGCAAAGTCACTATG'
@@ -100,11 +100,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         seq = filter_(seq)
-        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert seq.features[0].qualifiers['filters'][filter_id][distance]
 
         #a sequence with one hit but two hsps, but a contiguous region according
         #to est2genome
-        seq  = 'TAACATATGTATCGTTTGCTAACTGTATATCAGGAGAAGGAGTAATGTAAAAATTCGAGA'
+        seq = 'TAACATATGTATCGTTTGCTAACTGTATATCAGGAGAAGGAGTAATGTAAAAATTCGAGA'
         seq += 'TTATTGTAATTTAAGAAACTCTTTAGGTAGAATGTAATTAATACCAAAATCATTAAAATT'
         seq += 'TCTGTACTTTATACTTGTCATATTCTCAAGATACGAGTCAAAAATGTCTGATTAAATATG'
         seq += 'AACATATTTTTATATATTCATTCCATCATAATCTTCGAGATTTAAAAAGCTCTGATTATC'
@@ -114,7 +114,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         seq = SeqWithQuality(seq=Seq(seq), features=[snv1])
         seq = filter_(seq)
         seq = filter_(seq)
-        assert seq.features[0].qualifiers['filters'][filter_id][distance]
+        assert not seq.features[0].qualifiers['filters'][filter_id][distance]
 
     @staticmethod
     def test_close_to_intron_filter():
@@ -138,7 +138,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
 
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                [True, False, True, True]):
+                                 [False, True, False, False]):
             result = snv.qualifiers['filters']['close_to_intron'][60]
             assert result == expected
 
@@ -154,8 +154,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2, snv3])
-        max_variability = 40
+                             features=[snv1, snv2, snv3])
+        max_variability = 0.4
         filter_ = create_high_variable_region_filter(max_variability)
         filter_(seq)
         threshold = (max_variability, None)
@@ -164,7 +164,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
             result = snv.qualifiers['filters']['high_variable_reg'][threshold]
             assert result == expected
 
-        max_variability = 60
+        max_variability = 0.6
         filter_ = create_high_variable_region_filter(max_variability)
         filter_(seq)
         filter_(seq)
@@ -173,10 +173,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                  [False, False, False]):
             result = snv.qualifiers['filters']['high_variable_reg'][threshold]
             assert result == expected
-        max_variability = 25
-        window          = 6
+        max_variability = 0.25
+        window = 6
         threshold = (max_variability, window)
-        filter_   = create_high_variable_region_filter(max_variability,
+        filter_ = create_high_variable_region_filter(max_variability,
                                                        window=window)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
@@ -195,10 +195,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={})
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2, snv3])
+                             features=[snv1, snv2, snv3])
         proximity = 3
 
-        filter_ =  create_close_to_snv_filter(proximity)
+        filter_ = create_close_to_snv_filter(proximity)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
                                  [False, True, True]):
@@ -216,10 +216,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
                           qualifiers={})
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2, snv3])
+                             features=[snv1, snv2, snv3])
         distance = 2
 
-        filter_ =  create_snv_close_to_limit_filter(distance)
+        filter_ = create_snv_close_to_limit_filter(distance)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
                                  [True, False, True]):
@@ -246,9 +246,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2])
+                             features=[snv1, snv2])
         frecuency = 0.6
-        filter_ =  create_major_allele_freq_filter(frecuency)
+        filter_ = create_major_allele_freq_filter(frecuency)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
             result = snv.qualifiers['filters']['maf'][frecuency]
@@ -286,25 +286,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2])
-        kind    = SNP
+                             features=[snv1, snv2])
+        kind = SNP
         filter_ = create_kind_filter(kind)
         filter_(seq)
 
-        for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
+        for snv, expected in zip(seq.get_features(kind='snv'), [False, True]):
             result = snv.qualifiers['filters']['by_kind'][kind]
             assert result == expected
 
     @staticmethod
     def test_cap_enzyme_filter():
         'It test the cap enzyme filter'
-        seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
+        seq = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
 
         alleles = {('A', INVARIANT):{},
                    ('A', DELETION) :{}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
-        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv] )
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
         all_enzymes = True
         filter_ = create_cap_enzyme_filter(all_enzymes)
@@ -320,12 +320,12 @@ class SeqVariationFilteringTest(unittest.TestCase):
                    ('T', INVARIANT): {'read_groups':['rg1', 'rg3']}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
-        seq  = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
+        seq = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
 
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
-        kind     = 'read_groups'
-        groups   = ['rg1']
+        kind = 'read_groups'
+        groups = ['rg1']
         in_union = False
 
         parameters = (kind, groups, in_union)
@@ -341,7 +341,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
     def test_get_filter_description():
         'It tets get_filter_description function'
         filter_name = 'close_to_intron'
-        parameters  = 30
+        parameters = 30
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
@@ -349,7 +349,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert desc == 'An intron is located closer than 30 base pairs'
 
         filter_name = 'maf'
-        parameters  = 0.6
+        parameters = 0.6
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
@@ -358,7 +358,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert desc == 'The more frequent alleles is more frequent than 0.60'
 
         filter_name = 'by_kind'
-        parameters  = SNP
+        parameters = SNP
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
@@ -366,17 +366,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ['rg1', 'rg2']
         in_union = True
-        parameters  = (kind, tuple(groups), in_union)
+        parameters = (kind, tuple(groups), in_union)
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name == 'vrg'
-        descrip  = "Filters by read_groups with those items: ('rg1', 'rg2')."
+        descrip = "Filters by read_groups with those items: ('rg1', 'rg2')."
         descrip += ' Aggregated:True'
         assert desc == descrip
-
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']

@@ -47,7 +47,7 @@ class VariantCallFormatWriter(object):
         'It writes the header of the vcf file'
         header = self._header
         header.append('##format=VCFv3.3')
-        header.append('##fileDate=%s' %
+        header.append('##fileDate=%s' % 
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
         header.append('##reference=%s' % reference_name)
@@ -128,6 +128,7 @@ class VariantCallFormatWriter(object):
                 short_name, description = get_filter_description(name,
                                                                  parameters,
                                                       self._filter_descriptions)
+                short_name = short_name.upper()
                 filter_strs.append(short_name)
                 self._filter_descriptions[name, parameters] = (short_name,
                                                                description)
@@ -162,10 +163,11 @@ class VariantCallFormatWriter(object):
             ref_count = len(alleles[reference_allele]['read_names'])
         else:
             ref_count = 0
-        total_count = sum(acounts) + ref_count
-        afreqs  = [acount/total_count for acount in acounts]
+        total_count = float(sum(acounts) + ref_count)
+        afreqs = [acount / total_count for acount in acounts]
         if afreqs:
-            toprint_items.append('AF=%s' % ','.join(map(str, acounts)))
+            toprint_items.append('AF=%s' % ','.join(map(lambda x: '%.1f' % x,
+                                                        afreqs)))
 
         #MQ RMS mapping quality, e.g. MQ=52
         #BQ RMS base quality at this position
@@ -198,7 +200,7 @@ class VariantCallFormatWriter(object):
             if len(phreds) == 1:
                 phred = phreds[0]
             else:
-                inv_phred = lambda phred: math.pow(10, (-phred/10))
+                inv_phred = lambda phred: math.pow(10, (-phred / 10))
                 probs = map(inv_phred, phreds[:2])
                 prob = probs[0] * probs[1]
                 phred = -10 * math.log10(prob)
@@ -212,11 +214,12 @@ class VariantCallFormatWriter(object):
         items = []
         #the format
         items.append('RG:AC')
-
+        #print 'alleles', alleles
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = [(reference_allele, INVARIANT)]
         alleles_index.extend(alternative_alleles)
         alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
+        #print 'alleles_index', alleles_index
 
         #now we need the alleles for every sample
         grouping_key = self._genotype_grouping_key
@@ -232,6 +235,7 @@ class VariantCallFormatWriter(object):
                 if allele_index not in alleles_by_group[group]:
                     alleles_by_group[group][allele_index] = 0
                 alleles_by_group[group][allele_index] += 1
+        #print 'alleles by group', alleles_by_group
 
         #now we can build the info for every sample
         for group in self._genotype_groups.keys():
@@ -242,9 +246,11 @@ class VariantCallFormatWriter(object):
                 alleles.append(str(allele))
                 count = str(count) if count is not None else '.'
                 counts.append(count)
+            #print group, alleles, counts
             mix_genotype = '|'.join(alleles)
             allele_counts = ','.join(counts)
             items.append('%s:%s' % (mix_genotype, allele_counts))
+        #print 'result', ' '.join(items)
 
         return '\t'.join(items)
 

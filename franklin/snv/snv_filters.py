@@ -34,6 +34,10 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
 from franklin.seq.seqs import get_seq_name
 
 
+
+# In a filter TRUE result means that a snv does NOT pass the filter.
+# So it writes it to the vcf
+
 FILTER_DESCRIPTIONS = {
     'uniq_contiguous':
         {'id': 'UCR',
@@ -41,14 +45,14 @@ FILTER_DESCRIPTIONS = {
     'close_to_intron':
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
-    'high_variable_region':
-        {'id': 'HVR%2d',
-    'description':'The snv is in a region with more than %2d % of variability'},
+    'high_variable_reg':
+        {'id': 'HVR%.1f',
+    'description':'The region has more than %.1f snvs per base'},
     'close_to_snv':
         {'id':'cs%2d',
          'description':'The snv is closer than %d nucleotides to another snv'},
     'close_to_limit':
-        {'id':'cs%2d',
+        {'id':'cl%2d',
        'description':'The snv is closer than %d nucleotides to sequence limit'},
     'maf':
         {'id':'maf%.2f',
@@ -57,7 +61,7 @@ FILTER_DESCRIPTIONS = {
         {'id':'vk%s',
          'description':'It filters if it is of kind: %s'},
     'cap_enzymes':
-        {'id':'ce',
+        {'id':'ce%s',
          'description':'Enzymes that recognize different snp alleles: %s'},
     'is_variable':
         {'id':'v%s',
@@ -71,24 +75,33 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
     'It returns the short id and the description'
     if (filter_name, parameters) in filter_descriptions:
         return filter_descriptions[filter_name, parameters]
-    id_  = FILTER_DESCRIPTIONS[filter_name]['id']
+    id_ = FILTER_DESCRIPTIONS[filter_name]['id']
     desc = FILTER_DESCRIPTIONS[filter_name]['description']
 
     if filter_name == 'by_kind':
-        short_name,description = _get_nd_kind(id_, desc, parameters)
+        short_name, description = _get_nd_kind(id_, desc, parameters)
     elif filter_name == 'cap_enzymes':
-        short_name,description = _get_nd_ce(id_, desc, parameters)
+        short_name, description = _get_nd_ce(id_, desc, parameters)
     elif filter_name == 'is_variable':
-        short_name,description = _get_nd_iv(id_, desc, parameters)
+        short_name, description = _get_nd_iv(id_, desc, parameters)
+    elif filter_name == 'high_variable_reg':
+        short_name, description = _get_nd_hrg(id_, desc, parameters)
     else:
         if '%' in id_:
-            short_name  = id_  % parameters
+            short_name = id_ % parameters
         else:
-            short_name  = id_
+            short_name = id_
         if '%' in desc:
-            description  = desc  % parameters
+            description = desc % parameters
         else:
-            description  = desc
+            description = desc
+
+    return short_name, description
+
+def _get_nd_hrg(id_, desc, parameters):
+    'It returns the name and id of the snv filter for by is_variable filter'
+    short_name = id_ % parameters[0]
+    description = desc % (parameters[0])
 
     return short_name, description
 
@@ -202,7 +215,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             #with the sequence around the snv
             location = snv.location.start.position
             start = location - distance
-            end   = location + distance
+            end = location + distance
             if start < 0:
                 start = 0
             #print start, end
@@ -215,16 +228,16 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             #are there any similar sequences?
             try:
                 alignment = alignments.next()
-                result = False
+                result = True
             except StopIteration:
                 #if there is no similar sequence we assume that is unique
-                result = True
-            if not result:
+                result = False
+            if result:
                 #how many matches, it should be only one
                 num_hits = len(alignment['matches'])
 
                 if num_hits > 1:
-                    result = False
+                    result = True
                 else:
                     #how many match parts have the first match?
                     #we could do it with the blast result, but blast is not very
@@ -237,7 +250,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                                           genomic_seqs_index=genomic_seqs_index,
                                               similar_sequence=sim_seq,
                                               genomic_db=genomic_db)
-                    if not introns:
+                    if introns:
                         result = True
                     else:
                         result = False
@@ -264,10 +277,10 @@ def create_close_to_intron_filter(distance):
                 continue
 
             location = snv.location.start.position
-            result = True
+            result = False
             for intron in sequence.get_features(kind='intron'):
                 if abs(location - intron.location.start.position) < distance:
-                    result = False
+                    result = True
             _add_filter_result(snv, 'close_to_intron', result,
                                threshold=distance)
         return sequence
@@ -291,12 +304,12 @@ def create_high_variable_region_filter(max_variability, window=0):
             if previous_result is not None:
                 continue
             if window is None:
-                snv_num      = len(snvs)
+                snv_num = len(snvs)
                 total_length = len(sequence)
             else:
                 total_length = window
                 snv_num = snvs_in_window(snv, snvs, window)
-            variability = (snv_num/float(total_length)) * 100
+            variability = snv_num / float(total_length)
             if variability > max_variability:
                 result = True
             else:
@@ -355,7 +368,7 @@ def create_snv_close_to_limit_filter(distance):
                                                  threshold=distance)
             if previous_result is not None:
                 continue
-            location = int(str(snv.location.start))
+            location = int(snv.location.start.position)
             if location < distance or location + distance > len(sequence):
                 result = True
             else:
@@ -389,7 +402,7 @@ def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
     return major_allele_freq_filter
 
 def create_kind_filter(kind):
-    'It filters the snv by its kind'
+    'It filters out the snvs with a different kind'
     def kind_filter(sequence):
         'The filter'
         if sequence is None:
@@ -400,7 +413,7 @@ def create_kind_filter(kind):
                 continue
 
             kind_ = calculate_snv_kind(snv)
-            if kind  == kind_:
+            if kind != kind_:
                 result = True
             else:
                 result = False
@@ -446,7 +459,7 @@ def create_is_variable_filter(group_kind, groups, in_union=False,
                                                  threshold=parameters)
             if previous_result is not None:
                 continue
-            result =  variable_in_groupping(group_kind, snv, groups, in_union,
+            result = variable_in_groupping(group_kind, snv, groups, in_union,
                                           in_all_read_groups=in_all_read_groups)
 
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)
