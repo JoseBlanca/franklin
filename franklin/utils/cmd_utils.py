@@ -68,7 +68,7 @@ RUNNER_DEFINITIONS = {
 #            'parameters': {'database' :{'required':True,  'option': '-db'},
 #                   'program'  :{'required':True,  'option':'-p'},
 #                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-#                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+#                  'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
 #                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
 #                   'alig_format': {'default':5, 'option':'-outfmt'}
 #                            },
@@ -341,7 +341,7 @@ def create_runner(tool, parameters=None, environment=None):
 
                 logging.warning(print_name + ':' + stderr)
             else:
-                raise RuntimeError('Problem running ' + tool + ': ' + stdout + 
+                raise RuntimeError('Problem running ' + tool + ': ' + stdout +
                                stderr)
 
         # Now we are going to make this list with the files we are going to
