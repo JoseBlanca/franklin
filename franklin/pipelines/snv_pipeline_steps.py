@@ -79,7 +79,7 @@ close_to_limit_filter = {
 
 major_allele_freq_filter = {
           'function':create_major_allele_freq_filter,
-          'arguments':{'frequency':0.8},
+          'arguments':{'frequency':0.8, 'groups':None, 'group_kind':None},
           'type':'filter',
           'name':'maf',
           'comment':'The more frequent allele is more frequent than frec'}

@@ -37,7 +37,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'franklin'
+project = u'ngs_backbone'
 copyright = u'2010, Jose Blanca'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -159,13 +159,13 @@ html_static_path = ['_static']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'franklindoc'
+htmlhelp_basename = 'ngs_backbonelindoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
 
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_paper_size = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
 #latex_font_size = '10pt'
@@ -173,7 +173,7 @@ htmlhelp_basename = 'franklindoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'franklin.tex', u'franklin Documentation',
+  ('index', 'ngs_backbone.tex', u'ngs_backbone documentation',
    u'Jose Blanca', 'manual'),
 ]
 

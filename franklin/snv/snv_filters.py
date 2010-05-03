@@ -366,8 +366,8 @@ def create_snv_close_to_limit_filter(distance):
     return  snv_close_to_reference_limit
 
 
-def create_major_allele_freq_filter(frequency):
-    'It filters the snv in a seq by the frecuency of the more frecuent allele'
+def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
+    'It filters the snv in a seq by the frequency of the more frequent allele'
     def major_allele_freq_filter(sequence):
         'The filter'
         if sequence is None:
@@ -377,7 +377,8 @@ def create_major_allele_freq_filter(frequency):
                                                  threshold=frequency)
             if previous_result is not None:
                 continue
-            maf = calculate_maf_frequency(snv)
+            maf = calculate_maf_frequency(snv, groups=groups,
+                                          group_kind=group_kind)
             if maf > frequency:
                 result = True
             else:

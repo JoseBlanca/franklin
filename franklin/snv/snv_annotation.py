@@ -363,13 +363,17 @@ def snvs_in_window(snv, snvs, window):
             num_of_snvs += 1
     return num_of_snvs
 
-def calculate_maf_frequency(feature):
+def calculate_maf_frequency(feature, groups=None, group_kind=None):
     'It returns the most frequent allele frequency'
     alleles = feature.qualifiers['alleles']
     major_number_reads = None
     total_number_reads = 0
     for allele_info in alleles.values():
-        number_reads = len(allele_info['read_names'])
+        if not groups:
+            number_reads = len(allele_info['read_names'])
+        else:
+            number_reads = len([grp for grp in allele_info[group_kind]\
+                                                              if grp in groups])
         if major_number_reads is None or major_number_reads < number_reads:
             major_number_reads = number_reads
         total_number_reads += number_reads
