@@ -441,3 +441,10 @@ class OrderedDict(dict, DictMixin):
 
     def __ne__(self, other):
         return not self == other
+
+class DisposableFile(file):
+    'A file that remove the file when closed'
+    def close(self):
+        'This close removes the file when called'
+        file.close(self)
+        os.remove(self.name)

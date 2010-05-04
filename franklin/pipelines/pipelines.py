@@ -35,28 +35,37 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging, os
+import logging, os, tempfile
+import cPickle as pickle
 from itertools import imap, ifilter
+from tempfile import gettempdir, NamedTemporaryFile
+
+import psubprocess
+
 from franklin.seq.readers import seqs_in_file
-from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES
-from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES
+from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES, SEQ_STEPS
+from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES, SNV_STEPS
+from franklin.pipelines.annotation_steps import ANNOT_STEPS
 from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
 from franklin.snv.writers import VariantCallFormatWriter
+from franklin.utils.misc_utils import DisposableFile, DATA_DIR
 
 
 # Join the pipelines in PIPELINE
 PIPELINES = dict(SEQPIPELINES.items() + SNV_PIPELINES.items())
 
+STEPS = SEQ_STEPS
+STEPS.extend(SNV_STEPS)
+STEPS.extend(ANNOT_STEPS)
 
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
-
+    #only for the tests, this function should accept only lists, strs won't be
+    #supported
     if isinstance(pipeline, str):
-        seq_pipeline  = PIPELINES[pipeline]
-    else:
-        seq_pipeline = pipeline
+        pipeline = PIPELINES[pipeline]
 
     # This is done to be able to use the same step more than once. For that we
     # need to have indexed the configuration in different names but knowing wich
@@ -64,14 +73,14 @@ def configure_pipeline(pipeline, configuration):
     get_name_in_config = lambda x: x.get('name_in_config', x['name'])
 
     # set the configuration in the pipeline
-    for step in seq_pipeline:
+    for step in pipeline:
         name_in_config = get_name_in_config(step)
         if name_in_config in configuration:
             for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
 
     # Here I check that none of the arguments have a none value
-    for step in seq_pipeline:
+    for step in pipeline:
         for key, value in step['arguments'].items():
             # If the step is remove_adaptors, the vectors value can be None
             if (value is None and key == 'vectors' and
@@ -80,7 +89,7 @@ def configure_pipeline(pipeline, configuration):
                 msg = 'Parameter %s in step %s from pipeline %s must be set' % \
                             (key, step['name'], pipeline)
                 raise RuntimeError(msg)
-    return seq_pipeline
+    return pipeline
 
 def _get_func_tools(processes):
     'It returns a mapping function from multiprocessing or itertools'
@@ -168,6 +177,87 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
 WRITERS = {'sequence': SequenceWriter,
            'vcf': VariantCallFormatWriter}
 
+
+def process_sequences_for_script(in_fpath_seq, file_format,
+                                 pipeline, configuration, out_fpath):
+
+    pipeline = pickle.loads(pipeline)
+    configuration = pickle.loads(configuration)
+
+    #the pipeline is now a list of strs we should convert it into a list of
+    #dicts
+    steps = dict([(step['name'], step) for step in STEPS])
+    pipeline = [steps[step] for step in pipeline]
+
+    processed_seqs = _process_sequences(open(in_fpath_seq), in_fhand_qual=None,
+                                        file_format=file_format,
+                                        pipeline=pipeline,
+                                        configuration=configuration)
+    #now we write all seq in the file
+    out_fhand = open(out_fpath, 'a')
+    writer = SequenceWriter(fhand=out_fhand,
+                            file_format='repr')
+    for sequence in processed_seqs:
+        writer.write(sequence)
+    out_fhand.close()
+
+def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
+                                pipeline, configuration, processes):
+
+    if in_fhand_qual:
+        #a splitter for both seq and qual should be used
+        raise NotImplementedError
+    #we have to transform the pipeline list into a list of strs, otherwise
+    #it wouldn't be possible to send them to an external script.
+    pipeline = [step['name'] for step in pipeline]
+
+    #everything should be pickle because it will run with an external script
+    pipeline = pickle.dumps(pipeline)
+    configuration = pickle.dumps(configuration)
+
+    #we need a file that will be removed when the close is called in it
+    fhand, out_fpath = tempfile.mkstemp()
+    os.close(fhand)
+
+
+    #process_sequences_for_script(in_fhand_seqs.name, file_format,
+    #                             pipeline, configuration, out_fpath)
+    cmd = os.path.join(DATA_DIR, 'scripts', 'process_sequences.py')
+    cmd = [os.path.abspath(cmd)]
+    cmd.extend([in_fhand_seqs.name,
+                file_format, pipeline, configuration, out_fpath,
+                gettempdir()])
+    processes = processes if isinstance(processes, int) else None
+    if file_format == 'fasta':
+        splitter = '>'
+    elif file_format in ('fastq', 'sfastq', 'ifastq'):
+        splitter = 'fastq'
+    elif file_format == 'repr':
+        splitter = 'SeqWithQual'
+    else:
+        raise NotImplementedError
+    cmd_def = [{'options': 1, 'io': 'in', 'splitter':splitter}]
+    stdout  = NamedTemporaryFile()
+    stderr  = NamedTemporaryFile()
+    process = psubprocess.Popen(cmd, cmd_def=cmd_def,
+                                stdout=stdout,
+                                stderr=stderr,
+                                splits=processes)
+
+    process.wait()
+    stdout.close()
+    stderr.close()
+
+    return seqs_in_file(DisposableFile(out_fpath), format='repr')
+
+def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
+                                          configuration):
+    sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
+
+    # the pipeline that will process the generator is build
+    processed_seqs = _pipeline_builder(pipeline, sequences, configuration)
+    return processed_seqs
+
 def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
                         processes=False):
 
@@ -181,6 +271,9 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     If the checkpoints are requested an intermediate file for every step will be
     created.
     '''
+    if isinstance(pipeline, str):
+        pipeline = PIPELINES[pipeline]
+
     if file_format is None:
         file_format = guess_seq_file_format(io_fhands['in_seq'])
 
@@ -192,11 +285,16 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         in_fhand_qual  = None
 
     # Here the SeqRecord generator is created
-    sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
-
-    # the pipeline that will process the generator is build
-    filtered_seq_iter = _pipeline_builder(pipeline, sequences, configuration,
-                                        processes)
+    if processes:
+        filtered_seq_iter = _parallel_process_sequences(in_fhand_seqs,
+                                                        in_fhand_qual,
+                                                        file_format, pipeline,
+                                                        configuration,
+                                                        processes)
+    else:
+        filtered_seq_iter = _process_sequences(in_fhand_seqs, in_fhand_qual,
+                                          file_format, pipeline,
+                                          configuration)
 
     writers = []
     output_type = io_fhands['outputs']

@@ -142,4 +142,8 @@ SEQPIPELINES = {
 
     'word_masker'        : [remove_words, filter_short_seqs_solexa]}
 
-
+SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
+             strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
+             mask_polia, mask_low_complexity, mask_repeats,
+             filter_short_seqs_sanger, filter_short_seqs_solexa, edge_remover,
+             remove_words]

@@ -21,7 +21,7 @@ This module provides utilities to run external commands into franklin
 
 
 from franklin.seq.writers import temp_fasta_file, temp_qual_file
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, DisposableFile
 
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy, shutil
@@ -271,13 +271,6 @@ def _build_cmd(cmd_params, runner_def):
     cmd.extend(cmd_params)
     cmd.extend(cmd_args_end)
     return cmd, stdin
-
-class DisposableFile(file):
-    'A file that remove the file when closed'
-    def close(self):
-        'This close removes the file when called'
-        file.close(self)
-        os.remove(self.name)
 
 def create_runner(tool, parameters=None, environment=None):
     ''''It creates a runner class.

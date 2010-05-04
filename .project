@@ -3,6 +3,7 @@
 	<name>franklin</name>
 	<comment></comment>
 	<projects>
+		<project>psubprocess</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

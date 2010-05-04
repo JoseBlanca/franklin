@@ -123,7 +123,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_seq_pipeline_parallel_run(self):
         'It tests that the pipeline runs ok'
-        pipeline = 'sanger_with_qual'
+        pipeline = 'sanger_without_qual'
 
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
@@ -134,24 +134,19 @@ class PipelineTests(unittest.TestCase):
 
         io_fhands = {}
         io_fhands['in_seq']  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
         io_fhands['outputs'] = {}
-        io_fhands['outputs']['sequence']  = NamedTemporaryFile()
-        io_fhands['outputs']['quality'] = NamedTemporaryFile()
+        io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
 
-        try:
-            seq_pipeline_runner(pipeline, configuration, io_fhands,
-                                processes=2)
-            self.fail()
-        except RuntimeError:
-            pass
-        #io_fhands['outputs']['sequence'].seek(0)
+        seq_pipeline_runner(pipeline, configuration, io_fhands,
+                                processes=4)
+        out_fhand = open(io_fhands['outputs']['sequence'].name, 'r')
 
-        #result_seq = io_fhands['outputs']['sequence'].read()
-        #assert result_seq.count('>') == 6
+        result_seq = out_fhand.read()
+        assert result_seq.count('>') == 6
         #are we keeping the description?
-        #assert 'mdust' in result_seq
+        assert 'mdust' in result_seq
 
+        os.remove(io_fhands['outputs']['sequence'].name)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
