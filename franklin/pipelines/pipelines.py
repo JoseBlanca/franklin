@@ -54,7 +54,7 @@ def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
 
     if isinstance(pipeline, str):
-        seq_pipeline  = PIPELINES[pipeline]
+        seq_pipeline = PIPELINES[pipeline]
     else:
         seq_pipeline = pipeline
 
@@ -119,7 +119,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #we create all the cleaner functions
     cleaner_functions = {}
     for analysis_step in pipeline_steps:
-        function_factory  = analysis_step['function']
+        function_factory = analysis_step['function']
         if analysis_step['arguments']:
             arguments = analysis_step['arguments']
         else:
@@ -147,11 +147,11 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #now use use the cleaner functions using the mapper functions
     for analysis_step in pipeline_steps:
         cleaner_function = cleaner_functions[analysis_step['name']]
-        type_     = analysis_step['type']
+        type_ = analysis_step['type']
         if type_ == 'mapper':
             filtered_items = functs['map'](cleaner_function, items)
         elif type_ == 'filter':
-            filtered_items   = functs['filter'](cleaner_function, items)
+            filtered_items = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
             filtered_items, fhand_outs = cleaner_function(items)
             temp_bulk_files.append(fhand_outs)
@@ -185,11 +185,11 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         file_format = guess_seq_file_format(io_fhands['in_seq'])
 
     # Here we extract our input/output files
-    in_fhand_seqs  = io_fhands['in_seq']
+    in_fhand_seqs = io_fhands['in_seq']
     if 'in_qual' in io_fhands:
-        in_fhand_qual  = io_fhands['in_qual']
+        in_fhand_qual = io_fhands['in_qual']
     else:
-        in_fhand_qual  = None
+        in_fhand_qual = None
 
     # Here the SeqRecord generator is created
     sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
@@ -257,11 +257,11 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
 
         writer_name = writer.__class__.__name__
         if 'OrfWriter' in writer_name:
-            sec_fhand = writer.pep_fhand
+            seq_fhand = writer.pep_fhand
         elif 'SequenceWriter' in writer_name:
-            sec_fhand = writer.qual_fhand
+            seq_fhand = writer.qual_fhand
         else:
-            sec_fhand = None
-        if sec_fhand:
-            _close_and_remove_file(sec_fhand, writer.num_features)
+            seq_fhand = None
+        if seq_fhand:
+            _close_and_remove_file(seq_fhand, writer.num_features)
 
