@@ -166,6 +166,8 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter6']['name'] = 'maf'
     config['snv_filters']['filter6']['use'] = False
     config['snv_filters']['filter6']['frequency'] = 0.8
+    config['snv_filters']['filter6']['group_kind'] = 'read_groups'
+    config['snv_filters']['filter6']['groups'] = []
 
     config['snv_filters']['filter7'] = {}
     config['snv_filters']['filter7']['name'] = 'by_kind'

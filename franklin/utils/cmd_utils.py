@@ -21,7 +21,7 @@ This module provides utilities to run external commands into franklin
 
 
 from franklin.seq.writers import temp_fasta_file, temp_qual_file
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, DisposableFile
 
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy, shutil
@@ -68,7 +68,7 @@ RUNNER_DEFINITIONS = {
 #            'parameters': {'database' :{'required':True,  'option': '-db'},
 #                   'program'  :{'required':True,  'option':'-p'},
 #                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-#                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+#                  'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
 #                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
 #                   'alig_format': {'default':5, 'option':'-outfmt'}
 #                            },
@@ -272,13 +272,6 @@ def _build_cmd(cmd_params, runner_def):
     cmd.extend(cmd_args_end)
     return cmd, stdin
 
-class DisposableFile(file):
-    'A file that remove the file when closed'
-    def close(self):
-        'This close removes the file when called'
-        file.close(self)
-        os.remove(self.name)
-
 def create_runner(tool, parameters=None, environment=None):
     ''''It creates a runner class.
 
@@ -341,7 +334,7 @@ def create_runner(tool, parameters=None, environment=None):
 
                 logging.warning(print_name + ':' + stderr)
             else:
-                raise RuntimeError('Problem running ' + tool + ': ' + stdout + 
+                raise RuntimeError('Problem running ' + tool + ': ' + stdout +
                                stderr)
 
         # Now we are going to make this list with the files we are going to

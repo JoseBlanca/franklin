@@ -2,119 +2,137 @@
 Snv filters
 ===========
 
-Once we have annotate snvs with annotate_snv analysis, we can filter those snvs using some of the available filters.
-
+Once we have called the  snvs with the annotate_snv backbone analysis, we can filter those snvs.
 This analysis is performed by the filter_snv analysis.
 
-The configuration of the snv filtering is handler by the :ref:`snv-filter` section of the backbone.conf file. By default only kind filtering is activated. To use any of the filters change the Use Option to True in each of the filter sections::
+The configuration of the snv filtering is handled by the snv_filters section of the backbone.conf file. For each filter that we want to apply we have to create a new subsection like::
+
+  ['snv_filters']
+  [['filter1']]
+  name = 'close_to_intron'
+  distance = 30
+  use  = True
+
+All the snv filters have a boolean configuration parameter named *use*, when this parameter is set to False the filter will not be used even if it is declared in the configuration file.
+
+By default only kind filtering is activated although, as an example, other filters are configured with its use parameter set to False. To use any of these filters change the *use* parameter to True in each of the filter sections::
 
   use = True
 
-TAny of the filters remove the snv, instead it keeps the information of the filter result and writes it to the vcf file.
+None of the  filters remove the snv, instead it adds a flag to the snv depending on the result of the filter. The information regarding the snv filtering will be written in the vcf file.
 
-A detailed view and configuration hooks for each filter are described below.
 
-Available filters:
-------------------
+Available filters
+-----------------
+
+The configuration parameters for each available filter is described here.
+
 Close to intron
 _______________
-To use this filter you need first to annotate introns using annotate_introns :ref:`intron-annotation` analysis.
+
+
+The snvs close to an intron will be filtered by this filter. To use it you have to annotate the introns before using the :ref:`intron-annotation` backbone analysis.
 
 Use this filter if you want to filter snvs that are closer than X nucleotides to an intron.
-This filter only have and option and it is the distance to the intron::
+The configuration parameter for this filter is the distance between the snv and the intron::
 
   distance = 30
 
 Close to snv
 ____________
-Use this filter if you want to filter snvs that are closer than X nucleotides of another snv.
 
-This filter only have and option and is the distance to the intron::
+Use this filter if you want to filter out snvs that are close to another snv.
+
+This filter only have a parameter, distance between snvs::
 
   distance = 60
 
 Close to limit
 ______________
-Use this filter if you want to filter snvs that are closer than X nucleotides to the edges of the sequence
 
-This filter only have and option and is the distance to the intron::
+Use this filter if you want to filter snvs that are close to the edges of the sequence.
+
+The parameter to set for this filter is::
 
   distance = 60
 
 High variable region
 ____________________
-It filters the snv if it is in a variable region. The variability of a region is the frequency that we can find a snv per 100 nucleotides.
 
-This filter have two options to configure. The frequency and the length of the region. By default all the sequence is taken::
+It filters out all the snvs found in a sequence with a high variability. The variability is measured as the number of snvs per base.
 
-  max_variability = 0.4
-  window          = None  (All the sequence)
+Two parameters can be configured for this filter, the variability threshold and the window. If the window is not given the complete sequence is used to calculate the variability.
+
+::
+
+  max_variability = 0.04
+  window          = None  #(All the sequence)
 
 More frequent allele
 _____________________
-This filters rejects snvs in which the more frequent allele's frequency is bigger than the given one.
 
-This filter only have one option to configure::
+With this filter we can filter out the filters in which the most frequent allele has an allelic frequency above the given threshold. This filter can be used taking into account all the alleles or only the ones found in a subset of libraries, samples or readgroups.
 
-  frequency = 0.8
+To configure this filter with a threshold of 0.8 in a library named test_library we would do:
+
+  frequency  = 0.8
+  group_kind = 'libraries'
+  groups     = ['test_library']
 
 Kind filter
 ___________
-Snv caller in annotate_snv detects if the snv is a SNP, INDEL OR COMPLEX. With this filter you can filter by the kind you want.
 
-These are the correspondent codes to kinds::
+The backbone snv caller annotates SNPs and indels, with this filter, for instance, we can filter out the snvs that are not SNPs.
+The snv caller sets a kind for each snv: SNP, INDEL or COMPLEX. These kinds are coded as integers with the following codes::
 
-  SNP       = 0
-  INDEL     = 4
-  COMPLEX   = 5
+  SNP      = 0
+  INDEL    = 4
+  COMPLEX  = 5
 
 This filter only has one option to configure::
 
-  kind = 0  (Choose your snv type)
+  kind = 0
 
 Cap enzymes
 ___________
-It filters the snv looking if it is detectable by restriction enzymes. If alleles in the snv behave different with the restriction enzyme then it filters it.
 
-This filter uses remap from EMBOOS. The unique configurable option is to use most used enzymes or all of them::
+We can filter out the snvs that will not be detectable by using restriction enzymes. We consider a snv detectable if the two most abundant alleles have different restriction patterns.
+This filter uses remap from EMBOSS to do the restriction mapping. We can choose to use all the restriction enzymes from the remap database or only a small subset of cheap and easily available enzymes. The parameter to configure is::
 
   all_enzymes = True
 
 Sequence filter
 _______________
 
-It filters the snv looking if the snv is in one of the given sequences(name).
+It filters out the snv that do not belong to one of the given sequences. The sequences should be provided as a list in a file with one sequence name per line.
 
-This option only needs a path to the file with one sequence name per line::
+The filter requires a parameter with the path to the sequence names file::
 
-  list_path = 'path to file with seq names'
+  list_path = '/path/to/file/with/seq/names'
 
 Variable in group
 _________________
-In case you have more than one read_group library or sample and it it correcly defined in the sequence file names, you can filter looking if the snv is variable in a subgroup.
 
-The configuration file provides three basic filter combinations form each one of the group. For example: if you want to filter see if the snv are variables is just some of your libraries::
+In case you have more than one read_group,library or sample you can filter out the snvs that are not variable in a subgroup.
+
+To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for snps not variables in the libraries lib1 and lib2 would be::
 
   name       = 'is_variable_in_lb'
   step_name  = 'is_variable'
   group_kind = 'libraries'
   groups     = ['lib1', 'lib2']
 
-
-First you have to use a uniq name for this filter step.
-
-Group kind: one of samples, libraries or read_groups.
-
-groups : a list of libraries in which you want to look at.
+Several filters of this kind can be set up in the configuration file, to distinguish them a step_name option with a unique name should be also set up in the configuration for each filter.
 
 
 Unique contiguous
 _________________
-With this filter you can filter snvs that are in regions that are similar to other regions in the seq pool.
+
+With this filter you can filter out snvs that are in regions that seem to be duplicated or that are not contiguous.
 
 This filter have 3 configurable options::
 
-  distance           = 'distance from each side os the snv to select a region'
-  genomic_db         = 'path to seq pool'
-  genomic_seqs_fpath = 'path to seq pool blast db'
+  distance           = 'distance from each side of the snv to select a region'
+  genomic_db         = '/path/to/the/seq/fasta/file'
+  genomic_seqs_fpath = '/path/to/the/seq/blast/db'
 

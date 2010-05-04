@@ -62,10 +62,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
             result = snv.qualifiers['filters']['ref_not_in_list'][None]
             assert result == expected
 
-
-
-
-
     @staticmethod
     def test_unique_contiguous_region():
         '''It tests that we remove snv located in regions that are not unique in
@@ -145,7 +141,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                  [False, True, False, False]):
             result = snv.qualifiers['filters']['close_to_intron'][60]
             assert result == expected
-
 
     @staticmethod
     def test_high_variable_region_filter():
@@ -234,13 +229,17 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_major_allele_freq_filter_snv():
         'It test the first allele percent filter'
-        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
-                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names': ['r1', 'r2', 'r3', 'r4'],
+                                     'read_groups':['g1', 'g1', 'g1', 'g1']},
+                   ('T', SNP)      :{'read_names': ['r1', 'r2'],
+                                     'read_groups':['g2', 'g2']}}
 
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
                           qualifiers={'alleles':alleles})
-        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
-                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{'read_names': ['r1', 'r2', 'r3'],
+                                     'read_groups':['g1', 'g1', 'g1']},
+                   ('T', SNP)      :{'read_names': ['r1', 'r2'],
+                                     'read_groups':['g2', 'g2']}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
                           qualifiers={'alleles':alleles})
@@ -251,8 +250,23 @@ class SeqVariationFilteringTest(unittest.TestCase):
         frecuency = 0.6
         filter_ = create_major_allele_freq_filter(frecuency)
         filter_(seq)
-
         for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
+            result = snv.qualifiers['filters']['maf'][frecuency]
+            assert result == expected
+
+        #now we do it only for one read group
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={'alleles':alleles})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
+                          qualifiers={'alleles':alleles})
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
+                             features = [snv1, snv2])
+        frecuency = 0.6
+        filter_ =  create_major_allele_freq_filter(frecuency,
+                                                   groups=['g1'],
+                                                   group_kind='read_groups')
+        filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'), [True, True]):
             result = snv.qualifiers['filters']['maf'][frecuency]
             assert result == expected
 
@@ -360,9 +374,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         descrip = "Filters by read_groups with those items: ('rg1', 'rg2')."
         descrip += ' Aggregated:True'
         assert desc == descrip
-
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']

@@ -159,6 +159,20 @@ class TestSnvAnnotation(unittest.TestCase):
         maf = calculate_maf_frequency(feat)
         assert maf == 2/3
 
+        #with groups
+        alleles = {('A', INVARIANT): {'read_names':['r1'],
+                                      'libraries' :['l1']},
+                   ('A', DELETION):  {'read_names':['r2', 'r3'],
+                                      'libraries' :['l1', 'l2']}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        maf = calculate_maf_frequency(feat, groups=['l1'],
+                                      group_kind='libraries')
+        assert maf == 1/2
+        maf = calculate_maf_frequency(feat, groups=['l1', 'l2'],
+                                      group_kind='libraries')
+        assert maf == 2/3
+
     @staticmethod
     def test_snv_variability():
         'It tests that we can calculate the snv variability in a sequence'

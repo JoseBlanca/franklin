@@ -79,7 +79,7 @@ close_to_limit_filter = {
 
 major_allele_freq_filter = {
           'function':create_major_allele_freq_filter,
-          'arguments':{'frequency':0.8},
+          'arguments':{'frequency':0.8, 'groups':None, 'group_kind':None},
           'type':'filter',
           'name':'maf',
           'comment':'The more frequent allele is more frequent than frec'}
@@ -117,4 +117,8 @@ ref_not_in_list = {
 
 SNV_PIPELINES = {'snv_bam_annotator': [snv_bam_annotator]}
 
-
+SNV_STEPS = [snv_bam_annotator, unique_contiguous_region_filter,
+             close_to_intron_filter, high_variable_region_filter,
+             close_to_snv_filter, close_to_limit_filter,
+             major_allele_freq_filter, kind_filter, cap_enzyme_filter,
+             is_variable_filter, is_variable_filter, ref_not_in_list]

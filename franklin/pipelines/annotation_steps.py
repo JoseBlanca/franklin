@@ -64,3 +64,8 @@ annotate_gos = {'function': create_go_annotator,
                  'type':'mapper' ,
                  'name':'annotate_gos',
                  'comment': 'It annotates the gos'}
+
+
+ANNOT_STEPS = [annotate_cdna_introns, annotate_orthologs,
+               annotate_with_descriptions, annotate_microsatellites,
+               annotate_orfs, annotate_gos]
