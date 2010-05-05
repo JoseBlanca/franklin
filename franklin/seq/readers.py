@@ -39,7 +39,7 @@ BIOPYTHON_FORMATS = {'fasta': 'fasta',
                      'genbank': 'genbank',
                      'gb': 'genbank',
                      'embl': 'embl',
-                     'qual': 'qual',}
+                     'qual': 'qual', }
 
 def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
@@ -126,13 +126,13 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
             qual = letter_annotations['phred_quality']
         elif 'solexa_quality' in letter_annotations:
             qual = letter_annotations['solexa_quality']
-            phred = lambda qual: int(10 * math.log(10**(qual/10.0) + 1, 10))
+            phred = lambda qual: int(10 * math.log(10 ** (qual / 10.0) + 1, 10))
             qual = [phred(value) for value in qual]
         else:
             qual = None
 
-        seq  = seqrec.seq
-        seq  = Seq(str(seq), seq.alphabet)
+        seq = seqrec.seq
+        seq = Seq(str(seq), seq.alphabet)
         name = seqrec.name
 
         if qual_name and qual_name != name:
