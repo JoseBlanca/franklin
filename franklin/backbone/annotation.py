@@ -219,8 +219,8 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         create_bam_index(merged_bam.last_version)
 
         pipeline = 'snv_bam_annotator'
-        bam_fhand = open(merged_bam.last_version)
-        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand}}
+        bam_fpath = merged_bam.last_version
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fpath}}
         settings = self._project_settings
         if 'Snvs' in settings:
             snv_settings = settings['Snvs']

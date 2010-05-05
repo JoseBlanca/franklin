@@ -6,6 +6,7 @@ Created on 05/01/2010
 
 @author: peio
 '''
+from franklin.utils.misc_utils import get_num_threads
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of franklin.
@@ -296,7 +297,8 @@ def create_sam_reference_index(reference_fpath):
     call(cmd, raise_on_error=True)
 
 
-def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf):
+def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf,
+                threads=False):
     'It realigns the bam using GATK Local realignment around indels'
     #reference sam index
     create_sam_reference_index(reference_fpath)
@@ -315,6 +317,11 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf):
     cmd = java_cmd(java_conf=java_conf)
     cmd.extend(['-jar', gatk_jar, '-T', 'RealignerTargetCreator',
            '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name])
+    #according to GATK this is experimental, so it might be a good idea to
+    #do it in just one thread
+    parallel = True
+    if parallel:
+        cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
     #the realignment itself
@@ -323,4 +330,6 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf):
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '--output', out_bam_fpath])
+    if parallel:
+        cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)

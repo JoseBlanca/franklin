@@ -27,6 +27,7 @@ from Bio.SeqFeature import FeatureLocation
 
 from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
 from franklin.utils.cmd_utils import create_runner
+from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index
 from copy import copy
 
@@ -113,20 +114,20 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     read_groups_info = _get_read_group_info(bam)
 
     current_deletions = {}
-    reference_id      = get_seq_name(reference)
-    reference_seq     = reference.seq
-    reference_len     = len(reference_seq)
+    reference_id = get_seq_name(reference)
+    reference_seq = reference.seq
+    reference_len = len(reference_seq)
     for column in bam.pileup(reference=reference_id):
-        alleles    = {}
-        ref_pos    = column.pos
+        alleles = {}
+        ref_pos = column.pos
 
         if ref_pos >= reference_len:
             continue
-        ref_id     = bam.getrname(column.tid)
+        ref_id = bam.getrname(column.tid)
         ref_allele = reference_seq[ref_pos].upper()
         for pileup_read in column.pileups:
             #for each read in the column we add its allele to the alleles dict
-            aligned_read      = pileup_read.alignment
+            aligned_read = pileup_read.alignment
 
             read_mapping_qual = aligned_read.mapq
             #We ignore the reads that are likely to be missaligned
@@ -134,8 +135,8 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 continue
 
             read_group = aligned_read.opt('RG')
-            read_name  = aligned_read.qname
-            platform   = read_groups_info[read_group]['PL']
+            read_name = aligned_read.qname
+            platform = read_groups_info[read_group]['PL']
 
             read_pos = pileup_read.qpos
             edge_left, edge_right = read_edge_conf[platform]
@@ -146,12 +147,12 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 (edge_right is not None and edge_right <= read_pos)):
                 continue
 
-            allele     = None
-            qual       = None
+            allele = None
+            qual = None
             is_reverse = None
-            kind       = None
-            start      = None
-            end        = None
+            kind = None
+            start = None
+            end = None
             #which is the allele for this read in this position?
             if read_name in current_deletions:
                 current_deletion = current_deletions[read_name]
@@ -164,11 +165,11 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                         qual0 = _qualities_to_phred(qual0)
                         qual1 = aligned_read.qual[read_pos]
                         qual1 = _qualities_to_phred(qual1)
-                        qual  = min((qual0, qual1))
+                        qual = min((qual0, qual1))
                     else:
                         qual = None
                     is_reverse = bool(aligned_read.is_reverse)
-                    kind       = DELETION
+                    kind = DELETION
                     current_deletion[1] = False #we have returned it already
                 #we count how many positions should be skip until this read
                 #has now deletion again
@@ -196,8 +197,8 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
 
             #is there an insertion after this column
             if indel_length > 0:
-                start  = read_pos + 1
-                end    = start + indel_length
+                start = read_pos + 1
+                end = start + indel_length
 
                 allele, qual, is_reverse = _get_allele_from_read(aligned_read,
                                                               slice(start, end))
@@ -289,6 +290,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
+    bam_fhand = get_fhand(bam_fhand)
     create_bam_index(bam_fpath=bam_fhand.name)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
@@ -355,8 +357,8 @@ def snvs_in_window(snv, snvs, window):
     'it gets all the snvs  in a window taking a snv as reference'
     num_of_snvs = 0
     location = int(str(snv.location.start))
-    left_margin  = location - (window /2)
-    rigth_margin = location + (window /2)
+    left_margin = location - (window / 2)
+    rigth_margin = location + (window / 2)
     for snv in snvs:
         location = int(str(snv.location.start))
         if location > left_margin and location < rigth_margin:

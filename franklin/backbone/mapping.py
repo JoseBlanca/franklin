@@ -78,7 +78,8 @@ class MappingAnalyzer(Analyzer):
                           reads_fpath=read_fpath.last_version,
                           reference_fpath=reference_fpath.last_version,
                           out_bam_fpath=out_bam_fpath,
-                          parameters=mapping_parameters)
+                          parameters=mapping_parameters,
+                          threads=self.threads)
         self._log({'analysis_finished':True})
 
 class MergeBamAnalyzer(Analyzer):
@@ -213,7 +214,8 @@ class RealignBamAnalyzer(Analyzer):
                     out_bam_fpath=temp_bam_fpath,
                     java_conf={'java_memory':java_mem,
                                'picard_path':picard_path,
-                               'gatk_path':gatk_path})
+                               'gatk_path':gatk_path},
+                    threads=self.threads)
         #a new version for the original bam
         out_bam_fpath = bam_path.next_version
         shutil.move(temp_bam_fpath, out_bam_fpath)

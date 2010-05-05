@@ -20,7 +20,7 @@ Created on 05/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import call
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 import os
 
 def create_bwa_reference(reference_fpath):
@@ -38,7 +38,7 @@ def create_bwa_reference(reference_fpath):
     call(cmd, raise_on_error=True)
 
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
-                       parameters):
+                       parameters, threads=False):
     'It maps the reads to the reference using bwa and returns a bam file'
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
@@ -51,7 +51,8 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     bam_file_bam = 'bam_file.bam'
     output_sai = 'output.sai'
     if reads_length == 'short':
-        cmd = ['bwa', 'aln', reference_fpath, reads_fpath]
+        cmd = ['bwa', 'aln', reference_fpath, reads_fpath,
+               '-t', str(get_num_threads(threads))]
         sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
@@ -59,7 +60,8 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
         ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     elif reads_length == 'long':
-        cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath]
+        cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath,
+               '-t', str(get_num_threads(threads))]
         ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:
@@ -80,9 +82,10 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
-              parameters=None):
+              parameters=None, threads=False):
     'It maps the reads to the reference and returns a bam file'
     if parameters is None:
         parameters = {}
     mapper_func = MAPPER_FUNCS[mapper]
-    return mapper_func(reference_fpath, reads_fpath, out_bam_fpath, parameters)
+    return mapper_func(reference_fpath, reads_fpath, out_bam_fpath, parameters,
+                       threads=threads)

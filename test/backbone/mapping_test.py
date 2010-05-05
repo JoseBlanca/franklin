@@ -28,6 +28,8 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 
+THREADS = 2
+
 class TestBackboneMapping(unittest.TestCase):
     'It tests the backbone'
 
@@ -48,8 +50,9 @@ class TestBackboneMapping(unittest.TestCase):
                                    'groups':['hola']}}
 
         configuration = {'Snvs':{'min_quality':20},
-                       'Sam_processing':{'add_default_qualities':True},
-                       'snv_filters':snv_filters}
+                         'Sam_processing':{'add_default_qualities':True},
+                         'snv_filters':snv_filters,
+                         'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -61,36 +64,36 @@ class TestBackboneMapping(unittest.TestCase):
         os.mkdir(reads_dir)
         os.mkdir(clean_reads_dir)
 
-        solexa =  '@seq1\n'
+        solexa = '@seq1\n'
         solexa += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq2\n'
+        solexa = '@seq2\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq14\n'
+        solexa = '@seq14\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq15\n'
+        solexa = '@seq15\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq12\n'
+        solexa = '@seq12\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq13\n'
+        solexa = '@seq13\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa =  '@seq16\n'
+        solexa = '@seq16\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
 
-        sanger  = '>seq3\n'
+        sanger = '>seq3\n'
         sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
         sanger += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
         sanger += 'TTGTTTCTTCTTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATA'
@@ -166,7 +169,7 @@ class TestBackboneMapping(unittest.TestCase):
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.1.repr')
-        result =  open(repr_fpath).read()
+        result = open(repr_fpath).read()
         assert "type='snv'" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',
@@ -174,7 +177,7 @@ class TestBackboneMapping(unittest.TestCase):
         vcf_fpath = join(project_dir, 'annotations', 'result',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
-        assert 'vks' in vcf
+        assert 'VKS' in vcf
         assert 'AT5G19860.1' in vcf
 
         os.chdir('/tmp')
