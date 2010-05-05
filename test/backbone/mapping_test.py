@@ -28,7 +28,7 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 
-THREADS = False
+THREADS = 2
 
 class TestBackboneMapping(unittest.TestCase):
     'It tests the backbone'
@@ -120,9 +120,9 @@ class TestBackboneMapping(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
-        fpath_sanger = join(clean_reads_dir, 'lb_hola.pl_sanger.fasta')
+        fpath_sanger = join(clean_reads_dir, 'lb_hola1.pl_sanger.sm_hola.fasta')
         fpath_solexa = join(clean_reads_dir,
-                                    'lb_hola.pl_illumina.sfastq')
+                                    'lb_hola2.pl_illumina.sm_hola.sfastq')
         open(fpath_sanger, 'w').write(sanger)
         open(fpath_solexa, 'w').write(solexa)
 
@@ -145,7 +145,7 @@ class TestBackboneMapping(unittest.TestCase):
         singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
         singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
         assert exists(join(singular_mapping_dir, 'result',
-                                    'by_readgroup', 'lb_hola.pl_illumina.bam'))
+                            'by_readgroup', 'lb_hola2.pl_illumina.sm_hola.bam'))
         do_analysis(project_settings=settings_path, kind='select_last_mapping',
                     silent=True)
         result_dir = join(mapping_dir, 'result')
@@ -157,7 +157,6 @@ class TestBackboneMapping(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='merge_bam',
                     silent=True)
         assert exists(join(result_dir, 'merged.0.bam'))
-
 
         #we realign the mapping using GATK
         do_analysis(project_settings=settings_path, kind='realign_bam',
@@ -180,6 +179,7 @@ class TestBackboneMapping(unittest.TestCase):
         result = open(repr_fpath).read()
         #print result
         assert "type='snv'" in result
+        assert "'samples': ['adios_sanger', 'hola']" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',
                     silent=True)

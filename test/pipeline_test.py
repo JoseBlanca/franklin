@@ -53,10 +53,10 @@ class PipelineTests(unittest.TestCase):
 
     def test_configure_pipeline(self):
         'It tests configure pipeline'
-        pipeline      = 'sanger_with_qual'
+        pipeline = 'sanger_with_qual'
         configuration = {'remove_vectors': {'vectors':'Univec'},
                          'remove_adaptors':{'vectors':'hola'}}
-        pipeline      = configure_pipeline(pipeline, configuration)
+        pipeline = configure_pipeline(pipeline, configuration)
 
         assert pipeline[0]['arguments']['vectors'] == 'hola'
         assert pipeline[2]['arguments']['vectors'] == 'Univec'
@@ -82,7 +82,7 @@ class PipelineTests(unittest.TestCase):
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
-        seq_fhand  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        seq_fhand = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         qual_fhand = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
 
         seq_iter = seqs_in_file(seq_fhand, qual_fhand)
@@ -106,11 +106,11 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
-        io_fhands['in_seq']  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         io_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
         io_fhands['outputs'] = {}
         io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
-        io_fhands['outputs']['quality']  = NamedTemporaryFile(delete=False)
+        io_fhands['outputs']['quality'] = NamedTemporaryFile(delete=False)
         seq_pipeline_runner(pipeline, configuration, io_fhands)
         result_seq = open(io_fhands['outputs']['sequence'].name).read()
 #        io_fhands['outputs']['sequence'].seek(0)
@@ -133,7 +133,7 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
         io_fhands = {}
-        io_fhands['in_seq']  = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        io_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         io_fhands['outputs'] = {}
         io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
 
@@ -147,6 +147,10 @@ class PipelineTests(unittest.TestCase):
         assert 'mdust' in result_seq
 
         os.remove(io_fhands['outputs']['sequence'].name)
+
+        #now with an repr file
+        open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

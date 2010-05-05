@@ -87,7 +87,7 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
     for item in prefix:
         try:
             key, value = item.split('_', 1)
-            if key.upper() not in ['LB', 'PL']:
+            if key.upper() not in ['LB', 'PL', 'SM']:
                 continue
         except ValueError:
             continue
@@ -117,7 +117,7 @@ def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
 def _check_tag_in_RG(tag, tags_to_append):
     'It check if the given tag is in the tags to append'
     for tag_to_append in tags_to_append:
-        key = tag_to_append.split()[0]
+        key = tag_to_append.split(':')[0]
         if key.upper() == tag.upper():
             return True
     return False
