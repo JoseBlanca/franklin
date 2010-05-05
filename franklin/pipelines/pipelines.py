@@ -50,8 +50,7 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
 from franklin.snv.writers import VariantCallFormatWriter
-from franklin.utils.misc_utils import DisposableFile, DATA_DIR
-
+from franklin.utils.misc_utils import DisposableFile
 
 # Join the pipelines in PIPELINE
 PIPELINES = dict(SEQPIPELINES.items() + SNV_PIPELINES.items())

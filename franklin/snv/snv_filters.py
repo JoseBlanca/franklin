@@ -470,7 +470,7 @@ def create_is_variable_filter(group_kind, groups, in_union=False,
                 continue
             result = variable_in_groupping(group_kind, snv, groups, in_union,
                                           in_all_read_groups=in_all_read_groups)
-
+            result = not result
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)
         return sequence
 
