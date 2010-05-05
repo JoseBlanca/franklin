@@ -50,7 +50,7 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
 from franklin.snv.writers import VariantCallFormatWriter
-from franklin.utils.misc_utils import DisposableFile
+from franklin.utils.misc_utils import DisposableFile, get_num_threads
 
 # Join the pipelines in PIPELINE
 PIPELINES = dict(SEQPIPELINES.items() + SNV_PIPELINES.items())
@@ -246,7 +246,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         cmd.extend([in_fhand_seqs.name,
                     file_format, pipeline, configuration, out_fpath,
                     gettempdir()])
-        processes = processes if isinstance(processes, int) else None
+        processes = get_num_threads(processes)
         if file_format == 'fasta':
             splitter = '>'
         elif file_format in ('fastq', 'sfastq', 'ifastq'):
