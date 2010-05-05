@@ -41,7 +41,7 @@ from itertools import imap, ifilter
 from tempfile import gettempdir, NamedTemporaryFile
 
 import psubprocess
-
+import franklin
 from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES, SEQ_STEPS
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES, SNV_STEPS
@@ -123,11 +123,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         return items
     # We configure the pipeline depending on the sequences type and
     # configuration parameters
-    import sys
-    sys.stdout.write(str(configuration) + '\n')
     pipeline_steps = configure_pipeline(pipeline, configuration)
-    sys.stdout.write(str(pipeline_steps) + '\n')
-
 
     #we create all the cleaner functions
     cleaner_functions = {}
@@ -241,7 +237,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         process_sequences_for_script(in_fhand_seqs.name, file_format,
                                      pipeline, configuration, out_fpath)
     else:
-        cmd = os.path.join(DATA_DIR, 'scripts', 'process_sequences.py')
+        cmd = os.path.join(franklin.__path__[0], 'process_sequences.py')
         cmd = [os.path.abspath(cmd)]
         cmd.extend([in_fhand_seqs.name,
                     file_format, pipeline, configuration, out_fpath,
