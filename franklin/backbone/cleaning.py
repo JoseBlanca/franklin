@@ -46,7 +46,7 @@ class CleanReadsAnalyzer(Analyzer):
         elif file_info['pl'] == 'sanger':
             return 'sanger_with_qual'
         else:
-            raise ValueError('Unable to guess the cleaning pipeline: %s' %
+            raise ValueError('Unable to guess the cleaning pipeline: %s' % 
                              str(file_info))
 
     def create_cleaning_configuration(self, platform, library=None):
@@ -81,7 +81,7 @@ class CleanReadsAnalyzer(Analyzer):
                     if side == 'right':
                         right = length
         configuration['edge_removal'] = {}
-        configuration['edge_removal']['left_length']  = left
+        configuration['edge_removal']['left_length'] = left
         configuration['edge_removal']['right_length'] = right
 
         # Words settings
@@ -117,7 +117,7 @@ class CleanReadsAnalyzer(Analyzer):
         input file'''
         self._log({'analysis_started':True})
         input_paths = self._get_input_fpaths()['reads']
-        output_dir   =  self._create_output_dirs()['reads']
+        output_dir = self._create_output_dirs()['reads']
         for input_path in input_paths:
             input_fpath = str(input_path)
             fname = os.path.split(input_fpath)[-1]
@@ -125,8 +125,8 @@ class CleanReadsAnalyzer(Analyzer):
             if os.path.exists(output_fpath):
                 continue
             file_info = scrape_info_from_fname(input_path)
-            input_fhand  = open(input_fpath)
-            output_fhand  = open(output_fpath, 'w')
+            input_fhand = open(input_fpath)
+            output_fhand = open(output_fpath, 'w')
             pipeline = self._guess_cleaning_pipepile(file_info)
             iofhands = {'in_seq':input_fhand,
                         'outputs':{'sequence': output_fhand }}
@@ -134,7 +134,7 @@ class CleanReadsAnalyzer(Analyzer):
                                                        platform=file_info['pl'],
                                                        library=file_info['lb'])
             seq_pipeline_runner(pipeline, configuration, iofhands,
-                                file_info['format'])
+                                file_info['format'], processes=self.threads)
             input_fhand.close()
             output_fhand.close()
         self._log({'analysis_finished':True})
@@ -150,7 +150,7 @@ class ReadsStatsAnalyzer(Analyzer):
         self._create_output_dirs()['original_reads']
         self._create_output_dirs()['cleaned_reads']
 
-        clean_paths    = self._get_input_fpaths()['cleaned_reads']
+        clean_paths = self._get_input_fpaths()['cleaned_reads']
         original_paths = self._get_input_fpaths()['original_reads']
         reads = {'cleaned': clean_paths, 'original': original_paths}
 
@@ -158,13 +158,13 @@ class ReadsStatsAnalyzer(Analyzer):
         for seq_type, paths in reads.items():
             for path in paths:
                 stats_dir = self._get_stats_dir(seq_type)
-                basename  = path.basename
+                basename = path.basename
                 fpath = path.last_version
                 seqs = seqs_in_file(open(fpath))
                 file_format = guess_seq_file_format(open(fpath))
                 analyses = ['seq_length_distrib', 'qual_distrib']
                 if file_format == 'fasta':
-                    analyses =  ['seq_length_distrib']
+                    analyses = ['seq_length_distrib']
 
                 self._do_seq_stats(seqs, basename, stats_dir, analyses)
 
@@ -177,12 +177,12 @@ class ReadsStatsAnalyzer(Analyzer):
             if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
                 stats_dir = self._get_stats_dir('cleaned')
 
-                clean_seqs    = seqs_in_file(open(clean_fpath))
+                clean_seqs = seqs_in_file(open(clean_fpath))
                 original_seqs = seqs_in_file(open(original_fpath))
                 file_format = guess_seq_file_format(open(clean_fpath))
                 analyses = ['seq_length_distrib', 'qual_distrib']
                 if file_format == 'fasta':
-                    analyses =  ['seq_length_distrib']
+                    analyses = ['seq_length_distrib']
                 self._do_diff_seq_stats(clean_seqs, original_seqs,
                                         clean_path.basename,
                                         stats_dir, analyses)
@@ -201,7 +201,7 @@ class ReadsStatsAnalyzer(Analyzer):
         else:
             original_seqs, original_seqs2 = None, None
         all_reads = {'cleaned': clean_seqs, 'original': original_seqs}
-        basename  = 'global'
+        basename = 'global'
         for seqtype, seqs in all_reads.items():
             if seqs is None:
                 continue
@@ -211,7 +211,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
         # global stats. Diff fistributions
         stats_dir = self._get_stats_dir('cleaned')
-        analyses  = ['seq_length_distrib', 'qual_distrib']
+        analyses = ['seq_length_distrib', 'qual_distrib']
         if clean_seqs2 is not None and original_seqs2 is not None:
             self._do_diff_seq_stats(clean_seqs2, original_seqs2, basename,
                                     stats_dir, analyses)
@@ -257,12 +257,12 @@ class ReadsStatsAnalyzer(Analyzer):
     @staticmethod
     def _do_distrib(seqs, analysis, basename, stats_dir):
         'I actually do the distrib'
-        plot_fpath    = os.path.join(stats_dir, basename + '.png')
+        plot_fpath = os.path.join(stats_dir, basename + '.png')
         distrib_fpath = os.path.join(stats_dir, basename + '.dat')
         if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):
             return
         try:
-            plot_fhand    = open(plot_fpath, 'w')
+            plot_fhand = open(plot_fpath, 'w')
             distrib_fhand = open(distrib_fpath, 'w')
 
             seq_distrib(sequences=seqs, kind=analysis,
@@ -289,7 +289,7 @@ class ReadsStatsAnalyzer(Analyzer):
     def _do_diff_distrib(clean_seqs, original_seqs, analysis, basename,
                          stats_dir):
         'It performs the differential distribution'
-        plot_fpath    = os.path.join(stats_dir, basename + '.png')
+        plot_fpath = os.path.join(stats_dir, basename + '.png')
         distrib_fpath = os.path.join(stats_dir, basename + '.dat')
 
         if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):

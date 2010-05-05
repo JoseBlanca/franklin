@@ -47,7 +47,7 @@ ATGAACCGCAAAAGCTTGTATGCTGTATTGCCTTGATTTGGTTTCCAAGATTCTTCCCACATATATGATGATGATGATGA
 +
 FFFFFFFFG7777CGFFFFHHHHHHIHHHHHHHHHHHHHHH==?CCFFFFFFFGGCCCGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGFFFFFFFFFFFFFGGGFFFFFFF
 '''
-READS_ILL= '''@HWI-EAS59:3:1:5:1186#0/1
+READS_ILL = '''@HWI-EAS59:3:1:5:1186#0/1
 TGATACCACTGCTTANTCTGCGTTGNTACCA
 +
 BBBBCBAAABA=BB<%<C@?BBA@9%<B;A@
@@ -72,6 +72,7 @@ GATGGATCCCAAGTTNTTGAGGAACNAGAGG
 +
 BBA?;BBBBBA3AB=%=BBB@A=A=%<><@?
 '''
+THREADS = 2
 
 class TestBackbone(unittest.TestCase):
     'It tests the backbone'
@@ -139,7 +140,8 @@ class TestBackbone(unittest.TestCase):
                                      'adaptors_file_454':adaptors_path_454,
                                      'words_to_remove_454':words,
                                      'edge_removal':{'454_left':3,
-                                                     '454_right':3}}}
+                                                     '454_right':3}},
+                         'General_settings':{'threads':THREADS}}
 
 
         settings_path = create_project(directory=test_dir.name,
