@@ -36,12 +36,12 @@ class SeqsTest(unittest.TestCase):
         #sequence1 = Seq('aaavvttt')
 
         # First we initialice the quality in the init
-        seq1 = SeqWithQuality(name = 'seq1', seq=Seq('aaavvttt'),
+        seq1 = SeqWithQuality(name='seq1', seq=Seq('aaavvttt'),
                                qual=[2, 4 , 1, 4, 5, 6, 12, 34])
         assert seq1
 
         # Here we add the quality after the initialization
-        seq2 = SeqWithQuality(name = 'seq2', seq = Seq('aaavvttt'))
+        seq2 = SeqWithQuality(name='seq2', seq=Seq('aaavvttt'))
         seq2.qual = [2, 4 , 1, 4, 5, 6, 12, 34]
         assert seq2
 
@@ -57,12 +57,12 @@ class SeqsTest(unittest.TestCase):
         sequence1 = Seq('aaaccttt')
 
         # First we initialice the quality in the init
-        seq1 = SeqWithQuality(name = 'seq1', seq=sequence1, \
+        seq1 = SeqWithQuality(name='seq1', seq=sequence1, \
                                qual=[2, 4 , 1, 4, 5, 6, 12, 34])
         assert seq1
 
         # Here we add the quality after the initialization
-        seq2 = SeqWithQuality(name = 'seq2', seq = sequence1)
+        seq2 = SeqWithQuality(name='seq2', seq=sequence1)
         seq2.qual = [2, 4 , 1, 4, 5, 6, 12, 34]
         assert seq2
 
@@ -80,10 +80,10 @@ class SeqsTest(unittest.TestCase):
         sequence1 = Seq('aaaccttt')
 
         # First we initialice the quality in the init
-        seq1 = SeqWithQuality(name = 'seq1', seq = sequence1,
-                              qual = [2, 4 , 1, 4, 5, 6, 12, 34])
-        seq2 = SeqWithQuality(name = 'seq2', seq = sequence1,
-                              qual = [2, 4 , 1, 4, 5, 6, 12, 34])
+        seq1 = SeqWithQuality(name='seq1', seq=sequence1,
+                              qual=[2, 4 , 1, 4, 5, 6, 12, 34])
+        seq2 = SeqWithQuality(name='seq2', seq=sequence1,
+                              qual=[2, 4 , 1, 4, 5, 6, 12, 34])
         seq3 = seq1 + seq2
         assert seq3.seq == 'aaacctttaaaccttt'
         assert seq3.qual == [2, 4 , 1, 4, 5, 6, 12, 34, 2, 4 , 1, 4, 5,
@@ -106,11 +106,12 @@ class SeqsTest(unittest.TestCase):
         desc = 'a short sequence'
         annots = {'type':'region', 'go':['0001', '0002'], 'database':'my'}
 
-        seq1 = SeqWithQuality(name = 'seq1', seq = Seq('aaaccttt'),
+        qual_list = [2, 4 , 1, 4, 5, 6, 12, 34]
+        seq1 = SeqWithQuality(name='seq1', seq=Seq('aaaccttt'),
                               description=desc, annotations=annots,
-                              qual = [2, 4 , 1, 4, 5, 6, 12, 34], )
+                              qual=qual_list,)
         seqfeature = SeqFeature(location=FeatureLocation(5, 8), type='ortholog',
-                            qualifiers={'arabidposys':['arab1', 'arab2']})
+                                qualifiers={'arabidposys':['arab1', 'arab2']})
         seq1.features.append(seqfeature)
 
         a = eval(repr(seq1))
@@ -118,6 +119,7 @@ class SeqsTest(unittest.TestCase):
                                   'database': 'my'}
         assert a.seq == 'aaaccttt'
         assert a.features[0].qualifiers == {'arabidposys': ['arab1', 'arab2']}
+        assert a.qual == qual_list
 
 
 class SeqTest(unittest.TestCase):

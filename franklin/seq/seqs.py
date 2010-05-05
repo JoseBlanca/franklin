@@ -33,7 +33,7 @@ def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
     This is necessary because our SeqWithQuality is inmutable
     '''
     if seq is None:
-        seq=seqwithquality.seq
+        seq = seqwithquality.seq
     if id_ is  None:
         id_ = seqwithquality.id
     if name is None:
@@ -49,8 +49,8 @@ def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
 
     #the rest of parameters
     description = seqwithquality.description
-    dbxrefs     = seqwithquality.dbxrefs
-    features    = seqwithquality.features
+    dbxrefs = seqwithquality.dbxrefs
+    features = seqwithquality.features
     annotations = seqwithquality.annotations
 
     #the new sequence
@@ -82,7 +82,7 @@ def get_seq_name(seq):
         name = None
 
     if name is None:
-        name  = str(uuid4())
+        name = str(uuid4())
     return name
 
 UNKNOWN_NAME = "<unknown name>"
@@ -92,9 +92,9 @@ class SeqWithQuality(SeqRecord):
     methods'''
 
     def __init__(self, seq, id=UNKNOWN_ID, name=UNKNOWN_NAME,
-                 description = "<unknown description>", dbxrefs = None,
-                 features = None, annotations = None,
-                 letter_annotations = None, qual = None):
+                 description="<unknown description>", dbxrefs=None,
+                 features=None, annotations=None,
+                 letter_annotations=None, qual=None):
         if id == UNKNOWN_ID and name != UNKNOWN_NAME:
             id = name
         #We don't want a Biopython Seq, we need our repr
@@ -120,19 +120,19 @@ class SeqWithQuality(SeqRecord):
     def complement(self):
         ''' it returns a new object with the complementary strand of the seq '''
         return self.__class__(seq=self.seq.complement(),
-                              id = self.id + '_complemented',
-                              name = self.name + '_complemented',
-                              description = self.description,
-                              dbxrefs = self.dbxrefs, features = self.features,
-                              annotations = self.annotations,
-                              letter_annotations = self.letter_annotations)
+                              id=self.id + '_complemented',
+                              name=self.name + '_complemented',
+                              description=self.description,
+                              dbxrefs=self.dbxrefs, features=self.features,
+                              annotations=self.annotations,
+                              letter_annotations=self.letter_annotations)
 
     def __add__(self, seq2):
         '''It returns a new object with both seq and qual joined '''
         #per letter annotations
-        new_seq = self.__class__(name = self.name + '+' + seq2.name,
-                                 id = self.id + '+' + seq2.id,
-                                 seq  = self.seq + seq2.seq)
+        new_seq = self.__class__(name=self.name + '+' + seq2.name,
+                                 id=self.id + '+' + seq2.id,
+                                 seq=self.seq + seq2.seq)
         #the letter annotations, including quality
         for name, annot in self.letter_annotations.items():
             if name in seq2.letter_annotations:
@@ -143,10 +143,11 @@ class SeqWithQuality(SeqRecord):
     def __repr__(self):
         '''It writes the representation of the whole serecord,
         including annotations and feautures'''
-        toprint     = SeqRecord.__repr__(self)
+        toprint = SeqRecord.__repr__(self)
         toprint = toprint[:-1]
         toprint += ', features=%s, ' % repr(self.features)
-        toprint += 'annotations=%s' % repr(self.annotations)
+        toprint += 'annotations=%s, ' % repr(self.annotations)
+        toprint += 'qual=%s,' % repr(self.qual)
         toprint += ")"
         return toprint
 
@@ -190,9 +191,9 @@ def _maketrans(complement_mapping) :
     For internal use only.
     """
     before = ''.join(complement_mapping.keys())
-    after  = ''.join(complement_mapping.values())
+    after = ''.join(complement_mapping.values())
     before = before + before.lower()
-    after  = after + after.lower()
+    after = after + after.lower()
     return maketrans(before, after)
 
 _dna_complement_table = _maketrans(ambiguous_dna_complement)
