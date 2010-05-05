@@ -328,40 +328,30 @@ class SeqVariationFilteringTest(unittest.TestCase):
         groups = ('rg1',)
         in_union = False
 
-        parameters = (kind, groups, in_union)
-        filter_ = create_is_variable_filter(*parameters)
-        filter_(seq)
-        tgroups = tuple(groups)
-        tparameters = (kind, tgroups, in_union)
-        for snv, expected in zip(seq.get_features(kind='snv'), [False]):
-            result = snv.qualifiers['filters']['is_variable'][tparameters]
-            assert result == expected
+        parameters1 = (kind, groups, in_union)
+        filter1 = create_is_variable_filter(*parameters1)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = False
-
-        parameters = (kind, groups, in_union)
-        filter_ = create_is_variable_filter(*parameters)
-        filter_(seq)
-        tgroups = tuple(groups)
-        tparameters = (kind, tgroups, in_union)
-        for snv, expected in zip(seq.get_features(kind='snv'), [True]):
-            result = snv.qualifiers['filters']['is_variable'][tparameters]
-            assert result == expected
+        parameters2 = (kind, groups, in_union)
+        filter2 = create_is_variable_filter(*parameters2)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = True
+        parameters3 = (kind, groups, in_union)
+        filter3 = create_is_variable_filter(*parameters3)
 
-        parameters = (kind, groups, in_union)
-        filter_ = create_is_variable_filter(*parameters)
-        filter_(seq)
-        tgroups = tuple(groups)
-        tparameters = (kind, tgroups, in_union)
-        for snv, expected in zip(seq.get_features(kind='snv'), [False]):
-            result = snv.qualifiers['filters']['is_variable'][tparameters]
-            assert result == expected
+        filter1(seq)
+        filter2(seq)
+        filter3(seq)
+
+        for params, expected in [(parameters1, False), (parameters2, True),
+                                 (parameters3, False)]:
+            for snv, expected in zip(seq.get_features(kind='snv'), [expected]):
+                result = snv.qualifiers['filters']['is_variable'][params]
+                assert result == expected
 
     @staticmethod
     def test_get_filter_description():

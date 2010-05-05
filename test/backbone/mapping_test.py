@@ -28,7 +28,7 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 
-THREADS = 2
+THREADS = False
 
 class TestBackboneMapping(unittest.TestCase):
     'It tests the backbone'
@@ -44,10 +44,14 @@ class TestBackboneMapping(unittest.TestCase):
                                   'genomic_seqs_fpath':blastdb_seq},
                        'filter12':{'name':'ref_not_in_list', 'use':True,
                                 'list_path':os.path.join(DATA_DIR, 'cos_list')},
-                       'filter10':{'name': 'variable_in_sm',
-                                   'step_name': 'is_variable', 'use':True,
+                       'filter10':{'unique_name': 'variable_in_sm',
+                                   'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
-                                   'groups':['hola']}}
+                                   'groups':['hola']},
+                       'filter11':{'unique_name': 'variable_in_caracola',
+                                   'name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['caracola']}, }
 
         configuration = {'Snvs':{'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},
@@ -170,6 +174,7 @@ class TestBackboneMapping(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.1.repr')
         result = open(repr_fpath).read()
+        print result
         assert "type='snv'" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',
@@ -177,6 +182,7 @@ class TestBackboneMapping(unittest.TestCase):
         vcf_fpath = join(project_dir, 'annotations', 'result',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
+        print vcf
         assert 'VKS' in vcf
         assert 'AT5G19860.1' in vcf
 

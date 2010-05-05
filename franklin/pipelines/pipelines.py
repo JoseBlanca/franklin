@@ -59,6 +59,10 @@ STEPS = SEQ_STEPS
 STEPS.extend(SNV_STEPS)
 STEPS.extend(ANNOT_STEPS)
 
+def _get_name_in_config(step):
+    'It returns the name in config or the name'
+    return step.get('name_in_config', step['name'])
+
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
     #only for the tests, this function should accept only lists, strs won't be
@@ -69,11 +73,10 @@ def configure_pipeline(pipeline, configuration):
     # This is done to be able to use the same step more than once. For that we
     # need to have indexed the configuration in different names but knowing wich
     # is the pipeline step
-    get_name_in_config = lambda x: x.get('name_in_config', x['name'])
 
     # set the configuration in the pipeline
     for step in pipeline:
-        name_in_config = get_name_in_config(step)
+        name_in_config = _get_name_in_config(step)
         if name_in_config in configuration:
             for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
@@ -142,7 +145,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         else:
             #pylint:disable-msg=W0142
             cleaner_function = function_factory(**arguments) #IGNORE:W0142
-        cleaner_functions[analysis_step['name']] = cleaner_function
+        cleaner_functions[_get_name_in_config(analysis_step)] = cleaner_function
 
     #are we multiprocessing?
     functs = _get_func_tools(processes)
@@ -154,7 +157,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
 
     #now use use the cleaner functions using the mapper functions
     for analysis_step in pipeline_steps:
-        cleaner_function = cleaner_functions[analysis_step['name']]
+        step_name = _get_name_in_config(analysis_step)
+        cleaner_function = cleaner_functions[step_name]
         type_ = analysis_step['type']
         if type_ == 'mapper':
             filtered_items = functs['map'](cleaner_function, items)

@@ -21,7 +21,8 @@ Created on 12/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import shutil, os
+import shutil, os, copy
+
 from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -309,15 +310,11 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             if not filter_data['use']:
                 continue
             name = filter_data['name']
-            if 'step_name' in filter_data:
-                step_name = filter_data['step_name']
-            else:
-                step_name = name
+            unique_name = filter_data['unique_name'] if 'unique_name' in filter_data else name
             filter_config = {}
             for argument, value in filter_data.items():
                 if argument == 'use' or argument == 'name':
                     continue
-
                 if name == 'ref_not_in_list':
                     filter_config['seq_list'] = []
                     for item  in open(value):
@@ -325,8 +322,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                 else:
                     filter_config[argument] = value
 
-            filter_config['step_name'] = step_name
-            configuration[name] = filter_config
+            filter_config['name'] = name
+            configuration[unique_name] = filter_config
         pipeline = self._get_pipeline_from_step_name(configuration)
 
         return pipeline, configuration
@@ -344,13 +341,15 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                       'is_variable': is_variable_filter,
                       'ref_not_in_list':ref_not_in_list}
         pipeline = []
-        for name in configuration:
-            step_name = configuration[name]['step_name']
+        for unique_name in configuration:
+            step_name = configuration[unique_name]['name']
             #we have to remove the step name from the configuration because this
             #dict will be used as **kargs
-            del configuration[name]['step_name']
-            step = translator[step_name]
-            step['name_in_config'] = name
+            if 'unique_name' in configuration[unique_name]:
+                del configuration[unique_name]['unique_name']
+            del configuration[unique_name]['name']
+            step = copy.deepcopy(translator[step_name])
+            step['name_in_config'] = unique_name
             pipeline.append(step)
         return pipeline
 
