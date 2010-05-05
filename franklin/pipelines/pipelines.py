@@ -35,7 +35,7 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging, os, tempfile, copy
+import logging, os, tempfile, copy, sys
 import cPickle as pickle
 from itertools import imap, ifilter
 from tempfile import gettempdir, NamedTemporaryFile
@@ -237,8 +237,9 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         process_sequences_for_script(in_fhand_seqs.name, file_format,
                                      pipeline, configuration, out_fpath)
     else:
-        cmd = os.path.join(franklin.__path__[0], 'process_sequences.py')
-        cmd = [os.path.abspath(cmd)]
+        cmd = [sys.executable]
+        cmd2 = os.path.join(franklin.__path__[0], 'process_sequences.py')
+        cmd.append(os.path.abspath(cmd2))
         cmd.extend([in_fhand_seqs.name,
                     file_format, pipeline, configuration, out_fpath,
                     gettempdir()])
@@ -251,7 +252,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             splitter = 'SeqWithQual'
         else:
             raise NotImplementedError
-        cmd_def = [{'options': 1, 'io': 'in', 'splitter':splitter},
+        cmd_def = [{'options': 2, 'io': 'in', 'splitter':splitter},
                    {'options':-2, 'io': 'out'}]
         stdout = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
