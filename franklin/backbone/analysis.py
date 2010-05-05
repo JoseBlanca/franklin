@@ -38,7 +38,7 @@ def scrape_info_from_fname(path):
     fhand.close()
     fname = path.basename
     for item in fname.split('.'):
-        key, value     = item.split('_', 1)
+        key, value = item.split('_', 1)
         file_info[key] = value
     return file_info
 
@@ -86,6 +86,11 @@ class Analyzer(object):
         self._old_tmpdir = tempfile.gettempdir()
         self._setup_tempdir()
         self._silent = silent
+
+        if 'threads' in self._project_settings['General_settings']:
+            self.threads = self._project_settings['General_settings']['threads']
+        else:
+            self.threads = False
 
     @staticmethod
     def _set_tmp(tmpdir):

@@ -27,6 +27,16 @@ import franklin
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'franklin',
                          'data')
 
+
+def get_num_threads(threads):
+    "It returns num of threads to use in parallel"
+    if not threads:
+        return 1
+    elif isinstance(threads, int):
+        return threads
+    else:
+        return os.sysconf('SC_NPROCESSORS_ONLN')
+
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
     for num1, num2 in zip(list1, list2):

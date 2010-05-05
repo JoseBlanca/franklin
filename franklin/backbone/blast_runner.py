@@ -23,9 +23,11 @@ from os import makedirs, symlink, remove
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.cmd_utils import call
+from franklin.utils.misc_utils import get_num_threads
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
+
 
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -47,7 +49,8 @@ def _create_temp_fasta_file(fpath):
     return fasta_fhand
 
 def backbone_blast_runner(query_fpath, project_dir, blast_program,
-                          blast_db=None, blast_db_seq=None, dbtype='nucl'):
+                          blast_db=None, blast_db_seq=None, dbtype='nucl',
+                          threads=False):
     '''It returns the blast if the results doesn't exist'''
     if blast_db is None and blast_db_seq is None:
         raise RuntimeError('It needs a blast database or seqfile')
@@ -85,7 +88,8 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     logger.info('Running the blast %s' % result_fpath)
     try:
-        blast_runner(query_fpath, blast_db, blast_program, result_fpath)
+        blast_runner(query_fpath, blast_db, blast_program, result_fpath,
+                     threads=threads)
     except RuntimeError as error:
         if exists(result_fpath):
             remove(result_fpath)
@@ -100,11 +104,14 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     return result_fpath
 
-def blast_runner(seq_fpath, blast_db, blast_type, result_fpath):
+def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
+                 threads=False):
     'It runs a blast giving a file and a database path'
     cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
            '-b', '25', '-e', '0.0001', '-m', '7',
-           '-i', seq_fpath, '-o', result_fpath]
+           '-i', seq_fpath, '-o', result_fpath,
+           '-a', str(get_num_threads(threads))]
+
     call(cmd, raise_on_error=True, log=True)
 
 def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):

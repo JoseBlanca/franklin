@@ -59,10 +59,7 @@ class AnnotationAnalyzer(Analyzer):
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
 
-        if 'threads' in self._project_settings['General_settings']:
-            processes = self._project_settings['General_settings']['threads']
-        else:
-            processes = False
+
         self._log({'analysis_started':True})
         repr_fpaths = inputs['repr']
         try:
@@ -84,7 +81,7 @@ class AnnotationAnalyzer(Analyzer):
                 config = configuration
 
             seq_pipeline_runner(pipeline, configuration=config,
-                                io_fhands=io_fhands, processes=processes)
+                                io_fhands=io_fhands, processes=self.threads)
             temp_repr.close()
             repr_path = VersionedPath(os.path.join(output_dir,
                                                    seq_path.basename + '.repr'))
@@ -138,7 +135,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db=blastdb,
-                                              dbtype=db_kind)
+                                              dbtype=db_kind,
+                                              threads=self.threads)
                 if db_kind == 'nucl':
                     blast_program = 'tblastx'
                 else:
@@ -148,7 +146,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               project_dir=project_dir,
                                               blast_program=blast_program,
                                               blast_db_seq=input_.last_version,
-                                              dbtype='nucl')
+                                              dbtype='nucl',
+                                              threads=self.threads)
                 if input_ not in blasts:
                     blasts[input_] = {}
                 blasts[input_][database] = {'blast':blast,
@@ -387,7 +386,8 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                                                 project_dir=project_dir,
                                                 blast_program=blast_program,
                                                 blast_db=blastdb,
-                                                dbtype=db_kind)
+                                                dbtype=db_kind,
+                                                threads=self.threads)
                 if input_ not in blasts:
                     blasts[input_fpath] = []
                 blasts[input_fpath].append({'blast':blast, 'modifier':None})
@@ -486,7 +486,8 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             project_dir=project_dir,
                                             blast_program=blast_program,
                                             blast_db=blastdb,
-                                            dbtype=db_kind)
+                                            dbtype=db_kind,
+                                            threads=self.threads)
 
             if chop_big_xml:
                 #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
