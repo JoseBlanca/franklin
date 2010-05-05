@@ -20,6 +20,7 @@ Created on 26/11/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import create_runner, call
+from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
@@ -32,11 +33,11 @@ def get_orthologs(blast1_fhand, blast2_fhand):
     pools'''
     # First we have to get hist from the first blast. We will put the in a set
     blast1_hits = set()
-    for hits in get_hit_pairs_fom_blast(blast1_fhand):
+    for hits in get_hit_pairs_fom_blast(get_fhand(blast1_fhand)):
         blast1_hits.add(hits)
 
     # Know we will see if the hits in the second blast in the first too
-    for hits in get_hit_pairs_fom_blast(blast2_fhand):
+    for hits in get_hit_pairs_fom_blast(get_fhand(blast2_fhand)):
         hits = (hits[1], hits[0])
         if hits in blast1_hits:
             yield hits
@@ -54,14 +55,14 @@ def get_hit_pairs_fom_blast(blast1_fhand, filters=None):
                                                 results=blasts)
     for match in filtered_results:
         try:
-            query =  match['query'].id
+            query = match['query'].id
         except AttributeError:
-            query =  match['query'].name
+            query = match['query'].name
         for match_hit in match['matches']:
             try:
-                subject =  match_hit['subject'].id
+                subject = match_hit['subject'].id
             except AttributeError:
-                subject =  match_hit['subject'].name
+                subject = match_hit['subject'].name
             yield(query, subject)
 
 
@@ -71,8 +72,8 @@ def _infer_introns_from_matches(alignments):
         alignment = alignments.next()
     except StopIteration:
         return []
-    match     = alignment['matches'][0]
-    hsps      = match['match_parts']
+    match = alignment['matches'][0]
+    hsps = match['match_parts']
 
     introns = []
     direct_hsps, reverse_hsps = _separate_hsps(hsps)
@@ -114,14 +115,14 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     #           \
     point1, point2 = {}, {}
     if hsp1['query_strand'] > 0:
-        point1['query']   = hsp1['query_end']
+        point1['query'] = hsp1['query_end']
         point1['subject'] = hsp1['subject_end']
-        point2['query']   = hsp2['query_start']
+        point2['query'] = hsp2['query_start']
         point2['subject'] = hsp2['subject_start']
     else:
-        point1['query']   = hsp1['query_start']
+        point1['query'] = hsp1['query_start']
         point1['subject'] = hsp1['subject_start']
-        point2['query']   = hsp2['query_end']
+        point2['query'] = hsp2['query_end']
         point2['subject'] = hsp2['subject_end']
     #print 'point1', point1
     #print 'point2', point2
@@ -131,7 +132,7 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     #   xooooo
     #   oooooo
     #   oooooo
-    query_dif   = point2['query'] - point1['query']
+    query_dif = point2['query'] - point1['query']
     subject_dif = point2['subject'] - point1['subject']
     if query_dif + blast_tolerance < 0:
         return None
@@ -148,7 +149,7 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     # this is a very strange case. when it happens there is no intron
     if float(point2['subject'] - point1['subject']) == 0:
         return None
-    intron_index = (point2['subject'] - point1['subject'] - point2['query'] +
+    intron_index = (point2['subject'] - point1['subject'] - point2['query'] + 
                     point1['query']) / \
                     float(point2['subject'] - point1['subject'])
     #print intron_index
@@ -159,7 +160,7 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
 
 def _separate_hsps(hsps):
     'It separates hsps taking into accound the query and subject strands'
-    direct_hsps  = []
+    direct_hsps = []
     reverse_hsps = []
     for hsp in hsps:
         if (hsp['query_strand'] * hsp['subject_strand']) > 0:
@@ -205,7 +206,7 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     else:
         similar_seq = similar_sequence
     start = similar_seq['subject_start']
-    end   = similar_seq['subject_end']
+    end = similar_seq['subject_end']
     similar_seq = genomic_seqs_index[similar_seq['name']]
 
     #now we run est2genome for this cdna
@@ -326,7 +327,7 @@ def build_sequence_clusters(aligner_config, filters=None):
                     'min_length_bp' : 15}]
     pairs = get_hit_pairs_fom_blast(alignment_result, filters=filters)
     # run of to run tclust
-    input_fhand  = NamedTemporaryFile()
+    input_fhand = NamedTemporaryFile()
     for pair1, pair2 in pairs:
         if pair1 != pair2:
             input_fhand.write("%s\t%s\n" % (pair1, pair2))

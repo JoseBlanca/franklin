@@ -70,7 +70,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
                                        blast_program))
     if exists(result_fpath):
         logger.info('Using the stored blast result %s' % result_fpath)
-        return open(result_fpath)
+        return result_fpath
 
     #the input file should be fasta
     fasta_query_fhand = None
@@ -98,7 +98,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
     if fasta_db_fhand:
         fasta_db_fhand.close()
 
-    return open(result_fpath)
+    return result_fpath
 
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath):
     'It runs a blast giving a file and a database path'

@@ -52,6 +52,7 @@ def create_project(name, directory=None, configuration=None):
     config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
+    config['General_settings']['num_threads'] = None
 
     config['Other_settings'] = {}
     config['Other_settings']['default_sanger_quality'] = 20

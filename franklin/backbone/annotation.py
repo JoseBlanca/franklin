@@ -52,19 +52,24 @@ class AnnotationAnalyzer(Analyzer):
 
     def _get_inputs_and_prepare_outputs(self):
         'It creates the output dir and it returns the inputs'
-        output_dirs   = self._create_output_dirs()
-        inputs       = self._get_input_fpaths()
+        output_dirs = self._create_output_dirs()
+        inputs = self._get_input_fpaths()
         return inputs, output_dirs
 
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
+
+        if 'threads' in self._project_settings['General_settings']:
+            processes = self._project_settings['General_settings']['threads']
+        else:
+            processes = False
         self._log({'analysis_started':True})
-        repr_fpaths  = inputs['repr']
+        repr_fpaths = inputs['repr']
         try:
-            seqs_fpaths  = inputs['input']
+            seqs_fpaths = inputs['input']
         except KeyError:
             seqs_fpaths = []
-        seqs_paths  = self._get_seq_or_repr_path(seqs_fpaths, repr_fpaths)
+        seqs_paths = self._get_seq_or_repr_path(seqs_fpaths, repr_fpaths)
         for seq_path in seqs_paths:
             seq_fpath = seq_path.last_version
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
@@ -79,7 +84,7 @@ class AnnotationAnalyzer(Analyzer):
                 config = configuration
 
             seq_pipeline_runner(pipeline, configuration=config,
-                                io_fhands=io_fhands)
+                                io_fhands=io_fhands, processes=processes)
             temp_repr.close()
             repr_path = VersionedPath(os.path.join(output_dir,
                                                    seq_path.basename + '.repr'))
@@ -113,8 +118,11 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
         settings = self._project_settings['Annotation']['ortholog_annotation']
         ortholog_databases = settings['ortholog_databases']
 
+
+        general_settings = self._project_settings['General_settings']
+        project_dir = general_settings['project_path']
+
         #first we need some blasts
-        project_dir = self._project_settings['General_settings']['project_path']
         blasts = {}
         for input_ in inputs['input']:
             for database in ortholog_databases:
@@ -176,6 +184,9 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
         repr_dir = output_dirs['repr_dir']
         pipeline = [annotate_cdna_introns]
+
+        general_settings = self._project_settings['General_settings']
+
         settings = self._project_settings['Annotation']
         if 'Cdna_intron_annotation' not in settings:
             msg = 'You should set up genomic_db and genomic_seqs in settings'
@@ -184,14 +195,14 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
         if (not 'genomic_db' in settings['Cdna_intron_annotation'] or
             not  settings['Cdna_intron_annotation']['genomic_db']):
-            project_path = self._project_settings['General_settings']['project_path']
+            project_path = general_settings['project_path']
             genomic_db = make_backbone_blast_db(project_path,
                                                 genomic_seqs,
                                                 dbtype='nucl')
         else:
             genomic_db = settings['Cdna_intron_annotation']['genomic_db']
         configuration = {'annotate_cdna_introns': {'genomic_db':genomic_db,
-                                       'genomic_seqs_fhand':open(genomic_seqs)}}
+                                             'genomic_seqs_fhand':genomic_seqs}}
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
@@ -205,7 +216,7 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
         output_dir = output_dirs['result']
-        merged_bam   = inputs['merged_bam']
+        merged_bam = inputs['merged_bam']
         create_bam_index(merged_bam.last_version)
 
         pipeline = 'snv_bam_annotator'
@@ -244,9 +255,9 @@ class WriteAnnotationAnalyzer(Analyzer):
     'It writes all the output annotation files'
     def run(self):
         'It runs the analysis.'
-        output_dir   = self._create_output_dirs()['result']
-        inputs       = self._get_input_fpaths()
-        repr_paths   = inputs['repr']
+        output_dir = self._create_output_dirs()['result']
+        inputs = self._get_input_fpaths()
+        repr_paths = inputs['repr']
 
 
         output_files = {'vcf': ('vcf',),
@@ -298,7 +309,7 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
         for filter_data in settings.values():
             if not filter_data['use']:
                 continue
-            name   = filter_data['name']
+            name = filter_data['name']
             if 'step_name' in filter_data:
                 step_name = filter_data['step_name']
             else:
@@ -316,7 +327,7 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                     filter_config[argument] = value
 
             filter_config['step_name'] = step_name
-            configuration[name] =  filter_config
+            configuration[name] = filter_config
         pipeline = self._get_pipeline_from_step_name(configuration)
 
         return pipeline, configuration
@@ -357,8 +368,10 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         annot_settings = settings['description_annotation']
         description_databases = annot_settings['description_databases']
 
+        general_settings = self._project_settings['General_settings']
+
         #first we need some blasts
-        project_dir = self._project_settings['General_settings']['project_path']
+        project_dir = general_settings['project_path']
         blasts = {}
         for input_ in inputs['input']:
             input_fpath = input_.last_version
@@ -370,7 +383,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                     blast_program = 'blastx'
 
                 blastdb = blast_settings[database]['path']
-                blast   = backbone_blast_runner(query_fpath=input_fpath,
+                blast = backbone_blast_runner(query_fpath=input_fpath,
                                                 project_dir=project_dir,
                                                 blast_program=blast_program,
                                                 blast_db=blastdb,
@@ -442,9 +455,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         go_database = go_settings['blast_database']
 
         if 'create_dat_file' in go_settings:
-            create_dat  = go_settings['create_dat_file']
+            create_dat = go_settings['create_dat_file']
         else:
-            create_dat  = None
+            create_dat = None
 
         if 'java_memory' in  go_settings:
             java_memory = go_settings['java_memory']
@@ -469,12 +482,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
             blastdb = blast_settings[go_database]['path']
             input_fpath = input_.last_version
-            blast   = backbone_blast_runner(query_fpath=input_fpath,
+            blast = backbone_blast_runner(query_fpath=input_fpath,
                                             project_dir=project_dir,
                                             blast_program=blast_program,
                                             blast_db=blastdb,
                                             dbtype=db_kind)
-
 
             if chop_big_xml:
                 #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
@@ -483,24 +495,25 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                     chopped_blast.write(blast_parts)
                 chopped_blast.flush()
                 blast = chopped_blast
-            #print "Itemized done"
-            #raw_input()
 
             blasts[input_fpath] = blast
 
         # prepare pipeline
-        pipeline      = [annotate_gos]
+        pipeline = [annotate_gos]
         configuration = {}
 
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
             if create_dat:
-                dat_fpath = os.path.join(result_dir, input_.basename + '.b2g.dat')
+                dat_fpath = os.path.join(result_dir,
+                                         input_.basename + '.b2g.dat')
             else:
                 dat_fpath = None
-            annot_fpath = os.path.join(result_dir, input_.basename + '.b2g.annot')
+            annot_fpath = os.path.join(result_dir,
+                                       input_.basename + '.b2g.annot')
+            blast = blasts[input_fpath].name if chop_big_xml else blast[input_fpath]
 
-            step_config = {'blast': blasts[input_fpath],
+            step_config = {'blast': blast,
                            'dat_fpath': dat_fpath,
                            'annot_fpath': annot_fpath,
                            'java_memory':java_memory,

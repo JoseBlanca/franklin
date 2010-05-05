@@ -35,11 +35,12 @@ from franklin.seq.seqs import SeqFeature, get_seq_name, Seq
 from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seq_analysis import infer_introns_for_cdna, get_orthologs
 from franklin.seq.readers import guess_seq_file_format
+from franklin.utils.misc_utils import get_fhand
 
 def create_ortholog_annotator(blast, reverse_blast, species):
     '''It creates a function factory that calculates all the orthologs between
      crossed species. First it calculates all the orthologs'''
-    blast_fhand         = blast['blast']
+    blast_fhand = blast['blast']
     reverse_blast_fhand = reverse_blast['blast']
     orthologs = list(get_orthologs(blast_fhand, reverse_blast_fhand))
 
@@ -90,15 +91,15 @@ def _get_descriptions_from_blasts(blasts):
         else:
             modifier = None
 
-        blast = BlastParser(fhand=blast_fhand)
+        blast = BlastParser(fhand=get_fhand(blast_fhand))
         filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                     results=blast)
         #filtered_results = [filtered_results]
         for match in filtered_results:
             try:
-                query =  match['query'].id
+                query = match['query'].id
             except AttributeError:
-                query =  match['query'].name
+                query = match['query'].name
             if query not in seq_annot:
                 match_hit = match['matches'][0]
                 description = match_hit['subject'].description
@@ -130,9 +131,9 @@ def _get_features_from_sputnik(fhand):
             items = line.split()
             ssr_type = items[0]
             start = int(items[1]) - 1
-            end   = int(items[3]) - 1
+            end = int(items[3]) - 1
             score = int(items[8])
-            unit  = items[10]
+            unit = items[10]
             yield SeqFeature(location=FeatureLocation(start, end),
                              type='microsatellite',
                              qualifiers={'score':score, 'unit':unit,
@@ -158,10 +159,10 @@ def create_orf_annotator(parameters):
 
         items = description.split()
         start = int(items[1])
-        end   = int(items[2])
+        end = int(items[2])
         seq = Seq(seq, generic_dna)
         pep = Seq(pep, generic_protein)
-        qualifiers =  {'dna':seq, 'pep':pep}
+        qualifiers = {'dna':seq, 'pep':pep}
         if len(items) > 3:
             qualifiers['strand'] = 'reverse'
         else:
@@ -175,6 +176,7 @@ def create_orf_annotator(parameters):
 
 def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
     'It creates a function that annotates introns in cdna matching with genomic'
+    genomic_seqs_fhand = get_fhand(genomic_seqs_fhand)
     genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name,
                                      guess_seq_file_format(genomic_seqs_fhand))
     def annotate_orf(sequence):
@@ -201,6 +203,7 @@ def create_go_annotator(blast, annot_fpath=None, dat_fpath=None,
     if annot_fpath is None:
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
+    blast = get_fhand(blast)
     b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
                    java_memory=java_memory, prop_fpath=prop_fpath)
     go_annotations = _parse_b2g_output(open(annot_fpath))
@@ -226,7 +229,7 @@ def _parse_b2g_output(annot_fhand):
             continue
         items = line.split('\t')
         name = items[0]
-        go   = items[1]
+        go = items[1]
         if name not in annotations:
             annotations[name] = []
         annotations[name].append(go)

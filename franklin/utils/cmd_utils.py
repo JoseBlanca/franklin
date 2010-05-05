@@ -334,7 +334,7 @@ def create_runner(tool, parameters=None, environment=None):
 
                 logging.warning(print_name + ':' + stderr)
             else:
-                raise RuntimeError('Problem running ' + tool + ': ' + stdout +
+                raise RuntimeError('Problem running ' + tool + ': ' + stdout + 
                                stderr)
 
         # Now we are going to make this list with the files we are going to
@@ -435,7 +435,8 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
     b2g_bin = os.path.join(java_dir, 'blast2go.jar')
     tempdir = NamedTemporaryDir()
     out_basename = os.path.join(tempdir.name, 'out')
-    cmd = java_cmd(java_memory)
+    java_conf = {'java_memory':java_memory}
+    cmd = java_cmd(java_conf)
     cmd.extend(['-jar', b2g_bin, '-in', blast.name, '-out', out_basename, '-a'])
 
     if prop_fpath is None:

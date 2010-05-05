@@ -108,7 +108,7 @@ class NamedTemporaryDir(object):
                 break
             except os.error:
                 if time_waiting < timeout:
-                    time.sleep(timeout/10.0)
+                    time.sleep(timeout / 10.0)
                 else:
                     onerror(os.rmdir, path, sys.exc_info())
                     break
@@ -117,7 +117,7 @@ class NamedTemporaryDir(object):
 def _remove_atributes_to_tag(tag):
     '''It removees atributes to a xml tag '''
     mod_tag = "".join(tag).split(' ')
-    if len(mod_tag) >1:
+    if len(mod_tag) > 1:
         return mod_tag[0] + '>'
     else:
         return mod_tag[0]
@@ -128,7 +128,7 @@ def _get_xml_header(fhand, tag):
     end_file = fhand.tell()
 
     fhand.seek(0, 0)
-    header      = []
+    header = []
     current_tag = []
     listed_tag = '<' + tag + '>'
     while True:
@@ -155,9 +155,9 @@ def _get_xml_tail(fhand, tag):
     '''It takes the tail of the xml file '''
     in_tag = False
     tail = []
-    current_tag  = []
+    current_tag = []
     fhand.seek(-1, 2)
-    listed_tag = list('</'+ tag +'>')
+    listed_tag = list('</' + tag + '>')
     listed_tag.reverse()
     while True:
         if fhand.tell() == 0:
@@ -183,13 +183,14 @@ def _get_xml_tail(fhand, tag):
 def xml_itemize(fhand, tag, num_items=1):
     '''It takes a xml file and it chunks it by the given key. It adds header if
     exists to each of the pieces. It is a generator'''
+    fhand = get_fhand(fhand)
     fhand.seek(0, 2)
     end_file = fhand.tell()
 
     header = _get_xml_header(fhand, tag)
-    tail   = _get_xml_tail(fhand, tag)
-    section      = []
-    current_tag  = []
+    tail = _get_xml_tail(fhand, tag)
+    section = []
+    current_tag = []
     listed_tag_s = '<' + tag + '>'
     listed_tag_e = '</' + tag + '>'
     in_tag, in_section = False, False
@@ -312,7 +313,7 @@ class VersionedPath(object):
     def _get_last_fname(self):
         'It takes the last version of a versioned file'
         regex = re.compile('(' + self.basename + ')\.(\d*).?(' + self.extension + ')$')
-        last_file    = None
+        last_file = None
         last_version = None
         #what happens if there is nothing in the directory
         for file_ in os.listdir(self.directory):
@@ -436,7 +437,7 @@ class OrderedDict(dict, DictMixin):
 
     def __eq__(self, other):
         if isinstance(other, OrderedDict):
-            return len(self)==len(other) and self.items() == other.items()
+            return len(self) == len(other) and self.items() == other.items()
         return dict.__eq__(self, other)
 
     def __ne__(self, other):
@@ -448,3 +449,9 @@ class DisposableFile(file):
         'This close removes the file when called'
         file.close(self)
         os.remove(self.name)
+
+def get_fhand(file_):
+    'Given an fhand or and fpath it returns an fhand'
+    if isinstance(file_, basestring):
+        file_ = open(file_, 'r')
+    return file_

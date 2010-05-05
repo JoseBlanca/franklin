@@ -30,6 +30,8 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 
+THREADS = 2
+
 class OrthologTest(unittest.TestCase):
     'It test the ortholog analysis'
 
@@ -43,7 +45,8 @@ class OrthologTest(unittest.TestCase):
                                     'species':'arabidopsis',
                                     'kind': 'nucl'}},
                   'Annotation':{'ortholog_annotation':{'ortholog_databases':
-                                                       ['arabidopsis']}}
+                                                       ['arabidopsis']}},
+                'General_settings':{'threads':THREADS}
                  }
 
         settings_path = create_project(directory=test_dir.name,
@@ -99,7 +102,8 @@ class OrthologTest(unittest.TestCase):
                                            'kind': 'nucl'}},
                   'Annotation':{'description_annotation':{
                                                     'description_databases':
-                                                              ['arabidopsis']}}
+                                                              ['arabidopsis']}},
+                'General_settings':{'threads':THREADS}
                  }
 
         settings_path = create_project(directory=test_dir.name,
@@ -135,12 +139,13 @@ class OrthologTest(unittest.TestCase):
         genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
         config = {'Annotation':
                         {'Cdna_intron_annotation':{'genomic_db': genomic_db,
-                                                   'genomic_seqs':genomic_db}}}
+                                                   'genomic_seqs':genomic_db}},
+                'General_settings':{'threads':THREADS}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                       configuration=config)
         project_dir = join(test_dir.name, project_name)
-        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
         seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
         seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
         seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
@@ -173,9 +178,10 @@ class OrthologTest(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         settings_path = create_project(directory=test_dir.name,
-                                       name=project_name)
+                                       name=project_name,
+                         configuration={'General_settings':{'threads':THREADS}})
         project_dir = join(test_dir.name, project_name)
-        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
         seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
         seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
         seq += 'GAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGA'
@@ -217,13 +223,14 @@ class OrthologTest(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         matrix = os.path.join(DATA_DIR, 'At.smat')
-        config =  {'Annotation':{'orf_annotation': {'estscan_matrix':matrix}}}
+        config = {'Annotation':{'orf_annotation': {'estscan_matrix':matrix}},
+                  'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=config)
         project_dir = join(test_dir.name, project_name)
-        seq  = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
+        seq = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
         seq += 'GCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
         seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
         seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
@@ -253,8 +260,6 @@ class OrthologTest(unittest.TestCase):
         assert 'ATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCT' in open(seq_fpath).read()
         assert 'QASMGAPFTGLKSAAAFPVTRXTNDITTLVSNG' in open(pep_fpath).read()
 
-
-
         os.chdir('/tmp')
         test_dir.close()
 
@@ -270,13 +275,13 @@ class OrthologTest(unittest.TestCase):
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
                                                  'java_memory':2048}
-                 }}
+                 }, 'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=config)
         project_dir = join(test_dir.name, project_name)
-        seq  = 'CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
+        seq = 'CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
         seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
         seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
         seq += 'CTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAATTGGGA'
@@ -309,6 +314,6 @@ class OrthologTest(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='annotate_go',
                     silent=True)
 
-if    __name__    ==    "__main__":
+if    __name__ == "__main__":
     #import sys;sys.argv = ['', 'OrthologTest.test_go_annotation_analysis']
     unittest.main()

@@ -35,7 +35,7 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging, os, tempfile
+import logging, os, tempfile, copy
 import cPickle as pickle
 from itertools import imap, ifilter
 from tempfile import gettempdir, NamedTemporaryFile
@@ -123,12 +123,16 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         return items
     # We configure the pipeline depending on the sequences type and
     # configuration parameters
+    import sys
+    sys.stdout.write(str(configuration) + '\n')
     pipeline_steps = configure_pipeline(pipeline, configuration)
+    sys.stdout.write(str(pipeline_steps) + '\n')
+
 
     #we create all the cleaner functions
     cleaner_functions = {}
     for analysis_step in pipeline_steps:
-        function_factory  = analysis_step['function']
+        function_factory = analysis_step['function']
         if analysis_step['arguments']:
             arguments = analysis_step['arguments']
         else:
@@ -156,11 +160,11 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #now use use the cleaner functions using the mapper functions
     for analysis_step in pipeline_steps:
         cleaner_function = cleaner_functions[analysis_step['name']]
-        type_     = analysis_step['type']
+        type_ = analysis_step['type']
         if type_ == 'mapper':
             filtered_items = functs['map'](cleaner_function, items)
         elif type_ == 'filter':
-            filtered_items   = functs['filter'](cleaner_function, items)
+            filtered_items = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
             filtered_items, fhand_outs = cleaner_function(items)
             temp_bulk_files.append(fhand_outs)
@@ -174,20 +178,22 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
 
     return items
 
-WRITERS = {'sequence': SequenceWriter,
-           'vcf': VariantCallFormatWriter}
-
-
 def process_sequences_for_script(in_fpath_seq, file_format,
                                  pipeline, configuration, out_fpath):
+    '''It returns a repr file with the processed sequences
 
+    The pipeline and configuration should be pickled object.
+    '''
     pipeline = pickle.loads(pipeline)
     configuration = pickle.loads(configuration)
-
     #the pipeline is now a list of strs we should convert it into a list of
     #dicts
     steps = dict([(step['name'], step) for step in STEPS])
-    pipeline = [steps[step] for step in pipeline]
+    #the pipeline step do not have real functions because they were not
+    #pickeable, so we have to put the functions again in the steps
+    for step in pipeline:
+        step_name = step['name']
+        step['function'] = steps[step_name]['function']
 
     processed_seqs = _process_sequences(open(in_fpath_seq), in_fhand_qual=None,
                                         file_format=file_format,
@@ -203,13 +209,22 @@ def process_sequences_for_script(in_fpath_seq, file_format,
 
 def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
                                 pipeline, configuration, processes):
+    '''It returns a generator with the processed sequences
 
+    This function does the job calling an external script that does the
+    processing. For this calling uses psubprocess doing in fact the
+    parallelization
+    '''
     if in_fhand_qual:
         #a splitter for both seq and qual should be used
         raise NotImplementedError
     #we have to transform the pipeline list into a list of strs, otherwise
     #it wouldn't be possible to send them to an external script.
-    pipeline = [step['name'] for step in pipeline]
+    str_pipeline = []
+    for step in pipeline:
+        str_step = copy.copy(step)
+        str_step['function'] = 'function'
+        str_pipeline.append(step)
 
     #everything should be pickle because it will run with an external script
     pipeline = pickle.dumps(pipeline)
@@ -219,39 +234,53 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
     fhand, out_fpath = tempfile.mkstemp()
     os.close(fhand)
 
-
-    #process_sequences_for_script(in_fhand_seqs.name, file_format,
-    #                             pipeline, configuration, out_fpath)
-    cmd = os.path.join(DATA_DIR, 'scripts', 'process_sequences.py')
-    cmd = [os.path.abspath(cmd)]
-    cmd.extend([in_fhand_seqs.name,
-                file_format, pipeline, configuration, out_fpath,
-                gettempdir()])
-    processes = processes if isinstance(processes, int) else None
-    if file_format == 'fasta':
-        splitter = '>'
-    elif file_format in ('fastq', 'sfastq', 'ifastq'):
-        splitter = 'fastq'
-    elif file_format == 'repr':
-        splitter = 'SeqWithQual'
+    #debug = 'function'
+    #debug = 'subprocess'
+    debug = False
+    if debug == 'function':
+        process_sequences_for_script(in_fhand_seqs.name, file_format,
+                                     pipeline, configuration, out_fpath)
     else:
-        raise NotImplementedError
-    cmd_def = [{'options': 1, 'io': 'in', 'splitter':splitter}]
-    stdout  = NamedTemporaryFile()
-    stderr  = NamedTemporaryFile()
-    process = psubprocess.Popen(cmd, cmd_def=cmd_def,
-                                stdout=stdout,
-                                stderr=stderr,
-                                splits=processes)
-
-    process.wait()
-    stdout.close()
-    stderr.close()
-
+        cmd = os.path.join(DATA_DIR, 'scripts', 'process_sequences.py')
+        cmd = [os.path.abspath(cmd)]
+        cmd.extend([in_fhand_seqs.name,
+                    file_format, pipeline, configuration, out_fpath,
+                    gettempdir()])
+        processes = processes if isinstance(processes, int) else None
+        if file_format == 'fasta':
+            splitter = '>'
+        elif file_format in ('fastq', 'sfastq', 'ifastq'):
+            splitter = 'fastq'
+        elif file_format == 'repr':
+            splitter = 'SeqWithQual'
+        else:
+            raise NotImplementedError
+        cmd_def = [{'options': 1, 'io': 'in', 'splitter':splitter},
+                   {'options':-2, 'io': 'out'}]
+        stdout = NamedTemporaryFile()
+        stderr = NamedTemporaryFile()
+        if debug == 'subprocess':
+            import subprocess
+            process = subprocess.Popen(cmd, stdout=stdout,
+                                        stderr=stderr)
+        else:
+            process = psubprocess.Popen(cmd, cmd_def=cmd_def,
+                                        stdout=stdout,
+                                        stderr=stderr,
+                                        splits=processes)
+        retcode = process.wait()
+        if retcode:
+            stdout = open(stdout.name).read()
+            stderr = open(stderr.name).read()
+            msg = 'Running process seqs script failed.\n stdout: %s\n stderr: %s\n' % (stdout, stderr)
+            raise RuntimeError(msg)
+        stdout.close()
+        stderr.close()
     return seqs_in_file(DisposableFile(out_fpath), format='repr')
 
 def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
                                           configuration):
+    'It returns a generator with the processed sequences'
     sequences = seqs_in_file(in_fhand_seqs, in_fhand_qual, file_format)
 
     # the pipeline that will process the generator is build
@@ -278,11 +307,11 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         file_format = guess_seq_file_format(io_fhands['in_seq'])
 
     # Here we extract our input/output files
-    in_fhand_seqs  = io_fhands['in_seq']
+    in_fhand_seqs = io_fhands['in_seq']
     if 'in_qual' in io_fhands:
-        in_fhand_qual  = io_fhands['in_qual']
+        in_fhand_qual = io_fhands['in_qual']
     else:
-        in_fhand_qual  = None
+        in_fhand_qual = None
 
     # Here the SeqRecord generator is created
     if processes:
