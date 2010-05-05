@@ -260,9 +260,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
                           qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
-                             features = [snv1, snv2])
+                             features=[snv1, snv2])
         frecuency = 0.6
-        filter_ =  create_major_allele_freq_filter(frecuency,
+        filter_ = create_major_allele_freq_filter(frecuency,
                                                    groups=['g1'],
                                                    group_kind='read_groups')
         filter_(seq)
@@ -325,7 +325,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
         kind = 'read_groups'
-        groups = ['rg1']
+        groups = ('rg1',)
         in_union = False
 
         parameters = (kind, groups, in_union)
@@ -336,6 +336,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         for snv, expected in zip(seq.get_features(kind='snv'), [True]):
             result = snv.qualifiers['filters']['is_variable'][tparameters]
             assert result == expected
+        filter_descriptions = {}
 
     @staticmethod
     def test_get_filter_description():
@@ -370,10 +371,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
-        assert name == 'vrg'
-        descrip = "Filters by read_groups with those items: ('rg1', 'rg2')."
+        assert name == 'vrg1'
+        descrip = "Filters by read_groups with those items: rg1,rg2."
         descrip += ' Aggregated:True'
         assert desc == descrip
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name == 'vrg1'
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']

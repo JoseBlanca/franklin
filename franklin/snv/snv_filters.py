@@ -64,12 +64,14 @@ FILTER_DESCRIPTIONS = {
         {'id':'ce%s',
          'description':'Enzymes that recognize different snp alleles: %s'},
     'is_variable':
-        {'id':'v%s',
+        {'id':'v%s%i',
         'description':'Filters by %s with those items: %s. Aggregated:%s'},
     'ref_not_in_list':
         {'id':'rnl',
         'description':'Filters by given list of seq names'}
     }
+
+FILTER_COUNTS = {}
 
 def get_filter_description(filter_name, parameters, filter_descriptions):
     'It returns the short id and the description'
@@ -96,6 +98,8 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
         else:
             description = desc
 
+    filter_descriptions[filter_name, parameters] = short_name, description
+
     return short_name, description
 
 def _get_nd_hrg(id_, desc, parameters):
@@ -107,9 +111,14 @@ def _get_nd_hrg(id_, desc, parameters):
 
 def _get_nd_iv(id_, desc, parameters):
     'It returns the name and id of the snv filter for by is_variable filter'
+    global FILTER_COUNTS
+    if desc not in FILTER_COUNTS:
+        FILTER_COUNTS[desc] = 0
+    FILTER_COUNTS[desc] += 1
     groups = {'libraries':'lb', 'read_groups':'rg', 'samples':'sm'}
-    short_name = id_ % groups[parameters[0]]
-    description = desc % parameters
+    short_name = id_ % (groups[parameters[0]], FILTER_COUNTS[desc])
+    groups = ','.join(parameters[1])
+    description = desc % (parameters[0], groups, parameters[2])
 
     return short_name, description
 
