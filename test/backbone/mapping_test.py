@@ -48,7 +48,11 @@ class TestBackboneMapping(unittest.TestCase):
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
                                    'groups':['hola']},
-                       'filter11':{'unique_name': 'variable_in_caracola',
+                       'filter11':{'unique_name': 'variable_in_adios',
+                                   'name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['adios']},
+                       'filter13':{'unique_name': 'variable_in_caracola',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
                                    'groups':['caracola']}, }
@@ -174,7 +178,7 @@ class TestBackboneMapping(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.1.repr')
         result = open(repr_fpath).read()
-        print result
+        #print result
         assert "type='snv'" in result
 
         do_analysis(project_settings=settings_path, kind='write_annotation',
@@ -182,8 +186,11 @@ class TestBackboneMapping(unittest.TestCase):
         vcf_fpath = join(project_dir, 'annotations', 'result',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
-        print vcf
+        #print vcf
         assert 'VKS' in vcf
+        assert 'VLB1' in vcf
+        assert 'VLB2' in vcf
+        assert 'VLB3' in vcf
         assert 'AT5G19860.1' in vcf
 
         os.chdir('/tmp')

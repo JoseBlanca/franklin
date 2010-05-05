@@ -507,6 +507,10 @@ def variable_in_groupping(key, feature, items, in_union=False,
     for allele_list in alleles.values():
         variable_in_read_groups_.append(True if len(allele_list) > 1 else False)
 
+    #For the case in which there are no alleles
+    if not variable_in_read_groups_:
+        return False
+
     if in_all_read_groups:
         return all(variable_in_read_groups_)
     else:

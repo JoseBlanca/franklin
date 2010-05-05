@@ -67,6 +67,8 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                    }
         filters = {'by_kind':{SNP:True},
                    'high_variable_reg':{(0.8, 0):True},
+                   'is_variable':{('libraries', ('lib1',), False):True,
+                                  ('libraries', ('lib2',), False):True}
                     }
         snv2 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
                          qualifiers={'alleles':alleles,
@@ -82,9 +84,11 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         #print vcf
         assert 'VKS' in vcf
         assert '##FILTER=VKS' in vcf
+        assert '##FILTER=VLB1' in vcf
+        assert '##FILTER=VLB2' in vcf
         assert '1|2:1,1' in vcf
         assert '.:.' in vcf
-        assert 'HVR0.8;VKS' in vcf
+        assert 'HVR0.8;VLB1;VLB2;VKS' in vcf
         assert 'AF=0.2,0.5' in vcf
 
 if __name__ == "__main__":
