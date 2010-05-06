@@ -149,7 +149,7 @@ def _infer_introns_form_match_parts(hsp1, hsp2):
     # this is a very strange case. when it happens there is no intron
     if float(point2['subject'] - point1['subject']) == 0:
         return None
-    intron_index = (point2['subject'] - point1['subject'] - point2['query'] + 
+    intron_index = (point2['subject'] - point1['subject'] - point2['query'] +
                     point1['query']) / \
                     float(point2['subject'] - point1['subject'])
     #print intron_index
@@ -191,8 +191,8 @@ def _infer_introns_for_cdna_blast(sequence, genomic_db):
     introns = _infer_introns_from_matches(alignments)
     return introns
 
-def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                       genomic_seqs_index, similar_sequence):
+def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
+                           similar_sequence=None):
     'It infers the intron location in the cdna using est2genome'
 
     if not similar_sequence:
@@ -216,10 +216,6 @@ def _infer_introns_for_cdna_est2genome(sequence, genomic_db,
     #we run est2genome
     cmd = ['est2genome', cdna_file.name, similar_seq_file.name,
            '-sbegin2', str(start), '-send2', str(end), '-stdout', '-auto']
-#    # Sometimes est2genome fails randomly, so we repeat the call once
-#    try:
-#        stdout, stderr, retcode = call(cmd)
-#    except OSError:
     stdout, stderr, retcode = call(cmd)
 
     if retcode:
@@ -253,24 +249,6 @@ def est2genome_parser(output):
             result['cdna']['introns'].append(cdna)
             result['genomic']['introns'].append(genomic)
     return result
-
-def infer_introns_for_cdna(sequence, genomic_db=None, genomic_seqs_index=None,
-                           method='est2genome', similar_sequence=None):
-    '''Doing a blast with the sequences against the genomic db it infers the
-    positions of introns.
-
-    It a similar sequence dict (as returned by similar_sequences_for_blast) is
-    given, the blast won't be done.
-    '''
-    if method == 'blast':
-        print 'The blast method for looking for introns is not well tested'
-        return _infer_introns_for_cdna_blast(sequence, genomic_db)
-    else:
-        return _infer_introns_for_cdna_est2genome(sequence, genomic_db,
-                                                  genomic_seqs_index,
-                                                  similar_sequence)
-
-
 
 def look_for_similar_sequences(sequence, database, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
@@ -351,4 +329,3 @@ def _parse_tclust_result(result):
             continue
         clusters.append(line.split())
     return clusters
-
