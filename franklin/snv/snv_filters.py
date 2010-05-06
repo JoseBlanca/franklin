@@ -453,13 +453,16 @@ def create_cap_enzyme_filter(all_enzymes):
         return sequence
     return cap_enzyme_filter
 
-
-def create_is_variable_filter(group_kind, groups, in_union=False,
+def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_read_groups=True):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
 
-    parameters = (group_kind, tuple(groups), in_union)
+    if isinstance(groups, basestring):
+        groups = (groups,)
+    else:
+        groups = tuple(groups)
+    parameters = (group_kind, groups, in_union)
 
     def is_variable_filter(sequence):
         'The filter'

@@ -50,7 +50,8 @@ class TestSnvAnnotation(unittest.TestCase):
         bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
 
-        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30)
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         min_num_alleles=2)
 
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
@@ -244,23 +245,51 @@ class TestSnvPipeline(unittest.TestCase):
         bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
 
-        #univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
-                                               'min_quality':30}}
+                                               'min_quality':30,
+                                               'min_num_alleles':2}}
 
         io_fhands = {}
         io_fhands['in_seq'] = seq_fhand
-        io_fhands['outputs'] = {'sequence': NamedTemporaryFile(),
+        io_fhands['outputs'] = {'repr': NamedTemporaryFile(delete=False),
                                 'vcf': NamedTemporaryFile()}
 
         seq_pipeline_runner(pipeline, configuration, io_fhands)
 
-        #sequences = open(io_fhands['outputs']['sequence'].name).read()
+        seq_fname = io_fhands['outputs']['repr'].name
+        sequences = list(seqs_in_file(open(seq_fname)))
+        os.remove(seq_fname)
+        num_alleles = 0
+        for seq in sequences:
+            num_alleles += len(list(seq.get_features('snv')))
+        assert num_alleles == 4
+
         vcf = open(io_fhands['outputs']['vcf'].name).read()
         assert '66' in vcf
         assert '55' in vcf
         assert 'D2' in vcf
         assert 'IAA' in vcf
+
+        #now taking into account the alleles different than the reference
+        configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
+                                               'min_quality':30,
+                                               'min_num_alleles':1}}
+
+        io_fhands = {}
+        io_fhands['in_seq'] = seq_fhand
+        io_fhands['outputs'] = {'repr': NamedTemporaryFile(delete=False),
+                                'vcf': NamedTemporaryFile()}
+
+        seq_pipeline_runner(pipeline, configuration, io_fhands)
+
+        seq_fname = io_fhands['outputs']['repr'].name
+        sequences = list(seqs_in_file(open(seq_fname)))
+        os.remove(seq_fname)
+        num_alleles = 0
+        for seq in sequences:
+            num_alleles += len(list(seq.get_features('snv')))
+        assert num_alleles == 5
+
 
     @staticmethod
     def test_variable_in_read_group():

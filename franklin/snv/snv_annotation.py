@@ -109,6 +109,7 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                  min_mapq, min_num_alleles, read_edge_conf=None):
     'It yields the snv information for every snv in the given reference'
 
+    min_num_alleles = int(min_num_alleles)
     read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     read_groups_info = _get_read_group_info(bam)
@@ -224,8 +225,9 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
         #a variation is yield
         if not alleles:
             continue
-        if ((min_num_alleles > 1 and len(alleles) >= min_num_alleles) or
-           (len(alleles) > 1 or alleles.keys()[0][1] != INVARIANT)):
+        if (len(alleles) > min_num_alleles or
+            (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
+            (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
                    'reference_allele':ref_allele,
@@ -536,7 +538,7 @@ def _get_alleles_for_read_group(alleles, read_groups, group_kind='read_groups'):
             if read_group not in read_groups:
                 continue
             if not read_group in alleles_for_read_groups:
-                alleles_for_read_groups[read_group] = []
-            alleles_for_read_groups[read_group].append(allele)
+                alleles_for_read_groups[read_group] = set()
+            alleles_for_read_groups[read_group].add(allele)
     return alleles_for_read_groups
 
