@@ -36,6 +36,7 @@ The snvs close to an intron will be filtered by this filter. To use it you have 
 Use this filter if you want to filter snvs that are closer than X nucleotides to an intron.
 The configuration parameter for this filter is the distance between the snv and the intron::
 
+  name     = 'close_to_intron'
   distance = 30
 
 Close to snv
@@ -45,6 +46,7 @@ Use this filter if you want to filter out snvs that are close to another snv.
 
 This filter only have a parameter, distance between snvs::
 
+  name     = 'close_to_snv'
   distance = 60
 
 Close to limit
@@ -54,6 +56,7 @@ Use this filter if you want to filter snvs that are close to the edges of the se
 
 The parameter to set for this filter is::
 
+  name     = 'close_to_limit'
   distance = 60
 
 High variable region
@@ -64,7 +67,7 @@ It filters out all the snvs found in a sequence with a high variability. The var
 Two parameters can be configured for this filter, the variability threshold and the window. If the window is not given the complete sequence is used to calculate the variability.
 
 ::
-
+  name            = 'high_variable_region'
   max_variability = 0.04
   window          = None  #(All the sequence)
 
@@ -75,6 +78,7 @@ With this filter we can filter out the filters in which the most frequent allele
 
 To configure this filter with a threshold of 0.8 in a library named test_library we would do:
 
+  maf        = 'maf'
   frequency  = 0.8
   group_kind = 'libraries'
   groups     = ['test_library']
@@ -91,6 +95,7 @@ The snv caller sets a kind for each snv: SNP, INDEL or COMPLEX. These kinds are 
 
 This filter only has one option to configure::
 
+  name = 'by_kind'
   kind = 0
 
 Cap enzymes
@@ -99,6 +104,7 @@ ___________
 We can filter out the snvs that will not be detectable by using restriction enzymes. We consider a snv detectable if the two most abundant alleles have different restriction patterns.
 This filter uses remap from EMBOSS to do the restriction mapping. We can choose to use all the restriction enzymes from the remap database or only a small subset of cheap and easily available enzymes. The parameter to configure is::
 
+  name        = 'cap_enzyme'
   all_enzymes = True
 
 Sequence filter
@@ -108,6 +114,7 @@ It filters out the snv that do not belong to one of the given sequences. The seq
 
 The filter requires a parameter with the path to the sequence names file::
 
+  name      = 'ref_not_in_list'
   list_path = '/path/to/file/with/seq/names'
 
 Variable in group
@@ -117,12 +124,12 @@ In case you have more than one read_group,library or sample you can filter out t
 
 To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for snps not variables in the libraries lib1 and lib2 would be::
 
-  name       = 'is_variable_in_lb'
-  step_name  = 'is_variable'
-  group_kind = 'libraries'
-  groups     = ['lib1', 'lib2']
+  name        = 'is_variable'
+  unique_name = 'is_variable_in_lb'
+  group_kind  = 'libraries'
+  groups      = ['lib1', 'lib2']
 
-Several filters of this kind can be set up in the configuration file, to distinguish them a step_name option with a unique name should be also set up in the configuration for each filter.
+Several filters of this kind can be set up in the configuration file, to distinguish them a unique_name option with a  should be also set up in the configuration for each filter.
 
 
 Unique contiguous
@@ -132,6 +139,7 @@ With this filter you can filter out snvs that are in regions that seem to be dup
 
 This filter have 3 configurable options::
 
+  name               = 'uniq_contiguous'
   distance           = 'distance from each side of the snv to select a region'
   genomic_db         = '/path/to/the/seq/fasta/file'
   genomic_seqs_fpath = '/path/to/the/seq/blast/db'
