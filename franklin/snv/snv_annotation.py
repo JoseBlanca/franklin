@@ -379,6 +379,8 @@ def calculate_maf_frequency(feature, groups=None, group_kind=None):
         if major_number_reads is None or major_number_reads < number_reads:
             major_number_reads = number_reads
         total_number_reads += number_reads
+    if not total_number_reads:
+        return None
     return major_number_reads / total_number_reads
 
 def calculate_snv_variability(sequence):

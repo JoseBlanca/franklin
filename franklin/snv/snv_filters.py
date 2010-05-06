@@ -401,7 +401,8 @@ def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
                 continue
             maf = calculate_maf_frequency(snv, groups=groups,
                                           group_kind=group_kind)
-            if maf > frequency:
+
+            if maf > frequency or maf is None:
                 result = True
             else:
                 result = False

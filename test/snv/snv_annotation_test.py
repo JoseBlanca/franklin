@@ -157,7 +157,7 @@ class TestSnvAnnotation(unittest.TestCase):
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
         maf = calculate_maf_frequency(feat)
-        assert maf == 2/3
+        assert maf == 2 / 3
 
         #with groups
         alleles = {('A', INVARIANT): {'read_names':['r1'],
@@ -168,10 +168,14 @@ class TestSnvAnnotation(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         maf = calculate_maf_frequency(feat, groups=['l1'],
                                       group_kind='libraries')
-        assert maf == 1/2
+        assert maf == 1 / 2
         maf = calculate_maf_frequency(feat, groups=['l1', 'l2'],
                                       group_kind='libraries')
-        assert maf == 2/3
+        assert maf == 2 / 3
+        maf = calculate_maf_frequency(feat, groups=['l4'],
+                                      group_kind='libraries')
+        assert maf is None
+
 
     @staticmethod
     def test_snv_variability():
@@ -183,7 +187,7 @@ class TestSnvAnnotation(unittest.TestCase):
                           qualifiers={'alleles':{}})
         seq.features.extend([feat1, feat2])
         maf = calculate_snv_variability(seq)
-        assert maf == 2/100
+        assert maf == 2 / 100
 
 
     @staticmethod
@@ -245,7 +249,7 @@ class TestSnvPipeline(unittest.TestCase):
                                                'min_quality':30}}
 
         io_fhands = {}
-        io_fhands['in_seq']   = seq_fhand
+        io_fhands['in_seq'] = seq_fhand
         io_fhands['outputs'] = {'sequence': NamedTemporaryFile(),
                                 'vcf': NamedTemporaryFile()}
 
