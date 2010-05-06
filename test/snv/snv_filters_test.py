@@ -309,6 +309,22 @@ class SeqVariationFilteringTest(unittest.TestCase):
         all_enzymes = True
         filter_ = create_cap_enzyme_filter(all_enzymes)
         filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'), [False]):
+            result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
+            assert result == expected
+
+        #No cap
+        seq = 'ATGATGATG' + 'ATGATGATGTGGGAT'
+
+        alleles = {('A', INVARIANT):{},
+                   ('A', DELETION) :{}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles})
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
+
+        all_enzymes = True
+        filter_ = create_cap_enzyme_filter(all_enzymes)
+        filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [True]):
             result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
             assert result == expected
