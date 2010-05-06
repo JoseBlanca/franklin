@@ -46,8 +46,8 @@ FILTER_DESCRIPTIONS = {
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
     'high_variable_reg':
-        {'id': 'HVR%.1f',
-    'description':'The region has more than %.1f snvs per base'},
+        {'id': 'HVR%d',
+    'description':'The region has more than %d snvs per 100 bases'},
     'close_to_snv':
         {'id':'cs%2d',
          'description':'The snv is closer than %d nucleotides to another snv'},
@@ -87,7 +87,7 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
     elif filter_name == 'is_variable':
         short_name, description = _get_nd_iv(id_, desc, parameters)
     elif filter_name == 'high_variable_reg':
-        short_name, description = _get_nd_hrg(id_, desc, parameters)
+        short_name, description = _get_nd_hvr(id_, desc, parameters)
     else:
         if '%' in id_:
             short_name = id_ % parameters
@@ -102,10 +102,11 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
 
     return short_name, description
 
-def _get_nd_hrg(id_, desc, parameters):
+def _get_nd_hvr(id_, desc, parameters):
     'It returns the name and id of the snv filter for by is_variable filter'
-    short_name = id_ % parameters[0]
-    description = desc % (parameters[0])
+    number = int(parameters[0] * 100)
+    short_name = id_ % number
+    description = desc % number
 
     return short_name, description
 
