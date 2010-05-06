@@ -536,7 +536,7 @@ def _get_alleles_for_read_group(alleles, read_groups, group_kind='read_groups'):
             if read_group not in read_groups:
                 continue
             if not read_group in alleles_for_read_groups:
-                alleles_for_read_groups[read_group] = []
-            alleles_for_read_groups[read_group].append(allele)
+                alleles_for_read_groups[read_group] = set()
+            alleles_for_read_groups[read_group].add(allele)
     return alleles_for_read_groups
 

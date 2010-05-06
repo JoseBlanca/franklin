@@ -332,42 +332,78 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_is_variable_filter():
         'It tets variable filter function'
-        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2']},
-                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3']}}
+        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
+                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
-        seq = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
-
+        seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
+
+        alleles2 = {('A', SNP): {'read_groups':['rg1', 'rg1']}}
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles2})
+        seq2 = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+        seq2 = SeqWithQuality(seq=Seq(seq2), name='ref2', features=[snv2])
+
+        filters = []
+        parameters = []
+        results = []
 
         kind = 'read_groups'
         groups = ('rg1',)
         in_union = False
+        params = (kind, groups, in_union)
+        parameters.append(params)
+        filter_ = create_is_variable_filter(*params)
+        filters.append(filter_)
+        results.append(False)
 
-        parameters1 = (kind, groups, in_union)
-        filter1 = create_is_variable_filter(*parameters1)
+        assert filter_(seq2)
+
+        kind = 'read_groups'
+        groups = ('rg2', 'rg4')
+        in_union = True
+        params = (kind, groups, in_union)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(True)
+
+        kind = 'read_groups'
+        groups = 'fake'
+        in_union = True
+        params = (kind, (groups,), in_union)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(True)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = False
-        parameters2 = (kind, groups, in_union)
-        filter2 = create_is_variable_filter(*parameters2)
+        params = (kind, groups, in_union)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(True)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = True
-        parameters3 = (kind, groups, in_union)
-        filter3 = create_is_variable_filter(*parameters3)
+        params = (kind, groups, in_union)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(False)
 
-        filter1(seq)
-        filter2(seq)
-        filter3(seq)
+        for filter_ in filters:
+            filter_(seq)
+            filter_(seq2)
 
-        for params, expected in [(parameters1, False), (parameters2, True),
-                                 (parameters3, False)]:
+        for params, expected in zip(parameters, results):
             for snv, expected in zip(seq.get_features(kind='snv'), [expected]):
                 result = snv.qualifiers['filters']['is_variable'][params]
                 assert result == expected
+
+        for params in parameters:
+            for snv in seq2.get_features(kind='snv'):
+                assert snv.qualifiers['filters']['is_variable'][params]
 
     @staticmethod
     def test_get_filter_description():
