@@ -445,9 +445,9 @@ def create_cap_enzyme_filter(all_enzymes):
             enzymes = calculate_cap_enzymes(snv, sequence,
                                             all_enzymes=all_enzymes)
             if len(enzymes) != 0:
-                result = True
-            else:
                 result = False
+            else:
+                result = True
             _add_filter_result(snv, 'cap_enzymes', result, threshold=all_enzymes)
         return sequence
     return cap_enzyme_filter
