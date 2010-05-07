@@ -37,6 +37,32 @@ from franklin.seq.seq_analysis import infer_introns_for_cdna, get_orthologs
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.misc_utils import get_fhand
 
+def create_ortholog_annotator_new(blast, reverse_blast, species):
+    '''It creates a function factory that calculates all the orthologs between
+     crossed species. First it calculates all the orthologs'''
+    blast_fhand = blast['blast']
+    reverse_blast_fhand = reverse_blast['blast']
+
+    #we index the orthologs by the first one
+    orthologs = {}
+    for ortholog in get_orthologs(blast_fhand, reverse_blast_fhand):
+        if ortholog[0] not in orthologs:
+            orthologs[ortholog[0]] = [ortholog[1]]
+        else:
+            orthologs[ortholog[0]].append(ortholog[1])
+
+    def ortholog_annotator(sequence):
+        'The real annotator'
+        if sequence is None:
+            return
+        name = get_seq_name(sequence)
+        try:
+            sequence.annotations['%s-orthologs' % species] = orthologs[name]
+        except KeyError:
+            pass
+        return sequence
+    return ortholog_annotator
+
 def create_ortholog_annotator(blast, reverse_blast, species):
     '''It creates a function factory that calculates all the orthologs between
      crossed species. First it calculates all the orthologs'''
@@ -56,6 +82,7 @@ def create_ortholog_annotator(blast, reverse_blast, species):
         sequence.annotations['%s-orthologs' % species] = seq_orthologs
         return sequence
     return ortholog_annotator
+
 
 def create_description_annotator(blasts):
     '''It creates a function that return the best description from a list of

@@ -33,7 +33,7 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_orthologs_annotator():
         'It test the ortholog annotator'
-        blast_fhand  = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
+        blast_fhand = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
         reverse_blast_fhand = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
         blast = {'blast':blast_fhand}
         reverse_blast = {'blast':reverse_blast_fhand}
@@ -74,7 +74,7 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_orf_annotator():
         'It tests that we can annotate orfs'
-        seq  = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
+        seq = 'CTACTTACTAGCTTTAGTAAATCCTTCTAACCCTCGGTAAAAAAAAAAAAGAGGCATCAAATG'
         seq += 'GCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCAAGCT'
         seq += 'AGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCANGACC'
         seq += 'AACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCCCACCA'
@@ -93,7 +93,7 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_intron_annotator():
         'We can annotate introns in cdnas comparing with genomic'
-        seq  = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
+        seq = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
         seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
         seq += 'GTCTAGCATGGGGGATGGACTGGTGTCCCCAAGCTCATGAAAATAGGGATGCTCCTATGAAAA'
         seq += 'GTGAGTTTGTCGCAATTGCTCCTCATCCTCCTGATTCATCATATCACAAGACTGATGCCTCAC'
@@ -110,7 +110,7 @@ class AnnotationTests(unittest.TestCase):
         intron_annotator = create_cdna_intron_annotator(genomic_db=genomic_db,
                                             genomic_seqs_fhand=open(genomic_db))
         intron_annotator(seq)
-        intron_feat= seq.features[0]
+        intron_feat = seq.features[0]
         assert intron_feat.location.start.position == 478
         assert intron_feat.type == 'intron'
 
@@ -120,8 +120,8 @@ class AnnotationTests(unittest.TestCase):
         blast = open(os.path.join(DATA_DIR, 'blastResult.xml'))
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
-        go_annotator = create_go_annotator(blast)#, annot_fpath)
-        seq = SeqWithQuality(name ='seq1', seq=Seq('aaaa'))
+        go_annotator = create_go_annotator(blast)
+        seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))
 
         go_annotator(seq)
         assert 'GO:0009853' in seq.annotations['GOs']
