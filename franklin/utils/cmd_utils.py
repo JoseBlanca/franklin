@@ -454,7 +454,7 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
 def java_cmd(java_conf):
     'It returns the java -Xmxim thing'
     cmd = ['java']
-    if 'java_memory' in java_conf:
+    if 'java_memory' in java_conf and java_conf['java_memory'] is not None:
         cmd.append('-Xmx%im' % int(java_conf['java_memory']))
     return cmd
 
