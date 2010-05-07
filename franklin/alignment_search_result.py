@@ -63,17 +63,16 @@ class BlastParser(object):
     multiblast file'''
     def __init__(self, fhand):
         'The init requires a file to be parser'
-
         fhand.seek(0, 0)
-        self._blast_file  = fhand
+        self._blast_file = fhand
         blast_version = self._get_blast_version()
         self._blast_file.seek(0, 0)
 
         if blast_version and '+' in blast_version:
-            self.use_query_def_as_accession   = True
+            self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = True
         else:
-            self.use_query_def_as_accession   = True
+            self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = False
 
         #we use the biopython parser
@@ -82,7 +81,6 @@ class BlastParser(object):
         if fhand.read(1) == '<':
             fhand.seek(0)
             self._blast_parse = NCBIXML.parse(fhand)
-
 
     def __iter__(self):
         'Part of the iterator protocol'
@@ -101,12 +99,12 @@ class BlastParser(object):
             else:
                 definition = None
         else:
-            name       = bio_result.query_id
+            name = bio_result.query_id
             definition = definition
         if definition is None:
             definition = "<unknown description>"
         #length of query sequence
-        length     = bio_result.query_letters
+        length = bio_result.query_letters
         #now we can create the query sequence
         query = SeqWithQuality(name=name, description=definition,
                                seq=UnknownSeq(length=length))
@@ -117,20 +115,20 @@ class BlastParser(object):
             #the subject sequence
             if self.use_subject_def_as_accession:
                 items = alignment.hit_def.split(' ', 1)
-                name  = items[0]
+                name = items[0]
                 if len(items) > 1:
                     definition = items[1]
                 else:
                     definition = None
             else:
-                name       = alignment.accession
+                name = alignment.accession
                 definition = alignment.hit_def
 
             if definition is None:
                 definition = "<unknown description>"
 
-            length     = alignment.length
-            subject    = SeqWithQuality(name=name, description=definition,
+            length = alignment.length
+            subject = SeqWithQuality(name=name, description=definition,
                                         seq=UnknownSeq(length=length))
 
             #the hsps (match parts)
@@ -138,12 +136,12 @@ class BlastParser(object):
             match_start, match_end = None, None
             match_subject_start, match_subject_end = None, None
             for hsp in alignment.hsps:
-                expect         = hsp.expect
-                subject_start  = hsp.sbjct_start
-                subject_end    = hsp.sbjct_end
-                query_start    = hsp.query_start
-                query_end      = hsp.query_end
-                hsp_length     = len(hsp.query)
+                expect = hsp.expect
+                subject_start = hsp.sbjct_start
+                subject_end = hsp.sbjct_end
+                query_start = hsp.query_start
+                query_end = hsp.query_end
+                hsp_length = len(hsp.query)
                 #We have to check the subject strand
                 if subject_start < subject_end:
                     subject_strand = 1
@@ -159,11 +157,11 @@ class BlastParser(object):
                     query_start, query_end = query_end, query_start
 
                 try:
-                    similarity = hsp.positives*100.0/float(hsp_length)
+                    similarity = hsp.positives * 100.0 / float(hsp_length)
                 except TypeError:
                     similarity = None
                 try:
-                    identity = hsp.identities*100.0/float(hsp_length)
+                    identity = hsp.identities * 100.0 / float(hsp_length)
                 except TypeError:
                     identity = None
                 match_parts.append({
@@ -200,7 +198,7 @@ class BlastParser(object):
         return result
     def _get_blast_version(self):
         'It gets blast parser version'
-        for line in self._blast_file.read().split('\n'):
+        for line in self._blast_file:
             line = line.strip()
             if line.startswith('<BlastOutput_version>'):
                 return line.split('>')[1].split('<')[0]
@@ -236,8 +234,8 @@ class ExonerateParser(object):
         for line in  self._fhand:
             if not line.startswith('cigar_like:'):
                 continue
-            items   = line.split(':', 1)[1].strip().split()
-            query_id  = items[0]
+            items = line.split(':', 1)[1].strip().split()
+            query_id = items[0]
             if query_id not in cigar_dict:
                 cigar_dict[query_id] = []
             cigar_dict[query_id].append(items)
@@ -249,35 +247,35 @@ class ExonerateParser(object):
         '''It creates the result dictionary structure giving a list of
         match_parts of a query_id '''
         #TODO add to the match the match subject start and end
-        struct_dict  = {}
-        query_name   = query_result[0][0]
+        struct_dict = {}
+        query_name = query_result[0][0]
         query_length = int(query_result[0][9])
 
-        query        = SeqWithQuality(name=query_name,
+        query = SeqWithQuality(name=query_name,
                                       seq=UnknownSeq(length=query_length))
-        struct_dict['query']   = query
+        struct_dict['query'] = query
         struct_dict['matches'] = []
         for match_part_ in  query_result:
             (query_name, query_start, query_end, query_strand, subject_name,
             subject_start, subject_end, subject_strand, score, query_length,
             subject_length, similarity) = match_part_
-            query_start    = int(query_start)
-            query_end      = int(query_end)
-            subject_start  = int(subject_start)
-            subject_end    = int(subject_end)
-            query_strand   = _strand_transform(query_strand)
+            query_start = int(query_start)
+            query_end = int(query_end)
+            subject_start = int(subject_start)
+            subject_end = int(subject_end)
+            query_strand = _strand_transform(query_strand)
             subject_strand = _strand_transform(subject_strand)
-            score           = int(score)
-            similarity      = float(similarity)
+            score = int(score)
+            similarity = float(similarity)
             # For each line , It creates a match part dict
             match_part = {}
-            match_part['query_start']    = query_start
-            match_part['query_end']      = query_end
-            match_part['query_strand']   = query_strand
-            match_part['subject_start']  = subject_start
-            match_part['subject_end']    = subject_end
+            match_part['query_start'] = query_start
+            match_part['query_end'] = query_end
+            match_part['query_strand'] = query_strand
+            match_part['subject_start'] = subject_start
+            match_part['subject_end'] = subject_end
             match_part['subject_strand'] = subject_strand
-            match_part['scores']         = {'score':score,
+            match_part['scores'] = {'score':score,
                                            'similarity':similarity}
 
             # Check if the match is already added to the struct. A match is
@@ -288,7 +286,7 @@ class ExonerateParser(object):
                 if match['start'] > query_start:
                     match['start'] = query_start
                 if match['end'] < query_end:
-                    match['end']   = query_end
+                    match['end'] = query_end
                 if match['scores']['score'] < score:
                     match['scores']['score'] = score
                 match['match_parts'].append(match_part)
@@ -296,9 +294,9 @@ class ExonerateParser(object):
                 match = {}
                 match['subject'] = SeqWithQuality(name=subject_name,
                                      seq=UnknownSeq(length=int(subject_length)))
-                match['start']       = query_start
-                match['end']         = query_end
-                match['scores']       = {'score':score}
+                match['start'] = query_start
+                match['end'] = query_end
+                match['scores'] = {'score':score}
                 match['match_parts'] = []
                 match['match_parts'].append(match_part)
                 struct_dict['matches'].append(match)
@@ -312,7 +310,7 @@ class ExonerateParser(object):
 def _strand_transform(strand):
     '''It transfrom the +/- strand simbols in our user case 1/-1 caracteres '''
     if strand == '-':
-        return -1
+        return - 1
     elif strand == '+':
         return 1
 
@@ -388,9 +386,9 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
     #hsp
     hsp0 = hsps[0]
     subject_strand = hsp0['subject_strand']
-    query_strand   = hsp0['query_strand']
-    hsp0_qe        = hsp0['query_end']
-    hsp0_se        = hsp0['subject_end']
+    query_strand = hsp0['query_strand']
+    hsp0_qe = hsp0['query_end']
+    hsp0_se = hsp0['subject_end']
 
     #new hsps
     filtered_hsps = [hsp0]
@@ -398,7 +396,7 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
         if min_similarity and hsp['scores']['similarity'] < min_similarity:
             continue
         if (hsp['subject_strand'] != subject_strand or
-            hsp['query_strand']   != query_strand):
+            hsp['query_strand'] != query_strand):
             #we'll have into account only the matches with the same
             #orientation as the first hsp
             continue
@@ -426,7 +424,7 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
         slope_min = 0.95
         slope_max = 1.05
         if query_strand != subject_strand:
-            slope_min, slope_max = - slope_max, -slope_min
+            slope_min, slope_max = -slope_max, -slope_min
         if slope >= slope_min and slope <= slope_max:
             filtered_hsps.append(hsp)
     hsps = filtered_hsps
@@ -534,7 +532,7 @@ def get_alignment_parser(kind):
     '''It returns a parser depending of the aligner kind '''
     parsers = {'blast':BlastParser, 'exonerate':ExonerateParser,
                'blast+':BlastParser}
-    parser  = parsers[kind]
+    parser = parsers[kind]
     return parser
 
 class FilteredAlignmentResults(object):
@@ -639,14 +637,14 @@ class FilteredAlignmentResults(object):
         'It returns a function that will filter matches'
 
         log_best_score = parameters['log_best_score']
-        log_tolerance  = parameters['log_tolerance']
-        score_key      = parameters['score_key']
+        log_tolerance = parameters['log_tolerance']
+        score_key = parameters['score_key']
         if 'min_score_value' in parameters:
-            min_score  = parameters['min_score_value']
-            max_score  = None
+            min_score = parameters['min_score_value']
+            max_score = None
         else:
-            min_score  = None
-            max_score  = parameters['max_score_value']
+            min_score = None
+            max_score = parameters['max_score_value']
         def filter_(match):
             '''It returns True or False depending on the match meeting
             the criteria'''
@@ -667,13 +665,13 @@ class FilteredAlignmentResults(object):
     @staticmethod
     def _create_filter_min_score(parameters):
         'It returns a function that will filter matches'
-        score_key      = parameters['score_key']
+        score_key = parameters['score_key']
         if 'min_score_value' in parameters:
-            min_score  = parameters['min_score_value']
-            max_score  = None
+            min_score = parameters['min_score_value']
+            max_score = None
         else:
-            min_score  = None
-            max_score  = parameters['max_score_value']
+            min_score = None
+            max_score = parameters['max_score_value']
         def filter_(match):
             '''It returns True or False depending on the match meeting
             the criteria'''
@@ -698,7 +696,7 @@ class FilteredAlignmentResults(object):
             kind = 'bp'
         elif 'min_length_query_%' in parameters:
             min_length = parameters['min_length_query_%']
-            kind  = 'query'
+            kind = 'query'
             query = parameters['query']
         elif 'min_length_subject_%' in parameters:
             min_length = parameters['min_length_subject_%']
@@ -746,10 +744,10 @@ class FilteredAlignmentResults(object):
         '''
         #the min length can be given in base pairs or as a percentage
         #of the query or the subject
-        min_compat   = parameters['min_compatibility']
+        min_compat = parameters['min_compatibility']
         max_incompat = parameters['max_incompatibility']
-        min_simil    = parameters['min_similarity']
-        query        = parameters['query']
+        min_simil = parameters['min_similarity']
+        query = parameters['query']
 
         def filter_(match):
             '''It returns True or False depending on the match meeting
@@ -796,7 +794,7 @@ class FilteredAlignmentResults(object):
             else:
                 log_best_score = log10(best_score)
             filter_['log_best_score'] = log_best_score
-            filter_['log_tolerance']  = log10(filter_['score_tolerance'])
+            filter_['log_tolerance'] = log10(filter_['score_tolerance'])
         elif kind == 'min_length' and 'min_length_query_%' in filter_:
             filter_['query'] = result['query']
         elif kind == 'compatibility':
