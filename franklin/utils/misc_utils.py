@@ -32,7 +32,7 @@ def get_num_threads(threads):
     "It returns num of threads to use in parallel"
     if not threads:
         return 1
-    elif type(threads) == type(int):
+    elif type(threads) == type(0):
         return threads
     else:
         return os.sysconf('SC_NPROCESSORS_ONLN')

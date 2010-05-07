@@ -23,8 +23,20 @@ import unittest, os
 import StringIO
 from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                        _get_xml_header, NamedTemporaryDir,
-                                       VersionedPath)
+                                       VersionedPath, get_num_threads)
 from franklin.utils.collections_ import FileCachedList
+
+class Minor_utilities_test(unittest.TestCase):
+    'Test form minor utilities'
+    @staticmethod
+    def test_get_num_threads():
+        'tests get_num_threads'
+        threads = 3
+        assert get_num_threads(threads) == threads
+
+        threads = False
+        assert get_num_threads(threads) == 1
+
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''
@@ -77,7 +89,7 @@ class NamedTemporariDirTest(unittest.TestCase):
         dir_name = temp_dir.name
         fhand = open(os.path.join(dir_name, 'peio'), 'w')
         assert os.path.exists(fhand.name) == True
-        assert os.path.exists(dir_name)   == True
+        assert os.path.exists(dir_name) == True
         del(temp_dir)
         assert os.path.exists(dir_name) == False
 
