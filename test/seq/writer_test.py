@@ -180,7 +180,7 @@ class WriterTest(unittest.TestCase):
 
         seq1 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
                              id='seq1', name='seq1',
-                             dbxrefs=[], features=[orf_feature],
+                             dbxrefs=[], features=[orf_feature], description='',
                              annotations=annotations)
         seq2 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
                              id='seq2', name='seq2',
