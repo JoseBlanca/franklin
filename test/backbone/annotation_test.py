@@ -98,8 +98,7 @@ class OrthologTest(unittest.TestCase):
         project_name = 'backbone'
         arab_blastdb = join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         config = {'blast':{'arabidopsis': {'path': arab_blastdb,
-                                           'species':'arabidopsis',
-                                           'kind': 'nucl'}},
+                                           'species':'arabidopsis'}},
                   'Annotation':{'description_annotation':{
                                                     'description_databases':
                                                               ['arabidopsis']}},
@@ -155,7 +154,7 @@ class OrthologTest(unittest.TestCase):
         seq += 'AAGCAGTCCAGGCAAAAGCATCTAGACCACAAAATCCAAGAGGAAGACCGAGAAAGAAGCCTG'
         seq += 'TTACTGAATCTTTAGGTGATAGAGATAGTGAAGACCACAGTTTACAACCTCTTGCTATAGAGT'
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
-        seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
+        seq += 'TAGATATTGCGCTGAGTCAAGAAqAGATGTATTAATGCGGCAT'
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
 
@@ -270,8 +269,7 @@ class OrthologTest(unittest.TestCase):
         project_name = 'backbone'
         nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         config = {'blast':{'nr': {'path': nr_path,
-                                           'species':'nr',
-                                           'kind': 'nucl'}},
+                                           'species':'nr'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
                                                  'java_memory':2048}

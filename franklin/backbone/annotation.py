@@ -27,7 +27,8 @@ from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.blast_runner import (backbone_blast_runner,
-                                            make_backbone_blast_db)
+                                            make_backbone_blast_db,
+                                            guess_blastdb_kind)
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
                                                  annotate_with_descriptions,
@@ -124,7 +125,11 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
         blasts = {}
         for input_ in inputs['input']:
             for database in ortholog_databases:
-                db_kind = blast_settings[database]['kind']
+                if 'kind' in blast_settings[database]:
+                    db_kind = blast_settings[database]['kind']
+                else:
+                    db_kind = guess_blastdb_kind(blast_settings[database]['path'])
+
                 if db_kind == 'nucl':
                     blast_program = 'tblastx'
                 else:
@@ -374,7 +379,11 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         for input_ in inputs['input']:
             input_fpath = input_.last_version
             for database in description_databases:
-                db_kind = blast_settings[database]['kind']
+                if 'kind' in blast_settings[database]:
+                    db_kind = blast_settings[database]['kind']
+                else:
+                    db_kind = guess_blastdb_kind(blast_settings[database]['path'])
+
                 if db_kind == 'nucl':
                     blast_program = 'tblastx'
                 else:
@@ -473,7 +482,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         chop_big_xml, num_items = True, 1000
         blasts = {}
         for input_ in inputs['input']:
-            db_kind = blast_settings[go_database]['kind']
+            if 'kind' in blast_settings[go_database]:
+                db_kind = blast_settings[go_database]['kind']
+            else:
+                db_kind = guess_blastdb_kind(blast_settings[go_database]['path'])
+
             if db_kind == 'nucl':
                 blast_program = 'tblastx'
             else:

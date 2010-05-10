@@ -50,14 +50,13 @@ def _create_temp_fasta_file(fpath):
 
 def guess_blastdb_kind(blastdb):
     'it infers the kind of the blastdb'
-    blastdb = get_fhand(blastdb)
-    blastdb_fpath = blastdb.name
-    blastdir, basename = split(blastdb_fpath)
-    for file in listdir(blastdir):
-        if file.startswith(basename):
-            if splitext(file)[1][1] == 'n':
+
+    blastdir, basename_ = split(blastdb)
+    for file_ in listdir(blastdir):
+        if file_.startswith(basename_) and file_ != basename_:
+            if splitext(file_)[1][1] == 'n':
                 return 'nucl'
-            elif splitext(file)[1][1] == 'p':
+            elif splitext(file_)[1][1] == 'p':
                 return 'prot'
 
 def backbone_blast_runner(query_fpath, project_dir, blast_program,
