@@ -154,7 +154,7 @@ class TestBackboneMapping(unittest.TestCase):
         assert exists(result_dir_by_lib)
         f1 = open(join(result_dir, 'merged.bam'), 'w')
         f1.close()
-        do_analysis(project_settings=settings_path, kind='merge_bam',
+        do_analysis(project_settings=settings_path, kind='merge_bams',
                     silent=True)
         assert exists(join(result_dir, 'merged.0.bam'))
 
@@ -166,7 +166,7 @@ class TestBackboneMapping(unittest.TestCase):
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
-        do_analysis(project_settings=settings_path, kind='annotate_snv',
+        do_analysis(project_settings=settings_path, kind='annotate_snvs',
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr',
                           'reference.0.repr')
@@ -181,7 +181,7 @@ class TestBackboneMapping(unittest.TestCase):
         assert "type='snv'" in result
         assert "'samples': ['adios_sanger', 'hola']" in result
 
-        do_analysis(project_settings=settings_path, kind='write_annotation',
+        do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
         vcf_fpath = join(project_dir, 'annotations', 'result',
                          'reference.vcf')

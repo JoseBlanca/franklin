@@ -540,7 +540,7 @@ DEFINITIONS = {
             },
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': SnvFilterAnalyzer},
-    'annotate_snv':
+    'annotate_snvs':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -565,7 +565,7 @@ DEFINITIONS = {
             },
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateIntronsAnalyzer},
-    'write_annotation':
+    'write_annotations':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -584,7 +584,7 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateOrthologsAnalyzer},
-    'annotate_description':
+    'annotate_descriptions':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -596,7 +596,7 @@ DEFINITIONS = {
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateDescriptionAnalyzer},
 
-    'annotate_microsatellite':
+    'annotate_microsatellites':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -607,7 +607,7 @@ DEFINITIONS = {
             },
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateMicrosatelliteAnalyzer},
-    'annotate_orf':
+    'annotate_orfs':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',
@@ -618,7 +618,7 @@ DEFINITIONS = {
             },
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
          'analyzer': AnnotateOrfAnalyzer},
-    'annotate_go':
+    'annotate_gos':
         {'inputs':{
             'repr':
                 {'directory': 'annotation_repr',

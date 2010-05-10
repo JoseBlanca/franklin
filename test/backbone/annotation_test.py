@@ -80,7 +80,7 @@ class OrthologTest(unittest.TestCase):
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         assert 'arabidopsis-orthologs' in open(repr_fpath).read()
 
-        do_analysis(project_settings=settings_path, kind='write_annotation',
+        do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
 
         ort_fpath = join(project_dir, 'annotations', 'result', 'melon.orthologs')
@@ -121,8 +121,8 @@ class OrthologTest(unittest.TestCase):
         write_seqs_in_file([seq1, seq2],
                            open(join(input_dir, 'melon.fasta'), 'a'))
 
-        do_analysis(project_settings=settings_path, kind='annotate_description',
-                    silent=True)
+        do_analysis(project_settings=settings_path,
+                    kind='annotate_descriptions', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
@@ -202,12 +202,12 @@ class OrthologTest(unittest.TestCase):
         fhand.write(fasta)
         fhand.close()
         do_analysis(project_settings=settings_path,
-                    kind='annotate_microsatellite', silent=True)
+                    kind='annotate_microsatellites', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='microsatellite'" in  result
 
-        do_analysis(project_settings=settings_path, kind='write_annotation',
+        do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
         ssr_fpath = join(project_dir, 'annotations', 'result', 'seqs.ssr')
         assert os.path.exists(ssr_fpath)
@@ -248,11 +248,11 @@ class OrthologTest(unittest.TestCase):
         fhand.write(fasta)
         fhand.close()
         do_analysis(project_settings=settings_path,
-                    kind='annotate_orf', silent=True)
+                    kind='annotate_orfs', silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='orf'" in  result
-        do_analysis(project_settings=settings_path, kind='write_annotation',
+        do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
         seq_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_seq.fasta')
         pep_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_pep.fasta')
@@ -302,7 +302,7 @@ class OrthologTest(unittest.TestCase):
         shutil.copy(join(DATA_DIR, 'blastResult.xml'),
                     join(bdir, 'blast.tblastx.xml'))
 
-        do_analysis(project_settings=settings_path, kind='annotate_go',
+        do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
         result = open(repr_fpath).read()
@@ -311,7 +311,7 @@ class OrthologTest(unittest.TestCase):
                                            'result', 'seqs.b2g.dat'))
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'result', 'seqs.b2g.annot'))
-        do_analysis(project_settings=settings_path, kind='annotate_go',
+        do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
 
 if    __name__ == "__main__":

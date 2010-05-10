@@ -42,10 +42,10 @@ def test_backbone(analysis=None, analysis_dir=None):
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
     if choice in ('cleaning', None):
-        original_reads = join(project_dir,'reads/original')
+        original_reads = join(project_dir, 'reads/original')
         if exists(original_reads):
             os.remove(original_reads)
-        reads = join(project_dir,'reads')
+        reads = join(project_dir, 'reads')
         if not exists(reads):
             os.mkdir(reads)
         shutil.copytree(join(repository_dir, 'cleaning'),
@@ -57,7 +57,7 @@ def test_backbone(analysis=None, analysis_dir=None):
         clean_reads_dir = join(project_dir, 'reads', 'cleaned')
         if os.path.exists(clean_reads_dir):
             shutil.rmtree(join(project_dir, 'reads'))
-        os.mkdir(join(project_dir,'reads'))
+        os.mkdir(join(project_dir, 'reads'))
         shutil.copytree(join(repository_dir, 'assembling'),
                         join(project_dir, 'reads/cleaned'))
 
@@ -79,7 +79,7 @@ def test_backbone(analysis=None, analysis_dir=None):
                     join(project_dir, 'mapping', 'reference',
                          'reference.fasta'))
 
-        analyses = ['mapping', 'select_last_mapping', 'merge_bam',
+        analyses = ['mapping', 'select_last_mapping', 'merge_bams',
                     'realign_bam']
         run_analysis(analyses, settings_path)
 
@@ -99,7 +99,7 @@ def test_backbone(analysis=None, analysis_dir=None):
                    join(project_dir, 'mapping', 'merged.bam'))
         shutil.copy(join(repository_dir, 'snvs', 'reference.fasta'),
                    join(project_dir, 'mapping', 'reference', 'reference.fasta'))
-        analyses = ['annotate_snv', 'filter_snvs']
+        analyses = ['annotate_snvs', 'filter_snvs']
         run_analysis(analyses, settings_path)
 
     if choice in ('annotation', None):
@@ -112,10 +112,10 @@ def test_backbone(analysis=None, analysis_dir=None):
         shutil.copytree(join(repository_dir, 'annotation', 'blast'),
                         join(annot_dir, 'blast'))
 
-        analyses = ['annotate_orf', 'annotate_microsatellite',
-                    'annotate_go', 'annotate_description',
+        analyses = ['annotate_orfs', 'annotate_microsatellites',
+                    'annotate_gos', 'annotate_descriptions',
                     'annotate_orthologs', 'annotate_introns',
-                    'write_annotation']
+                    'write_annotations']
         run_analysis(analyses, settings_path)
 
     if not analysis_dir:
@@ -139,8 +139,8 @@ def prepare_conf(project_dir, repository_dir):
     'It prepares the backbone configuration file'
 
     univec_database = join(DATA_DIR, 'blast', 'univec')
-    estscan_matrix  = join(repository_dir, 'config_data', 'At.smat')
-    tair7_seq       = join(repository_dir, 'annotation', 'tair7_genomic.fasta')
+    estscan_matrix = join(repository_dir, 'config_data', 'At.smat')
+    tair7_seq = join(repository_dir, 'annotation', 'tair7_genomic.fasta')
 
     out_fhand = open(join(project_dir, BACKBONE_DIRECTORIES['config_file']),
                      'w')

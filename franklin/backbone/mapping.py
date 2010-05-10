@@ -249,7 +249,7 @@ DEFINITIONS = {
                               'create':False}},
          'analyzer': LastAnalysisAnalyzer,
         },
-    'merge_bam':
+    'merge_bams':
         {'inputs':{
             'bams':
                 {'directory': 'mappings_by_readgroup',
