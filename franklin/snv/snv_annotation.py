@@ -495,6 +495,25 @@ def _parse_remap_output(remap_output):
     remap_fhand.close()
     return enzymes
 
+def not_variable_in_groupping(key, feature, items, in_union=True):
+    'It looks if the given snv is not variable for the given key/items'
+    alleles = _get_alleles_for_read_group(feature.qualifiers['alleles'],
+                                          items, key)
+
+    if in_union:
+        alleles = _aggregate_alleles(alleles)
+    no_variable_in_read_groups_ = []
+    for allele_list in alleles.values():
+        no_variable = True if len(allele_list) == 1 else False
+        no_variable_in_read_groups_.append(no_variable)
+    print no_variable_in_read_groups_
+
+    #For the case in which there are no alleles
+    if not no_variable_in_read_groups_:
+        return True
+
+    return all(no_variable_in_read_groups_)
+
 def variable_in_groupping(key, feature, items, in_union=False,
                            in_all_read_groups=True):
     'It looks if the given snv is variable for the given key/items'
@@ -504,9 +523,6 @@ def variable_in_groupping(key, feature, items, in_union=False,
     if in_union:
         alleles = _aggregate_alleles(alleles)
 
-    #if we'd like to consider alleles with one allele different than the
-    #reference
-    # or len(allele_list) == 1 and allele_list[0][1] != INVARIANT
     variable_in_read_groups_ = []
     for allele_list in alleles.values():
         variable_in_read_groups_.append(True if len(allele_list) > 1 else False)

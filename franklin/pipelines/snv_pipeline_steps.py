@@ -31,7 +31,8 @@ from franklin.snv.snv_filters import (create_high_variable_region_filter,
                                       create_kind_filter,
                                       create_cap_enzyme_filter,
                                       create_is_variable_filter,
-                                      create_reference_in_list_filter)
+                                      create_reference_in_list_filter,
+                                      create_not_variable_in_group_filter)
 
 snv_bam_annotator = {'function':create_snv_annotator,
           'arguments':{'bam_fhand':None, 'min_quality':45,
@@ -91,19 +92,26 @@ kind_filter = {
           'name':'by_kind',
           'comment': 'It filters by snv kind'}
 
-cap_enzyme_filter  = {
+cap_enzyme_filter = {
           'function':  create_cap_enzyme_filter,
           'arguments': {'all_enzymes':True},
           'type': 'filter',
           'name': 'cap_enzyme',
         'comment': 'It filters by enzymes that recognize different snp alleles'}
 
-is_variable_filter  = {
+is_variable_filter = {
           'function': create_is_variable_filter,
           'arguments': {'group_kind': None, 'groups':None},
           'type': 'filter',
           'name': 'is_variable',
           'comment': 'It filters by variability is selected groups'}
+
+no_variable_in_group_filter = {
+          'function': create_not_variable_in_group_filter,
+          'arguments': {'group_kind': None, 'groups':None},
+          'type': 'filter',
+          'name': 'no_variable',
+          'comment': 'It filters by not variables in selected groups'}
 ref_not_in_list = {
           'function': create_reference_in_list_filter,
           'arguments': {'seq_list': None},

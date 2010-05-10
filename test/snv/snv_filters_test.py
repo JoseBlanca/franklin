@@ -35,7 +35,8 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_cap_enzyme_filter,
                                       create_is_variable_filter,
                                       get_filter_description,
-                                      create_reference_in_list_filter)
+                                      create_reference_in_list_filter,
+                                      create_not_variable_in_group_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -330,6 +331,44 @@ class SeqVariationFilteringTest(unittest.TestCase):
             assert result == expected
 
     @staticmethod
+    def test_is_not_variable_filter():
+        'It tets variable filter function'
+        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
+                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles})
+        seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+
+
+        alleles2 = {('A', SNP): {'read_groups':['rg1', 'rg1']}}
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles2})
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv, snv2])
+
+        filters = []
+        parameters = []
+        results = []
+
+        kind = 'read_groups'
+        groups = ('rg1',)
+        in_union = True
+        params = (kind, groups, in_union)
+
+
+        parameters.append(params)
+        filter_ = create_not_variable_in_group_filter(*params)
+        filters.append(filter_)
+        results.append((True, False))
+
+        filter_(seq)
+
+        for params, expected in zip(parameters, results):
+            for snv, expected in zip(seq.get_features(kind='snv'), expected):
+                result = snv.qualifiers['filters']['is_not_variable'][params]
+                assert result == expected
+
+
+    @staticmethod
     def test_is_variable_filter():
         'It tets variable filter function'
         alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
@@ -357,7 +396,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
         results.append(False)
-
         assert filter_(seq2)
 
         kind = 'read_groups'

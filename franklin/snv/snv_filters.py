@@ -30,7 +30,8 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
-                                         variable_in_groupping)
+                                         variable_in_groupping,
+                                         not_variable_in_groupping)
 from franklin.seq.seqs import get_seq_name
 
 
@@ -453,6 +454,35 @@ def create_cap_enzyme_filter(all_enzymes):
         return sequence
     return cap_enzyme_filter
 
+def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
+    '''it filters looking if the list of reads is variable in the given
+    conditions. It look in the'''
+
+    if isinstance(groups, basestring):
+        groups = (groups,)
+    else:
+        groups = tuple(groups)
+    parameters = (group_kind, groups, in_union)
+
+    def is_not_variable_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'is_not_variable',
+                                                 threshold=parameters)
+            if previous_result is not None:
+                continue
+            result = variable_in_groupping(group_kind, snv, groups, in_union,
+                                          in_all_read_groups=False)
+            result = bool(result)
+            _add_filter_result(snv, 'is_not_variable', result, threshold=parameters)
+
+        return sequence
+
+    return is_not_variable_filter
+
+
 def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_read_groups=True):
     '''it filters looking if the list of reads is variable in the given
@@ -475,7 +505,8 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
                 continue
             result = variable_in_groupping(group_kind, snv, groups, in_union,
                                           in_all_read_groups=in_all_read_groups)
-            result = not result
+            result = True if result is None else not result
+
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)
         return sequence
 
