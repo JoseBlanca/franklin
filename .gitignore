@@ -6,3 +6,4 @@ doc/build
 test/backbone/formatdb.log
 .settings
 doc/source/downloads
+test/backbone/error.log
