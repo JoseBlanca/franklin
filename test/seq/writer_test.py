@@ -118,7 +118,7 @@ class WriterTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         features = [srr_feature, intron_feature, orf_feature, snv]
 
-        annotations={'GOs': ['GO:0019253', 'GO:0016984', ],
+        annotations = {'GOs': ['GO:0019253', 'GO:0016984', ],
                      'arabidopsis-orthologs':['ara1', 'ara2'],
                      'melo-orthologs':['mel1', 'mel2']}
 
@@ -148,12 +148,12 @@ class WriterTest(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         features = [srr_feature, intron_feature, orf_feature, snv]
 
-        annotations={'GOs': ['GO:0019253', 'GO:0016984', ],
+        annotations = {'GOs': ['GO:0019253', 'GO:0016984', ],
                      'arabidopsis-orthologs':['ara1', 'ara2'],
                      'melo-orthologs':['mel1', 'mel2']}
 
         seq2 = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
-                             id='seq2', name='seq2', description='Some desc',
+                             id='seq2', name='seq2',
                              dbxrefs=[], features=features,
                              annotations=annotations)
         fhand = StringIO()
@@ -179,11 +179,11 @@ class WriterTest(unittest.TestCase):
                                                     'strand':'forward'})
 
         seq1 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
-                             id='seq1', name='seq1', description='Some desc',
+                             id='seq1', name='seq1',
                              dbxrefs=[], features=[orf_feature],
                              annotations=annotations)
         seq2 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
-                             id='seq2', name='seq2', description='Some desc',
+                             id='seq2', name='seq2',
                              dbxrefs=[], features=[orf_feature],
                              annotations=annotations)
         fhand = StringIO()
@@ -191,7 +191,7 @@ class WriterTest(unittest.TestCase):
         gff_writer.write(seq1)
         gff_writer.write(seq2)
         gff = fhand.getvalue()
-        print gff
+        assert 'description' not in gff
 
 
 if __name__ == "__main__":
