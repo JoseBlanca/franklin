@@ -86,6 +86,8 @@ class OrthologTest(unittest.TestCase):
         ort_fpath = join(project_dir, 'annotations', 'result', 'melon.orthologs')
         assert os.path.exists(ort_fpath)
         assert "tair1" in open(ort_fpath).read()
+        orf_fpath = join(project_dir, 'annotations', 'result', 'melon.orf')
+        assert not os.path.exists(orf_fpath)
 
 
         os.chdir('/tmp')

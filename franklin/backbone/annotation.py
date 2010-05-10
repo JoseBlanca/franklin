@@ -289,10 +289,29 @@ class WriteAnnotationAnalyzer(Analyzer):
 
             io_fhands = {'in_seq': open(seq_path.last_version),
                          'outputs': outputs}
-            seq_pipeline_runner(pipeline=None,
-                                configuration=None,
-                                io_fhands=io_fhands)
+            feature_counter = seq_pipeline_runner(pipeline=None,
+                                                  configuration=None,
+                                                  io_fhands=io_fhands)
 
+            # We need to close fhands and remove void files.
+            # sequence writer could have a qual fhand
+            # orf writer has a pep_fhand
+            for kind, fhands in io_fhands['outputs'].items():
+                kind_key = 'sequence' if kind == 'quality' else kind
+                if kind in feature_counter:
+                    self._close_and_remove_files(fhands,
+                                                 feature_counter[kind_key])
+
+    @staticmethod
+    def _close_and_remove_files(fhands, num_features):
+        'it closes and removes files that are empty'
+        if not isinstance(fhands, tuple) and not isinstance(fhands, list):
+            fhands = (fhands,)
+        for fhand in fhands:
+            fpath = fhand.name
+            fhand.close()
+            if not num_features and os.path.exists(fpath):
+                os.remove(fpath)
 
 class SnvFilterAnalyzer(AnnotationAnalyzer):
     'It performs the filtering analysis of the snvs'

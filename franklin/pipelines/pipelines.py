@@ -325,70 +325,55 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
                                           file_format, pipeline,
                                           configuration)
 
-    writers = []
+    writers = {}
     output_type = io_fhands['outputs']
     if 'sequence' in output_type:
         if 'quality' in io_fhands['outputs']:
             qual_fhand = io_fhands['outputs']['quality']
         else:
             qual_fhand = None
-        writers.append(SequenceWriter(fhand=io_fhands['outputs']['sequence'],
-                                      qual_fhand=qual_fhand,
-                                      file_format=file_format))
+        writers['sequence'] = SequenceWriter(fhand=io_fhands['outputs']['sequence'],
+                                           qual_fhand=qual_fhand,
+                                           file_format=file_format)
 
     if 'repr' in output_type:
         fhand = io_fhands['outputs']['repr']
-        writers.append(SequenceWriter(fhand=fhand, file_format='repr'))
+        writers['repr'] = SequenceWriter(fhand=fhand, file_format='repr')
 
     if 'vcf' in output_type:
         ref_name = os.path.basename(io_fhands['in_seq'].name)
         fhand = io_fhands['outputs']['vcf']
-        writers.append(VariantCallFormatWriter(fhand=fhand,
-                                               reference_name=ref_name))
+        writers['vcf'] = VariantCallFormatWriter(fhand=fhand,
+                                                 reference_name=ref_name)
     if 'gff' in output_type:
         default_type = None
         fhand = io_fhands['outputs']['gff']
-        writers.append(GffWriter(fhand=fhand, default_type=default_type))
+        writers['gff'] = GffWriter(fhand=fhand, default_type=default_type)
     if 'ssr' in output_type:
         fhand = io_fhands['outputs']['ssr']
-        writers.append(SsrWriter(fhand=fhand))
+        writers['ssr'] = SsrWriter(fhand=fhand)
 
     if 'orf' in output_type:
         fhand, pep_fhand = io_fhands['outputs']['orf']
-        writers.append(OrfWriter(fhand=fhand, pep_fhand=pep_fhand))
+        writers['orf'] = OrfWriter(fhand=fhand, pep_fhand=pep_fhand)
 
     if 'orthologs' in output_type:
         fhand = io_fhands['outputs']['orthologs']
-        writers.append(OrthologWriter(fhand=fhand))
+        writers['orthologs'] = OrthologWriter(fhand=fhand)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
-        for writer in writers:
+        for writer in writers.values():
             writer.write(sequence)
 
-    # We need to close fhands and remove void files. SOme of the writers needs
-    # to close in order to work finish its work
-
-    # sequence writer could have a qual fhand
-    # orf writer has a pep_fhand
-    def _close_and_remove_file(fhand, num_features):
-        fpath = fhand.name
-        fhand.close()
-        if not num_features and os.path.exists(fpath):
-            os.remove(fpath)
-
-    for writer in writers:
+    # Some of the writers needs to close in order to finish its work
+    feature_counter = {}
+    for wtype, writer in writers.items():
         if 'close' in dir(writer):
             writer.close()
-        _close_and_remove_file(writer.fhand, writer.num_features)
+        feature_counter[wtype] = writer.num_features
 
-        writer_name = writer.__class__.__name__
-        if 'OrfWriter' in writer_name:
-            sec_fhand = writer.pep_fhand
-        elif 'SequenceWriter' in writer_name:
-            sec_fhand = writer.qual_fhand
-        else:
-            sec_fhand = None
-        if sec_fhand:
-            _close_and_remove_file(sec_fhand, writer.num_features)
+    return feature_counter
+
+
 
