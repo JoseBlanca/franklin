@@ -27,7 +27,8 @@ from os.path import join
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
-from franklin.backbone.blast_runner import backbone_blast_runner
+from franklin.backbone.blast_runner import backbone_blast_runner, \
+    guess_blastdb_kind
 
 def _get_basename(fpath):
     'It returns the base name without path and extension'
@@ -47,7 +48,7 @@ class BlastTest(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
 
         #some query fasta file
-        query  = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
+        query = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
         query += 'CATACCCCTGCCGAACCGCTTTTGTCA|n'
         query_fhand = NamedTemporaryFile(mode='w')
         query_fhand.write(query)
@@ -83,7 +84,7 @@ class BlastTest(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
 
         #some query fasta file
-        query  = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
+        query = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
         query += 'CATACCCCTGCCGAACCGCTTTTGTCA|n'
         query_fhand = NamedTemporaryFile(mode='w')
         query_fhand.write(query)
@@ -115,14 +116,14 @@ class BlastTest(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
 
         #some query fasta file
-        query  = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
+        query = '>seq1\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGCT'
         query += 'CATACCCCTGCCGAACCGCTTTTGTCA\n'
         query_fhand = NamedTemporaryFile(mode='w')
         query_fhand.write(query)
         query_fhand.flush()
 
         #the blast db
-        blast  = '@seq\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGC\n'
+        blast = '@seq\nGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCCTGTAGGGCAGGC\n'
         blast += '+\n'
         blast += '11111111111111111111111111111111111111111111111111111\n'
         blast_db_fhand = NamedTemporaryFile(mode='w', suffix='.sfastq')
@@ -144,6 +145,14 @@ class BlastTest(unittest.TestCase):
                                           blast_program))
         assert '<Hit_accession>seq</Hit_accession>' in open(blast_fpath).read()
 
-if    __name__    ==    "__main__":
+    @staticmethod
+    def test_blastdb_seq_kind():
+        'It test the blastdb kind'
+        blastdb = join(DATA_DIR, 'blast', 'tomato_genome2')
+        assert  guess_blastdb_kind(blastdb) == 'nucl'
+#        blastdb = '/srv/databases/blast/tair7_pep'
+#        assert  guess_blastdb_kind(blastdb) == 'prot'
+
+if    __name__ == "__main__":
     #import sys;sys.argv = ['', 'BlastTest.test_blast_seq_against_seq_db']
     unittest.main()
