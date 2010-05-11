@@ -40,14 +40,6 @@ class TakeSampleTest(unittest.TestCase):
                 a = take_sample(iterator, sample_size)
                 assert sample_size ==  len(list(a))
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
