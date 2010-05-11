@@ -23,7 +23,8 @@ from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
 import unittest
 from StringIO import StringIO
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.seq.writers import GffWriter, SsrWriter, OrfWriter, OrthologWriter
+from franklin.seq.writers import (GffWriter, SsrWriter, OrfWriter,
+                                  OrthologWriter, temp_fasta_file)
 from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
@@ -193,7 +194,26 @@ class WriterTest(unittest.TestCase):
         gff = fhand.getvalue()
         assert 'description' not in gff
 
+class TestFastaFileUtils(unittest.TestCase):
+    'here we test our utils related to fast format'
 
+    @staticmethod
+    def test_temp_fasta_file_one_seq():
+        'It test temp_fasta_file'
+        seqrec1 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        fhand = temp_fasta_file(seqrec1)
+        content = open(fhand.name).read()
+        assert content == ">seq1\nATGATAGATAGATGF\n"
+
+    @staticmethod
+    def test_temp_fasta_file_seq_iter():
+        'It test temp_fasta_file'
+        seqrec1 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        seqrec2 = SeqWithQuality(seq=Seq('ATGATAGATAGA'), name='seq2')
+        seq_iter = iter([seqrec1, seqrec2])
+        fhand = temp_fasta_file(seq_iter)
+        content = open(fhand.name).read()
+        assert content == ">seq1\nATGATAGATAGATGF\n>seq2\nATGATAGATAGA\n"
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_gff_writer']
     unittest.main()
