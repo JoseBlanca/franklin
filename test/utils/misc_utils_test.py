@@ -24,7 +24,7 @@ import StringIO
 from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                        _get_xml_header, NamedTemporaryDir,
                                        VersionedPath, get_num_threads)
-from franklin.utils.collections_ import FileCachedList
+
 
 class Minor_utilities_test(unittest.TestCase):
     'Test form minor utilities'
@@ -93,23 +93,6 @@ class NamedTemporariDirTest(unittest.TestCase):
         del(temp_dir)
         assert os.path.exists(dir_name) == False
 
-class FileCachedListTest(unittest.TestCase):
-    'It tests a list like class cached on a file'
-    @staticmethod
-    def test_filecachedlist():
-        'It test the functionality of this list like class'
-        #with ints
-        clist = FileCachedList(type_=int)
-        clist.append(0)
-        clist.append(1)
-        for index, item in enumerate(clist.items()):
-            assert item == index
-        #with floats
-        clist = FileCachedList(type_=float)
-        clist.append(0)
-        clist.append(1)
-        for index, item in enumerate(clist.items()):
-            assert item == float(index)
 
 class VersionedPathTest(unittest.TestCase):
     'It tests the versioned path class'
