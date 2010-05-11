@@ -70,11 +70,16 @@ class CmapTest(unittest.TestCase):
                 'species':{'cmelo': species}}
         fhand = StringIO()
         cmap_to_gff(cmap, fhand)
+        correspondences = '''
+##cmap_corr evidence_type_acc=ANB;ID1=marker1_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker1_1;map_set_acc2=ms2;map_acc2=gl2;
+##cmap_corr evidence_type_acc=ANB;ID1=marker2_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker2_1;map_set_acc2=ms2;map_acc2=gl2;
+'''
+        assert correspondences in fhand.getvalue()
         #print fhand.getvalue()
 
         fhand = StringIO()
         cmap_to_mcf(cmap, fhand)
-        print fhand.getvalue()
+        #print fhand.getvalue()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

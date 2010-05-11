@@ -18,7 +18,7 @@ Created on 27/10/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 from copy import copy
 
-from franklin.utils.collections_ import list_pairs_iter
+from itertools import combinations
 from franklin.gff import write_gff
 
 def _species_pragma(species):
@@ -28,14 +28,14 @@ def _species_pragma(species):
     if 'full_name' in species:
         str_ += 'species_full_name=%s;' % species['full_name']
     if 'common_name' in species:
-        str_ += 'species_common_name=%s;'% species['common_name']
+        str_ += 'species_common_name=%s;' % species['common_name']
     if 'display_order' in species:
         str_ += 'display_order=%s;' % str(species['display_order'])
     return str_
 
 def _map_set_pragma(map_set):
     'It returns the map set pragma line'
-    str_ =  '##cmap_map_set map_set_acc=%s;' % map_set['accession']
+    str_ = '##cmap_map_set map_set_acc=%s;' % map_set['accession']
     str_ += 'map_set_name=%s;' % map_set['name']
     if 'short_name' in map_set['short_name']:
         str_ += 'map_set_short_name=%s;' % map_set['short_name']
@@ -93,8 +93,8 @@ def _cmap_correspondences(marker_count, marker_id_map):
     correspondences'''
     strs = []
     for correspondences in marker_count.values():
-        for marker1, marker2 in list_pairs_iter(correspondences):
-            str_  = ['##cmap_corr evidence_type_acc=ANB;']
+        for marker1, marker2 in combinations(correspondences, 2):
+            str_ = ['##cmap_corr evidence_type_acc=ANB;']
             str_.append('ID1=%s;map_set_acc1=%s;map_acc1=%s;' % (marker1,
                                                  marker_id_map[marker1][0],
                                                  marker_id_map[marker1][1]))
@@ -147,7 +147,7 @@ def cmap_to_mcf(data, fhand):
 
     for mapset in data['map_sets']:
         fhand.write('**************************************************\n')
-        fhand.write('map: %s\n' %mapset['name'])
+        fhand.write('map: %s\n' % mapset['name'])
         fhand.write('**************************************************\n\n')
         for map_ in mapset['maps']:
             fhand.write(map_['name'] + '\n')
