@@ -60,6 +60,7 @@ def create_project(name, directory=None, configuration=None):
 
     config['Read_stats'] = {}
     config['Read_stats']['sampling_size'] = 1000
+
     config['Cleaning'] = {}
 
     config['Cleaning']['vector_database'] = 'UniVec'
