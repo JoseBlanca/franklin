@@ -15,6 +15,8 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
+
+
 # franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
@@ -23,10 +25,13 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import math
+import math, re
 
 from Bio import SeqIO
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from franklin.seq.seqs import SeqWithQuality, Seq
+from franklin.utils.collections_ import take_sample
+from franklin.utils.misc_utils import get_fhand
 
 #the translation between our formats and the biopython formats
 BIOPYTHON_FORMATS = {'fasta': 'fasta',
@@ -64,15 +69,66 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
+def num_seqs_in_file(seq_fhand, format=None):
+    'It counts seqs in file. '
+    seq_fhand = get_fhand(seq_fhand)
+    if format is None:
+        format = guess_seq_file_format(seq_fhand)
 
-def seqs_in_file(seq_fhand, qual_fhand=None, format=None):
+    if format == 'fasta':
+        return count_str_in_file(seq_fhand, '^>')
+    elif format == 'repr':
+        class_name = SeqWithQuality.__class__.__name__.split('.')[-1]
+        return count_str_in_file(seq_fhand, "^%s" % class_name)
+    elif 'fastq' in format:
+        return _num_seqs_in_fastq(seq_fhand)
+    else:
+        raise NotImplementedError('I can not count this format: %s' % format)
+
+def count_str_in_file(fhand, regex):
+    'it counts the string  in file content'
+    regex = re.compile(regex)
+    pos_at_start = fhand.tell()
+    fhand.seek(0)
+    counter = 0
+    for line in fhand:
+        counter += len(re.findall(regex, line))
+    fhand.seek(pos_at_start)
+    return counter
+
+
+def _num_seqs_in_fastq(fhand):
+    'it counts seqs in a fastq file '
+    pos_at_start = fhand.tell()
+    fhand.seek(0)
+    counter = 0
+    for fastq in FastqGeneralIterator(fhand):
+        counter += 1
+    fhand.seek(pos_at_start)
+    return counter
+
+def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
+    '''It yields a seqrecord for each of the sequences found in the seq file.
+
+
+    '''
+    if format is None:
+        format = guess_seq_file_format(seq_fhand)
+    seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, format=format)
+
+    if sample_size is None:
+        return seqs
+
+    num_seqs = num_seqs_in_file(seq_fhand, format)
+    return take_sample(seqs, sample_size, num_seqs)
+
+def _seqs_in_file(seq_fhand, qual_fhand=None, format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
     # look if seq_fhand is a list or not
     seq_fhand.seek(0)
     if qual_fhand is not None:
         qual_fhand.seek(0)
-    if format is None:
-        format = guess_seq_file_format(seq_fhand)
+
     if format == 'repr':
         return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
     else:
