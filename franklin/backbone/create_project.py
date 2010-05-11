@@ -58,6 +58,8 @@ def create_project(name, directory=None, configuration=None):
     config['Other_settings']['default_sanger_quality'] = 20
     config['Other_settings']['java_memory'] = 2048
 
+    config['Read_stats'] = {}
+    config['Read_stats']['sampling_size'] = 1000
     config['Cleaning'] = {}
 
     config['Cleaning']['vector_database'] = 'UniVec'
