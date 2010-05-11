@@ -118,8 +118,11 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
 
     if sample_size is None:
         return seqs
+    try:
+        num_seqs = num_seqs_in_file(seq_fhand, format)
+    except NotImplementedError:
+        num_seqs = None
 
-    num_seqs = num_seqs_in_file(seq_fhand, format)
     return take_sample(seqs, sample_size, num_seqs)
 
 def _seqs_in_file(seq_fhand, qual_fhand=None, format=None):
