@@ -20,13 +20,17 @@ Created on 26/11/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
+
+from Bio import SeqIO
+
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      look_for_similar_sequences,
                                      est2genome_parser,
-                                     build_sequence_clusters)
+                                     build_sequence_clusters,
+                                     match_words)
 from franklin.utils.misc_utils import DATA_DIR
-from Bio import SeqIO
+
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
 
@@ -105,6 +109,43 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         clusters = build_sequence_clusters(aligner_config)
         assert len(clusters) == 1
         assert clusters[0] == ['seq1', 'seq2']
+
+class WordMatchTest(unittest.TestCase):
+    'It test that we can match words against sequences'
+
+    @staticmethod
+    def test_forward_words():
+        'It test that we can match words against in the same orientation'
+
+        seq = 'gCACAggTGTGggTATAgg'
+        seq = SeqWithQuality(seq=Seq(seq))
+
+        result = match_words(seq, ['CACA', 'TATA', 'KK'])
+        assert result['query'] == seq
+
+        #The match por CACA
+        match = result['matches'][0]
+        assert match['subject'] == 'CACA'
+        assert match['start'] == 1
+        assert match['end'] == 10
+        assert len(match['match_parts']) == 2
+        #the reverse match part
+        assert match['match_parts'][1] == {'query_start':7,
+                                           'query_end':10,
+                                           'query_strand':1,
+                                           'subject_start':0,
+                                           'subject_end':3,
+                                           'subject_strand':-1}
+
+        #The match por TATA
+        match = result['matches'][1]
+        assert match['subject'] == 'TATA'
+        assert match['start'] == 13
+        assert match['end'] == 16
+        assert len(match['match_parts']) == 2
+
+        #No matches for KK
+        assert len(result['matches']) == 2
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

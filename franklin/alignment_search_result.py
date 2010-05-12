@@ -255,7 +255,7 @@ class ExonerateParser(object):
                                       seq=UnknownSeq(length=query_length))
         struct_dict['query'] = query
         struct_dict['matches'] = []
-        for match_part_ in  query_result:
+        for match_part_ in query_result:
             (query_name, query_start, query_end, query_strand, subject_name,
             subject_start, subject_end, subject_strand, score, query_length,
             subject_length, similarity) = match_part_

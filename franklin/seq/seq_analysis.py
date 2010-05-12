@@ -19,12 +19,13 @@ Created on 26/11/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 from franklin.utils.cmd_utils import create_runner, call
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
-from franklin.utils.collections_ import list_consecutive_pairs_iter
 from franklin.alignment_search_result import BlastParser
 from tempfile import NamedTemporaryFile
 
@@ -203,3 +204,85 @@ def _parse_tclust_result(result):
             continue
         clusters.append(line.split())
     return clusters
+
+def _find_matches(string, word):
+    'It returns the spans covered for the word matches in the string'
+    matches = set()
+    for match in re.finditer(word, string, re.IGNORECASE):
+        match = match.span()
+        matches.add((match[0], match[1] - 1))
+    return matches
+
+def _reverse_locations(locations, len_string):
+    'It transforms the coordinates into the reverse complementary ones'
+    reverse_point = lambda p: len_string - p - 1
+    reverse_location = lambda x: (reverse_point(x[1]), reverse_point(x[0]))
+    rev_locations = set()
+    for location in locations:
+        rev_locations.add(reverse_location(location))
+    return rev_locations
+
+def _build_match_parts(matches, query_strand, subj_strand):
+    'Given a list of matches it returns a list of match parts dicts'
+
+    match_parts = []
+    for match in matches:
+        match_part = {}
+        match_part['query_start'] = match[0]
+        match_part['query_end'] = match[1]
+        match_part['query_strand'] = query_strand
+        match_part['subject_start'] = 0
+        match_part['subject_end'] = match[1] - match[0]
+        match_part['subject_strand'] = subj_strand
+        match_parts.append(match_part)
+    return match_parts
+
+def match_word(seq, word):
+    'It matches the words against the given sequence'
+
+    fwd_seq  = str(seq.seq)
+    rev_seq  = str(seq.seq.reverse_complement())
+
+    matches = _find_matches(fwd_seq, word)
+    match_parts = _build_match_parts(matches, query_strand=1,
+                                              subj_strand=1)
+    matches = _find_matches(rev_seq, word)
+    matches = _reverse_locations(matches, len(rev_seq))
+    match_parts.extend(_build_match_parts(matches, query_strand=1,
+                                          subj_strand=-1))
+    return match_parts
+
+def _find_match_start_end(match_parts):
+    'Given a list of match parts it find the start and end on the query'
+    start, end = None, None
+    for match_part in match_parts:
+        if start is None:
+            start, end = match_part['query_start'], match_part['query_end']
+            continue
+        if start > match_part['query_start']:
+            start = match_part['query_start']
+        if end < match_part['query_end']:
+            end = match_part['query_end']
+    return start, end
+
+def match_words(seq, words):
+    'It matches the words against the given sequence'
+    #this result is an alignment search result structure
+    result = {'query': seq, 'matches':[]}
+    for word in words:
+        match_parts = match_word(seq, word)
+        if match_parts:
+            start, end = _find_match_start_end(match_parts)
+            match = {'subject':word,
+                     'start'  :start,
+                     'end'    :end,
+                     'subject_start' : 1,
+                     'subject_end'   : match_parts[0]['subject_end'],
+                     'match_parts': match_parts,
+                     }
+            result['matches'].append(match)
+    #if there are no matches we return None
+    if result['matches']:
+        return result
+    else:
+        return None

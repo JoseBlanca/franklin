@@ -35,9 +35,7 @@ from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 
-
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
-
 
 def create_edge_stripper(left_length=None, right_length=None):
     'It removes num of letters from seq.'
@@ -203,7 +201,6 @@ def _trim_seq_by_quality_defaults(seq_len, min_quality_bases, min_seq_length,
             min_seq_length = fiftypercent
     return (min_quality_bases, min_seq_length, quality_window_width)
 
-
 def create_masker_for_low_complexity():
     'It creates a masker function for low complexity sections that uses mdust'
     mask_low_complex_by_seq = create_runner(tool='mdust')
@@ -238,7 +235,6 @@ def create_masker_for_polia():
         fhand = mask_polya_by_seq(sequence)['sequence']
         return _sequence_from_trimpoly(fhand, sequence, trim=False)
     return mask_polya
-
 
 def create_word_masker(words, beginning=True):
     'It removes the given words if they are in the start of the seq'
@@ -280,8 +276,6 @@ def create_striper_by_quality_trimpoly():
     '''It creates a function that removes bad quality regions.
 
      It uses trimpoly's quality checks.'''
-
-
     def strip_seq_by_quality_trimpoly(sequence):
         '''It strips the sequence where low quality is found
 
@@ -455,7 +449,6 @@ def create_striper_by_quality_lucy2(vector=None):
         return seq_iter, [striped_seq_fhand, striped_qual_fhand]
     return strip_seq_by_quality_lucy
 
-
 #pylint:disable-msg=C0103
 def create_vector_striper_by_alignment(vectors, aligner):
     '''It creates a function which will remove vectors from the given sequence.
@@ -474,7 +467,6 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
                               'min_length_bp' : 15}],
-
                'blast':      [{'kind'         : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
@@ -499,7 +491,6 @@ def create_vector_striper_by_alignment(vectors, aligner):
             return None
         if vectors is None:
             return sequence
-
 
         # first we are going to align he sequence with the vectors
         alignment_fhand = aligner_(sequence)[aligner]
@@ -683,7 +674,6 @@ def split_seq_by_masked_regions(seq_iter, min_length):
         for new_seq in seqs:
             yield new_seq
 
-
 def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
     '''It creates a function that mask repeats from a sequence'''
 
@@ -700,5 +690,24 @@ def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
                                                        sequence.seq.alphabet))
     return mask_repeats_by_repeatmasker
 
+def create_short_adaptor_striper(adaptors):
+    '''It creates a function which removes the adaptors from the given sequence.
 
+    The adaptors should be a list. It will look for them using regular
+    expressions.
+    '''
+    def strip_vector_by_alignment(sequence):
+        '''It strips the vector from a sequence.
+
+        It returns a striped sequence with the longest segment without vector.
+        '''
+        if sequence is None:
+            return None
+        if adaptors is None:
+            return sequence
+        alignments = parser(alignment_fhand)
+        alignment_matches = _get_non_matched_locations(alignments)
+        return _get_longest_non_matched_seq_region(sequence, alignment_matches)
+
+    return strip_vector_by_alignment
 

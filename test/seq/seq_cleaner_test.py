@@ -19,7 +19,7 @@ Created on 2009 uzt 6
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os
+import unittest, os, tempfile
 
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
@@ -272,7 +272,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq_iter = lucy_striper(seqs_in_file(seq_fhand, format='fastq'))[0]
 
     @staticmethod
-    def test_strip_vector_align_exonera():
+    def test_strip_vector_exonerate():
         'It tests strip_vector_by_alignment'
 
         vec1 = SeqWithQuality(name='vec1', seq=Seq('atcgatcgatagcatacgat'))
@@ -329,6 +329,26 @@ class SeqCleanerTest(unittest.TestCase):
                                seq=vec1.seq[::-1]+vec2.seq+seq2.seq)
         seq3 = strip_vector_by_alignment(seq1)
         assert str(seq2.seq) == str(seq3.seq)
+
+    @staticmethod
+    def test_strip_short_adaptors():
+        'It tests the short adaptor removal with J. Forment sequences'
+
+        fhand_vectors = tempfile.NamedTemporaryFile()
+        fhand_vectors.write('>adaptor1|nCGTGTCTCTA\n')
+        fhand_vectors.flush()
+
+        seq  = 'CGCGTGTCTCTAGATAGGGACAGTAGGAATCTCGTTAATCCATTCATGCGCGTCACTAATTAG'
+        seq += 'ATGACGAGGCATTTGGCTACCTTAAGAGAGTCATAGTTACTCCCGCCGTTTA'
+        seq  = Seq(seq)
+        seq  = SeqWithQuality(name='seq', seq=seq)
+
+        strip_vector_by_alignment = \
+                create_vector_striper_by_alignment(fhand_vectors, 'exonerate')
+
+        clean_seq = strip_vector_by_alignment(seq)
+        print len(seq)
+        print len(clean_seq)
 
     @staticmethod
     def test_strip_vector_align_blast():
@@ -454,16 +474,16 @@ class SeqSplitterTests(unittest.TestCase):
         seq = SeqWithQuality(seq=Seq(seq1), name='seq')
         locations =  _get_unmasked_locations(seq)
 
-        seq_iter = _get_matched_locations(seq, locations, 3)
-        assert str(seq_iter.next().seq) == 'AATT'
-        assert str(seq_iter.next().seq) == 'AATTAAT'
-        assert str(seq_iter.next().seq) == 'TTC'
-        assert str(seq_iter.next().seq) == 'GCGCGCGCGCCC'
+        seqs = list(_get_matched_locations(seq, locations, 3))
+        assert str(seqs[0].seq) == 'AATT'
+        assert str(seqs[1].seq) == 'AATTAAT'
+        assert str(seqs[2].seq) == 'TTC'
+        assert str(seqs[3].seq) == 'GCGCGCGCGCCC'
 
 
-        seq_iter = _get_matched_locations(seq, locations, 5)
-        assert str(seq_iter.next().seq) == 'AATTAAT'
-        assert str(seq_iter.next().seq) == 'GCGCGCGCGCCC'
+        seqs = list(_get_matched_locations(seq, locations, 5))
+        assert str(seqs[0].seq) == 'AATTAAT'
+        assert str(seqs[1].seq) == 'GCGCGCGCGCCC'
 
     @staticmethod
     def test_strip_masked_section():
@@ -475,11 +495,11 @@ class SeqSplitterTests(unittest.TestCase):
 
         seq_iter = iter([seq, seq_])
 
-        new_seq_iter = split_seq_by_masked_regions(seq_iter, 5)
-        assert str(new_seq_iter.next().seq) == 'AATTAAT'
-        assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
-        assert str(new_seq_iter.next().seq) == 'AATTAAT'
-        assert str(new_seq_iter.next().seq) == 'GCGCGCGCGCCC'
+        new_seqs = list(split_seq_by_masked_regions(seq_iter, 5))
+        assert str(new_seqs[0].seq) == 'AATTAAT'
+        assert str(new_seqs[1].seq) == 'GCGCGCGCGCCC'
+        assert str(new_seqs[2].seq) == 'AATTAAT'
+        assert str(new_seqs[3].seq) == 'GCGCGCGCGCCC'
 
     @staticmethod
     def test_word_masker():
