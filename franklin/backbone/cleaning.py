@@ -115,6 +115,7 @@ class CleanReadsAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
+        logger = logging.getLogger("franklin")
         self._log({'analysis_started':True})
         input_paths = self._get_input_fpaths()['reads']
         output_dir = self._create_output_dirs()['reads']
@@ -123,6 +124,8 @@ class CleanReadsAnalyzer(Analyzer):
             fname = os.path.split(input_fpath)[-1]
             output_fpath = os.path.join(output_dir, fname)
             if os.path.exists(output_fpath):
+                msg = '%s already cleaned. Not cleaned again'  % output_fpath
+                logger.info(msg)
                 continue
             file_info = scrape_info_from_fname(input_path)
             input_fhand = open(input_fpath)

@@ -24,6 +24,7 @@ Created on 15/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, tempfile
+from xml.parsers.expat import ExpatError
 from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation
 from Bio.Alphabet import generic_dna, generic_protein
@@ -96,23 +97,27 @@ def _get_descriptions_from_blasts(blasts):
             modifier = blast['modifier']
         else:
             modifier = None
-
-        blast = BlastParser(fhand=get_fhand(blast_fhand))
+        blast_fhand = get_fhand(blast_fhand)
+        blast = BlastParser(fhand=blast_fhand)
         filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                     results=blast)
         #filtered_results = [filtered_results]
-        for match in filtered_results:
-            try:
-                query = match['query'].id
-            except AttributeError:
-                query = match['query'].name
-            if query not in seq_annot:
-                match_hit = match['matches'][0]
-                description = match_hit['subject'].description
-                if modifier is not None:
-                    description = modifier(description)
-                if description != "<unknown description>":
-                    seq_annot[query] = description.strip()
+        try:
+            for match in filtered_results:
+                try:
+                    query = match['query'].id
+                except AttributeError:
+                    query = match['query'].name
+                if query not in seq_annot:
+                    match_hit = match['matches'][0]
+                    description = match_hit['subject'].description
+                    if modifier is not None:
+                        description = modifier(description)
+                    if description != "<unknown description>":
+                        seq_annot[query] = description.strip()
+        except ExpatError as error:
+            msg = str(error) + ':%s' % blast_fhand.name
+            raise ExpatError(msg)
     return seq_annot
 
 def create_microsatellite_annotator():
