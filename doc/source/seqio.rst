@@ -18,7 +18,7 @@ seq_io.py is a little utility distributed with ngs_backbone that allows us to mo
 
 For instance, to go from sanger fastq to fasta and qual we would do::
 
-  seqio.py -s seq.sfastq -f sfastq -o seq.fasta -l seq.qual -t fasta
+  $ seqio.py -s seq.sfastq -f sfastq -o seq.fasta -l seq.qual -t fasta
 
 And to do the reverse::
 
