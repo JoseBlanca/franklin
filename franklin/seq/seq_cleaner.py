@@ -34,6 +34,7 @@ from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
+from franklin.seq.seq_analysis import match_words
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
@@ -507,11 +508,38 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
     return strip_vector_by_alignment
 
+def create_word_striper_by_alignment(words):
+    '''It creates a function which will remove words from the given sequence.
+
+    It matches the words against the sequence and leaves the longest non-matched
+    part (unless is the first part of the sequence).
+    '''
+
+    def strip_words_by_matching(sequence):
+        '''It strips the given words from a sequence.
+
+        It returns a striped sequence with the longest segment without the
+        words.
+        '''
+        if sequence is None:
+            return None
+        if words is None:
+            return sequence
+
+        alignments = match_words(sequence, words)
+        if not alignments:
+            return sequence
+        locations = _get_non_matched_locations(alignments)
+        return _get_longest_non_matched_seq_region(sequence, locations)
+
+    return strip_words_by_matching
+
+
 def _merge_overlaping_locations(locations):
     '''It merges overlaping locations
 
-    It accept a list of (start, end) tuplas.
-     '''
+    It accept a list of (start, end) tuples.
+    '''
     #we collect all start and ends in a list marking if they are start or end
     limits = [] #all starts and ends
     for location in locations:
@@ -546,6 +574,26 @@ def _merge_overlaping_locations(locations):
     #we sort the start and ends by the start position
     limits = sorted(limits, cmp_limits)
 
+    #if there are contiguous locations we should merged them
+    new_limits = []
+    merge = False
+    for index, limit in enumerate(limits):
+        try:
+            next_limit = limits[index + 1]
+        except IndexError:
+            next_limit = None
+        if (next_limit and
+            limit['type'] == 'end' and
+            next_limit['type'] == 'start' and
+            limit['location'] + 1 == next_limit['location']):
+            merge = True
+            continue
+        if merge:
+            merge = False
+            continue
+        new_limits.append(limit)
+    limits = new_limits
+
     #now we create the merged locations
     starts = 0
     merged_locations = []
@@ -559,10 +607,11 @@ def _merge_overlaping_locations(locations):
             if starts == 0:
                 end = limit['location']
                 merged_locations.append((start, end))
+
     return merged_locations
 
 def _get_non_matched_locations(alignments):
-    '''It detects query's non matched fragments in and alignement
+    '''It detects query's non matched fragments in an alignment
 
     It returns a list of  (start, end) tuples
      '''
@@ -599,7 +648,30 @@ def _get_unmasked_locations(seq):
 
     return locations
 
-#pylint:disable-msg=C0103
+def _get_non_matched_from_matched_locations(locations, seq_len):
+    'Given a set of regions in a seq it returns the complementary ones'
+    if not locations:
+        return [(0, seq_len - 1)]
+
+    comp_locations = []
+    #the first complementary region starts at 0 unless the first given location
+    #starts at 0
+    if locations[0][0] == 0:
+        start = locations[0][1] + 1
+        locations.pop(0)
+    else:
+        start = 0
+    for loc in locations:
+        comp_locations.append((start, loc[0] - 1))
+        start = loc[1] + 1
+    else:
+        #if the last location do not end at the end of the seq we add the
+        #last complementary location
+        end = seq_len - 1
+        if start <= end:
+            comp_locations.append((start, end))
+    return comp_locations
+
 def _get_longest_non_matched_seq_region(seq, locations):
     'Given a seq and the locations it returns the longest region'
 
@@ -607,38 +679,34 @@ def _get_longest_non_matched_seq_region(seq, locations):
     if not locations:
         return seq
 
+    #they are one based, we do them 0 based
+    #locations = [(loc[0] - 1, loc[1] - 1) for loc in locations]
+
     # Once we collect all the start and ends in a list of tuples, we are going
     # to merge overlapings
     locations = _merge_overlaping_locations(locations)
 
-    # Now, we search for the longest non overlaping zone
-    longest_location  = None
-    longest_dist      = 0
-    for i in range(len(locations)):
-        if i == 0:
-            start = 0
-            end   = locations[i][0]
-        else:
-            start = locations[i-1][1]
-            end   = locations[i][0]
-        # Once we now the star and end of each non matching section we search
-        # for the longest
-        dist = end - start
-        if dist > longest_dist:
-            longest_dist = dist
-            longest_location = (start, end)
-    else:
-        start  = locations[-1][1]
-        end    = len(seq)
-        dist = end - start
-        if dist > longest_dist:
-            longest_location = (start, end)
+    #we want the non-matched locations
+    locations = _get_non_matched_from_matched_locations(locations, len(seq))
 
-    if longest_location is None:
-        return None
+    #if there is one that starts at zero we remove it, because it should be
+    #vector
+    #if locations[0][0] == 0:
+    #    locations.pop(0)
+
+    #now we return the longest one
+    longest_loc = None
+    for loc in locations:
+        if not longest_loc:
+            longest_loc = loc
+            continue
+        if longest_loc[1] - longest_loc[0] < loc[1] - loc[0]:
+            longest_loc = loc
+
+    if longest_loc:
+        return seq[longest_loc[0]:longest_loc[1] + 1]
     else:
-        start, end = longest_location
-        return seq[start:end]
+        return None
 
 def _get_matched_locations(seq, locations, min_length):
     'It returns a seq iterator from a seq. To split the seq it uses the'

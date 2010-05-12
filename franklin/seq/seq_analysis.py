@@ -283,6 +283,8 @@ def match_words(seq, words):
             result['matches'].append(match)
     #if there are no matches we return None
     if result['matches']:
-        return result
+        #we return a list to be compatible with the blast structure that
+        #allows results for different sequences
+        return [result]
     else:
         return None

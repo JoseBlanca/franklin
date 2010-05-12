@@ -120,7 +120,7 @@ class WordMatchTest(unittest.TestCase):
         seq = 'gCACAggTGTGggTATAgg'
         seq = SeqWithQuality(seq=Seq(seq))
 
-        result = match_words(seq, ['CACA', 'TATA', 'KK'])
+        result = match_words(seq, ['CACA', 'TATA', 'KK'])[0]
         assert result['query'] == seq
 
         #The match por CACA

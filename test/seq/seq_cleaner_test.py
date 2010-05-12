@@ -39,7 +39,8 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 split_seq_by_masked_regions,
                                 create_word_masker,
                                 create_word_remover,
-                                create_edge_stripper)
+                                create_edge_stripper,
+                                create_word_striper_by_alignment)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -285,15 +286,17 @@ class SeqCleanerTest(unittest.TestCase):
         seq  = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq = Seq(seq)
         seq2 = SeqWithQuality(name='seq', seq=seq)
-        seq1 = SeqWithQuality(name=seq2.name, seq=vec1.seq+seq2.seq+vec2.seq,
+        seq1 = SeqWithQuality(name=seq2.name,
+                              seq=vec1.seq + seq2.seq + vec2.seq,
                               description='hola')
 
         seq3 = strip_vector_by_alignment(seq1)
+
         assert str(seq2.seq) == str(seq3.seq)
         assert seq3.description == 'hola'
 
         fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq )
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq)
         seq3 = strip_vector_by_alignment(seq1)
         assert str(seq2.seq) == str(seq3.seq)
 
@@ -334,21 +337,36 @@ class SeqCleanerTest(unittest.TestCase):
     def test_strip_short_adaptors():
         'It tests the short adaptor removal with J. Forment sequences'
 
-        fhand_vectors = tempfile.NamedTemporaryFile()
-        fhand_vectors.write('>adaptor1|nCGTGTCTCTA\n')
-        fhand_vectors.flush()
-
-        seq  = 'CGCGTGTCTCTAGATAGGGACAGTAGGAATCTCGTTAATCCATTCATGCGCGTCACTAATTAG'
+        seq  = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATCTCGTTAATCCATTCATGCGCGTCACTAATTAG'
         seq += 'ATGACGAGGCATTTGGCTACCTTAAGAGAGTCATAGTTACTCCCGCCGTTTA'
         seq  = Seq(seq)
         seq  = SeqWithQuality(name='seq', seq=seq)
 
-        strip_vector_by_alignment = \
-                create_vector_striper_by_alignment(fhand_vectors, 'exonerate')
+        strip_adap = create_word_striper_by_alignment(words=['CGTGTCTCTA',
+                                                             'TATATATA'])
 
-        clean_seq = strip_vector_by_alignment(seq)
-        print len(seq)
-        print len(clean_seq)
+        clean_seq = strip_adap(seq)
+        assert str(clean_seq.seq).startswith('gATAGGGACAGTAGGAATCTCGTTAATC')
+
+        #two words
+        #       000000000011111111112222222222333333333344444444
+        #       012345678901234567890123456789012345678901234567
+        seq  = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATTTTTTTcCGTGTCTCTAc'
+        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        clean_seq = strip_adap(seq)
+        assert str(clean_seq.seq) == 'gATAGGGACAGTAGGAATTTTTTTc'
+
+        #We don't want the first region even if it's the longest one
+        seq  = 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCgCGTGTCTCTAgC'
+        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        clean_seq = strip_adap(seq)
+        assert str(clean_seq.seq) == 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCg'
+
+        #Everything works if the adaptors are at the beginning and ends
+        seq  = 'CGTGTCTCTAcccccccccccccccTATATATAggggggggggCGTGTCTCTA'
+        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        clean_seq = strip_adap(seq)
+        assert str(clean_seq.seq) == 'ccccccccccccccc'
 
     @staticmethod
     def test_strip_vector_align_blast():
@@ -459,15 +477,6 @@ class SeqSplitterTests(unittest.TestCase):
         assert not locations
 
     @staticmethod
-    def test_get_longest_section_detector():
-        'it test if we get the longest not matched section'
-        seq = SeqWithQuality(seq=Seq('AATTAATTAATTTCGCGCGCGCGCCC'), name='seq')
-        matches = ((0, 3), (6, 7), (6, 19))
-        longest = _get_longest_non_matched_seq_region(seq, matches)
-        assert str(longest.seq) == 'CGCGCCC'
-
-
-    @staticmethod
     def test_get_matched_regions():
         'it tests get_matched_region function'
         seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
@@ -479,7 +488,6 @@ class SeqSplitterTests(unittest.TestCase):
         assert str(seqs[1].seq) == 'AATTAAT'
         assert str(seqs[2].seq) == 'TTC'
         assert str(seqs[3].seq) == 'GCGCGCGCGCCC'
-
 
         seqs = list(_get_matched_locations(seq, locations, 5))
         assert str(seqs[0].seq) == 'AATTAAT'
@@ -549,5 +557,5 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq.seq == 'tctcatcatca'
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_short_adaptors']
     unittest.main()

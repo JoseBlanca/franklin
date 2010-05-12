@@ -260,9 +260,14 @@ class ExonerateParser(object):
             subject_start, subject_end, subject_strand, score, query_length,
             subject_length, similarity) = match_part_
             query_start = int(query_start)
-            query_end = int(query_end)
+            #they number the positions between symbols
+            # A C G T
+            #0 1 2 3 4
+            #Hence the subsequence "CG" would have start=1, end=3, and length=2
+            #but we would say start=1 and end=2
+            query_end = int(query_end) - 1
             subject_start = int(subject_start)
-            subject_end = int(subject_end)
+            subject_end = int(subject_end) - 1
             query_strand = _strand_transform(query_strand)
             subject_strand = _strand_transform(subject_strand)
             score = int(score)
