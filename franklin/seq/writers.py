@@ -197,9 +197,10 @@ class GffWriter(object):
             strand = '.'
             phase = '.'
             score = '.'
+            source = 'franklin'
             if kind == 'microsatellite':
                 srr_cont += 1
-                source = 'sputnik'
+                #source = 'sputnik'
                 type_ = 'microsatellite' #SO:0000289
                 score = str(feature.qualifiers['score'])
                 attributes = self._get_subfeature_attributes(sequence.id,
@@ -207,14 +208,15 @@ class GffWriter(object):
                                                              kind, srr_cont)
             elif kind == 'intron':
                 intron_cont += 1
-                source = 'est2genome'
-                type_ = 'intron' #SO:0000188
+                #source = 'est2genome'
+                #TODO remove slash when new version of igv released
+                type_ = 'intron_' #SO:0000188
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, intron_cont)
             elif kind == 'orf':
                 orf_cont += 1
-                source = 'estscan'
+                #source = 'estscan'
                 type_ = 'ORF' #SO:0000236
                 strand = feature.qualifiers['strand']
                 strand = '+' if strand == 'forward' else '-'
@@ -223,7 +225,7 @@ class GffWriter(object):
                                                              kind, intron_cont)
             elif kind == 'snv':
                 snv_cont += 1
-                source = 'franklin'
+                #source = 'franklin'
                 type_ = 'SNV' #SO:0001483
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,

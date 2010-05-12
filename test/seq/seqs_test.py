@@ -20,7 +20,7 @@ Created on 2009 mar 27
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
+from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature, get_seq_name
 from Bio.SeqFeature import FeatureLocation, ExactPosition
 from Bio.Alphabet import Alphabet
 
@@ -153,6 +153,20 @@ class SeqTest(unittest.TestCase):
         text = 'A' * 100
         seq = Seq(text)
         assert text in repr(seq)
+
+class TestGetSeqName(unittest.TestCase):
+    'It tests that we can get a sequence name'
+    @staticmethod
+    def test_get_seq_name():
+        'It tests that we can get a sequence name'
+        #with no name attribute -> uuid
+        assert len(get_seq_name('AA')) > 10
+        seq = SeqWithQuality(id='seqid', name='seqname', seq=Seq('ATGAT'))
+        assert get_seq_name(seq) == 'seqname'
+        seq = SeqWithQuality(id='seqid', seq=Seq('ATGAT'))
+        assert get_seq_name(seq) == 'seqid'
+        seq = SeqWithQuality(seq=Seq('ATGAT'))
+        assert  len(get_seq_name(seq)) > 10
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

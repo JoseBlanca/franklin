@@ -268,7 +268,7 @@ class WriteAnnotationAnalyzer(Analyzer):
         output_files = {'vcf': ('vcf',),
                         'orf':('orf_seq.fasta', 'orf_pep.fasta'),
                         'ssr':('ssr',),
-                        'gff':('gff',),
+                        'gff':('gff3',),
                         'orthologs':('orthologs',)}
 
         for seq_path in repr_paths:

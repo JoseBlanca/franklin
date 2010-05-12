@@ -46,7 +46,7 @@ class CleanReadsAnalyzer(Analyzer):
         elif file_info['pl'] == 'sanger':
             return 'sanger_with_qual'
         else:
-            raise ValueError('Unable to guess the cleaning pipeline: %s' % 
+            raise ValueError('Unable to guess the cleaning pipeline: %s' %
                              str(file_info))
 
     def create_cleaning_configuration(self, platform, library=None):
@@ -115,6 +115,7 @@ class CleanReadsAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
+        logger = logging.getLogger("franklin")
         self._log({'analysis_started':True})
         input_paths = self._get_input_fpaths()['reads']
         output_dir = self._create_output_dirs()['reads']
@@ -123,6 +124,8 @@ class CleanReadsAnalyzer(Analyzer):
             fname = os.path.split(input_fpath)[-1]
             output_fpath = os.path.join(output_dir, fname)
             if os.path.exists(output_fpath):
+                msg = '%s already cleaned. Not cleaned again'  % output_fpath
+                logger.info(msg)
                 continue
             file_info = scrape_info_from_fname(input_path)
             input_fhand = open(input_fpath)
@@ -154,13 +157,19 @@ class ReadsStatsAnalyzer(Analyzer):
         original_paths = self._get_input_fpaths()['original_reads']
         reads = {'cleaned': clean_paths, 'original': original_paths}
 
+        if ('reads_stats' in self._project_settings and
+            'sampling_size' in self._project_settings['reads_stats' ]):
+            sample_size = self._project_settings['reads_stats' ]['sampling_size']
+        else:
+            sample_size = None
+
         # first per file stats
         for seq_type, paths in reads.items():
             for path in paths:
                 stats_dir = self._get_stats_dir(seq_type)
                 basename = path.basename
                 fpath = path.last_version
-                seqs = seqs_in_file(open(fpath))
+                seqs = seqs_in_file(open(fpath), sample_size=sample_size)
                 file_format = guess_seq_file_format(open(fpath))
                 analyses = ['seq_length_distrib', 'qual_distrib']
                 if file_format == 'fasta':
@@ -177,8 +186,10 @@ class ReadsStatsAnalyzer(Analyzer):
             if os.path.exists(clean_fpath) and os.path.exists(original_fpath):
                 stats_dir = self._get_stats_dir('cleaned')
 
-                clean_seqs = seqs_in_file(open(clean_fpath))
-                original_seqs = seqs_in_file(open(original_fpath))
+                clean_seqs = seqs_in_file(open(clean_fpath),
+                                          sample_size=sample_size)
+                original_seqs = seqs_in_file(open(original_fpath),
+                                             sample_size=sample_size)
                 file_format = guess_seq_file_format(open(clean_fpath))
                 analyses = ['seq_length_distrib', 'qual_distrib']
                 if file_format == 'fasta':
