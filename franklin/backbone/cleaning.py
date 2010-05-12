@@ -53,6 +53,7 @@ class CleanReadsAnalyzer(Analyzer):
         'It returns the pipeline configuration looking at the project settings'
         settings = self._project_settings['Cleaning']
         configuration = {}
+        platforms = ('sanger', '454', 'illumina')
 
         if 'vector_database' in settings:
             configuration['remove_vectors'] = {}
@@ -61,12 +62,10 @@ class CleanReadsAnalyzer(Analyzer):
 
         # adaptors settings
         adaptors_file = None
-        if platform == 'sanger' and 'adaptors_file_sanger' in settings:
-            adaptors_file = settings['adaptors_file_sanger']
-        elif platform == '454' and 'adaptors_file_454' in settings:
-            adaptors_file = settings['adaptors_file_454']
-        elif platform == 'illumina' and 'adaptors_file_illumina' in settings:
-            adaptors_file = settings['adaptors_file_illumina']
+        for platform_ in platforms:
+            adaptors_file_ = 'adaptors_file_%s' % platform_
+            if platform == platform_ and adaptors_file_ in settings:
+                adaptors_file = settings[adaptors_file_]
         configuration['remove_adaptors'] = {}
         configuration['remove_adaptors']['vectors'] = adaptors_file
 
@@ -110,6 +109,16 @@ class CleanReadsAnalyzer(Analyzer):
                                       lucy_libraries[library]['splice_file'])
                 configuration['strip_lucy'] = {}
                 configuration['strip_lucy']['vector'] = [vector, splice]
+
+        # min length settings
+        min_seq_settings = settings['min_seq_length']
+        for platform_ in platforms:
+            if platform == platform_ and platform_ in min_seq_settings:
+                min_length = min_seq_settings[platform_]
+
+        configuration['remove_short'] = {}
+        configuration['remove_short']['length'] = min_length
+
         return configuration
 
     def run(self):

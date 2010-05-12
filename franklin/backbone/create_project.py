@@ -74,6 +74,11 @@ def create_project(name, directory=None, configuration=None):
     comments.append('words_to_remove_illumina = [someword, another_word]')
     config['Cleaning'].comments = {'vector_database':comments}
 
+    config['Cleaning']['min_seq_length'] = {}
+    config['Cleaning']['min_seq_length']['454'] = 100
+    config['Cleaning']['min_seq_length']['sanger'] = 100
+    config['Cleaning']['min_seq_length']['illumina'] = 22
+
     config['Cleaning']['edge_removal'] = {}
     config['Cleaning']['edge_removal']['454_left'] = None
     config['Cleaning']['edge_removal']['454_right'] = None

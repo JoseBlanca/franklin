@@ -91,17 +91,12 @@ mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
                 'name': 'mask_repeats',
                 'comment':'Mask repeats with repeatmasker'}
 
-filter_short_seqs_sanger = {'function': create_length_filter,
-                     'arguments':{'length':100, 'count_masked': False},
+filter_short_seqs = {'function': create_length_filter,
+                     'arguments':{'length':None, 'count_masked': False},
                      'type':'filter' ,
                      'name':'remove_short',
-                     'comment': 'Remove seq shorter than 100 nt'}
+                     'comment': 'Remove seq shorter than X nt'}
 
-filter_short_seqs_solexa = {'function': create_length_filter,
-                            'arguments':{'length':22, 'count_masked': False},
-                            'type':'filter' ,
-                            'name':'remove_short',
-                            'comment': 'Remove seq shorter than 22 nt'}
 
 edge_remover = {'function':create_edge_stripper,
                   'arguments':{},
@@ -125,25 +120,24 @@ SEQPIPELINES = {
     'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
                             remove_vectors, mask_low_complexity,
                             remove_words, edge_remover,
-                            filter_short_seqs_sanger],
+                            filter_short_seqs],
 
     'sanger_without_qual': [remove_vectors, strip_quality_by_n,
                             mask_low_complexity, remove_words, edge_remover,
-                            filter_short_seqs_sanger],
+                            filter_short_seqs],
 
-    'repeatmasker'       : [mask_repeats, filter_short_seqs_sanger],
+    'repeatmasker'       : [mask_repeats, filter_short_seqs],
 
     'solexa'             : [remove_adaptors, strip_quality,
-                            filter_short_seqs_solexa],
+                            filter_short_seqs],
 
-    'adaptors'           : [remove_adaptors, filter_short_seqs_sanger],
+    'adaptors'           : [remove_adaptors, filter_short_seqs],
 
     'mask_dust'          : [mask_polia, mask_low_complexity],
 
-    'word_masker'        : [remove_words, filter_short_seqs_solexa]}
+    'word_masker'        : [remove_words, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
              mask_polia, mask_low_complexity, mask_repeats,
-             filter_short_seqs_sanger, filter_short_seqs_solexa, edge_remover,
-             remove_words]
+             filter_short_seqs, edge_remover, remove_words]
