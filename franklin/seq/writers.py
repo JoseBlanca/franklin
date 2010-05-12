@@ -209,7 +209,8 @@ class GffWriter(object):
             elif kind == 'intron':
                 intron_cont += 1
                 #source = 'est2genome'
-                type_ = 'intron' #SO:0000188
+                #TODO remove slash when new version of igv released
+                type_ = 'intron_' #SO:0000188
                 attributes = self._get_subfeature_attributes(sequence.id,
                                                              sequence.name,
                                                              kind, intron_cont)
