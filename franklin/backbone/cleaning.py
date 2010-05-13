@@ -69,6 +69,9 @@ class CleanReadsAnalyzer(Analyzer):
             long_adap_fhand.close()
             os.remove(long_adap_fhand.name)
             return adaptors_fpath, short_adaptors
+        elif not seq_writer.num_features:   #no long adaptors remaining
+            os.remove(long_adap_fhand.name)
+            return None, short_adaptors     #we do not return the adaptor file
         else:
             return long_adap_fhand.name, short_adaptors
 
