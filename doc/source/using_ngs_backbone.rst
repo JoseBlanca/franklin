@@ -103,7 +103,10 @@ solexa
 A collection of cleaning steps are available that compose each one of these pipelines. These steps are:
 
 adaptor removal
-  Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is exonerate. If a match is found this section of the read is removed.
+  Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is exonerate. If a match is found this section of the read is removed. Short adaptors will be treated as such.
+
+short adaptor removal
+  ngs_backbone will look for adaptors shorter than 15 bp with exact matches.
 
 precise vector removal
   If the vector and cloning site is known lucy can be used to remove the vector in a precise way.
@@ -116,9 +119,6 @@ general vector removal
 
 low complexity masking
   The regions with a low complexity are masked by using mdust
-
-word removal
-  If we know that some particular sequence appear at the beginning of the read we can remove it using this module
 
 edge removal
   After all the other modules are run we can delete a fixed amount of bases from the sequence extremes
@@ -161,13 +161,13 @@ adaptors_file_sanger
 adaptors_file_illumina
   Idem for the illumina sequences
 
-words_to_remove_454
-  A list of words to be removed if they are found at the start of the 454 sequences.
+short_adaptors_454
+  A list of words to be removed. They can be regular expressions.
 
-words_to_remove_sanger
+short_adaptors_sanger
   Idem for the sanger sequences
 
-words_to_remove_illumina
+short_adaptors_illumina
   Idem for the illumina sequences
 
 edge_removal -> 454_left
