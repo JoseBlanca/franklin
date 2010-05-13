@@ -38,7 +38,6 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_word_masker,
-                                create_word_remover,
                                 create_edge_stripper,
                                 create_word_striper_by_alignment)
 
@@ -368,6 +367,18 @@ class SeqCleanerTest(unittest.TestCase):
         clean_seq = strip_adap(seq)
         assert str(clean_seq.seq) == 'ccccccccccccccc'
 
+        #It test if we remove words from the beginning of the seq
+        word = 'ATAT'
+        seq2 = 'tctcatcatca'
+        seq1 = word + seq2 + word
+        word = '^' + word
+        seq1 = Seq(seq1)
+        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+
+        remover = create_word_striper_by_alignment([word])
+        seq = remover(seq)
+        assert seq.seq == seq2
+
     @staticmethod
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
@@ -532,19 +543,6 @@ class SeqSplitterTests(unittest.TestCase):
         remover = create_word_masker([word], False)
         seq = remover(seq)
         assert seq.seq == 'ATcaTcaTcaTca'
-
-    @staticmethod
-    def test_word_remover():
-        'It test if we remove words from the beginning of the seq'
-        word = 'ATAT'
-        seq2 = 'tctcatcatca'
-        seq1 = word + seq2
-        seq1 = Seq(seq1)
-        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
-
-        remover = create_word_remover([word])
-        seq = remover(seq)
-        assert seq.seq == seq2
 
     @staticmethod
     def test_edge_stripper():

@@ -134,11 +134,11 @@ class TestBackbone(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
-        words = ['ATGAAC']
+        words = ['^ATGAAC']
         univec = os.path.join(DATA_DIR, 'blast', 'univec')
         configuration = {'Cleaning':{'vector_database':univec,
                                      'adaptors_file_454':adaptors_path_454,
-                                     'words_to_remove_454':words,
+                                     'short_adaptors_454':words,
                                      'edge_removal':{'454_left':3,
                                                      '454_right':3}},
                          'General_settings':{'threads':THREADS}}
@@ -176,7 +176,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         # It means thar the adaptor has been removed
         assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
         seq = seqs[2].seq
-        # It means thar the starting word has been removed
+        # It means that the starting word has been removed
         assert  seq.startswith('AAAAG')
         do_analysis(project_settings=settings_path, kind='read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')
@@ -185,7 +185,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         assert exists(original_stats_dir)
         assert exists(join(clean_stats_dir, 'global.diff_qual_distrib.png'))
         assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.dat'))
-
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')

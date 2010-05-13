@@ -69,9 +69,9 @@ def create_project(name, directory=None, configuration=None):
     comments.append('adaptors_file_sanger = /some/adaptors/fasta/file')
     comments.append('adaptors_file_illumina = /some/adaptors/fasta/file')
 
-    comments.append('words_to_remove_sanger = [someword, another_word]')
-    comments.append('words_to_remove_454 = [someword, another_word]')
-    comments.append('words_to_remove_illumina = [someword, another_word]')
+    comments.append('short_adaptors_sanger = [some_word, another_regex]')
+    comments.append('short_adaptors_454 = [some_word, another_regex]')
+    comments.append('short_adaptors_illumina = [some_word, another_regex]')
     config['Cleaning'].comments = {'vector_database':comments}
 
     config['Cleaning']['min_seq_length'] = {}

@@ -53,7 +53,6 @@ class CleanReadsAnalyzer(Analyzer):
         'It returns the pipeline configuration looking at the project settings'
         settings = self._project_settings['Cleaning']
         configuration = {}
-        platforms = ('sanger', '454', 'illumina')
 
         if 'vector_database' in settings:
             configuration['remove_vectors'] = {}
@@ -62,12 +61,19 @@ class CleanReadsAnalyzer(Analyzer):
 
         # adaptors settings
         adaptors_file = None
-        for platform_ in platforms:
-            adaptors_file_ = 'adaptors_file_%s' % platform_
-            if platform == platform_ and adaptors_file_ in settings:
-                adaptors_file = settings[adaptors_file_]
+        adap_param = 'adaptors_file_%s' % platform
+        if adap_param in settings:
+            adaptors_file = settings[adap_param]
         configuration['remove_adaptors'] = {}
         configuration['remove_adaptors']['vectors'] = adaptors_file
+
+        # Words settings
+        words = None
+        word_param = 'short_adaptors_%s' % platform
+        if word_param in settings:
+            words = settings[word_param]
+        configuration['remove_short_adaptors'] = {}
+        configuration['remove_short_adaptors']['words'] = words
 
         #edge_remover
         left, right = None, None
@@ -82,18 +88,6 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['edge_removal'] = {}
         configuration['edge_removal']['left_length'] = left
         configuration['edge_removal']['right_length'] = right
-
-        # Words settings
-        words = None
-        if platform == 'sanger' and 'words_to_remove_sanger' in settings:
-            words = settings['words_to_remove_sanger']
-        elif platform == '454' and 'words_to_remove_454' in settings:
-            words = settings['words_to_remove_454']
-        elif platform == 'illumina' and 'words_to_remove_illumina' in settings:
-            words = settings['words_to_remove_illumina']
-
-        configuration['word_remover'] = {}
-        configuration['word_remover']['words'] = words
 
         # lucy settings.
         lucy_settings = settings['lucy_settings']
@@ -112,9 +106,8 @@ class CleanReadsAnalyzer(Analyzer):
 
         # min length settings
         min_seq_settings = settings['min_seq_length']
-        for platform_ in platforms:
-            if platform == platform_ and platform_ in min_seq_settings:
-                min_length = min_seq_settings[platform_]
+        if platform in min_seq_settings:
+            min_length = min_seq_settings[platform]
 
         configuration['remove_short'] = {}
         configuration['remove_short']['length'] = min_length
@@ -343,4 +336,3 @@ DEFINITIONS = {
          'analyzer': ReadsStatsAnalyzer,
         },
      }
-

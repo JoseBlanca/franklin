@@ -27,7 +27,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_masker_for_polia,
                                     create_masker_for_low_complexity,
                                     create_masker_repeats_by_repeatmasker,
-                                    create_word_remover,
+                                    create_word_striper_by_alignment,
                                     create_edge_stripper)
 
 from franklin.seq.seq_filters import create_length_filter
@@ -104,11 +104,11 @@ edge_remover = {'function':create_edge_stripper,
                   'name': 'edge_removal',
                   'comment': 'Strip given edge lengths. Both sides'}
 # words
-remove_words = {'function'  : create_word_remover,
-              'arguments' : {'words':None},
-              'type'      : 'mapper',
-              'name'      : 'word_remover',
-      'comment'   : 'It removes  the given words in the beginning of a sequence'
+remove_short_adaptors = {'function': create_word_striper_by_alignment,
+                         'arguments' : {'words':None},
+                         'type'      : 'mapper',
+                         'name'      : 'remove_short_adaptors',
+                   'comment'   : 'It removes the given regexs from the sequence'
               }
 
 
@@ -119,12 +119,12 @@ remove_words = {'function'  : create_word_remover,
 SEQPIPELINES = {
     'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
                             remove_vectors, mask_low_complexity,
-                            remove_words, edge_remover,
+                            remove_short_adaptors, edge_remover,
                             filter_short_seqs],
 
     'sanger_without_qual': [remove_vectors, strip_quality_by_n,
-                            mask_low_complexity, remove_words, edge_remover,
-                            filter_short_seqs],
+                            mask_low_complexity, remove_short_adaptors,
+                            edge_remover, filter_short_seqs],
 
     'repeatmasker'       : [mask_repeats, filter_short_seqs],
 
@@ -135,9 +135,9 @@ SEQPIPELINES = {
 
     'mask_dust'          : [mask_polia, mask_low_complexity],
 
-    'word_masker'        : [remove_words, filter_short_seqs]}
+    'word_masker'        : [remove_short_adaptors, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
              mask_polia, mask_low_complexity, mask_repeats,
-             filter_short_seqs, edge_remover, remove_words]
+             filter_short_seqs, edge_remover, remove_short_adaptors]
