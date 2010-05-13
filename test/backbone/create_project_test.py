@@ -43,9 +43,9 @@ ACCCTTCTAGCAGTAGGAATGACTTGACCACCTCCTCTGTGGATTGTAGTAGTAGATGATGGCATCAGCGTGAAGCACCA
 +
 B>>>GGFFFFFFFFFGGGGHHHHHHHHHIIIIIIIIIIIIIIIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGCB;;;;BGFFFFFFF
 @FKU4KFK07IE66H
-ATGAACCGCAAAAGCTTGTATGCTGTATTGCCTTGATTTGGTTTCCAAGATTCTTCCCACATATATGATGATGATGATGATGTTAGGAGAGAGTGTAGCTGGAAACCGAGACTTTGGCTGGAGAAGCA
+ATGAACCGCAAAAGCTTGTATGCTGTATTGCCTTGATTTGGTTTCCAAGATTCTTCCCACATATATGATGATGATGATGATGTTAGGAGAGAGTGTAGCTGGAAACCGAGACTTTGGCTGGAGAAGCATGCGTATGATCATGACAGATAGC
 +
-FFFFFFFFG7777CGFFFFHHHHHHIHHHHHHHHHHHHHHH==?CCFFFFFFFGGCCCGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGFFFFFFFFFFFFFGGGFFFFFFF
+FFFFFFFFG7777CGFFFFHHHHHHIHHHHHHHHHHHHHHH==?CCFFFFFFFGGCCCGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGFFFFFFFFFFFFFGGGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 '''
 READS_ILL = '''@HWI-EAS59:3:1:5:1186#0/1
 TGATACCACTGCTTANTCTGCGTTGNTACCA
@@ -143,7 +143,6 @@ class TestBackbone(unittest.TestCase):
                                                      '454_right':3}},
                          'General_settings':{'threads':THREADS}}
 
-
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=configuration)
@@ -157,7 +156,7 @@ class TestBackbone(unittest.TestCase):
         os.makedirs(adaptors_dir)
         adap_fhand = open(adaptors_path_454, 'w')
         adap_fhand.write('''>smart_5_cds_primer_1
-GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
+GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         adap_fhand.close()
 
         #print original_reads_dir
@@ -177,7 +176,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG''')
         assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
         seq = seqs[2].seq
         # It means that the starting word has been removed
-        assert  seq.startswith('AAAAG')
+        assert  seq.startswith('CAAGATTCTTCCCACAT')
         do_analysis(project_settings=settings_path, kind='read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')
         original_stats_dir = join(original_reads_dir, 'stats')

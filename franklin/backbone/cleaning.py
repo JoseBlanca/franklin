@@ -23,6 +23,7 @@ Created on 15/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, itertools, logging
+from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
@@ -30,6 +31,8 @@ from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqs_in_file
+from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
+from franklin.seq.writers import SequenceWriter
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -49,6 +52,26 @@ class CleanReadsAnalyzer(Analyzer):
             raise ValueError('Unable to guess the cleaning pipeline: %s' %
                              str(file_info))
 
+    @staticmethod
+    def _purge_short_adaptors(adaptors_fpath):
+        '''It returns a file without short adaptors and the list of adaptors
+        removed'''
+        long_adap_fhand = NamedTemporaryFile(delete=False, mode='a')
+        seq_writer = SequenceWriter(long_adap_fhand, file_format='fasta')
+        short_adaptors = []
+        for seq in seqs_in_file(open(adaptors_fpath)):
+            if len(seq) < MIN_LONG_ADAPTOR_LENGTH:
+                short_adaptors.append(str(seq.seq))
+            else:
+                seq_writer.write(seq)
+        if not short_adaptors:
+            #not worth the new file, we remove it
+            long_adap_fhand.close()
+            os.remove(long_adap_fhand.name)
+            return adaptors_fpath, short_adaptors
+        else:
+            return long_adap_fhand.name, short_adaptors
+
     def create_cleaning_configuration(self, platform, library=None):
         'It returns the pipeline configuration looking at the project settings'
         settings = self._project_settings['Cleaning']
@@ -60,18 +83,23 @@ class CleanReadsAnalyzer(Analyzer):
                                                      settings['vector_database']
 
         # adaptors settings
-        adaptors_file = None
+        adaptors_fpath = None
         adap_param = 'adaptors_file_%s' % platform
         if adap_param in settings:
-            adaptors_file = settings[adap_param]
+            adaptors_fpath = settings[adap_param]
+        #we have to remove the short adaptors from the file and treat them
+        #as short adaptors
+        if adaptors_fpath:
+            adaptors_fpath, words = self._purge_short_adaptors(adaptors_fpath)
+        else:
+            words = []
         configuration['remove_adaptors'] = {}
-        configuration['remove_adaptors']['vectors'] = adaptors_file
+        configuration['remove_adaptors']['vectors'] = adaptors_fpath
 
         # Words settings
-        words = None
         word_param = 'short_adaptors_%s' % platform
         if word_param in settings:
-            words = settings[word_param]
+            words.extend(settings[word_param])
         configuration['remove_short_adaptors'] = {}
         configuration['remove_short_adaptors']['words'] = words
 

@@ -38,6 +38,10 @@ from franklin.seq.seq_analysis import match_words
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
+#The adaptors shorter than this length can not be processed by blast or
+#exonerate, they should be processed by the word remover function
+MIN_LONG_ADAPTOR_LENGTH = 15
+
 def create_edge_stripper(left_length=None, right_length=None):
     'It removes num of letters from seq.'
     def edge_stripper(sequence):
@@ -452,17 +456,17 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
-                              'min_length_bp' : 15}],
+                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
                'blast':      [{'kind'         : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
-                              'min_length_bp' : 15}],
+                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
                'blast+':      [{'kind'         : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
-                              'min_length_bp' : 15}]}
+                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}]}
 
     aligner_ = create_runner(tool=aligner, parameters=parameters[aligner])
     parser   = get_alignment_parser(aligner)

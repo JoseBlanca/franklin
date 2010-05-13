@@ -245,11 +245,3 @@ def _parse_b2g_output(annot_fhand):
             annotations[name] = []
         annotations[name].append(go)
     return annotations
-
-
-
-
-
-
-
-
