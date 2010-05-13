@@ -24,7 +24,7 @@ from franklin.seq.seqs import  SeqFeature, SeqWithQuality, Seq
 from Bio.SeqFeature import FeatureLocation, ExactPosition
 from franklin.snv.snv_annotation import SNP, INVARIANT
 from tempfile import NamedTemporaryFile
-from franklin.snv.writers import VariantCallFormatWriter
+from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
 
 class VariantCallFormatWriterTest(unittest.TestCase):
     'VariantCallFormatWrite tests'
@@ -88,8 +88,24 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert '##FILTER=VLB2' in vcf
         assert '1|2:1,1' in vcf
         assert '.:.' in vcf
-        assert 'HVR0.8;VLB1;VLB2;VKS' in vcf
+        assert 'HVR80;VLB1;VLB2;VKS' in vcf
         assert 'AF=0.2,0.5' in vcf
+
+        seq_str = 'ATATATATATATATATATATATATAT' * 50
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
+                             name='AT1G55265.1', features=[snv1, snv2])
+        # test snv_illumina writer using the same seqs
+        fhand = NamedTemporaryFile(mode='a')
+        writer = SnvIlluminaWriter(fhand)
+        writer.write(seq)
+        illumina_snv = open(fhand.name).read()
+        assert 'AT1G55265.1_21,SNP,[A/C/T]TATATATATATA' in illumina_snv
+
+        fhand = NamedTemporaryFile(mode='a')
+        writer = SnvIlluminaWriter(fhand, write_short=True)
+        writer.write(seq)
+        illumina_snv = open(fhand.name).read()
+        assert 'ATATATAT[A/C/T]TATATATATA' in illumina_snv
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
