@@ -162,7 +162,7 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
         pipeline = []
         configuration = {}
         for database in ortholog_databases:
-            step = annotate_orthologs
+            step = copy.deepcopy(annotate_orthologs)
             step['name_in_config'] = database
             #an annotation step for every ortholog database
             pipeline.append(step)
@@ -173,7 +173,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                     'reverse_blast':{'blast':
                                      blasts[input_][database]['reverse_blast']},
                     'species': database}
-                configuration[input_.basename] = {}
+                if input_.basename not in configuration:
+                    configuration[input_.basename] = {}
                 configuration[input_.basename][database] = step_config
 
         return self._run_annotation(pipeline=pipeline,

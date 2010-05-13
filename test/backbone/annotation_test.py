@@ -30,7 +30,7 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 
-THREADS = 2
+THREADS = False
 
 class OrthologTest(unittest.TestCase):
     'It test the ortholog analysis'
@@ -42,12 +42,16 @@ class OrthologTest(unittest.TestCase):
         project_name = 'backbone'
 
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
-                                    'species':'arabidopsis',
-                                    'kind': 'nucl'}},
+                                           'species':'arabidopsis',
+                                           'kind': 'nucl'},
+                          'arabidopsis2':{'path':'/path/to/tair2',
+                                           'species':'arabidopsis2',
+                                           'kind': 'nucl'}},
+
                   'Annotation':{'ortholog_annotation':{'ortholog_databases':
-                                                       ['arabidopsis']}},
-                'General_settings':{'threads':THREADS}
-                 }
+                                            ['arabidopsis', 'arabidopsis2']}},
+                'General_settings':{'threads':THREADS}}
+
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -57,15 +61,25 @@ class OrthologTest(unittest.TestCase):
         # create blast results
         melon_tair_blastdir = join(project_dir, 'annotations', 'blast',
                                    'melon', 'tair')
+        melon_tair2_blastdir = join(project_dir, 'annotations', 'blast',
+                                   'melon', 'tair2')
         os.makedirs(melon_tair_blastdir)
+        os.makedirs(melon_tair2_blastdir)
         tair_melon_blastdir = join(project_dir, 'annotations', 'blast',
                                    'tair', 'melon')
+        tair2_melon_blastdir = join(project_dir, 'annotations', 'blast',
+                                   'tair2', 'melon')
         os.makedirs(tair_melon_blastdir)
+        os.makedirs(tair2_melon_blastdir)
         blast_fname = BACKBONE_BASENAMES['blast_basename'] + '.tblastx.xml'
         shutil.copy(join(DATA_DIR, 'melon_tair.xml'),
                    join(melon_tair_blastdir, blast_fname))
+        shutil.copy(join(DATA_DIR, 'melon_tair.xml'),
+                   join(melon_tair2_blastdir, blast_fname))
         shutil.copy(join(DATA_DIR, 'tair_melon.xml'),
                    join(tair_melon_blastdir, blast_fname))
+        shutil.copy(join(DATA_DIR, 'tair_melon.xml'),
+                   join(tair2_melon_blastdir, blast_fname))
 
         #some melon file to annotate
         input_dir = join(project_dir, BACKBONE_DIRECTORIES['annotation_input'])
@@ -78,7 +92,9 @@ class OrthologTest(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='annotate_orthologs',
                     silent=True)
         repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
-        assert 'arabidopsis-orthologs' in open(repr_fpath).read()
+        repr_ = open(repr_fpath).read()
+        assert 'arabidopsis-orthologs' in repr_
+        assert 'arabidopsis2-orthologs' in repr_
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
@@ -86,6 +102,7 @@ class OrthologTest(unittest.TestCase):
         ort_fpath = join(project_dir, 'annotations', 'result', 'melon.orthologs')
         assert os.path.exists(ort_fpath)
         assert "tair1" in open(ort_fpath).read()
+
         orf_fpath = join(project_dir, 'annotations', 'result', 'melon.orf')
         assert not os.path.exists(orf_fpath)
 
@@ -315,5 +332,5 @@ class OrthologTest(unittest.TestCase):
                     silent=True)
 
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'OrthologTest.test_go_annotation_analysis']
+    #import sys;sys.argv = ['', 'OrthologTest.test_ortholog_annotation_analysis']
     unittest.main()
