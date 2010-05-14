@@ -334,7 +334,7 @@ def create_runner(tool, parameters=None, environment=None):
 
                 logging.warning(print_name + ':' + stderr)
             else:
-                raise RuntimeError('Problem running ' + tool + ': ' + stdout + 
+                raise RuntimeError('Problem running ' + tool + ': ' + stdout +
                                stderr)
 
         # Now we are going to make this list with the files we are going to
@@ -417,15 +417,26 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     else:
         stdout_str, stderr_str = process.communicate(stdin)
     retcode = process.returncode
+
+    if stdout != subprocess.PIPE:
+        stdout.flush()
+        stdout.seek(0)
+    if stderr != subprocess.PIPE:
+        stderr.flush()
+        stderr.seek(0)
+
     if raise_on_error and retcode:
+        if stdout != subprocess.PIPE:
+            stdout_str = stdout.read()
+            stdout.seek(0)
+        if stderr != subprocess.PIPE:
+            stderr_str = stderr.read()
+            stderr.seek(0)
         msg = 'Error running command: %s\n stderr: %s\n stdout: %s' % \
                                                 (' '.join(cmd), stderr_str,
                                                  stdout_str)
         raise RuntimeError(msg)
-    if stdout != subprocess.PIPE:
-        stdout.flush()
-    if stderr != subprocess.PIPE:
-        stderr.flush()
+
     return stdout_str, stderr_str, retcode
 
 def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
@@ -454,6 +465,9 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
 def java_cmd(java_conf):
     'It returns the java -Xmxim thing'
     cmd = ['java']
+    if java_conf is None:
+        return cmd
+
     if 'java_memory' in java_conf and java_conf['java_memory'] is not None:
         cmd.append('-Xmx%im' % int(java_conf['java_memory']))
     return cmd
