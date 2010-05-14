@@ -270,7 +270,8 @@ class WriteAnnotationAnalyzer(Analyzer):
                         'orf':('orf_seq.fasta', 'orf_pep.fasta'),
                         'ssr':('ssr',),
                         'gff':('gff3',),
-                        'orthologs':('orthologs',)}
+                        'orthologs':('orthologs',),}
+                        #'snv_illumina': ('snv_illumina',)}
 
         for seq_path in repr_paths:
             outputs = {}

@@ -49,7 +49,7 @@ from franklin.pipelines.annotation_steps import ANNOT_STEPS
 from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
-from franklin.snv.writers import VariantCallFormatWriter
+from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
 from franklin.utils.misc_utils import DisposableFile, get_num_threads
 
 # Join the pipelines in PIPELINE
@@ -360,6 +360,10 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
     if 'orthologs' in output_type:
         fhand = io_fhands['outputs']['orthologs']
         writers['orthologs'] = OrthologWriter(fhand=fhand)
+
+    if 'snv_illumina' in output_type:
+        fhand = io_fhands['outputs']['snv_illumina']
+        writers['snv_illumina'] = SnvIlluminaWriter(fhand=fhand)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:

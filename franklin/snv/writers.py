@@ -25,8 +25,45 @@ from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
 from franklin.utils.misc_utils import OrderedDict
 
-#http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
 
+class SnvIlluminaWriter(object):
+    'It writes the snv in the illumina genotyper format'
+    def __init__(self, fhand, length=60, write_short=False):
+        'It initiates the class'
+        self.fhand = fhand
+        self.num_features = 0
+        self._length = length
+        self._write_short = write_short
+
+    def write(self, sequence):
+        'It does the real write of the features'
+        seq_name = get_seq_name(sequence)
+
+        for snv in sequence.get_features(kind='snv'):
+            self.num_features += 1
+            location  =  snv.location.start.position
+            reference_allele = snv.qualifiers['reference_allele']
+            snv_name  =  "%s_%d" % (seq_name, location + 1)
+            left_limit  = location - self._length
+            rigth_limit = location + self._length + 1
+            if self._write_short and left_limit < 0:
+                left_limit = 0
+            if self._write_short and rigth_limit > len(sequence):
+                rigth_limit = len(sequence)
+
+
+            seq_left   = sequence[left_limit: location]
+            seq_rigth  = sequence[location + 1: rigth_limit]
+            alleles = [allele[0] for allele in snv.qualifiers['alleles'].keys()]
+            alleles = set(alleles)
+            alleles.add(reference_allele)
+            alleles_str = "[" + "/".join(alleles) + "]"
+            illum_str = '%s,SNP,%s\n' % (snv_name,
+                                     seq_left.seq + alleles_str + seq_rigth.seq)
+            self.fhand.write(illum_str)
+        self.fhand.flush()
+
+#http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
 class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name):
@@ -47,7 +84,7 @@ class VariantCallFormatWriter(object):
         'It writes the header of the vcf file'
         header = self._header
         header.append('##format=VCFv3.3')
-        header.append('##fileDate=%s' % 
+        header.append('##fileDate=%s' %
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
         header.append('##reference=%s' % reference_name)
