@@ -22,7 +22,7 @@ This module provides utilities to run external commands into franklin
 import unittest
 
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
-                                      _which_binary, b2gpipe_runner)
+                                      _which_binary, b2gpipe_runner, call)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
 import os, tempfile
@@ -127,6 +127,63 @@ class RunnerFactorytest(unittest.TestCase):
         os.remove(annot_fpath)
         os.remove(dat_fpath)
 
+class TestCall(unittest.TestCase):
+    'It test call'
+
+    def test_call(self):
+        'Test call'
+        cmd = ['ls', '/@#@#@#@']
+
+        ## When fails
+        #without stdout file. Raise False
+        stdout, stderr, retcode = call(cmd)
+        assert '/@#@#@#@' in stderr
+
+        try:
+            call(cmd, raise_on_error=True)
+            self.fail()
+        except RuntimeError as error:
+            assert '/@#@#@#@' in str(error)
+
+
+        #with stdout file
+        stdout = tempfile.NamedTemporaryFile()
+        stderr = tempfile.NamedTemporaryFile()
+        stdout_str, stderr_str, retcode = call(cmd, stdout=stdout,
+                                               stderr=stderr)
+        assert not stdout_str
+        assert not stderr_str
+
+        assert '/@#@#@#@' in stderr.read()
+        try:
+            call(cmd, stdout=stdout, stderr=stderr, raise_on_error=True)
+            self.fail()
+        except RuntimeError as error:
+            assert '/@#@#@#@' in stderr.read()
+
+
+        ## when it do right
+        cmd = ['ls', '/']
+        #without stdout file.
+        stdout, stderr, retcode = call(cmd)
+        assert 'root'in stdout
+
+        #without stdout file.
+        stdout = tempfile.NamedTemporaryFile()
+        stderr = tempfile.NamedTemporaryFile()
+        stdout_str, stderr_str, retcode = call(cmd, stdout=stdout, stderr=stderr)
+        assert  stdout_str is None
+
+        assert 'root' in stdout.read()
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testiprscan_parse']
+    import sys;sys.argv = ['', 'TestCall.test_call']
     unittest.main()
