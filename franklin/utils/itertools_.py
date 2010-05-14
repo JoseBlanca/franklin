@@ -82,4 +82,3 @@ def _take_sample(iterator, sample_size, num_items_in):
                 counter += 1
             else:
                 break
-

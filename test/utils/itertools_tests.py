@@ -4,7 +4,7 @@ Created on 11/05/2010
 @author: peio
 '''
 import unittest
-from franklin.utils.collections_ import take_sample
+from franklin.utils.itertools_ import take_sample
 
 class TakeSampleTest(unittest.TestCase):
     'tests take sample test'

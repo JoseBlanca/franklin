@@ -30,7 +30,7 @@ import math, re
 from Bio import SeqIO
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from franklin.seq.seqs import SeqWithQuality, Seq
-from franklin.utils.collections_ import take_sample
+from franklin.utils.itertools_ import take_sample
 from franklin.utils.misc_utils import get_fhand
 
 #the translation between our formats and the biopython formats
