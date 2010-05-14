@@ -29,7 +29,7 @@ from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from franklin.statistics import (seq_distrib, general_seq_statistics,
                                  seq_distrib_diff)
-from franklin.seq.readers import guess_seq_file_format
+from franklin.seq.readers import guess_seq_file_format, num_seqs_in_file
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
@@ -234,13 +234,13 @@ class ReadsStatsAnalyzer(Analyzer):
         # stats per seq file. All files together
         if clean_paths:
             clean_fpaths = [path.last_version for path in clean_paths]
-            clean_seqs = self._seqs_in_files(clean_fpaths)
+            clean_seqs = self._seqs_in_files(clean_fpaths, sample_size)
             clean_seqs, clean_seqs2 = itertools.tee(clean_seqs, 2)
         else:
             clean_seqs, clean_seqs2 = None, None
         if original_paths:
             original_fpaths = [path.last_version for path in original_paths]
-            original_seqs = self._seqs_in_files(original_fpaths)
+            original_seqs = self._seqs_in_files(original_fpaths, sample_size)
             original_seqs, original_seqs2 = itertools.tee(original_seqs, 2)
         else:
             original_seqs, original_seqs2 = None, None
@@ -265,12 +265,25 @@ class ReadsStatsAnalyzer(Analyzer):
         'It gets the stats dir for each seqtype'
         return os.path.join(self._get_project_path(),
                              BACKBONE_DIRECTORIES['%s_reads_stats' % seqtype])
+
     @staticmethod
-    def _seqs_in_files(fpaths):
-        'It yields seqrecored from a list of files'
-        for fpath in fpaths:
-            for seq in seqs_in_file(open(fpath)):
-                yield seq
+    def _seqs_in_files(fpaths, sample_size):
+        'It yields SeqRecords from a list of files'
+        if sample_size is None:
+            samples = [None] * len(fpaths)
+        else:
+            #we count the seqs in every file
+            num_seqs = []
+            for fpath in fpaths:
+                num_seqs.append(num_seqs_in_file(open(fpath)))
+            total_seqs = float(sum(num_seqs))
+            #how many seqs to sample for each file?
+            samples = [int(num / total_seqs * sample_size) for num in num_seqs]
+
+        if sample_size is None:
+            for fpath in fpaths:
+                for seq in seqs_in_file(open(fpath), sample_size=samples):
+                    yield seq
 
     def _do_seq_stats(self, seqs, basename, stats_dir, analyses):
         'It performs all kind of stats for a fpath'
