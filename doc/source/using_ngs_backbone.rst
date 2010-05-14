@@ -191,6 +191,11 @@ edge_removal -> illumina_right
 lucy_settings
   A path to a lucy settings file with the splice and vectors files to be used by lucy
 
+min_seq_length
+  The minimum sequence length allowable after the cleaning is done. All sequences shorter than these values will be discarded. This is a subsection with one value for each platform 454, sanger and illumina.
+
+
+
 lucy settings
 _____________
 
@@ -290,3 +295,11 @@ Running the analysis
 ____________________
 
 The corresponding ngs_backbone is realign_bam.
+
+
+
+Parallel operation
+==================
+
+Running ngs_backbone with multiple subprocesses is as easy as setting the configuration option threads to True. ngs_backbone will run will as many subprocesses as cpu cores are found in the computer. Also the threads option can be set to an integer and ngs_backbone will run with as many subprocess as indicated.
+

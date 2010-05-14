@@ -18,7 +18,7 @@ An application like that in a fast moving field, as the NGS is, has the risk of 
 Installation
 ============
 
-To install ngs_backbone python 2.6 and Biopython_ are required. python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
+To install ngs_backbone python 2.6 is required. Also you need the following python libraries: Biopython_, psubprocess_ and pysam_. python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
 
   $ python setup.py install
 
@@ -47,6 +47,7 @@ analysis                       external tools required
 .. _samtools: http://samtools.sourceforge.net/
 .. _picard: http://picard.sourceforge.net/index.shtml
 .. _pysam: http://code.google.com/p/pysam/
+.. _psubprocess: http://bioinf.comav.upv.es/psubprocess/
 .. _GATK: http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit
 .. _Biopython: http://biopython.org/wiki/Main_Page
 .. _lucy: http://lucy.sourceforge.net/

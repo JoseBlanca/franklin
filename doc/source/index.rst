@@ -10,6 +10,8 @@ ngs_backbone
 ngs_backbone is a bioinformatic application created to work on sequence analysis by using NGS (Next Generation Sequencing)  and sanger sequences. It is capable of cleaning reads, do de novo assembly or mapping against a reference and annotate SNPs, SSRs, ORFs, GO terms and sequence descriptions.
 Our laboratory is focused on transcriptomic analysis, so the tool has been used and tested on transcriptomes. Some analyses will be useful for genome analysis, but since our work deals mainly with transcriptomes design tradeoffs in ngs_backbone reflect this.
 
+ngs_backbone can run in parallel using single node multicore systems and computer clusters.
+
 For the analyses, in most cases, ngs_backbone uses external software like: mira_, bwa_, samtools_, picard_, etc.
 
 The application works on Linux so experience with that operating system is required when using it.
