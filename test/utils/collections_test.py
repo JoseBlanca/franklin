@@ -4,25 +4,7 @@ Created on 11/05/2010
 @author: peio
 '''
 import unittest
-from franklin.utils.collections_ import FileCachedList, take_sample
-
-class FileCachedListTest(unittest.TestCase):
-    'It tests a list like class cached on a file'
-    @staticmethod
-    def test_filecachedlist():
-        'It test the functionality of this list like class'
-        #with ints
-        clist = FileCachedList(type_=int)
-        clist.append(0)
-        clist.append(1)
-        for index, item in enumerate(clist.items()):
-            assert item == index
-        #with floats
-        clist = FileCachedList(type_=float)
-        clist.append(0)
-        clist.append(1)
-        for index, item in enumerate(clist.items()):
-            assert item == float(index)
+from franklin.utils.collections_ import take_sample
 
 class TakeSampleTest(unittest.TestCase):
     'tests take sample test'

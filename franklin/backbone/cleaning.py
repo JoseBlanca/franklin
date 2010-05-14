@@ -323,8 +323,7 @@ class ReadsStatsAnalyzer(Analyzer):
             distrib_fhand = open(distrib_fpath, 'w')
 
             seq_distrib(sequences=seqs, kind=analysis,
-                        distrib_fhand=distrib_fhand, plot_fhand=plot_fhand,
-                        low_memory=True)
+                        distrib_fhand=distrib_fhand, plot_fhand=plot_fhand)
         except TypeError:
             plot_fhand.close()
             distrib_fhand.close()
