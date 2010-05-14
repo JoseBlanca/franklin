@@ -16,6 +16,7 @@
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+from franklin.utils.itertools_ import make_cache
 
 PLOT_LABELS = {'masked_seq_distrib' :{
                                  'title': 'Masked sequence length distribution',
@@ -122,6 +123,11 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
     values1 = values_functs[kind](seqs1)
     values2 = values_functs[kind](seqs2)
 
+    #we cache the values because they're hard to get, it would be wise to
+    #check the performance
+    values1 = make_cache(values1)
+    values2 = make_cache(values2)
+
     #the range
     vals1, values1 = itertools.tee(values1)
     vals2, values2 = itertools.tee(values2)
@@ -181,8 +187,10 @@ def general_seq_statistics(sequences):
     lengths   = _sequence_lengths(seqs)
     qualities = _sequence_qualitities(sequences)
 
-    #it would be cool to cache the lengths
-
+    #we cache the values because they're hard to get, it would be wise to
+    #check the performance
+    lengths   = make_cache(lengths)
+    qualities = make_cache(qualities)
 
     lens, lengths = itertools.tee(lengths)
     n_seqs = 0
