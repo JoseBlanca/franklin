@@ -23,6 +23,9 @@ Created on 04/09/2009
 from __future__  import division
 
 import itertools, random
+import cPickle as pickle
+
+from tempfile import TemporaryFile
 
 def list_consecutive_pairs_iter(items):
     'Given a list it yields all consecutive pairs (1,2, 2,3, 3,4)'
@@ -82,3 +85,21 @@ def _take_sample(iterator, sample_size, num_items_in):
                 counter += 1
             else:
                 break
+
+def make_cache(iterator):
+    'Given an iterator it makes a new iterator that feeds from a cache'
+
+    cache_fhand = TemporaryFile(suffix='.cache')
+    #we save the old iterator in the cache
+    for item in iterator:
+        pickle.dump(item, cache_fhand)
+
+    #now we create the generator that feeds from the cache
+    cache_fhand.seek(0)
+    while True:
+        try:
+            yield pickle.load(cache_fhand)
+        except EOFError:
+            break
+
+    cache_fhand.close() #we remove the temporary cache
