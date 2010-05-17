@@ -144,3 +144,19 @@ class store():
     def __iter__(self):
         'Part of the iterator protocol'
         return self
+
+def classify(items, classifier):
+    '''Given an iterator and a classifier function it returns several iterators
+
+    It returns a dict. They keys will be the values returned by the classifier
+    when is applied to each item.
+    The items should be pickable and the values returned by the classifier
+    hashable.
+    '''
+    classifications = {}
+    for item in items:
+        kind = classifier(item)
+        if kind not in classifications:
+            classifications[kind] = store()
+        classifications[kind].append(item)
+    return classifications

@@ -4,7 +4,7 @@ Created on 11/05/2010
 @author: peio
 '''
 import unittest
-from franklin.utils.itertools_ import take_sample, make_cache, store
+from franklin.utils.itertools_ import take_sample, make_cache, store, classify
 
 class TakeSampleTest(unittest.TestCase):
     'tests take sample test'
@@ -23,7 +23,7 @@ class TakeSampleTest(unittest.TestCase):
                 assert sample_size ==  len(list(a))
 
 class MakeCacheTest(unittest.TestCase):
-    'It test the cache for iterables'
+    'It tests the cache for iterables'
     @staticmethod
     def test_make_cache():
         'It test the cache for iterables'
@@ -32,7 +32,7 @@ class MakeCacheTest(unittest.TestCase):
         assert list(items) == item_list
 
 class StoreTest(unittest.TestCase):
-    'It test the store for iterables'
+    'It tests the store for iterables'
     @staticmethod
     def test_store():
         'It test the store for iterables'
@@ -40,6 +40,16 @@ class StoreTest(unittest.TestCase):
         storage = store()
         storage.extend(item_list)
         assert list(storage) == item_list
+
+class ClassifierTest(unittest.TestCase):
+    'It tests the classifier function'
+    @staticmethod
+    def test_classifier():
+        'It tests the classifier function'
+        item_list = [1, 0.5, 2, .75]
+        classification = classify(item_list, lambda x: type(x).__name__)
+        assert list(classification['int']) == [1, 2]
+        assert list(classification['float']) == [0.5, 0.75]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
