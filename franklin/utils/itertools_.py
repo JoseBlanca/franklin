@@ -21,6 +21,7 @@ Created on 04/09/2009
 
 #import pysparse
 from __future__  import division
+import tempfile
 
 import itertools, random
 import cPickle as pickle
@@ -103,3 +104,43 @@ def make_cache(iterator):
             break
 
     cache_fhand.close() #we remove the temporary cache
+
+class store():
+    '''It stores pickable elements for future use.
+
+    Similar to a queue but once you ask for the first element you can add no
+    more.
+    '''
+    def __init__(self):
+        'It inits the store'
+        self._cache_fhand = tempfile.TemporaryFile()
+        self._lock = False
+
+    def append(self, item):
+        'It adds one item to the store'
+        if not self._lock:
+            pickle.dump(item, self._cache_fhand)
+        else:
+            raise RuntimeError('The store is locked')
+
+    def extend(self, items):
+        'It adds the items to the store'
+        if not self._lock:
+            for item in items:
+                self.append(item)
+        else:
+            raise RuntimeError('The store is locked')
+
+    def next(self):
+        'It returns one item'
+        if not self._lock:
+            self._lock = True
+            self._cache_fhand.seek(0)
+        try:
+            return pickle.load(self._cache_fhand)
+        except EOFError:
+            raise StopIteration
+
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self
