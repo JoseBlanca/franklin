@@ -18,7 +18,7 @@ An application like that in a fast moving field, as the NGS is, has the risk of 
 Installation
 ============
 
-To install ngs_backbone python 2.6 is required. Also you need the following python libraries: Biopython_, psubprocess_ and pysam_. python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
+To install ngs_backbone python 2.6 is required. Also you need the following python libraries: Biopython_, psubprocess_, pysam_ and configobj_ . python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
 
   $ python setup.py install
 
@@ -59,4 +59,5 @@ analysis                       external tools required
 .. _ESTScan: http://estscan.sourceforge.net/
 .. _emboss: http://emboss.sourceforge.net/
 .. _blast2go: http://www.blast2go.org/
+.. _configobj: http://pypi.python.org/pypi/configobj/
 
