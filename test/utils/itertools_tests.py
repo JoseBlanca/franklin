@@ -4,7 +4,8 @@ Created on 11/05/2010
 @author: peio
 '''
 import unittest
-from franklin.utils.itertools_ import take_sample, make_cache, store, classify
+from franklin.utils.itertools_ import (take_sample, make_cache, store, classify,
+                                       ungroup)
 
 class TakeSampleTest(unittest.TestCase):
     'tests take sample test'
@@ -50,6 +51,15 @@ class ClassifierTest(unittest.TestCase):
         classification = classify(item_list, lambda x: type(x).__name__)
         assert list(classification['int']) == [1, 2]
         assert list(classification['float']) == [0.5, 0.75]
+
+class UngroupTest(unittest.TestCase):
+    'It tests the ungorup generator'
+    @staticmethod
+    def test_ungroup():
+        'It tests the ungroup generator'
+        items = [{'a': 1, 'b':2}, {'a':2}, {'c':3}]
+        items = list(ungroup(items, lambda x: x.items()))
+        assert items == [('a', 1), ('b', 2), ('a', 2), ('c', 3)]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

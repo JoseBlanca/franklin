@@ -160,3 +160,13 @@ def classify(items, classifier):
             classifications[kind] = store()
         classifications[kind].append(item)
     return classifications
+
+def ungroup(items, ungrouper):
+    '''Similar to map, but the ungrouper returns an iterable
+
+    All items returned by the ungrouper will be added to the generator.
+    '''
+    for item in items:
+        subitems = ungrouper(item)
+        for subitem in subitems:
+            yield subitem
