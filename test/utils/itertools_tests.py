@@ -47,10 +47,11 @@ class ClassifierTest(unittest.TestCase):
     @staticmethod
     def test_classifier():
         'It tests the classifier function'
-        item_list = [1, 0.5, 2, .75]
+        item_list = [1, 0.5, 2, .75, 'a']
         classification = classify(item_list, lambda x: type(x).__name__)
         assert list(classification['int']) == [1, 2]
         assert list(classification['float']) == [0.5, 0.75]
+        assert list(classification['str']) == ['a']
 
 class UngroupTest(unittest.TestCase):
     'It tests the ungorup generator'
