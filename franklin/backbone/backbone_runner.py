@@ -30,8 +30,11 @@ from franklin.backbone.annotation import DEFINITIONS as annot_defs
 from franklin.backbone.cleaning import DEFINITIONS as clean_defs
 from franklin.backbone.assembling import DEFINITIONS as assembly_defs
 from franklin.backbone.mapping import DEFINITIONS as mapp_defs
+from franklin.backbone.create_project import (validate_configuration,
+                                              make_config_spec)
 
 DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs]
+BACKBONESPEC = ''
 
 def get_analysis_especifications():
     'It groups all the especification'
@@ -68,7 +71,11 @@ def do_analysis(kind, project_settings=None, analysis_config=None, silent=False)
     if not analysis_config:
         analysis_config = {}
 
-    settings = ConfigObj(project_settings, unrepr=True)
+    config_spec = make_config_spec()
+    settings = ConfigObj(project_settings, configspec=config_spec, unrepr=True)
+    #settings = validate_configuration(settings)
+
+
     specifications = get_analysis_especifications()
 
 

@@ -25,10 +25,13 @@ from os.path import join, exists
 from configobj import ConfigObj
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
-from franklin.backbone.create_project import create_project
+from franklin.backbone.create_project import (create_project,
+                                              is_integer_none_or_true)
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
+from validate import (Validator, ValidateError, VdtTypeError, VdtValueError,
+                      VdtValueTooSmallError, VdtValueTooBigError)
 
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAATAGTCAGCATGCATGATTAGGCTAAGCCGTAAGCATAGCATGACCCCATTGGCAAAGCTAGCATGATACGACATCATTATAGCGAGAGACGCATATCGAGAATGAGCGATCAGCACATGTCAGCGAGCTACTGACTATCATATATAGCGCAGAGACGACTAGCATCGAT
@@ -72,7 +75,7 @@ GATGGATCCCAAGTTNTTGAGGAACNAGAGG
 +
 BBA?;BBBBBA3AB=%=BBB@A=A=%<><@?
 '''
-THREADS = 2
+THREADS = 3
 
 class TestBackbone(unittest.TestCase):
     'It tests the backbone'
@@ -213,6 +216,20 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
                     kind='set_assembly_as_reference')
         os.chdir('/tmp')
         test_dir.close()
+
+class TestValidations(unittest.TestCase):
+    'test validation functions'
+    def test_is_interger_or_none(self):
+        'test is_integer_or_none'
+        value = None
+        assert is_integer_none_or_true(value) == value
+
+        value = False
+        assert is_integer_none_or_true(value) == value
+
+        value = 2
+        assert is_integer_none_or_true(value, min=1) == value
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']

@@ -86,10 +86,9 @@ class CleanReadsAnalyzer(Analyzer):
                                                      settings['vector_database']
 
         # adaptors settings
-        adaptors_fpath = None
         adap_param = 'adaptors_file_%s' % platform
-        if adap_param in settings:
-            adaptors_fpath = settings[adap_param]
+        adaptors_fpath = settings[adap_param]
+
         #we have to remove the short adaptors from the file and treat them
         #as short adaptors
         if adaptors_fpath:
@@ -101,7 +100,7 @@ class CleanReadsAnalyzer(Analyzer):
 
         # Words settings
         word_param = 'short_adaptors_%s' % platform
-        if word_param in settings:
+        if settings[word_param] is not None:
             words.extend(settings[word_param])
         configuration['remove_short_adaptors'] = {}
         configuration['remove_short_adaptors']['words'] = words
