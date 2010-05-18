@@ -74,7 +74,6 @@ def _check_blast(blast, expected):
 
 class BlastParserTest(unittest.TestCase):
     'It test the blast parser'
-
     @staticmethod
     def test_blast_parser():
         'It test the blast parser'
@@ -116,7 +115,8 @@ class BlastParserTest(unittest.TestCase):
 
         #with the subject id given in the xml blast
         expected_results = [
-            {'query':{'name':'cCL1Contig2', 'description':'<unknown description>',
+            {'query':{'name':'cCL1Contig2',
+                      'description':'<unknown description>',
                       'length':1924}},{}, {}, {}]
         parser = BlastParser(fhand=blast_file)
         for index, blast in enumerate(parser):
@@ -141,14 +141,9 @@ class BlastParserTest(unittest.TestCase):
         filt_b = FilteredAlignmentResults(match_filters=filters, results=blasts)
         try:
             filt_b.next()
-            self.fail
+            self.fail()
         except StopIteration:
             pass
-        #match_summary = _summarize_matches(filt_b)
-        #_check_match_summary(match_summary, expected)
-#        match_summary = _summarize_matches(parser)
-#        print match_summary
-
 
 def _summarize_matches(parser):
     '''Given a alignment result parser it returns a dict with the matches for
@@ -195,16 +190,16 @@ class ExonerateParserTest(unittest.TestCase):
                   'scores':{'score':136},
                   'start':0,
                   'end':29,
-                  'match_parts':[{'query_start':0, 'query_end':29,
+                  'match_parts':[{'query_start':0, 'query_end':28,
                                   'query_strand':1,
                                   'subject_start':5,
-                                  'subject_end':34,
+                                  'subject_end':33,
                                   'subject_strand':1,
                                   'scores':{'score':135, 'similarity':95}},
-                                  {'query_start':27, 'query_end':54,
+                                  {'query_start':27, 'query_end':53,
                                   'query_strand':1,
                                   'subject_start':5,
-                                  'subject_end':32,
+                                  'subject_end':31,
                                   'subject_strand':1,
                                   'scores':{'score':136, 'similarity':95}},
                                   ]}],
@@ -216,9 +211,6 @@ class ExonerateParserTest(unittest.TestCase):
             _check_blast(exonerate, expected_results[index])
             n_exonerates += 1
         assert n_exonerates == 2
-
-
-
 
 class AlignmentSearchResultFilterTest(unittest.TestCase):
     'It test that we can filter out matches from the blast or ssaha2 results'
@@ -377,7 +369,6 @@ class ResultFilterTests(unittest.TestCase):
         filtered_blasts = FilteredAlignmentResults(match_filters=filters,
                                                    results=blasts)
         assert len(list(filtered_blasts)) == 0
-
 
 class IncompatibleLengthTest(unittest.TestCase):
     'It checks that we calculate the incompatible length ok'
@@ -686,8 +677,6 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
                                                     'd_incompatibility'],
                                                 filter_same_query_subject=False)
         assert scores == [[90.0, 80.0], [16.0, 16.0]]
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']
