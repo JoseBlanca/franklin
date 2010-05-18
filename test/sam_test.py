@@ -21,7 +21,7 @@ Created on 05/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from tempfile import NamedTemporaryFile
-import unittest, os
+import unittest, os, pysam
 
 from franklin.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
@@ -29,8 +29,9 @@ from StringIO import StringIO
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
-                          calculate_bam_coverage_data,
-                          generate_bam_mapping_quality_data)
+                          _calculate_bam_coverage_data,
+                          _generate_bam_mapping_quality_data,
+                          bam_distribs, create_bam_index)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -175,32 +176,55 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         realign_bam(bam_path, reference_path, out_bam.name)
         out_bam.close()
 
+SAM = '''@SQ\tSN:SGN-U576692\tLN:1714
+@SQ\tSN:SGN-U572743\tLN:833
+@RG\tID:g1\tLB:g1\tSM:g1\tPL:454
+@RG\tID:g2\tLB:g2\tSM:g2\tPL:illumina
+SGN-U572743\t0\tSGN-U572743\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g2
+SGN-E221402\t0\tSGN-U572743\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
+SGN-E221403\t0\tSGN-U572743\t1416\t208\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g2
+SGN-E221404\t0\tSGN-U572743\t1416\t210\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g2
+SGN-E221404\t0\tSGN-U576692\t1416\t167\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g2
+SGN-E221405\t0\tSGN-U576692\t1416\t304\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
+SGN-E221406\t0\tSGN-U576692\t1416\t100\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
+'''
 class SamStatsTest(unittest.TestCase):
     'Tests sam stat calculators'
     @staticmethod
     def test_basic_stats():
         'It tests bam coverage'
         sam = NamedTemporaryFile(suffix='.sam')
-        sam.write('''@SQ\tSN:SGN-U576692\tLN:1714
-@SQ	SN:SGN-U572743\tLN:833
-@RG	ID:g1	LB:g1	SM:g1
-@RG	ID:g2	LB:g2	SM:g2
-SGN-E221403	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT	558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7	AS:i:160	XS:i:0	XF:i:3	XE:i:4	XN:i:0	RG:Z:g2
-SGN-E221402\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
-SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA	999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ	AS:i:250	XS:i:0	XF:i:0	XE:i:7	XN:i:0	RG:Z:g1
-''')
+        sam.write(SAM)
+
         sam.flush()
         bam_fhand = NamedTemporaryFile()
         sam2bam(sam.name, bam_fhand.name)
 
-        data = list(calculate_bam_coverage_data(bam_fhand))
-        assert data[0] == {'g2': 1, 'g1': 1}
-        assert data[-1] == {'g1': 1}
+        create_bam_index(bam_fpath=bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, 'rb')
 
-        bam_fhand.seek(0)
-        data = list(generate_bam_mapping_quality_data(bam_fhand))
-        assert data == [('g2', 207), ('g1', 207), ('g1', 226)]
+        data = list(_calculate_bam_coverage_data(bam))
+        assert data[0] == {'g2': 1, 'g1': 2}
+        assert data[-1] == {'g2': 3, 'g1': 1}
+
+        data = list(_generate_bam_mapping_quality_data(bam))
+        assert data == [('g2', 167), ('g1', 48), ('g1', 100)]
+
+    @staticmethod
+    def test_bam_distribs():
+        'test bam coverage distrib'
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+
+        bam_distribs(bam_fhand, 'coverage')#, basename='test1')
+        bam_distribs(bam_fhand, 'mapq')#, basename='test1')
+
+
 
 if	__name__	==	"__main__":
-    #import	sys;sys.argv	=	['',	'SamStatsTest.test_basic_stats']
+    #import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
+    import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
     unittest.main()

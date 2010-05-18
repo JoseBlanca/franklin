@@ -23,7 +23,9 @@ Created on 29/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from configobj import ConfigObj
+from configobj import ConfigObj, flatten_errors
+from validate import (Validator, ValidateError, VdtTypeError, VdtValueError,
+                      VdtValueTooSmallError, VdtValueTooBigError)
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
 def create_project(name, directory=None, configuration=None):
@@ -45,85 +47,100 @@ def create_project(name, directory=None, configuration=None):
     config_data = os.path.join(project_path,
                                BACKBONE_DIRECTORIES['external_software_config'])
 
-    config = ConfigObj(unrepr=True)
+    config = make_config(project_path, name, config_data)
     config.filename = os.path.join(settings_path)
+
+    #overwrite with the configuration given
+    for section, config_info in configuration.items():
+        for key, value in config_info.items():
+            if not section in config:
+                config[section] = {}
+            config[section][key] = value
+
+    # Validate Config
+    validate_configuration(config)
+    config.write()
+
+    return settings_path
+
+def validate_configuration(config, copy=True):
+    'It validates the configuration'
+    validator = Validator()
+    #add function to validate some options
+    validator.functions['integer_none_or_bool'] = is_integer_none_or_bool
+    validator.functions['integer_or_none'] = is_integer_or_none
+    validator.functions['string_or_none'] = is_string_or_none
+    validator.functions['list_or_none'] = is_list_or_none
+    result = config.validate(validator, copy=copy)
+    errors = []
+    if result != True:
+        for (section_list, key, _) in flatten_errors(config, result):
+            if key is not None:
+                error_msg = 'The "%s" key in the section "%s" failed validation' % (key, ', '.join(section_list))
+            else:
+                error_msg = 'The following section was missing:%s ' % ', '.join(section_list)
+            errors.append(error_msg)
+        raise ValidateError('Check following error:\n %s' % '\n'.join(errors))
+    else:
+        config.write
+
+def is_string_or_none(value):
+    'This function validates the value and looks if it is an string or a None'
+    kind = type(value)
+    if  kind not in (type('str'), type(None)):
+        raise VdtTypeError(value)
+    return value
+
+def is_list_or_none(value, min=None, max=None):
+    'This function validates the value and looks if it is an list or a None'
+    kind = type(value)
+    if  kind not in (type([1]), type(None)):
+        raise VdtTypeError(value)
+    return value
+
+def is_integer_none_or_bool(value, min=None, max=None):
+    '''This function validates the value and looks if it is an integer a None or
+    True'''
+
+    kind = type(value)
+    if kind not in (type(1), type(None), type(True)):
+        raise VdtTypeError(value)
+
+    if type(value) == type(1):
+        if min is not None and value < int(min):
+            raise VdtValueTooSmallError(value)
+        if max is not None and value >int(max):
+            raise VdtValueTooBigError(value)
+    return value
+
+def is_integer_or_none(value, min=None, max=None):
+    '''This function validates the value and looks if it is an integer a None'''
+    kind = type(value)
+    if kind not in (type(1), type(None)):
+        raise VdtTypeError(value)
+    if isinstance(value, int):
+        if min is not None and value < int(min):
+            raise VdtValueTooSmallError(value)
+        if max is not None and value >int(max):
+            raise VdtValueTooBigError(value)
+    return value
+
+
+def make_config(project_path, name, config_data):
+    'It creates the configobj'
+
+    config_spec = make_config_spec()
+
+    config = ConfigObj(configspec=config_spec, unrepr=True)
 
     config['General_settings'] = {}
     config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
-    config['General_settings']['num_threads'] = None
-
-    config['Other_settings'] = {}
-    config['Other_settings']['default_sanger_quality'] = 20
-    config['Other_settings']['java_memory'] = 2048
-
-    config['Read_stats'] = {}
-    config['Read_stats']['sampling_size'] = 1000
 
     config['Cleaning'] = {}
-
-    config['Cleaning']['vector_database'] = 'UniVec'
-    comments = []
-    comments.append('adaptors_file_454 = /some/adaptors/fasta/file')
-    comments.append('adaptors_file_sanger = /some/adaptors/fasta/file')
-    comments.append('adaptors_file_illumina = /some/adaptors/fasta/file')
-
-    comments.append('short_adaptors_sanger = [some_word, another_regex]')
-    comments.append('short_adaptors_454 = [some_word, another_regex]')
-    comments.append('short_adaptors_illumina = [some_word, another_regex]')
-    config['Cleaning'].comments = {'vector_database':comments}
-
-    config['Cleaning']['min_seq_length'] = {}
-    config['Cleaning']['min_seq_length']['454'] = 100
-    config['Cleaning']['min_seq_length']['sanger'] = 100
-    config['Cleaning']['min_seq_length']['illumina'] = 22
-
-    config['Cleaning']['edge_removal'] = {}
-    config['Cleaning']['edge_removal']['454_left'] = None
-    config['Cleaning']['edge_removal']['454_right'] = None
-    config['Cleaning']['edge_removal']['sanger_left'] = None
-    config['Cleaning']['edge_removal']['sanger_right'] = None
-    config['Cleaning']['edge_removal']['illumina_left'] = None
-    config['Cleaning']['edge_removal']['illumina_right'] = None
-
     lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
     config['Cleaning']['lucy_settings'] = lucy_settings
-
-    config['Mira'] = {}
-    config['Mira']['job_options'] = ['denovo', 'est']
-    config['Mira']['general_settings'] = ['-AS:sd=1']
-    config['Mira']['454_settings'] = ['-LR:mxti=no', '-CO:rodirs=5',
-                                         '-AL:mrs=80',
-                                         '-OUT:sssip=0:stsip=0']
-    config['Mira']['sanger_settings'] = ['-AS:epoq=no', '-AS:bdq=30',
-                                         '-CO:rodirs=5', '-AL:mrs=80',
-                                         '-OUT:sssip=0:stsip=0']
-
-    config['Mappers'] = {}
-    config['Mappers']['mapper_for_454'] = 'bwa'
-    config['Mappers']['mapper_for_illumina'] = 'bwa'
-    config['Mappers']['mapper_for_solid'] = 'bwa'
-    config['Mappers']['mapper_for_sanger'] = 'bwa'
-
-    config['Sam_processing'] = {}
-    config['Sam_processing']['add_default_qualities'] = True
-
-    config['Annotation'] = {}
-    config['Annotation']['description_annotation'] = {}
-    config['Annotation']['description_annotation']['description_databases'] = ['somedb']
-    config['Annotation']['ortholog_annotation'] = {}
-    config['Annotation']['ortholog_annotation']['ortholog_databases'] = ['somedb']
-    config['Annotation']['Cdna_intron_annotation'] = {}
-    config['Annotation']['Cdna_intron_annotation']['genomic_db'] = 'path_to_blastdb'
-    config['Annotation']['Cdna_intron_annotation']['genomic_seqs'] = 'path_to_seqs'
-    config['Annotation']['orf_annotation'] = {}
-    config['Annotation']['orf_annotation']['estscan_matrix'] = 'path to estscan matrix'
-    config['Annotation']['go_annotation'] = {}
-    config['Annotation']['go_annotation']['blast_database'] = 'nr'
-    config['Annotation']['go_annotation']['java_memory'] = 2048
-    config['Annotation']['go_annotation']['create_dat_file'] = False
-
 
     config['blast'] = {}
     config['blast']['nr'] = {}
@@ -134,14 +151,6 @@ def create_project(name, directory=None, configuration=None):
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
 
-    config['Snvs'] = {}
-    config['Snvs']['edge_removal'] = {}
-    config['Snvs']['edge_removal']['454_left'] = None
-    config['Snvs']['edge_removal']['454_right'] = None
-    config['Snvs']['edge_removal']['sanger_left'] = None
-    config['Snvs']['edge_removal']['sanger_right'] = None
-    config['Snvs']['edge_removal']['illumina_left'] = None
-    config['Snvs']['edge_removal']['illumina_right'] = None
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}
@@ -214,14 +223,118 @@ def create_project(name, directory=None, configuration=None):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
-    #overwrite with the configuration given
-    outputs = ['vcf']
-    for section, config_info in configuration.items():
-        for key, value in config_info.items():
-            if not section in config:
-                config[section] = {}
-            config[section][key] = value
+    return config
 
-    config.write()
+def make_config_spec():
+    'It creates the backbone_config_spec '
 
-    return settings_path
+    cfg ='''
+    ['General_settings']
+        tmpdir       = string
+        project_name = string
+        project_path = string
+        threads      = integer_none_or_bool(min=1, default=None)
+
+    ['Other_settings']
+        default_sanger_quality = integer(default=20)
+        java_memory            = integer(default=1024)
+        picard_path            = string_or_none(default=None)
+        gatk_path              = string_or_none(default=None)
+
+    # Sample size to make stats
+    ['Read_stats']
+        sampling_size = integer(min=0, max=3000, default=1000)
+
+    ['Cleaning']
+
+        adaptors_file_454 = string_or_none(default=None)
+        adaptors_file_sanger = string_or_none(default=None)
+        adaptors_file_illumina = string_or_none(default=None)
+
+        short_adaptors_sanger = list_or_none(default=None)
+        short_adaptors_454 = list_or_none(default=None)
+        short_adaptors_illumina = list_or_none(default=None)
+
+        vector_database = string(default='UniVec')
+        # Minimun seq length before removing the seq in the cleaning step
+        [['min_seq_length']]
+            454      = integer(min=0, max=400 ,default=100)
+            sanger   = integer(min=0, max=400, default=100)
+            illumina = integer(min=0, default=22)
+
+        # Nucleotides to remove for each edge in each platform
+        [['edge_removal']]
+            454_left       = integer_or_none(default=None)
+            454_right      = integer_or_none(default=None)
+            sanger_left    = integer_or_none(default=None)
+            sanger_right   = integer_or_none(default=None)
+            illumina_left  = integer_or_none(default=None)
+            illumina_right = integer_or_none(default=None)
+
+    # Mira configuration.
+    ['Mira']
+        job_options = string_list(default=list('denovo', 'est'))
+        general_settings = string_list(default=list('-AS:sd=1'))
+        454_settings     = string_list(default=list("-LR:mxti=no", "-CO:rodirs=5", "-AL:mrs=80", "-OUT:sssip=0:stsip=0"))
+        sanger_settings  = string_list(default=list('-AS:epoq=no', '-AS:bdq=30', '-CO:rodirs=5', '-AL:mrs=80', '-OUT:sssip=0:stsip=0'))
+
+
+    ['Mappers']
+        mapper_for_454 = string(default=bwa)
+        mapper_for_illumina = string(default=bwa)
+        mapper_for_solid = string(default=bwa)
+        mapper_for_sanger = string(default=bwa)
+
+    ['Sam_processing']
+        add_default_qualities = boolean(default=True)
+
+    ['Annotation']
+        [['description_annotation']]
+            # List of databases to use form description annotation.
+            # This databases must be previously defined in blast section
+            description_databases = string_list(default=list('somedb'))
+        [['ortholog_annotation']]
+            # List ofdatabses to look form orthoglogs
+            # This databases must be previously defined in blast section
+            ortholog_databases =  string_list(default=list('somedb'))
+        [['Cdna_intron_annotation']]
+            # Path to the genomic seqs
+            genomic_seqs = string(default='path_to_seqs')
+            genomic_db = string_or_none(default =None)
+
+        [['orf_annotation']]
+            estscan_matrix = string(default='path to estscan matrix')
+        [['go_annotation']]
+            blast_database = string(default='nr')
+            java_memory = integer(default=2048)
+            create_dat_file = boolean(default=False)
+            prop_fpath = string_or_none(default=None)
+
+    ['blast']
+        # Add as many blast databases as you need. You only need to add the
+        # path and the species of the databases
+        [[__many__]]
+            path    = string(default="Path to database")
+            species = string(default='species')
+
+
+    ['Snvs']
+        min_quality = integer(default=45)
+        min_mapq    = integer(default=15)
+        min_num_allele =  integer(default=1)
+        [['edge_removal']]
+            454_left       = integer_or_none(default=None)
+            454_right      = integer_or_none(default=None)
+            sanger_left    = integer_or_none(default=None)
+            sanger_right   = integer_or_none(default=None)
+            illumina_left  = integer_or_none(default=None)
+            illumina_right = integer_or_none(default=None)
+
+
+'''
+
+    cfg = cfg.splitlines()
+    config_spec = ConfigObj(cfg, list_values=False,_inspec=True)
+    return config_spec
+
+

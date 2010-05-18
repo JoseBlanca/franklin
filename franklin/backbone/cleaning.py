@@ -80,16 +80,13 @@ class CleanReadsAnalyzer(Analyzer):
         settings = self._project_settings['Cleaning']
         configuration = {}
 
-        if 'vector_database' in settings:
-            configuration['remove_vectors'] = {}
-            configuration['remove_vectors']['vectors'] = \
-                                                     settings['vector_database']
+        configuration['remove_vectors'] = {}
+        configuration['remove_vectors']['vectors'] = settings['vector_database']
 
         # adaptors settings
-        adaptors_fpath = None
         adap_param = 'adaptors_file_%s' % platform
-        if adap_param in settings:
-            adaptors_fpath = settings[adap_param]
+        adaptors_fpath = settings[adap_param]
+
         #we have to remove the short adaptors from the file and treat them
         #as short adaptors
         if adaptors_fpath:
@@ -101,21 +98,14 @@ class CleanReadsAnalyzer(Analyzer):
 
         # Words settings
         word_param = 'short_adaptors_%s' % platform
-        if word_param in settings:
+        if settings[word_param] is not None:
             words.extend(settings[word_param])
         configuration['remove_short_adaptors'] = {}
         configuration['remove_short_adaptors']['words'] = words
 
         #edge_remover
-        left, right = None, None
-        if 'edge_removal' in settings:
-            for (pl_side, length) in settings['edge_removal'].items():
-                er_platform, side = pl_side.split('_')
-                if er_platform == platform:
-                    if side == 'left':
-                        left = length
-                    if side == 'right':
-                        right = length
+        left =  settings['edge_removal']['%s_left' % platform]
+        right = settings['edge_removal']['%s_right' % platform]
         configuration['edge_removal'] = {}
         configuration['edge_removal']['left_length'] = left
         configuration['edge_removal']['right_length'] = right
@@ -136,10 +126,7 @@ class CleanReadsAnalyzer(Analyzer):
                 configuration['strip_lucy']['vector'] = [vector, splice]
 
         # min length settings
-        min_seq_settings = settings['min_seq_length']
-        if platform in min_seq_settings:
-            min_length = min_seq_settings[platform]
-
+        min_length = settings['min_seq_length'][platform]
         configuration['remove_short'] = {}
         configuration['remove_short']['length'] = min_length
 

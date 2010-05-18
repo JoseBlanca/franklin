@@ -102,28 +102,17 @@ class MergeBamAnalyzer(Analyzer):
 
         #Do we have to add the default qualities to the sam file?
         #do we have characters different from ACTGN?
-        add_qualities = ('Sam_processing' in settings and
-                       'add_default_qualities' in settings['Sam_processing'] and
-                       settings['Sam_processing']['add_default_qualities'])
-
+        add_qualities = settings['Sam_processing']['add_default_qualities']
         #memory for the java programs
-        if ('Other_settings' in settings and
-            'java_memory' in settings['Other_settings']):
-            java_mem = settings['Other_settings']['java_memory']
-        else:
-            java_mem = None
-
-        if ('Other_settings' in settings and
-            'picard_path' in settings['Other_settings']):
-            picard_path = settings['Other_settings']['picard_path']
-        else:
-            picard_path = None
+        java_mem = settings['Other_settings']['java_memory']
+        picard_path = settings['Other_settings']['picard_path']
 
         if add_qualities:
             default_sanger_quality = settings['Other_settings']['default_sanger_quality']
             default_sanger_quality = int(default_sanger_quality)
         else:
             default_sanger_quality = None
+
         temp_dir = NamedTemporaryDir()
         for bam_path in bam_paths:
             bam_basename = bam_path.basename
@@ -188,20 +177,10 @@ class RealignBamAnalyzer(Analyzer):
         reference_path = inputs['reference']
 
         #memory for the java programs
-        if ('Other_settings' in settings):
-            osettings = settings['Other_settings']
-            if 'java_memory' in osettings:
-                java_mem = osettings['java_memory']
-            else:
-                java_mem = None
-            if 'picard_path' in osettings:
-                picard_path = osettings['picard_path']
-            else:
-                picard_path = None
-            if 'gatk_path' in osettings:
-                gatk_path = osettings['gatk_path']
-            else:
-                gatk_path = None
+        osettings   = settings['Other_settings']
+        java_mem    = osettings['java_memory']
+        picard_path = osettings['picard_path']
+        gatk_path = osettings['gatk_path']
 
         #we need a temporary path
         temp_bam = NamedTemporaryFile(suffix='.bam')

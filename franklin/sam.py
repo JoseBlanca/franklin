@@ -22,11 +22,23 @@ Created on 05/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, re, tempfile
+import os, re, tempfile, copy
+from itertools import imap
 import pysam
 from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
+from franklin.utils.itertools_ import ungroup, classify
+from franklin.statistics import create_distribution
+
+def get_read_group_info(bam):
+    'It returns a dict witht the read group info: platform, lb, etc'
+    rg_info = {}
+    for read_group in bam.header['RG']:
+        name = read_group['ID']
+        del read_group['ID']
+        rg_info[name] = read_group
+    return rg_info
 def _guess_picard_path(java_conf=None):
     'It returns the picard path using locate'
     if java_conf and 'picard_path' in java_conf and java_conf['picard_path']:
@@ -333,15 +345,12 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
         cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
-
-
-def calculate_bam_coverage_data(bam_fhand):
+def _calculate_bam_coverage_data(bam):
     '''This function gets data to make stats of a sam file.
 
     It extracts per column coverage data from a bam
     '''
-    create_bam_index(bam_fpath=bam_fhand.name)
-    bam = pysam.Samfile(bam_fhand.name, 'rb')
+    # TODO, needs sampling
     for column in bam.pileup():
         reads_per_colum = {}
         for pileup_read in column.pileups:
@@ -353,18 +362,91 @@ def calculate_bam_coverage_data(bam_fhand):
 
         yield reads_per_colum
 
+def _get_bam_coverage(bam, rgs, grouping):
+    'It serializes the coverage_data'
+    coverages = _calculate_bam_coverage_data(bam)
+    coverages = ungroup(coverages, lambda x: x.items())
+    coverages = imap(lambda x: (rgs[x[0]][grouping], x[1]), coverages)
+    coverages = classify(coverages, lambda x: x[0])
+    new_coverages = {}
+    for group, values in coverages.items():
+        values = imap(lambda x: x[1], values)
+        new_coverages[group] = values
 
-def generate_bam_mapping_quality_data(bam_fhand):
+    return new_coverages
+
+def _generate_bam_mapping_quality_data(bam):
     '''This function get data to make stats of a sam file.
 
     It extracts mapping quality per read
     '''
-    create_bam_index(bam_fpath=bam_fhand.name)
-    bam = pysam.Samfile(bam_fhand.name, 'rb')
-
     for aligned_read in pysam.IteratorRowAll(bam):
         read_mapping_qual = aligned_read.mapq
         read_group = aligned_read.opt('RG')
         yield(read_group, read_mapping_qual)
+
+def _get_bam_mapping_quality(bam, rgs, grouping):
+    'It serializes the mapq data'
+    mapqs = _generate_bam_mapping_quality_data(bam)
+    mapqs = imap(lambda x: (rgs[x[0]][grouping], x[1]), mapqs)
+    mapqs = classify(mapqs, lambda x: x[0])
+    new_mapqs = {}
+    for group, values in mapqs.items():
+        values = imap(lambda x: x[1], values)
+        new_mapqs[group] = values
+
+    return new_mapqs
+
+def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
+    '''It makes the bam coverage distribution.
+
+    It can make the distribution taking into account any of the readgroup items:
+    platform, sample and library
+    '''
+    value_calculator = {'coverage':_get_bam_coverage,
+                       'mapq':_get_bam_mapping_quality}
+
+    coverage_labels = {'title': "Coverage for %s %s",
+                       'xlabel': 'Coverage' ,
+                       'ylabel': 'Num. of positions'
+                       }
+    mapping_labels = {'title': "Mapping qualities for %s %s",
+                       'xlabel': "mapping quality" ,
+                       'ylabel': 'Num. of reads'
+                       }
+    plot_labels = {'coverage': coverage_labels,
+                   'mapq':mapping_labels}
+
+    create_bam_index(bam_fpath=bam_fhand.name)
+    bam = pysam.Samfile(bam_fhand.name, 'rb')
+    rgs = get_read_group_info(bam)
+    if grouping is None:
+
+        platforms = set([rg['PL'] for rg in rgs.values()])
+        if len(platforms) > 1:
+            grouping = 'PL'
+        else:
+            grouping = 'SM'
+    item_values = value_calculator[kind](bam, rgs, grouping)
+    for group_name, values in item_values.items():
+        if basename is None:
+            distrib_fhand = None
+            plot_fhand = None
+        else:
+            distrib_fhand = open('%s.%s_%s.dat' % (basename, kind, group_name),
+                                 'w')
+            plot_fhand = open('%s.%s_%s.png' % (basename, kind, group_name),
+                              'w')
+        if grouping == 'PL':
+            grouping = 'platform'
+        elif grouping == 'SM':
+            grouping = 'sample'
+        labels = copy.deepcopy(plot_labels[kind])
+        labels['title'] = labels['title'] % (grouping, group_name)
+
+        range_ = range_
+
+        create_distribution(values, labels, distrib_fhand=distrib_fhand,
+                            plot_fhand=plot_fhand, range_=range_)
 
 
