@@ -194,16 +194,10 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         general_settings = self._project_settings['General_settings']
 
         settings = self._project_settings['Annotation']
-        if 'Cdna_intron_annotation' not in settings:
-            msg = 'You should set up genomic_db and genomic_seqs in settings'
-            raise RuntimeError(msg)
-
         genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
-        if (not 'genomic_db' in settings['Cdna_intron_annotation'] or
-            not  settings['Cdna_intron_annotation']['genomic_db']):
+        if settings['Cdna_intron_annotation']['genomic_db'] is None:
             project_path = general_settings['project_path']
-            genomic_db = make_backbone_blast_db(project_path,
-                                                genomic_seqs,
+            genomic_db = make_backbone_blast_db(project_path, genomic_seqs,
                                                 dbtype='nucl')
         else:
             genomic_db = settings['Cdna_intron_annotation']['genomic_db']
@@ -234,10 +228,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
             # read egde conf
             read_edge_conf = self._configure_read_edge_conf(snv_settings)
             configuration['snv_bam_annotator']['read_edge_conf'] = read_edge_conf
-            for confif_param in ('min_quality', 'min_mapq', 'min_num_alleles'):
-                if confif_param in snv_settings:
-                    param_value = int(snv_settings[confif_param])
-                    configuration['snv_bam_annotator'][confif_param] = param_value
+            for config_param in ('min_quality', 'min_mapq', 'min_num_alleles'):
+                param_value = int(snv_settings[config_param])
+                configuration['snv_bam_annotator'][config_param] = param_value
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
@@ -483,20 +476,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         go_settings = annot_settings['go_annotation']
         go_database = go_settings['blast_database']
 
-        if 'create_dat_file' in go_settings:
-            create_dat = go_settings['create_dat_file']
-        else:
-            create_dat = None
-
-        if 'java_memory' in  go_settings:
-            java_memory = go_settings['java_memory']
-        else:
-            java_memory = None
-
-        if 'prop_fpath' in go_settings:
-            prop_fpath = go_settings['prop_fpath']
-        else:
-            prop_fpath = None
+        create_dat = go_settings['create_dat_file']
+        java_memory = go_settings['java_memory']
+        prop_fpath = go_settings['prop_fpath']
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']

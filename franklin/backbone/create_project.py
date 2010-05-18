@@ -308,6 +308,7 @@ def make_config_spec():
             blast_database = string(default='nr')
             java_memory = integer(default=2048)
             create_dat_file = boolean(default=False)
+            prop_fpath = string_or_none(default=None)
 
     ['blast']
         # Add as many blast databases as you need. You only need to add the
@@ -318,6 +319,9 @@ def make_config_spec():
 
 
     ['Snvs']
+        min_quality = integer(default=45)
+        min_mapq    = integer(default=15)
+        min_num_allele =  integer(default=1)
         [['edge_removal']]
             454_left       = integer_or_none(default=None)
             454_right      = integer_or_none(default=None)
