@@ -26,7 +26,7 @@ from configobj import ConfigObj
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import (create_project,
-                                              is_integer_none_or_true)
+                                              is_integer_none_or_bool)
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
@@ -75,7 +75,7 @@ GATGGATCCCAAGTTNTTGAGGAACNAGAGG
 +
 BBA?;BBBBBA3AB=%=BBB@A=A=%<><@?
 '''
-THREADS = 3
+THREADS = False
 
 class TestBackbone(unittest.TestCase):
     'It tests the backbone'
@@ -222,13 +222,13 @@ class TestValidations(unittest.TestCase):
     def test_is_interger_or_none(self):
         'test is_integer_or_none'
         value = None
-        assert is_integer_none_or_true(value) == value
+        assert is_integer_none_or_bool(value) == value
 
         value = False
-        assert is_integer_none_or_true(value) == value
+        assert is_integer_none_or_bool(value) == value
 
         value = 2
-        assert is_integer_none_or_true(value, min=1) == value
+        assert is_integer_none_or_bool(value, min=1) == value
 
 
 if __name__ == "__main__":

@@ -67,7 +67,7 @@ def validate_configuration(config, copy=True):
     'It validates the configuration'
     validator = Validator()
     #add function to validate some options
-    validator.functions['integer_none_or_true'] = is_integer_none_or_true
+    validator.functions['integer_none_or_bool'] = is_integer_none_or_bool
     validator.functions['integer_or_none'] = is_integer_or_none
     validator.functions['string_or_none'] = is_string_or_none
     validator.functions['list_or_none'] = is_list_or_none
@@ -98,7 +98,7 @@ def is_list_or_none(value, min=None, max=None):
         raise VdtTypeError(value)
     return value
 
-def is_integer_none_or_true(value, min=None, max=None):
+def is_integer_none_or_bool(value, min=None, max=None):
     '''This function validates the value and looks if it is an integer a None or
     True'''
 
@@ -106,7 +106,7 @@ def is_integer_none_or_true(value, min=None, max=None):
     if kind not in (type(1), type(None), type(True)):
         raise VdtTypeError(value)
 
-    if isinstance(value, int):
+    if type(value) == type(1):
         if min is not None and value < int(min):
             raise VdtValueTooSmallError(value)
         if max is not None and value >int(max):
@@ -233,7 +233,7 @@ def make_config_spec():
         tmpdir       = string
         project_name = string
         project_path = string
-        threads      = integer_none_or_true(min=1, default=None)
+        threads      = integer_none_or_bool(min=1, default=None)
 
     ['Other_settings']
         default_sanger_quality = integer(default=20)
