@@ -28,7 +28,7 @@ from Bio.SeqFeature import FeatureLocation
 from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
 from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
-from franklin.sam import create_bam_index
+from franklin.sam import create_bam_index, get_read_group_info
 from copy import copy
 
 DELETION_ALLELE = '-'
@@ -86,15 +86,6 @@ def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
     allele_info['libraries'].append(readgroup_info[read_group]['LB'])
     allele_info['samples'].append(readgroup_info[read_group]['SM'])
 
-def _get_read_group_info(bam):
-    'It returns a dict witht the read group info: platform, lb, etc'
-    rg_info = {}
-    for read_group in bam.header['RG']:
-        name = read_group['ID']
-        del read_group['ID']
-        rg_info[name] = read_group
-    return rg_info
-
 def _normalize_read_edge_conf(read_edge_conf):
     'It returns a dict with all valid keys'
     platforms = ('454', 'sanger', 'illumina')
@@ -112,7 +103,7 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     min_num_alleles = int(min_num_alleles)
     read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
-    read_groups_info = _get_read_group_info(bam)
+    read_groups_info = get_read_group_info(bam)
 
     current_deletions = {}
     reference_id = get_seq_name(reference)
