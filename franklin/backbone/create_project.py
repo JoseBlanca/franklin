@@ -238,6 +238,8 @@ def make_config_spec():
     ['Other_settings']
         default_sanger_quality = integer(default=20)
         java_memory            = integer(default=1024)
+        picard_path            = string_or_none(default=None)
+        gatk_path              = string_or_none(default=None)
 
     # Sample size to make stats
     ['Read_stats']
