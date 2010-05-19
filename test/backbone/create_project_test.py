@@ -180,6 +180,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         seq = seqs[2].seq
         # It means that the starting word has been removed
         assert  seq.startswith('CAAGATTCTTCCCACAT')
+
         do_analysis(project_settings=settings_path, kind='read_stats')
         clean_stats_dir = join(cleaned_dir, 'stats')
         original_stats_dir = join(original_reads_dir, 'stats')

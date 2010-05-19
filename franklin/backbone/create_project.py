@@ -138,9 +138,10 @@ def make_config(project_path, name, config_data):
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
 
-    config['Cleaning'] = {}
-    lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
-    config['Cleaning']['lucy_settings'] = lucy_settings
+#    config['Cleaning'] = {}
+#    config['Cleaning']['lucy'] = {}
+#    lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
+#    config['Cleaning']['lucy']['vector_settings'] = lucy_settings
 
     config['blast'] = {}
     config['blast']['nr'] = {}
@@ -270,6 +271,11 @@ def make_config_spec():
             sanger_right   = integer_or_none(default=None)
             illumina_left  = integer_or_none(default=None)
             illumina_right = integer_or_none(default=None)
+        [[lucy]]
+            vector_settings = string_or_none(default=None)
+            bracket = float_list(default=list(10, 0.02))
+            window  = float_list(default=list(50, 0.08, 10, 0.3))
+            error   = float_list(default=list(0.015, 0.015))
 
     # Mira configuration.
     ['Mira']

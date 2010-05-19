@@ -111,19 +111,32 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['edge_removal']['right_length'] = right
 
         # lucy settings.
-        lucy_settings = settings['lucy_settings']
-        if os.path.exists(lucy_settings):
-            lucy_settings_dir = os.path.dirname(lucy_settings)
-            lucy_settinhs_fhand = open(lucy_settings)
-            lucy_libraries = eval(lucy_settinhs_fhand.read())
-            lucy_settinhs_fhand.close()
+        lucy_settings = settings['lucy']
+        lucy_vector_settings = lucy_settings['vector_settings']
+        if lucy_vector_settings is not None:
+            lucy_settings_dir = os.path.dirname(lucy_vector_settings)
+            lucy_settings_fhand = open(lucy_vector_settings)
+            lucy_libraries = eval(lucy_settings_fhand.read())
+            lucy_settings_fhand.close()
             if library in lucy_libraries:
                 vector = os.path.join(lucy_settings_dir,
                                       lucy_libraries[library]['vector_file'])
                 splice = os.path.join(lucy_settings_dir,
                                       lucy_libraries[library]['splice_file'])
-                configuration['strip_lucy'] = {}
-                configuration['strip_lucy']['vector'] = [vector, splice]
+                vector_settings = [vector, splice]
+            else:
+                vector_settings = None
+        else:
+            vector_settings = None
+
+        parameters = {'bracket':lucy_settings['bracket'],
+                      'window':lucy_settings['window'],
+                      'error':lucy_settings['error']}
+        if vector_settings:
+            parameters['vector'] = vector_settings
+
+        configuration['strip_lucy'] = {}
+        configuration['strip_lucy']['parameters'] = parameters
 
         # min length settings
         min_length = settings['min_seq_length'][platform]
