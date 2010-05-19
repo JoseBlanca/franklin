@@ -22,8 +22,6 @@ Created on 29/03/2010
 import unittest, os
 from os.path import join, exists
 
-from configobj import ConfigObj
-
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
@@ -144,11 +142,11 @@ class TestBackboneMapping(unittest.TestCase):
         mapping_dir = join(project_dir, 'mapping')
         singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
         singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
-        assert exists(join(singular_mapping_dir, 'result',
+        assert exists(join(singular_mapping_dir, 'bams',
                             'by_readgroup', 'lb_hola2.pl_illumina.sm_hola.bam'))
         do_analysis(project_settings=settings_path, kind='select_last_mapping',
                     silent=True)
-        result_dir = join(mapping_dir, 'result')
+        result_dir = join(mapping_dir, 'bams')
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
