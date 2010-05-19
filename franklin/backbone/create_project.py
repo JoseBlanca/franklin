@@ -247,12 +247,12 @@ def make_config_spec():
 
     ['Cleaning']
 
-        adaptors_file_454 = string_or_none(default=None)
-        adaptors_file_sanger = string_or_none(default=None)
-        adaptors_file_illumina = string_or_none(default=None)
+        adaptors_file_454       = string_or_none(default=None)
+        adaptors_file_sanger    = string_or_none(default=None)
+        adaptors_file_illumina  = string_or_none(default=None)
 
-        short_adaptors_sanger = list_or_none(default=None)
-        short_adaptors_454 = list_or_none(default=None)
+        short_adaptors_sanger   = list_or_none(default=None)
+        short_adaptors_454      = list_or_none(default=None)
         short_adaptors_illumina = list_or_none(default=None)
 
         vector_database = string(default='UniVec')
@@ -280,10 +280,10 @@ def make_config_spec():
 
 
     ['Mappers']
-        mapper_for_454 = string(default=bwa)
+        mapper_for_454      = string(default=bwa)
         mapper_for_illumina = string(default=bwa)
-        mapper_for_solid = string(default=bwa)
-        mapper_for_sanger = string(default=bwa)
+        mapper_for_solid    = string(default=bwa)
+        mapper_for_sanger   = string(default=bwa)
 
     ['Sam_processing']
         add_default_qualities = boolean(default=True)
@@ -300,15 +300,15 @@ def make_config_spec():
         [['Cdna_intron_annotation']]
             # Path to the genomic seqs
             genomic_seqs = string(default='path_to_seqs')
-            genomic_db = string_or_none(default =None)
+            genomic_db   = string_or_none(default =None)
 
         [['orf_annotation']]
-            estscan_matrix = string(default='path to estscan matrix')
+            estscan_matrix  = string(default='path to estscan matrix')
         [['go_annotation']]
-            blast_database = string(default='nr')
-            java_memory = integer(default=2048)
+            blast_database  = string(default='nr')
+            java_memory     = integer(default=2048)
             create_dat_file = boolean(default=False)
-            prop_fpath = string_or_none(default=None)
+            prop_fpath      = string_or_none(default=None)
 
     ['blast']
         # Add as many blast databases as you need. You only need to add the
@@ -317,11 +317,10 @@ def make_config_spec():
             path    = string(default="Path to database")
             species = string(default='species')
 
-
     ['Snvs']
-        min_quality = integer(default=45)
-        min_mapq    = integer(default=15)
-        min_num_allele =  integer(default=1)
+        min_quality     = integer(default=45)
+        min_mapq        = integer(default=15)
+        min_num_alleles =  integer(default=1)
         [['edge_removal']]
             454_left       = integer_or_none(default=None)
             454_right      = integer_or_none(default=None)
