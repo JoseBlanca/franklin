@@ -166,22 +166,16 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
     if format is None and not seq_fhand.readline():
         raise StopIteration
     seq_fhand.seek(0)
-
-    seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[format])
     if qual_fhand is None:
-        qual_iter = None
+        seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[format])
     else:
-        qual_iter = SeqIO.parse(qual_fhand, 'qual')
-
+        seq_iter = SeqIO.QualityIO.PairedFastaQualIterator(seq_fhand,
+                                                           qual_fhand)
     for seqrec in seq_iter:
         #do we have quality?
         letter_annotations = seqrec.letter_annotations
-        qual_name = None
-        if qual_iter is not None:
-            qual_sec_record = qual_iter.next()
-            qual = qual_sec_record.letter_annotations['phred_quality']
-            qual_name = qual_sec_record.name
-        elif 'phred_quality' in letter_annotations:
+
+        if 'phred_quality' in letter_annotations:
             qual = letter_annotations['phred_quality']
         elif 'solexa_quality' in letter_annotations:
             qual = letter_annotations['solexa_quality']
@@ -193,11 +187,6 @@ def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
         seq = seqrec.seq
         seq = Seq(str(seq), seq.alphabet)
         name = seqrec.name
-
-        if qual_name and qual_name != name:
-            msg = 'Seqs and quals not in the same order: %s, %s' % (name ,
-                                                                    qual_name)
-            raise RuntimeError(msg)
         description = " ".join(seqrec.description.split(' ')[1:])
         annotations = seqrec.annotations
         seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,

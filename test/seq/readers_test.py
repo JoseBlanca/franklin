@@ -78,7 +78,7 @@ class SeqsInFileTests(unittest.TestCase):
                 seq.name
             self.fail()
             #pylint: disable-msg=W0704
-        except RuntimeError:
+        except ValueError:
             pass
 
     @staticmethod
