@@ -446,7 +446,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
 
         range_ = range_
 
-        create_distribution(values, labels, distrib_fhand=distrib_fhand,
-                            plot_fhand=plot_fhand, range_=range_)
+        yield  create_distribution(values, labels, distrib_fhand=distrib_fhand,
+                                   plot_fhand=plot_fhand, range_=range_)
 
 
