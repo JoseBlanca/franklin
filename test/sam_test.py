@@ -219,16 +219,16 @@ class SamStatsTest(unittest.TestCase):
         bam_fhand = NamedTemporaryFile()
         sam2bam(sam.name, bam_fhand.name)
 
-        distribs = bam_distribs(bam_fhand, 'coverage')#, basename='test1')
-        assert distribs.next()['distrib'][0] ==  168
+        distribs = bam_distribs(bam_fhand, 'coverage')
+        assert distribs[('platform', '454')][0] ==  168
 
-        distribs = bam_distribs(bam_fhand, 'mapq')#, basename='test1')
-        assert distribs.next()['distrib'][0] == 1
+        distribs = bam_distribs(bam_fhand, 'mapq')
+        assert distribs[('platform', '454')][0] == 1
 
 
 
 
 if	__name__	==	"__main__":
-    import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
-    import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
+#    import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
+#    import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
     unittest.main()

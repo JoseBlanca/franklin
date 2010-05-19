@@ -428,6 +428,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
         else:
             grouping = 'SM'
     item_values = value_calculator[kind](bam, rgs, grouping)
+    results = {}
     for group_name, values in item_values.items():
         if basename is None:
             distrib_fhand = None
@@ -446,7 +447,10 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
 
         range_ = range_
 
-        yield  create_distribution(values, labels, distrib_fhand=distrib_fhand,
+        distrib = create_distribution(values, labels, distrib_fhand=distrib_fhand,
                                    plot_fhand=plot_fhand, range_=range_)
+
+        results[(grouping, group_name)] = distrib['distrib']
+    return results
 
 
