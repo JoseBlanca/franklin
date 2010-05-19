@@ -24,8 +24,8 @@ import pysam
 from collections import defaultdict
 
 from Bio.SeqFeature import FeatureLocation
-
-from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name
+from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
+from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name, Seq
 from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
@@ -41,11 +41,11 @@ INVARIANT = 3
 INDEL = 4
 COMPLEX = 5
 
-COMMON_ENZYMES = ['ecori', 'smai', 'bamhi', 'alui', 'bglii',
-                  'sali', 'bgli', 'clai', 'bsteii', 'taqi',
-                  'psti', 'pvuii', 'hindiii', 'ecorv', 'xbai',
-                  'haeiii', 'xhoi', 'kpni', 'scai', 'banii',
-                  'hinfi', 'drai', 'apai', 'asp718']
+COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
+                  'SalI', 'BglI', 'ClaI', 'BsteII', 'TaqI',
+                  'PstI', 'PvuII', 'HindIII', 'EcoRV', 'ZbaI',
+                  'HaeIII', 'HoI', 'KpnI', 'ScaI', 'Ban',
+                  'HinfI', 'DraI', 'ApaI', 'Asp718']
 
 def _qualities_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
@@ -429,6 +429,12 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
     #we have to build the two sequences
     ref = reference
     loc = location
+
+    if all_enzymes:
+        restriction_batch = CommOnly
+    else:
+        restriction_batch = RestrictionBatch(COMMON_ENZYMES)
+
     def create_sequence(name, allele, kind):
         'The returns the sequence for the given allele'
         sseq = ref.seq
@@ -440,25 +446,15 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
             seq = sseq[0:loc + 1] + sseq[loc + len(allele) + 1:]
         elif kind == INSERTION:
             seq = sseq[0:loc] + allele + sseq[loc:]
-        seq = SeqWithQuality(name=name, seq=seq)
         return seq
+
     seq1 = create_sequence('seq1', allele1, kind1)
     seq2 = create_sequence('seq2', allele2, kind2)
 
-    parameters = {}
-    if not all_enzymes:
-        parameters['enzymes'] = ",".join(COMMON_ENZYMES)
-
-    remap_runner = create_runner(tool='remap', parameters=parameters)
-
-    result1_fhand = remap_runner(seq1)['remap']
-    result2_fhand = remap_runner(seq2)['remap']
-    enzymes1 = _parse_remap_output(result1_fhand)
-    enzymes2 = _parse_remap_output(result2_fhand)
-
-    # close and remove open and unused files
-    result1_fhand.close()
-    result2_fhand.close()
+    anal1 = Analysis(restriction_batch, seq1, linear=True)
+    enzymes1 = set(anal1.with_sites().keys())
+    anal1 = Analysis(restriction_batch, seq2, linear=True)
+    enzymes2 = set(anal1.with_sites().keys())
 
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
@@ -485,25 +481,6 @@ def _parse_remap_output(remap_output):
             continue
     remap_fhand.close()
     return enzymes
-
-def not_variable_in_groupping(key, feature, items, in_union=True):
-    'It looks if the given snv is not variable for the given key/items'
-    alleles = _get_alleles_for_read_group(feature.qualifiers['alleles'],
-                                          items, key)
-
-    if in_union:
-        alleles = _aggregate_alleles(alleles)
-    no_variable_in_read_groups_ = []
-    for allele_list in alleles.values():
-        no_variable = True if len(allele_list) == 1 else False
-        no_variable_in_read_groups_.append(no_variable)
-    print no_variable_in_read_groups_
-
-    #For the case in which there are no alleles
-    if not no_variable_in_read_groups_:
-        return True
-
-    return all(no_variable_in_read_groups_)
 
 def variable_in_groupping(key, feature, items, in_union=False,
                            in_all_read_groups=True):

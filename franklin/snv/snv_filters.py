@@ -30,8 +30,7 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
-                                         variable_in_groupping,
-                                         not_variable_in_groupping)
+                                         variable_in_groupping)
 from franklin.seq.seqs import get_seq_name
 
 

@@ -231,7 +231,6 @@ class TestValidations(unittest.TestCase):
         value = 2
         assert is_integer_none_or_bool(value, min=1) == value
 
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
     unittest.main()
