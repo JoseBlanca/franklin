@@ -30,7 +30,8 @@ from franklin.mapping import map_reads
 from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
-                          sam2bam, sort_bam_sam, standardize_sam, realign_bam)
+                          sam2bam, sort_bam_sam, standardize_sam, realign_bam,
+                          bam_distribs)
 
 class SetAssemblyAsReferenceAnalyzer(Analyzer):
     'It sets the reference assembly as mapping reference'
@@ -200,6 +201,30 @@ class RealignBamAnalyzer(Analyzer):
         shutil.move(temp_bam_fpath, out_bam_fpath)
         self._log({'analysis_finished':True})
 
+class BamStatsAnalyzer(Analyzer):
+    'It makes the stats of the mapping'
+
+    def run(self):
+        '''It runs the analysis.'''
+        self._log({'analysis_started':True})
+        settings = self._project_settings
+        self._create_output_dirs()['result']
+        project_path = settings['General_settings']['project_path']
+        project_name = settings['General_settings']['project_name']
+        os.chdir(project_path)
+        inputs = self._get_input_fpaths()
+        bam_path = inputs['bam']
+        bam_fpath = bam_path.last_version
+        bam_fhand = open(bam_fpath)
+
+        out_dir = os.path.abspath(self._get_output_dirs()['result'])
+        for kind in ('coverage', 'mapq'):
+            basename = os.path.join(out_dir, "%s" % (project_name))
+            bam_fhand.seek(0)
+            bam_distribs(bam_fhand, kind, basename=basename)
+        bam_fhand.close()
+
+
 DEFINITIONS = {
     'set_assembly_as_reference':
         {'inputs':{
@@ -251,5 +276,14 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': RealignBamAnalyzer,
+        },
+    'mapping_stats':
+        {'inputs':{
+            'bam':
+                {'directory': 'mapping_result',
+                 'file': 'merged_bam'},
+            },
+         'outputs':{'result':{'directory': 'mapping_stats'}},
+         'analyzer': BamStatsAnalyzer,
         },
 }

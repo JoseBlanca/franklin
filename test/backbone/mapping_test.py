@@ -199,7 +199,10 @@ class TestBackboneMapping(unittest.TestCase):
         #                 'reference.snv_illumina')
         #illumina_snv = open(illumina_snv_path).read()
         #print illumina_snv
-
+        do_analysis(project_settings=settings_path, kind='mapping_stats',
+                    silent=True)
+        stats_dir = join(project_dir, 'mapping', 'result', 'stats')
+        assert exists(join(stats_dir, 'backbone.coverage_illumina.dat'))
 
 
         os.chdir('/tmp')

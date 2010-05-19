@@ -31,6 +31,7 @@ BACKBONE_DIRECTORIES = {
     'mappings': ('mapping', ''),
     'mapping_result': ('mapping', 'result'),
     'mapping_reference': 'mapping/reference',
+    'mapping_stats':('mapping', 'result/stats'),
     'mappings_by_readgroup': ('mapping', 'result/by_readgroup'),
     'pileups':'mapping/result/pileups',
     'snvs':'annotations/snvs',
