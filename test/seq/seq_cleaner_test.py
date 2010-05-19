@@ -19,7 +19,7 @@ Created on 2009 uzt 6
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os, tempfile
+import unittest, os
 
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
@@ -34,7 +34,6 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_masker_repeats_by_repeatmasker,
                                 _get_non_matched_locations,
                                 _get_unmasked_locations,
-                                _get_longest_non_matched_seq_region,
                                 _get_matched_locations,
                                 split_seq_by_masked_regions,
                                 create_word_masker,
@@ -264,9 +263,9 @@ class SeqCleanerTest(unittest.TestCase):
         # now we test the sequence with adaptors
         vector_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_vector.fasta')
         splice_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_splice.fasta')
-
-        lucy_striper = create_striper_by_quality_lucy2(vector=[vector_fpath,
-                                                               splice_fpath])
+        parameters = {'vector':[vector_fpath, splice_fpath],
+                      'bracket':[10, 0.02]}
+        lucy_striper = create_striper_by_quality_lucy2(parameters)
         seq_fhand = open(os.path.join(DATA_DIR, 'lucy',
                                       'seq_with_adaptor1.fastq'))
         seq_iter = lucy_striper(seqs_in_file(seq_fhand, format='fastq'))[0]

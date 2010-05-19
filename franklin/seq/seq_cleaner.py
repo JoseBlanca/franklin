@@ -375,17 +375,12 @@ def _extract_name_description(seq_iter):
 
     return name_description
 
-def create_striper_by_quality_lucy2(vector=None):
+def create_striper_by_quality_lucy2(parameters=None):
     '''It creates a function that removes bad quality regions using lucy.
 
     The function will take a sequence iterator and it will return a new sequence
     iterator with the processed sequences in it.'''
-    #we prepare the function that will run lucy
-    if vector is None:
-        run_lucy_for_seqs = create_runner(tool='lucy')
-    else:
-        run_lucy_for_seqs = create_runner(tool='lucy',
-                                          parameters={'vector':vector})
+    run_lucy_for_seqs = create_runner(tool='lucy', parameters=parameters)
 
     def strip_seq_by_quality_lucy(sequences):
         '''It trims the bad quality regions from the given sequences.
