@@ -244,7 +244,7 @@ def make_config_spec():
 
     # Sample size to make stats
     ['Read_stats']
-        sampling_size = integer(min=0, max=3000, default=1000)
+        sampling_size = integer_or_none(min=0, max=3000, default=None)
 
     ['Cleaning']
 
