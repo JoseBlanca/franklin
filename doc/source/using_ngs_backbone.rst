@@ -41,24 +41,24 @@ file or directory type location
 ====================== ========================
 configuration file     ngs_backbone.conf
 log file               ngs_backbone.log
-raw reads              /reads/original/
-clean reads            /reads/cleaned/
-assemblies             /assembly/
-assembly input         /assembly/input/
-assembly output        /assembly/result/
-mappings               /mapping/
-mapping output         /mapping/result/
-annotations            /annotations/
-annotation input       /annotations/input/
-annotation output      /annotation/result/
-error logs             /ngs_backbone_errors/
+raw reads              reads/raw/
+clean reads            reads/cleaned/
+assemblies             assembly/
+assembly input         assembly/input/
+assembly output        assembly/result/
+mappings               mapping/
+mapping output         mapping/bams/
+annotations            annotations/
+annotation input       annotations/input/
+annotation output      annotation/result/
+error logs             backbone_errors/
 ====================== ========================
 
 Sequence files should be fasta or sanger fastq, fasta for the ones without quality and fastq for the ones with quality. The file extension should reflect the sequence file format, fasta and sfastq.
 
 The sequence file names for the reads should define several tags: lb (library), sm (sample) and pl (platform/technology). This convention is required if a mapping analysis is to be done with this sequence files. These tags follow the sam file header `specification <http://samtools.sourceforge.net/SAM1.pdf>`_. An example of some valid sequence file names is::
 
-  $ ls reads/original/
+  $ ls reads/raw/
   lb_mos.pl_illumina.sm_mos.sfastq  lb_pep.pl_illumina.sm_pep.sfastq
   lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq
 
@@ -140,7 +140,7 @@ solexa
 Input and output files
 ______________________
 
-The reads to be cleaned should be in the project directory under /reads/original/. The `naming conventions`_ should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/original, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
+The reads to be cleaned should be in the project directory under /reads/raw/. The `naming conventions`_ should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/raw, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
 
 .. _clean-config:
 
@@ -188,12 +188,21 @@ edge_removal -> illumina_left
 edge_removal -> illumina_right
   Idem for the right edge of the illumina reads
 
-lucy_settings
-  A path to a lucy settings file with the splice and vectors files to be used by lucy
 
 min_seq_length
   The minimum sequence length allowable after the cleaning is done. All sequences shorter than these values will be discarded. This is a subsection with one value for each platform 454, sanger and illumina.
 
+lucy -> vector_settings
+  A path to a lucy settings file with the splice and vectors files to be used by lucy
+
+lucy ->bracket
+    Look at lucy man page before changing defaults.
+
+lucy -> window
+    Look at lucy man page before changing defaults.
+
+lucy -> error
+    Look at lucy man page before changing defaults.
 
 
 lucy settings

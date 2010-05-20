@@ -30,8 +30,7 @@ from franklin.backbone.create_project import (create_project,
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
-from validate import (Validator, ValidateError, VdtTypeError, VdtValueError,
-                      VdtValueTooSmallError, VdtValueTooBigError)
+
 
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAATAGTCAGCATGCATGATTAGGCTAAGCCGTAAGCATAGCATGACCCCATTGGCAAAGCTAGCATGATACGACATCATTATAGCGAGAGACGCATATCGAGAATGAGCGATCAGCACATGTCAGCGAGCTACTGACTATCATATATAGCGCAGAGACGACTAGCATCGAT
