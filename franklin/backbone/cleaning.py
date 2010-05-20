@@ -269,10 +269,9 @@ class ReadsStatsAnalyzer(Analyzer):
             #how many seqs to sample for each file?
             samples = [int(num / total_seqs * sample_size) for num in num_seqs]
 
-        if sample_size is None:
-            for fpath in fpaths:
-                for seq in seqs_in_file(open(fpath), sample_size=samples):
-                    yield seq
+        for fpath, sample in zip(fpaths, samples):
+            for seq in seqs_in_file(open(fpath), sample_size=sample):
+                yield seq
 
     def _do_seq_stats(self, seqs_path, stats_dir, analyses,
                       sample_size):
@@ -288,10 +287,17 @@ class ReadsStatsAnalyzer(Analyzer):
 
         for analysis in analyses:
             analysis_basename = '%s.%s' % (basename, analysis)
-            seqs, seqs2 = itertools.tee(seqs, 2)
-            self._do_distrib(seqs2, analysis, analysis_basename, stats_dir)
+            self._do_distrib(seqs, analysis, analysis_basename, stats_dir)
 
         # now general stats
+        if isinstance(seqs_path, list):
+            seqs_fpaths = [path.last_version for path in seqs_path]
+            seqs = self._seqs_in_files(seqs_fpaths, sample_size=None)
+            basename = BASENAME_FOR_ALL_TOGETHER
+        else:
+            basename = seqs_path.basename
+            fpath = seqs_path.last_version
+            seqs = seqs_in_file(open(fpath), sample_size=None)
         analysis_basename = '%s.general_stats' % basename
         self._do_general_stats(seqs, analysis_basename, stats_dir)
 

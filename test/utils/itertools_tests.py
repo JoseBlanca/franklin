@@ -6,12 +6,19 @@ Created on 11/05/2010
 import unittest
 from franklin.utils.itertools_ import (take_sample, make_cache, store, classify,
                                        ungroup)
+import itertools
 
 class TakeSampleTest(unittest.TestCase):
     'tests take sample test'
     @staticmethod
     def test_take_sample():
         'tests take sample test'
+        #basic test
+        items = iter(range(100))
+        sample = list(take_sample(items, 10))
+        assert len(sample) == 10
+        assert sample != [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
         n_items = [1000, 100, 100000, 100000, 100000]
         sample_sizes = [990, 8, 100, 100, 200]
 
@@ -22,6 +29,14 @@ class TakeSampleTest(unittest.TestCase):
                 iterator= iter(range(n_item))
                 a = take_sample(iterator, sample_size)
                 assert sample_size ==  len(list(a))
+
+    def test_tee_sample(self):
+        'It tests that tee and sample behave ok together'
+        items = iter(range(1000))
+        sample = take_sample(items, 50)
+        sample1, sample2 = itertools.tee(sample)
+        print list(sample1)
+        print list(sample2)
 
 class MakeCacheTest(unittest.TestCase):
     'It tests the cache for iterables'
