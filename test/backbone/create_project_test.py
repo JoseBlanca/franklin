@@ -186,7 +186,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         assert exists(clean_stats_dir)
         assert exists(original_stats_dir)
         assert exists(join(clean_stats_dir, 'global.diff_qual_distrib.png'))
-        assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.dat'))
+        assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.txt'))
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')

@@ -296,7 +296,7 @@ class ReadsStatsAnalyzer(Analyzer):
     def _do_general_stats(self, seqs, basename, stats_dir):
         'It performs the  general stats analysis'
         general_fpath = os.path.join(self._get_project_path(), stats_dir,
-                                     basename + '.dat')
+                                     basename + '.txt')
         if os.path.exists(general_fpath):
             return
 
