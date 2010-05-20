@@ -314,6 +314,7 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         in_fhand_qual = None
 
     # Here the SeqRecord generator is created
+    processes = None if processes == 1 else processes
     if processes:
         filtered_seq_iter = _parallel_process_sequences(in_fhand_seqs,
                                                         in_fhand_qual,
