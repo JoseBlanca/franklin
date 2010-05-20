@@ -6,6 +6,7 @@ Created on 05/01/2010
 
 @author: peio
 '''
+from tempfile import NamedTemporaryFile
 
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of franklin.
@@ -28,7 +29,7 @@ import pysam
 from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
-from franklin.utils.itertools_ import ungroup, classify
+from franklin.utils.itertools_ import ungroup, classify, take_sample
 from franklin.statistics import create_distribution
 
 def get_read_group_info(bam):
@@ -397,7 +398,8 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
 
     return new_mapqs
 
-def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
+def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
+                 sample_size=None):
     '''It makes the bam coverage distribution.
 
     It can make the distribution taking into account any of the readgroup items:
@@ -417,8 +419,15 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
     plot_labels = {'coverage': coverage_labels,
                    'mapq':mapping_labels}
 
-    create_bam_index(bam_fpath=bam_fhand.name)
-    bam = pysam.Samfile(bam_fhand.name, 'rb')
+    if sample_size is not None:
+        sampled_bam_fhand = NamedTemporaryFile(suffix='.bam')
+        sample_bam(bam_fhand, sampled_bam_fhand, sample_size)
+        sample_fpath = sampled_bam_fhand.name
+    else:
+        sample_fpath = bam_fhand.name
+
+    create_bam_index(bam_fpath=sample_fpath)
+    bam = pysam.Samfile(sample_fpath, 'rb')
     rgs = get_read_group_info(bam)
     if grouping is None:
 
@@ -453,4 +462,28 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None):
         results[(grouping, group_name)] = distrib['distrib']
     return results
 
+def sample_bam(bam_fhand, out_bam_fhand, sample_size):
+    'It takes a sample from a bam'
+    sam_fhand = NamedTemporaryFile(suffix='.sam')
+    final_sam = NamedTemporaryFile(suffix='.sam')
+    bam2sam(bam_fhand.name, sam_fhand.name, header=True)
 
+    # First get header
+    for line in open(sam_fhand.name):
+        if line[0] == '@':
+            final_sam.write(line)
+        else:
+            break
+    sam_body = take_sample(_reads_in_sam(sam_fhand), sample_size=sample_size)
+
+    for line in sam_body:
+        final_sam.write(line)
+    final_sam.flush()
+    sam2bam(final_sam.name, out_bam_fhand.name)
+
+def _reads_in_sam(sam_fhand):
+    'It yields a read mapping in each iteration'
+    for line in open(sam_fhand.name):
+        if line[0] == '@':
+            continue
+        yield line

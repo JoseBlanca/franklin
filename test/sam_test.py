@@ -31,7 +31,7 @@ from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           standardize_sam, realign_bam,
                           _calculate_bam_coverage_data,
                           _generate_bam_mapping_quality_data,
-                          bam_distribs, create_bam_index)
+                          bam_distribs, create_bam_index, sample_bam)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -225,10 +225,29 @@ class SamStatsTest(unittest.TestCase):
         distribs = bam_distribs(bam_fhand, 'mapq')
         assert distribs[('platform', '454')][0] == 1
 
+        distribs = bam_distribs(bam_fhand, 'mapq', sample_size=100)
+        assert distribs[('platform', '454')][0] == 1
+
+    @staticmethod
+    def test_sample_bam():
+        'it tests sample bam function'
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+        bam_fhand.flush()
+        out_bam = NamedTemporaryFile(suffix='.bam')
+        sample_bam(bam_fhand, out_bam, 2)
+        out_sam = NamedTemporaryFile(suffix='.sam')
+        bam2sam(out_bam.name, out_sam.name, header=True)
+
+        sam = open(out_sam.name).read().splitlines()
+        assert len(sam) == 6
 
 
 
 if	__name__	==	"__main__":
 #    import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
-#    import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
+#    import sys;sys.argv = ['', 'SamStatsTest.test_sample_bam']
     unittest.main()
