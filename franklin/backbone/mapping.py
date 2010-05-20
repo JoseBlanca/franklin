@@ -211,6 +211,7 @@ class BamStatsAnalyzer(Analyzer):
         self._create_output_dirs()['result']
         project_path = settings['General_settings']['project_path']
         project_name = settings['General_settings']['project_name']
+        sample_size = settings['Sam_stats']['sampling_size']
         os.chdir(project_path)
         inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
@@ -221,9 +222,9 @@ class BamStatsAnalyzer(Analyzer):
         for kind in ('coverage', 'mapq'):
             basename = os.path.join(out_dir, "%s" % (project_name))
             bam_fhand.seek(0)
-            bam_distribs(bam_fhand, kind, basename=basename)
+            bam_distribs(bam_fhand, kind, basename=basename,
+                         sample_size=sample_size)
         bam_fhand.close()
-
 
 DEFINITIONS = {
     'set_assembly_as_reference':

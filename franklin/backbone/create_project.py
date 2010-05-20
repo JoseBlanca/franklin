@@ -294,6 +294,9 @@ def make_config_spec():
     ['Sam_processing']
         add_default_qualities = boolean(default=True)
 
+    ['Sam_stats']
+        sampling_size = integer_or_none(default=None)
+
     ['Annotation']
         [['description_annotation']]
             # List of databases to use form description annotation.
