@@ -107,7 +107,7 @@ class TestBackbone(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
-        original_reads_dir = join(reads_dir, 'original')
+        original_reads_dir = join(reads_dir, 'raw')
         os.mkdir(reads_dir)
         os.mkdir(original_reads_dir)
 
@@ -152,7 +152,7 @@ class TestBackbone(unittest.TestCase):
 
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
-        original_reads_dir = join(reads_dir, 'original')
+        original_reads_dir = join(reads_dir, 'raw')
         os.mkdir(reads_dir)
         os.mkdir(original_reads_dir)
 
