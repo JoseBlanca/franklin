@@ -118,10 +118,11 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
                  threads=False):
     'It runs a blast giving a file and a database path'
+    #threads = get_num_threads(threads)
     cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
            '-b', '25', '-e', '0.0001', '-m', '7',
            '-i', seq_fpath, '-o', result_fpath,
-           '-a', str(get_num_threads(threads))]
+           '-a', str(threads)]
 
     call(cmd, raise_on_error=True, log=True)
 

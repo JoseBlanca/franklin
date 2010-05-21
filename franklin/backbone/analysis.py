@@ -28,7 +28,7 @@ import franklin
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
-from franklin.utils.misc_utils import VersionedPath
+from franklin.utils.misc_utils import VersionedPath, get_num_threads
 
 def scrape_info_from_fname(path):
     'It guess pipeline taking into account the platform and the file format'
@@ -87,10 +87,8 @@ class Analyzer(object):
         self._setup_tempdir()
         self._silent = silent
 
-        if 'threads' in self._project_settings['General_settings']:
-            self.threads = self._project_settings['General_settings']['threads']
-        else:
-            self.threads = False
+        threads = self._project_settings['General_settings']['threads']
+        self.threads = get_num_threads(threads)
 
     @staticmethod
     def _set_tmp(tmpdir):
