@@ -20,7 +20,7 @@ Created on 05/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.utils.cmd_utils import call
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 import os
 
 def create_bwa_reference(reference_fpath):
@@ -40,6 +40,7 @@ def create_bwa_reference(reference_fpath):
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
                        parameters, threads=False):
     'It maps the reads to the reference using bwa and returns a bam file'
+    threads = get_num_threads(threads)
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
     if not os.path.exists(bwt_fpath):

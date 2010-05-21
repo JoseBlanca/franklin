@@ -23,7 +23,7 @@ from os import makedirs, symlink, remove, listdir
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.cmd_utils import call
-from franklin.utils.misc_utils import get_num_threads, get_fhand
+from franklin.utils.misc_utils import get_fhand
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
