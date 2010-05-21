@@ -454,9 +454,12 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
 
     if dat_fpath:
         cmd.append('-d')
+    logger = logging.getLogger('franklin')
+    logger.info('Running blast2go: %s' % ' '.join(cmd))
+
     call(cmd, raise_on_error=True)
     shutil.move(out_basename + '.annot', annot_fpath)
-    if dat_fpath is not None:
+    if dat_fpath:
         shutil.move(out_basename + '.dat', dat_fpath)
     tempdir.close()
 
