@@ -276,16 +276,15 @@ class ReadsStatsAnalyzer(Analyzer):
     def _do_seq_stats(self, seqs_path, stats_dir, analyses,
                       sample_size):
         'It performs all kind of stats for a path'
-        if isinstance(seqs_path, list):
-            seqs_fpaths = [path.last_version for path in seqs_path]
-            seqs = self._seqs_in_files(seqs_fpaths, sample_size)
-            basename = BASENAME_FOR_ALL_TOGETHER
-        else:
-            basename = seqs_path.basename
-            fpath = seqs_path.last_version
-            seqs = seqs_in_file(open(fpath), sample_size=sample_size)
-
         for analysis in analyses:
+            if isinstance(seqs_path, list):
+                seqs_fpaths = [path.last_version for path in seqs_path]
+                seqs = self._seqs_in_files(seqs_fpaths, sample_size)
+                basename = BASENAME_FOR_ALL_TOGETHER
+            else:
+                basename = seqs_path.basename
+                fpath = seqs_path.last_version
+                seqs = seqs_in_file(open(fpath), sample_size=sample_size)
             analysis_basename = '%s.%s' % (basename, analysis)
             self._do_distrib(seqs, analysis, analysis_basename, stats_dir)
 
