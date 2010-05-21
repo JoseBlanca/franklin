@@ -64,28 +64,30 @@ def _take_sample(iterator, sample_size, num_items_in):
 
     This is the function that do the job
     '''
-    rate = num_items_in / sample_size
+    rate = sample_size / num_items_in
 
-    reserved_rate = 0.01 if 0.005 * num_items_in > 10 else 10 / num_items_in
+    reserved_rate = rate
+    if reserved_rate * num_items_in < 10:
+        reserved_rate = 10 / num_items_in
+    reserve_length = int(num_items_in * reserved_rate)
 
     counter = 0
     reserved_items = []
+    reserve_full = False
     for item in iterator:
         random_num = random.random()
-        if random_num < rate :
+        if random_num < rate:
             yield item
             counter += 1
             if counter >= sample_size:
                 break
-        elif random_num < reserved_rate:
+        elif not reserve_full and random_num - rate < reserved_rate:
             reserved_items.append(item)
-    else:
-        for reserved_item in reserved_items:
-            if counter <= sample_size:
-                yield reserved_item
-                counter += 1
-            else:
-                break
+            if len(reserved_items) >= reserve_length:
+                reserve_full = True
+    items_left = sample_size - counter
+    for item in random.sample(reserved_items, items_left):
+        yield item
 
 def make_cache(iterator):
     'Given an iterator it makes a new iterator that feeds from a cache'
