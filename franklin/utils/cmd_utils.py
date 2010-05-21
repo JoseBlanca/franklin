@@ -454,7 +454,7 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
         prop_fpath = os.path.join(java_dir, 'b2gPipe.properties')
         cmd.extend(['-prop', prop_fpath])
 
-    if dat_fpath is not None:
+    if dat_fpath:
         cmd.append('-d')
     call(cmd, raise_on_error=True)
     shutil.move(out_basename + '.annot', annot_fpath)
