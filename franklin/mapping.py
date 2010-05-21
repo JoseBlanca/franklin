@@ -40,6 +40,7 @@ def create_bwa_reference(reference_fpath):
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
                        parameters, threads=False):
     'It maps the reads to the reference using bwa and returns a bam file'
+    threads = get_num_threads(threads)
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
     if not os.path.exists(bwt_fpath):
@@ -52,7 +53,7 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     output_sai = 'output.sai'
     if reads_length == 'short':
         cmd = ['bwa', 'aln', reference_fpath, reads_fpath,
-               '-t', str(get_num_threads(threads))]
+               '-t', str(threads)]
         sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
@@ -61,7 +62,7 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     elif reads_length == 'long':
         cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath,
-               '-t', str(get_num_threads(threads))]
+               '-t', str(threads)]
         ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:

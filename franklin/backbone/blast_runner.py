@@ -23,7 +23,7 @@ from os import makedirs, symlink, remove, listdir
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.cmd_utils import call
-from franklin.utils.misc_utils import get_num_threads, get_fhand
+from franklin.utils.misc_utils import get_fhand
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
@@ -118,10 +118,11 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
                  threads=False):
     'It runs a blast giving a file and a database path'
+    #threads = get_num_threads(threads)
     cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
            '-b', '25', '-e', '0.0001', '-m', '7',
            '-i', seq_fpath, '-o', result_fpath,
-           '-a', str(get_num_threads(threads))]
+           '-a', str(threads)]
 
     call(cmd, raise_on_error=True, log=True)
 
