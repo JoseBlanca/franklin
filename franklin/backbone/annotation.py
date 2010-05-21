@@ -482,7 +482,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
-        chop_big_xml, num_items = True, 1000
+        chop_big_xml, num_items = True, 100
         blasts = {}
         for input_ in inputs['input']:
             if 'kind' in blast_settings[go_database]:
@@ -503,7 +503,6 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             blast_db=blastdb,
                                             dbtype=db_kind,
                                             threads=self.threads)
-
             if chop_big_xml:
                 #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
                 chopped_blast = NamedTemporaryFile(suffix='.xml')
@@ -527,7 +526,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 dat_fpath = None
             annot_fpath = os.path.join(result_dir,
                                        input_.basename + '.b2g.annot')
-            blast = blasts[input_fpath].name if chop_big_xml else blast[input_fpath]
+            blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
 
             step_config = {'blast': blast,
                            'dat_fpath': dat_fpath,
@@ -536,7 +535,6 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                            'prop_fpath':prop_fpath}
 
             configuration[input_.basename] = {'annotate_gos': step_config}
-
         result = self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,

@@ -217,6 +217,7 @@ def create_go_annotator(blast, annot_fpath=None, dat_fpath=None,
     blast = get_fhand(blast)
     b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
                    java_memory=java_memory, prop_fpath=prop_fpath)
+
     go_annotations = _parse_b2g_output(open(annot_fpath))
     if annot_fpath is None:
         os.remove(annot_fpath)
