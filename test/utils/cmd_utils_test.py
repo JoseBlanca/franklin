@@ -136,7 +136,7 @@ class TestCall(unittest.TestCase):
 
         ## When fails
         #without stdout file. Raise False
-        stdout, stderr, retcode = call(cmd)
+        stderr = call(cmd)[1]
         assert '/@#@#@#@' in stderr
 
         try:
@@ -145,12 +145,10 @@ class TestCall(unittest.TestCase):
         except RuntimeError as error:
             assert '/@#@#@#@' in str(error)
 
-
         #with stdout file
         stdout = tempfile.NamedTemporaryFile()
         stderr = tempfile.NamedTemporaryFile()
-        stdout_str, stderr_str, retcode = call(cmd, stdout=stdout,
-                                               stderr=stderr)
+        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr)[:2]
         assert not stdout_str
         assert not stderr_str
 
@@ -161,29 +159,20 @@ class TestCall(unittest.TestCase):
         except RuntimeError as error:
             assert '/@#@#@#@' in stderr.read()
 
-
         ## when it do right
         cmd = ['ls', '/']
         #without stdout file.
-        stdout, stderr, retcode = call(cmd)
+        stdout, stderr = call(cmd)[:2]
         assert 'root'in stdout
 
         #without stdout file.
         stdout = tempfile.NamedTemporaryFile()
         stderr = tempfile.NamedTemporaryFile()
-        stdout_str, stderr_str, retcode = call(cmd, stdout=stdout, stderr=stderr)
+        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr)[:2]
         assert  stdout_str is None
 
         assert 'root' in stdout.read()
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestCall.test_call']
+    #import sys;sys.argv = ['', 'TestCall.test_call']
     unittest.main()

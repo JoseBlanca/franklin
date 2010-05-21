@@ -420,17 +420,15 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
 
     if stdout != subprocess.PIPE:
         stdout.flush()
-        stdout.seek(0)
     if stderr != subprocess.PIPE:
         stderr.flush()
-        stderr.seek(0)
 
     if raise_on_error and retcode:
         if stdout != subprocess.PIPE:
-            stdout_str = stdout.read()
+            stdout_str = open(stdout.name).read()
             stdout.seek(0)
         if stderr != subprocess.PIPE:
-            stderr_str = stderr.read()
+            stderr_str = open(stderr.name).read()
             stderr.seek(0)
         msg = 'Error running command: %s\n stderr: %s\n stdout: %s' % \
                                                 (' '.join(cmd), stderr_str,
