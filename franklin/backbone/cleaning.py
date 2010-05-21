@@ -22,7 +22,7 @@ Created on 15/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, itertools, logging
+import os, logging
 from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
