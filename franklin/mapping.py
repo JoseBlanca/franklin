@@ -21,7 +21,7 @@ Created on 05/02/2010
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
-from franklin.sam import bam2sam, sort_bam_sam
+from franklin.sam import sam2bam, sort_bam_sam
 import os
 
 def create_bwa_reference(reference_fpath):
@@ -70,7 +70,7 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
         raise ValueError('Reads length: short or long')
     # From sam to Bam
     unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
-    bam2sam(ali_fhand.name, unsorted_bam)
+    sam2bam(ali_fhand.name, unsorted_bam)
     # sort bam file
     sort_bam_sam(unsorted_bam, bam_fpath, sort_method='coordinate',
                  java_conf=java_conf)
