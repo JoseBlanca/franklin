@@ -68,10 +68,7 @@ def validate_configuration(config, copy=True):
     validator = Validator()
     #add function to validate some options
     validator.functions['integer_none_or_bool'] = is_integer_none_or_bool
-    validator.functions['integer_or_none'] = is_integer_or_none
-    validator.functions['string_or_none'] = is_string_or_none
-    validator.functions['list_or_none'] = is_list_or_none
-    result = config.validate(validator, copy=copy)
+    result = config.validate(validator, copy=True)
     errors = []
     if result != True:
         for (section_list, key, _) in flatten_errors(config, result):
@@ -83,20 +80,6 @@ def validate_configuration(config, copy=True):
         raise ValidateError('Check following error:\n %s' % '\n'.join(errors))
     else:
         config.write
-
-def is_string_or_none(value):
-    'This function validates the value and looks if it is an string or a None'
-    kind = type(value)
-    if  kind not in (type('str'), type(None)):
-        raise VdtTypeError(value)
-    return value
-
-def is_list_or_none(value, min=None, max=None):
-    'This function validates the value and looks if it is an list or a None'
-    kind = type(value)
-    if  kind not in (type([1]), type(None)):
-        raise VdtTypeError(value)
-    return value
 
 def is_integer_none_or_bool(value, min=None, max=None):
     '''This function validates the value and looks if it is an integer a None or
@@ -112,19 +95,6 @@ def is_integer_none_or_bool(value, min=None, max=None):
         if max is not None and value >int(max):
             raise VdtValueTooBigError(value)
     return value
-
-def is_integer_or_none(value, min=None, max=None):
-    '''This function validates the value and looks if it is an integer a None'''
-    kind = type(value)
-    if kind not in (type(1), type(None)):
-        raise VdtTypeError(value)
-    if isinstance(value, int):
-        if min is not None and value < int(min):
-            raise VdtValueTooSmallError(value)
-        if max is not None and value >int(max):
-            raise VdtValueTooBigError(value)
-    return value
-
 
 def make_config(project_path, name, config_data):
     'It creates the configobj'
@@ -239,38 +209,38 @@ def make_config_spec():
     ['Other_settings']
         default_sanger_quality = integer(default=20)
         java_memory            = integer(default=1024)
-        picard_path            = string_or_none(default=None)
-        gatk_path              = string_or_none(default=None)
+        picard_path            = string(default=None)
+        gatk_path              = string(default=None)
 
     # Sample size to make stats
     ['Read_stats']
-        sampling_size = integer_or_none(min=0, max=3000, default=None)
+        sampling_size = integer(min=0, max=3000, default=None)
 
     ['Cleaning']
+        adaptors_file_454       = string(default=None)
+        adaptors_file_sanger    = string(default=None)
+        adaptors_file_illumina  = string(default=None)
 
-        adaptors_file_454       = string_or_none(default=None)
-        adaptors_file_sanger    = string_or_none(default=None)
-        adaptors_file_illumina  = string_or_none(default=None)
-
-        short_adaptors_sanger   = list_or_none(default=None)
-        short_adaptors_454      = list_or_none(default=None)
-        short_adaptors_illumina = list_or_none(default=None)
+        short_adaptors_sanger   = list(default=None)
+        short_adaptors_454      = list(default=None)
+        short_adaptors_illumina = list(default=None)
 
         vector_database = string(default='UniVec')
+
+        # Nucleotides to remove for each edge in each platform
+        454_left_trim       = integer(default=None)
+        454_right_trim      = integer(default=None)
+        sanger_left_trim    = integer(default=None)
+        sanger_right_trim   = integer(default=None)
+        illumina_left_trim  = integer(default=None)
+        illumina_right_trim = integer(default=None)
+
         # Minimun seq length before removing the seq in the cleaning step
         [['min_seq_length']]
             454      = integer(min=0, max=400 ,default=100)
             sanger   = integer(min=0, max=400, default=100)
             illumina = integer(min=0, default=22)
 
-        # Nucleotides to remove for each edge in each platform
-        [['edge_removal']]
-            454_left       = integer_or_none(default=None)
-            454_right      = integer_or_none(default=None)
-            sanger_left    = integer_or_none(default=None)
-            sanger_right   = integer_or_none(default=None)
-            illumina_left  = integer_or_none(default=None)
-            illumina_right = integer_or_none(default=None)
         [[lucy]]
             vector_settings = string_or_none(default=None)
             bracket = float_list(default=list(10, 0.02))
@@ -330,19 +300,15 @@ def make_config_spec():
         min_quality     = integer(default=45)
         min_mapq        = integer(default=15)
         min_num_alleles =  integer(default=1)
-        [['edge_removal']]
-            454_left       = integer_or_none(default=None)
-            454_right      = integer_or_none(default=None)
-            sanger_left    = integer_or_none(default=None)
-            sanger_right   = integer_or_none(default=None)
-            illumina_left  = integer_or_none(default=None)
-            illumina_right = integer_or_none(default=None)
-
-
+        [['ignore_edges']]
+            454_left       = integer(default=None)
+            454_right      = integer(default=None)
+            sanger_left    = integer(default=None)
+            sanger_right   = integer(default=None)
+            illumina_left  = integer(default=None)
+            illumina_right = integer(default=None)
 '''
 
     cfg = cfg.splitlines()
-    config_spec = ConfigObj(cfg, list_values=False,_inspec=True)
+    config_spec = ConfigObj(cfg, list_values=False)
     return config_spec
-
-

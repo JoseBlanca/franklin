@@ -104,8 +104,8 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['remove_short_adaptors']['words'] = words
 
         #edge_remover
-        left =  settings['edge_removal']['%s_left' % platform]
-        right = settings['edge_removal']['%s_right' % platform]
+        left =  settings['%s_left_trim' % platform]
+        right = settings['%s_right_trim' % platform]
         configuration['edge_removal'] = {}
         configuration['edge_removal']['left_length'] = left
         configuration['edge_removal']['right_length'] = right

@@ -120,7 +120,7 @@ general vector removal
 low complexity masking
   The regions with a low complexity are masked by using mdust
 
-edge removal
+edge trimming
   After all the other modules are run we can delete a fixed amount of bases from the sequence extremes
 
 short sequence filtering
@@ -170,22 +170,22 @@ short_adaptors_sanger
 short_adaptors_illumina
   Idem for the illumina sequences
 
-edge_removal -> 454_left
+454_left_trim
   A fixed number of bases to be removed from the left edge of the 454 reads.
 
-edge_removal -> 454_right
+454_right_trim
   Idem for the right edge of the 454 reads
 
-edge_removal -> sanger_left
+sanger_left_trim
   Idem for the left edge of the sanger reads
 
-edge_removal -> sanger_right
+sanger_right_trim
   Idem for the right edge of the sanger reads
 
-edge_removal -> illumina_left
+illumina_left_trim
   Idem for the left edge of the illumina reads
 
-edge_removal -> illumina_right
+illumina_right_trim
   Idem for the right edge of the illumina reads
 
 
