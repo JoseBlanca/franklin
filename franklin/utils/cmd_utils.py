@@ -28,7 +28,14 @@ import StringIO, logging, copy, shutil
 
 def _locate_file(fpath):
     cmd = ['locate', fpath]
-    stdout = call(cmd, raise_on_error=True)[0]
+    stdout, stderr, retcode = call(cmd, raise_on_error=False)
+    if retcode == 1:
+        raise RuntimeError('File not found: %s' % fpath)
+    elif not retcode:
+        pass
+    else:
+        msg = 'Locate produced and error when looking for: %s' % fpath
+        raise RuntimeError(msg)
     found_path = None
     for line in stdout.splitlines():
         if fpath in line:
