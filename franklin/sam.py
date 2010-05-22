@@ -40,6 +40,7 @@ def get_read_group_info(bam):
         del read_group['ID']
         rg_info[name] = read_group
     return rg_info
+
 def _guess_picard_path(java_conf=None):
     'It returns the picard path using locate'
     if java_conf and 'picard_path' in java_conf and java_conf['picard_path']:
@@ -68,13 +69,13 @@ def sam2bam(sam_path, bam_path):
     cmd = ['samtools', 'view', '-bSh', '-o', bam_path, sam_path]
     call(cmd, raise_on_error=True)
 
-def bamsam_converter(input_fhand, output_fhand, picard_path=None):
+def bamsam_converter(input_fhand, output_fhand, java_conf=None):
     'Converts between sam and bam'
-    if picard_path is None:
-        picard_path = _guess_picard_path()
+    picard_path = _guess_picard_path(java_conf)
     picard_jar = os.path.join(picard_path, 'SamFormatConverter.jar')
-    cmd = ['java', '-Xmx2g', '-jar', picard_jar, 'INPUT=' + input_fhand,
-           'OUTPUT=' + output_fhand]
+    cmd = java_cmd(java_conf)
+    cmd.extend(['-jar', picard_jar, 'INPUT=' + input_fhand,
+                'OUTPUT=' + output_fhand])
     call(cmd, raise_on_error=True)
 
 def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
