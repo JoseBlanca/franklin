@@ -65,7 +65,7 @@ def bam2sam(bam_path, sam_path, header=False):
 
 def sam2bam(sam_path, bam_path):
     'It converts between bam and sam.'
-    cmd = ['samtools', 'view', '-bth', '-o', bam_path, sam_path]
+    cmd = ['samtools', 'view', '-bSh', '-o', bam_path, sam_path]
     call(cmd, raise_on_error=True)
 
 def bamsam_converter(input_fhand, output_fhand, picard_path=None):
