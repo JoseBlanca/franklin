@@ -68,6 +68,12 @@ def sam2bam(sam_path, bam_path):
     'It converts between bam and sam.'
     cmd = ['samtools', 'view', '-bSh', '-o', bam_path, sam_path]
     call(cmd, raise_on_error=True)
+    
+    #if we try to use this function with a sam with no header it would fail
+     #samtools view -bhS -o seqs.bam  seqs.2.sam
+    #[samopen] no @SQ lines in the header.
+    #[sam_read1] missing header? Abort!
+    #in that case we would have to use the -t option
 
 def bamsam_converter(input_fhand, output_fhand, java_conf=None):
     'Converts between sam and bam'
