@@ -23,10 +23,15 @@ Created on 29/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from configobj import ConfigObj, flatten_errors
-from validate import (Validator, ValidateError, VdtTypeError, VdtValueError,
-                      VdtValueTooSmallError, VdtValueTooBigError)
+
+from configobj import ConfigObj
+
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
+from franklin.utils.misc_utils import OrderedDict
+from franklin.utils.config_utils import (pretyfy_config, add_default_values,
+                                         validate_config, STRING, INTEGER,
+                                         BOOLEAN, INTEGER_OR_BOOL, STRING_LIST,
+                                         NUMBER_LIST)
 
 def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
@@ -47,7 +52,7 @@ def create_project(name, directory=None, configuration=None):
     config_data = os.path.join(project_path,
                                BACKBONE_DIRECTORIES['external_software_config'])
 
-    config = make_config(project_path, name, config_data)
+    config = _make_default_config(project_path, name, config_data)
     config.filename = os.path.join(settings_path)
 
     #overwrite with the configuration given
@@ -57,101 +62,50 @@ def create_project(name, directory=None, configuration=None):
                 config[section] = {}
             config[section][key] = value
 
-    # Validate Config
-    validate_configuration(config)
     config.write()
+
+    pretyfy_config(config.filename)
 
     return settings_path
 
-def validate_configuration(config, copy=True):
-    'It validates the configuration'
-    validator = Validator()
-    #add function to validate some options
-    validator.functions['integer_none_or_bool'] = is_integer_none_or_bool
-    validator.functions['integer_or_none'] = is_integer_or_none
-    validator.functions['string_or_none'] = is_string_or_none
-    validator.functions['list_or_none'] = is_list_or_none
-    result = config.validate(validator, copy=copy)
-    errors = []
-    if result != True:
-        for (section_list, key, _) in flatten_errors(config, result):
-            if key is not None:
-                error_msg = 'The "%s" key in the section "%s" failed validation' % (key, ', '.join(section_list))
-            else:
-                error_msg = 'The following section was missing:%s ' % ', '.join(section_list)
-            errors.append(error_msg)
-        raise ValidateError('Check following error:\n %s' % '\n'.join(errors))
-    else:
-        config.write
+def create_configuration(config_path):
+    'It returns a validated configObj'
 
-def is_string_or_none(value):
-    'This function validates the value and looks if it is an string or a None'
-    kind = type(value)
-    if  kind not in (type('str'), type(None)):
-        raise VdtTypeError(value)
-    return value
+    config = ConfigObj(config_path, unrepr=True)
 
-def is_list_or_none(value, min=None, max=None):
-    'This function validates the value and looks if it is an list or a None'
-    kind = type(value)
-    if  kind not in (type([1]), type(None)):
-        raise VdtTypeError(value)
-    return value
+    add_default_values(config, DEFAULT_CONFIGURATION)
 
-def is_integer_none_or_bool(value, min=None, max=None):
-    '''This function validates the value and looks if it is an integer a None or
-    True'''
+    validate_config(config, DEFAULT_CONFIGURATION)
 
-    kind = type(value)
-    if kind not in (type(1), type(None), type(True)):
-        raise VdtTypeError(value)
+    return config
 
-    if type(value) == type(1):
-        if min is not None and value < int(min):
-            raise VdtValueTooSmallError(value)
-        if max is not None and value >int(max):
-            raise VdtValueTooBigError(value)
-    return value
+def _make_default_config(project_path, name, config_data):
+    'It creates the configobj adding some default values'
 
-def is_integer_or_none(value, min=None, max=None):
-    '''This function validates the value and looks if it is an integer a None'''
-    kind = type(value)
-    if kind not in (type(1), type(None)):
-        raise VdtTypeError(value)
-    if isinstance(value, int):
-        if min is not None and value < int(min):
-            raise VdtValueTooSmallError(value)
-        if max is not None and value >int(max):
-            raise VdtValueTooBigError(value)
-    return value
+    config = ConfigObj(unrepr=True)
 
+    add_default_values(config, DEFAULT_CONFIGURATION)
 
-def make_config(project_path, name, config_data):
-    'It creates the configobj'
+    _add_some_settings(config, project_path, name, config_data)
 
-    config_spec = make_config_spec()
+    validate_config(config, DEFAULT_CONFIGURATION)
 
-    config = ConfigObj(configspec=config_spec, unrepr=True)
+    return config
+def _add_some_settings(config, project_path, name, config_data):
+    'It adds some extra default parameters'
 
-    config['General_settings'] = {}
-    config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
+    config['General_settings'] = config['General_settings']
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
+    config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
 
-#    config['Cleaning'] = {}
-#    config['Cleaning']['lucy'] = {}
-#    lucy_settings = os.path.join(config_data, 'lucy', 'lucy.conf')
-#    config['Cleaning']['lucy']['vector_settings'] = lucy_settings
-
-    config['blast'] = {}
+    config['blast'] = config['blast']
     config['blast']['nr'] = {}
-    config['blast']['nr']['path'] = "Path_to_nr database"
+    config['blast']['nr']['path'] = "/path/to/nr/database"
     config['blast']['nr']['species'] = 'all'
-    config['blast']['nr']['kind'] = 'prot'
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
-
 
     config['snv_filters'] = {}
     config['snv_filters']['filter1'] = {}
@@ -224,125 +178,119 @@ def make_config(project_path, name, config_data):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
-    return config
-
-def make_config_spec():
-    'It creates the backbone_config_spec '
-
-    cfg ='''
-    ['General_settings']
-        tmpdir       = string
-        project_name = string
-        project_path = string
-        threads      = integer_none_or_bool(min=1, default=None)
-
-    ['Other_settings']
-        default_sanger_quality = integer(default=20)
-        java_memory            = integer(default=1024)
-        picard_path            = string_or_none(default=None)
-        gatk_path              = string_or_none(default=None)
-
-    # Sample size to make stats
-    ['Read_stats']
-        sampling_size = integer_or_none(min=0, max=3000, default=None)
-
-    ['Cleaning']
-
-        adaptors_file_454       = string_or_none(default=None)
-        adaptors_file_sanger    = string_or_none(default=None)
-        adaptors_file_illumina  = string_or_none(default=None)
-
-        short_adaptors_sanger   = list_or_none(default=None)
-        short_adaptors_454      = list_or_none(default=None)
-        short_adaptors_illumina = list_or_none(default=None)
-
-        vector_database = string(default='UniVec')
-        # Minimun seq length before removing the seq in the cleaning step
-        [['min_seq_length']]
-            454      = integer(min=0, max=400 ,default=100)
-            sanger   = integer(min=0, max=400, default=100)
-            illumina = integer(min=0, default=22)
-
-        # Nucleotides to remove for each edge in each platform
-        [['edge_removal']]
-            454_left       = integer_or_none(default=None)
-            454_right      = integer_or_none(default=None)
-            sanger_left    = integer_or_none(default=None)
-            sanger_right   = integer_or_none(default=None)
-            illumina_left  = integer_or_none(default=None)
-            illumina_right = integer_or_none(default=None)
-        [[lucy]]
-            vector_settings = string_or_none(default=None)
-            bracket = float_list(default=list(10, 0.02))
-            window  = float_list(default=list(50, 0.08, 10, 0.3))
-            error   = float_list(default=list(0.015, 0.015))
-
-    # Mira configuration.
-    ['Mira']
-        job_options = string_list(default=list('denovo', 'est'))
-        general_settings = string_list(default=list('-AS:sd=1'))
-        454_settings     = string_list(default=list("-LR:mxti=no", "-CO:rodirs=5", "-AL:mrs=80", "-OUT:sssip=0:stsip=0"))
-        sanger_settings  = string_list(default=list('-AS:epoq=no', '-AS:bdq=30', '-CO:rodirs=5', '-AL:mrs=80', '-OUT:sssip=0:stsip=0'))
-
-
-    ['Mappers']
-        mapper_for_454      = string(default=bwa)
-        mapper_for_illumina = string(default=bwa)
-        mapper_for_solid    = string(default=bwa)
-        mapper_for_sanger   = string(default=bwa)
-
-    ['Sam_processing']
-        add_default_qualities = boolean(default=True)
-
-    ['Sam_stats']
-        sampling_size = integer_or_none(default=None)
-
-    ['Annotation']
-        [['description_annotation']]
-            # List of databases to use form description annotation.
-            # This databases must be previously defined in blast section
-            description_databases = string_list(default=list('somedb'))
-        [['ortholog_annotation']]
-            # List ofdatabses to look form orthoglogs
-            # This databases must be previously defined in blast section
-            ortholog_databases =  string_list(default=list('somedb'))
-        [['Cdna_intron_annotation']]
-            # Path to the genomic seqs
-            genomic_seqs = string(default='path_to_seqs')
-            genomic_db   = string_or_none(default =None)
-
-        [['orf_annotation']]
-            estscan_matrix  = string(default='path to estscan matrix')
-        [['go_annotation']]
-            blast_database  = string(default='nr')
-            java_memory     = integer(default=2048)
-            create_dat_file = boolean(default=False)
-            prop_fpath      = string_or_none(default=None)
-
-    ['blast']
-        # Add as many blast databases as you need. You only need to add the
-        # path and the species of the databases
-        [[__many__]]
-            path    = string(default="Path to database")
-            species = string(default='species')
-
-    ['Snvs']
-        min_quality     = integer(default=45)
-        min_mapq        = integer(default=15)
-        min_num_alleles =  integer(default=1)
-        [['edge_removal']]
-            454_left       = integer_or_none(default=None)
-            454_right      = integer_or_none(default=None)
-            sanger_left    = integer_or_none(default=None)
-            sanger_right   = integer_or_none(default=None)
-            illumina_left  = integer_or_none(default=None)
-            illumina_right = integer_or_none(default=None)
-
-
-'''
-
-    cfg = cfg.splitlines()
-    config_spec = ConfigObj(cfg, list_values=False,_inspec=True)
-    return config_spec
-
-
+DEFAULT_CONFIGURATION = OrderedDict([
+           ('General_settings',
+                OrderedDict([
+                    ('tmpdir', (STRING, None)),
+                    ('project_name', (STRING, None)),
+                    ('project_path', (STRING, None)),
+                    ('threads', (INTEGER_OR_BOOL, None)),
+                ]),
+            ),
+           ('Other_settings',
+                OrderedDict([
+                    ('default_sanger_quality', (INTEGER, 20)),
+                    ('java_memory', (INTEGER, None)),
+                    ('picard_path', (STRING, None)),
+                    ('gatk_path',   (STRING, None)),
+                ])
+            ),
+           ('Cleaning',
+                OrderedDict([
+                    ('adaptors_file_454', (STRING, None)),
+                    ('adaptors_file_sanger', (STRING, None)),
+                    ('adaptors_file_illumina', (STRING, None)),
+                    ('short_adaptors_sanger', (STRING_LIST, [])),
+                    ('short_adaptors_454', (STRING_LIST, [])),
+                    ('short_adaptors_illumina', (STRING_LIST, [])),
+                    ('vector_database', (STRING, 'UniVec')),
+                    ('min_seq_length',{
+                                      '454' : (INTEGER, 100),
+                                      'sanger': (INTEGER, 100),
+                                      'illumina': (INTEGER, 22),
+                    }),
+                    ('edge_removal',
+                         OrderedDict([
+                            ('454_left', (INTEGER, None)),
+                            ('454_right', (INTEGER, None)),
+                            ('sanger_left', (INTEGER, None)),
+                            ('sanger_right', (INTEGER, None)),
+                            ('illumina_left', (INTEGER, None)),
+                            ('illumina_right', (INTEGER, None)),
+                        ]),
+                    ),
+                    ('lucy', {
+                             'vector_settings': (STRING, None),
+                             'bracket': (NUMBER_LIST, [10, 0.02]),
+                             'window': (NUMBER_LIST, [50, 0.08, 10, 0.3]),
+                             'error': (NUMBER_LIST, [0.015, 0.015])
+                    })
+               ]),
+            ),
+           ('Mira',
+                OrderedDict([
+                   ('job_options', (STRING_LIST, ['denovo', 'est'])),
+                   ('general_settings', (STRING_LIST, ['-AS:sd=1'])),
+                   ('454_settings', (STRING_LIST, ["-LR:mxti=no",
+                                                   "-CO:rodirs=5",
+                                                   "-AL:mrs=80",
+                                                   "-OUT:sssip=0:stsip=0"])),
+                   ('sanger_settings', (STRING_LIST, ['-AS:epoq=no',
+                                                      '-AS:bdq=30',
+                                                      '-CO:rodirs=5',
+                                                      '-AL:mrs=80',
+                                                      '-OUT:sssip=0:stsip=0'])),
+                ]),
+           ),
+           ('Mappers', {
+                'mapper_for_454': (STRING, 'bwa'),
+                'mapper_for_illumina': (STRING, 'bwa'),
+                'mapper_for_solid': (STRING, 'bwa'),
+                'mapper_for_sanger': (STRING, 'bwa'),
+           }),
+           ('Sam_processing',{
+                'add_default_qualities': (BOOLEAN, True),
+            }),
+           ('Sam_stats',{
+                'sampling_size': (INTEGER, None),
+            }),
+          ('Annotation', {
+                'description_annotation':{
+                    'description_databases': (STRING_LIST, [])},
+                'ortholog_annotation': {
+                    'ortholog_databases': (STRING_LIST, [])},
+                'Cdna_intron_annotation': {
+                    'genomic_seqs': (STRING, None),
+                    'genomic_db' : (STRING, None),},
+                'orf_annotation':{
+                    'estscan_matrix' : (STRING, 'path to estscan matrix')},
+                'go_annotation':{
+                    'blast_database': (STRING, 'nr'),
+                    'java_memory': (INTEGER, 2048),
+                    'create_dat_file': (BOOLEAN, False),
+                    'prop_fpath': (STRING, None)}
+                },
+            ),
+        ('blast', {
+            '__many__':{
+                'path': (STRING, "/Path/to/database"),
+                'species': (STRING, 'species_name')},
+            }),
+        ('Snvs',
+            OrderedDict([
+                ('min_quality', (INTEGER, 45)),
+                ('min_mapq', (INTEGER, 15)),
+                ('min_num_alleles', (INTEGER, 1)),
+                ('edge_removal',
+                         OrderedDict([
+                            ('454_left', (INTEGER, None)),
+                            ('454_right', (INTEGER, None)),
+                            ('sanger_left', (INTEGER, None)),
+                            ('sanger_right', (INTEGER, None)),
+                            ('illumina_left', (INTEGER, None)),
+                            ('illumina_right', (INTEGER, None)),
+                        ])
+                )
+            ])
+        )
+    ])

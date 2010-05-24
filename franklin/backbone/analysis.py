@@ -105,9 +105,8 @@ class Analyzer(object):
         'It prepares tempfile to use the given tempdir from the settings'
 
         self._old_tempdir = tempfile.tempdir
-        try:
-            tmpdir = self._project_settings['General_settings']['tmpdir']
-        except KeyError:
+        tmpdir = self._project_settings['General_settings']['tmpdir']
+        if tmpdir is None:
             return
         self._set_tmp(tmpdir)
 

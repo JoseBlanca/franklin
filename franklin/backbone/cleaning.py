@@ -192,7 +192,7 @@ class ReadsStatsAnalyzer(Analyzer):
         original_paths = self._get_input_fpaths()['original_reads']
         reads = {'cleaned': clean_paths, 'original': original_paths}
 
-        sample_size = self._project_settings['Read_stats' ]['sampling_size']
+        sample_size = None
 
         # first per file stats
         for seq_type, paths in reads.items():
