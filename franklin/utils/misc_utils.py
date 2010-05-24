@@ -19,7 +19,7 @@ Created on 2009 api 30
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import tempfile, sys, stat
+import tempfile, sys, stat, shutil
 import os, re, math, time
 from UserDict import DictMixin
 import franklin
@@ -67,61 +67,61 @@ class NamedTemporaryDir(object):
         '''It removes the temp dir'''
         if os.path.exists(self._name):
             #shutil.rmtree(self._name)
-            self._rmtree(self._name)
+            shutil.rmtree(self._name)
 
     def __del__(self):
         '''It removes de temp dir when instance is removed and the garbaje
         colector decides it'''
         self.close()
 
-    def _rmtree(self, path, ignore_errors=False, onerror=None, timeout=5.0):
-        'shutil rmtree adding timeout'
-        if ignore_errors:
-            def onerror(*args):
-                pass
-        elif onerror is None:
-            def onerror(*args):
-                raise
-        try:
-            if os.path.islink(path):
-                # symlinks to directories are forbidden, see bug #1669
-                raise OSError("Cannot call rmtree on a symbolic link")
-        except OSError:
-            onerror(os.path.islink, path, sys.exc_info())
-            # can't continue even if onerror hook returns
-            return
-        names = []
-        try:
-            names = os.listdir(path)
-        except os.error, err:
-            onerror(os.listdir, path, sys.exc_info())
-        for name in names:
-            fullname = os.path.join(path, name)
-            try:
-                mode = os.lstat(fullname).st_mode
-            except os.error:
-                mode = 0
-            if stat.S_ISDIR(mode):
-                self._rmtree(fullname, ignore_errors, onerror)
-            else:
-                try:
-                    os.remove(fullname)
-                except os.error, err:
-                    onerror(os.remove, fullname, sys.exc_info())
-
-        start_time = time.time()
-        time_waiting = abs(start_time - time.time())
-        while time_waiting < timeout:
-            time_waiting = abs(start_time - time.time())
-            try:
-                os.rmdir(path)
-                break
-            except os.error:
-                if time_waiting < timeout:
-                    time.sleep(timeout / 10.0)
-                else:
-                    onerror(os.rmdir, path, sys.exc_info())
-                    break
+#    def _rmtree(self, path, ignore_errors=False, onerror=None, timeout=5.0):
+#        'shutil rmtree adding timeout'
+#        if ignore_errors:
+#            def onerror(*args):
+#                pass
+#        elif onerror is None:
+#            def onerror(*args):
+#                raise
+#        try:
+#            if os.path.islink(path):
+#                # symlinks to directories are forbidden, see bug #1669
+#                raise OSError("Cannot call rmtree on a symbolic link")
+#        except OSError:
+#            onerror(os.path.islink, path, sys.exc_info())
+#            # can't continue even if onerror hook returns
+#            return
+#        names = []
+#        try:
+#            names = os.listdir(path)
+#        except os.error, err:
+#            onerror(os.listdir, path, sys.exc_info())
+#        for name in names:
+#            fullname = os.path.join(path, name)
+#            try:
+#                mode = os.lstat(fullname).st_mode
+#            except os.error:
+#                mode = 0
+#            if stat.S_ISDIR(mode):
+#                self._rmtree(fullname, ignore_errors, onerror)
+#            else:
+#                try:
+#                    os.remove(fullname)
+#                except os.error, err:
+#                    onerror(os.remove, fullname, sys.exc_info())
+#
+#        start_time = time.time()
+#        time_waiting = abs(start_time - time.time())
+#        while time_waiting < timeout:
+#            time_waiting = abs(start_time - time.time())
+#            try:
+#                os.rmdir(path)
+#                break
+#            except os.error:
+#                if time_waiting < timeout:
+#                    time.sleep(timeout / 10.0)
+#                else:
+#                    onerror(os.rmdir, path, sys.exc_info())
+#                    break
 
 
 def _remove_atributes_to_tag(tag):
