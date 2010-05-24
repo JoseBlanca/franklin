@@ -86,8 +86,57 @@ def _make_default_config(project_path, name, config_data):
 
     return config
 
-def _validate_config(config, validation_spec, errors=None):
+STRING = (basestring,)
+INTEGER = (int,)
+BOOLEAN = (bool,)
+FLOAT = (float,)
+NUMBER = (float, int)
+INTEGER_OR_BOOL = (int, bool)
+
+def _list(value, parameter, type_):
+    'It checks that the values in the list are the given type_'
+    if not isinstance(value, list) and not isinstance(value, tuple):
+        msg = 'In parameter %s, value %s is not a list' % (parameter,
+                                                            str(value))
+        raise ValueError(msg)
+    for item in value:
+        _check_type(item, parameter, type_)
+
+STRING_LIST = (_list, STRING)
+FLOAT_LIST = (_list, FLOAT)
+NUMBER_LIST = (_list, NUMBER)
+
+def _check_type(value, parameter, types):
+    'It check that the value is an string or None'
+    if value is None:
+        return
+    if not any([isinstance(value, type_) for type_ in types]):
+        msg = 'In parameter %s, value %s is not a %s' % (parameter,
+                                                         str(value),
+                                                         str(type_))
+        raise ValueError(msg)
+
+def _validate_config(config, validation_spec):
     'It raises an error if some value is not ok'
+    errors = _validate_config_recursive(config, validation_spec)
+    if errors:
+        msg = 'Erros found in the configuration for the following '
+        msg += 'sections:values:type -> '
+        errors = ', '.join(['%s:%s:%s' % (error) for error in errors])
+        msg += errors
+        raise ValueError(msg)
+
+def _validate_config_recursive(config, validation_spec, errors=None):
+    'It returns the errors found in the configuration'
+    validator_strs = {(basestring,): 'string',
+                      (int,): 'integer',
+                      (bool,): 'bolean',
+                      (float,): 'float',
+                      (float, int): 'number',
+                      (int, bool): 'integer or boolean',
+                      (_list, STRING): 'list of strings',
+                      (_list, FLOAT): 'list of floats',
+                      (_list, NUMBER): 'list of numbers'}
 
     if errors is None:
         errors = []
@@ -106,30 +155,26 @@ def _validate_config(config, validation_spec, errors=None):
             else:
                 spec_value = validation_spec[key]
             if spec_value is not None:
-                _validate_config(value, spec_value, errors)
+                _validate_config_recursive(value, spec_value, errors)
         else:
             #are there a default value?
             if key == 'kind':
                 pass
             spec_value = validation_spec[key]
-            if isinstance(spec_value, tuple) or isinstance(spec_value, list):
-                validator = validation_spec[key][0]
-            else:
-                validator = validation_spec[key]
+            validator = validation_spec[key][0]
+            validator_str = validator_strs[validator]
             try:
-                if validator in (STRING, INTEGER, BOOLEAN, FLOAT):
+                if validator in (STRING, INTEGER, BOOLEAN, FLOAT,
+                                 INTEGER_OR_BOOL):
                     _check_type(value, key, validator)
-                elif validator == INTEGER_OR_BOOL:
-                    _integer_or_bool(value, key)
-                elif validator == STRING_LIST:
-                    _list_check_type(value, key, STRING)
-                elif validator == FLOAT_LIST:
-                    _list_check_type(value, key, FLOAT)
+                elif validator in (STRING_LIST, FLOAT_LIST, NUMBER_LIST):
+                    validator[0](value, key, validator[1])
                 else:
                     raise RuntimeError('Unknown validator ' + str(validator))
 
             except ValueError:
-                errors.append((value, key))
+                errors.append((key, value, validator_str))
+    return errors
 
 def _add_default_values(config, defaults):
     'It adds the default values to the configuration'
@@ -239,63 +284,15 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
-STRING = basestring
-INTEGER = int
-BOOLEAN = bool
-FLOAT = float
-
-def _integer_or_bool(value, parameter):
-    'It check that the value is an integer, bool or None'
-    if value is None:
-        return
-    if not isinstance(value, int) and not isinstance(value, bool):
-        msg = 'parameter %s, value %s is not an integer or bool'  % (parameter,
-                                                         str(value))
-        raise ValueError(msg)
-
-INTEGER_OR_BOOL = _integer_or_bool
-
-def _string_list(value, parameter):
-    'It checks that the values in the list are strings'
-    _list_check_type(value, parameter, STRING)
-
-def _float_list(value, parameter):
-    'It checks that the values in the list are strings'
-    _list_check_type(value, parameter, float)
-
-def _list_check_type(value, parameter, type_):
-    'It checks that the values in the list are the given type_'
-    if not isinstance(value, list) and not isinstance(value, tuple):
-        msg = 'In parameter %s, value %s is not a list' % (parameter,
-                                                            str(value))
-        raise ValueError(msg)
-    for item in value:
-        _check_type(item, parameter, type_)
-
-STRING_LIST = _string_list
-FLOAT_LIST = _float_list
-
-
-def _check_type(value, parameter, type_):
-    'It check that the value is an string or None'
-    if value is None:
-        return
-    if not isinstance(value, type_):
-        msg = 'In parameter %s, value %s is not a %s' % (parameter,
-                                                         str(value),
-                                                         str(type_))
-        raise ValueError(msg)
-
-
 DEFAULT_CONFIGURATION = {
            'General_settings': {
                 'tmpdir': (STRING, None),
-                'project_name': STRING,
-                'project_path': STRING,
+                'project_name': (STRING, None),
+                'project_path': (STRING, None),
                 'threads': (INTEGER_OR_BOOL, None),
                                 },
            'Other_settings': {
-                'default_sanger_quality': (STRING, 20),
+                'default_sanger_quality': (INTEGER, 20),
                 'java_memory': (INTEGER, None),
                 'picard_path': (STRING, None),
                 'gatk_path':   (STRING, None),
@@ -323,9 +320,9 @@ DEFAULT_CONFIGURATION = {
                     },
                'lucy':{
                     'vector_settings': (STRING, None),
-                    'bracket': (FLOAT_LIST, [10, 0.02]),
-                    'window': (FLOAT_LIST, [50, 0.08, 10, 0.3]),
-                    'error': (FLOAT_LIST, [0.015, 0.015])
+                    'bracket': (NUMBER_LIST, [10, 0.02]),
+                    'window': (NUMBER_LIST, [50, 0.08, 10, 0.3]),
+                    'error': (NUMBER_LIST, [0.015, 0.015])
                     }
                },
            'Mira': {
