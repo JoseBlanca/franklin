@@ -21,6 +21,7 @@ Created on 05/02/2010
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
+from franklin.sam import sam2bam, sort_bam_sam
 import os
 
 def create_bwa_reference(reference_fpath):
@@ -38,7 +39,7 @@ def create_bwa_reference(reference_fpath):
     call(cmd, raise_on_error=True)
 
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
-                       parameters, threads=False):
+                       parameters, threads=False, java_conf=None):
     'It maps the reads to the reference using bwa and returns a bam file'
     threads = get_num_threads(threads)
     #the reference should have an index
@@ -69,24 +70,20 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
         raise ValueError('Reads length: short or long')
     # From sam to Bam
     unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
-    cmd = ['samtools', 'view' , '-bt', reference_fpath, '-o', unsorted_bam,
-           ali_fhand.name]
-    call(cmd, raise_on_error=True)
+    sam2bam(ali_fhand.name, unsorted_bam)
     # sort bam file
-    bam_basename = os.path.splitext(bam_fpath)[0]
-    cmd = ['samtools', 'sort', unsorted_bam, bam_basename]
-    call(cmd, raise_on_error=True)
-
+    sort_bam_sam(unsorted_bam, bam_fpath, sort_method='coordinate',
+                 java_conf=java_conf)
     temp_dir.close()
 
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
-              parameters=None, threads=False):
+              parameters=None, threads=False, java_conf=None):
     'It maps the reads to the reference and returns a bam file'
     if parameters is None:
         parameters = {}
     mapper_func = MAPPER_FUNCS[mapper]
     return mapper_func(reference_fpath, reads_fpath, out_bam_fpath, parameters,
-                       threads=threads)
+                       threads=threads, java_conf=java_conf)

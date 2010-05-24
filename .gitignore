@@ -1,4 +1,5 @@
-/.pydevproject
+.pydevproject
+.project
 *.pyc
 /franklin.egg-info
 doc/build

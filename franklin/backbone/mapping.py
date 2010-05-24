@@ -62,6 +62,10 @@ class MappingAnalyzer(Analyzer):
         reference_fpath = inputs['reference']
         output_dir = self._create_output_dirs(timestamped=True)['result']
 
+        #memory for the java programs
+        java_mem = self._project_settings['Other_settings']['java_memory']
+        picard_path = self._project_settings['Other_settings']['picard_path']
+
         for read_fpath in reads_fpaths:
             read_info = scrape_info_from_fname(read_fpath)
             platform = read_info['pl']
@@ -80,7 +84,9 @@ class MappingAnalyzer(Analyzer):
                           reference_fpath=reference_fpath.last_version,
                           out_bam_fpath=out_bam_fpath,
                           parameters=mapping_parameters,
-                          threads=self.threads)
+                          threads=self.threads,
+                          java_conf={'java_memory':java_mem,
+                                     'picard_path':picard_path})
         self._log({'analysis_finished':True})
 
 class MergeBamAnalyzer(Analyzer):
