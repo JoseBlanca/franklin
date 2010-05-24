@@ -32,7 +32,7 @@ from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 
 THREADS = False
 
-class OrthologTest(unittest.TestCase):
+class AnnotationTest(unittest.TestCase):
     'It test the ortholog analysis'
 
     @staticmethod
@@ -42,11 +42,9 @@ class OrthologTest(unittest.TestCase):
         project_name = 'backbone'
 
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
-                                           'species':'arabidopsis',
-                                           'kind': 'nucl'},
+                                           'species':'arabidopsis'},
                           'arabidopsis2':{'path':'/path/to/tair2',
-                                           'species':'arabidopsis2',
-                                           'kind': 'nucl'}},
+                                           'species':'arabidopsis2'}},
 
                   'Annotation':{'ortholog_annotation':{'ortholog_databases':
                                             ['arabidopsis', 'arabidopsis2']}},
@@ -332,5 +330,5 @@ class OrthologTest(unittest.TestCase):
                     silent=True)
 
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'OrthologTest.test_ortholog_annotation_analysis']
+    import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
     unittest.main()

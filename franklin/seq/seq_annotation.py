@@ -23,7 +23,6 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, tempfile
 from xml.parsers.expat import ExpatError
 from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation

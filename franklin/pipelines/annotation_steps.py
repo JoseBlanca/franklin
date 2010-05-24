@@ -60,7 +60,7 @@ annotate_orfs = {'function': create_orf_annotator,
                  'comment': 'It annotates The orf'}
 
 annotate_gos = {'function': create_go_annotator,
-                 'arguments':{'blast':None},
+                 'arguments':{'blast2go':None},
                  'type':'mapper' ,
                  'name':'annotate_gos',
                  'comment': 'It annotates the gos'}

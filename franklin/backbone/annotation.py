@@ -48,6 +48,7 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             is_variable_filter,
                                             ref_not_in_list)
 from franklin.utils.misc_utils import VersionedPath, xml_itemize
+from franklin.utils.cmd_utils import b2gpipe_runner
 
 class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
@@ -495,14 +496,14 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             else:
                 blast_program = 'blastx'
 
-            blastdb = blast_settings[go_database]['path']
+            blastdb     = blast_settings[go_database]['path']
             input_fpath = input_.last_version
-            blast = backbone_blast_runner(query_fpath=input_fpath,
-                                            project_dir=project_dir,
-                                            blast_program=blast_program,
-                                            blast_db=blastdb,
-                                            dbtype=db_kind,
-                                            threads=self.threads)
+            blast       = backbone_blast_runner(query_fpath=input_fpath,
+                                                project_dir=project_dir,
+                                                blast_program=blast_program,
+                                                blast_db=blastdb,
+                                                dbtype=db_kind,
+                                                threads=self.threads)
             if chop_big_xml:
                 #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
                 chopped_blast = NamedTemporaryFile(suffix='.xml')
@@ -513,10 +514,8 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
             blasts[input_fpath] = blast
 
-        # prepare pipeline
-        pipeline = [annotate_gos]
-        configuration = {}
-
+        #First we do the blast 2 go por each of the files
+        blast2go = {}
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
             if create_dat:
@@ -527,21 +526,33 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             annot_fpath = os.path.join(result_dir,
                                        input_.basename + '.b2g.annot')
             blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
+            blast = open(blast)
+            b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
+                   java_memory=java_memory, prop_fpath=prop_fpath)
 
-            step_config = {'blast': blast,
-                           'dat_fpath': dat_fpath,
-                           'annot_fpath': annot_fpath,
-                           'java_memory':java_memory,
-                           'prop_fpath':prop_fpath}
+            blast2go[input_fpath] = open(annot_fpath)
+
+        # prepare pipeline
+        pipeline = [annotate_gos]
+        configuration = {}
+
+        for input_ in  inputs['input']:
+            input_fpath = input_.last_version
+
+            step_config = {'blast2go': blast2go[input_fpath]}
 
             configuration[input_.basename] = {'annotate_gos': step_config}
         result = self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=repr_dir)
+
         #remove the temporal files
         for input_ in  inputs['input']:
+            input_fpath = input_.last_version
             blasts[input_fpath].close()
+            blast2go[input_fpath].close()
+
         return result
 
 
