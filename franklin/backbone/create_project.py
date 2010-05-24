@@ -22,10 +22,9 @@ Created on 29/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, tempfile, shutil
 
 from configobj import ConfigObj
-from validate import Validator
 
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
@@ -60,9 +59,33 @@ def create_project(name, directory=None, configuration=None):
 
     config.write()
 
+    pretyfy_config(config.filename)
+
     print open(config.filename).read()
 
     return settings_path
+
+def pretyfy_config(fpath):
+    'It adds tabs to the config'
+    new_config = tempfile.NamedTemporaryFile()
+
+    section_depth = 0
+    for line in open(fpath):
+        line = line.strip()
+        if line.startswith('['):
+            section_depth = line.count('[')
+
+        if line.startswith('['):
+            line = '    ' * (section_depth  - 1) + line
+        else:
+            line = '    ' * (section_depth - 0) + line
+
+        line = line + '\n'
+        if line.startswith('[') and line.count('[') == 1:
+            new_config.write('\n')
+        new_config.write(line)
+
+    shutil.move(new_config.name, fpath)
 
 def create_configuration(config_path):
     'It returns a validated configObj'
