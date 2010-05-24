@@ -69,6 +69,8 @@ def create_configuration(config_path):
 
     _add_default_values(config, DEFAULT_CONFIGURATION)
 
+    _validate_config(config, DEFAULT_CONFIGURATION)
+
     return config
 
 def _make_default_config(project_path, name, config_data):
@@ -80,7 +82,54 @@ def _make_default_config(project_path, name, config_data):
 
     _add_default_values(config, DEFAULT_CONFIGURATION)
 
+    _validate_config(config, DEFAULT_CONFIGURATION)
+
     return config
+
+def _validate_config(config, validation_spec, errors=None):
+    'It raises an error if some value is not ok'
+
+    if errors is None:
+        errors = []
+    for key, value in config.items():
+        #if key == '__many__':
+            #this is only used for the validation, not for the default
+            #continue
+
+        #are we dealing with a dict or with just a value?
+        if 'items' in dir(value):
+            if '__many__' in validation_spec:
+                spec_value = validation_spec['__many__']
+            elif key not in validation_spec:
+                #some sections do not require validation
+                spec_value = None
+            else:
+                spec_value = validation_spec[key]
+            if spec_value is not None:
+                _validate_config(value, spec_value, errors)
+        else:
+            #are there a default value?
+            if key == 'kind':
+                pass
+            spec_value = validation_spec[key]
+            if isinstance(spec_value, tuple) or isinstance(spec_value, list):
+                validator = validation_spec[key][0]
+            else:
+                validator = validation_spec[key]
+            try:
+                if validator in (STRING, INTEGER, BOOLEAN, FLOAT):
+                    _check_type(value, key, validator)
+                elif validator == INTEGER_OR_BOOL:
+                    _integer_or_bool(value, key)
+                elif validator == STRING_LIST:
+                    _list_check_type(value, key, STRING)
+                elif validator == FLOAT_LIST:
+                    _list_check_type(value, key, FLOAT)
+                else:
+                    raise RuntimeError('Unknown validator ' + str(validator))
+
+            except ValueError:
+                errors.append((value, key))
 
 def _add_default_values(config, defaults):
     'It adds the default values to the configuration'
@@ -115,7 +164,6 @@ def _add_some_settings(config, project_path, name, config_data):
     config['blast']['nr'] = {}
     config['blast']['nr']['path'] = "Path_to_nr database"
     config['blast']['nr']['species'] = 'all'
-    config['blast']['nr']['kind'] = 'prot'
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
@@ -191,108 +239,147 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
+STRING = basestring
+INTEGER = int
+BOOLEAN = bool
+FLOAT = float
 
-string = 'string'
-integer_or_bool = 'interger_or_bool'
-integer = 'integer'
-string_list = ''
-float_list = ''
-boolean = ''
+def _integer_or_bool(value, parameter):
+    'It check that the value is an integer, bool or None'
+    if value is None:
+        return
+    if not isinstance(value, int) and not isinstance(value, bool):
+        msg = 'parameter %s, value %s is not an integer or bool'  % (parameter,
+                                                         str(value))
+        raise ValueError(msg)
+
+INTEGER_OR_BOOL = _integer_or_bool
+
+def _string_list(value, parameter):
+    'It checks that the values in the list are strings'
+    _list_check_type(value, parameter, STRING)
+
+def _float_list(value, parameter):
+    'It checks that the values in the list are strings'
+    _list_check_type(value, parameter, float)
+
+def _list_check_type(value, parameter, type_):
+    'It checks that the values in the list are the given type_'
+    if not isinstance(value, list) and not isinstance(value, tuple):
+        msg = 'In parameter %s, value %s is not a list' % (parameter,
+                                                            str(value))
+        raise ValueError(msg)
+    for item in value:
+        _check_type(item, parameter, type_)
+
+STRING_LIST = _string_list
+FLOAT_LIST = _float_list
+
+
+def _check_type(value, parameter, type_):
+    'It check that the value is an string or None'
+    if value is None:
+        return
+    if not isinstance(value, type_):
+        msg = 'In parameter %s, value %s is not a %s' % (parameter,
+                                                         str(value),
+                                                         str(type_))
+        raise ValueError(msg)
+
 
 DEFAULT_CONFIGURATION = {
            'General_settings': {
-                'tmpdir': (string, None),
-                'project_name': string,
-                'project_path': string,
-                'threads': (integer_or_bool, None),
+                'tmpdir': (STRING, None),
+                'project_name': STRING,
+                'project_path': STRING,
+                'threads': (INTEGER_OR_BOOL, None),
                                 },
            'Other_settings': {
-                'default_sanger_quality': (string, 20),
-                'java_memory': (integer, None),
-                'picard_path': (string, None),
-                'gatk_path':   (string, None),
+                'default_sanger_quality': (STRING, 20),
+                'java_memory': (INTEGER, None),
+                'picard_path': (STRING, None),
+                'gatk_path':   (STRING, None),
                 },
            'Cleaning': {
-                'adaptors_file_454': (string, None),
-                'adaptors_file_sanger': (string, None),
-                'adaptors_file_illumina': (string, None),
-                'short_adaptors_sanger': (string_list, []),
-                'short_adaptors_454': (string_list, []),
-                'short_adaptors_illumina': (string_list, []),
-                'vector_database': (string, 'UniVec'),
+                'adaptors_file_454': (STRING, None),
+                'adaptors_file_sanger': (STRING, None),
+                'adaptors_file_illumina': (STRING, None),
+                'short_adaptors_sanger': (STRING_LIST, []),
+                'short_adaptors_454': (STRING_LIST, []),
+                'short_adaptors_illumina': (STRING_LIST, []),
+                'vector_database': (STRING, 'UniVec'),
                 'min_seq_length':{
-                    '454' : (integer, 100),
-                    'sanger': (integer, 100),
-                    'illumina': (integer, 22),
+                    '454' : (INTEGER, 100),
+                    'sanger': (INTEGER, 100),
+                    'illumina': (INTEGER, 22),
                     },
                'edge_removal': {
-                    '454_left': (integer, None),
-                    '454_right': (integer, None),
-                    'sanger_left': (integer, None),
-                    'sanger_right': (integer, None),
-                    'illumina_left': (integer, None),
-                    'illumina_right': (integer, None),
+                    '454_left': (INTEGER, None),
+                    '454_right': (INTEGER, None),
+                    'sanger_left': (INTEGER, None),
+                    'sanger_right': (INTEGER, None),
+                    'illumina_left': (INTEGER, None),
+                    'illumina_right': (INTEGER, None),
                     },
                'lucy':{
-                    'vector_settings': (string, None),
-                    'bracket': (float_list, [10, 0.02]),
-                    'window': (float_list, [50, 0.08, 10, 0.3]),
-                    'error': (float_list, [0.015, 0.015])
+                    'vector_settings': (STRING, None),
+                    'bracket': (FLOAT_LIST, [10, 0.02]),
+                    'window': (FLOAT_LIST, [50, 0.08, 10, 0.3]),
+                    'error': (FLOAT_LIST, [0.015, 0.015])
                     }
                },
            'Mira': {
-                'job_options': (string_list, ['denovo', 'est']),
-                'general_settings': (string_list, ['-AS:sd=1']),
-                '454_settings': (string_list, ["-LR:mxti=no", "-CO:rodirs=5",
+                'job_options': (STRING_LIST, ['denovo', 'est']),
+                'general_settings': (STRING_LIST, ['-AS:sd=1']),
+                '454_settings': (STRING_LIST, ["-LR:mxti=no", "-CO:rodirs=5",
                                                "-AL:mrs=80",
                                                "-OUT:sssip=0:stsip=0"]),
-                'sanger_settings': (string_list, ['-AS:epoq=no', '-AS:bdq=30',
+                'sanger_settings': (STRING_LIST, ['-AS:epoq=no', '-AS:bdq=30',
                                                   '-CO:rodirs=5', '-AL:mrs=80',
                                                   '-OUT:sssip=0:stsip=0']),
             },
            'Mappers': {
-                'mapper_for_454': (string, 'bwa'),
-                'mapper_for_illumina': (string, 'bwa'),
-                'mapper_for_solid': (string, 'bwa'),
-                'mapper_for_sanger': (string, 'bwa'),
+                'mapper_for_454': (STRING, 'bwa'),
+                'mapper_for_illumina': (STRING, 'bwa'),
+                'mapper_for_solid': (STRING, 'bwa'),
+                'mapper_for_sanger': (STRING, 'bwa'),
            },
            'Sam_processing':{
-                'add_default_qualities': (boolean, True),
+                'add_default_qualities': (BOOLEAN, True),
             },
            'Sam_stats':{
-                'sampling_size': (integer, None),
+                'sampling_size': (INTEGER, None),
             },
           'Annotation': {
                 'description_annotation':{
-                    'description_databases': (string_list, [])},
+                    'description_databases': (STRING_LIST, [])},
                 'ortholog_annotation': {
-                    'ortholog_databases': (string_list, [])},
+                    'ortholog_databases': (STRING_LIST, [])},
                 'Cdna_intron_annotation': {
-                    'genomic_seqs': (string, None),
-                    'genomic_db' : (string, None),},
+                    'genomic_seqs': (STRING, None),
+                    'genomic_db' : (STRING, None),},
                     },
                 'orf_annotation':{
-                    'estscan_matrix' : (string, 'path to estscan matrix')},
+                    'estscan_matrix' : (STRING, 'path to estscan matrix')},
                 'go_annotation':{
-                    'blast_database': (string, 'nr'),
-                    'java_memory': (integer, 2048),
-                    'create_dat_file': (boolean, False),
-                    'prop_fpath': (string, None)},
+                    'blast_database': (STRING, 'nr'),
+                    'java_memory': (INTEGER, 2048),
+                    'create_dat_file': (BOOLEAN, False),
+                    'prop_fpath': (STRING, None)},
         'blast': {
             '__many__':{
-                'path': (string, "/Path/to/database"),
-                'species': (string, 'species_name')},
+                'path': (STRING, "/Path/to/database"),
+                'species': (STRING, 'species_name')},
             },
         'Snvs': {
-            'min_quality': (integer, 45),
-            'min_mapq': (integer, 15),
-            'min_num_alleles': (integer, 1)},
+            'min_quality': (INTEGER, 45),
+            'min_mapq': (INTEGER, 15),
+            'min_num_alleles': (INTEGER, 1)},
         'edge_removal':{
-            '454_left': (integer, None),
-            '454_right': (integer, None),
-            'sanger_left': (integer, None),
-            'sanger_right': (integer, None),
-            'illumina_left': (integer, None),
-            'illumina_right': (integer, None),}
+            '454_left': (INTEGER, None),
+            '454_right': (INTEGER, None),
+            'sanger_left': (INTEGER, None),
+            'sanger_right': (INTEGER, None),
+            'illumina_left': (INTEGER, None),
+            'illumina_right': (INTEGER, None),}
         }
-
