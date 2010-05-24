@@ -124,7 +124,7 @@ class MergeBamAnalyzer(Analyzer):
         for bam_path in bam_paths:
             bam_basename = bam_path.basename
             temp_sam = NamedTemporaryFile(prefix='%s.' % bam_basename,
-                                               suffix='.sam')
+                                          suffix='.sam')
             sam_fpath = os.path.join(temp_dir.name, bam_basename + '.sam')
             bam2sam(bam_path.last_version, temp_sam.name)
             sam_fhand = open(sam_fpath, 'w')
