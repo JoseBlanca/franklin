@@ -192,8 +192,6 @@ class ReadsStatsAnalyzer(Analyzer):
         original_paths = self._get_input_fpaths()['original_reads']
         reads = {'cleaned': clean_paths, 'original': original_paths}
 
-        sample_size = None
-
         # first per file stats
         for seq_type, paths in reads.items():
             for path in paths:
@@ -203,8 +201,7 @@ class ReadsStatsAnalyzer(Analyzer):
                     analyses = ['seq_length_distrib']
                 else:
                     analyses = ['seq_length_distrib', 'qual_distrib']
-                self._do_seq_stats(path, stats_dir, analyses,
-                                   sample_size)
+                self._do_seq_stats(path, stats_dir, analyses)
 
         # now the difference between the cleaned and the original per file
         for clean_path in reads['cleaned']:
@@ -221,7 +218,7 @@ class ReadsStatsAnalyzer(Analyzer):
                     analyses = ['seq_length_distrib']
                 self._do_diff_seq_stats(clean_fpath, original_fpath,
                                         clean_path.basename, stats_dir,
-                                        analyses, sample_size)
+                                        analyses)
 
         # stats per seq file. All files together
         all_reads = {'cleaned': clean_paths, 'original': original_paths}
@@ -230,7 +227,7 @@ class ReadsStatsAnalyzer(Analyzer):
                 continue
             stats_dir = self._get_stats_dir(seqtype)
             analyses = ['seq_length_distrib', 'qual_distrib']
-            self._do_seq_stats(seq_paths, stats_dir, analyses, sample_size)
+            self._do_seq_stats(seq_paths, stats_dir, analyses)
 
         # global stats. Diff fistributions
         if clean_paths:
@@ -247,7 +244,7 @@ class ReadsStatsAnalyzer(Analyzer):
         if clean_fpaths is not None and original_fpaths is not None:
             self._do_diff_seq_stats(clean_fpaths, original_fpaths,
                                     BASENAME_FOR_ALL_TOGETHER,
-                                    stats_dir, analyses, sample_size)
+                                    stats_dir, analyses)
         self._log({'analysis_finished':True})
 
     def _get_stats_dir(self, seqtype):
@@ -256,56 +253,43 @@ class ReadsStatsAnalyzer(Analyzer):
                              BACKBONE_DIRECTORIES['%s_reads_stats' % seqtype])
 
     @staticmethod
-    def _seqs_in_files(fpaths, sample_size):
+    def _seqs_in_files(fpaths):
         'It yields SeqRecords from a list of files'
-        if sample_size is None:
-            samples = [None] * len(fpaths)
-        else:
-            #we count the seqs in every file
-            num_seqs = []
-            for fpath in fpaths:
-                num_seqs.append(num_seqs_in_file(open(fpath)))
-            total_seqs = float(sum(num_seqs))
-            #how many seqs to sample for each file?
-            samples = [int(num / total_seqs * sample_size) for num in num_seqs]
-
-        for fpath, sample in zip(fpaths, samples):
-            for seq in seqs_in_file(open(fpath), sample_size=sample):
+        for fpath in fpaths:
+            for seq in seqs_in_file(open(fpath)):
                 yield seq
 
-    def _do_seq_stats(self, seqs_path, stats_dir, analyses,
-                      sample_size):
+    def _do_seq_stats(self, seqs_path, stats_dir, analyses):
         'It performs all kind of stats for a path'
         for analysis in analyses:
-            if isinstance(seqs_path, list):
-                seqs_fpaths = [path.last_version for path in seqs_path]
-                seqs = self._seqs_in_files(seqs_fpaths, sample_size)
-                basename = BASENAME_FOR_ALL_TOGETHER
-            else:
-                basename = seqs_path.basename
-                fpath = seqs_path.last_version
-                seqs = seqs_in_file(open(fpath), sample_size=sample_size)
-            analysis_basename = '%s.%s' % (basename, analysis)
-            self._do_distrib(seqs, analysis, analysis_basename, stats_dir)
+            self._do_distrib(seqs_path, analysis, stats_dir)
 
+        self._do_general_stats(seqs_path, stats_dir)
+
+    def _do_general_stats(self, seqs_path, stats_dir):
+        'It performs the  general stats analysis'
+        if not seqs_path:
+            #it could be an empty list
+            return
         # now general stats
         if isinstance(seqs_path, list):
-            seqs_fpaths = [path.last_version for path in seqs_path]
-            seqs = self._seqs_in_files(seqs_fpaths, sample_size=None)
             basename = BASENAME_FOR_ALL_TOGETHER
         else:
             basename = seqs_path.basename
             fpath = seqs_path.last_version
-            seqs = seqs_in_file(open(fpath), sample_size=None)
-        analysis_basename = '%s.general_stats' % basename
-        self._do_general_stats(seqs, analysis_basename, stats_dir)
+        basename = '%s.general_stats' % basename
 
-    def _do_general_stats(self, seqs, basename, stats_dir):
-        'It performs the  general stats analysis'
         general_fpath = os.path.join(self._get_project_path(), stats_dir,
                                      basename + '.txt')
         if os.path.exists(general_fpath):
             return
+
+        if isinstance(seqs_path, list):
+            seqs_fpaths = [path.last_version for path in seqs_path]
+            seqs = self._seqs_in_files(seqs_fpaths)
+        else:
+            fpath = seqs_path.last_version
+            seqs = seqs_in_file(open(fpath))
 
         general_fhand = open(general_fpath, 'w')
         stats = general_seq_statistics(seqs)
@@ -314,9 +298,18 @@ class ReadsStatsAnalyzer(Analyzer):
                 to_print = '%-19s : %d\n' % (key, value)
                 general_fhand.write(to_print)
 
-    @staticmethod
-    def _do_distrib(seqs, analysis, basename, stats_dir):
+    def _do_distrib(self, seqs_path, analysis, stats_dir):
         'I actually do the distrib'
+        if isinstance(seqs_path, list):
+            seqs_fpaths = [path.last_version for path in seqs_path]
+            seqs = self._seqs_in_files(seqs_fpaths)
+            basename = BASENAME_FOR_ALL_TOGETHER
+        else:
+            basename = seqs_path.basename
+            fpath = seqs_path.last_version
+            seqs = seqs_in_file(open(fpath))
+        basename = '%s.%s' % (basename, analysis)
+
         plot_fpath = os.path.join(stats_dir, basename + '.png')
         distrib_fpath = os.path.join(stats_dir, basename + '.dat')
         if os.path.exists(distrib_fpath) and os.path.exists(plot_fpath):
@@ -335,20 +328,16 @@ class ReadsStatsAnalyzer(Analyzer):
             raise
 
     def _do_diff_seq_stats(self, seqs1_fpath, seqs2_fpath, basename,
-                           stats_dir, analyses, sample_size):
+                           stats_dir, analyses):
         'It performs the differential distribution'
 
         for analysis in analyses:
             if isinstance(seqs1_fpath, list):
-                seqs1 = self._seqs_in_files(seqs1_fpath,
-                                            sample_size=sample_size)
-                seqs2 = self._seqs_in_files(seqs2_fpath,
-                                            sample_size=sample_size)
+                seqs1 = self._seqs_in_files(seqs1_fpath)
+                seqs2 = self._seqs_in_files(seqs2_fpath)
             else:
-                seqs1 = seqs_in_file(open(seqs1_fpath),
-                                          sample_size=sample_size)
-                seqs2 = seqs_in_file(open(seqs2_fpath),
-                                          sample_size=sample_size)
+                seqs1 = seqs_in_file(open(seqs1_fpath))
+                seqs2 = seqs_in_file(open(seqs2_fpath))
 
             analysis_basename = '%s.diff_%s' % (basename, analysis)
             self._do_diff_distrib(seqs1, seqs2, analysis,
