@@ -22,11 +22,9 @@ Created on 26/01/2010
 import unittest, os.path
 from os.path import join, exists
 
-from configobj import ConfigObj
-
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import (create_project,
-                                              is_integer_none_or_bool)
+                                              create_configuration)
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
@@ -88,7 +86,7 @@ class TestBackbone(unittest.TestCase):
 
         assert settings_path == join(test_dir.name,
                                 'backbone', BACKBONE_DIRECTORIES['config_file'])
-        settings = ConfigObj(settings_path, unrepr=True)
+        settings = create_configuration(settings_path)
         assert settings['General_settings']['project_name'] == 'backbone'
         project_path = join(test_dir.name, 'backbone')
         assert settings['General_settings']['project_path'] == project_path
@@ -216,19 +214,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
                     kind='set_assembly_as_reference')
         os.chdir('/tmp')
         test_dir.close()
-
-class TestValidations(unittest.TestCase):
-    'test validation functions'
-    def test_is_interger_or_none(self):
-        'test is_integer_or_none'
-        value = None
-        assert is_integer_none_or_bool(value) == value
-
-        value = False
-        assert is_integer_none_or_bool(value) == value
-
-        value = 2
-        assert is_integer_none_or_bool(value, min=1) == value
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']

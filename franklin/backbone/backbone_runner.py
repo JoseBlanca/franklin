@@ -30,8 +30,7 @@ from franklin.backbone.annotation import DEFINITIONS as annot_defs
 from franklin.backbone.cleaning import DEFINITIONS as clean_defs
 from franklin.backbone.assembling import DEFINITIONS as assembly_defs
 from franklin.backbone.mapping import DEFINITIONS as mapp_defs
-from franklin.backbone.create_project import (validate_configuration,
-                                              make_config_spec)
+from franklin.backbone.create_project import create_configuration
 
 DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs]
 BACKBONESPEC = ''
@@ -60,7 +59,8 @@ def _configure_logging(log_fpath, silent):
         console_hand.setFormatter(formatter)
         logger.addHandler(console_hand)
 
-def do_analysis(kind, project_settings=None, analysis_config=None, silent=False):
+def do_analysis(kind, project_settings=None, analysis_config=None,
+                silent=False):
     'It does one of the predefined analyses'
     if project_settings is None:
         project_settings = os.path.join(os.getcwd(),
@@ -71,10 +71,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None, silent=False)
     if not analysis_config:
         analysis_config = {}
 
-    config_spec = make_config_spec()
-    settings = ConfigObj(project_settings, configspec=config_spec, unrepr=True)
-    #settings = validate_configuration(settings)
-
+    settings = create_configuration(project_settings)
 
     specifications = get_analysis_especifications()
 
