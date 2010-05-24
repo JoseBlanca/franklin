@@ -23,7 +23,10 @@ Created on 29/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 from configobj import ConfigObj
+from validate import Validator
+
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
 def create_project(name, directory=None, configuration=None):
@@ -55,10 +58,9 @@ def create_project(name, directory=None, configuration=None):
                 config[section] = {}
             config[section][key] = value
 
-    # Validate Config
-    #_validate_configuration(config)
-
     config.write()
+
+    print open(config.filename).read()
 
     return settings_path
 
@@ -201,9 +203,9 @@ def _add_some_settings(config, project_path, name, config_data):
     'It adds some extra default parameters'
 
     config['General_settings'] = {}
-    config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
+    config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
 
     config['blast'] = {}
     config['blast']['nr'] = {}
@@ -284,70 +286,85 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
-DEFAULT_CONFIGURATION = {
-           'General_settings': {
-                'tmpdir': (STRING, None),
-                'project_name': (STRING, None),
-                'project_path': (STRING, None),
-                'threads': (INTEGER_OR_BOOL, None),
-                                },
-           'Other_settings': {
-                'default_sanger_quality': (INTEGER, 20),
-                'java_memory': (INTEGER, None),
-                'picard_path': (STRING, None),
-                'gatk_path':   (STRING, None),
-                },
-           'Cleaning': {
-                'adaptors_file_454': (STRING, None),
-                'adaptors_file_sanger': (STRING, None),
-                'adaptors_file_illumina': (STRING, None),
-                'short_adaptors_sanger': (STRING_LIST, []),
-                'short_adaptors_454': (STRING_LIST, []),
-                'short_adaptors_illumina': (STRING_LIST, []),
-                'vector_database': (STRING, 'UniVec'),
-                'min_seq_length':{
-                    '454' : (INTEGER, 100),
-                    'sanger': (INTEGER, 100),
-                    'illumina': (INTEGER, 22),
-                    },
-               'edge_removal': {
-                    '454_left': (INTEGER, None),
-                    '454_right': (INTEGER, None),
-                    'sanger_left': (INTEGER, None),
-                    'sanger_right': (INTEGER, None),
-                    'illumina_left': (INTEGER, None),
-                    'illumina_right': (INTEGER, None),
-                    },
-               'lucy':{
-                    'vector_settings': (STRING, None),
-                    'bracket': (NUMBER_LIST, [10, 0.02]),
-                    'window': (NUMBER_LIST, [50, 0.08, 10, 0.3]),
-                    'error': (NUMBER_LIST, [0.015, 0.015])
-                    }
-               },
-           'Mira': {
-                'job_options': (STRING_LIST, ['denovo', 'est']),
-                'general_settings': (STRING_LIST, ['-AS:sd=1']),
-                '454_settings': (STRING_LIST, ["-LR:mxti=no", "-CO:rodirs=5",
-                                               "-AL:mrs=80",
-                                               "-OUT:sssip=0:stsip=0"]),
-                'sanger_settings': (STRING_LIST, ['-AS:epoq=no', '-AS:bdq=30',
-                                                  '-CO:rodirs=5', '-AL:mrs=80',
-                                                  '-OUT:sssip=0:stsip=0']),
-            },
-           'Mappers': {
+from franklin.utils.misc_utils import OrderedDict
+
+DEFAULT_CONFIGURATION = OrderedDict([
+           ('General_settings',
+                OrderedDict([
+                    ('tmpdir', (STRING, None)),
+                    ('project_name', (STRING, None)),
+                    ('project_path', (STRING, None)),
+                    ('threads', (INTEGER_OR_BOOL, None)),
+                ]),
+            ),
+           ('Other_settings',
+                OrderedDict([
+                    ('default_sanger_quality', (INTEGER, 20)),
+                    ('java_memory', (INTEGER, None)),
+                    ('picard_path', (STRING, None)),
+                    ('gatk_path',   (STRING, None)),
+                ])
+            ),
+           ('Cleaning',
+                OrderedDict([
+                    ('adaptors_file_454', (STRING, None)),
+                    ('adaptors_file_sanger', (STRING, None)),
+                    ('adaptors_file_illumina', (STRING, None)),
+                    ('short_adaptors_sanger', (STRING_LIST, [])),
+                    ('short_adaptors_454', (STRING_LIST, [])),
+                    ('short_adaptors_illumina', (STRING_LIST, [])),
+                    ('vector_database', (STRING, 'UniVec')),
+                    ('min_seq_length',{
+                                      '454' : (INTEGER, 100),
+                                      'sanger': (INTEGER, 100),
+                                      'illumina': (INTEGER, 22),
+                    }),
+                    ('edge_removal',
+                         OrderedDict([
+                            ('454_left', (INTEGER, None)),
+                            ('454_right', (INTEGER, None)),
+                            ('sanger_left', (INTEGER, None)),
+                            ('sanger_right', (INTEGER, None)),
+                            ('illumina_left', (INTEGER, None)),
+                            ('illumina_right', (INTEGER, None)),
+                        ]),
+                    ),
+                    ('lucy', {
+                             'vector_settings': (STRING, None),
+                             'bracket': (NUMBER_LIST, [10, 0.02]),
+                             'window': (NUMBER_LIST, [50, 0.08, 10, 0.3]),
+                             'error': (NUMBER_LIST, [0.015, 0.015])
+                    })
+               ]),
+            ),
+           ('Mira',
+                OrderedDict([
+                   ('job_options', (STRING_LIST, ['denovo', 'est'])),
+                   ('general_settings', (STRING_LIST, ['-AS:sd=1'])),
+                   ('454_settings', (STRING_LIST, ["-LR:mxti=no",
+                                                   "-CO:rodirs=5",
+                                                   "-AL:mrs=80",
+                                                   "-OUT:sssip=0:stsip=0"])),
+                   ('sanger_settings', (STRING_LIST, ['-AS:epoq=no',
+                                                      '-AS:bdq=30',
+                                                      '-CO:rodirs=5',
+                                                      '-AL:mrs=80',
+                                                      '-OUT:sssip=0:stsip=0'])),
+                ]),
+           ),
+           ('Mappers', {
                 'mapper_for_454': (STRING, 'bwa'),
                 'mapper_for_illumina': (STRING, 'bwa'),
                 'mapper_for_solid': (STRING, 'bwa'),
                 'mapper_for_sanger': (STRING, 'bwa'),
-           },
-           'Sam_processing':{
+           }),
+           ('Sam_processing',{
                 'add_default_qualities': (BOOLEAN, True),
-            },
-           'Sam_stats':{
+            }),
+           ('Sam_stats',{
                 'sampling_size': (INTEGER, None),
-            },
-          'Annotation': {
+            }),
+          ('Annotation', {
                 'description_annotation':{
                     'description_databases': (STRING_LIST, [])},
                 'ortholog_annotation': {
@@ -355,28 +372,35 @@ DEFAULT_CONFIGURATION = {
                 'Cdna_intron_annotation': {
                     'genomic_seqs': (STRING, None),
                     'genomic_db' : (STRING, None),},
-                    },
                 'orf_annotation':{
                     'estscan_matrix' : (STRING, 'path to estscan matrix')},
                 'go_annotation':{
                     'blast_database': (STRING, 'nr'),
                     'java_memory': (INTEGER, 2048),
                     'create_dat_file': (BOOLEAN, False),
-                    'prop_fpath': (STRING, None)},
-        'blast': {
+                    'prop_fpath': (STRING, None)}
+                },
+            ),
+        ('blast', {
             '__many__':{
                 'path': (STRING, "/Path/to/database"),
                 'species': (STRING, 'species_name')},
-            },
-        'Snvs': {
-            'min_quality': (INTEGER, 45),
-            'min_mapq': (INTEGER, 15),
-            'min_num_alleles': (INTEGER, 1)},
-        'edge_removal':{
-            '454_left': (INTEGER, None),
-            '454_right': (INTEGER, None),
-            'sanger_left': (INTEGER, None),
-            'sanger_right': (INTEGER, None),
-            'illumina_left': (INTEGER, None),
-            'illumina_right': (INTEGER, None),}
-        }
+            }),
+        ('Snvs',
+            OrderedDict([
+                ('min_quality', (INTEGER, 45)),
+                ('min_mapq', (INTEGER, 15)),
+                ('min_num_alleles', (INTEGER, 1)),
+                ('edge_removal',
+                         OrderedDict([
+                            ('454_left', (INTEGER, None)),
+                            ('454_right', (INTEGER, None)),
+                            ('sanger_left', (INTEGER, None)),
+                            ('sanger_right', (INTEGER, None)),
+                            ('illumina_left', (INTEGER, None)),
+                            ('illumina_right', (INTEGER, None)),
+                        ])
+                )
+            ])
+        )
+    ])
