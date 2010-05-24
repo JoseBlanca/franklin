@@ -207,20 +207,10 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
         return sequence
     return annotate_orf
 
-def create_go_annotator(blast, annot_fpath=None, dat_fpath=None,
-                        java_memory=None, prop_fpath=None):
+def create_go_annotator(blast2go):
     'It annotates GOs using blast2go4pipe'
 
-    if annot_fpath is None:
-        fhand, annot_fpath = tempfile.mkstemp()
-        os.close(fhand)
-    blast = get_fhand(blast)
-    b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
-                   java_memory=java_memory, prop_fpath=prop_fpath)
-
-    go_annotations = _parse_b2g_output(open(annot_fpath))
-    if annot_fpath is None:
-        os.remove(annot_fpath)
+    go_annotations = _parse_b2g_output(blast2go)
 
     def go_annotator(sequence):
         'The annotator'

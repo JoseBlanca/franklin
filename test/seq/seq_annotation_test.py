@@ -26,6 +26,7 @@ from franklin.seq.seq_annotation import (create_microsatellite_annotator,
                                          create_cdna_intron_annotator)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.cmd_utils import b2gpipe_runner
 import unittest, tempfile, os
 
 class AnnotationTests(unittest.TestCase):
@@ -120,7 +121,9 @@ class AnnotationTests(unittest.TestCase):
         blast = open(os.path.join(DATA_DIR, 'blastResult.xml'))
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
-        go_annotator = create_go_annotator(blast)
+        b2gpipe_runner(blast, annot_fpath)
+        blast2go = open(annot_fpath)
+        go_annotator = create_go_annotator(blast2go)
         seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))
 
         go_annotator(seq)
