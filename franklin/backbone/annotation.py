@@ -476,9 +476,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         go_settings = annot_settings['go_annotation']
         go_database = go_settings['blast_database']
 
-        create_dat = go_settings['create_dat_file']
+        create_dat  = go_settings['create_dat_file']
         java_memory = go_settings['java_memory']
-        prop_fpath = go_settings['prop_fpath']
+        prop_fpath  = go_settings['prop_fpath']
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
