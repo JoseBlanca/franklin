@@ -80,9 +80,9 @@ def _make_default_config(project_path, name, config_data):
 
     config = ConfigObj(unrepr=True)
 
-    _add_some_settings(config, project_path, name, config_data)
-
     _add_default_values(config, DEFAULT_CONFIGURATION)
+
+    _add_some_settings(config, project_path, name, config_data)
 
     _validate_config(config, DEFAULT_CONFIGURATION)
 
@@ -202,14 +202,14 @@ def _add_default_values(config, defaults):
 def _add_some_settings(config, project_path, name, config_data):
     'It adds some extra default parameters'
 
-    config['General_settings'] = {}
+    config['General_settings'] = config['General_settings']
     config['General_settings']['project_name'] = name
     config['General_settings']['project_path'] = project_path
     config['General_settings']['tmpdir'] = os.path.join(project_path, 'tmp')
 
-    config['blast'] = {}
+    config['blast'] = config['blast']
     config['blast']['nr'] = {}
-    config['blast']['nr']['path'] = "Path_to_nr database"
+    config['blast']['nr']['path'] = "/path/to/nr/database"
     config['blast']['nr']['species'] = 'all'
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
