@@ -76,7 +76,7 @@ _____________________
 
 With this filter we can filter out the filters in which the most frequent allele has an allelic frequency above the given threshold. This filter can be used taking into account all the alleles or only the ones found in a subset of libraries, samples or readgroups.
 
-To configure this filter with a threshold of 0.8 in a library named test_library we would do:
+To configure this filter with a threshold of 0.8 in a library named test_library we would do::
 
   maf        = 'maf'
   frequency  = 0.8

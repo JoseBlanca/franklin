@@ -42,14 +42,14 @@ def test_backbone(analysis=None, analysis_dir=None):
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
     if choice in ('cleaning', None):
-        original_reads = join(project_dir, 'reads/original')
+        original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
             os.remove(original_reads)
         reads = join(project_dir, 'reads')
         if not exists(reads):
             os.mkdir(reads)
         shutil.copytree(join(repository_dir, 'cleaning'),
-                        join(project_dir, 'reads/original'))
+                        join(project_dir, 'reads/raw'))
         analyses = ['clean_reads', 'read_stats']
         run_analysis(analyses, settings_path)
 

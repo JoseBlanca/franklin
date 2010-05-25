@@ -16,7 +16,9 @@
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 from franklin.utils.itertools_ import make_cache
+from franklin.utils.itertools_ import ungroup, classify
 
 PLOT_LABELS = {'masked_seq_distrib' :{
                                  'title': 'Masked sequence length distribution',
@@ -60,7 +62,12 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
     if labels is None:
         labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count'}
     #we do the distribution
-    distrib, bin_edges = histogram(numbers, bins=bins, range_=range_)
+    result = histogram(numbers, bins=bins, range_=range_)
+    if result:
+        distrib, bin_edges = result
+    else:
+        #there is no numbers
+        return
     #we write the output
     if distrib_fhand is not None:
         _write_distribution(distrib_fhand, distrib, bin_edges)
@@ -80,6 +87,14 @@ def _masked_sequence_lengths(sequences):
             if letter.islower():
                 length += 1
         yield length
+
+def _sequence_length_quals(sequences):
+    'It yields the length and qualities as tuples'
+    for seq in sequences:
+        quals = seq.qual
+        if quals is None:
+            quals = []
+        yield {'length': len(seq), 'qual':quals}
 
 def _sequence_lengths(sequences):
     'It yields the sequence lengths'
@@ -182,15 +197,14 @@ def general_seq_statistics(sequences):
     It calculates the total sequence length, the average sequence length, the
     total masked sequence length, and the number of sequences.
     '''
-    seqs, sequences = itertools.tee(sequences)
-
-    lengths   = _sequence_lengths(seqs)
-    qualities = _sequence_qualitities(sequences)
-
-    #we cache the values because they're hard to get, it would be wise to
-    #check the performance
-    lengths   = make_cache(lengths)
-    qualities = make_cache(qualities)
+    lengths_and_quals = _sequence_length_quals(sequences)
+    lengths_and_quals = ungroup(lengths_and_quals, lambda x: x.items())
+    lengths_and_quals = classify(lengths_and_quals, lambda x: x[0])
+    lengths           = itertools.imap(lambda x: x[1],
+                                       lengths_and_quals['length'])
+    qualities         = itertools.imap(lambda x: x[1],
+                                       lengths_and_quals['qual'])
+    qualities         = ungroup(qualities, lambda x: x)
 
     lens, lengths = itertools.tee(lengths)
     n_seqs = 0
@@ -229,7 +243,8 @@ def _average_max_min(numbers):
             max_ = number
         if min_ is None or min_ > number:
             min_ = number
-    return sum_ / float(count), max_, min_
+    avg = sum_ / float(count) if count else None
+    return avg, max_, min_
 
 def _variance(numbers, mean):
     'Given an iterator with numbers it calculates the variance'
@@ -238,7 +253,10 @@ def _variance(numbers, mean):
     for number in numbers:
         sum_ += (number - mean) ** 2
         count += 1
-    return (sum_ / float(count))
+    if not count:
+        return None
+    else:
+        return (sum_ / float(count))
 
 def histogram(numbers, bins, range_= None):
     '''An alternative implementation to the numpy.histogram.
@@ -257,6 +275,10 @@ def histogram(numbers, bins, range_= None):
             range_[1] = calc_range[1]
 
     min_, max_ = range_
+
+    if not min_ and not max_:
+        #there's no numbers
+        return
 
     #now we can calculate the bin egdes
     distrib_span = max_ - min_

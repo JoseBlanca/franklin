@@ -13,7 +13,7 @@ Creating a new project
 
 ::
 
-  $ ngs_backbone_create_project.py -p project_name
+  $ backbone_create_project.py -p project_name
   $ ls -l project_name
   total 4
   -rw-r--r-- 1 jose jose 2479 abr 16 09:30 ngs_backbone.conf
@@ -25,7 +25,7 @@ Running an analysis
 
 ::
 
-  $ ngs_backbone_analysis.py -a analysis_name
+  $ backbone_analysis.py -a analysis_name
 
 This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.
 

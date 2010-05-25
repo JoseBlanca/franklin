@@ -105,7 +105,7 @@ class StatisticsTest(unittest.TestCase):
 
 
     @staticmethod
-    def test_genral_seq_stats():
+    def test_general_seq_stats():
         "it test length_statistics"
         fhand_seq = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
         fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
@@ -114,7 +114,9 @@ class StatisticsTest(unittest.TestCase):
 
         assert stats['seq_length']          == 15
         assert stats['seq_length_average']  == 3.75
-        assert stats['mean_quality']        == 2.3333333333333335
+        qualities = [1, 2, 3, 4, 1, 2, 2, 3, 1, 2, 3, 3, 1, 1, 6]
+        mean_qual = sum(qualities) / float(len(qualities))
+        assert stats['mean_quality']        == mean_qual
         assert stats['num_sequences']       == 4
         assert stats['max_seq_length']      == 4
         assert stats['min_seq_length']      == 3
