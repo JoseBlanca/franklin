@@ -31,6 +31,23 @@ from franklin.seq.readers import seqs_in_file
 from tempfile import NamedTemporaryFile
 
 
+READS_NOQUAL = '''>FM195262.1
+TACGGCCGGGGTNNCNNANNNNGCATTCTCGCAGGGTCTTTCTACACTATTAGATAAGAT
+GGATCCTTCTCAGAGAGTGAAGTTTGTTCAGGAAGTCAAGAAGGTTCTTGGATGATGATA
+TGATACCAACACATCCAACACAATATGCGCATGCTACATGTTATTTTTCAAGTACATACA
+TAGAAGGATATTGCTTGGCCTTGATTGATCATGTCTGATCTAAGTCGATCATTATTTTCT
+TGAAACTTCCTTTCGGACGTGGTGCTATGGTTGATGAATTTGGATGTGTGCGTTCTGCCA
+GGTGTAAGCCCAAAGGTTTATACAGACCGAGTTAAGGTTAGGAAGAGCACGAGTGAACTT
+>FM187038.1
+GCACGAGGGCCGTCGCAGAGGCGGTGCTGAGGTCGAGGGCCGGTCTTGGCAGGCCACAAC
+AGCCCACTGGCTCGTTCCTCTTCCTGGGTCCGACTGGCGTGGGGAAAACTGAGCTGGCCA
+AGGCCCTAGCCGAACAGCTGTTCGACGACGAGAACCTTCTTGTCCGCATCGACATGTCGG
+AGGTCGCTCGCGATCTGGTCATGCAGGAGGTGAGGAGGCACTTCCGCCCTGAGCTGCTGA
+ACCGTCTCGACGAGATCGTGATCTTCGATCCTCTGTCCCACGAGCAGCTGAGGAAGGTCG
+CTCGCCTTCAGATGAAGGATGTGGCCGTCCGTCTTGCCGAANNNNNCATCGCTCTGGCTG
+TGACCGANNNNNCATTGGACATCATCTTGTCTCTCTCTNNNNNNTCNNNNT
+'''
+
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAATAGTCAGCATGCATGATTAGGCTAAGCCGTAAGCATAGCATGACCCCATTGGCAAAGCTAGCATGATACGACATCATTATAGCGAGAGACGCATATCGAGAATGAGCGATCAGCACATGTCAGCGAGCTACTGACTATCATATATAGCGCAGAGACGACTAGCATCGAT
 +
@@ -95,12 +112,15 @@ class TestBackbone(unittest.TestCase):
         test_dir.close()
 
     @staticmethod
-    def xtest_cleaning_analysis_lucy():
+    def test_cleaning_analysis_lucy():
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
+        univec = os.path.join(DATA_DIR, 'blast', 'univec')
+        configuration = {'Cleaning':{'vector_database':univec}}
         settings_path = create_project(directory=test_dir.name,
-                                       name=project_name)
+                                       name=project_name,
+                                       configuration=configuration)
 
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
@@ -116,8 +136,10 @@ class TestBackbone(unittest.TestCase):
         luc_c.flush()
 
         #print original_reads_dir
+        fpath_noqual = join(original_reads_dir, 'pl_sanger.lb_ps.fasta')
         fpath_454 = join(original_reads_dir, 'pl_454.lb_ps.sfastq')
         fpath_ill = join(original_reads_dir, 'pl_illumina.lb_psi.sfastq')
+        open(fpath_noqual, 'w').write(READS_NOQUAL)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
         do_analysis(project_settings=settings_path, kind='clean_reads')
@@ -126,6 +148,10 @@ class TestBackbone(unittest.TestCase):
 
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
+
+        cleaned_noqual = join(cleaned_dir, os.path.basename(fpath_noqual))
+        clean_seqs =  open(cleaned_noqual).read()
+        assert clean_seqs.startswith('>FM195262.1\nGCATTCTCG')
 
     @staticmethod
     def test_cleaning_analysis():

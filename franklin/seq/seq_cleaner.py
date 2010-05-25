@@ -285,7 +285,7 @@ def create_striper_by_quality_trimpoly():
             logging.warning(msg)
             return None
 
-        parameters = {'only_n_trim':None, 'ntrim_above_percent': '3'}
+        parameters = {'only_n_trim':None, 'ntrim_above_percent': '2'}
         mask_polya_by_seq = create_runner(tool='trimpoly',
                                           parameters=parameters)
         fhand = mask_polya_by_seq(sequence)['sequence']
