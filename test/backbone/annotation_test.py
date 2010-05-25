@@ -30,7 +30,7 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 
-THREADS = False
+THREADS = 2
 
 class AnnotationTest(unittest.TestCase):
     'It test the ortholog analysis'
