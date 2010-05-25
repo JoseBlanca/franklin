@@ -62,7 +62,7 @@ class TestBackboneMapping(unittest.TestCase):
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
-                                      configuration=configuration)
+                                       configuration=configuration)
         project_dir = join(test_dir.name, project_name)
         #setup the original reads
         reads_dir = join(project_dir, 'reads')
@@ -153,6 +153,7 @@ class TestBackboneMapping(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='merge_bams',
                     silent=True)
         assert exists(join(result_dir, 'merged.0.bam'))
+        assert exists(join(result_dir, 'merged.0.bam.bai'))
 
         #we realign the mapping using GATK
         do_analysis(project_settings=settings_path, kind='realign_bam',

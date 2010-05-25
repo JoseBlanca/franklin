@@ -31,7 +31,7 @@ from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
-                          bam_distribs)
+                          bam_distribs, create_bam_index)
 
 class SetAssemblyAsReferenceAnalyzer(Analyzer):
     'It sets the reference assembly as mapping reference'
@@ -156,7 +156,12 @@ class MergeBamAnalyzer(Analyzer):
 
         temp_sam = NamedTemporaryFile(suffix='.sam')
         reference_fhand = open(reference_path.last_version)
-        merge_sam(sams, temp_sam, reference_fhand)
+        try:
+            merge_sam(sams, temp_sam, reference_fhand)
+        except Exception:
+            if os.path.exists(merged_bam_fpath):
+                os.remove(merged_bam_fpath)
+            raise
         reference_fhand.close()
 
         # close files
@@ -172,6 +177,8 @@ class MergeBamAnalyzer(Analyzer):
                                 'picard_path':picard_path})
         temp_bam.close()
         temp_sam.close()
+        create_bam_index(merged_bam_fpath)
+
         self._log({'analysis_finished':True})
 
 class RealignBamAnalyzer(Analyzer):
