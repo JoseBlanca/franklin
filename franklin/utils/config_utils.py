@@ -39,6 +39,7 @@ def pretyfy_config(fpath):
             new_config.write('\n')
         new_config.write(line)
 
+    new_config.flush()
     shutil.move(new_config.name, fpath)
     new_config.close()
 
