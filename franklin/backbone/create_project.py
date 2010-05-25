@@ -260,7 +260,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                 'ortholog_annotation': {
                     'ortholog_databases': (STRING_LIST, [])},
                 'Cdna_intron_annotation': {
-                    'genomic_seqs': (STRING, None),
+                    'genomic_seq_file': (STRING, None),
                     'genomic_db' : (STRING, None),},
                 'orf_annotation':{
                     'estscan_matrix' : (STRING, 'path to estscan matrix')},
@@ -268,7 +268,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     'blast_database': (STRING, 'nr'),
                     'java_memory': (INTEGER, 2048),
                     'create_dat_file': (BOOLEAN, False),
-                    'prop_fpath': (STRING, None)}
+                    'b2g_properties_file': (STRING, None)}
                 },
             ),
         ('blast', {

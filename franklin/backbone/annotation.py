@@ -195,7 +195,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         general_settings = self._project_settings['General_settings']
 
         settings = self._project_settings['Annotation']
-        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seqs']
+        genomic_seqs = settings['Cdna_intron_annotation']['genomic_seq_file']
         if settings['Cdna_intron_annotation']['genomic_db'] is None:
             project_path = general_settings['project_path']
             genomic_db = make_backbone_blast_db(project_path, genomic_seqs,
@@ -479,7 +479,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
         create_dat  = go_settings['create_dat_file']
         java_memory = go_settings['java_memory']
-        prop_fpath  = go_settings['prop_fpath']
+        prop_fpath  = go_settings['b2g_properties_file']
 
         #first we need some blasts
         project_dir = self._project_settings['General_settings']['project_path']
@@ -528,8 +528,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             if not os.path.exists(annot_fpath):
                 blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
                 blast = open(blast)
-                b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
-                               java_memory=java_memory, prop_fpath=prop_fpath)
+                b2gpipe_runner(blast, annot_fpath=annot_fpath,
+                               dat_fpath=dat_fpath, java_memory=java_memory,
+                               prop_fpath=prop_fpath)
 
             blast2go[input_fpath] = open(annot_fpath)
 

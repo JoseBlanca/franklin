@@ -99,11 +99,12 @@ class AnnotationTest(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
 
-        ort_fpath = join(project_dir, 'annotations', 'result', 'melon.orthologs')
+        ort_fpath = join(project_dir, 'annotations', 'features',
+                         'melon.orthologs')
         assert os.path.exists(ort_fpath)
         assert "tair1" in open(ort_fpath).read()
 
-        orf_fpath = join(project_dir, 'annotations', 'result', 'melon.orf')
+        orf_fpath = join(project_dir, 'annotations', 'features', 'melon.orf')
         assert not os.path.exists(orf_fpath)
 
 
@@ -157,7 +158,7 @@ class AnnotationTest(unittest.TestCase):
         genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
         config = {'Annotation':
                         {'Cdna_intron_annotation':{'genomic_db': genomic_db,
-                                                   'genomic_seqs':genomic_db}},
+                                                'genomic_seq_file':genomic_db}},
                 'General_settings':{'threads':THREADS}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -227,7 +228,7 @@ class AnnotationTest(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
-        ssr_fpath = join(project_dir, 'annotations', 'result', 'seqs.ssr')
+        ssr_fpath = join(project_dir, 'annotations', 'features', 'seqs.ssr')
         assert os.path.exists(ssr_fpath)
         assert "Seqname"  in open(ssr_fpath).read()
 
@@ -272,8 +273,10 @@ class AnnotationTest(unittest.TestCase):
         assert "type='orf'" in  result
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
-        seq_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_seq.fasta')
-        pep_fpath = join(project_dir, 'annotations', 'result', 'seqs.orf_pep.fasta')
+        seq_fpath = join(project_dir, 'annotations', 'features',
+                         'seqs.orf_seq.fasta')
+        pep_fpath = join(project_dir, 'annotations', 'features',
+                         'seqs.orf_pep.fasta')
 
         assert 'ATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCT' in open(seq_fpath).read()
         assert 'QASMGAPFTGLKSAAAFPVTRXTNDITTLVSNG' in open(pep_fpath).read()
@@ -325,9 +328,9 @@ class AnnotationTest(unittest.TestCase):
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
-                                           'result', 'seqs.b2g.dat'))
+                                           'features', 'seqs.b2g.dat'))
         assert os.path.exists(os.path.join(project_dir, 'annotations',
-                                           'result', 'seqs.b2g.annot'))
+                                           'features', 'seqs.b2g.annot'))
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
 
