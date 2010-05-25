@@ -484,7 +484,6 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         for input_ in inputs['input']:
             input_fpath = input_.last_version
             annot_fpath = join(result_dir, input_.basename + '.b2g.annot')
-
             if not exists(annot_fpath):
                 go_blast_settings = blast_settings[go_database]
                 blast = self._get_b2g_blast(input_fpath, go_blast_settings)
@@ -497,7 +496,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                dat_fpath=dat_fpath, java_memory=java_memory,
                                prop_fpath=prop_fpath)
 
-            blast2go[input_fpath] = open(annot_fpath)
+            blast2go[input_fpath] = annot_fpath
 
         # prepare pipeline
         pipeline = [annotate_gos]
@@ -506,7 +505,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
 
-            step_config = {'blast2go': blast2go[input_fpath]}
+            step_config = {'annot_fpath': blast2go[input_fpath]}
 
             configuration[input_.basename] = {'annotate_gos': step_config}
         result = self._run_annotation(pipeline=pipeline,

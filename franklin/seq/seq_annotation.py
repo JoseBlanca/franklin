@@ -206,10 +206,10 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
         return sequence
     return annotate_orf
 
-def create_go_annotator(blast2go):
+def create_go_annotator(annot_fpath):
     'It annotates GOs using blast2go4pipe'
 
-    go_annotations = _parse_b2g_output(blast2go)
+    go_annotations = _parse_b2g_output(open(annot_fpath))
 
     def go_annotator(sequence):
         'The annotator'
