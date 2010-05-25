@@ -151,6 +151,31 @@ class SeqCleanerTest(unittest.TestCase):
         # if works
         assert trimmed_seq.seq.endswith('ATGACATCGA')
 
+        #another seq with the problem at the begining
+        seq  = 'TNNNNNNAGGGCTTTCCTGACAGCTANNNNNTTTGCGGGCAACATCCAGAACAAGCACCG'
+        seq += 'GCAGATTGGCAATGCCGTGCCCCCGCCTCTTGCCTATGCACTTGGGAGGAAGCTGAAGGA'
+        seq += 'AGCCGTTGACAAGCGTCAGGAAGCCAGCGCAGGCGTGCCTGCACCATGAGAAGTTTTCCT'
+        seq = Seq(seq)
+        seq1 = SeqWithQuality(seq=seq)
+        strip_seq_by_quality_trimpoly = create_striper_by_quality_trimpoly()
+        trimmed_seq = strip_seq_by_quality_trimpoly(seq1)
+        str_seq = str(trimmed_seq.seq)
+        assert str_seq.startswith('TTTGCGGGCAACA')
+        assert str_seq.endswith('GAGAAGTTTTCCT')
+
+        seq  = 'TGACATCGAACCTCGGCGCCGAGCACCTCCTCGCTGGGATGGTGGGCAAGAACTCCATGA'
+        seq += 'AGGTCGCTCGCGATCTGGTCATGCAGGAGGTGAGGAGGCACTTCCGCCCTGAGCTGCTGA'
+        seq += 'ACCGTCTCGACGAGATCGTGATCTTCGATCCTCTGTCCCACGAGCAGCTGAGGAAGGTCG'
+        seq += 'CTCGCCTTCAGATGAAGGATGTGGCCGTCCGTCTTGCCGAANNNNNCATCGCTCTGGCTG'
+        seq += 'TGACCGANNNNNCATTGGACATCATCTTGTCTCTCTCTNNNNNNTCNNNNT'
+        seq = Seq(seq)
+        seq1 = SeqWithQuality(seq=seq)
+        strip_seq_by_quality_trimpoly = create_striper_by_quality_trimpoly()
+        trimmed_seq = strip_seq_by_quality_trimpoly(seq1)
+        str_seq = str(trimmed_seq.seq)
+        assert str_seq.startswith('TGACATCGAA')
+        assert str_seq.endswith('TCTTGCCGAA')
+
     def xtest_strip_seq_by_qual_lucy(self):
         '''This is an old version of using lucy in a firlter. It is bogus and I
         not going to repair it :)
