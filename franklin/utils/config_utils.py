@@ -119,7 +119,7 @@ def _validate_config_recursive(config, validation_spec, errors=None):
             validator = validation_spec[key][0]
             validator_str = validator_strs[validator]
             try:
-                if validator in (STRING, INTEGER, BOOLEAN, FLOAT,
+                if validator in (STRING, INTEGER, BOOLEAN, FLOAT, NUMBER,
                                  INTEGER_OR_BOOL):
                     _check_type(value, key, validator)
                 elif validator in (STRING_LIST, FLOAT_LIST, NUMBER_LIST):

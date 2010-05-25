@@ -30,8 +30,8 @@ from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from franklin.utils.misc_utils import OrderedDict
 from franklin.utils.config_utils import (pretyfy_config, add_default_values,
                                          validate_config, STRING, INTEGER,
-                                         BOOLEAN, INTEGER_OR_BOOL, STRING_LIST,
-                                         NUMBER_LIST)
+                                         NUMBER, BOOLEAN, INTEGER_OR_BOOL,
+                                         STRING_LIST, NUMBER_LIST)
 
 def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
@@ -204,6 +204,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     ('short_adaptors_454', (STRING_LIST, [])),
                     ('short_adaptors_illumina', (STRING_LIST, [])),
                     ('vector_database', (STRING, 'UniVec')),
+                    ('strip_n_percent', (NUMBER, 2.0)),
                     ('min_seq_length',{
                                       '454' : (INTEGER, 100),
                                       'sanger': (INTEGER, 100),

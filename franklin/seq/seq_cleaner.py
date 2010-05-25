@@ -262,10 +262,12 @@ def create_word_masker(words, beginning=True):
 
     return word_remover
 
-def create_striper_by_quality_trimpoly():
+def create_striper_by_quality_trimpoly(ntrim_above_percent=2):
     '''It creates a function that removes bad quality regions.
 
-     It uses trimpoly's quality checks.'''
+    It uses trimpoly's quality checks.'''
+    ntrim_above_percent = '%.1f' % ntrim_above_percent
+
     def strip_seq_by_quality_trimpoly(sequence):
         '''It strips the sequence where low quality is found
 
@@ -285,7 +287,8 @@ def create_striper_by_quality_trimpoly():
             logging.warning(msg)
             return None
 
-        parameters = {'only_n_trim':None, 'ntrim_above_percent': '2'}
+        parameters = {'only_n_trim':None,
+                      'ntrim_above_percent': ntrim_above_percent}
         mask_polya_by_seq = create_runner(tool='trimpoly',
                                           parameters=parameters)
         fhand = mask_polya_by_seq(sequence)['sequence']

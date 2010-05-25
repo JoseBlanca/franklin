@@ -138,6 +138,10 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['strip_lucy'] = {}
         configuration['strip_lucy']['parameters'] = parameters
 
+        n_trim = settings['strip_n_percent']
+        configuration['strip_trimpoly'] = {}
+        configuration['strip_trimpoly']['ntrim_above_percent'] = n_trim
+
         # min length settings
         min_length = settings['min_seq_length'][platform]
         configuration['remove_short'] = {}

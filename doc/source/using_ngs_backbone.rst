@@ -114,6 +114,9 @@ precise vector removal
 bad quality trimming
   There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise ngs_backbone does the job (illumina).
 
+bad quality trimming by Ns
+  When there are no qualities available we can infer the quality from the percent of Ns found in the sequence. This step removes regions with a high number of Ns.
+
 general vector removal
   The reads are compared against the Univec database using blast to look for remaining vectors.
 
@@ -132,7 +135,7 @@ long reads with quality
   adaptor removal, precise vector removal, bad quality trimming, general vector removal, low complexity masking, word removal, edge removal, and short sequence filtering
 
 long reads without quality
-  general vector removal, bad quality trimming, low complexity masking, word removal, edge removal, and short sequence filtering
+  general vector removal, bad quality trimming by Ns, low complexity masking, word removal, edge removal, and short sequence filtering
 
 solexa
   adaptor removal, bad quality trimming,  and short sequence filtering
@@ -188,6 +191,8 @@ edge_removal -> illumina_left
 edge_removal -> illumina_right
   Idem for the right edge of the illumina reads
 
+strip_n_percent
+  Threshold used for the trimming of regions with a lot of Ns in sequences with no quality information available. Lower values (e.g. 1.5) are more stringent.
 
 min_seq_length
   The minimum sequence length allowable after the cleaning is done. All sequences shorter than these values will be discarded. This is a subsection with one value for each platform 454, sanger and illumina.
