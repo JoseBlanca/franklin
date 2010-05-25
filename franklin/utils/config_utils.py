@@ -99,10 +99,6 @@ def _validate_config_recursive(config, validation_spec, errors=None):
     if errors is None:
         errors = []
     for key, value in config.items():
-        #if key == '__many__':
-            #this is only used for the validation, not for the default
-            #continue
-
         #are we dealing with a dict or with just a value?
         if 'items' in dir(value):
             if '__many__' in validation_spec:
@@ -115,9 +111,9 @@ def _validate_config_recursive(config, validation_spec, errors=None):
             if spec_value is not None:
                 _validate_config_recursive(value, spec_value, errors)
         else:
-            #are there a default value?
-            if key == 'kind':
-                pass
+            #is there a validation rule?
+            if key not in validation_spec:
+                continue
             spec_value = validation_spec[key]
             validator = validation_spec[key][0]
             validator_str = validator_strs[validator]

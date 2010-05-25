@@ -28,6 +28,7 @@ from franklin.backbone.create_project import (create_project,
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
+from tempfile import NamedTemporaryFile
 
 
 READS_454 = '''@FKU4KFK07H6D2L
@@ -215,6 +216,27 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         os.chdir('/tmp')
         test_dir.close()
 
+
+class ConfigurationTest(unittest.TestCase):
+    'Tests for configirations'
+    @staticmethod
+    def test_create_configuration():
+        'Test default config'
+        fhand = NamedTemporaryFile()
+        fhand.write('[Snvs]\nmin_num_alleles = 2\n[[edge_removal]]\n454_left=None')
+        fhand.flush()
+        config_fpath = fhand.name
+        config = create_configuration(config_fpath)
+        assert config['Snvs']['min_quality'] == 45
+
+        #malformed
+        fhand = NamedTemporaryFile()
+        fhand.write('[blast]\n[[nr]]\nkind="nucl"\npath="path"\nspecies="all"')
+        fhand.flush()
+        config_fpath = fhand.name
+        config = create_configuration(config_fpath)
+        assert config['Snvs']['min_quality'] == 45
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
+    #import sys;sys.argv = ['', 'ConfigurationTest.test_create_configuration']
     unittest.main()
