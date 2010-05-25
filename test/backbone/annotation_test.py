@@ -42,9 +42,11 @@ class AnnotationTest(unittest.TestCase):
         project_name = 'backbone'
 
         config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
-                                           'species':'arabidopsis'},
+                                           'species':'arabidopsis',
+                                           'kind':'nucl'},
                           'arabidopsis2':{'path':'/path/to/tair2',
-                                           'species':'arabidopsis2'}},
+                                           'species':'arabidopsis2',
+                                           'kind': 'nucl'}},
 
                   'Annotation':{'ortholog_annotation':{'ortholog_databases':
                                             ['arabidopsis', 'arabidopsis2']}},

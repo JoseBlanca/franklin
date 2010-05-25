@@ -525,10 +525,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 dat_fpath = None
             annot_fpath = os.path.join(result_dir,
                                        input_.basename + '.b2g.annot')
-            blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
-            blast = open(blast)
-            b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
-                   java_memory=java_memory, prop_fpath=prop_fpath)
+            if not os.path.exists(annot_fpath):
+                blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
+                blast = open(blast)
+                b2gpipe_runner(blast, annot_fpath=annot_fpath, dat_fpath=dat_fpath,
+                               java_memory=java_memory, prop_fpath=prop_fpath)
 
             blast2go[input_fpath] = open(annot_fpath)
 
