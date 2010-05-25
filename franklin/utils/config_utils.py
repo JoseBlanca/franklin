@@ -21,7 +21,7 @@ import tempfile, shutil
 
 def pretyfy_config(fpath):
     'It adds tabs to the config'
-    new_config = tempfile.NamedTemporaryFile()
+    new_config = tempfile.NamedTemporaryFile(delete=False)
 
     section_depth = 0
     for line in open(fpath):
@@ -39,8 +39,9 @@ def pretyfy_config(fpath):
             new_config.write('\n')
         new_config.write(line)
 
+    new_config.flush()
     shutil.move(new_config.name, fpath)
-
+    new_config.close()
 
 STRING = (basestring,)
 INTEGER = (int,)
