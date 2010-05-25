@@ -89,7 +89,7 @@ class MappingAnalyzer(Analyzer):
                                      'picard_path':picard_path})
 
         # Now we run the select _last mapping
-        self._spawn_analysis(PRIVATE_DEFINITIONS['select_last_mapping'])
+        self._spawn_analysis(DEFINITIONS['_select_last_mapping'])
 
         self._log({'analysis_finished':True})
 
@@ -258,12 +258,12 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mappings_by_readgroup'}},
          'analyzer': MappingAnalyzer,
         },
-#    'select_last_mapping':
-#        {'inputs':{'analyses_dir':{'directory': 'mappings'}},
-#         'outputs':{'result':{'directory': 'mapping_result',
-#                              'create':False}},
-#         'analyzer': _LastAnalysisAnalyzer,
-#        },
+    '_select_last_mapping':
+        {'inputs':{'analyses_dir':{'directory': 'mappings'}},
+         'outputs':{'result':{'directory': 'mapping_result',
+                              'create':False}},
+         'analyzer': _LastAnalysisAnalyzer,
+        },
     'merge_bams':
         {'inputs':{
             'bams':
@@ -297,12 +297,4 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_stats'}},
          'analyzer': BamStatsAnalyzer,
         },
-}
-PRIVATE_DEFINITIONS ={
-    'select_last_mapping':
-         {'inputs':{'analyses_dir':{'directory': 'mappings'}},
-         'outputs':{'result':{'directory': 'mapping_result',
-                              'create':False}},
-         'analyzer': _LastAnalysisAnalyzer,
-         }
 }

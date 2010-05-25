@@ -40,6 +40,8 @@ def get_analysis_especifications():
     specifications = {}
     for spec in DEFINITIONS:
         for key, value in spec.items():
+            if key.startswith('_'):
+                continue
             specifications[key] = value
     return specifications
 
