@@ -23,14 +23,14 @@ The first step is to create a ngs_backbone project.
 
 The create_project scripts makes a directory for the project and creates a configuration file template in it. This file will hold all the information about the parameters required to run the analysis.
 
-For the tutorial I will clean the demo reads distributed with ngs_backbone, you can find them in franklin/franklin/data/acceptance/. They have to be located at reads/original/ and they should respect the :ref:`naming conventions <naming>`. Also take into account that ngs_backbone only will accept fasta and fastq files.
+For the tutorial I will clean the demo reads distributed with ngs_backbone, you can find them in franklin/franklin/data/acceptance/. They have to be located at reads/raw/ and they should respect the :ref:`naming conventions <naming>`. Also take into account that ngs_backbone only will accept fasta and fastq files.
 
 ::
 
   $ mkdir reads
-  $ mkdir reads/original
-  $ cp ~/franklin/franklin/data/acceptance/cleaning/* reads/original/
-  $ ls reads/original/
+  $ mkdir reads/raw
+  $ cp ~/franklin/franklin/data/acceptance/cleaning/* reads/raw/
+  $ ls reads/raw/
   lb_microtom_gb.pl_sanger.sm_microtom.fasta
   lb_mu16.pl_454.sm_mu16.sfastq
   lb_microtom_sgn.pl_sanger.sm_microtom.sfastq
@@ -59,7 +59,7 @@ Several files and directories have been generated. ngs_backbone.log is just a lo
   lb_mu16.pl_454.sm_mu16.sfastq
   lb_ximo.pl_illumina.sm_rp_75_59_uc82.sfastq
 
-To finish up the analysis we can create some statistics about both the original and the cleaned files doing a new analysis::
+To finish up the analysis we can create some statistics about both the raw and the cleaned files doing a new analysis::
 
   $ backbone_analysis.py -a clean_read_stats
   2010-04-28 08:31:48,404 INFO ReadsStatsAnalyzer
@@ -68,7 +68,7 @@ To finish up the analysis we can create some statistics about both the original 
   2010-04-28 08:32:52,051 INFO Analysis finished
   2010-04-28 08:32:52,078 INFO Time elapsed 0:01:03.706581
 
-In this case the results will be found in two subdirectories named stats found in reads/original and reads/clean.
+In this case the results will be found in two subdirectories named stats found in reads/raw and reads/clean.
 
 
 Looking for SNPs
