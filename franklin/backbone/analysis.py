@@ -246,7 +246,15 @@ class Analyzer(object):
             elif 'analysis_finished' in messages:
                 logger.info('Analysis finished')
 
-class LastAnalysisAnalyzer(Analyzer):
+    def _spawn_analysis(self, analysis_def):
+        'Spawn a new analysis'
+        p_settings     = self._project_settings
+        analyzer_klass = analysis_def['analyzer']
+        analyzer       = analyzer_klass(project_settings=p_settings,
+                                        analysis_definition=analysis_def)
+        analyzer.run()
+
+class _LastAnalysisAnalyzer(Analyzer):
     'It chooses the latest assembly as the result'
 
     def run(self):

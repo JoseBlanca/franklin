@@ -61,8 +61,7 @@ def test_backbone(analysis=None, analysis_dir=None):
         shutil.copytree(join(repository_dir, 'assembling'),
                         join(project_dir, 'reads/cleaned'))
 
-        analyses = [ 'prepare_mira_assembly', 'mira_assembly',
-                     'select_last_assembly']
+        analyses = [ 'prepare_mira_assembly', 'mira_assembly']
         run_analysis(analyses, settings_path)
 
     if choice in ('mapping', None):
@@ -79,8 +78,7 @@ def test_backbone(analysis=None, analysis_dir=None):
                     join(project_dir, 'mapping', 'reference',
                          'reference.fasta'))
 
-        analyses = ['mapping', 'select_last_mapping', 'merge_bams',
-                    'realign_bam']
+        analyses = ['mapping', 'merge_bams', 'realign_bam']
         run_analysis(analyses, settings_path)
 
     if choice in ('snvs', None):

@@ -25,7 +25,7 @@ import os, shutil
 from tempfile import NamedTemporaryFile
 
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
-                                        LastAnalysisAnalyzer)
+                                        _LastAnalysisAnalyzer)
 from franklin.mapping import map_reads
 from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath
 from franklin.backbone.specifications import BACKBONE_BASENAMES
@@ -87,6 +87,10 @@ class MappingAnalyzer(Analyzer):
                           threads=self.threads,
                           java_conf={'java_memory':java_mem,
                                      'picard_path':picard_path})
+
+        # Now we run the select _last mapping
+        self._spawn_analysis(PRIVATE_DEFINITIONS['select_last_mapping'])
+
         self._log({'analysis_finished':True})
 
 class MergeBamAnalyzer(Analyzer):
@@ -254,12 +258,12 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mappings_by_readgroup'}},
          'analyzer': MappingAnalyzer,
         },
-    'select_last_mapping':
-        {'inputs':{'analyses_dir':{'directory': 'mappings'}},
-         'outputs':{'result':{'directory': 'mapping_result',
-                              'create':False}},
-         'analyzer': LastAnalysisAnalyzer,
-        },
+#    'select_last_mapping':
+#        {'inputs':{'analyses_dir':{'directory': 'mappings'}},
+#         'outputs':{'result':{'directory': 'mapping_result',
+#                              'create':False}},
+#         'analyzer': _LastAnalysisAnalyzer,
+#        },
     'merge_bams':
         {'inputs':{
             'bams':
@@ -293,4 +297,12 @@ DEFINITIONS = {
          'outputs':{'result':{'directory': 'mapping_stats'}},
          'analyzer': BamStatsAnalyzer,
         },
+}
+PRIVATE_DEFINITIONS ={
+    'select_last_mapping':
+         {'inputs':{'analyses_dir':{'directory': 'mappings'}},
+         'outputs':{'result':{'directory': 'mapping_result',
+                              'create':False}},
+         'analyzer': _LastAnalysisAnalyzer,
+         }
 }

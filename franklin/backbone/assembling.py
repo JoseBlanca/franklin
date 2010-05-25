@@ -25,7 +25,7 @@ Created on 15/03/2010
 
 from tempfile import NamedTemporaryFile
 import os, shutil
-from franklin.backbone.analysis import (Analyzer, LastAnalysisAnalyzer)
+from franklin.backbone.analysis import (Analyzer, _LastAnalysisAnalyzer)
 from franklin.utils.cmd_utils import call
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
@@ -193,6 +193,10 @@ class MiraAssemblyAnalyzer(Analyzer):
         if os.path.exists(mira_info_dir):
             os.symlink(mira_info_dir, os.path.join(results_dir,
                                                   BACKBONE_DIRECTORIES['info']))
+
+        # Now we run the select _last mapping
+        self._spawn_analysis(PRIVATE_DEFINITIONS['select_last_assembly'])
+
         self._log({'analysis_finished':True})
         os.chdir(original_dir)
 
@@ -218,10 +222,19 @@ DEFINITIONS ={
                     },
          'analyzer': MiraAssemblyAnalyzer,
         },
+#    'select_last_assembly':
+#        {'inputs':{'analyses_dir':{'directory': 'assemblies'}},
+#         'outputs':{'result':{'directory': 'assembly_result',
+#                              'create': False}},
+#         'analyzer': _LastAnalysisAnalyzer,
+#        },
+   }
+
+PRIVATE_DEFINITIONS ={
     'select_last_assembly':
         {'inputs':{'analyses_dir':{'directory': 'assemblies'}},
          'outputs':{'result':{'directory': 'assembly_result',
                               'create': False}},
-         'analyzer': LastAnalysisAnalyzer,
+         'analyzer': _LastAnalysisAnalyzer,
         },
-   }
+}

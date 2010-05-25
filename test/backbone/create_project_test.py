@@ -184,7 +184,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         original_stats_dir = join(original_reads_dir, 'stats')
         assert exists(clean_stats_dir)
         assert exists(original_stats_dir)
-        assert exists(join(clean_stats_dir, 'global.diff_qual_distrib.png'))
+        assert exists(join(clean_stats_dir, 'all.diff_qual_distrib.png'))
         assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.txt'))
 
         do_analysis(project_settings=settings_path,
@@ -201,8 +201,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
         assert exists(join(assembly_dir, singular_assembly_dir,
                                            'stderr.txt'))
-
-        do_analysis(project_settings=settings_path, kind='select_last_assembly')
         assem_result_dir = join(assembly_dir, 'result')
         assert exists(assem_result_dir)
         assert exists(join(assem_result_dir, 'info'))

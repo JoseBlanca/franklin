@@ -144,8 +144,6 @@ class TestBackboneMapping(unittest.TestCase):
         singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
         assert exists(join(singular_mapping_dir, 'bams',
                             'by_readgroup', 'lb_hola2.pl_illumina.sm_hola.bam'))
-        do_analysis(project_settings=settings_path, kind='select_last_mapping',
-                    silent=True)
         result_dir = join(mapping_dir, 'bams')
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
@@ -181,7 +179,7 @@ class TestBackboneMapping(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
-        vcf_fpath = join(project_dir, 'annotations', 'result',
+        vcf_fpath = join(project_dir, 'annotations', 'features',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
         #print vcf
