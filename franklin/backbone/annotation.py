@@ -22,7 +22,7 @@ Created on 12/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import shutil, os, copy
-
+from os.path import join, exists
 from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -464,6 +464,93 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
                                     output_dir=repr_dir)
 
 class AnnotateGoAnalyzer(AnnotationAnalyzer):
+    'This class is used to annotate gos using blast2go'
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        repr_dir            = output_dirs['repr_dir']
+        result_dir          = output_dirs['result']
+        blast_settings      = self._project_settings['blast']
+
+        go_settings    = self._project_settings['Annotation']['go_annotation']
+
+        go_database = go_settings['blast_database']
+        create_dat  = go_settings['create_dat_file']
+        java_memory = go_settings['java_memory']
+        prop_fpath  = go_settings['b2g_properties_file']
+
+        blast2go = {}
+        for input_ in inputs['input']:
+            input_fpath = input_.last_version
+            annot_fpath = join(result_dir, input_.basename + '.b2g.annot')
+
+            if not exists(annot_fpath):
+                go_blast_settings = blast_settings[go_database]
+                blast = self._get_b2g_blast(input_fpath, go_blast_settings)
+                if create_dat:
+                    dat_fpath = join(result_dir, input_.basename + '.b2g.dat')
+                else:
+                    dat_fpath = None
+
+                b2gpipe_runner(blast, annot_fpath=annot_fpath,
+                               dat_fpath=dat_fpath, java_memory=java_memory,
+                               prop_fpath=prop_fpath)
+
+            blast2go[input_fpath] = open(annot_fpath)
+
+        # prepare pipeline
+        pipeline = [annotate_gos]
+        configuration = {}
+
+        for input_ in  inputs['input']:
+            input_fpath = input_.last_version
+
+            step_config = {'blast2go': blast2go[input_fpath]}
+
+            configuration[input_.basename] = {'annotate_gos': step_config}
+        result = self._run_annotation(pipeline=pipeline,
+                                      configuration=configuration,
+                                      inputs=inputs, output_dir=repr_dir)
+
+        return result
+
+    def _get_b2g_blast(self, input_fpath, goblast_settings):
+        'It gets a chopped blast ready for use with blast2go'
+        if 'kind' in goblast_settings:
+            db_kind = goblast_settings['kind']
+        else:
+            db_kind = guess_blastdb_kind(goblast_settings['path'])
+
+        if db_kind == 'nucl':
+            blast_program = 'tblastx'
+        else:
+            blast_program = 'blastx'
+
+        blastdb     = goblast_settings['path']
+
+        project_dir = self._project_settings['General_settings']['project_path']
+        blast       = backbone_blast_runner(query_fpath=input_fpath,
+                                            project_dir=project_dir,
+                                            blast_program=blast_program,
+                                            blast_db=blastdb,
+                                            dbtype=db_kind,
+                                            threads=self.threads)
+
+        blast = open(blast)
+        chop_big_xml, num_items = True, 100
+        if chop_big_xml:
+            #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
+            chopped_blast = NamedTemporaryFile(suffix='.xml')
+            for blast_parts in xml_itemize(blast, 'Iteration', num_items):
+                chopped_blast.write(blast_parts)
+            chopped_blast.flush()
+            blast = chopped_blast
+
+        return blast
+
+
+class AnnotateGoAnalyzerold(AnnotationAnalyzer):
     'This class is used to annotate gos using blast2go'
 
     def run(self):
