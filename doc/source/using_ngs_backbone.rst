@@ -1,88 +1,4 @@
 
-Usage
-=====
-
-The main ideas to consider when using ngs_backbone are: project and analysis. A *project* is a directory (with its subdirectories) that includes a configuration file and all input and output files. An *analysis* takes some inputs from the project and creates some outputs. ngs_backbone knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/.
-
-The configuration parameters required for every analysis are stored in the configuration file (ngs_backbone.conf) located in the project directory. A sample of this configuration file is created by ngs_backbone when a new project is created. This file should be tweaked to adapt the analyses to your requirements before running them.
-
-ngs_backbone has only two main executables: backbone_create_project.py and backbone_analysis.py. The first one is used to create a project from scratch and the second one to run all analyses.
-
-Creating a new project
-----------------------
-
-::
-
-  $ backbone_create_project.py -p project_name
-  $ ls -l project_name
-  total 4
-  -rw-r--r-- 1 jose jose 2479 abr 16 09:30 ngs_backbone.conf
-
-This command will create a new directory named project_name with a file named ngs_backbone.conf in it. These are the two hallmarks that define a ngs_backbone *project*, the directory and the configuration file.
-
-Running an analysis
--------------------
-
-::
-
-  $ backbone_analysis.py -a analysis_name
-
-This command will run the analysis on the data present in the project using the parameters found in the configuration file. The output files will also be located in the project.
-
-.. _naming:
-
-Naming conventions
-==================
-
-The ngs_backbone usage is heavily based on directory and file name conventions. If the input files are not located where ngs_backbone expects to find them or they have non-standard file names the analysis will fail.
-
-====================== ========================
-file or directory type location
-====================== ========================
-configuration file     ngs_backbone.conf
-log file               ngs_backbone.log
-raw reads              reads/raw/
-clean reads            reads/cleaned/
-assemblies             assembly/
-assembly input         assembly/input/
-assembly output        assembly/result/
-mappings               mapping/
-mapping output         mapping/bams/
-annotations            annotations/
-annotation input       annotations/input/
-annotation output      annotation/result/
-error logs             backbone_errors/
-====================== ========================
-
-Sequence files should be fasta or sanger fastq, fasta for the ones without quality and fastq for the ones with quality. The file extension should reflect the sequence file format, fasta and sfastq.
-
-The sequence file names for the reads should define several tags: lb (library), sm (sample) and pl (platform/technology). This convention is required if a mapping analysis is to be done with this sequence files. These tags follow the sam file header `specification <http://samtools.sourceforge.net/SAM1.pdf>`_. An example of some valid sequence file names is::
-
-  $ ls reads/raw/
-  lb_mos.pl_illumina.sm_mos.sfastq  lb_pep.pl_illumina.sm_pep.sfastq
-  lb_mu16.pl_454.sm_mu16.sfastq     lb_upv196.pl_454.sm_upv196.sfastq
-
-Available analyses
-==================
-
-The available analyses are:
-
-========================================    =================================================
-analysis                                    description
-========================================    =================================================
-:ref:`clean-reads`                          sequence reads cleaning
-:ref:`mira-assembly`                        Assembly reads into a contig set with  mira
-:ref:`mapping`                              bwa read mapping against a reference sequence
-:ref:`bam-realignment`                      GATK bam realignment
-:ref:`snp-calling`                          SNP annotation from a bam file
-:ref:`orf-annotation`                       ESTScan ORF annotation
-:ref:`ortholog-annotation`                  reciprocal blast based ortholog annotation
-:ref:`description-annotation`               description blast based annotation
-:ref:`ssr-annotation`                       microsatellite sputnik based annotation
-:ref:`intron-annotation`                    est2genome cDNA based annotation
-:ref:`go-annotation`                        blast2go  annotation
-========================================    =================================================
-
 
 .. _clean-reads:
 
@@ -143,7 +59,7 @@ solexa
 Input and output files
 ______________________
 
-The reads to be cleaned should be in the project directory under /reads/raw/. The `naming conventions`_ should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/raw, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
+The reads to be cleaned should be in the project directory under /reads/raw/. The :doc:`naming conventions <introduction>` should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/raw, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
 
 .. _clean-config:
 
@@ -220,7 +136,7 @@ The lucy settings file should have the following format:
   {'library1':{'vector_file':'lib1_vector.fasta', 'splice_file':'lib1_splice.fasta'},
    'library2':{'vector_file':'lib2_vector.fasta', 'splice_file':'lib2_splice.fasta'},}
 
-In this file the paths to the vector and splice files for lucy should be stated for every library to be cleaned by lucy. The library name will be scraped from the read sequence file (that should follow the `naming conventions`_. The vector file is just a fasta file, the information to be set in the splice file should is explained in the lucy man page.
+In this file the paths to the vector and splice files for lucy should be stated for every library to be cleaned by lucy. The library name will be scraped from the read sequence file (that should follow the :doc:`naming conventions <introduction>`. The vector file is just a fasta file, the information to be set in the splice file should is explained in the lucy man page.
 
 
 .. _mira-assembly:
@@ -233,7 +149,7 @@ The `mira <http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=
 Input and output files
 ______________________
 
-The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the `naming conventions`_.
+The input files required to do a mira analysis are the reads located in reads/cleaned. The reads files should follow the :doc:`naming conventions <introduction>`.
 
 Configuration parameters
 ________________________
@@ -274,7 +190,7 @@ A set of read files can be mapped against a reference genome. For the mapping ng
 Input and output files
 ______________________
 
-The read files should be located in reads/cleaned/ and should follow the `naming conventions`_. It is very important to set in the read file names the library, sample and platforms, otherwise the realignment and the SNP calling will fail. The reference genome should be located in mapping/reference as a fasta file.
+The read files should be located in reads/cleaned/ and should follow the :doc:`naming conventions <introduction>`. It is very important to set in the read file names the library, sample and platforms, otherwise the realignment and the SNP calling will fail. The reference genome should be located in mapping/reference as a fasta file.
 
 Once bwa is finished a timestamped mapping directory will contain a result/by_readgroup subdirectory with one bam file for each input read file. Every one of such bam files is considered to be a read group. After the mapping is finished a merge_bam analysis can be done. That analysis will merged all bam files located in result/by_reagroup and will create an unique bam file in result/merged_bam. This bam file will contain as many read groups as bam files are merged. Every read group will retain the information about the library, sample and platform.
 
