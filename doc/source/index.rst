@@ -29,6 +29,7 @@ ngs_backbone is at this time beta software so it will not be bug free. It works 
    annotation
    snv_filters
    tutorials
+   ngs_workshop <ngs_workshop/index>
    seqio
    architecture
    download
