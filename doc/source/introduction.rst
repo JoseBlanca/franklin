@@ -64,7 +64,7 @@ mappings               mapping/
 mapping output         mapping/bams/
 annotations            annotations/
 annotation input       annotations/input/
-annotation output      annotation/result/
+annotation output      annotation/features/
 error logs             backbone_errors/
 ====================== ========================
 
@@ -96,6 +96,11 @@ analysis                                    description
 :ref:`intron-annotation`                    est2genome cDNA based annotation
 :ref:`go-annotation`                        blast2go  annotation
 ========================================    =================================================
+
+Parallel operation
+==================
+
+Running ngs_backbone with multiple subprocesses is as easy as setting the configuration option threads to True. ngs_backbone will run will as many subprocesses as cpu cores are found in the computer. Also the threads option can be set to an integer and ngs_backbone will run with as many subprocess as indicated.
 
 
 Installation

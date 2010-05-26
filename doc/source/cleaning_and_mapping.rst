@@ -228,8 +228,3 @@ The corresponding ngs_backbone is realign_bam.
 
 
 
-Parallel operation
-==================
-
-Running ngs_backbone with multiple subprocesses is as easy as setting the configuration option threads to True. ngs_backbone will run will as many subprocesses as cpu cores are found in the computer. Also the threads option can be set to an integer and ngs_backbone will run with as many subprocess as indicated.
-
