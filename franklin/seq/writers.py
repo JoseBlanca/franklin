@@ -138,13 +138,32 @@ class GffWriter(object):
             return self._default_type
 
     @staticmethod
-    def _get_sequence_attributes(sequence):
+    def _escape(string):
+        'It returns an escaped string'
+        #codes taken from:
+        #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
+        escapes = {';': '%3B',
+                   '=': '%3D',
+                   '%': '%25',
+                   '&': '%26',
+                   ',': '%2C'}
+        new_string = []
+        for char_ in string:
+            if char_ in escapes:
+                char_ = escapes[char_]
+            new_string.append(char_)
+        return ''.join(new_string)
+
+    def _get_sequence_attributes(self, sequence):
         '''It writes gff attributes looking in features and annotations of the
         sequnce'''
-        attributes = ['ID=%s;name=%s' % (sequence.id, sequence.name)]
+        attributes = ['ID=%s;name=%s' % (self._escape(sequence.id),
+                                         self._escape(sequence.name))]
 
-        if sequence.description and sequence.description != "<unknown description>":
-            attributes.append('description=%s' % sequence.description)
+        if (sequence.description and
+            sequence.description != "<unknown description>"):
+            desc = self._escape(sequence.description)
+            attributes.append('description=%s' % desc)
 
         if 'GOs' in sequence.annotations:
             gos = ','.join(sequence.annotations['GOs'])
@@ -154,9 +173,10 @@ class GffWriter(object):
         orthologs = []
         for annot in sequence.annotations:
             if 'orthologs' in annot:
-                specie = annot.split('-')[0]
-                for ortholog_names  in sequence.annotations[annot]:
-                    orthologs.append('%s:%s' % (specie, ortholog_names))
+                specie = self._escape(annot.split('-')[0])
+                for ortholog_names in sequence.annotations[annot]:
+                    orthologs.append('%s:%s' % (specie,
+                                                self._escape(ortholog_names)))
         if orthologs:
             attributes.append('orthologs=%s' % ",".join(orthologs))
 
@@ -164,15 +184,13 @@ class GffWriter(object):
 
     def _get_seq_feature(self, sequence, seq_offset):
         'It gets the gff section of the sequence. The parent'
-        seqid = sequence.id
-        source = self._source
+        seqid = self._escape(sequence.id)
+        source = self._escape(self._source)
         type_ = self._get_seq_sofa_type(sequence)
         start = 1
         end = len(sequence)
         start = str(start)
         end = str(end)
-        #start  = str(seq_offset + start)
-        #end    = str(seq_offset + end)
 
         score = '.'
         strand = '.'
@@ -187,13 +205,12 @@ class GffWriter(object):
         srr_cont, intron_cont, orf_cont, snv_cont = 0, 0, 0, 0
         for feature in sequence.features:
             kind = feature.type
-            seqid = sequence.id
+            seq_name = self._escape(sequence.name)
+            seqid = self._escape(sequence.id)
             start = int(str(feature.location.start)) + 1
             end = int(str(feature.location.end)) + 1
             start = str(start)
             end = str(end)
-            #start  = str(seq_offset + start)
-            #end    = str(seq_offset + end)
             strand = '.'
             phase = '.'
             score = '.'
@@ -203,34 +220,29 @@ class GffWriter(object):
                 #source = 'sputnik'
                 type_ = 'microsatellite' #SO:0000289
                 score = str(feature.qualifiers['score'])
-                attributes = self._get_subfeature_attributes(sequence.id,
-                                                             sequence.name,
+                attributes = self._get_subfeature_attributes(seqid,
+                                                             seq_name,
                                                              kind, srr_cont)
             elif kind == 'intron':
                 intron_cont += 1
-                #source = 'est2genome'
-                #TODO remove slash when new version of igv released
                 type_ = 'intron_' #SO:0000188
-                attributes = self._get_subfeature_attributes(sequence.id,
-                                                             sequence.name,
+                attributes = self._get_subfeature_attributes(seqid,
+                                                             seq_name,
                                                              kind, intron_cont)
             elif kind == 'orf':
                 orf_cont += 1
-                #source = 'estscan'
                 type_ = 'ORF' #SO:0000236
                 strand = feature.qualifiers['strand']
                 strand = '+' if strand == 'forward' else '-'
-                attributes = self._get_subfeature_attributes(sequence.id,
-                                                             sequence.name,
-                                                             kind, intron_cont)
+                attributes = self._get_subfeature_attributes(seqid,
+                                                             seq_name,
+                                                             kind, orf_cont)
             elif kind == 'snv':
                 snv_cont += 1
-                #source = 'franklin'
                 type_ = 'SNV' #SO:0001483
-                attributes = self._get_subfeature_attributes(sequence.id,
-                                                             sequence.name,
+                attributes = self._get_subfeature_attributes(seqid,
+                                                             seq_name,
                                                              kind, snv_cont)
-
 
             yield [seqid, source, type_, start, end, score, strand,
                            phase, attributes]
