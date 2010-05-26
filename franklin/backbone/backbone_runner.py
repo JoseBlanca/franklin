@@ -82,7 +82,10 @@ def do_analysis(kind, project_settings=None, analysis_config=None,
                              BACKBONE_DIRECTORIES['log_file'])
     _configure_logging(log_fpath, silent)
 
-    analysis_def = specifications[kind]
+    try:
+        analysis_def = specifications[kind]
+    except KeyError:
+        raise ValueError('Unknown analysis: ' + kind)
 
     analyzer_klass = analysis_def['analyzer']
     analyzer = analyzer_klass(project_settings=settings,
