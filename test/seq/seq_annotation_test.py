@@ -122,7 +122,7 @@ class AnnotationTests(unittest.TestCase):
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
         b2gpipe_runner(blast, annot_fpath)
-        blast2go = open(annot_fpath)
+        blast2go = annot_fpath
         go_annotator = create_go_annotator(blast2go)
         seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))
 
