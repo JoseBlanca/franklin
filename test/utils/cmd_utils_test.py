@@ -152,7 +152,7 @@ class TestCall(unittest.TestCase):
         assert not stdout_str
         assert not stderr_str
 
-        assert '/@#@#@#@' in stderr.read()
+        assert '/@#@#@#@' in open(stderr.name).read()
         try:
             call(cmd, stdout=stdout, stderr=stderr, raise_on_error=True)
             self.fail()
