@@ -290,11 +290,13 @@ class AnnotationTest(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        b2g = os.path.join(DATA_DIR, 'b2gPipe.properties')
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
-                                                 'java_memory':2048}
+                                                 'java_memory':2048,
+                                                 'b2g_properties_file':b2g}
                  }, 'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
@@ -335,5 +337,5 @@ class AnnotationTest(unittest.TestCase):
                     silent=True)
 
 if    __name__ == "__main__":
-#    import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
+    import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
     unittest.main()

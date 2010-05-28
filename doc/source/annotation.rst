@@ -96,6 +96,8 @@ create_dat_file
 java_memory
   This optional parameter is especially important if the creation of the dat file is required.
 
+b2g_properties_file
+  Optionaly you can configure blast2go's properties tunning this file.
 
 .. _orf-annotation:
 

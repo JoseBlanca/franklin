@@ -495,6 +495,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 b2gpipe_runner(blast, annot_fpath=annot_fpath,
                                dat_fpath=dat_fpath, java_memory=java_memory,
                                prop_fpath=prop_fpath)
+                blast.close()
 
             blast2go[input_fpath] = annot_fpath
 
@@ -536,113 +537,16 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                                             dbtype=db_kind,
                                             threads=self.threads)
 
-        blast = open(blast)
-        chop_big_xml, num_items = True, 100
+        chop_big_xml, num_items = True, 2
         if chop_big_xml:
             #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
             chopped_blast = NamedTemporaryFile(suffix='.xml')
             for blast_parts in xml_itemize(blast, 'Iteration', num_items):
                 chopped_blast.write(blast_parts)
             chopped_blast.flush()
-            blast = chopped_blast
-
-        return blast
-
-
-class AnnotateGoAnalyzerold(AnnotationAnalyzer):
-    'This class is used to annotate gos using blast2go'
-
-    def run(self):
-        'It runs the analysis.'
-        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        repr_dir = output_dirs['repr_dir']
-        result_dir = output_dirs['result']
-        blast_settings = self._project_settings['blast']
-
-        annot_settings = self._project_settings['Annotation']
-        go_settings = annot_settings['go_annotation']
-        go_database = go_settings['blast_database']
-
-        create_dat  = go_settings['create_dat_file']
-        java_memory = go_settings['java_memory']
-        prop_fpath  = go_settings['b2g_properties_file']
-
-        #first we need some blasts
-        project_dir = self._project_settings['General_settings']['project_path']
-        chop_big_xml, num_items = True, 100
-        blasts = {}
-        for input_ in inputs['input']:
-            if 'kind' in blast_settings[go_database]:
-                db_kind = blast_settings[go_database]['kind']
-            else:
-                db_kind = guess_blastdb_kind(blast_settings[go_database]['path'])
-
-            if db_kind == 'nucl':
-                blast_program = 'tblastx'
-            else:
-                blast_program = 'blastx'
-
-            blastdb     = blast_settings[go_database]['path']
-            input_fpath = input_.last_version
-            blast       = backbone_blast_runner(query_fpath=input_fpath,
-                                                project_dir=project_dir,
-                                                blast_program=blast_program,
-                                                blast_db=blastdb,
-                                                dbtype=db_kind,
-                                                threads=self.threads)
-            if chop_big_xml:
-                #chopped_blast = open('/tmp/blast_itemized.xml', 'w')
-                chopped_blast = NamedTemporaryFile(suffix='.xml')
-                for blast_parts in xml_itemize(blast, 'Iteration', num_items):
-                    chopped_blast.write(blast_parts)
-                chopped_blast.flush()
-                blast = chopped_blast
-
-            blasts[input_fpath] = blast
-
-        #First we do the blast 2 go por each of the files
-        blast2go = {}
-        for input_ in  inputs['input']:
-            input_fpath = input_.last_version
-            if create_dat:
-                dat_fpath = os.path.join(result_dir,
-                                         input_.basename + '.b2g.dat')
-            else:
-                dat_fpath = None
-            annot_fpath = os.path.join(result_dir,
-                                       input_.basename + '.b2g.annot')
-            if not os.path.exists(annot_fpath):
-                blast = blasts[input_fpath].name if chop_big_xml else blasts[input_fpath]
-                blast = open(blast)
-                b2gpipe_runner(blast, annot_fpath=annot_fpath,
-                               dat_fpath=dat_fpath, java_memory=java_memory,
-                               prop_fpath=prop_fpath)
-
-            blast2go[input_fpath] = open(annot_fpath)
-
-        # prepare pipeline
-        pipeline = [annotate_gos]
-        configuration = {}
-
-        for input_ in  inputs['input']:
-            input_fpath = input_.last_version
-
-            step_config = {'blast2go': blast2go[input_fpath]}
-
-            configuration[input_.basename] = {'annotate_gos': step_config}
-        result = self._run_annotation(pipeline=pipeline,
-                                    configuration=configuration,
-                                    inputs=inputs,
-                                    output_dir=repr_dir)
-
-        #remove the temporal files
-        for input_ in  inputs['input']:
-            input_fpath = input_.last_version
-            blasts[input_fpath].close()
-            blast2go[input_fpath].close()
-
-        return result
-
+            return chopped_blast
+        else:
+            return open(blast)
 
 DEFINITIONS = {
     'filter_snvs':
