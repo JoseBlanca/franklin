@@ -58,8 +58,8 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'vectors':'hola'}}
         pipeline = configure_pipeline(pipeline, configuration)
 
-        assert pipeline[0]['arguments']['vectors'] == 'hola'
-        assert pipeline[2]['arguments']['vectors'] == 'Univec'
+        assert pipeline[1]['arguments']['vectors'] == 'hola'
+        assert pipeline[3]['arguments']['vectors'] == 'Univec'
 
         # Now it should fail because one of the arguments is Not set
         configuration = {'remove_vectors': {'vectors':'Univec'}}
@@ -150,7 +150,7 @@ class PipelineTests(unittest.TestCase):
 
         #now with an repr file
         open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
