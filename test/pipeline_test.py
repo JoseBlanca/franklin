@@ -26,6 +26,7 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
                                          seq_pipeline_runner,
                                          _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
+from franklin.seq.writers import SequenceWriter
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -105,21 +106,22 @@ class PipelineTests(unittest.TestCase):
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
-        io_fhands = {}
-        io_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
-        io_fhands['outputs'] = {}
-        io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
-        io_fhands['outputs']['quality'] = NamedTemporaryFile(delete=False)
-        seq_pipeline_runner(pipeline, configuration, io_fhands)
-        result_seq = open(io_fhands['outputs']['sequence'].name).read()
-#        io_fhands['outputs']['sequence'].seek(0)
-#        result_seq = io_fhands['outputs']['sequence'].read()
+        in_fhands = {}
+        in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        in_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+
+
+        out_seq_fhand = NamedTemporaryFile()
+        out_qual_fhand = NamedTemporaryFile()
+        writer = SequenceWriter(out_seq_fhand, qual_fhand=out_qual_fhand,
+                                file_format='fasta')
+        seq_pipeline_runner(pipeline, configuration, in_fhands,
+                            writers={'seq':writer})
+        result_seq = open(out_seq_fhand.name).read()
         assert result_seq.count('>') == 6
+
         #are we keeping the description?
         assert 'mdust' in result_seq
-        os.remove(io_fhands['outputs']['sequence'].name)
-        os.remove(io_fhands['outputs']['quality'].name)
 
     def test_seq_pipeline_parallel_run(self):
         'It tests that the pipeline runs ok'
@@ -132,25 +134,20 @@ class PipelineTests(unittest.TestCase):
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
-        io_fhands = {}
-        io_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        io_fhands['outputs'] = {}
-        io_fhands['outputs']['sequence'] = NamedTemporaryFile(delete=False)
+        in_fhands = {}
+        in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        out_fhand = NamedTemporaryFile()
+        writer = SequenceWriter(out_fhand, file_format='fasta')
+        writers = {'seq': writer}
 
-        seq_pipeline_runner(pipeline, configuration, io_fhands,
-                                processes=4)
-        out_fhand = open(io_fhands['outputs']['sequence'].name, 'r')
+        seq_pipeline_runner(pipeline, configuration, in_fhands,
+                            processes=4, writers=writers)
+        out_fhand = open(out_fhand.name, 'r')
 
         result_seq = out_fhand.read()
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq
-
-        os.remove(io_fhands['outputs']['sequence'].name)
-
-        #now with an repr file
-        open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

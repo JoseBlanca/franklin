@@ -252,8 +252,6 @@ class GffWriter(object):
         '''It gets the attribute section of a sequence's  subfeature'''
         return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
 
-
-
 class SequenceWriter(object):
     'It writes sequences one by one'
     def __init__(self, fhand, file_format, qual_fhand=None):
@@ -278,7 +276,6 @@ class SequenceWriter(object):
         self.fhand.flush()
         if self.qual_fhand:
             self.qual_fhand.flush()
-
 
 def write_seqs_in_file(seqs, seq_fhand, qual_fhand=None, format='fasta',
                        default_quality=25):

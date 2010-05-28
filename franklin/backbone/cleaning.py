@@ -168,13 +168,16 @@ class CleanReadsAnalyzer(Analyzer):
             input_fhand = open(input_fpath)
             output_fhand = open(output_fpath, 'w')
             pipeline = self._guess_cleaning_pipepile(file_info)
-            iofhands = {'in_seq':input_fhand,
-                        'outputs':{'sequence': output_fhand }}
+            infhands = {'in_seq':input_fhand}
+            writer = SequenceWriter(output_fhand,
+                                    file_format=file_info['format'])
+
             configuration = self.create_cleaning_configuration(
                                                        platform=file_info['pl'],
                                                        library=file_info['lb'])
-            seq_pipeline_runner(pipeline, configuration, iofhands,
-                                file_info['format'], processes=self.threads)
+            seq_pipeline_runner(pipeline, configuration, infhands,
+                                file_info['format'], processes=self.threads,
+                                writers={'seq':writer})
             input_fhand.close()
             output_fhand.close()
         self._log({'analysis_finished':True})

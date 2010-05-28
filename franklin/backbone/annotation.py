@@ -47,6 +47,10 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             cap_enzyme_filter,
                                             is_variable_filter,
                                             ref_not_in_list)
+from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
+                                  OrfWriter, OrthologWriter)
+from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
+
 from franklin.utils.misc_utils import VersionedPath, xml_itemize
 from franklin.utils.cmd_utils import b2gpipe_runner
 
@@ -74,8 +78,10 @@ class AnnotationAnalyzer(Analyzer):
             seq_fpath = seq_path.last_version
             temp_repr = NamedTemporaryFile(suffix='.repr', mode='a',
                                            delete=False)
-            io_fhands = {'in_seq': open(seq_fpath),
-                         'outputs':{'repr':temp_repr}}
+            in_fhands = {'in_seq': open(seq_fpath)}
+
+            writer = SequenceWriter(fhand=temp_repr,
+                                    file_format='repr')
 
             if seq_path.basename in configuration:
                 #there is a different configuration for every file to annotate
@@ -84,7 +90,9 @@ class AnnotationAnalyzer(Analyzer):
                 config = configuration
 
             seq_pipeline_runner(pipeline, configuration=config,
-                                io_fhands=io_fhands, processes=self.threads)
+                                in_fhands=in_fhands,
+                                processes=self.threads,
+                                writers={'repr': writer})
             temp_repr.close()
             repr_path = VersionedPath(os.path.join(output_dir,
                                                    seq_path.basename + '.repr'))
@@ -265,7 +273,6 @@ class WriteAnnotationAnalyzer(Analyzer):
                         'ssr':('ssr',),
                         'gff':('gff3',),
                         'orthologs':('orthologs',),}
-                        #'snv_illumina': ('snv_illumina',)}
 
         for seq_path in repr_paths:
             outputs = {}
@@ -283,16 +290,46 @@ class WriteAnnotationAnalyzer(Analyzer):
                 if len(output) == 1:
                     outputs[kind] = output[0]
 
-            io_fhands = {'in_seq': open(seq_path.last_version),
-                         'outputs': outputs}
+            in_fhands = {'in_seq': open(seq_path.last_version)}
+
+            writers = {}
+            if 'repr' in outputs:
+                writers['repr'] = SequenceWriter(fhand=outputs['repr'],
+                                                 file_format='repr')
+
+            if 'vcf' in outputs:
+                ref_name = os.path.basename(in_fhands['in_seq'].name)
+                fhand = outputs['vcf']
+                writers['vcf'] = VariantCallFormatWriter(fhand=fhand,
+                                                        reference_name=ref_name)
+            if 'gff' in outputs:
+                default_type = None
+                writers['gff'] = GffWriter(fhand=outputs['gff'],
+                                           default_type=default_type)
+            if 'orf' in outputs:
+                fhand, pep_fhand = outputs['orf']
+                writers['orf'] = OrfWriter(fhand=fhand, pep_fhand=pep_fhand)
+
+            if 'ssr' in outputs:
+                writers['ssr'] = SsrWriter(fhand=outputs['ssr'])
+
+            if 'orthologs' in outputs:
+                writers['orthologs'] = \
+                                      OrthologWriter(fhand=outputs['orthologs'])
+
+            if 'snv_illumina' in outputs:
+                writers['snv_illumina'] = \
+                                SnvIlluminaWriter(fhand=outputs['snv_illumina'])
+
             feature_counter = seq_pipeline_runner(pipeline=None,
                                                   configuration=None,
-                                                  io_fhands=io_fhands)
+                                                  in_fhands=in_fhands,
+                                                  writers = writers)
 
             # We need to close fhands and remove void files.
             # sequence writer could have a qual fhand
             # orf writer has a pep_fhand
-            for kind, fhands in io_fhands['outputs'].items():
+            for kind, fhands in outputs.items():
                 kind_key = 'sequence' if kind == 'quality' else kind
                 if kind in feature_counter:
                     self._close_and_remove_files(fhands,

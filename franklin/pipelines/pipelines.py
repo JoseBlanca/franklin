@@ -47,9 +47,7 @@ from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES, SEQ_STEPS
 from franklin.pipelines.snv_pipeline_steps import SNV_PIPELINES, SNV_STEPS
 from franklin.pipelines.annotation_steps import ANNOT_STEPS
 from franklin.seq.readers import guess_seq_file_format
-from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
-                                  OrfWriter, OrthologWriter)
-from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
+from franklin.seq.writers import SequenceWriter
 from franklin.utils.misc_utils import DisposableFile
 
 # Join the pipelines in PIPELINE
@@ -286,8 +284,8 @@ def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
     processed_seqs = _pipeline_builder(pipeline, sequences, configuration)
     return processed_seqs
 
-def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
-                        processes=False):
+def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
+                        writers=None, processes=False):
 
     '''It runs all the analysis for the given sequence pipeline.
 
@@ -303,12 +301,12 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         pipeline = PIPELINES[pipeline]
 
     if file_format is None:
-        file_format = guess_seq_file_format(io_fhands['in_seq'])
+        file_format = guess_seq_file_format(in_fhands['in_seq'])
 
     # Here we extract our input/output files
-    in_fhand_seqs = io_fhands['in_seq']
-    if 'in_qual' in io_fhands:
-        in_fhand_qual = io_fhands['in_qual']
+    in_fhand_seqs = in_fhands['in_seq']
+    if 'in_qual' in in_fhands:
+        in_fhand_qual = in_fhands['in_qual']
     else:
         in_fhand_qual = None
 
@@ -324,46 +322,6 @@ def seq_pipeline_runner(pipeline, configuration, io_fhands, file_format=None,
         filtered_seq_iter = _process_sequences(in_fhand_seqs, in_fhand_qual,
                                           file_format, pipeline,
                                           configuration)
-
-    writers = {}
-    output_type = io_fhands['outputs']
-    if 'sequence' in output_type:
-        if 'quality' in io_fhands['outputs']:
-            qual_fhand = io_fhands['outputs']['quality']
-        else:
-            qual_fhand = None
-        writers['sequence'] = SequenceWriter(fhand=io_fhands['outputs']['sequence'],
-                                           qual_fhand=qual_fhand,
-                                           file_format=file_format)
-
-    if 'repr' in output_type:
-        fhand = io_fhands['outputs']['repr']
-        writers['repr'] = SequenceWriter(fhand=fhand, file_format='repr')
-
-    if 'vcf' in output_type:
-        ref_name = os.path.basename(io_fhands['in_seq'].name)
-        fhand = io_fhands['outputs']['vcf']
-        writers['vcf'] = VariantCallFormatWriter(fhand=fhand,
-                                                 reference_name=ref_name)
-    if 'gff' in output_type:
-        default_type = None
-        fhand = io_fhands['outputs']['gff']
-        writers['gff'] = GffWriter(fhand=fhand, default_type=default_type)
-    if 'ssr' in output_type:
-        fhand = io_fhands['outputs']['ssr']
-        writers['ssr'] = SsrWriter(fhand=fhand)
-
-    if 'orf' in output_type:
-        fhand, pep_fhand = io_fhands['outputs']['orf']
-        writers['orf'] = OrfWriter(fhand=fhand, pep_fhand=pep_fhand)
-
-    if 'orthologs' in output_type:
-        fhand = io_fhands['outputs']['orthologs']
-        writers['orthologs'] = OrthologWriter(fhand=fhand)
-
-    if 'snv_illumina' in output_type:
-        fhand = io_fhands['outputs']['snv_illumina']
-        writers['snv_illumina'] = SnvIlluminaWriter(fhand=fhand)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:

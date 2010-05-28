@@ -290,8 +290,9 @@ DEFAULT_CONFIGURATION = OrderedDict([
                             ('sanger_right', (INTEGER, None)),
                             ('illumina_left', (INTEGER, None)),
                             ('illumina_right', (INTEGER, None)),
-                        ])
-                )
+                        ]),
+                ),
+                ('vcf_grouping', (STRING, 'read_groups')),
             ])
         )
     ])
