@@ -190,17 +190,10 @@ class TestBackboneMapping(unittest.TestCase):
         assert 'VLB3' in vcf
         assert 'AT5G19860.1' in vcf
 
-        # Uncomment this if you add snv_illumina to writerannotation analysis
-        # output files
-        #illumina_snv_path = join(project_dir, 'annotations', 'result',
-        #                 'reference.snv_illumina')
-        #illumina_snv = open(illumina_snv_path).read()
-        #print illumina_snv
         do_analysis(project_settings=settings_path, kind='mapping_stats',
                     silent=True)
-        stats_dir = join(project_dir, 'mapping', 'result', 'stats')
+        stats_dir = join(project_dir, 'mapping', 'bams', 'stats')
         assert exists(join(stats_dir, 'backbone.coverage_illumina.dat'))
-
 
         os.chdir('/tmp')
         test_dir.close()

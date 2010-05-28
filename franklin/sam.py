@@ -68,7 +68,7 @@ def sam2bam(sam_path, bam_path):
     'It converts between bam and sam.'
     cmd = ['samtools', 'view', '-bSh', '-o', bam_path, sam_path]
     call(cmd, raise_on_error=True)
-    
+
     #if we try to use this function with a sam with no header it would fail
      #samtools view -bhS -o seqs.bam  seqs.2.sam
     #[samopen] no @SQ lines in the header.
@@ -180,15 +180,28 @@ def merge_sam(infiles, outfile, reference):
             outfile.write(line)
     outfile.flush()
 
-def sort_bam_sam(in_fhand, out_fhand, sort_method='coordinate',
-                 java_conf=None):
+def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
+                 java_conf=None, tmp_dir=None):
     'It sorts a bam file using picard'
     picard_path = _guess_picard_path(java_conf)
     picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
     java_cmd_ = java_cmd(java_conf)
-    java_cmd_.extend(['-jar', picard_sort_jar, 'INPUT=' + in_fhand,
-           'OUTPUT=' + out_fhand, 'SORT_ORDER=' + sort_method])
-    call(java_cmd_, raise_on_error=True)
+    java_cmd_.extend(['-jar', picard_sort_jar, 'INPUT=' + in_fpath,
+           'OUTPUT=' + out_fpath, 'SORT_ORDER=' + sort_method])
+
+    if tmp_dir:
+        java_cmd_.append('TMP_DIR=%s' % tmp_dir)
+
+    stdout, stderr, retcode = call(java_cmd_, raise_on_error=False)
+    err_msg = 'No space left on device'
+    if retcode and (err_msg in stdout or err_msg in stderr):
+        raise RuntimeError('Picard sort consumed all space in device.')
+    elif retcode:
+        msg = 'Error running picard: %s\n stderr: %s\n stdout: %s' % \
+                                                (' '.join(java_cmd_), stderr,
+                                                 stdout)
+        raise RuntimeError(msg)
+
 
 def guess_mapped(flag):
     'Giving the flag, guess if the read is mapped or not'

@@ -100,6 +100,7 @@ class MergeBamAnalyzer(Analyzer):
         self._log({'analysis_started':True})
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
+        tmp_dir      = settings['General_settings']['tmpdir']
         os.chdir(project_path)
         inputs = self._get_input_fpaths()
         bam_paths = inputs['bams']
@@ -172,9 +173,11 @@ class MergeBamAnalyzer(Analyzer):
         sam2bam(temp_sam.name, temp_bam.name)
 
         # finally we need to order the bam
+        #print 'unsorted.bam', temp_bam.name
+        #raw_input()
         sort_bam_sam(temp_bam.name, merged_bam_fpath,
                      java_conf={'java_memory':java_mem,
-                                'picard_path':picard_path})
+                                'picard_path':picard_path}, tmp_dir=tmp_dir )
         temp_bam.close()
         temp_sam.close()
         create_bam_index(merged_bam_fpath)
