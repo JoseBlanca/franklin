@@ -93,6 +93,7 @@ class VariantCallFormatWriter(object):
         header.append('##INFO=AC,-1,Integer,"Allele Count"')
         header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
         header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
+        header.append('##INFO=GC,.,String,"Genotype counts for alleles"')
         header.append('##FORMAT=RG,.,String,"Read group Genotype genotype"')
         header.append('##FORMAT=AC,.,String,"Allele count"')
 
@@ -215,6 +216,25 @@ class VariantCallFormatWriter(object):
                 quals.extend(allele_info[kind])
             if quals:
                 toprint_items.append(strfmt % self._root_mean_square(quals))
+
+        #genotype count
+        #we count in how many genotypes every allele has been found.
+        grouping_key = self._genotype_grouping_key
+        allele_numb_coding = self._numbers_for_alleles(reference_allele[0],
+                                                       alternative_alleles)
+        #we count the number of times every allele appears in a group (sample)
+        genotype_counts = []
+        for allele, allele_info in qualifiers['alleles'].items():
+            allele = allele_numb_coding[allele]
+            genotype_counts.append((allele,
+                                    len(set(allele_info[grouping_key]))))
+        #we have to sort by the number of groups
+        genotype_counts = sorted(genotype_counts, lambda x, y: y[1] - x[1])
+        #now we print
+        alleles = [str(count[0]) for count in genotype_counts]
+        counts = [str(count[1]) for count in genotype_counts]
+        toprint_items.append('GC=%s:%s' % ('|'.join(alleles), ','.join(counts)))
+
         if toprint_items:
             return ';'.join(toprint_items)
         else:
@@ -245,18 +265,24 @@ class VariantCallFormatWriter(object):
             phred = alleles.values()[0]['quality']
         return '%i' % phred
 
+    @staticmethod
+    def _numbers_for_alleles(reference_allele, alternative_alleles):
+        'It returns a key with the numbers for the alleles'
+        #a map from alleles to allele index (0 for reference, etc)
+        alleles_index = [(reference_allele, INVARIANT)]
+        alleles_index.extend(alternative_alleles)
+        alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
+        return alleles_index
+
     def _create_genotypes(self, alleles, reference_allele, alternative_alleles):
         'It returns the genotype section for this snv'
 
         items = []
         #the format
         items.append('RG:AC')
-        #print 'alleles', alleles
         #a map from alleles to allele index (0 for reference, etc)
-        alleles_index = [(reference_allele, INVARIANT)]
-        alleles_index.extend(alternative_alleles)
-        alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
-        #print 'alleles_index', alleles_index
+        alleles_index = self._numbers_for_alleles(reference_allele,
+                                                  alternative_alleles)
 
         #now we need the alleles for every sample
         grouping_key = self._genotype_grouping_key
@@ -272,7 +298,6 @@ class VariantCallFormatWriter(object):
                 if allele_index not in alleles_by_group[group]:
                     alleles_by_group[group][allele_index] = 0
                 alleles_by_group[group][allele_index] += 1
-        #print 'alleles by group', alleles_by_group
 
         #now we can build the info for every sample
         for group in self._genotype_groups.keys():
