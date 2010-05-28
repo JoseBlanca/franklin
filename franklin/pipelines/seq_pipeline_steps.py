@@ -28,9 +28,15 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_masker_for_low_complexity,
                                     create_masker_repeats_by_repeatmasker,
                                     create_word_striper_by_alignment,
-                                    create_edge_stripper)
+                                    create_edge_stripper, create_upper_mapper)
 
 from franklin.seq.seq_filters import create_length_filter
+
+up_case = {'function':create_upper_mapper,
+           'arguments':{},
+           'type': 'mapper',
+           'name': 'up_case',
+           'comment': 'It convers the sequence to upper case'}
 
 #pylint:disable-msg=C0103
 remove_vectors = {'function':create_vector_striper_by_alignment,
@@ -117,18 +123,18 @@ remove_short_adaptors = {'function': create_word_striper_by_alignment,
 ################################################################################
 
 SEQPIPELINES = {
-    'sanger_with_qual'   : [remove_adaptors, strip_quality_lucy2,
+    'sanger_with_qual'   : [up_case, remove_adaptors, strip_quality_lucy2,
                             remove_vectors, mask_low_complexity,
                             remove_short_adaptors, edge_remover,
                             filter_short_seqs],
 
-    'sanger_without_qual': [remove_vectors, strip_quality_by_n,
+    'sanger_without_qual': [up_case, remove_vectors, strip_quality_by_n,
                             mask_low_complexity, remove_short_adaptors,
                             edge_remover, filter_short_seqs],
 
     'repeatmasker'       : [mask_repeats, filter_short_seqs],
 
-    'solexa'             : [remove_adaptors, strip_quality,
+    'solexa'             : [up_case, remove_adaptors, strip_quality,
                             filter_short_seqs],
 
     'adaptors'           : [remove_adaptors, filter_short_seqs],

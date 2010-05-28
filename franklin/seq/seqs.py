@@ -157,6 +157,16 @@ class SeqWithQuality(SeqRecord):
             if feature.type == kind:
                 yield feature
 
+    def upper(self):
+        'It returns the sequence upper cased'
+        return self.__class__(seq=self.seq.upper(),
+                              id=self.id,
+                              name=self.name,
+                              description=self.description,
+                              dbxrefs=self.dbxrefs, features=self.features,
+                              annotations=self.annotations,
+                              letter_annotations=self.letter_annotations)
+
 class SeqFeature(BioSeqFeature):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''
@@ -255,6 +265,10 @@ class Seq(BioSeq):
         #Much faster on really long sequences than the previous loop based one.
         #thx to Michael Palmer, University of Waterloo
         return self.__class__(str(self).translate(ttable), self.alphabet)
+
+    def upper(self):
+        'It returns the uppercased sequence'
+        return self.__class__(str(self).upper(), self.alphabet)
 
     def __getitem__(self, index) :                 # Seq API requirement
         #Note since Python 2.0, __getslice__ is deprecated

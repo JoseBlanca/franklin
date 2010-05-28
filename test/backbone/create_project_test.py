@@ -65,6 +65,17 @@ ATGAACCGCAAAAGCTTGTATGCTGTATTGCCTTGATTTGGTTTCCAAGATTCTTCCCACATATATGATGATGATGATGA
 +
 FFFFFFFFG7777CGFFFFHHHHHHIHHHHHHHHHHHHHHH==?CCFFFFFFFGGCCCGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFGGGFFFFFFFFFFFFFGGGFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 '''
+
+SANGER_QUAL = """@SEX_N_int_8782-8882_agen_plate-001_A01_F.b.ab1 CHROMAT_FILE: SEX_N_int_8782-8882_agen_plate-001_A01_F.b.ab1 PHD_FILE: SEX_N_int_8782-8882_agen_plate-001_A01_F.b.ab1.phd.1 CHEM: term DYE: big TIME: Mon May 24 13:19:19 2010
+gacctatagaacaagtcggtccggaattcccgggatcatcaacatgccttccaccgctgcttccaccaaggtcccccagaccaccatgaacttcaacggctactgcgttgttatgtaaataacctcacagtgccttgaagggccaacgagagcattgagaggcagatgccaaccagctttcctccagcagatcttctggcaaaccacccatctcacctgagtgatcctgttctcgcaacatcactcgatgagaaccactgaagatcggtatctcgcctctcaacgtcagaccagcaatctgcttttccctctatcatgttcgagaagcccacctctcgttccgccacaacaacaacctcgcctaggaagcttcttgtcactgcttcatggtggactctgcacaatgggagcacccactgacaacaaccggagcggtgaggatctttccttgatgggaatggaaaaaaacctttgtcaaccggggatatacatccgcacacatcacacacaccatcctttcacataaacaactttcgcttctttttgttggggataacttcacacgggactacttttcgtccacacggagctttccctctttcaattttcgacactcaggcaactaaccgtatcttttggaccctttctctctttcgttgttcgttcgacaccaaacaccctttgcgggctgaggacatcgcctgcgggaaacgatgcaacaacttctcttcggttcacactcttctgcaaacgtcacctgggagtcggtggactcacacataccaacctcaacctcttccctcggctgggagggaggctatttcgggaatgcttctcacttttggttgggggggacttgaccgggcttggggattgggcctttatcccccccttcctttttttttgcgaacctttccttggaaaatttctttgggaaagggaattttaaaagggggggggaaatccttttccttttttacttgttctttttgagaga
++
+)))))..)))))*.16FFFFFH412-/4\HJK@@?B=BBBF??:A98==1+++13DJJJJ5+++)0.5==AHHHH@9555<G=74--0;@JA?B==89888AEFMB>>BADDDDDKKBBDDDLGGFA:200335A=AA566=====A=M>=AMMDEJ>>>LLL<<<LAC555G7000C<?//-6--++/-228LLDDBL77/35558<DL@@@DHLLL>;..5ALLLLDDD10.3.//>9D6000,,0HH8//HHDDHLLMH;-0.<<<<<<<=</<<>>><D>>>D888H<...<<MLHHLL>>>>>>HLLLL<=//..,++++0088LLH>>>>>@@DHH//.88>464844<LHH228HL11/H;<<88688HH222??DDD<;;LDH@@@DD@9822388<DDD89345CC223995963-./33<8;;D;;;LHHLKDDDLJDDDHLLLDBBHHHHKHL><<885131--00544AADFLLA=9=.-.,33A<<555<<<A=33223373330599<==J<<833..-9050C9888EAA?F?AAFFFFA@834303722376;8:88=9A88,-,-69:---4.79FCHFFCB//1355C44..36-.0007=3/-0,,,01.3.66?AAADDDEBFA==BBDFBF==552.1.,+-/26:=7-2++)*.1113139<@320;/-.44640+))))****+*****,,0.,**+*/58888855620/----70)))))+-44<25++*****+02++*+,++,,+++-))))),,**))+')'')'*000-,))))))+++('+*+*))))))++++))))),,,++)))))+.2-,,,+***,***+,))))))*-,-+)))))))))*+,,)))++*,10*))))),-.1?88//-++++++++/+****))))))+-**+*.)**)+*+*+*++)'''++-+010-*)))))())))+,00/++632++*+***+**,..-,,,,,,
+@SEX_N_int_8782-8882_agen_plate-001_A01_R.g.ab1 CHROMAT_FILE: SEX_N_int_8782-8882_agen_plate-001_A01_R.g.ab1 PHD_FILE: SEX_N_int_8782-8882_agen_plate-001_A01_R.g.ab1.phd.1 CHEM: term DYE: big TIME: Mon May 24 13:19:19 2010
+gggggggcggtattctacatcaagtccccactcgtggcacctcgcctcaggaacactttgaccgaccgaactctccgcccgactgcctctgtggccggtgcttcgaatactcatcgacgaacatctccctatttgccactccgggttctaccttgccgagcgttcgcacaccatgtccacgggataacccctatgactggatcgcagagaacatgctggctaggaggtagtccgcgcccgtgaccatggtctctgcaccataaagcgagctctcaatatcttgcagacttcttcccccttcggttactactttacccgtcccaggtcgtctggtgtccagttcctttcaatagacctccagcgcccatcacatatggcgtctgtgcgtataccgcactaagttcccagaagttgtctctacgtggatgattgtgagtgatacgatgtccccggcacccactaccgaactcatggttgtatcagatcctgacgaggagtacgtggaggataggatcgtggcgctactgaactcaaggaaatctccatctgctgatccaagaattctaaaagatcacgacgccggaatcgcaccctagtccctgcagcttcccccgaacaatgcttagagagtattcgatgtttccaacagttatgctttgggccggatcaagggggcccatattccagaacaagctttggtcgcgctccatgcaccggctggacagcctctttcccataagctcggggtggttccacttcctcccgcaccttctttccgccttgggccccggtccggaaaaaaaaggaaaaccggaaagggacaaaagggtgcgaggggaaataccccccattcttctcttttcccggaataagaagaccaaaagggggggggggggccctttgccc
++
+47771/***).//.4--,--03/..000...0...-3,--9.,,-,,,.,,.9......-1-,,0---04.,,,,,-;<AA94--....33,,,--../??=90...A<9//.8-,,-13---.0?9<00...044;900////668=555555333000006-,,,)))004,,0879-0-..-,,--++,.,103336630//--<-.-0,,--/22.3A------.-<000--------00000-,,+-**++-,---,,----,--633//8;02//-<...33888A33...0-3.--,--,,,-,--7=DC85540.-84-/+++++--,66--,--399:73251,,0000,,,,,6<A?==??88,.-,))))-766--+))-+++,,-++))-127-.)))))*030--+.+,.;000-,,000,,,44000-,,,-00032--,,,0-01=00+++0122///0001--*)))++423:,,+++//++**))++1153-3,,,0,,,,,+++++0-1-,--410**))))++*)))+)+***+-*++++++++..0004-.++++1,,,,,)+++,-***))))))*,'''')),+,+++-****+))))++)))))'*+++,,)*)))))+)+,)))))))))))))+)**)))))))))))-)))))))+,,*+*****))****---+'''))/,,+++))))))))++))))))+,++-1,))'((''')'(''''..+)''))))'')',,,,,+++.,++*'''''(205/0-,,,-00119-.--+(()))((')))*0..,,**+((*(''++****))+)'('))..900,/,))'')((.0+),,,*))''''''''))))))*+.40.))))))*****0***++
+"""
+
 READS_ILL = '''@HWI-EAS59:3:1:5:1186#0/1
 TGATACCACTGCTTANTCTGCGTTGNTACCA
 +
@@ -137,14 +148,19 @@ class TestBackbone(unittest.TestCase):
 
         #print original_reads_dir
         fpath_noqual = join(original_reads_dir, 'pl_sanger.lb_ps.fasta')
+        fpath_qual = join(original_reads_dir, 'pl_sanger.lb_andreas.sfastq')
         fpath_454 = join(original_reads_dir, 'pl_454.lb_ps.sfastq')
         fpath_ill = join(original_reads_dir, 'pl_illumina.lb_psi.sfastq')
         open(fpath_noqual, 'w').write(READS_NOQUAL)
+        open(fpath_qual, 'w').write(SANGER_QUAL)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
         do_analysis(project_settings=settings_path, kind='clean_reads')
         cleaned_dir = join(project_dir, 'reads', 'cleaned')
         assert exists(cleaned_dir)
+
+        cleaned_qual = join(cleaned_dir, os.path.basename(fpath_qual))
+        assert 'SEX' in open(cleaned_qual).read()
 
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
@@ -240,7 +256,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         os.chdir('/tmp')
         test_dir.close()
 
-
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
     @staticmethod
@@ -262,5 +277,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'ConfigurationTest.test_create_configuration']
+    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis_lucy']
     unittest.main()

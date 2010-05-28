@@ -38,13 +38,21 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 split_seq_by_masked_regions,
                                 create_word_masker,
                                 create_edge_stripper,
-                                create_word_striper_by_alignment)
+                                create_word_striper_by_alignment,
+                                create_upper_mapper)
 
 from franklin.utils.misc_utils import DATA_DIR
 
-
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
+
+    @staticmethod
+    def test_upper():
+        'It tests the upper mapper'
+        seq = SeqWithQuality(seq=Seq('actg'))
+        upper = create_upper_mapper()
+        seq = upper(seq)
+        assert seq.seq == 'ACTG'
 
     @staticmethod
     def test_strip_seq_by_quality():

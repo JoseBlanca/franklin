@@ -331,7 +331,8 @@ def _write_fasta_file(seqs, fhand_seq, default_quality=None, fhand_qual=None):
             desc = None
         if desc == "<unknown description>":
             desc = None
-        fhand_seq.write(fasta_str(seq, name, desc))
+        fasta_seq = fasta_str(seq, name, desc)
+        fhand_seq.write(fasta_seq)
 
     fhand_seq.flush()
     if fhand_qual is not None:

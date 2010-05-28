@@ -42,6 +42,13 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 #exonerate, they should be processed by the word remover function
 MIN_LONG_ADAPTOR_LENGTH = 15
 
+def create_upper_mapper():
+    'It returns a function that uppers the sequence'
+    def upper(sequence):
+        'Given a sequence it uppers it case'
+        return sequence.upper()
+    return upper
+
 def create_edge_stripper(left_length=None, right_length=None):
     'It removes num of letters from seq.'
     def edge_stripper(sequence):
@@ -510,7 +517,7 @@ def create_word_striper_by_alignment(words):
         '''
         if sequence is None:
             return None
-        if words is None:
+        if not words:
             return sequence
 
         alignments = match_words(sequence, words)

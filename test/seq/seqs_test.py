@@ -121,6 +121,12 @@ class SeqsTest(unittest.TestCase):
         assert a.features[0].qualifiers == {'arabidposys': ['arab1', 'arab2']}
         assert a.qual == qual_list
 
+    @staticmethod
+    def test_upper():
+        'It test the uppercase funtion'
+        seq = SeqWithQuality(Seq('actg'))
+        seq.upper()
+        assert seq.seq == 'actg'
 
 class SeqTest(unittest.TestCase):
     'It tests the Seq object.'
