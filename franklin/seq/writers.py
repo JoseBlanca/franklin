@@ -20,7 +20,7 @@ feature) to the file.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import tempfile, os
+import tempfile
 
 from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name

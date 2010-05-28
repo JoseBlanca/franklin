@@ -300,8 +300,10 @@ class WriteAnnotationAnalyzer(Analyzer):
             if 'vcf' in outputs:
                 ref_name = os.path.basename(in_fhands['in_seq'].name)
                 fhand = outputs['vcf']
+                grouping = self._project_settings['Snvs']['vcf_grouping']
                 writers['vcf'] = VariantCallFormatWriter(fhand=fhand,
-                                                        reference_name=ref_name)
+                                                        reference_name=ref_name,
+                                                        grouping=grouping)
             if 'gff' in outputs:
                 default_type = None
                 writers['gff'] = GffWriter(fhand=outputs['gff'],
