@@ -66,7 +66,7 @@ class SnvIlluminaWriter(object):
 #http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
 class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
-    def __init__(self, fhand, reference_name, grouping):
+    def __init__(self, fhand, reference_name, grouping=None):
         'It inits the class'
         # The fhand is as it arrives
         open(fhand.name, 'w')
@@ -75,6 +75,8 @@ class VariantCallFormatWriter(object):
         self._temp_fhand = NamedTemporaryFile(mode='a')
         self._filter_descriptions = {}
         self._header = []
+        if grouping is None:
+            grouping = 'read_groups'
         self._genotype_grouping_key = grouping
         self._genotype_groups = OrderedDict()
         self._get_pre_header(reference_name)

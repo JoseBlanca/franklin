@@ -27,6 +27,7 @@ from Bio.SeqFeature import FeatureLocation
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
+from franklin.seq.writers import SequenceWriter
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX,
                                          _remove_bad_quality_alleles,
@@ -38,6 +39,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          calculate_cap_enzymes,
                                          create_snv_annotator,
                                          variable_in_groupping)
+from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
 
@@ -253,22 +255,24 @@ class TestSnvPipeline(unittest.TestCase):
                                                'min_quality':30,
                                                'min_num_alleles':2}}
 
-        io_fhands = {}
-        io_fhands['in_seq'] = seq_fhand
-        io_fhands['outputs'] = {'repr': NamedTemporaryFile(delete=False),
-                                'vcf': NamedTemporaryFile()}
+        in_fhands = {}
+        in_fhands['in_seq'] = seq_fhand
+        seq_fhand = NamedTemporaryFile()
+        seq_writer = SequenceWriter(seq_fhand, file_format='repr')
+        snv_fhand = NamedTemporaryFile()
+        snv_writer = VariantCallFormatWriter(snv_fhand,
+                                             reference_name='reference')
 
-        seq_pipeline_runner(pipeline, configuration, io_fhands)
+        seq_pipeline_runner(pipeline, configuration, in_fhands,
+                            writers={'seq':seq_writer, 'snv':snv_writer})
 
-        seq_fname = io_fhands['outputs']['repr'].name
-        sequences = list(seqs_in_file(open(seq_fname)))
-        os.remove(seq_fname)
+        sequences = list(seqs_in_file(open(seq_fhand.name)))
         num_alleles = 0
         for seq in sequences:
             num_alleles += len(list(seq.get_features('snv')))
         assert num_alleles == 4
 
-        vcf = open(io_fhands['outputs']['vcf'].name).read()
+        vcf = open(snv_fhand.name).read()
         assert '66' in vcf
         assert '55' in vcf
         assert 'D2' in vcf
@@ -281,19 +285,19 @@ class TestSnvPipeline(unittest.TestCase):
 
         io_fhands = {}
         io_fhands['in_seq'] = seq_fhand
-        io_fhands['outputs'] = {'repr': NamedTemporaryFile(delete=False),
-                                'vcf': NamedTemporaryFile()}
+        seq_fhand = NamedTemporaryFile()
+        seq_writer = SequenceWriter(seq_fhand, file_format='repr')
+        snv_fhand = NamedTemporaryFile()
+        snv_writer = VariantCallFormatWriter(snv_fhand,
+                                             reference_name='reference')
+        seq_pipeline_runner(pipeline, configuration, io_fhands,
+                            writers={'seq':seq_writer, 'snv':snv_writer})
 
-        seq_pipeline_runner(pipeline, configuration, io_fhands)
-
-        seq_fname = io_fhands['outputs']['repr'].name
-        sequences = list(seqs_in_file(open(seq_fname)))
-        os.remove(seq_fname)
+        sequences = list(seqs_in_file(open(seq_fhand.name)))
         num_alleles = 0
         for seq in sequences:
             num_alleles += len(list(seq.get_features('snv')))
-        assert num_alleles == 5
-
+        assert num_alleles == 9
 
     @staticmethod
     def test_variable_in_read_group():
