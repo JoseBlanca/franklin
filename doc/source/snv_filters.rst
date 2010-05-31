@@ -87,16 +87,14 @@ Kind filter
 ___________
 
 The backbone snv caller annotates SNPs and indels, with this filter, for instance, we can filter out the snvs that are not SNPs.
-The snv caller sets a kind for each snv: SNP, INDEL or COMPLEX. These kinds are coded as integers with the following codes::
+The snv caller sets a kind for each snv: SNP, INDEL or COMPLEX. You can filter by::
 
-  SNP      = 0
-  INDEL    = 4
-  COMPLEX  = 5
+    'SNV', 'INVARIANT', 'COMPLEX'
 
 This filter only has one option to configure::
 
   name = 'by_kind'
-  kind = 0
+  kind = 'SNV'
 
 Cap enzymes
 ___________

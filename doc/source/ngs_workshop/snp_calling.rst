@@ -22,7 +22,7 @@ Once we have a sam file we can use several tools that call the SNPs (e.g. `PolyB
 SNP filtering
 =============
 
-Usually we do not require as many as SNPs as we get from the NGS sequences. One way to reduce the number of SNPs is to choose some of them at random. This simple approach would be good if all SNPs had the same usefulness, but this is not the case. Some SNPs are more polymorphic than other, or are more easily detected by PCR or by a restriction enzyme or can be located in a gene of interest. There are a lot of different criteria to segregate the SNPs, ngs_backbone includes some of these `filters <http://bioinf.comav.upv.es/ngs_backbone/snv_filters.html>`_. 
+Usually we do not require as many as SNPs as we get from the NGS sequences. One way to reduce the number of SNPs is to choose some of them at random. This simple approach would be good if all SNPs had the same usefulness, but this is not the case. Some SNPs are more polymorphic than other, or are more easily detected by PCR or by a restriction enzyme or can be located in a gene of interest. There are a lot of different criteria to segregate the SNPs, ngs_backbone includes some of these `filters <http://bioinf.comav.upv.es/ngs_backbone/snv_filters.html>`_.
 
 
 VCF format
@@ -75,7 +75,7 @@ min_num_alleles
   There are two main criteria when defining a SNP. A SNPs is any position in which we find two different alleles or an SNPs is any position with an allele different to the one found in the reference genome. To opt for the first option we should do  min_num_alleles equal to two.
 
 edge_removal
-  If we don't trust the read edges we could ignore several base pairs by using these parameters. 
+  If we don't trust the read edges we could ignore several base pairs by using these parameters.
 
 We want only SNPs with at least two alleles so, edit the configuration file and, in the Snvs section, we set the min_num_alleles to 2.
 
@@ -149,7 +149,7 @@ Now that we have some SNPs we can select which ones are the best for us. In ngs_
     [[filter7]]
         name = 'by_kind'
         use = True
-        kind = 0
+        kind = 'SNP'
 
 Now we run the analysis::
 
@@ -173,8 +173,8 @@ Now the VCF will have the filter column filled::
   ##FILTER=VKS,"It filters if it is of kind: snp"
   #CHROM  POS     ID      REF     ALT     QUAL    FILTER
   TC458159        1491    .       A       D1,G,T  138     HVR6;VKS
-  TC458158        7104    .       G       T       55      .  
-  TC458159        29      .       C       T       50      HVR6 
+  TC458158        7104    .       G       T       55      .
+  TC458159        29      .       C       T       50      HVR6
 
 The meaning of the tags that appear in the filter column is explained at the beginning of the file. When one tag appears in the filter column (like VKS) means that this SNP has not passed that filter, in this case it is not an SNP but an indel. An SNP that passed all filters should have a "." in the filter column. In the example shown the SNP in the position 7104 passes all filters, it is an SNP and it is not in a highly variable region.
 

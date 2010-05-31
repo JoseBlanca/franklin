@@ -382,12 +382,25 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                         filter_config['seq_list'].append(item.strip())
                 else:
                     filter_config[argument] = value
+                if name == 'by_kind' and argument == 'kind':
+                    filter_config[argument] =  self._snv_kind_to_franklin(value)
 
             filter_config['name'] = name
             configuration[unique_name] = filter_config
         pipeline = self._get_pipeline_from_step_name(configuration)
 
         return pipeline, configuration
+
+    @staticmethod
+    def _snv_kind_to_franklin(value):
+        '''it translates the snv kind value to the number code understanded by
+        franklin'''
+        if value in (0, '0', 'SNP', 'snp'):
+            return 0
+        elif value in (3, '3', 'INVARIANT', 'invariant'):
+            return 3
+        elif value in (4, '4', 'INDEL', 'indel'):
+            return 4
 
     def _get_pipeline_from_step_name(self, configuration):
         'It gets the pipeline steps from filter_names'

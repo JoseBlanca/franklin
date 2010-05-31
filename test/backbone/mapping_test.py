@@ -40,6 +40,9 @@ class TestBackboneMapping(unittest.TestCase):
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
                                   'genomic_seqs_fpath':blastdb_seq},
+
+                       'filter7':{'name':'by_kind', 'use':True,
+                                  'kind':'SNP'},
                        'filter12':{'name':'ref_not_in_list', 'use':True,
                                 'list_path':os.path.join(DATA_DIR, 'cos_list')},
                        'filter10':{'unique_name': 'variable_in_sm',

@@ -145,7 +145,7 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter7'] = {}
     config['snv_filters']['filter7']['name'] = 'by_kind'
     config['snv_filters']['filter7']['use'] = True
-    config['snv_filters']['filter7']['kind'] = 0 # snp
+    config['snv_filters']['filter7']['kind'] = 'SNP'
 
     config['snv_filters']['filter8'] = {}
     config['snv_filters']['filter8']['name'] = 'cap_enzyme'
