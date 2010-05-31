@@ -282,7 +282,6 @@ class TestSnvPipeline(unittest.TestCase):
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
                                                'min_quality':30,
                                                'min_num_alleles':1}}
-
         io_fhands = {}
         io_fhands['in_seq'] = seq_fhand
         seq_fhand = NamedTemporaryFile()

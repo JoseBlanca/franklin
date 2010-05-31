@@ -101,7 +101,6 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     'It yields the snv information for every snv in the given reference'
 
     min_num_alleles = int(min_num_alleles)
-    read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     read_groups_info = get_read_group_info(bam)
 
@@ -285,6 +284,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
     #the bam should have an index, does the index exists?
     bam_fhand = get_fhand(bam_fhand)
     create_bam_index(bam_fpath=bam_fhand.name)
+    read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
 
