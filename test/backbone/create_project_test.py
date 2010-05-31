@@ -119,6 +119,9 @@ class TestBackbone(unittest.TestCase):
         assert settings['General_settings']['project_name'] == 'backbone'
         project_path = join(test_dir.name, 'backbone')
         assert settings['General_settings']['project_path'] == project_path
+        assert settings['Cleaning']['strip_n_percent'] == 2.0
+        content = open(settings_path).read()
+        assert 'strip_n_percent' in content
         os.chdir('/tmp')
         test_dir.close()
 
@@ -277,5 +280,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis_lucy']
+    #import sys;sys.argv = ['', 'TestBackbone.test_create_project']
     unittest.main()

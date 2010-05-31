@@ -98,7 +98,7 @@ ngs_backbone loads the configuration file and does the analysis using those para
 backbone.log
   Everything done by ngs_backbone will be logged in this file. If we remove the file the program will create a new one the next time is run.
  
-temp
+tmp
   The temp directory in which all the temporary file are stored. Once the analysis is done you can safely remove this directory. You can also set which directory to use as temp in backbone.conf.
 
 Also a new directory named reads/cleaned will be created with the new cleaned files in it.
