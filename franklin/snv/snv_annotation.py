@@ -483,11 +483,11 @@ def _parse_remap_output(remap_output):
     return enzymes
 
 def variable_in_groupping(key, feature, items, in_union=False,
-                           in_all_read_groups=True):
+                           in_all_groups=True):
     'It looks if the given snv is variable for the given key/items'
 
-    alleles = _get_alleles_for_read_group(feature.qualifiers['alleles'],
-                                          items, key)
+    alleles = _get_alleles_for_group(feature.qualifiers['alleles'],
+                                     items, key)
     if in_union:
         alleles = _aggregate_alleles(alleles)
 
@@ -499,7 +499,7 @@ def variable_in_groupping(key, feature, items, in_union=False,
     if not variable_in_read_groups_:
         return False
 
-    if in_all_read_groups:
+    if in_all_groups:
         return all(variable_in_read_groups_)
     else:
         return any(variable_in_read_groups_)
@@ -511,7 +511,7 @@ def _aggregate_alleles(alleles):
         aggregate = aggregate.union(allele_list)
     return {None: aggregate}
 
-def _get_alleles_for_read_group(alleles, read_groups, group_kind='read_groups'):
+def _get_alleles_for_group(alleles, read_groups, group_kind='read_groups'):
     '''It get the alleles from the given items of type:key, separated by items.
     For example, if you give key rg and items rg1, rg2, it will return
     alleles separated in rg1 and rg2 '''
