@@ -42,10 +42,10 @@ INDEL = 4
 COMPLEX = 5
 
 COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
-                  'SalI', 'BglI', 'ClaI', 'BsteII', 'TaqI',
-                  'PstI', 'PvuII', 'HindIII', 'EcoRV', 'ZbaI',
-                  'HaeIII', 'HoI', 'KpnI', 'ScaI', 'Ban',
-                  'HinfI', 'DraI', 'ApaI', 'Asp718']
+                  'SalI', 'BglI', 'ClaI', 'TaqI',
+                  'PstI', 'PvuII', 'HindIII', 'EcoRV',
+                  'HaeIII', 'KpnI', 'ScaI',
+                  'HinfI', 'DraI', 'ApaI', 'BstEII', 'ZraI', 'BanI', 'Asp718I']
 
 def _qualities_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
@@ -460,34 +460,12 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
 
     return enzymes
 
-def _parse_remap_output(remap_output):
-    ''' It takes the remap output and it returns a set list with the enzymes
-     that cut there'''
-    section = ''
-    enzymes = []
-    remap_fhand = open(remap_output.name)
-    for line in remap_fhand:
-        line = line.strip()
-        if line.isspace() or len(line) < 2:
-            continue
-        if section == 'cut':
-            if line.startswith('#'):
-                section = ''
-            else:
-                enzymes.append(line.split()[0])
-
-        if line.startswith('# Enzymes that cut'):
-            section = 'cut'
-            continue
-    remap_fhand.close()
-    return enzymes
-
 def variable_in_groupping(key, feature, items, in_union=False,
-                           in_all_read_groups=True):
+                           in_all_groups=True):
     'It looks if the given snv is variable for the given key/items'
 
-    alleles = _get_alleles_for_read_group(feature.qualifiers['alleles'],
-                                          items, key)
+    alleles = _get_alleles_for_group(feature.qualifiers['alleles'],
+                                     items, key)
     if in_union:
         alleles = _aggregate_alleles(alleles)
 
@@ -499,7 +477,7 @@ def variable_in_groupping(key, feature, items, in_union=False,
     if not variable_in_read_groups_:
         return False
 
-    if in_all_read_groups:
+    if in_all_groups:
         return all(variable_in_read_groups_)
     else:
         return any(variable_in_read_groups_)
@@ -511,7 +489,7 @@ def _aggregate_alleles(alleles):
         aggregate = aggregate.union(allele_list)
     return {None: aggregate}
 
-def _get_alleles_for_read_group(alleles, read_groups, group_kind='read_groups'):
+def _get_alleles_for_group(alleles, read_groups, group_kind='read_groups'):
     '''It get the alleles from the given items of type:key, separated by items.
     For example, if you give key rg and items rg1, rg2, it will return
     alleles separated in rg1 and rg2 '''

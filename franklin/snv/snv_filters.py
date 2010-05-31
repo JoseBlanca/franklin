@@ -481,7 +481,7 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
             if previous_result is not None:
                 continue
             result = variable_in_groupping(group_kind, snv, groups, in_union,
-                                          in_all_read_groups=False)
+                                           in_all_groups=False)
             result = bool(result)
             _add_filter_result(snv, 'is_not_variable', result,
                                threshold=parameters)
@@ -490,7 +490,7 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
     return is_not_variable_filter
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
-                              in_all_read_groups=True):
+                              in_all_groups=True):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
 
@@ -510,7 +510,7 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
             if previous_result is not None:
                 continue
             result = variable_in_groupping(group_kind, snv, groups, in_union,
-                                          in_all_read_groups=in_all_read_groups)
+                                          in_all_groups=in_all_groups)
             result = True if result is None else not result
 
             _add_filter_result(snv, 'is_variable', result, threshold=parameters)

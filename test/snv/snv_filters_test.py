@@ -355,7 +355,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         in_union = True
         params = (kind, groups, in_union)
 
-
         parameters.append(params)
         filter_ = create_not_variable_in_group_filter(*params)
         filters.append(filter_)

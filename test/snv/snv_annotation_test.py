@@ -204,8 +204,15 @@ class TestSnvAnnotation(unittest.TestCase):
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         enz = list(set(enzymes))[0]
-        #print enz.__name__
         assert 'HinfI' == enz.__name__
+
+        #only with the common enzymes
+        feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
+                           qualifiers={'alleles':alleles})
+        enzymes = calculate_cap_enzymes(feat1, reference, False)
+        enz = list(set(enzymes))[0]
+        assert 'HinfI' == enz.__name__
+
 
         # With a deletion
         reference = SeqWithQuality(seq=Seq('ATGATGATGgaaattcATGATGATGTGGGAT'),

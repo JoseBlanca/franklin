@@ -353,7 +353,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     #do it in just one thread
     parallel = True
     if parallel and threads and threads > 1:
-        cmd.extend(['--numthreads', str(get_num_threads(threads))])
+        cmd.extend(['-nt', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
     #the realignment itself
