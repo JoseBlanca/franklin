@@ -178,6 +178,12 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter12']['use'] = False
     config['snv_filters']['filter12']['list_path'] = 'path_to_file_with_list'
 
+    config['snv_filters']['filter13'] = {}
+    config['snv_filters']['filter13']['name'] = 'min_groups'
+    config['snv_filters']['filter13']['use'] = False
+    config['snv_filters']['filter13']['min_groups'] = 4
+    config['snv_filters']['filter13']['group_kind'] = 'samples'
+
 DEFAULT_CONFIGURATION = OrderedDict([
            ('General_settings',
                 OrderedDict([

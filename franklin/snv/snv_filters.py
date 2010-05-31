@@ -33,8 +33,6 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          variable_in_groupping)
 from franklin.seq.seqs import get_seq_name
 
-
-
 # In a filter TRUE result means that a snv does NOT pass the filter.
 # So it writes it to the vcf
 
@@ -68,7 +66,10 @@ FILTER_DESCRIPTIONS = {
         'description':'Filters by %s with those items: %s. Aggregated:%s'},
     'ref_not_in_list':
         {'id':'rnl',
-        'description':'Filters by given list of seq names'}
+        'description':'Filters by given list of seq names'},
+    'min_groups':
+        {'id':'m%s%i',
+        'description':'Filters SNVs read in less than %i %s'},
     }
 
 FILTER_COUNTS = {}
@@ -88,6 +89,8 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
         short_name, description = _get_nd_iv(id_, desc, parameters)
     elif filter_name == 'high_variable_reg':
         short_name, description = _get_nd_hvr(id_, desc, parameters)
+    elif filter_name == 'min_groups':
+        short_name, description = _get_min_groups_desc(id_, desc, parameters)
     else:
         if '%' in id_:
             short_name = id_ % parameters
@@ -99,6 +102,15 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
             description = desc
 
     filter_descriptions[filter_name, parameters] = short_name, description
+
+    return short_name, description
+
+def _get_min_groups_desc(id_, desc, parameters):
+    'It returns the name and id of the snv filter for min_groups'
+    group_letter = parameters[1][0]
+    min_group_num = parameters[0]
+    short_name = id_ % (group_letter, min_group_num)
+    description = desc % (min_group_num, parameters[1])
 
     return short_name, description
 
@@ -329,9 +341,6 @@ def create_high_variable_region_filter(max_variability, window=0):
         return sequence
     return high_variable_region_filter
 
-
-
-
 def create_close_to_snv_filter(distance):
     '''It returns a filter that filters snv by the distance to other snvs.
 
@@ -387,7 +396,6 @@ def create_snv_close_to_limit_filter(distance):
                                threshold=distance)
         return sequence
     return  snv_close_to_reference_limit
-
 
 def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
     'It filters the snv in a seq by the frequency of the more frequent allele'
@@ -475,12 +483,11 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
             result = variable_in_groupping(group_kind, snv, groups, in_union,
                                           in_all_read_groups=False)
             result = bool(result)
-            _add_filter_result(snv, 'is_not_variable', result, threshold=parameters)
-
+            _add_filter_result(snv, 'is_not_variable', result,
+                               threshold=parameters)
         return sequence
 
     return is_not_variable_filter
-
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_read_groups=True):
@@ -510,3 +517,29 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
         return sequence
 
     return is_variable_filter
+
+def create_min_groups_filter(min_groups, group_kind='read_groups'):
+    'It filters snvs read in less groups (samples) than the min number given'
+
+    parameters = (min_groups, group_kind)
+
+    def min_groups_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        for snv in sequence.get_features(kind='snv'):
+            previous_result = _get_filter_result(snv, 'min_groups',
+                                                 threshold=parameters)
+            if previous_result is not None:
+                continue
+
+            #how many groups are in the alleles?
+            groups = set()
+            for allele in  snv.qualifiers['alleles'].values():
+                groups = groups.union(set(allele[group_kind]))
+            result = True if len(groups) >= min_groups else False
+
+            _add_filter_result(snv, 'min_groups', result, threshold=parameters)
+        return sequence
+
+    return min_groups_filter

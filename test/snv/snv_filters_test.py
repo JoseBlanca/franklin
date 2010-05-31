@@ -36,7 +36,8 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_is_variable_filter,
                                       get_filter_description,
                                       create_reference_in_list_filter,
-                                      create_not_variable_in_group_filter)
+                                      create_not_variable_in_group_filter,
+                                      create_min_groups_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -396,7 +397,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
         results.append(False)
-        assert filter_(seq2)
+        filter_(seq2)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg4')
@@ -444,6 +445,24 @@ class SeqVariationFilteringTest(unittest.TestCase):
                 assert snv.qualifiers['filters']['is_variable'][params]
 
     @staticmethod
+    def test_min_num_groups_filter():
+        'It tests the min num groups svn filter'
+        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
+                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles})
+        seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
+
+        filter_ = create_min_groups_filter(min_groups=4)
+        filter_(seq)
+        filter_ = create_min_groups_filter(min_groups=5)
+        filter_(seq)
+        results = seq.features[0].qualifiers['filters']['min_groups']
+        assert results[(4, 'read_groups')]
+        assert not results[(5, 'read_groups')]
+
+    @staticmethod
     def test_get_filter_description():
         'It tets get_filter_description function'
         filter_name = 'close_to_intron'
@@ -483,6 +502,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
+
+        parameters = (4, 'read_groups')
+        name, desc = get_filter_description('min_groups',
+                                            parameters,
+                                            filter_descriptions)
+        assert name == 'mr4'
+        assert desc == 'Filters SNVs read in less than 4 read_groups'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']
