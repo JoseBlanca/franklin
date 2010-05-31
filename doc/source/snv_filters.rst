@@ -137,10 +137,21 @@ _________________
 
 With this filter you can filter out snvs that are in regions that seem to be duplicated or that are not contiguous.
 
-This filter have 3 configurable options::
+This filter have 4 configurable options::
 
   name               = 'uniq_contiguous'
   distance           = 'distance from each side of the snv to select a region'
   genomic_db         = '/path/to/the/seq/fasta/file'
   genomic_seqs_fpath = '/path/to/the/seq/blast/db'
+
+Minimun number of groups
+________________________
+
+It filters out the SNVs that not supported by enough number of groups. For instance we could filter the SNVs read in less than 4 samples.
+
+The options are::
+
+  name       = 'min_groups'
+  min_groups = 4
+  group_kind = 'samples'
 

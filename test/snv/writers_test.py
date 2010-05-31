@@ -92,6 +92,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert '.:.' in vcf
         assert 'HVR80;VLB1;VLB2;VKS' in vcf
         assert 'AF=0.2,0.5' in vcf
+        assert 'GP=0.50' in vcf
 
         seq_str = 'ATATATATATATATATATATATATAT' * 50
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
