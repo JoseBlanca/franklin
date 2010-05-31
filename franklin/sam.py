@@ -352,7 +352,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     #according to GATK this is experimental, so it might be a good idea to
     #do it in just one thread
     parallel = True
-    if parallel:
+    if parallel and threads and threads > 1:
         cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
