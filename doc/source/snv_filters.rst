@@ -120,12 +120,34 @@ The filter requires a parameter with the path to the sequence names file::
 Variable in group
 _________________
 
-In case you have more than one read_group,library or sample you can filter out the snvs that are not variable in a subgroup.
+With this filter we can select SNVs variables in some specific samples, libraries or read groups. For instance we can look for SNVs variables in the sample1.
 
-To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for snps not variables in the libraries lib1 and lib2 would be::
+It can work with libraries, samples or read_groups. The kind of grouping used is set in the variable group_kind.
+
+The groups are a list (for instance a list of samples). By default it will look for SNVs variable in the union of these samples. If we ask for SNVs variable in sample_1 and sample_2 it will consider SNVs with different alleles between 1 and 2 and also SNVs with two alleles in sample_1 but not variable in sample_2. If we want all the samples to be variable independently of each other we could set the parameters in_union to False and in_all_groups to True.
+
+To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for SNVs variable in the libraries lib1 and lib2 would be::
 
   name        = 'is_variable'
   unique_name = 'is_variable_in_lb'
+  group_kind  = 'libraries'
+  groups      = ['lib1', 'lib2']
+
+Several filters of this kind can be set up in the configuration file, to distinguish them a unique_name option with a  should be also set up in the configuration for each filter.
+
+Not variable in group
+_____________________
+
+With this filter we can select SNVs not variable in some specific samples, libraries or read groups. For instance we can look for SNVs not variables in the sample_1.
+
+It can work with libraries, samples or read_groups. The kind of grouping used is set in the variable group_kind.
+
+The groups are a list (for instance a list of samples). If we ask for SNVs not variable in sample_1 and sample_2 it will consider SNVs that are not variable in all samples (they all should have the same allele). If we want the samples to be not variable but we want to allow to have different alleles between them we could use the option in_union=False.
+
+To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for SNVs not variable in the libraries lib1 and lib2 would be::
+
+  name        = 'no_variable'
+  unique_name = 'not_is_variable_in_lb'
   group_kind  = 'libraries'
   groups      = ['lib1', 'lib2']
 
