@@ -211,8 +211,8 @@ class VariantCallFormatWriter(object):
 
         #MQ RMS mapping quality, e.g. MQ=52
         #BQ RMS base quality at this position
-        for kind, strfmt in (('mapping_qualities', 'MQ=%f'),
-                             ('qualities', 'BQ=%f')):
+        for kind, strfmt in (('mapping_qualities', 'MQ=%.2f'),
+                             ('qualities', 'BQ=%.2f')):
             quals = []
             for allele_info in alleles.values():
                 quals.extend(allele_info[kind])
@@ -236,6 +236,12 @@ class VariantCallFormatWriter(object):
         alleles = [str(count[0]) for count in genotype_counts]
         counts = [str(count[1]) for count in genotype_counts]
         toprint_items.append('GC=%s:%s' % ('|'.join(alleles), ','.join(counts)))
+
+        #genotype polymorphism
+        #1 - (number_groups_for_the_allele_with_more_groups) / number_groups
+        number_of_groups = sum([count[1] for count in genotype_counts])
+        genotype_polymorphism = 1 - genotype_counts[0][1] / float(number_of_groups)
+        toprint_items.append('GP=%.2f' % genotype_polymorphism)
 
         if toprint_items:
             return ';'.join(toprint_items)
