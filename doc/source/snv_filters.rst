@@ -146,7 +146,7 @@ The groups are a list (for instance a list of samples). If we ask for SNVs not v
 
 To configure the filter the kind of group to use (libraries, samples or read_groups) should be set. Also a list with the group names should be given. A configuration to look for SNVs not variable in the libraries lib1 and lib2 would be::
 
-  name        = 'no_variable'
+  name        = 'is_not_variable'
   unique_name = 'not_is_variable_in_lb'
   group_kind  = 'libraries'
   groups      = ['lib1', 'lib2']
