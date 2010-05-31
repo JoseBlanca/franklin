@@ -42,10 +42,10 @@ INDEL = 4
 COMPLEX = 5
 
 COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
-                  'SalI', 'BglI', 'ClaI', 'BsteII', 'TaqI',
-                  'PstI', 'PvuII', 'HindIII', 'EcoRV', 'ZbaI',
-                  'HaeIII', 'HoI', 'KpnI', 'ScaI', 'Ban',
-                  'HinfI', 'DraI', 'ApaI', 'Asp718']
+                  'SalI', 'BglI', 'ClaI', 'TaqI',
+                  'PstI', 'PvuII', 'HindIII', 'EcoRV',
+                  'HaeIII', 'KpnI', 'ScaI',
+                  'HinfI', 'DraI', 'ApaI', 'BstEII', 'ZraI', 'BanI', 'Asp718I']
 
 def _qualities_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
@@ -458,28 +458,6 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
 
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
-    return enzymes
-
-def _parse_remap_output(remap_output):
-    ''' It takes the remap output and it returns a set list with the enzymes
-     that cut there'''
-    section = ''
-    enzymes = []
-    remap_fhand = open(remap_output.name)
-    for line in remap_fhand:
-        line = line.strip()
-        if line.isspace() or len(line) < 2:
-            continue
-        if section == 'cut':
-            if line.startswith('#'):
-                section = ''
-            else:
-                enzymes.append(line.split()[0])
-
-        if line.startswith('# Enzymes that cut'):
-            section = 'cut'
-            continue
-    remap_fhand.close()
     return enzymes
 
 def variable_in_groupping(key, feature, items, in_union=False,
