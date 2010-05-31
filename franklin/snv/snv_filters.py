@@ -537,7 +537,7 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
             groups = set()
             for allele in  snv.qualifiers['alleles'].values():
                 groups = groups.union(set(allele[group_kind]))
-            result = True if len(groups) >= min_groups else False
+            result = False if len(groups) >= min_groups else True
 
             _add_filter_result(snv, 'min_groups', result, threshold=parameters)
         return sequence
