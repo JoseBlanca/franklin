@@ -46,7 +46,8 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             kind_filter,
                                             cap_enzyme_filter,
                                             is_variable_filter,
-                                            ref_not_in_list)
+                                            ref_not_in_list,
+                                            min_groups)
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
 from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
@@ -398,7 +399,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                       'by_kind' : kind_filter,
                       'cap_enzyme': cap_enzyme_filter,
                       'is_variable': is_variable_filter,
-                      'ref_not_in_list':ref_not_in_list}
+                      'ref_not_in_list':ref_not_in_list,
+                      'min_groups':min_groups}
         pipeline = []
         for unique_name in configuration:
             step_name = configuration[unique_name]['name']
