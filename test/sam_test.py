@@ -133,7 +133,7 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
         add_header_and_tags_to_sam(insam,    outsam)
 
         out_content = open(outsam.name).read()
-        print out_content
+        #print out_content
         assert 'RG:Z:sample1_group1' in out_content
         assert 'SM:sample1' in out_content
 
