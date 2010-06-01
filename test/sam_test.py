@@ -256,8 +256,6 @@ class SamStatsTest(unittest.TestCase):
         sam = open(out_sam.name).read().splitlines()
         assert len(sam) == 6
 
-
-
 if	__name__	==	"__main__":
 #    import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
 #    import sys;sys.argv = ['', 'SamStatsTest.test_sample_bam']
