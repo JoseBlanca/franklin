@@ -326,8 +326,7 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
     # The SeqRecord generator is consumed
     for sequence in sequences:
         for writer in writers.values():
-            #writer.write(sequence)
-            pass
+            writer.write(sequence)
 
     # Some of the writers needs to close in order to finish its work
     feature_counter = {}
