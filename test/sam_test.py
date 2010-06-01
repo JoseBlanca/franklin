@@ -116,15 +116,26 @@ SGN-E221403	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTG
 SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGTTAGACACTCCTGGGCCATACTTGTTGGATGTGATTGTACCTCATCAGGAGCATGTTCTACCGATGATTCCCAGTGGCGGTGCTTTCAAAAATGTGATTACGGAGGGTGATGGGAGACGTTCCTATTGACTTTGAGAAGCTACATAACTAGTTCAAGGCATTGTATTATCTAAAATAAACTTAATATTTATGTTTACTTAAAAGTTTTTCATTGTGTGAAGGAAAAAAAAAAAAAAAAAAAAAAAAA	999@7<22-2***-,206433>:?9<,,,66:>00066=??EEAAA?B200002<<@@@=DB99777864:..0::@833099???<@488>></...<:B<<.,,8881288@BBDDBD885@@;;9:/9.,,,99B99233885558=?DKKKDDAA??DKBB=440/0<8?DEDFBB??6@152@@FBMFIIDDDDDDKKKOK@@@@DD:N688BBDDDBBBKKDEDDBN977?<9<111:<??==BKMPKKBB==99>QQYYYYYYYYYYYYQQ	AS:i:250	XS:i:0	XF:i:0	XE:i:7	XN:i:0
 '''
 
-        insam	=	NamedTemporaryFile(prefix='lb_group1.',	suffix='.sam')
+        insam = NamedTemporaryFile(prefix='lb_group1.', suffix='.sam')
         insam.write(sam_value)
 
-        outsam	=	NamedTemporaryFile()
+        outsam = NamedTemporaryFile()
         add_header_and_tags_to_sam(insam,	outsam)
 
         out_content	=	open(outsam.name).read()
-        assert	'RG:Z:group1'	in	out_content
-        assert	'SM:group1'in	out_content
+        assert 'RG:Z:group1' in out_content
+        assert 'SM:group1' in out_content
+
+        insam = NamedTemporaryFile(prefix='sm_sample1.lb_group1.', suffix='.sam')
+        insam.write(sam_value)
+
+        outsam = NamedTemporaryFile()
+        add_header_and_tags_to_sam(insam,    outsam)
+
+        out_content = open(outsam.name).read()
+        print out_content
+        assert 'RG:Z:sample1_group1' in out_content
+        assert 'SM:sample1' in out_content
 
     @staticmethod
     def test_sort_bam():
