@@ -203,16 +203,13 @@ class TestSnvAnnotation(unittest.TestCase):
         feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
-        enz = list(set(enzymes))[0]
-        assert 'HinfI' == enz.__name__
+        assert 'HinfI' in enzymes
 
         #only with the common enzymes
         feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, False)
-        enz = list(set(enzymes))[0]
-        assert 'HinfI' == enz.__name__
-
+        assert 'HinfI' in enzymes
 
         # With a deletion
         reference = SeqWithQuality(seq=Seq('ATGATGATGgaaattcATGATGATGTGGGAT'),
@@ -223,7 +220,6 @@ class TestSnvAnnotation(unittest.TestCase):
         feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
-        enzymes = [enz.__name__ for enz in enzymes]
         assert 'EcoRI'  in enzymes
 
         #with an insertion
@@ -235,7 +231,6 @@ class TestSnvAnnotation(unittest.TestCase):
         feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
-        enzymes = [enz.__name__ for enz in enzymes]
         assert 'EcoRI' in enzymes
 
         #with only one allele
@@ -245,7 +240,7 @@ class TestSnvAnnotation(unittest.TestCase):
         feat1 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
-        assert [] == enzymes
+        assert not enzymes
 
 class TestSnvPipeline(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs using the pipeline'

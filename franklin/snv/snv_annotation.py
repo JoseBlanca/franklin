@@ -25,8 +25,7 @@ from collections import defaultdict
 
 from Bio.SeqFeature import FeatureLocation
 from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
-from franklin.seq.seqs import SeqFeature, SeqWithQuality, get_seq_name, Seq
-from franklin.utils.cmd_utils import create_runner
+from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
 from copy import copy
@@ -411,7 +410,7 @@ def calculate_cap_enzymes(feature, sequence, all_enzymes=False):
                                                        all_enzymes)
             enzymes = enzymes.union(i_j_enzymes)
 
-    enzymes = list(enzymes)
+    enzymes = [str(enzyme) for enzyme in enzymes]
     feature.qualifiers['cap_enzymes'] = enzymes
     return enzymes
 
