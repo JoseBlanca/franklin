@@ -275,7 +275,7 @@ class WriteAnnotationAnalyzer(Analyzer):
                         'ssr':('ssr',),
                         'gff':('gff3',),
                         'orthologs':('orthologs',),}
-        output_files = {'ssr':('ssr',),}
+
         for seq_path in repr_paths:
             outputs = {}
             for kind, extensions in output_files.items():

@@ -313,20 +313,21 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
     # Here the SeqRecord generator is created
     processes = None if processes == 1 else processes
     if processes:
-        filtered_seq_iter = _parallel_process_sequences(in_fhand_seqs,
-                                                        in_fhand_qual,
-                                                        file_format, pipeline,
-                                                        configuration,
-                                                        processes)
+        sequences = _parallel_process_sequences(in_fhand_seqs,
+                                                in_fhand_qual,
+                                                file_format, pipeline,
+                                                configuration,
+                                                processes)
     else:
-        filtered_seq_iter = _process_sequences(in_fhand_seqs, in_fhand_qual,
-                                               file_format, pipeline,
-                                               configuration)
+        sequences = _process_sequences(in_fhand_seqs, in_fhand_qual,
+                                       file_format, pipeline,
+                                       configuration)
 
     # The SeqRecord generator is consumed
-    for sequence in filtered_seq_iter:
+    for sequence in sequences:
         for writer in writers.values():
-            writer.write(sequence)
+            #writer.write(sequence)
+            pass
 
     # Some of the writers needs to close in order to finish its work
     feature_counter = {}

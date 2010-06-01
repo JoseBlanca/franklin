@@ -108,10 +108,8 @@ def _num_seqs_in_fastq(fhand):
     return counter
 
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
-    '''It yields a seqrecord for each of the sequences found in the seq file.
+    'It yields a seqrecord for each of the sequences found in the seq file.'
 
-
-    '''
     if format is None:
         format = guess_seq_file_format(seq_fhand)
     seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, format=format)
@@ -151,10 +149,11 @@ def _seqs_in_file_with_repr(seq_fhand):
                 yield eval(buffer_)
                 buffer_ = ''
             buffer_ += line
+            print len(buffer_)
+    #the last sequence
     if buffer_:
         yield eval(buffer_)
-    else:
-        raise StopIteration
+    raise StopIteration
 
 def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
     '''It yields a seqrecord for each of the sequences found in the seq file
