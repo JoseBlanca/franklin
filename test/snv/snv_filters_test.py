@@ -458,8 +458,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_min_groups_filter(min_groups=5)
         filter_(seq)
         results = seq.features[0].qualifiers['filters']['min_groups']
-        assert results[(4, 'read_groups')]
-        assert not results[(5, 'read_groups')]
+        assert not results[(4, 'read_groups')]
+        assert results[(5, 'read_groups')]
 
     @staticmethod
     def test_get_filter_description():
