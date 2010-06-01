@@ -149,7 +149,6 @@ def _seqs_in_file_with_repr(seq_fhand):
                 yield eval(buffer_)
                 buffer_ = ''
             buffer_ += line
-            print len(buffer_)
     #the last sequence
     if buffer_:
         yield eval(buffer_)
