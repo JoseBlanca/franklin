@@ -346,27 +346,38 @@ class SeqVariationFilteringTest(unittest.TestCase):
                          qualifiers={'alleles':alleles2})
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv, snv2])
 
-        filters = []
-        parameters = []
-        results = []
-
-        kind = 'read_groups'
-        groups = ('rg1',)
-        in_union = True
-        params = (kind, groups, in_union)
-
-        parameters.append(params)
-        filter_ = create_not_variable_in_group_filter(*params)
-        filters.append(filter_)
-        results.append((True, False))
-
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                                      groups=['rg1'],
+                                                      in_union=True)
         filter_(seq)
 
-        for params, expected in zip(parameters, results):
-            for snv, expected in zip(seq.get_features(kind='snv'), expected):
-                result = snv.qualifiers['filters']['is_not_variable'][params]
-                assert result == expected
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                                      groups=['rg2', 'rg4'],
+                                                      in_union=True)
+        filter_(seq)
 
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                                      groups=['rg3', 'rg4'],
+                                                      in_union=True)
+        filter_(seq)
+
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                                      groups=['rg3', 'rg4'],
+                                                      in_union=False)
+        filter_(seq)
+
+        snv1 = seq.features[0].qualifiers['filters']['is_not_variable']
+        snv2 = seq.features[1].qualifiers['filters']['is_not_variable']
+
+        assert snv1['read_groups', ('rg1',), True]
+        assert not snv2['read_groups', ('rg1',), True]
+
+
+        assert not snv1['read_groups', ('rg2', 'rg4'), True]
+        assert not snv2['read_groups', ('rg2', 'rg4'), True]
+
+        assert snv1['read_groups', ('rg3', 'rg4'), True]
+        assert not snv1['read_groups', ('rg3', 'rg4'), False]
 
     @staticmethod
     def test_is_variable_filter():
@@ -522,7 +533,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                             filter_descriptions)
         assert name == 'cef'
         assert desc == 'SNV is not a CAP detectable by the enzymes: cheap ones'
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']
