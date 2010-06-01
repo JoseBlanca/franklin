@@ -39,7 +39,7 @@ from franklin.seq.seqs import get_seq_name
 FILTER_DESCRIPTIONS = {
     'uniq_contiguous':
         {'id': 'UCR',
-         'description':'A blast in the near region gave several matches'},
+         'description':'Region is not unique or non contiguous'},
     'close_to_intron':
         {'id': 'I%2d',
          'description':'An intron is located closer than %2d base pairs'},
@@ -51,25 +51,25 @@ FILTER_DESCRIPTIONS = {
          'description':'The snv is closer than %d nucleotides to another snv'},
     'close_to_limit':
         {'id':'cl%2d',
-       'description':'The snv is closer than %d nucleotides to sequence limit'},
+      'description':'The snv is closer than %d nucleotides the reference edge'},
     'maf':
         {'id':'maf%.2f',
-         'description':'The more frequent alleles is more frequent than %.2f'},
+       'description':'The most frequent allele frequency is greater than %.2f'},
     'by_kind':
         {'id':'vk%s',
-         'description':'It filters if it is of kind: %s'},
+         'description':'It is not an %s'},
     'cap_enzymes':
         {'id':'ce%s',
-         'description':'Enzymes that recognize different snp alleles: %s'},
+         'description':'SNV is not a CAP detectable by the enzymes: %s'},
     'is_variable':
         {'id':'v%s%i',
-        'description':'Filters by %s with those items: %s. Aggregated:%s'},
+        'description':'It is not variable in the %s : %s. All together: %s'},
     'ref_not_in_list':
         {'id':'rnl',
         'description':'Filters by given list of seq names'},
     'min_groups':
         {'id':'m%s%i',
-        'description':'Filters SNVs read in less than %i %s'},
+        'description':'SNV read in less than %i %s'},
     }
 
 FILTER_COUNTS = {}
@@ -147,10 +147,10 @@ def _get_nd_kind(id_, desc, parameters):
 def _get_nd_ce(id_, desc, parameters):
     'It returns the name and id of the snv filter for cap_enzyme filter'
     if parameters:
-        enzymes = 'All'
+        enzymes = 'all'
         booltag = 't'
     else:
-        enzymes = 'Most Comercial'
+        enzymes = 'cheap ones'
         booltag = 'f'
 
     short_name = id_ % booltag

@@ -479,7 +479,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                             filter_descriptions)
 
         assert name == 'maf0.60'
-        assert desc == 'The more frequent alleles is more frequent than 0.60'
+        assert desc == 'The most frequent allele frequency is greater than 0.60'
 
         filter_name = 'by_kind'
         parameters = SNP
@@ -495,8 +495,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
-        descrip = "Filters by read_groups with those items: rg1,rg2."
-        descrip += ' Aggregated:True'
+        descrip = "It is not variable in the read_groups : rg1,rg2."
+        descrip += ' All together: True'
         assert desc == descrip
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
@@ -507,7 +507,22 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                             parameters,
                                             filter_descriptions)
         assert name == 'mr4'
-        assert desc == 'Filters SNVs read in less than 4 read_groups'
+        assert desc == 'SNV read in less than 4 read_groups'
+
+        parameters = (True)
+        name, desc = get_filter_description('cap_enzymes',
+                                            parameters,
+                                            filter_descriptions)
+        assert name == 'cet'
+        assert desc == 'SNV is not a CAP detectable by the enzymes: all'
+
+        parameters = (False)
+        name, desc = get_filter_description('cap_enzymes',
+                                            parameters,
+                                            filter_descriptions)
+        assert name == 'cef'
+        assert desc == 'SNV is not a CAP detectable by the enzymes: cheap ones'
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_svn_pipeline']
