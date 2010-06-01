@@ -64,6 +64,9 @@ FILTER_DESCRIPTIONS = {
     'is_variable':
         {'id':'v%s%i',
         'description':'It is not variable in the %s : %s. All together: %s'},
+    'is_not_variable':
+        {'id':'nv%s%i',
+        'description':'It is variable in the %s : %s. All together: %s'},
     'ref_not_in_list':
         {'id':'rnl',
         'description':'Filters by given list of seq names'},
@@ -86,6 +89,8 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
     elif filter_name == 'cap_enzymes':
         short_name, description = _get_nd_ce(id_, desc, parameters)
     elif filter_name == 'is_variable':
+        short_name, description = _get_nd_iv(id_, desc, parameters)
+    elif filter_name == 'is_not_variable':
         short_name, description = _get_nd_iv(id_, desc, parameters)
     elif filter_name == 'high_variable_reg':
         short_name, description = _get_nd_hvr(id_, desc, parameters)

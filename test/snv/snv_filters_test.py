@@ -509,9 +509,23 @@ class SeqVariationFilteringTest(unittest.TestCase):
         descrip = "It is not variable in the read_groups : rg1,rg2."
         descrip += ' All together: True'
         assert desc == descrip
+
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
+
+        filter_name = 'is_not_variable'
+        kind = 'read_groups'
+        groups = ['rg1', 'rg2']
+        in_union = True
+        parameters = (kind, tuple(groups), in_union)
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name[:4] == 'nvrg'
+        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip += ' All together: True'
+        assert desc == descrip
 
         parameters = (4, 'read_groups')
         name, desc = get_filter_description('min_groups',
