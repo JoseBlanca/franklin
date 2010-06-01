@@ -7,6 +7,7 @@ from franklin.utils.misc_utils import DATA_DIR
 import unittest, StringIO, tempfile
 from franklin.seq.readers import (seqs_in_file, guess_seq_file_format,
                                   guess_seq_type, num_seqs_in_file)
+from franklin.seq.seqs import Seq, SeqWithQuality
 from os.path import join
 
 class GuessFormatSeqFileTest(unittest.TestCase):
@@ -146,6 +147,17 @@ class SeqsInFileTests(unittest.TestCase):
             assert seq.name == expected[index][0]
             assert str(seq.seq) == expected[index][1]
             assert seq.qual == expected[index][2]
+
+    @staticmethod
+    def test_repr():
+        'It test the repr reader'
+        seq1 = SeqWithQuality(seq=Seq('ATCT'))
+        seq2 = SeqWithQuality(seq=Seq('AAAA'))
+        fcontent = repr(seq1) + '\n' + repr(seq2) + '\n'
+        fhand = StringIO.StringIO(fcontent)
+        seqs = list(seqs_in_file(fhand, format='repr'))
+        assert repr(seqs[0]) == repr(seq1)
+        assert repr(seqs[1]) == repr(seq2)
 
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'

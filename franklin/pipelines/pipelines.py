@@ -320,8 +320,8 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
                                                         processes)
     else:
         filtered_seq_iter = _process_sequences(in_fhand_seqs, in_fhand_qual,
-                                          file_format, pipeline,
-                                          configuration)
+                                               file_format, pipeline,
+                                               configuration)
 
     # The SeqRecord generator is consumed
     for sequence in filtered_seq_iter:
@@ -336,6 +336,3 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
         feature_counter[wtype] = writer.num_features
 
     return feature_counter
-
-
-
