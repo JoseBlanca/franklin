@@ -24,6 +24,7 @@ from __future__  import division
 import tempfile
 
 import itertools, random
+from array import array
 import cPickle as pickle
 
 from tempfile import TemporaryFile
@@ -172,3 +173,60 @@ def ungroup(items, ungrouper):
         subitems = ungrouper(item)
         for subitem in subitems:
             yield subitem
+
+class store2(object):
+    '''It stores elements for future use.
+
+    It can work in memory or write it contents to a file.
+    '''
+    def __init__(self, typecode):
+        'The init '
+        self._typecode = typecode
+        self._array = array(typecode)
+        self._cache_fhand = None
+
+    def extend(self, items):
+        'It adds all items to the store'
+        for item in items:
+            self.append(item, flush=False)
+        if self._cache_fhand:
+            self._cache_fhand.flush()
+
+    def append(self, item, flush=True):
+        'It appends one item to the store'
+        if self._array is not None:
+            self._array.append(item)
+        else:
+            self._cache_fhand.write(str(item) + '\n')
+            if flush:
+                self._cache_fhand.flush()
+
+    def _generate_file_items(self):
+        'It yields all items from the file cache'
+        casts = {'h': int, 'H':int, 'i':int, 'I':int, 'L':int, 'l':int,
+                 'f':float }
+        cast = casts[self._typecode]
+        for line in open(self._cache_fhand.name):
+            yield cast(line)
+
+    def _get_items(self):
+        'A generator that yields all items'
+        if self._array is not None:
+            return iter(self._array)
+        else:
+            return self._generate_file_items()
+
+    items = property(_get_items)
+
+    def to_disk(self):
+        'It saves all items to the disk'
+        if self._cache_fhand is not None:
+            return  #we are already in disk
+        self._cache_fhand = tempfile.NamedTemporaryFile()
+        #we store all item in the file
+        for item in self._array:
+            self._cache_fhand.write(str(item) + '\n')
+        self._cache_fhand.flush()
+        #we remove the array storage
+        del self._array
+        self._array = None

@@ -5,7 +5,7 @@ Created on 11/05/2010
 '''
 import unittest
 from franklin.utils.itertools_ import (take_sample, make_cache, store, classify,
-                                       ungroup)
+                                       ungroup, store2)
 import itertools
 
 class TakeSampleTest(unittest.TestCase):
@@ -35,15 +35,13 @@ class TakeSampleTest(unittest.TestCase):
         items = iter(range(1000))
         sample = take_sample(items, 50)
         sample1, sample2 = itertools.tee(sample)
-        print list(sample1)
-        print list(sample2)
 
 class MakeCacheTest(unittest.TestCase):
     'It tests the cache for iterables'
     @staticmethod
     def test_make_cache():
         'It test the cache for iterables'
-        item_list = [1,3, 4, 4.7, 'hola', [1, {'caracola':True}]]
+        item_list = [1, 3, 4, 4.7, 'hola', [1, {'caracola':True}]]
         items = make_cache(iter(item_list))
         assert list(items) == item_list
 
@@ -52,7 +50,7 @@ class StoreTest(unittest.TestCase):
     @staticmethod
     def test_store():
         'It test the store for iterables'
-        item_list = [1,3, 4, 4.7, 'hola', [1, {'caracola':True}]]
+        item_list = [1, 3, 4, 4.7, 'hola', [1, {'caracola':True}]]
         storage = store()
         storage.extend(item_list)
         assert list(storage) == item_list
@@ -76,6 +74,27 @@ class UngroupTest(unittest.TestCase):
         items = [{'a': 1, 'b':2}, {'a':2}, {'c':3}]
         items = list(ungroup(items, lambda x: x.items()))
         assert items == [('a', 1), ('b', 2), ('a', 2), ('c', 3)]
+
+class Store2Test(unittest.TestCase):
+    'It tests the store for iterables'
+    @staticmethod
+    def test_store():
+        'It test the store for iterables'
+        item_list = [1, 3, 4]
+        storage = store2(typecode='I')
+        storage.extend(item_list)
+        assert list(storage.items) == item_list
+
+    @staticmethod
+    def test_store_to_disk():
+        'It test the store for iterables saving to disk'
+        item_list = [1, 2, 3]
+        item_list2 = [4, 5, 6]
+        storage = store2(typecode='I')
+        storage.extend(item_list)
+        storage.to_disk()
+        storage.extend(item_list2)
+        assert list(storage.items) == [1, 2, 3, 4, 5, 6]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
