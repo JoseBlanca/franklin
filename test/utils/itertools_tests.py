@@ -83,7 +83,8 @@ class Store2Test(unittest.TestCase):
         item_list = [1, 3, 4]
         storage = store2(typecode='I')
         storage.extend(item_list)
-        assert list(storage.items) == item_list
+        assert list(storage) == item_list
+        assert list(storage) == item_list
 
     @staticmethod
     def test_store_to_disk():
@@ -94,7 +95,18 @@ class Store2Test(unittest.TestCase):
         storage.extend(item_list)
         storage.to_disk()
         storage.extend(item_list2)
-        assert list(storage.items) == [1, 2, 3, 4, 5, 6]
+        assert list(storage) == [1, 2, 3, 4, 5, 6]
+
+    @staticmethod
+    def test_basic_statistics():
+        'It test the max, min avg, etc.'
+        item_list = [1, 2, 3]
+        storage = store2(typecode='I')
+        storage.extend(item_list)
+        assert storage.max == max(item_list)
+        assert storage.min == min(item_list)
+        assert storage.average == 2
+        assert len(storage) == len(item_list)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

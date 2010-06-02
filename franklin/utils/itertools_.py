@@ -174,8 +174,22 @@ def ungroup(items, ungrouper):
         for subitem in subitems:
             yield subitem
 
+MIN_FREE_MEMORY_PERCENT = 10
+MEMORY_CHECK_CYCLES = 10000
+
+def _check_free_memory(percent=None):
+    'It checks that we still have more free memory than the given percent'
+    if not percent:
+        percent = MIN_FREE_MEMORY_PERCENT
+    fhand = open('/proc/meminfo', 'r')
+    mem_total = int(fhand.readline().split()[1])
+    mem_free = int(fhand.readline().split()[1])
+    free_percent = mem_free / mem_total * 100
+    if percent > free_percent:
+        raise RuntimeError('Scarce memory')
+
 class store2(object):
-    '''It stores elements for future use.
+    '''It stores numbers for future use.
 
     It can work in memory or write it contents to a file.
     '''
@@ -184,25 +198,52 @@ class store2(object):
         self._typecode = typecode
         self._array = array(typecode)
         self._cache_fhand = None
+        self._max = None
+        self._min = None
+        self._len = 0
+        self._sum = 0
+        self._check_in_cycles = MEMORY_CHECK_CYCLES
 
     def extend(self, items):
         'It adds all items to the store'
         for item in items:
-            self.append(item, flush=False)
-        if self._cache_fhand:
-            self._cache_fhand.flush()
+            self.append(item)
 
-    def append(self, item, flush=True):
+    def append(self, item):
         'It appends one item to the store'
+        #some statistics
+        if self._max is None:
+            self._max = item
+            self._min = item
+        else:
+            if self._max < item:
+                self._max = item
+            if self._min > item:
+                self._min = item
+        self._sum += item
+        self._len += 1
+
+        #are we running low on memory?
+        self._check_in_cycles -= 1
+        if self._check_in_cycles <= 0 and self._cache_fhand is not None:
+            try:
+                _check_free_memory()
+            except RuntimeError:
+                #we are running low on memory, so we store in disk
+                self.to_disk()
+            self._check_in_cycles = MEMORY_CHECK_CYCLES
+
         if self._array is not None:
             self._array.append(item)
         else:
             self._cache_fhand.write(str(item) + '\n')
-            if flush:
-                self._cache_fhand.flush()
 
     def _generate_file_items(self):
         'It yields all items from the file cache'
+        #let's be sure that all items are in the disk
+        if self._cache_fhand:
+            self._cache_fhand.flush()
+
         casts = {'h': int, 'H':int, 'i':int, 'I':int, 'L':int, 'l':int,
                  'f':float }
         cast = casts[self._typecode]
@@ -216,7 +257,9 @@ class store2(object):
         else:
             return self._generate_file_items()
 
-    items = property(_get_items)
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self._get_items()
 
     def to_disk(self):
         'It saves all items to the disk'
@@ -230,3 +273,22 @@ class store2(object):
         #we remove the array storage
         del self._array
         self._array = None
+
+    def _get_min(self):
+        'It returns the minimum'
+        return self._min
+    min = property(_get_min)
+
+    def _get_max(self):
+        'It returns the maximum'
+        return self._max
+    max = property(_get_max)
+
+    def _get_average(self):
+        'It returns the maximum'
+        return self._sum / self._len
+    average = property(_get_average)
+
+    def __len__(self):
+        'It returns the number of items'
+        return self._len
