@@ -75,39 +75,6 @@ class UngroupTest(unittest.TestCase):
         items = list(ungroup(items, lambda x: x.items()))
         assert items == [('a', 1), ('b', 2), ('a', 2), ('c', 3)]
 
-class CachedArrayTest(unittest.TestCase):
-    'It tests the store for iterables'
-    @staticmethod
-    def test_store():
-        'It test the store for iterables'
-        item_list = [1, 3, 4]
-        storage = CachedArray(typecode='I')
-        storage.extend(item_list)
-        assert list(storage) == item_list
-        assert list(storage) == item_list
-
-    @staticmethod
-    def test_store_to_disk():
-        'It test the store for iterables saving to disk'
-        item_list = [1, 2, 3]
-        item_list2 = [4, 5, 6]
-        storage = CachedArray(typecode='I')
-        storage.extend(item_list)
-        storage.to_disk()
-        storage.extend(item_list2)
-        assert list(storage) == [1, 2, 3, 4, 5, 6]
-
-    @staticmethod
-    def test_basic_statistics():
-        'It test the max, min avg, etc.'
-        item_list = [1, 2, 3]
-        storage = CachedArray(typecode='I')
-        storage.extend(item_list)
-        assert storage.max == max(item_list)
-        assert storage.min == min(item_list)
-        assert storage.average == 2
-        assert len(storage) == len(item_list)
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

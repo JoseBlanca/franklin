@@ -24,8 +24,7 @@ from tempfile import NamedTemporaryFile
 
 from franklin.utils.misc_utils import float_lists_are_equal
 from franklin.utils.seqio_utils import seqs_in_file
-from franklin.statistics import (seq_distrib, general_seq_statistics,
-                               seq_distrib_diff, histogram)
+from franklin.statistics import CachedArray, histogram
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -50,92 +49,6 @@ def _file_length(fhand):
     'Given an fhand it returns the file length in bytes'
     return os.stat(fhand.name)[6]
 
-class StatisticsTest(unittest.TestCase):
-    'It tests different statistics for the sequences'
-
-    @staticmethod
-    def test_sequence_length_distrib():
-        'It tests that we get the correct sequence length distribution'
-        fhand = StringIO('>h\nATCTCAT\n>o\nACTAGG\n>l\AGCTAGCGTAGT\n>a\nGTAT\n')
-        distrib_fhand = NamedTemporaryFile(suffix='.txt')
-        fig_fhand     = NamedTemporaryFile(suffix='.png')
-        seqs = seqs_in_file(fhand)
-        seq_distrib('seq_length_distrib', sequences=seqs,
-                    distrib_fhand=distrib_fhand, plot_fhand=fig_fhand)
-        #now we check the results
-        distrib = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-                   0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0]
-        bin_edges = [0.0, 0.35, 0.7, 1.05, 1.4, 1.75, 2.1, 2.45, 2.8, 3.15,
-                     3.5, 3.85, 4.2, 4.55, 4.9, 5.25, 5.6, 5.95, 6.3, 6.65, 7.0]
-        _check_distrib_file(distrib_fhand, distrib, bin_edges)
-        assert _file_length(fig_fhand) > 100
-
-    @staticmethod
-    def test_masked_seq_length_distrib():
-        'It tests that we get the correct sequence length distribution'
-        fhand = StringIO('>h\nATCTcat\n>o\nactagg\n>l\nActagcgtAGT\n>a\nGTAT\n')
-        distrib_fhand = NamedTemporaryFile(suffix='.txt')
-        fig_fhand = NamedTemporaryFile(suffix='.png')
-        seqs = seqs_in_file(fhand)
-        seq_distrib('masked_seq_distrib', sequences=seqs,
-                    distrib_fhand=distrib_fhand, plot_fhand=fig_fhand)
-        #now we check the results
-        distrib = [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]
-        bin_edges = [0., 0.35, 0.7, 1.05, 1.4, 1.75, 2.1, 2.45, 2.8, 3.15, 3.5,
-                     3.85, 4.2, 4.55, 4.9, 5.25, 5.6, 5.95, 6.3, 6.65, 7.]
-        _check_distrib_file(distrib_fhand, distrib, bin_edges)
-        assert _file_length(fig_fhand) > 100
-
-    @staticmethod
-    def test_seq_quality_distrib():
-        'It tests that we get the correct sequence quality distribution'
-        fhand_seq = StringIO('>h\nACTG\n>o\nACTG\n>l\nACTG\n>a\nACG\n')
-        fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
-        distrib_fhand = NamedTemporaryFile(suffix='.txt')
-        fig_fhand = NamedTemporaryFile(suffix='.png')
-        seqs = seqs_in_file(fhand_seq, fhand)
-        seq_distrib('qual_distrib', sequences=seqs, distrib_fhand=distrib_fhand,
-                    plot_fhand=fig_fhand)
-        #now we check the results
-        distrib = [5, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]
-        bin_edges = [1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5,
-                     3.75, 4., 4.25, 4.5, 4.75, 5., 5.25, 5.5, 5.75, 6.]
-        _check_distrib_file(distrib_fhand, distrib, bin_edges)
-        assert _file_length(fig_fhand) > 100
-
-
-    @staticmethod
-    def test_general_seq_stats():
-        "it test length_statistics"
-        fhand_seq = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
-        fhand = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
-        seqs  = seqs_in_file(fhand_seq, fhand)
-        stats = general_seq_statistics(seqs)
-
-        assert stats['seq_length']          == 15
-        assert stats['seq_length_average']  == 3.75
-        qualities = [1, 2, 3, 4, 1, 2, 2, 3, 1, 2, 3, 3, 1, 1, 6]
-        mean_qual = sum(qualities) / float(len(qualities))
-        assert stats['mean_quality']        == mean_qual
-        assert stats['num_sequences']       == 4
-        assert stats['max_seq_length']      == 4
-        assert stats['min_seq_length']      == 3
-        assert stats['seq_length_variance'] == 0.1875
-
-    @staticmethod
-    def test_seq_distrib_diff():
-        'It test seq_distrib_diff'
-        fhand_seq1 = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
-        fhand1 = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
-        fhand_seq2 = StringIO('>h\nACTG\n>o\nACtG\n>l\nACtG\n>a\nAcG\n')
-        fhand2 = StringIO('>h\n1 2 3 4 \n>o\n1 2 2 3\n>l\n1 2 3 3\n>a\n1 1 6\n')
-        seqs1 = seqs_in_file(fhand_seq1, fhand1)
-        seqs2 = seqs_in_file(fhand_seq2, fhand2)
-
-        distri = seq_distrib_diff(seqs1, seqs2, 'qual_distrib')
-        for num in distri['distrib']:
-            assert num == 0
-
 class HistogramTest(unittest.TestCase):
     'It checks our histogram/distribution implementation'
     @staticmethod
@@ -150,6 +63,40 @@ class HistogramTest(unittest.TestCase):
             assert num1 == num2
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
+
+class CachedArrayTest(unittest.TestCase):
+    'It tests the store for iterables'
+    @staticmethod
+    def test_store():
+        'It test the store for iterables'
+        item_list = [1, 3, 4]
+        storage = CachedArray(typecode='I')
+        storage.extend(item_list)
+        assert list(storage) == item_list
+        assert list(storage) == item_list
+
+    @staticmethod
+    def test_store_to_disk():
+        'It test the store for iterables saving to disk'
+        item_list = [1, 2, 3]
+        item_list2 = [4, 5, 6]
+        storage = CachedArray(typecode='I')
+        storage.extend(item_list)
+        storage.to_disk()
+        storage.extend(item_list2)
+        assert list(storage) == [1, 2, 3, 4, 5, 6]
+
+    @staticmethod
+    def test_basic_statistics():
+        'It test the max, min avg, etc.'
+        item_list = [1, 2, 3]
+        storage = CachedArray(typecode='I')
+        storage.extend(item_list)
+        assert storage.max == max(item_list)
+        assert storage.min == min(item_list)
+        assert storage.average == 2
+        assert len(storage) == len(item_list)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']

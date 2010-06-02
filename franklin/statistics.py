@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import itertools
+import itertools, tempfile
+from array import array
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -290,3 +291,142 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         plt.show()
     else:
         fig.savefig(fhand)
+
+
+MIN_FREE_MEMORY_PERCENT = 10
+MEMORY_CHECK_CYCLES = 10000
+
+def _check_free_memory(percent=None):
+    'It checks that we still have more free memory than the given percent'
+    if not percent:
+        percent = MIN_FREE_MEMORY_PERCENT
+    fhand = open('/proc/meminfo', 'r')
+    mem_total = int(fhand.readline().split()[1])
+    mem_free = int(fhand.readline().split()[1])
+    free_percent = mem_free / mem_total * 100
+    if percent > free_percent:
+        raise RuntimeError('Scarce memory')
+
+class CachedArray(object):
+    '''It stores numbers for future use.
+
+    It can work in memory or write it contents to a file.
+    '''
+    def __init__(self, typecode):
+        'The init '
+        self._typecode = typecode
+        self._array = array(typecode)
+        self._cache_fhand = None
+        self._max = None
+        self._min = None
+        self._len = 0
+        self._sum = 0
+        self._check_in_cycles = MEMORY_CHECK_CYCLES
+
+    def extend(self, items):
+        'It adds all items to the store'
+        for item in items:
+            self.append(item)
+
+    def append(self, item):
+        'It appends one item to the store'
+        #some statistics
+        if self._max is None:
+            self._max = item
+            self._min = item
+        else:
+            if self._max < item:
+                self._max = item
+            if self._min > item:
+                self._min = item
+        self._sum += item
+        self._len += 1
+
+        #are we running low on memory?
+        self._check_in_cycles -= 1
+        if self._check_in_cycles <= 0 and self._cache_fhand is not None:
+            try:
+                _check_free_memory()
+            except RuntimeError:
+                #we are running low on memory, so we store in disk
+                self.to_disk()
+            self._check_in_cycles = MEMORY_CHECK_CYCLES
+
+        if self._array is not None:
+            self._array.append(item)
+        else:
+            self._cache_fhand.write(str(item) + '\n')
+
+    def _generate_file_items(self):
+        'It yields all items from the file cache'
+        #let's be sure that all items are in the disk
+        if self._cache_fhand:
+            self._cache_fhand.flush()
+
+        casts = {'h': int, 'H':int, 'i':int, 'I':int, 'L':int, 'l':int,
+                 'f':float }
+        cast = casts[self._typecode]
+        for line in open(self._cache_fhand.name):
+            yield cast(line)
+
+    def _get_items(self):
+        'A generator that yields all items'
+        if self._array is not None:
+            return iter(self._array)
+        else:
+            return self._generate_file_items()
+
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self._get_items()
+
+    def to_disk(self):
+        'It saves all items to the disk'
+        if self._cache_fhand is not None:
+            return  #we are already in disk
+        self._cache_fhand = tempfile.NamedTemporaryFile()
+        #we store all item in the file
+        for item in self._array:
+            self._cache_fhand.write(str(item) + '\n')
+        self._cache_fhand.flush()
+        #we remove the array storage
+        del self._array
+        self._array = None
+
+    def _get_min(self):
+        'It returns the minimum'
+        return self._min
+    min = property(_get_min)
+
+    def _get_max(self):
+        'It returns the maximum'
+        return self._max
+    max = property(_get_max)
+
+    def _get_sum(self):
+        'It returns the sum'
+        return self._sum
+    sum = property(_get_sum)
+
+    def _get_average(self):
+        'It returns the maximum'
+        return self._sum / self._len
+    average = property(_get_average)
+
+    def __len__(self):
+        'It returns the number of items'
+        return self._len
+
+    def _get_variance(self):
+        'It returns the variance'
+        sum_ = 0
+        count = 0
+        mean = self.average
+        for number in self:
+            sum_ += (number - mean) ** 2
+            count += 1
+        if not count:
+            return None
+        else:
+            return (sum_ / float(count))
+    variance = property(_get_variance)

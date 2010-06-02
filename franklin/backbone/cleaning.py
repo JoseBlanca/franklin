@@ -31,9 +31,8 @@ from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
-from franklin.utils.itertools_ import CachedArray
 from franklin.statistics import (create_distribution, write_distribution,
-                                 draw_histogram)
+                                 draw_histogram, CachedArray)
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
