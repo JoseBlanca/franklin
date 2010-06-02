@@ -30,7 +30,7 @@ from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
 from franklin.utils.itertools_ import ungroup, classify, take_sample
-from franklin.statistics import create_distribution
+from franklin.statistics import create_distribution, CachedArray
 
 def get_read_group_info(bam):
     'It returns a dict witht the read group info: platform, lb, etc'
@@ -366,12 +366,13 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
         cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
-def _calculate_bam_coverage_data(bam):
+def _get_bam_coverage(bam, rgs, grouping):
     '''This function gets data to make stats of a sam file.
 
     It extracts per column coverage data from a bam
     '''
-    # TODO, needs sampling
+    coverages = {}
+
     for column in bam.pileup():
         reads_per_colum = {}
         for pileup_read in column.pileups:
@@ -381,42 +382,35 @@ def _calculate_bam_coverage_data(bam):
                 reads_per_colum[read_group] = 0
             reads_per_colum[read_group] += 1
 
-        yield reads_per_colum
+        #we group by the grouping key
+        new_reads_per_colum = {}
+        for read_group, value in reads_per_colum.items():
+            group = rgs[read_group][grouping]
+            if group not in new_reads_per_colum:
+                new_reads_per_colum[group] = 0
+            new_reads_per_colum[group] += value
 
-def _get_bam_coverage(bam, rgs, grouping):
-    'It serializes the coverage_data'
-    coverages = _calculate_bam_coverage_data(bam)
-    coverages = ungroup(coverages, lambda x: x.items())
-    coverages = imap(lambda x: (rgs[x[0]][grouping], x[1]), coverages)
-    coverages = classify(coverages, lambda x: x[0])
-    new_coverages = {}
-    for group, values in coverages.items():
-        values = imap(lambda x: x[1], values)
-        new_coverages[group] = values
+        for group, value in new_reads_per_colum.items():
+            if group not in coverages:
+                coverages[group] = CachedArray('I')
+            coverages[group].append(value)
 
-    return new_coverages
+    return coverages
 
-def _generate_bam_mapping_quality_data(bam):
+def _get_bam_mapping_quality(bam, rgs, grouping):
     '''This function get data to make stats of a sam file.
 
     It extracts mapping quality per read
     '''
+    mquals = {}
     for aligned_read in pysam.IteratorRowAll(bam):
         read_mapping_qual = aligned_read.mapq
         read_group = aligned_read.opt('RG')
-        yield(read_group, read_mapping_qual)
-
-def _get_bam_mapping_quality(bam, rgs, grouping):
-    'It serializes the mapq data'
-    mapqs = _generate_bam_mapping_quality_data(bam)
-    mapqs = imap(lambda x: (rgs[x[0]][grouping], x[1]), mapqs)
-    mapqs = classify(mapqs, lambda x: x[0])
-    new_mapqs = {}
-    for group, values in mapqs.items():
-        values = imap(lambda x: x[1], values)
-        new_mapqs[group] = values
-
-    return new_mapqs
+        group = rgs[read_group][grouping]
+        if group not in mquals:
+            mquals[group] = CachedArray('H')
+        mquals[group].append(read_mapping_qual)
+    return mquals
 
 def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
                  sample_size=None):
@@ -449,14 +443,15 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
     create_bam_index(bam_fpath=sample_fpath)
     bam = pysam.Samfile(sample_fpath, 'rb')
     rgs = get_read_group_info(bam)
-    if grouping is None:
 
+    if grouping is None:
         platforms = set([rg['PL'] for rg in rgs.values()])
         if len(platforms) > 1:
             grouping = 'PL'
         else:
             grouping = 'SM'
     item_values = value_calculator[kind](bam, rgs, grouping)
+
     results = {}
     for group_name, values in item_values.items():
         if basename is None:
@@ -474,9 +469,8 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
         labels = copy.deepcopy(plot_labels[kind])
         labels['title'] = labels['title'] % (grouping, group_name)
 
-        range_ = range_
-
-        distrib = create_distribution(values, labels, distrib_fhand=distrib_fhand,
+        distrib = create_distribution(values, labels,
+                                      distrib_fhand=distrib_fhand,
                                    plot_fhand=plot_fhand, range_=range_)
 
         results[(grouping, group_name)] = distrib['distrib']

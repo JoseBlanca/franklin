@@ -77,8 +77,11 @@ def histogram(numbers, bins, range_= None):
     '''
     #an iterator for the numbers
     if range_ is None or None in range_ :
-        nums, numbers = itertools.tee(numbers)
-        calc_range = _range(nums)
+        if 'min' in dir(numbers):
+            calc_range = numbers.min, numbers.max
+        else:
+            nums, numbers = itertools.tee(numbers)
+            calc_range = _range(nums)
         if range_ is None:          #min and max
             range_ = calc_range
         elif range_[0] is None:     #min

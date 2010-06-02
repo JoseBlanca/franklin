@@ -29,8 +29,6 @@ from StringIO import StringIO
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
-                          _calculate_bam_coverage_data,
-                          _generate_bam_mapping_quality_data,
                           bam_distribs, create_bam_index, sample_bam)
 
 class SamTest(unittest.TestCase):
@@ -201,25 +199,6 @@ SGN-E221406\t0\tSGN-U576692\t1416\t100\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTG
 '''
 class SamStatsTest(unittest.TestCase):
     'Tests sam stat calculators'
-    @staticmethod
-    def test_basic_stats():
-        'It tests bam coverage'
-        sam = NamedTemporaryFile(suffix='.sam')
-        sam.write(SAM)
-
-        sam.flush()
-        bam_fhand = NamedTemporaryFile()
-        sam2bam(sam.name, bam_fhand.name)
-
-        create_bam_index(bam_fpath=bam_fhand.name)
-        bam = pysam.Samfile(bam_fhand.name, 'rb')
-
-        data = list(_calculate_bam_coverage_data(bam))
-        assert data[0] == {'g2': 1, 'g1': 2}
-        assert data[-1] == {'g2': 3, 'g1': 1}
-
-        data = list(_generate_bam_mapping_quality_data(bam))
-        assert data == [('g2', 167), ('g1', 48), ('g1', 100)]
 
     @staticmethod
     def test_bam_distribs():
