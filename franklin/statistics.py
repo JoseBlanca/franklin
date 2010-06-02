@@ -17,28 +17,6 @@
 
 import itertools
 
-from franklin.utils.itertools_ import make_cache
-from franklin.utils.itertools_ import ungroup, classify
-
-PLOT_LABELS = {'masked_seq_distrib' :{
-                                 'title': 'Masked sequence length distribution',
-                                 'xlabel':'Masked length',
-                                 'ylabel':'Number of sequences'},
-                'seq_length_distrib':{'title':'Sequence length distribution',
-                                      'xlabel':'Sequence length',
-                                      'ylabel': 'Number of sequences'},
-                'qual_distrib'      :{'title':'Sequence quality distribution',
-                                      'xlabel':'quality',
-                                      'ylabel':'Number of bp'},
-                'contig_read_distrib':{'title':'Contig reads distribution',
-                                      'xlabel':'number of reads',
-                                      'ylabel':'number of contigs'},
-                'contig_coverage_distrib':{
-                                      'title':'Contig coverage distribution',
-                                      'xlabel':'coverage',
-                                      'ylabel':'number of positions'},
-                }
-
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
 
@@ -79,106 +57,6 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
                       fhand=plot_fhand)
     return {'distrib':list(distrib), 'bin_edges':list(bin_edges)}
 
-def _masked_sequence_lengths(sequences):
-    'It yields the masked sequence lengths'
-    for seq in sequences:
-        length = 0
-        for letter in str(seq.seq):
-            if letter.islower():
-                length += 1
-        yield length
-
-def _sequence_length_quals(sequences):
-    'It yields the length and qualities as tuples'
-    for seq in sequences:
-        quals = seq.qual
-        if quals is None:
-            quals = []
-        yield {'length': len(seq), 'qual':quals}
-
-def _sequence_lengths(sequences):
-    'It yields the sequence lengths'
-    for seq in sequences:
-        yield len(seq)
-
-def _sequence_qualitities(sequences):
-    'It yields the sequence qualities'
-    for seq in sequences:
-        # This statistic can be run when there is no quality. In this cases it
-        # should exit without warnings
-        if seq.qual is None:
-            continue
-        for value in seq.qual:
-            yield value
-
-#pylint:disable-msg=W0613
-def seq_distrib(kind, sequences, distrib_fhand=None, plot_fhand=None,
-                range_=None):
-    'It returns the stat function depending on the stat it calculates(type)'
-    stats = {'masked_seq_distrib'     : _masked_sequence_lengths,
-             'seq_length_distrib'     : _sequence_lengths,
-             'qual_distrib'           : _sequence_qualitities,
-             }
-    values = stats[kind](sequences)
-    labels = PLOT_LABELS[kind]
-    return create_distribution(values, labels, distrib_fhand=distrib_fhand,
-                                plot_fhand=plot_fhand, range_=range_)
-
-def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
-    'It return the difference between different distributions of the given type'
-
-    #get labesl depending on the stat type
-    labels = PLOT_LABELS[kind]
-
-    #the values for boths sequences
-    values_functs = {
-             'masked_seq_distrib': _masked_sequence_lengths,
-             'seq_length_distrib': _sequence_lengths,
-             'qual_distrib'      : _sequence_qualitities}
-    values1 = values_functs[kind](seqs1)
-    values2 = values_functs[kind](seqs2)
-
-    #we cache the values because they're hard to get, it would be wise to
-    #check the performance
-    values1 = make_cache(values1)
-    values2 = make_cache(values2)
-
-    #the range
-    vals1, values1 = itertools.tee(values1)
-    vals2, values2 = itertools.tee(values2)
-
-    min_, max_ = None, None
-    for values in (vals1, vals2):
-        for number in values:
-            if min_ is None or min_ > number:
-                min_ = number
-            if max_ is None or max_ < number:
-                max_ = number
-    range_ = (min_, max_)
-
-    #Now I calculate the distibution with the same range, in order to be able
-    # to get the difference
-    distrib1 = create_distribution(values1,  range_=range_)
-    distrib2 = create_distribution(values2,  range_=range_)
-
-    diff_distrib   = []
-    diff_bin_edges = distrib1['bin_edges']
-    # now a subtract distrib1 from distrib2
-    for i in range(len(distrib1['distrib'])):
-        diff = distrib1['distrib'][i] - distrib2['distrib'][i]
-        diff_distrib.append(diff)
-
-    #we write the output
-    if distrib_fhand is not None:
-        write_distribution(distrib_fhand, diff_distrib, diff_bin_edges)
-    #do we have to plot it?
-    if plot_fhand is not None:
-        draw_histogram(diff_distrib, diff_bin_edges,
-                     title=labels['title'], xlabel=labels['xlabel'],
-                     ylabel=labels['ylabel'],
-                     fhand=plot_fhand)
-    return {'distrib':diff_distrib, 'bin_edges':diff_bin_edges}
-
 def _range(numbers):
     'Given an iterator with numbers it returns the min and max'
     min_, max_ = None, None
@@ -188,34 +66,6 @@ def _range(numbers):
         if max_ is None or max_ < number:
             max_ = number
     return min_, max_
-
-def _average_max_min(numbers):
-    'Given an iterator with numbers it calculates the average'
-    sum_ = 0
-    count = 0
-    max_ = None
-    min_ = None
-    for number in numbers:
-        sum_ += number
-        count += 1
-        if max_ is None or max_ < number:
-            max_ = number
-        if min_ is None or min_ > number:
-            min_ = number
-    avg = sum_ / float(count) if count else None
-    return avg, max_, min_
-
-def _variance(numbers, mean):
-    'Given an iterator with numbers it calculates the variance'
-    sum_ = 0
-    count = 0
-    for number in numbers:
-        sum_ += (number - mean) ** 2
-        count += 1
-    if not count:
-        return None
-    else:
-        return (sum_ / float(count))
 
 def histogram(numbers, bins, range_= None):
     '''An alternative implementation to the numpy.histogram.
