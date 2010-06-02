@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__  import division
+
 import itertools, tempfile
 from array import array
 
