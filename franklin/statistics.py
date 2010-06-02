@@ -39,7 +39,7 @@ PLOT_LABELS = {'masked_seq_distrib' :{
                                       'ylabel':'number of positions'},
                 }
 
-def _write_distribution(fhand, distribution, bin_edges):
+def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
 
     It requires a list with the distribution and a list with the bin_edges.
@@ -70,7 +70,7 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
         return
     #we write the output
     if distrib_fhand is not None:
-        _write_distribution(distrib_fhand, distrib, bin_edges)
+        write_distribution(distrib_fhand, distrib, bin_edges)
     #do we have to plot it?
     if plot_fhand is not None:
         draw_histogram(distrib, bin_edges,
@@ -170,7 +170,7 @@ def seq_distrib_diff(seqs1, seqs2, kind, distrib_fhand=None, plot_fhand=None):
 
     #we write the output
     if distrib_fhand is not None:
-        _write_distribution(distrib_fhand, diff_distrib, diff_bin_edges)
+        write_distribution(distrib_fhand, diff_distrib, diff_bin_edges)
     #do we have to plot it?
     if plot_fhand is not None:
         draw_histogram(diff_distrib, diff_bin_edges,

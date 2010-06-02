@@ -259,6 +259,48 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         os.chdir('/tmp')
         test_dir.close()
 
+    @staticmethod
+    def test_read_stats_analysis():
+        'It test the read statistics'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        project_dir = join(test_dir.name, project_name)
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name)
+
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        original_reads_dir = join(reads_dir, 'raw')
+        os.mkdir(reads_dir)
+        os.mkdir(original_reads_dir)
+        fpath_454 = join(original_reads_dir, 'pl_454.lb_a.sfastq')
+        fpath_ill = join(original_reads_dir, 'pl_illumina.lb_b.sfastq')
+        open(fpath_454, 'w').write(READS_454)
+        open(fpath_ill, 'w').write(READS_ILL)
+
+        #the cleaned reads
+        cleaned_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(cleaned_reads_dir)
+        fpath_454 = join(cleaned_reads_dir, 'pl_454.lb_a.sfastq')
+        fpath_ill = join(cleaned_reads_dir, 'pl_illumina.lb_no_raw.sfastq')
+        open(fpath_454, 'w').write(READS_454)
+        open(fpath_ill, 'w').write(READS_ILL)
+
+        do_analysis(project_settings=settings_path, kind='read_stats')
+
+        clean_stats_dir = join(cleaned_reads_dir, 'stats')
+        clean_fnames = os.listdir(clean_stats_dir)
+        expected_fnames = ['pl_454.lb_a.qual.diff',
+                           'pl_illumina.lb_no_raw.qual',
+                           'pl_454.lb_a.qual',
+                           'pl_illumina.lb_no_raw.length',
+                           'pl_454.lb_a.length',
+                           'pl_454.lb_a.length.diff']
+        for fname in expected_fnames:
+            assert fname + '.dat' in clean_fnames
+            assert fname + '.png' in clean_fnames
+
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
     @staticmethod
@@ -280,5 +322,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_create_project']
+    import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
     unittest.main()

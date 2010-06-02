@@ -35,7 +35,7 @@ BACKBONE_DIRECTORIES = {
     'mappings_by_readgroup': ('mapping', 'bams/by_readgroup'),
     'snvs':'annotations/snvs',
     'info':'info',
-    'original_reads_stats': 'reads/raw/stats',
+    'raw_reads_stats': 'reads/raw/stats',
     'cleaned_reads_stats': 'reads/cleaned/stats',
     'annotation_repr':'annotations/repr',
     'annotation_input':'annotations/input',

@@ -33,6 +33,9 @@ from franklin.seq.readers import guess_seq_file_format, num_seqs_in_file
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
+from franklin.utils.itertools_ import CachedArray
+from franklin.statistics import (create_distribution, write_distribution,
+                                 draw_histogram)
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -185,7 +188,169 @@ class CleanReadsAnalyzer(Analyzer):
 
 BASENAME_FOR_ALL_TOGETHER = 'all'
 
+PLOT_LABELS = {
+        'seq_length':{'title':'Sequence length distribution',
+                              'xlabel':'Sequence length',
+                              'ylabel': 'Number of sequences'},
+        'seq_qual'      :{'title':'Sequence quality distribution',
+                              'xlabel':'quality',
+                              'ylabel':'Number of bp'},
+        }
+
 class ReadsStatsAnalyzer(Analyzer):
+    '''It calculates stats for original and cleaned reads.
+    It calculates the distribution between both type off reads'''
+
+    def run(self):
+        'It runs the analysis'
+        self._log({'analysis_started':True})
+        self._create_output_dirs()['original_reads']
+        self._create_output_dirs()['cleaned_reads']
+
+        clean_paths = self._get_input_fpaths()['cleaned_reads']
+        original_paths = self._get_input_fpaths()['original_reads']
+        reads = {'cleaned': clean_paths, 'raw': original_paths}
+
+        #we need the raw and cleaned files paired
+        paired_paths = self._pair_raw_cleaned_read_files(reads)
+
+        #now we can do the statistics
+        for pair in paired_paths.values():
+            self._do_seq_distrib_for_pair(pair)
+
+        self._log({'analysis_finished':True})
+
+    @staticmethod
+    def _do_diff_distrib_for_numbers(numbers, plot_fhand, distrib_fhand,
+                                     dist_type):
+        'It creates the diff distribution for the given numbers'
+
+        max_ = max(numbers[0].max, numbers[1].max)
+        min_ = min(numbers[0].min, numbers[1].min)
+        range_ = min_, max_
+        # to get the difference we need both distribs
+        distrib1 = create_distribution(numbers[0], range_=range_)
+        distrib2 = create_distribution(numbers[1], range_=range_)
+
+        # now a subtract distrib1 from distrib2
+        diff_distrib   = []
+        diff_bin_edges = distrib1['bin_edges']
+        for i in range(len(distrib1['distrib'])):
+            diff = distrib1['distrib'][i] - distrib2['distrib'][i]
+            diff_distrib.append(diff)
+
+        #now we write the result
+        write_distribution(distrib_fhand, diff_distrib, diff_bin_edges)
+
+        labels = PLOT_LABELS[dist_type]
+        draw_histogram(diff_distrib, diff_bin_edges,
+                       title=labels['title'], xlabel=labels['xlabel'],
+                       ylabel=labels['ylabel'],
+                       fhand=plot_fhand)
+
+    def _do_seq_distrib_for_pair(self, pair):
+        'It does the distribution for a pair of cleaned and raw seqs'
+
+        get_stats_dir = lambda seq_type: os.path.join(self._get_project_path(),
+                              BACKBONE_DIRECTORIES['%s_reads_stats' % seq_type])
+
+        #the statistics for both clean and raw sequences
+        lengths = {}
+        quals = {}
+        for seq_type in ('raw', 'cleaned'):
+            if seq_type in pair:
+                fpath = pair[seq_type].last_version
+                basename = pair[seq_type].basename
+
+                #the names for the output files
+                stats_dir = get_stats_dir(seq_type)
+                out_fpath = os.path.join(stats_dir, basename + '.length')
+                plot_fpath = out_fpath + '.png'
+                distrib_fpath = out_fpath + '.dat'
+
+                if os.path.exists(plot_fpath):
+                    continue
+
+                lengths_, quals_ = self._get_lengths_quals_from_file(fpath)
+                lengths[seq_type] = lengths_
+                quals[seq_type] = quals_
+
+                #the distributions for the lengths
+                create_distribution(lengths_, PLOT_LABELS['seq_length'],
+                                    distrib_fhand=open(distrib_fpath, 'w'),
+                                    plot_fhand=open(plot_fpath, 'w'),
+                                    range_= (lengths_.min, lengths_.max))
+
+                #the distributions for the quals
+                out_fpath = os.path.join(stats_dir, basename + '.qual')
+                plot_fpath = out_fpath + '.png'
+                distrib_fpath = out_fpath + '.dat'
+
+                create_distribution(quals_, PLOT_LABELS['seq_qual'],
+                                    distrib_fhand=open(distrib_fpath, 'w'),
+                                    plot_fhand=open(plot_fpath, 'w'),
+                                    range_=(quals_.min, quals_.max))
+
+        #the statistics for the differences
+        if 'raw' in pair and 'cleaned' in pair:
+            fpath = pair['cleaned'].last_version
+            basename = pair['cleaned'].basename
+
+            #the names for the output files
+            stats_dir = get_stats_dir('cleaned')
+            out_fpath = os.path.join(stats_dir, basename + '.length.diff')
+            plot_fpath = out_fpath + '.png'
+            distrib_fpath = out_fpath + '.dat'
+
+            if not os.path.exists(plot_fpath):
+                #the distributions for the lengths
+                lengths = lengths['raw'], lengths['cleaned']
+                self._do_diff_distrib_for_numbers(lengths,
+                                             plot_fhand= open(plot_fpath, 'w'),
+                                             distrib_fhand= open(distrib_fpath,
+                                                                 'w'),
+                                             dist_type='seq_length')
+                del lengths
+
+                #the distributions for the quals
+                out_fpath = os.path.join(stats_dir, basename + '.qual.diff')
+                plot_fpath = out_fpath + '.png'
+                distrib_fpath = out_fpath + '.dat'
+
+                quals = quals['raw'], quals['cleaned']
+                self._do_diff_distrib_for_numbers(quals,
+                                             plot_fhand= open(plot_fpath, 'w'),
+                                             distrib_fhand= open(distrib_fpath,
+                                                                 'w'),
+                                             dist_type='seq_qual')
+                del quals
+
+    @staticmethod
+    def _get_lengths_quals_from_file(seq_fpath):
+        'Given a sequence file it returns the lengths and quals'
+        lengths = CachedArray('I')
+        quals   = CachedArray('H')
+        for seq in seqs_in_file(open(seq_fpath)):
+            lengths.append(len(seq))
+            quals.extend(seq.qual)
+        return lengths, quals
+
+
+    @staticmethod
+    def _pair_raw_cleaned_read_files(read_paths):
+        'It returns the paths for cleaned and raw paired'
+        pairs = {}
+        for path in read_paths['raw']:
+            basename = path.basename
+            pairs[basename] = {'raw': path}
+        for path in read_paths['cleaned']:
+            basename = path.basename
+            if basename not in pairs:
+                pairs[basename] = {}
+            pairs[basename]['cleaned'] = path
+        return pairs
+
+class ReadsStatsAnalyzer_old(Analyzer):
     '''It calculates stats for original and cleaned reads.
     It calculates the distribution between both type off reads'''
 
@@ -383,7 +548,7 @@ DEFINITIONS = {
                 {'directory': 'cleaned_reads',
                  'file_kinds': 'sequence_files'}
                 },
-         'outputs':{'original_reads':{'directory':'original_reads_stats'},
+         'outputs':{'original_reads':{'directory':'raw_reads_stats'},
                     'cleaned_reads'   :{'directory':'cleaned_reads_stats'}},
          'analyzer': ReadsStatsAnalyzer,
         },
