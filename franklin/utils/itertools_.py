@@ -188,7 +188,7 @@ def _check_free_memory(percent=None):
     if percent > free_percent:
         raise RuntimeError('Scarce memory')
 
-class store2(object):
+class CachedArray(object):
     '''It stores numbers for future use.
 
     It can work in memory or write it contents to a file.

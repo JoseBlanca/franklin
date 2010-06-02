@@ -5,7 +5,7 @@ Created on 11/05/2010
 '''
 import unittest
 from franklin.utils.itertools_ import (take_sample, make_cache, store, classify,
-                                       ungroup, store2)
+                                       ungroup, CachedArray)
 import itertools
 
 class TakeSampleTest(unittest.TestCase):
@@ -75,13 +75,13 @@ class UngroupTest(unittest.TestCase):
         items = list(ungroup(items, lambda x: x.items()))
         assert items == [('a', 1), ('b', 2), ('a', 2), ('c', 3)]
 
-class Store2Test(unittest.TestCase):
+class CachedArrayTest(unittest.TestCase):
     'It tests the store for iterables'
     @staticmethod
     def test_store():
         'It test the store for iterables'
         item_list = [1, 3, 4]
-        storage = store2(typecode='I')
+        storage = CachedArray(typecode='I')
         storage.extend(item_list)
         assert list(storage) == item_list
         assert list(storage) == item_list
@@ -91,7 +91,7 @@ class Store2Test(unittest.TestCase):
         'It test the store for iterables saving to disk'
         item_list = [1, 2, 3]
         item_list2 = [4, 5, 6]
-        storage = store2(typecode='I')
+        storage = CachedArray(typecode='I')
         storage.extend(item_list)
         storage.to_disk()
         storage.extend(item_list2)
@@ -101,7 +101,7 @@ class Store2Test(unittest.TestCase):
     def test_basic_statistics():
         'It test the max, min avg, etc.'
         item_list = [1, 2, 3]
-        storage = store2(typecode='I')
+        storage = CachedArray(typecode='I')
         storage.extend(item_list)
         assert storage.max == max(item_list)
         assert storage.min == min(item_list)
