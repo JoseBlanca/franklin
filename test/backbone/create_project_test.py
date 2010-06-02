@@ -224,14 +224,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         # It means that the starting word has been removed
         assert  seq.startswith('CAAGATTCTTCCCACAT')
 
-        do_analysis(project_settings=settings_path, kind='read_stats')
-        clean_stats_dir = join(cleaned_dir, 'stats')
-        original_stats_dir = join(original_reads_dir, 'stats')
-        assert exists(clean_stats_dir)
-        assert exists(original_stats_dir)
-        assert exists(join(clean_stats_dir, 'all.diff_qual_distrib.png'))
-        assert exists(join(clean_stats_dir, 'pl_454.lb_a.general_stats.txt'))
-
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')
         assembly_input = join(project_dir, 'assembly', 'input')
@@ -353,5 +345,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
+    #import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
     unittest.main()
