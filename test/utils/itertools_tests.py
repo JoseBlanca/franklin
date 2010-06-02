@@ -5,7 +5,7 @@ Created on 11/05/2010
 '''
 import unittest
 from franklin.utils.itertools_ import (take_sample, make_cache, store, classify,
-                                       ungroup, CachedArray)
+                                       ungroup)
 import itertools
 
 class TakeSampleTest(unittest.TestCase):

@@ -287,11 +287,11 @@ class ReadsStatsAnalyzer(Analyzer):
                 out_fpath = os.path.join(stats_dir, basename + '.qual')
                 plot_fpath = out_fpath + '.png'
                 distrib_fpath = out_fpath + '.dat'
-
-                create_distribution(quals_, PLOT_LABELS['seq_qual'],
-                                    distrib_fhand=open(distrib_fpath, 'w'),
-                                    plot_fhand=open(plot_fpath, 'w'),
-                                    range_=(quals_.min, quals_.max))
+                if quals_:
+                    create_distribution(quals_, PLOT_LABELS['seq_qual'],
+                                        distrib_fhand=open(distrib_fpath, 'w'),
+                                        plot_fhand=open(plot_fpath, 'w'),
+                                        range_=(quals_.min, quals_.max))
 
                 #the statistics for the statistics file
                 self._write_statistics(stats_fhand, fpath, lengths_, quals_)
@@ -323,7 +323,8 @@ class ReadsStatsAnalyzer(Analyzer):
                 distrib_fpath = out_fpath + '.dat'
 
                 quals = quals['raw'], quals['cleaned']
-                self._do_diff_distrib_for_numbers(quals,
+                if quals[0]:
+                    self._do_diff_distrib_for_numbers(quals,
                                              plot_fhand= open(plot_fpath, 'w'),
                                              distrib_fhand= open(distrib_fpath,
                                                                  'w'),
@@ -349,14 +350,14 @@ class ReadsStatsAnalyzer(Analyzer):
         stats_fhand.write('Sequence length average: %.2f\n' % lengths.average)
 
         stats_fhand.write('Sequence length variance: %.2f\n' % lengths.variance)
+        if quals:
+            stats_fhand.write('Sequence qualities minimum: %i\n' % quals.min)
 
-        stats_fhand.write('Sequence qualities minimum: %i\n' % quals.min)
+            stats_fhand.write('Sequence qualities maximum: %i\n' % quals.max)
 
-        stats_fhand.write('Sequence qualities maximum: %i\n' % quals.max)
-
-        stats_fhand.write('Sequence qualities average: %.2f\n' % quals.average)
-
-        stats_fhand.write('Sequence qualities variance: %.2f\n' % \
+            stats_fhand.write('Sequence qualities average: %.2f\n' % \
+                                                                  quals.average)
+            stats_fhand.write('Sequence qualities variance: %.2f\n' % \
                                                                  quals.variance)
         stats_fhand.write('\n')
 
@@ -367,7 +368,9 @@ class ReadsStatsAnalyzer(Analyzer):
         quals   = CachedArray('H')
         for seq in seqs_in_file(open(seq_fpath)):
             lengths.append(len(seq))
-            quals.extend(seq.qual)
+            qual = seq.qual
+            if qual:
+                quals.extend(qual)
         return lengths, quals
 
     @staticmethod

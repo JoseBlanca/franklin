@@ -297,7 +297,6 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     else:
         fig.savefig(fhand)
 
-
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
 

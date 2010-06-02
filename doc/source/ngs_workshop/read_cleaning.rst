@@ -168,7 +168,7 @@ qual_distrib
 general_stats
   Some general statistics like, total length, length and quality range and variance.
 
-These statistics are generated for every read file found in the raw and cleaned directories. Also the same statistics are calculated for all reads together.
+These statistics are generated for every read file found in the raw and cleaned directories.
 
 For each chart ngs_backbone creates two files, one with the figure and another with the data used to build the chart.
 
