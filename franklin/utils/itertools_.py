@@ -284,6 +284,11 @@ class CachedArray(object):
         return self._max
     max = property(_get_max)
 
+    def _get_sum(self):
+        'It returns the sum'
+        return self._sum
+    sum = property(_get_sum)
+
     def _get_average(self):
         'It returns the maximum'
         return self._sum / self._len
@@ -292,3 +297,17 @@ class CachedArray(object):
     def __len__(self):
         'It returns the number of items'
         return self._len
+
+    def _get_variance(self):
+        'It returns the variance'
+        sum_ = 0
+        count = 0
+        mean = self.average
+        for number in self:
+            sum_ += (number - mean) ** 2
+            count += 1
+        if not count:
+            return None
+        else:
+            return (sum_ / float(count))
+    variance = property(_get_variance)

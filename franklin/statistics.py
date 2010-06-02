@@ -189,47 +189,6 @@ def _range(numbers):
             max_ = number
     return min_, max_
 
-def general_seq_statistics(sequences):
-    '''Given a sequence iterator it calculates some general statistics.
-
-    The statistics will be written into the given distrib_fhand (if given) and
-    a dict with them will be returned.
-    It calculates the total sequence length, the average sequence length, the
-    total masked sequence length, and the number of sequences.
-    '''
-    lengths_and_quals = _sequence_length_quals(sequences)
-    lengths_and_quals = ungroup(lengths_and_quals, lambda x: x.items())
-    lengths_and_quals = classify(lengths_and_quals, lambda x: x[0])
-    lengths           = itertools.imap(lambda x: x[1],
-                                       lengths_and_quals['length'])
-    qualities         = itertools.imap(lambda x: x[1],
-                                       lengths_and_quals['qual'])
-    qualities         = ungroup(qualities, lambda x: x)
-
-    lens, lengths = itertools.tee(lengths)
-    n_seqs = 0
-    total_len = 0
-    for length in lens:
-        n_seqs += 1
-        total_len += length
-
-    stats = {}
-    stats['num_sequences'] = n_seqs
-    stats['seq_length']    = total_len
-    lens, lengths = itertools.tee(lengths)
-    avg_len, max_len, min_len = _average_max_min(lens)
-    stats['seq_length_average']  = avg_len
-    stats['seq_length_variance'] = _variance(lengths, avg_len)
-    stats['min_seq_length'], stats['max_seq_length'] = min_len, max_len
-
-    quals, qualities = itertools.tee(qualities)
-    avg_qual, max_qual, min_qual = _average_max_min(quals)
-    stats['mean_quality']     = avg_qual
-    stats['quality_variance'] = _variance(qualities, avg_qual)
-    stats['min_quality']      = min_qual
-    stats['max_quality']      = max_qual
-    return stats
-
 def _average_max_min(numbers):
     'Given an iterator with numbers it calculates the average'
     sum_ = 0

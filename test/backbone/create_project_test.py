@@ -25,7 +25,7 @@ from os.path import join, exists
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import (create_project,
                                               create_configuration)
-from franklin.backbone.analysis import BACKBONE_DIRECTORIES
+from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
 from tempfile import NamedTemporaryFile
@@ -300,6 +300,37 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         for fname in expected_fnames:
             assert fname + '.dat' in clean_fnames
             assert fname + '.png' in clean_fnames
+
+        statistics_fpath = join(clean_stats_dir,
+                                BACKBONE_BASENAMES['statistics_file'])
+        content = open(statistics_fpath).read()
+        assert content == '''statistics for pl_illumina.lb_no_raw.sfastq
+-------------------------------------------
+Num sequences: 6
+Total sequence length: 172
+Sequence length minimum: 24
+Sequence length maximum: 31
+Sequence length average: 28.67
+Sequence length variance: 10.89
+Sequence qualities minimum: 4
+Sequence qualities maximum: 34
+Sequence qualities average: 29.63
+Sequence qualities variance: 47.80
+
+statistics for pl_454.lb_a.sfastq
+---------------------------------
+Num sequences: 4
+Total sequence length: 759
+Sequence length minimum: 106
+Sequence length maximum: 295
+Sequence length average: 189.75
+Sequence length variance: 4972.69
+Sequence qualities minimum: 20
+Sequence qualities maximum: 40
+Sequence qualities average: 36.99
+Sequence qualities variance: 8.19
+
+'''
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'

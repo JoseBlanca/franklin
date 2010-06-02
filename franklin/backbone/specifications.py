@@ -50,5 +50,6 @@ BACKBONE_BASENAMES = {
     'merged_bam':'merged.bam',
     'snv_result':'all.snvs',
     'merged_frg':'all_seq.frg',
-    'blast_basename':'blast'
+    'blast_basename':'blast',
+    'statistics_file': 'statistics.txt',
 }

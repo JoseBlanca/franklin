@@ -26,10 +26,8 @@ import os, logging
 from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.backbone.specifications import BACKBONE_DIRECTORIES
-from franklin.statistics import (seq_distrib, general_seq_statistics,
-                                 seq_distrib_diff)
-from franklin.seq.readers import guess_seq_file_format, num_seqs_in_file
+from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
+                                              BACKBONE_BASENAMES)
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
@@ -258,12 +256,17 @@ class ReadsStatsAnalyzer(Analyzer):
         lengths = {}
         quals = {}
         for seq_type in ('raw', 'cleaned'):
+            stats_dir = get_stats_dir(seq_type)
+
+            stats_fpath = os.path.join(stats_dir,
+                                       BACKBONE_BASENAMES['statistics_file'])
+            stats_fhand = open(stats_fpath, 'a')
+
             if seq_type in pair:
                 fpath = pair[seq_type].last_version
                 basename = pair[seq_type].basename
 
                 #the names for the output files
-                stats_dir = get_stats_dir(seq_type)
                 out_fpath = os.path.join(stats_dir, basename + '.length')
                 plot_fpath = out_fpath + '.png'
                 distrib_fpath = out_fpath + '.dat'
@@ -290,6 +293,9 @@ class ReadsStatsAnalyzer(Analyzer):
                                     distrib_fhand=open(distrib_fpath, 'w'),
                                     plot_fhand=open(plot_fpath, 'w'),
                                     range_=(quals_.min, quals_.max))
+
+                #the statistics for the statistics file
+                self._write_statistics(stats_fhand, fpath, lengths_, quals_)
 
         #the statistics for the differences
         if 'raw' in pair and 'cleaned' in pair:
@@ -326,6 +332,36 @@ class ReadsStatsAnalyzer(Analyzer):
                 del quals
 
     @staticmethod
+    def _write_statistics(stats_fhand, seq_fpath, lengths, quals):
+        'It writes some statistics'
+
+        to_print = 'statistics for %s\n' % os.path.basename(seq_fpath)
+        stats_fhand.write(to_print)
+        stats_fhand.write('-' * (len(to_print) - 1) + '\n')
+
+        stats_fhand.write('Num sequences: %i\n' % len(lengths))
+
+        stats_fhand.write('Total sequence length: %i\n' % lengths.sum)
+
+        stats_fhand.write('Sequence length minimum: %i\n' % lengths.min)
+
+        stats_fhand.write('Sequence length maximum: %i\n' % lengths.max)
+
+        stats_fhand.write('Sequence length average: %.2f\n' % lengths.average)
+
+        stats_fhand.write('Sequence length variance: %.2f\n' % lengths.variance)
+
+        stats_fhand.write('Sequence qualities minimum: %i\n' % quals.min)
+
+        stats_fhand.write('Sequence qualities maximum: %i\n' % quals.max)
+
+        stats_fhand.write('Sequence qualities average: %.2f\n' % quals.average)
+
+        stats_fhand.write('Sequence qualities variance: %.2f\n' % \
+                                                                 quals.variance)
+        stats_fhand.write('\n')
+
+    @staticmethod
     def _get_lengths_quals_from_file(seq_fpath):
         'Given a sequence file it returns the lengths and quals'
         lengths = CachedArray('I')
@@ -334,7 +370,6 @@ class ReadsStatsAnalyzer(Analyzer):
             lengths.append(len(seq))
             quals.extend(seq.qual)
         return lengths, quals
-
 
     @staticmethod
     def _pair_raw_cleaned_read_files(read_paths):
