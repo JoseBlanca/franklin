@@ -54,7 +54,7 @@ Calling the SNPs with ngs_backbone is very easy, but before doing it take a look
   [Snvs]
     min_quality = 45
     min_mapq = 15
-    min_num_alleles = 1
+    min_num_alleles = 2
     [[edge_removal]]
         454_left = None
         454_right = None
