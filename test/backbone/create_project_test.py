@@ -131,7 +131,7 @@ class TestBackbone(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         univec = os.path.join(DATA_DIR, 'blast', 'univec')
-        configuration = {'Cleaning':{'vector_database':univec}}
+        configuration = {'Cleaning':{'vector_database':None}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=configuration)

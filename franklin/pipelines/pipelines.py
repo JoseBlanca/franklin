@@ -79,16 +79,16 @@ def configure_pipeline(pipeline, configuration):
             for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
 
-    # Here I check that none of the arguments have a none value
-    for step in pipeline:
-        for key, value in step['arguments'].items():
-            # If the step is remove_adaptors, the vectors value can be None
-            if (value is None and key == 'vectors' and
-                step['name'] != 'remove_adaptors'):
-
-                msg = 'Parameter %s in step %s from pipeline %s must be set' % \
-                            (key, step['name'], pipeline)
-                raise RuntimeError(msg)
+#    # Here I check that none of the arguments have a none value
+#    for step in pipeline:
+#        for key, value in step['arguments'].items():
+#            # If the step is remove_adaptors, the vectors value can be None
+#            if (value is None and
+#                (key == 'vectors' and step['name'] != 'remove_adaptors') or :
+#
+#                msg = 'Parameter %s in step %s from pipeline %s must be set' % \
+#                            (key, step['name'], pipeline)
+#                raise RuntimeError(msg)
     return pipeline
 
 def _get_func_tools(processes):
