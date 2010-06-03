@@ -71,7 +71,7 @@ Now we have a new merged.bam in mapping/bams/merged.0.bam. This file has all the
 ::
 
   ~/ngs_workshop/maize$ ls mapping/bams
-  by_readgroup  merged.0.bam
+  by_readgroup  merged.0.bam  merged.0.bam.bai
 
 Task 3: Taking a look at a bam file
 ===================================

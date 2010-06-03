@@ -31,7 +31,7 @@ The usual approach to get rid of the low quality region is to do a window analys
 Task 1: cleaning the reads
 ==========================
 
-For this workshop we are going to use the software `ngs_backbone <http://bioinf.comav.upv.es/ngs_backbone/>`_. We are going to clean and map some 454, illumina and sanger sequences and we are going to look for SNPs in them. As a real world example we have prepared some public maize reads obtained from the `SRA <http://bioinf.comav.upv.es/ngs_backbone/i>`_ NCBI section. These new sequences are not in the usual Genbank sections. The NCBI has created a new section called SRA (Sequence Read Archive) prepared for these sequences.
+For this workshop we are going to use the software `ngs_backbone <http://bioinf.comav.upv.es/ngs_backbone/>`_. We are going to clean and map some 454, illumina and sanger sequences and we are going to look for SNPs in them. As a real world example we have prepared some public maize reads obtained from the `SRA <http://www.ncbi.nlm.nih.gov/sra>`_ NCBI section. These new sequences are not in the usual Genbank sections. The NCBI has created a new section called SRA (Sequence Read Archive) prepared for these sequences.
 
 The raw sequences
 -----------------
@@ -55,6 +55,8 @@ Luckily we should have a directory named ngs_workshop with a subdirectory named 
 
 In this directory we have three files with reads, two of them have been already cleaned (or we just don't want to clean them) and one is raw, as it came from the sequencing machine. So the first thing to do is to clean these reads. We will do it by using ngs_backbone.
 
+Also the :download:`final result <downloads/maize_result.tar.gz>` is also available, just in case you want to check anything.
+
 The cleaning
 ------------
 
@@ -75,7 +77,7 @@ Now we create a directory named reads with a subdirectory named raw and we copy 
   ~/ngs_workshop/maize$ mkdir reads
   ~/ngs_workshop/maize$ mkdir reads/raw
   ~/ngs_workshop/maize$ cp ../course_data/sm_B73XMo17.lb_MB_14day.pl_illumina.sfastq reads/raw/
-  (devel)~/ngs_workshop/maize$ cp ../course_data/sm_mix.lb_genbank.pl_sanger.fasta reads/raw/
+  ~/ngs_workshop/maize$ cp ../course_data/sm_mix.lb_genbank.pl_sanger.fasta reads/raw/
   ~/ngs_workshop/maize$ ls reads/raw/
   sm_B73XMo17.lb_MB_14day.pl_illumina.sfastq  sm_mix.lb_genbank.pl_sanger.fasta
 
