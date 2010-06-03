@@ -23,7 +23,8 @@ import unittest, os
 import StringIO
 from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                        _get_xml_header, NamedTemporaryDir,
-                                       VersionedPath, get_num_threads)
+                                       VersionedPath, get_num_threads,
+                                       rel_symlink)
 
 
 class Minor_utilities_test(unittest.TestCase):
@@ -37,6 +38,28 @@ class Minor_utilities_test(unittest.TestCase):
         threads = False
         assert get_num_threads(threads) == 1
 
+    def test_rel_symlink(self):
+        'It tests various cases of rel symlinks'
+        tempdir = NamedTemporaryDir()
+        hola = os.path.join(tempdir.name, 'hola')
+        os.mkdir (hola)
+        caracola = os.path.join(tempdir.name, 'caracola')
+        rel_symlink(hola ,caracola)
+        assert os.path.exists(caracola)
+
+
+        fname = os.path.join(hola, 'fname')
+        fhand = open(fname, 'w')
+        caracola2 = os.path.join(tempdir.name, 'caracola2')
+        rel_symlink(fname ,caracola2)
+        assert os.path.exists(caracola2)
+
+
+        path2 = os.path.join(tempdir.name, 'dir1', 'dir2')
+        os.makedirs(path2)
+        caracola3 = os.path.join(path2, 'caracola3')
+        rel_symlink(hola, caracola3)
+        assert os.path.exists(caracola3)
 
 class XMLTest(unittest.TestCase):
     '''It tests the xml utils'''

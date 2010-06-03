@@ -414,3 +414,43 @@ def get_fhand(file_):
     if isinstance(file_, basestring):
         file_ = open(file_, 'r')
     return file_
+
+def _common_base(path1, path2):
+    'it return the common and uncommon part of both strings'
+    common = []
+    path1 = path1.split(os.sep)
+    path2 = path2.split(os.sep)
+
+
+    for index, dir_ in enumerate(path1):
+        try:
+            if dir_ == path2[index]:
+                common.append(dir_)
+            else:
+                break
+        except IndexError:
+            break
+
+    uncommon1 = path1[len(common) :]
+    uncommon2 = path2[len(common) :]
+    return uncommon1, uncommon2
+
+def _rel_path(path1, path2):
+    'it return relative paths from path2 to path1'
+    uncommon1, uncommon2 =  _common_base(path1, path2)
+
+    path =  ['..'] * (len(uncommon2) - 1)
+    path.extend(uncommon1)
+    return os.sep.join(path)
+
+def rel_symlink(path1, path2):
+    'It makes the relative symlink'
+    path1 = os.path.abspath(path1)
+    path2 = os.path.abspath(path2)
+    original_cwd = os.getcwd()
+    dir2, fname2 = os.path.split(path2)
+    os.chdir(dir2)
+    rel_path = _rel_path(path1, path2)
+
+    os.symlink(rel_path, fname2)
+    os.chdir(original_cwd)
