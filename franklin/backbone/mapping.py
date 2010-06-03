@@ -27,7 +27,8 @@ from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
                                         _LastAnalysisAnalyzer)
 from franklin.mapping import map_reads
-from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath
+from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath,\
+    rel_symlink
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
@@ -45,7 +46,7 @@ class SetAssemblyAsReferenceAnalyzer(Analyzer):
                                                                     contigs_ext)
         if os.path.exists(reference_fpath):
             os.remove(reference_fpath)
-        os.symlink(contigs_path.last_version, reference_fpath)
+        rel_symlink(contigs_path.last_version, reference_fpath)
 
 def _get_basename(fpath):
     'It returns the base name without path and extension'

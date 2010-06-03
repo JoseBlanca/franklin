@@ -19,11 +19,11 @@ A blast runner hardly tied to backbone folder structure
 
 import logging
 from os.path import join, exists, splitext, basename, split
-from os import makedirs, symlink, remove, listdir
+from os import makedirs, remove, listdir
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.cmd_utils import call
-from franklin.utils.misc_utils import get_num_threads
+from franklin.utils.misc_utils import get_num_threads, rel_symlink
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
@@ -138,7 +138,7 @@ def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
         #which is the name of the new databae?
         blast_db_seq_format = guess_seq_file_format(open(blast_db_seq))
         if blast_db_seq_format == 'fasta':
-            symlink(blast_db_seq, db_seq_fpath)
+            rel_symlink(blast_db_seq, db_seq_fpath)
         else:
             seqio(in_seq_fhand=open(blast_db_seq),
                   out_seq_fhand=open(db_seq_fpath, 'w'),

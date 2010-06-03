@@ -24,6 +24,7 @@ Created on 15/03/2010
 
 
 from tempfile import NamedTemporaryFile
+from franklin.utils.misc_utils import rel_symlink
 import os, shutil
 from franklin.backbone.analysis import (Analyzer, _LastAnalysisAnalyzer)
 from franklin.utils.cmd_utils import call
@@ -129,7 +130,7 @@ class MiraAssemblyAnalyzer(Analyzer):
             fpath = path.last_version
             fname = os.path.split(fpath)[-1]
             mira_input_fname = os.path.join(assembly_dir, fname)
-            os.symlink(fpath, mira_input_fname)
+            rel_symlink(fpath, mira_input_fname)
             if '454' in fname:
                 techs.add('454')
             elif 'sanger' in fname:
@@ -186,12 +187,12 @@ class MiraAssemblyAnalyzer(Analyzer):
             res_fpath = os.path.join(results_dir,
                                      BACKBONE_BASENAMES['contigs'] + result_ext)
             if os.path.exists(mira_fpath):
-                os.symlink(mira_fpath, res_fpath)
+                rel_symlink(mira_fpath, res_fpath)
 
 
         mira_info_dir = os.path.join(mira_dir, '%s_d_info' % proj_name)
         if os.path.exists(mira_info_dir):
-            os.symlink(mira_info_dir, os.path.join(results_dir,
+            rel_symlink(mira_info_dir, os.path.join(results_dir,
                                                   BACKBONE_DIRECTORIES['info']))
 
         # Now we run the select _last mapping

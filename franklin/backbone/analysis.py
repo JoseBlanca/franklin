@@ -28,7 +28,8 @@ import franklin
 from franklin.seq.readers import guess_seq_file_format
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
-from franklin.utils.misc_utils import VersionedPath, get_num_threads
+from franklin.utils.misc_utils import VersionedPath, get_num_threads,\
+    rel_symlink
 
 def scrape_info_from_fname(path):
     'It guess pipeline taking into account the platform and the file format'
@@ -269,4 +270,4 @@ class _LastAnalysisAnalyzer(Analyzer):
         output_dir = self._get_output_dirs()['result']
         if os.path.exists(output_dir):
             os.remove(output_dir)
-        os.symlink(latest_dir, output_dir)
+        rel_symlink(latest_dir, output_dir)
