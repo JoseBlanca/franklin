@@ -38,7 +38,7 @@ The raw sequences
 
 The sequences downloaded from the SRA are in sanger fastq format. This will not be the case if you get a file from a sequencing service. The 454 machine delivers sff files, illumina illumina fastq files and the ABI sanger sequencers abi chromatograms. Take a look at the sequence :doc:`file formats <sequence_file_formats>` to understand their differences and how to go from one format to another format. Since we have got our sequences from the SRA site all our reads are in sanger fastq format.
 
-The first step is to download the :download:`sequence files <downloads/ngs_workshop.tar.gz>`. Open a terminal and uncompress the file with the command::
+The first step is to download the :download:`sequence files </downloads/ngs_workshop.tar.gz>`. Open a terminal and uncompress the file with the command::
 
   $ tar -xzf ngs_workshop.tar.gz
   
@@ -55,7 +55,7 @@ Luckily we should have a directory named ngs_workshop with a subdirectory named 
 
 In this directory we have three files with reads, two of them have been already cleaned (or we just don't want to clean them) and one is raw, as it came from the sequencing machine. So the first thing to do is to clean these reads. We will do it by using ngs_backbone.
 
-Also the :download:`final result <downloads/maize_result.tar.gz>` is also available, just in case you want to check anything.
+Also the :download:`final result </downloads/maize_result.tar.gz>` is also available, just in case you want to check anything.
 
 The cleaning
 ------------
