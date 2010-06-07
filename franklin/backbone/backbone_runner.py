@@ -23,7 +23,6 @@ Created on 12/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, logging
-from configobj import ConfigObj
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
 from franklin.backbone.annotation import DEFINITIONS as annot_defs
