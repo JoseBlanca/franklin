@@ -157,6 +157,10 @@ class SeqsInFileTests(unittest.TestCase):
         'It test the repr reader'
         assert ['arab1', 'arab2'] == _cast_to_class("['arab1', 'arab2']")
         assert ('arab1', 'arab2') == _cast_to_class("('arab1', 'arab2')")
+        result = _cast_to_class("{1: 2}")
+        assert {1: 2}  == result
+
+        assert {'al': {'c': 1}, 'T': 2} ==  _cast_to_class("{'al': {'c': 1}, 'T': 2}")
 
         seq1 = SeqWithQuality(seq=Seq('ATCT'))
         seq2 = SeqWithQuality(seq=Seq('AAAA'))
@@ -224,6 +228,36 @@ class SeqsInFileTests(unittest.TestCase):
         assert feat0.type == feat1.type
         assert feat0.qualifiers == feat1.qualifiers
         assert str(feat0.location) == str(feat1.location)
+
+        #with snps
+        repr_ = "SeqWithQuality(seq=Seq('GGGGATTTG', Alphabet()), features=[SeqFeature(FeatureLocation(ExactPosition(213),ExactPosition(213)), type='snv', qualifiers={'alleles': {('C', 3): {'read_groups': ['group1+454', 'group1+454', 'group1+454'], 'qualities': [44.0, 44.0, 44.0], 'libraries': ['group1', 'group1', 'group1'], 'read_names': ['seq1', 'seq4', 'seq7'], 'orientations': [True, True, True], 'samples': ['group1+454', 'group1+454', 'group1+454'], 'quality': 66.0, 'mapping_qualities': [149, 149, 149]}, ('T', 0): {'read_groups': ['group1+454', 'group1+454', 'group1+454', 'group1+454', 'group1+454', 'group1+454'], 'qualities': [44.0, 44.0, 44.0, 44.0, 44.0, 44.0], 'libraries': ['group1', 'group1', 'group1', 'group1', 'group1', 'group1'], 'read_names': ['seq2', 'seq3', 'seq5', 'seq6', 'seq8', 'seq9'], 'orientations': [True, True, True, True, True, True], 'samples': ['group1+454', 'group1+454', 'group1+454', 'group1+454', 'group1+454', 'group1+454'], 'quality': 66.0, 'mapping_qualities': [28, 28, 28, 28, 28, 28]}}, 'reference_allele': 'C'} )])\n"
+        alleles = {('C', 3):
+                     {'read_groups': ['group1+454', 'group1+454', 'group1+454'],
+                      'qualities': [44.0, 44.0, 44.0],
+                      'libraries': ['group1', 'group1', 'group1'],
+                      'read_names': ['seq1', 'seq4', 'seq7'],
+                      'orientations': [True, True, True],
+                      'samples': ['group1+454', 'group1+454', 'group1+454'],
+                      'quality': 66.0, 'mapping_qualities': [149, 149, 149]},
+                   ('T', 0):
+                     {'read_groups': ['group1+454', 'group1+454', 'group1+454',
+                                      'group1+454', 'group1+454', 'group1+454'],
+                      'qualities': [44.0, 44.0, 44.0, 44.0, 44.0, 44.0],
+                      'libraries': ['group1', 'group1', 'group1', 'group1',
+                                    'group1', 'group1'],
+                      'read_names': ['seq2', 'seq3', 'seq5', 'seq6', 'seq8',
+                                     'seq9'],
+                      'orientations': [True, True, True, True, True, True],
+                      'samples': ['group1+454', 'group1+454', 'group1+454',
+                                  'group1+454', 'group1+454', 'group1+454'],
+                      'quality': 66.0,
+                      'mapping_qualities': [28, 28, 28, 28, 28, 28]}
+                  }
+        fcontent = repr_
+        fhand = StringIO.StringIO(fcontent)
+        seq0 = list(seqs_in_file(fhand, format='repr'))[0]
+        alleles0 = seq0.features[0].qualifiers['alleles']
+        assert alleles == alleles0
 
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'

@@ -163,7 +163,10 @@ def _get_dict_key_values(string):
         keys.append(key)
         values.append(value)
     #keys should be all strings
-    keys = [key.strip(key[0]) for key in keys]
+    new_keys = []
+    for key in keys:
+        new_keys.append(_cast_to_class(key))
+    keys = new_keys
     #print 'keys->', keys
     #print 'values->', values
     return keys, values
@@ -221,18 +224,9 @@ def _cast_simple_list(list_repr, class_name):
 
     list_ = []
     for item in list_repr.split(','):
-        item = item.strip()
-        if item.isdigit():
-            item = int(item)
-        elif item.replace('.', '').isdigit():
-            item = float(item)
-        elif item == 'True':
-            item = True
-        elif item == 'False':
-            item = False
-        else:   #it should be a string
-            item = item.strip(item[0])
+        item = _cast_to_class(item.strip())
         list_.append(item)
+
     if class_name == 'tuple':
         return tuple(list_)
     else:
@@ -241,7 +235,9 @@ def _cast_simple_list(list_repr, class_name):
 def _cast_to_class(class_repr):
     'It parses an repr and it returns the data structure'
     #till the first ( is the name of the class
-    print 'repr ->', class_repr
+    #print 'repr ->', class_repr
+    class_repr = class_repr.strip()
+
 
     if class_repr == '[]':
         return []
@@ -249,8 +245,6 @@ def _cast_to_class(class_repr):
         return {}
     elif class_repr[0] in ('"', "'"):
         return class_repr.strip(class_repr[0])
-    elif class_repr == 'None':
-        return None
     elif class_repr[0] in ('[', '('):
         if class_repr[0] == '[':
             class_name = 'list'
@@ -271,7 +265,19 @@ def _cast_to_class(class_repr):
         class_name = class_repr[:first_paren_pos ].strip()
         class_content =  class_repr[first_paren_pos + 1:last_paren_pos]
     else:
-        return class_repr
+        #a simple element
+        if class_repr == 'None':
+            return None
+        elif class_repr.isdigit():
+            return int(class_repr)
+        elif class_repr.replace('.', '').isdigit():
+            return float(class_repr)
+        elif class_repr == 'True':
+            return True
+        elif class_repr == 'False':
+            return False
+        else:   #it should be a string
+            return class_repr.strip(class_repr[0])
 
     #now we have to split the class content by the ,
     #also each item can be an arg or a karg
