@@ -156,6 +156,7 @@ class SeqsInFileTests(unittest.TestCase):
     def test_repr():
         'It test the repr reader'
         assert ['arab1', 'arab2'] == _cast_to_class("['arab1', 'arab2']")
+        assert ('arab1', 'arab2') == _cast_to_class("('arab1', 'arab2')")
 
         seq1 = SeqWithQuality(seq=Seq('ATCT'))
         seq2 = SeqWithQuality(seq=Seq('AAAA'))

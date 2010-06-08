@@ -212,7 +212,7 @@ def _item_is_karg(string):
     else:
         return False
 
-def _cast_simple_list(list_repr):
+def _cast_simple_list(list_repr, class_name):
     'It casts int, string or bool lists'
     list_repr = list_repr.strip()[1:-1]
 
@@ -233,12 +233,15 @@ def _cast_simple_list(list_repr):
         else:   #it should be a string
             item = item.strip(item[0])
         list_.append(item)
-    return list_
+    if class_name == 'tuple':
+        return tuple(list_)
+    else:
+        return list_
 
 def _cast_to_class(class_repr):
     'It parses an repr and it returns the data structure'
     #till the first ( is the name of the class
-    #print 'repr ->', class_repr
+    print 'repr ->', class_repr
 
     if class_repr == '[]':
         return []
@@ -248,12 +251,15 @@ def _cast_to_class(class_repr):
         return class_repr.strip(class_repr[0])
     elif class_repr == 'None':
         return None
-    elif class_repr[0] == '[':
+    elif class_repr[0] in ('[', '('):
+        if class_repr[0] == '[':
+            class_name = 'list'
+        else:
+            class_name = 'tuple'
         # accelerator for simple lists
-        simple_list = _cast_simple_list(class_repr)
+        simple_list = _cast_simple_list(class_repr, class_name)
         if simple_list is not None:
             return simple_list
-        class_name = 'list'
         class_content = class_repr[1:-1]
     elif class_repr[0] == '{':
         class_name = 'dict'
@@ -307,10 +313,11 @@ def _cast_to_class(class_repr):
                'DNAAlphabet': DNAAlphabet,
                'SeqFeature': SeqFeature,
                'list': list,
+               'tuple': tuple,
                'dict': dict}
     #print 'args->', args
     #print 'kargs->', kargs
-    if class_name in ('dict', 'list'):
+    if class_name in ('dict', 'list', 'tuple'):
         return classes[class_name](args)
     else:
         return classes[class_name](*args, **kargs)
