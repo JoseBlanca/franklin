@@ -28,8 +28,12 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 import math, re
 
 from Bio import SeqIO
+from Bio.Alphabet import (Alphabet, SingleLetterAlphabet, ProteinAlphabet,
+                          DNAAlphabet)
+from Bio.SeqFeature import ExactPosition, FeatureLocation
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
-from franklin.seq.seqs import SeqWithQuality, Seq
+
+from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
 from franklin.utils.itertools_ import take_sample
 from franklin.utils.misc_utils import get_fhand
 
@@ -96,7 +100,6 @@ def count_str_in_file(fhand, regex):
     fhand.seek(pos_at_start)
     return counter
 
-
 def _num_seqs_in_fastq(fhand):
     'it counts seqs in a fastq file '
     pos_at_start = fhand.tell()
@@ -112,7 +115,7 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
 
     if format is None:
         format = guess_seq_file_format(seq_fhand)
-    seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, format=format)
+    seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, file_format=format)
 
     if sample_size is None:
         return seqs
@@ -123,49 +126,213 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
 
     return take_sample(seqs, sample_size, num_seqs)
 
-def _seqs_in_file(seq_fhand, qual_fhand=None, format=None):
+def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
     'It yields a seqrecord for each of the sequences found in the seq file'
     # look if seq_fhand is a list or not
     seq_fhand.seek(0)
     if qual_fhand is not None:
         qual_fhand.seek(0)
 
-    if format == 'repr':
+    if file_format == 'repr':
         return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
     else:
-        return _seqs_in_file_with_bio(seq_fhand=seq_fhand, format=format,
+        return _seqs_in_file_with_bio(seq_fhand=seq_fhand,
+                                      file_format=file_format,
                                       qual_fhand=qual_fhand)
 
-def _seqs_in_file_with_repr(seq_fhand):
-    'It yields all the sequences in repr format in a file'
-    from Bio.Alphabet import *
-    from Bio.SeqFeature import *
-    from franklin.seq.seqs import SeqFeature, Seq
-
+def _seq_chunks_in_repr(seq_fhand):
+    'It yields the reprs for the SeqRecords, one by one'
     buffer_ = ''
     for line in seq_fhand:
         if line[:4] in ('SeqW', 'SeqR'):
             if buffer_:
-                yield eval(buffer_)
+                yield buffer_
                 buffer_ = ''
             buffer_ += line
     #the last sequence
     if buffer_:
-        yield eval(buffer_)
-    raise StopIteration
+        yield buffer_
 
-def _seqs_in_file_with_bio(seq_fhand, format, qual_fhand=None):
+def _get_dict_key_values(string):
+    'Given a string like 1:2, 3:4 it returns the keys and values'
+
+    #print 'string', string
+    keys, values = [], []
+    for item in _items_in_list(string):
+        key, value = list(_items_in_list(item, ':'))
+        keys.append(key)
+        values.append(value)
+    #keys should be all strings
+    keys = [key.strip(key[0]) for key in keys]
+    #print 'keys->', keys
+    #print 'values->', values
+    return keys, values
+
+def _items_in_list(string, split_char=','):
+    'Given a string with commas it yields the items in it'
+    #the ( add 1 to the depth and the ) remove 1
+    #we only return the items at depth 0
+    depth = 0
+    last_pos = 0 #last position returned
+    quotes = ''
+    for position, char in enumerate(string):
+        #are we inside a string?
+        if not quotes and char in ('"', "'"):
+            quotes = char
+            continue
+        elif quotes and char == quotes:
+            quotes = ''
+            continue
+        if quotes:
+            continue
+
+        if char in ('(', '[', '{'):
+            depth += 1
+        elif char in (')', ']', '}'):
+            depth -= 1
+        elif char == split_char and depth == 0:
+            yield string[last_pos: position].strip()
+            last_pos = position + 1
+    #the last item
+    if last_pos < len(string):
+        yield string[last_pos: len(string)].strip()
+
+def _item_is_karg(string):
+    'It returns True if the given string seems a karg'
+    try:
+        equal_pos = string.index('=')
+    except ValueError:
+        return False
+    try:
+        paren_pos = string.index('(')
+    except ValueError:
+        return True
+    if equal_pos < paren_pos:
+        return True
+    else:
+        return False
+
+def _cast_simple_list(list_repr):
+    'It casts int, string or bool lists'
+    list_repr = list_repr.strip()[1:-1]
+
+    if set(('(', '[', '{', ')', ']', '}')).intersection(set(list_repr)):
+        return None  #this is not a simple list
+
+    list_ = []
+    for item in list_repr.split(','):
+        item = item.strip()
+        if item.isdigit():
+            item = int(item)
+        elif item.replace('.', '').isdigit():
+            item = float(item)
+        elif item == 'True':
+            item = True
+        elif item == 'False':
+            item = False
+        else:   #it should be a string
+            item = item.strip(item[0])
+        list_.append(item)
+    return list_
+
+def _cast_to_class(class_repr):
+    'It parses an repr and it returns the data structure'
+    #till the first ( is the name of the class
+    #print 'repr ->', class_repr
+
+    if class_repr == '[]':
+        return []
+    elif class_repr == '{}':
+        return {}
+    elif class_repr[0] in ('"', "'"):
+        return class_repr.strip(class_repr[0])
+    elif class_repr == 'None':
+        return None
+    elif class_repr[0] == '[':
+        # accelerator for simple lists
+        simple_list = _cast_simple_list(class_repr)
+        if simple_list is not None:
+            return simple_list
+        class_name = 'list'
+        class_content = class_repr[1:-1]
+    elif class_repr[0] == '{':
+        class_name = 'dict'
+        class_content = class_repr[1:-1]
+    elif '(' in class_repr:   #non native class
+        first_paren_pos = class_repr.index('(')
+        last_paren_pos = len(class_repr) - 1
+        last_paren_pos = last_paren_pos if class_repr[last_paren_pos] == ')' else last_paren_pos - 1
+        class_name = class_repr[:first_paren_pos ].strip()
+        class_content =  class_repr[first_paren_pos + 1:last_paren_pos]
+    else:
+        return class_repr
+
+    #now we have to split the class content by the ,
+    #also each item can be an arg or a karg
+    #print 'class_name ->', class_name
+    #print 'class_content ->', class_content
+
+    args, kargs = [], []
+    if class_name == 'dict':
+        keys, values = _get_dict_key_values(class_content)
+        #we cast the values
+        values = [_cast_to_class(value) for value in values]
+        args = zip(keys, values)
+        #print 'dict_args ->', args
+    else:
+        #print 'items ->', list(_items_in_list(class_content))
+        in_kargs = False
+        for item in _items_in_list(class_content):
+            if not in_kargs and _item_is_karg(item):
+                in_kargs = True
+            if in_kargs:
+                kargs.append(item)
+            else:
+                args.append(item)
+
+        #we transform the kargs into a dict
+        kargs = [arg.split('=', 1) for arg in kargs]
+
+        #we fix the kargs and the args
+        kargs = dict([(arg[0].strip(), _cast_to_class(arg[1])) for arg in kargs])
+        args = [_cast_to_class(arg) for arg in args]
+
+    classes = {'SeqWithQuality': SeqWithQuality,
+               'Seq': Seq,
+               'Alphabet': Alphabet,
+               'SingleLetterAlphabet': SingleLetterAlphabet,
+               'ProteinAlphabet': ProteinAlphabet,
+               'ExactPosition': ExactPosition,
+               'FeatureLocation': FeatureLocation,
+               'DNAAlphabet': DNAAlphabet,
+               'SeqFeature': SeqFeature,
+               'list': list,
+               'dict': dict}
+    #print 'args->', args
+    #print 'kargs->', kargs
+    if class_name in ('dict', 'list'):
+        return classes[class_name](args)
+    else:
+        return classes[class_name](*args, **kargs)
+
+def _seqs_in_file_with_repr(seq_fhand):
+    'It yields all the sequences in repr format in a file'
+
+    for seq_chunk in _seq_chunks_in_repr(seq_fhand):
+        yield _cast_to_class(seq_chunk)
+
+def _seqs_in_file_with_bio(seq_fhand, file_format, qual_fhand=None):
     '''It yields a seqrecord for each of the sequences found in the seq file
     using biopython'''
     seq_fhand.seek(0)
     if qual_fhand is not None:
         qual_fhand.seek(0)
     #if the format is None maybe the file is empty
-    if format is None and not seq_fhand.readline():
+    if file_format is None and not seq_fhand.readline():
         raise StopIteration
     seq_fhand.seek(0)
     if qual_fhand is None:
-        seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[format])
+        seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[file_format])
     else:
         seq_iter = SeqIO.QualityIO.PairedFastaQualIterator(seq_fhand,
                                                            qual_fhand)
@@ -203,4 +370,3 @@ def guess_seq_type(fhand, format, limit):
         return 'short_seqs'
     else:
         return 'long_seqs'
-

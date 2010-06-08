@@ -232,7 +232,6 @@ class AnnotationTest(unittest.TestCase):
         assert os.path.exists(ssr_fpath)
         assert "Seqname"  in open(ssr_fpath).read()
 
-
         os.chdir('/tmp')
         test_dir.close()
 

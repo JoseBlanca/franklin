@@ -5,9 +5,14 @@ Created on 11/05/2010
 '''
 from franklin.utils.misc_utils import DATA_DIR
 import unittest, StringIO, tempfile
+
+from Bio.Alphabet import SingleLetterAlphabet
+from Bio.SeqFeature import ExactPosition, FeatureLocation
+
 from franklin.seq.readers import (seqs_in_file, guess_seq_file_format,
-                                  guess_seq_type, num_seqs_in_file)
-from franklin.seq.seqs import Seq, SeqWithQuality
+                                  guess_seq_type, num_seqs_in_file,
+                                  _cast_to_class)
+from franklin.seq.seqs import Seq, SeqWithQuality, SeqFeature
 from os.path import join
 
 class GuessFormatSeqFileTest(unittest.TestCase):
@@ -24,7 +29,6 @@ class GuessFormatSeqFileTest(unittest.TestCase):
         fhand = StringIO.StringIO('@fastq\nACTAG\n')
         fhand.name = 'hola.sfastq'
         assert guess_seq_file_format(fhand) == 'fastq'
-
 
     @staticmethod
     def test_staticmethod():
@@ -151,6 +155,8 @@ class SeqsInFileTests(unittest.TestCase):
     @staticmethod
     def test_repr():
         'It test the repr reader'
+        assert ['arab1', 'arab2'] == _cast_to_class("['arab1', 'arab2']")
+
         seq1 = SeqWithQuality(seq=Seq('ATCT'))
         seq2 = SeqWithQuality(seq=Seq('AAAA'))
         fcontent = repr(seq1) + '\n' + repr(seq2) + '\n'
@@ -158,6 +164,65 @@ class SeqsInFileTests(unittest.TestCase):
         seqs = list(seqs_in_file(fhand, format='repr'))
         assert repr(seqs[0]) == repr(seq1)
         assert repr(seqs[1]) == repr(seq2)
+
+        #with quality
+        seq1 = SeqWithQuality(seq=Seq('ATCT'), qual=[10, 2, 3, 4])
+        fcontent = repr(seq1) + '\n'
+        fhand = StringIO.StringIO(fcontent)
+        seqs = list(seqs_in_file(fhand, format='repr'))
+        assert repr(seqs[0]) == repr(seq1)
+
+        #a seq with features
+        seq1 = SeqWithQuality(seq=Seq('GAAAAGATGTG', SingleLetterAlphabet()),
+                             id='seq', name='seq', description='', dbxrefs=[],
+                    features=[SeqFeature(FeatureLocation(ExactPosition(478),
+                                                         ExactPosition(478)),
+                                         type='intron',
+                                         qualifiers={'db': 'tomato'} ),
+                              SeqFeature(FeatureLocation(ExactPosition(572),
+                                                         ExactPosition(572)),
+                                         type='intron',
+                                         qualifiers={'db': 'tomato'} )],
+                             annotations={}, qual=None)
+        fcontent = repr(seq1) + '\n'
+        fhand = StringIO.StringIO(fcontent)
+        seq0 = list(seqs_in_file(fhand, format='repr'))[0]
+
+        assert seq0.seq == seq1.seq
+        assert seq0.qual == seq1.qual
+        assert seq0.description == seq1.description
+        assert seq0.annotations == seq1.annotations
+        feat0 = seq0.features[0]
+        feat1 = seq1.features[0]
+        assert feat0.type == feat1.type
+        assert feat0.qualifiers == feat1.qualifiers
+        assert str(feat0.location) == str(feat1.location)
+
+        #some more qualifiers
+        fhand = tempfile.NamedTemporaryFile(suffix='.repr')
+        seq1 = SeqWithQuality(id='seqid', name='seqname',
+                         description='seqdescription', seq=Seq('ATGAT'))
+        seq1.letter_annotations["phred_quality"] = [40, 40, 38, 30, 30]
+        seq1.annotations['source'] = 'ara1'
+
+        seqfeature = SeqFeature(location=FeatureLocation(5, 8),
+                                type='orthologs',
+                                qualifiers={'arabidposis':['arab1', 'arab2']})
+        seq1.features.append(seqfeature)
+
+        fcontent = repr(seq1) + '\n'
+        fhand = StringIO.StringIO(fcontent)
+        seq0 = list(seqs_in_file(fhand, format='repr'))[0]
+
+        assert seq0.seq == seq1.seq
+        assert seq0.qual == seq1.qual
+        assert seq0.description == seq1.description
+        assert seq0.annotations == seq1.annotations
+        feat0 = seq0.features[0]
+        feat1 = seq1.features[0]
+        assert feat0.type == feat1.type
+        assert feat0.qualifiers == feat1.qualifiers
+        assert str(feat0.location) == str(feat1.location)
 
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'

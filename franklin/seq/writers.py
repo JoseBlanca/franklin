@@ -90,7 +90,7 @@ class SsrWriter(object):
             self.num_features += 1
             start = int(str(ssr.location.start))
             end = int(str(ssr.location.end))
-            score = ssr.qualifiers['score']
+            score = int(ssr.qualifiers['score'])
             kind = ssr.qualifiers['type']
             unit = ssr.qualifiers['unit']
             length = end - start + 1

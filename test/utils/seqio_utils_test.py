@@ -94,26 +94,6 @@ class TestCat(unittest.TestCase):
         cat(infiles=[None, None], outfile=outh)
         assert outh.getvalue() == ''
 
-class TestReprIn_Out(unittest.TestCase):
-    'Tests repr write and read functions'
-    @staticmethod
-    def test_repr():
-        'It test seqs in file read and write with repr'
-        fhand = tempfile.NamedTemporaryFile(suffix='.repr')
-        seq1 = SeqWithQuality(id='seqid', name='seqname',
-                         description='seqdescription', seq=Seq('ATGAT'))
-        seq1.letter_annotations["phred_quality"] = [40, 40, 38, 30, 30]
-        seq1.annotations['source'] = 'ara1'
-
-        seqfeature = SeqFeature(location=FeatureLocation(5, 8),
-                                type='orthologs',
-                                qualifiers={'arabidposys':['arab1', 'arab2']})
-        seq1.features.append(seqfeature)
-        write_seqs_in_file(seqs=[seq1], seq_fhand=fhand, format='repr')
-        seqs = seqs_in_file(fhand)
-        seq0 = seqs.next()
-        assert repr(seq0) == repr(seq1)
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
