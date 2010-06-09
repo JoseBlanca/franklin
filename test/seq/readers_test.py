@@ -155,6 +155,8 @@ class SeqsInFileTests(unittest.TestCase):
     @staticmethod
     def test_repr():
         'It test the repr reader'
+
+        assert ('adios',) == _cast_to_class("('adios',)")
         assert ['arab1', 'arab2'] == _cast_to_class("['arab1', 'arab2']")
         assert ('arab1', 'arab2') == _cast_to_class("('arab1', 'arab2')")
         result = _cast_to_class("{1: 2}")
@@ -258,6 +260,8 @@ class SeqsInFileTests(unittest.TestCase):
         seq0 = list(seqs_in_file(fhand, format='repr'))[0]
         alleles0 = seq0.features[0].qualifiers['alleles']
         assert alleles == alleles0
+
+
 
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'

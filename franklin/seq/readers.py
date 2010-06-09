@@ -224,6 +224,8 @@ def _cast_simple_list(list_repr, class_name):
 
     list_ = []
     for item in list_repr.split(','):
+        if not item:
+            continue
         item = _cast_to_class(item.strip())
         list_.append(item)
 
@@ -234,10 +236,9 @@ def _cast_simple_list(list_repr, class_name):
 
 def _cast_to_class(class_repr):
     'It parses an repr and it returns the data structure'
-    #till the first ( is the name of the class
-    #print 'repr ->', class_repr
-    class_repr = class_repr.strip()
 
+    print 'repr ->', class_repr
+    class_repr = class_repr.strip()
 
     if class_repr == '[]':
         return []
