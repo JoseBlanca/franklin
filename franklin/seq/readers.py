@@ -237,15 +237,17 @@ def _cast_simple_list(list_repr, class_name):
 def _cast_to_class(class_repr):
     'It parses an repr and it returns the data structure'
 
-    print 'repr ->', class_repr
+    #print 'repr ->', class_repr
     class_repr = class_repr.strip()
 
     if class_repr == '[]':
         return []
     elif class_repr == '{}':
         return {}
-    elif class_repr[0] in ('"', "'"):
+    elif class_repr[0] in ('"', "'"):   #string
         return class_repr.strip(class_repr[0])
+    elif class_repr[:2] in ('u"', "u'"):   #unicode string
+        return unicode(class_repr[1:].strip(class_repr[1]))
     elif class_repr[0] in ('[', '('):
         if class_repr[0] == '[':
             class_name = 'list'
