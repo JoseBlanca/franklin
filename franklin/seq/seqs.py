@@ -25,6 +25,9 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq as BioSeq
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import SeqFeature as BioSeqFeature
+from Bio.SeqFeature import FeatureLocation
+from Bio.Alphabet import (DNAAlphabet, ProteinAlphabet,
+                          generic_alphabet, NucleotideAlphabet)
 
 def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
                           id_=None):
@@ -85,14 +88,62 @@ def get_seq_name(seq):
         name = str(uuid4())
     return name
 
+ALPHABETS = {'alphabet': generic_alphabet,
+             'dnaalphabet':DNAAlphabet,
+             'nucleotidealphabet':NucleotideAlphabet,
+             'proteinalphabet':ProteinAlphabet}
+
 UNKNOWN_NAME = "<unknown name>"
 UNKNOWN_ID = "<unknown id>"
+UNKNOWN_DESCRIPTION = "<unknown description>"
+
+def create_seq_from_struct(struct):
+    'It returns a SeqWithQuality'
+
+    kwargs = {}
+
+    seq = struct['seq']['seq']
+    if 'alphabet' in struct['seq']:
+        alphabet = struct['seq']['alphabet']
+    else:
+        alphabet = 'alphabet'
+    alphabet = ALPHABETS[alphabet]()
+    kwargs['seq'] = Seq(seq, alphabet=alphabet)
+
+    #the properties and default values
+    properties = {'id': UNKNOWN_ID,
+                  'name': UNKNOWN_NAME,
+                  'description': UNKNOWN_DESCRIPTION,
+                  'dbxrefs': None,
+                  'annotations': None,
+                  'letter_annotations':None,
+                  'qual':None}
+
+    for prop, default in properties.items():
+        value = struct[prop] if prop in struct else default
+        kwargs[prop] = value
+
+    #the features
+    if 'features' not in struct:
+        features = None
+    else:
+        features = []
+        for feature in struct['features']:
+            feat = SeqFeature(location=FeatureLocation(int(feature['start']),
+                                                       int(feature['end'])),
+                              type=feature['type'],
+                              qualifiers=feature['qualifiers'])
+            features.append(feat)
+    kwargs['features'] = features
+
+    return SeqWithQuality(**kwargs)
+
 class SeqWithQuality(SeqRecord):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''
 
     def __init__(self, seq, id=UNKNOWN_ID, name=UNKNOWN_NAME,
-                 description="<unknown description>", dbxrefs=None,
+                 description=UNKNOWN_DESCRIPTION, dbxrefs=None,
                  features=None, annotations=None,
                  letter_annotations=None, qual=None):
         if id == UNKNOWN_ID and name != UNKNOWN_NAME:

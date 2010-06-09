@@ -20,7 +20,8 @@ Created on 2009 mar 27
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature, get_seq_name
+from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature, get_seq_name,
+                               create_seq_from_struct)
 from Bio.SeqFeature import FeatureLocation, ExactPosition
 from Bio.Alphabet import Alphabet
 
@@ -173,6 +174,27 @@ class TestGetSeqName(unittest.TestCase):
         assert get_seq_name(seq) == 'seqid'
         seq = SeqWithQuality(seq=Seq('ATGAT'))
         assert  len(get_seq_name(seq)) > 10
+
+class TestCreateSeqStruct(unittest.TestCase):
+    'It tests that we can create a SeqWithQuality with a dict'
+    @staticmethod
+    def test_seq_from_stuct():
+        'It tests that we can get create a SeqWithQuality'
+        struct = {'seq': {'seq': 'ACTG', 'alphabet':'dnaalphabet'},
+                  'name': 'hola',
+                  'features': [{'start':1, 'end':2, 'type':'orf',
+                                'qualifiers':{'hola':'caracola'}}]
+                  }
+        seq = create_seq_from_struct(struct)
+
+        assert seq.seq == 'ACTG'
+        assert seq.name == 'hola'
+        feat= seq.features[0]
+        assert int(str(feat.location.start)) == 1
+        assert int(str(feat.location.end)) == 2
+        assert feat.type == 'orf'
+        assert feat.qualifiers == {'hola':'caracola'}
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
