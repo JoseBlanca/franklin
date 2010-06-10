@@ -89,9 +89,13 @@ def get_seq_name(seq):
     return name
 
 ALPHABETS = {'alphabet': generic_alphabet,
-             'dnaalphabet':DNAAlphabet,
+             'dnaalphabet': DNAAlphabet,
              'nucleotidealphabet':NucleotideAlphabet,
              'proteinalphabet':ProteinAlphabet}
+
+_alphabet_name = lambda alpha: str(alpha).split('.')[-1].strip(')').strip('(')
+
+ALPHABETS_REV = dict([(_alphabet_name(alpha), text) for text, alpha in ALPHABETS.items()])
 
 UNKNOWN_NAME = "<unknown name>"
 UNKNOWN_ID = "<unknown id>"
@@ -116,8 +120,7 @@ def create_seq_from_struct(struct):
                   'description': UNKNOWN_DESCRIPTION,
                   'dbxrefs': None,
                   'annotations': None,
-                  'letter_annotations':None,
-                  'qual':None}
+                  'letter_annotations':None}
 
     for prop, default in properties.items():
         value = struct[prop] if prop in struct else default
@@ -217,6 +220,48 @@ class SeqWithQuality(SeqRecord):
                               dbxrefs=self.dbxrefs, features=self.features,
                               annotations=self.annotations,
                               letter_annotations=self.letter_annotations)
+
+    def _get_struct(self):
+        'It returns a structure with native python objects with all info'
+
+        struct = {}
+
+        seq = self.seq
+        alphabet = ALPHABETS_REV[_alphabet_name(seq.alphabet)]
+
+        struct['seq'] = {'seq':str(seq), 'alphabet':alphabet}
+
+        properties = {'id': UNKNOWN_ID,
+                      'name': UNKNOWN_NAME,
+                      'description': UNKNOWN_DESCRIPTION}
+        for prop, default in properties.items():
+            attr = getattr(self, prop)
+            if attr != default:
+                struct[prop] = attr
+
+        #redundant information
+        if struct['id'] == struct['name']:
+            del struct['id']
+
+        properties = ['dbxrefs', 'annotations', 'letter_annotations']
+        for prop in properties:
+            attr = getattr(self, prop)
+            if attr:
+                struct[prop] = attr
+
+        features = []
+        for feat in self.features:
+            loc = feat.location
+            feat = {'start': loc.start.position,
+                    'end':   loc.end.position,
+                    'type':  feat.type,
+                    'qualifiers': feat.qualifiers}
+            features.append(feat)
+        struct['features'] = features
+
+        return struct
+
+    struct = property(_get_struct)
 
 class SeqFeature(BioSeqFeature):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
