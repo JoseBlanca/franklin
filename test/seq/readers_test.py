@@ -6,9 +6,10 @@ Created on 11/05/2010
 from franklin.utils.misc_utils import DATA_DIR
 import unittest, StringIO, tempfile
 
-from Bio.Alphabet import SingleLetterAlphabet
+from Bio.Alphabet import SingleLetterAlphabet, DNAAlphabet
 from Bio.SeqFeature import ExactPosition, FeatureLocation
 
+from franklin.seq.writers import write_seqs_in_file
 from franklin.seq.readers import (seqs_in_file, guess_seq_file_format,
                                   guess_seq_type, num_seqs_in_file,
                                   _cast_to_class)
@@ -262,6 +263,22 @@ class SeqsInFileTests(unittest.TestCase):
         seq0 = list(seqs_in_file(fhand, format='repr'))[0]
         alleles0 = seq0.features[0].qualifiers['alleles']
         assert alleles == alleles0
+
+    @staticmethod
+    def test_json_reader():
+        'It tests the json sequence writer'
+        #first we write some files
+        seq0 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        seq1 = SeqWithQuality(seq=Seq('GATACCA', DNAAlphabet()), name='seq2')
+        fhand = tempfile.NamedTemporaryFile(suffix='.json')
+        write_seqs_in_file([seq0, seq1], fhand, format='json')
+        fhand.flush()
+
+        #now we read them
+        seqs = list(seqs_in_file(open(fhand.name)))
+        assert seqs[0].seq == seq0.seq
+        assert seqs[1].seq == seq1.seq
+        assert str(seqs[1].seq.alphabet) == str(seq1.seq.alphabet)
 
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'

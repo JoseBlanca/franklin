@@ -25,7 +25,7 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import math, re
+import math, re, json
 
 from Bio import SeqIO
 from Bio.Alphabet import (Alphabet, SingleLetterAlphabet, ProteinAlphabet,
@@ -33,7 +33,8 @@ from Bio.Alphabet import (Alphabet, SingleLetterAlphabet, ProteinAlphabet,
 from Bio.SeqFeature import ExactPosition, FeatureLocation
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
-from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
+from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature,
+                               create_seq_from_struct)
 from franklin.utils.itertools_ import take_sample
 from franklin.utils.misc_utils import get_fhand
 
@@ -56,7 +57,9 @@ def guess_seq_file_format(fhand):
     line = fhand.readline()
     if not line:
         return None
-    if line[:4] in ('SeqW', 'SeqR'):
+    if line[0] == '{':
+        format_ = 'json'
+    elif line[:4] in ('SeqW', 'SeqR'):
         format_ = 'repr'
     elif line[0] == '>':
         item = fhand.readline().strip()[0]
@@ -135,10 +138,74 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
 
     if file_format == 'repr':
         return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
+    if file_format == 'json':
+        return _seqs_in_file_with_json(seq_fhand=seq_fhand)
     else:
         return _seqs_in_file_with_bio(seq_fhand=seq_fhand,
                                       file_format=file_format,
                                       qual_fhand=qual_fhand)
+
+def _seqs_in_file_with_json(seq_fhand):
+    'It yields all the sequences in json format in a file'
+
+    to_seq = lambda string: create_seq_from_struct(json.loads(string))
+
+    buffer_ = ''
+    for line in seq_fhand:
+        line = line.rstrip()
+        if not line:    #seqs are divided by empty lines
+            if buffer:
+                yield to_seq(buffer_)
+                buffer_ = ''
+        else:
+            buffer_ += line
+    else:
+        if buffer_: #the last seq
+            yield to_seq(buffer_)
+
+def _seqs_in_file_with_repr(seq_fhand):
+    'It yields all the sequences in repr format in a file'
+
+    for seq_chunk in _seq_chunks_in_repr(seq_fhand):
+        yield _cast_to_class(seq_chunk)
+
+def _seqs_in_file_with_bio(seq_fhand, file_format, qual_fhand=None):
+    '''It yields a seqrecord for each of the sequences found in the seq file
+    using biopython'''
+    seq_fhand.seek(0)
+    if qual_fhand is not None:
+        qual_fhand.seek(0)
+    #if the format is None maybe the file is empty
+    if file_format is None and not seq_fhand.readline():
+        raise StopIteration
+    seq_fhand.seek(0)
+    if qual_fhand is None:
+        seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[file_format])
+    else:
+        seq_iter = SeqIO.QualityIO.PairedFastaQualIterator(seq_fhand,
+                                                           qual_fhand)
+    for seqrec in seq_iter:
+        #do we have quality?
+        letter_annotations = seqrec.letter_annotations
+
+        if 'phred_quality' in letter_annotations:
+            qual = letter_annotations['phred_quality']
+        elif 'solexa_quality' in letter_annotations:
+            qual = letter_annotations['solexa_quality']
+            phred = lambda qual: int(10 * math.log(10 ** (qual / 10.0) + 1, 10))
+            qual = [phred(value) for value in qual]
+        else:
+            qual = None
+
+        seq = seqrec.seq
+        seq = Seq(str(seq), seq.alphabet)
+        name = seqrec.name
+        description = " ".join(seqrec.description.split(' ')[1:])
+        annotations = seqrec.annotations
+        seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,
+                                description=description,
+                                annotations=annotations)
+        yield seqrec
 
 def _seq_chunks_in_repr(seq_fhand):
     'It yields the reprs for the SeqRecords, one by one'
@@ -330,50 +397,6 @@ def _cast_to_class(class_repr):
         return classes[class_name](args)
     else:
         return classes[class_name](*args, **kargs)
-
-def _seqs_in_file_with_repr(seq_fhand):
-    'It yields all the sequences in repr format in a file'
-
-    for seq_chunk in _seq_chunks_in_repr(seq_fhand):
-        yield _cast_to_class(seq_chunk)
-
-def _seqs_in_file_with_bio(seq_fhand, file_format, qual_fhand=None):
-    '''It yields a seqrecord for each of the sequences found in the seq file
-    using biopython'''
-    seq_fhand.seek(0)
-    if qual_fhand is not None:
-        qual_fhand.seek(0)
-    #if the format is None maybe the file is empty
-    if file_format is None and not seq_fhand.readline():
-        raise StopIteration
-    seq_fhand.seek(0)
-    if qual_fhand is None:
-        seq_iter = SeqIO.parse(seq_fhand, BIOPYTHON_FORMATS[file_format])
-    else:
-        seq_iter = SeqIO.QualityIO.PairedFastaQualIterator(seq_fhand,
-                                                           qual_fhand)
-    for seqrec in seq_iter:
-        #do we have quality?
-        letter_annotations = seqrec.letter_annotations
-
-        if 'phred_quality' in letter_annotations:
-            qual = letter_annotations['phred_quality']
-        elif 'solexa_quality' in letter_annotations:
-            qual = letter_annotations['solexa_quality']
-            phred = lambda qual: int(10 * math.log(10 ** (qual / 10.0) + 1, 10))
-            qual = [phred(value) for value in qual]
-        else:
-            qual = None
-
-        seq = seqrec.seq
-        seq = Seq(str(seq), seq.alphabet)
-        name = seqrec.name
-        description = " ".join(seqrec.description.split(' ')[1:])
-        annotations = seqrec.annotations
-        seqrec = SeqWithQuality(seq=seq, qual=qual, name=name,
-                                description=description,
-                                annotations=annotations)
-        yield seqrec
 
 def guess_seq_type(fhand, format, limit):
     'It guess seq type: short, long'

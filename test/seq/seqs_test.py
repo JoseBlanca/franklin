@@ -23,7 +23,7 @@ import unittest
 from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature, get_seq_name,
                                create_seq_from_struct)
 from Bio.SeqFeature import FeatureLocation, ExactPosition
-from Bio.Alphabet import Alphabet
+from Bio.Alphabet import Alphabet, DNAAlphabet
 
 class SeqsTest(unittest.TestCase):
     '''Tests the seq with quality class '''
@@ -203,6 +203,15 @@ class TestCreateSeqStruct(unittest.TestCase):
         assert struct2['seq'] == struct['seq']
         assert struct2['name'] == struct['name']
         assert struct2 == struct
+
+        #with a non-default alphabet
+        struct = {'seq': {'seq': 'ACTG', 'alphabet': 'dnaalphabet'}}
+        seq = create_seq_from_struct(struct)
+        struct2 = seq.struct
+        assert str(seq.seq.alphabet) == str(DNAAlphabet())
+
+        seq = SeqWithQuality(Seq('ACTG', DNAAlphabet()))
+        assert seq.struct['seq']['alphabet'] == 'dnaalphabet'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -242,7 +242,7 @@ class SeqWithQuality(SeqRecord):
                 struct[prop] = attr
 
         #redundant information
-        if struct['id'] == struct['name']:
+        if 'id' in struct and struct['id'] == struct['name']:
             del struct['id']
 
         properties = ['dbxrefs', 'annotations', 'letter_annotations']
