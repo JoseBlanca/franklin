@@ -180,7 +180,7 @@ class TestCreateSeqStruct(unittest.TestCase):
     @staticmethod
     def test_seq_from_stuct():
         'It tests that we can get create a SeqWithQuality'
-        struct = {'seq': {'seq': 'ACTG', 'alphabet':'dnaalphabet'},
+        struct = {'seq': {'seq': 'ACTG'},
                   'name': 'hola',
                   'features': [{'start':1, 'end':2, 'type':'orf',
                                 'qualifiers':{'hola':'caracola'}}],

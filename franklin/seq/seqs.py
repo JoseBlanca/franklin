@@ -27,7 +27,7 @@ from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import SeqFeature as BioSeqFeature
 from Bio.SeqFeature import FeatureLocation
 from Bio.Alphabet import (DNAAlphabet, ProteinAlphabet,
-                          generic_alphabet, NucleotideAlphabet)
+                          Alphabet, NucleotideAlphabet)
 
 def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
                           id_=None):
@@ -88,7 +88,7 @@ def get_seq_name(seq):
         name = str(uuid4())
     return name
 
-ALPHABETS = {'alphabet': generic_alphabet,
+ALPHABETS = {'alphabet': Alphabet,
              'dnaalphabet': DNAAlphabet,
              'nucleotidealphabet':NucleotideAlphabet,
              'proteinalphabet':ProteinAlphabet}
@@ -229,7 +229,9 @@ class SeqWithQuality(SeqRecord):
         seq = self.seq
         alphabet = ALPHABETS_REV[_alphabet_name(seq.alphabet)]
 
-        struct['seq'] = {'seq':str(seq), 'alphabet':alphabet}
+        struct['seq'] = {'seq':str(seq)}
+        if alphabet != 'alphabet': #the default one
+            struct['seq']['alphabet'] = alphabet
 
         properties = {'id': UNKNOWN_ID,
                       'name': UNKNOWN_NAME,
