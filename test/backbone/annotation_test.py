@@ -91,7 +91,8 @@ class AnnotationTest(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='annotate_orthologs',
                     silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'melon.0.repr')
         repr_ = open(repr_fpath).read()
         assert 'arabidopsis-orthologs' in repr_
         assert 'arabidopsis2-orthologs' in repr_
@@ -142,7 +143,8 @@ class AnnotationTest(unittest.TestCase):
 
         do_analysis(project_settings=settings_path,
                     kind='annotate_descriptions', silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'melon.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'melon.0.repr')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
 
@@ -185,7 +187,8 @@ class AnnotationTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path, kind='annotate_introns',
                     silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.repr')
 
         assert "type='intron'" in  open(repr_fpath).read()
         os.chdir('/tmp')
@@ -222,7 +225,8 @@ class AnnotationTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path,
                     kind='annotate_microsatellites', silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='microsatellite'" in  result
 
@@ -267,7 +271,8 @@ class AnnotationTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path,
                     kind='annotate_orfs', silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.repr')
         result = open(repr_fpath).read()
         assert "type='orf'" in  result
         do_analysis(project_settings=settings_path, kind='write_annotations',
@@ -325,7 +330,8 @@ class AnnotationTest(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr', 'seqs.0.repr')
+        repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.repr')
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',

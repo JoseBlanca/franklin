@@ -37,7 +37,7 @@ BACKBONE_DIRECTORIES = {
     'info':'info',
     'raw_reads_stats': 'reads/raw/stats',
     'cleaned_reads_stats': 'reads/cleaned/stats',
-    'annotation_repr':'annotations/repr',
+    'annotation_dbs':'annotations/db',
     'annotation_input':'annotations/input',
     'annotation_result':'annotations/features',
     'blast_dir':'annotations/blast',

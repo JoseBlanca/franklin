@@ -68,7 +68,6 @@ class AnnotationAnalyzer(Analyzer):
     def _run_annotation(self, pipeline, configuration, inputs, output_dir):
         'It runs the analysis.'
 
-
         self._log({'analysis_started':True})
         repr_fpaths = inputs['repr']
         try:
@@ -608,7 +607,7 @@ DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             },
          'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
@@ -616,7 +615,7 @@ DEFINITIONS = {
     'annotate_snvs':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'merged_bam':
                 {'directory':'mapping_result',
@@ -625,23 +624,23 @@ DEFINITIONS = {
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'result':{'directory': 'annotation_dbs'}},
          'analyzer': SnvCallerAnalyzer},
     'annotate_introns':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateIntronsAnalyzer},
     'write_annotations':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             },
          'outputs':{'result':{'directory': 'annotation_result'}},
@@ -649,58 +648,58 @@ DEFINITIONS = {
     'annotate_orthologs':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'result':{'directory': 'annotation_repr'}},
+         'outputs':{'result':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateOrthologsAnalyzer},
     'annotate_descriptions':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateDescriptionAnalyzer},
 
     'annotate_microsatellites':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateMicrosatelliteAnalyzer},
     'annotate_orfs':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'repr_dir':{'directory': 'annotation_repr'}},
+         'outputs':{'repr_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateOrfAnalyzer},
     'annotate_gos':
         {'inputs':{
             'repr':
-                {'directory': 'annotation_repr',
+                {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'repr_dir':{'directory': 'annotation_repr'},
+         'outputs':{'repr_dir':{'directory': 'annotation_dbs'},
                     'result':{'directory':'annotation_result'}},
          'analyzer': AnnotateGoAnalyzer},
     }
