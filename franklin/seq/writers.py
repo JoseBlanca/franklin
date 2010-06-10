@@ -20,7 +20,7 @@ feature) to the file.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import tempfile
+import tempfile, json
 
 from Bio import SeqIO
 from franklin.seq.seqs import get_seq_name
@@ -46,7 +46,6 @@ class OrthologWriter(object):
                 line_content = '%s\t%s\t%s\n' % (spp, name, orthologs)
                 self.fhand.write(line_content)
         self.fhand.flush()
-
 
 class OrfWriter(object):
     'It writes the orf annotation into a file'
@@ -269,6 +268,9 @@ class SequenceWriter(object):
         format_ = self._format
         if format_ == 'repr':
             self.fhand.write(repr(sequence) + '\n')
+        elif format_ == 'json':
+            struct = json.dumps(sequence.struct)
+            self.fhand.write(struct + '\n\n')
         else:
             SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])
             if self.qual_fhand and format_ == 'fasta':

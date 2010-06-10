@@ -190,7 +190,7 @@ class TestCreateSeqStruct(unittest.TestCase):
 
         assert seq.seq == 'ACTG'
         assert seq.name == 'hola'
-        feat= seq.features[0]
+        feat = seq.features[0]
         assert int(str(feat.location.start)) == 1
         assert int(str(feat.location.end)) == 2
         assert feat.type == 'orf'

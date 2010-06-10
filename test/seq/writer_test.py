@@ -19,18 +19,20 @@ Created on 25/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
-import unittest
+import unittest, json
 from StringIO import StringIO
+
+from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
+
 from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.seq.writers import (GffWriter, SsrWriter, OrfWriter,
-                                  OrthologWriter, temp_fasta_file)
+                                  OrthologWriter, temp_fasta_file,
+                                  write_seqs_in_file)
 from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 class WriterTest(unittest.TestCase):
     'It test all writers for seqs'
-
 
     @staticmethod
     def test_ortologth_writer():
@@ -48,7 +50,6 @@ class WriterTest(unittest.TestCase):
         seq_result = open(fhand.name).read()
         assert  'ara1,ara2' in seq_result
         assert  'melo1,melo2' in seq_result
-
 
     @staticmethod
     def test_orf_writer():
@@ -73,8 +74,6 @@ class WriterTest(unittest.TestCase):
         pep_result = open(pep_fhand.name).read()
         assert 'ATGGCTTCATCCATTCTCTCATCCGCCG' in seq_result
         assert 'LHPFSHPPXWPLX' in pep_result
-
-
 
     @staticmethod
     def test_ssr_writer():
@@ -194,8 +193,22 @@ class WriterTest(unittest.TestCase):
         gff = fhand.getvalue()
         assert 'description' not in gff
 
+class SequenceWriter(unittest.TestCase):
+    'It tests that we can write a stream of SeqWithQuality into a file'
+
+    @staticmethod
+    def test_json_writer():
+        'It tests the json sequence writer'
+        seq0 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        seq1 = SeqWithQuality(seq=Seq('GATACCA'), name='seq2')
+        fhand = StringIO()
+        write_seqs_in_file([seq0, seq1], fhand, format='json')
+        lines = fhand.getvalue().splitlines()
+        struct1 = json.loads(lines[2])
+        assert struct1['seq']['seq'] == 'GATACCA'
+
 class TestFastaFileUtils(unittest.TestCase):
-    'here we test our utils related to fast format'
+    'Here we test a couple of utilities related to fast format'
 
     @staticmethod
     def test_temp_fasta_file_one_seq():
@@ -214,6 +227,7 @@ class TestFastaFileUtils(unittest.TestCase):
         fhand = temp_fasta_file(seq_iter)
         content = open(fhand.name).read()
         assert content == ">seq1\nATGATAGATAGATGF\n>seq2\nATGATAGATAGA\n"
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_gff_writer']
     unittest.main()
