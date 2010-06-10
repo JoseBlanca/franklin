@@ -183,7 +183,8 @@ class TestCreateSeqStruct(unittest.TestCase):
         struct = {'seq': {'seq': 'ACTG'},
                   'name': 'hola',
                   'features': [{'start':1, 'end':2, 'type':'orf',
-                                'qualifiers':{'hola':'caracola'}}],
+                                'qualifiers':{'dna':{'seq': 'ACT'},
+                                              'pep':{'seq': 'M'}}}],
                   'letter_annotations':{'phred_quality': [1, 2, 3, 4]}
                   }
         seq = create_seq_from_struct(struct)
@@ -194,7 +195,9 @@ class TestCreateSeqStruct(unittest.TestCase):
         assert int(str(feat.location.start)) == 1
         assert int(str(feat.location.end)) == 2
         assert feat.type == 'orf'
-        assert feat.qualifiers == {'hola':'caracola'}
+        dna = feat.qualifiers['dna']
+        assert str(dna) == 'ACT'
+        assert str(dna.alphabet) == str(Alphabet())
 
         #now let's get the struct back
         struct2 = seq.struct

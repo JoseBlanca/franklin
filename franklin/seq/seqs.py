@@ -26,8 +26,8 @@ from Bio.Seq import Seq as BioSeq
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import SeqFeature as BioSeqFeature
 from Bio.SeqFeature import FeatureLocation
-from Bio.Alphabet import (DNAAlphabet, ProteinAlphabet,
-                          Alphabet, NucleotideAlphabet)
+from Bio.Alphabet import (DNAAlphabet, ProteinAlphabet, Alphabet,
+                          NucleotideAlphabet, SingleLetterAlphabet)
 
 def copy_seq_with_quality(seqwithquality, seq=None, qual=None, name=None,
                           id_=None):
@@ -91,7 +91,8 @@ def get_seq_name(seq):
 ALPHABETS = {'alphabet': Alphabet,
              'dnaalphabet': DNAAlphabet,
              'nucleotidealphabet':NucleotideAlphabet,
-             'proteinalphabet':ProteinAlphabet}
+             'proteinalphabet':ProteinAlphabet,
+             'singleletteralphabet':SingleLetterAlphabet}
 
 _alphabet_name = lambda alpha: str(alpha).split('.')[-1].strip(')').strip('(')
 
@@ -101,18 +102,21 @@ UNKNOWN_NAME = "<unknown name>"
 UNKNOWN_ID = "<unknown id>"
 UNKNOWN_DESCRIPTION = "<unknown description>"
 
+def _build_seq(struct):
+    'Given a struct for a Seq it returns one Seq'
+    if 'alphabet' in struct:
+        alphabet = struct['alphabet']
+        alphabet = ALPHABETS[alphabet]()
+        return Seq(struct['seq'], alphabet=alphabet)
+    else:
+        return Seq(struct['seq'])
+
 def create_seq_from_struct(struct):
     'It returns a SeqWithQuality'
 
     kwargs = {}
 
-    seq = struct['seq']['seq']
-    if 'alphabet' in struct['seq']:
-        alphabet = struct['seq']['alphabet']
-    else:
-        alphabet = 'alphabet'
-    alphabet = ALPHABETS[alphabet]()
-    kwargs['seq'] = Seq(seq, alphabet=alphabet)
+    kwargs['seq'] = _build_seq(struct['seq'])
 
     #the properties and default values
     properties = {'id': UNKNOWN_ID,
@@ -132,10 +136,19 @@ def create_seq_from_struct(struct):
     else:
         features = []
         for feature in struct['features']:
+            qualifiers = feature['qualifiers']
+            type_ = feature['type']
+            #The orf feature is special, it has two seqs in it
+            if type_ == 'orf':
+                if 'dna' in qualifiers:
+                    qualifiers['dna'] = _build_seq(qualifiers['dna'])
+                if 'pep' in qualifiers:
+                    qualifiers['pep'] = _build_seq(qualifiers['pep'])
+
             feat = SeqFeature(location=FeatureLocation(int(feature['start']),
                                                        int(feature['end'])),
-                              type=feature['type'],
-                              qualifiers=feature['qualifiers'])
+                              type=type_,
+                              qualifiers=qualifiers)
             features.append(feat)
     kwargs['features'] = features
 
@@ -221,17 +234,22 @@ class SeqWithQuality(SeqRecord):
                               annotations=self.annotations,
                               letter_annotations=self.letter_annotations)
 
+    def _from_seq_to_struct(self, seq):
+        'Given a Seq it returns the struct'
+
+        alphabet = ALPHABETS_REV[_alphabet_name(seq.alphabet)]
+
+        struct = {'seq':str(seq)}
+        if alphabet != 'alphabet': #the default one
+            struct['alphabet'] = alphabet
+        return struct
+
     def _get_struct(self):
         'It returns a structure with native python objects with all info'
 
         struct = {}
 
-        seq = self.seq
-        alphabet = ALPHABETS_REV[_alphabet_name(seq.alphabet)]
-
-        struct['seq'] = {'seq':str(seq)}
-        if alphabet != 'alphabet': #the default one
-            struct['seq']['alphabet'] = alphabet
+        struct['seq'] = self._from_seq_to_struct(self.seq)
 
         properties = {'id': UNKNOWN_ID,
                       'name': UNKNOWN_NAME,
@@ -253,10 +271,21 @@ class SeqWithQuality(SeqRecord):
 
         features = []
         for feat in self.features:
+            type_ = feat.type
+            qualifiers = feat.qualifiers
+            #The orf feature is special, it has two seqs in it
+            if type_ == 'orf':
+                if 'dna' in qualifiers:
+                    qualifiers['dna'] = \
+                                     self._from_seq_to_struct(qualifiers['dna'])
+                if 'pep' in qualifiers:
+                    qualifiers['pep'] = \
+                                     self._from_seq_to_struct(qualifiers['pep'])
+
             loc = feat.location
             feat = {'start': loc.start.position,
                     'end':   loc.end.position,
-                    'type':  feat.type,
+                    'type':  type_,
                     'qualifiers': feat.qualifiers}
             features.append(feat)
         struct['features'] = features
