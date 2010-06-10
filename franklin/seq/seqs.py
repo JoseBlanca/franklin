@@ -21,6 +21,8 @@ Created on 2009 mar 27
 
 from uuid import uuid4
 
+import copy
+
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq as BioSeq
 from Bio.Seq import UnknownSeq
@@ -136,7 +138,7 @@ def create_seq_from_struct(struct):
     else:
         features = []
         for feature in struct['features']:
-            qualifiers = feature['qualifiers']
+            qualifiers = copy.deepcopy(feature['qualifiers'])
             type_ = feature['type']
             #The orf feature is special, it has two seqs in it
             if type_ == 'orf':
@@ -272,7 +274,7 @@ class SeqWithQuality(SeqRecord):
         features = []
         for feat in self.features:
             type_ = feat.type
-            qualifiers = feat.qualifiers
+            qualifiers = copy.deepcopy(feat.qualifiers)
             #The orf feature is special, it has two seqs in it
             if type_ == 'orf':
                 if 'dna' in qualifiers:
@@ -286,7 +288,7 @@ class SeqWithQuality(SeqRecord):
             feat = {'start': loc.start.position,
                     'end':   loc.end.position,
                     'type':  type_,
-                    'qualifiers': feat.qualifiers}
+                    'qualifiers': qualifiers}
             features.append(feat)
         struct['features'] = features
 
