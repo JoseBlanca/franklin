@@ -19,12 +19,12 @@ Created on 19/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from tempfile import NamedTemporaryFile
-import datetime, math, os
+import datetime, math
+
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
 from franklin.utils.misc_utils import OrderedDict
-
 
 class SnvIlluminaWriter(object):
     'It writes the snv in the illumina genotyper format'
@@ -177,30 +177,26 @@ class VariantCallFormatWriter(object):
         else:
             return ';'.join(filter_strs)
 
-    @staticmethod
-    def _root_mean_square(numbers):
-        'It returns the root mean square for the given numbers'
-        power2 = lambda x: math.pow(x, 2)
-        return math.sqrt(sum(map(power2, numbers)) / len(numbers))
-
     def _create_info(self, qualifiers, alternative_alleles):
         'It creates the INFO bit on the vcf'
         toprint_items = []
 
         alleles = qualifiers['alleles']
 
+        allele_count = lambda al: sum(alleles[al]['read_groups'].values())
+
         #AC allele count in genotypes, for each ALT allele, in the same order as
         #listed
         acounts = [] #allele_count
         for allele in alternative_alleles:
-            acounts.append(len(alleles[allele]['read_names']))
+            acounts.append(allele_count(allele))
         if acounts:
             toprint_items.append('AC=%s' % ','.join(map(str, acounts)))
 
         #AF allele frequency for each ALT allele in the same order as listed:
         reference_allele = qualifiers['reference_allele'], INVARIANT
         if reference_allele in alleles:
-            ref_count = len(alleles[reference_allele]['read_names'])
+            ref_count = allele_count(reference_allele)
         else:
             ref_count = 0
         total_count = float(sum(acounts) + ref_count)
@@ -211,13 +207,11 @@ class VariantCallFormatWriter(object):
 
         #MQ RMS mapping quality, e.g. MQ=52
         #BQ RMS base quality at this position
-        for kind, strfmt in (('mapping_qualities', 'MQ=%.2f'),
-                             ('qualities', 'BQ=%.2f')):
-            quals = []
-            for allele_info in alleles.values():
-                quals.extend(allele_info[kind])
-            if quals:
-                toprint_items.append(strfmt % self._root_mean_square(quals))
+        for kind, strfmt in (('mapping_quality', 'MQ=%.2f'),
+                             ('quality', 'BQ=%.2f')):
+            qual = qualifiers[kind]
+            if qual is not None:
+                toprint_items.append(strfmt % qual)
 
         #genotype count
         #we count in how many genotypes every allele has been found.

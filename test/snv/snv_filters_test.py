@@ -231,20 +231,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_major_allele_freq_filter_snv():
         'It test the first allele percent filter'
-        alleles = {('A', INVARIANT):{'read_names': ['r1', 'r2', 'r3', 'r4'],
-                                     'read_groups':['g1', 'g1', 'g1', 'g1']},
-                   ('T', SNP)      :{'read_names': ['r1', 'r2'],
-                                     'read_groups':['g2', 'g2']}}
-
+        read_groups = {'g1':{}, 'g2':{}}
+        alleles = {('A', INVARIANT):{'read_groups':{'g1':4}},
+                   ('T', SNP)      :{'read_groups':{'g2':2}}}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
-                          qualifiers={'alleles':alleles})
-        alleles = {('A', INVARIANT):{'read_names': ['r1', 'r2', 'r3'],
-                                     'read_groups':['g1', 'g1', 'g1']},
-                   ('T', SNP)      :{'read_names': ['r1', 'r2'],
-                                     'read_groups':['g2', 'g2']}}
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':read_groups})
+        alleles = {('A', INVARIANT):{'read_groups':{'g1':3}},
+                   ('T', SNP)      :{'read_groups':{'g2':2}}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':read_groups})
 
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
@@ -258,9 +256,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         #now we do it only for one read group
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':read_groups})
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':read_groups})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features=[snv1, snv2])
         frecuency = 0.6
@@ -275,13 +275,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_kind_filter():
         'It test the kind filter'
-        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3', 'r4']},
-                   ('T', SNP)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{},
+                   ('T', SNP)      :{}}
 
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
                           qualifiers={'alleles':alleles})
-        alleles = {('A', INVARIANT):{'read_names':['r1', 'r2', 'r3']},
-                   ('T', INDEL)      :{'read_names':['r1', 'r2']}}
+        alleles = {('A', INVARIANT):{},
+                   ('T', INDEL)    :{}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
                           qualifiers={'alleles':alleles})
@@ -334,16 +334,17 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_is_not_variable_filter():
         'It tets variable filter function'
-        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
-                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
-                         qualifiers={'alleles':alleles})
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
         seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
 
-
-        alleles2 = {('A', SNP): {'read_groups':['rg1', 'rg1']}}
+        alleles2 = {('A', SNP): {'read_groups':{'rg1':2}}}
         snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
-                         qualifiers={'alleles':alleles2})
+                         qualifiers={'alleles':alleles2,
+                                     'read_groups':{}})
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv, snv2])
 
         filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
@@ -382,16 +383,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_is_variable_filter():
         'It tets variable filter function'
-        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
-                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':2, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
-                         qualifiers={'alleles':alleles})
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
         seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
-        alleles2 = {('A', SNP): {'read_groups':['rg1', 'rg1']}}
+        alleles2 = {('A', SNP): {'read_groups':{'rg1':2}}}
         snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
-                         qualifiers={'alleles':alleles2})
+                         qualifiers={'alleles':alleles2,
+                                     'read_groups':{}})
         seq2 = 'ATGATGATGgaaattcATGATGATGTGGGAT'
         seq2 = SeqWithQuality(seq=Seq(seq2), name='ref2', features=[snv2])
 
@@ -457,8 +460,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_min_num_groups_filter():
         'It tests the min num groups svn filter'
-        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2', 'rg4', 'rg4']},
-                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3', 'rg3']}}
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles})
         seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'

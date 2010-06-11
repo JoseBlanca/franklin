@@ -20,15 +20,17 @@ Created on 16/02/2010
 
 from __future__ import division
 
-import pysam
 from collections import defaultdict
+from copy import copy
+import math
+
+import pysam
 
 from Bio.SeqFeature import FeatureLocation
 from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
 from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
-from copy import copy
 
 DELETION_ALLELE = '-'
 N_ALLLELES = ('n', '?')
@@ -73,17 +75,13 @@ def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
     'It adds one allele to the alleles dict'
     key = (allele, kind)
     if key not in alleles:
-        alleles[key] = {'read_names':[], 'read_groups':[], 'orientations':[],
-                       'qualities':[], 'mapping_qualities':[], 'samples':[],
-                       'libraries': []}
+        alleles[key] = {'read_groups':[], 'orientations':[],
+                        'qualities':[], 'mapping_qualities':[]}
     allele_info = alleles[key]
-    allele_info['read_names'].append(read_name)
     allele_info['read_groups'].append(read_group)
     allele_info['orientations'].append(not(is_reverse))
     allele_info['qualities'].append(qual)
     allele_info['mapping_qualities'].append(mapping_quality)
-    allele_info['libraries'].append(readgroup_info[read_group]['LB'])
-    allele_info['samples'].append(readgroup_info[read_group]['SM'])
 
 def _normalize_read_edge_conf(read_edge_conf):
     'It returns a dict with all valid keys'
@@ -220,7 +218,8 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
                    'reference_allele':ref_allele,
-                   'alleles':alleles}
+                   'alleles':alleles,
+                   'read_groups':read_groups_info}
 
 def _add_default_sanger_quality(alleles, default_sanger_quality,
                                 read_groups_info):
@@ -276,6 +275,51 @@ def _calculate_allele_quality(allele_info):
                     total_qual += independent_quals[2] / 4.0
     return total_qual
 
+def _root_mean_square(numbers):
+    'It returns the root mean square for the given numbers'
+    power2 = lambda x: math.pow(x, 2)
+    return math.sqrt(sum(map(power2, numbers)) / len(numbers))
+
+def _summarize_snv(snv):
+    'It returns an snv with an smaller memory footprint'
+    used_read_groups = set()
+    for allele_info in snv['alleles'].values():
+        #the read_groups list to a count dict
+        rg_count = {}
+        for read_group in allele_info['read_groups']:
+            if read_group not in rg_count:
+                rg_count[read_group] = 0
+            rg_count[read_group] += 1
+            used_read_groups.add(read_group)
+        allele_info['read_groups'] = rg_count
+
+    #we calculate a couple of parameters that summarize the quality
+    for kind in ('mapping_qualities', 'qualities'):
+        quals = []
+        for allele_info in snv['alleles'].values():
+            quals.extend(allele_info[kind])
+        if kind == 'mapping_qualities':
+            kind = 'mapping_quality'
+        if kind == 'qualities':
+            kind = 'quality'
+        snv[kind] = _root_mean_square(quals) if quals else None
+
+    for allele_info in snv['alleles'].values():
+        #we remove some extra quality info
+        del allele_info['mapping_qualities']
+        del allele_info['qualities']
+        del allele_info['orientations']
+
+    #we remove from the read_groups the ones not used in this snv
+    new_read_groups = {}
+    for read_group, info in snv['read_groups'].items():
+        if read_group in used_read_groups:
+            new_read_groups[read_group] = info
+
+    snv['read_groups'] = new_read_groups
+
+    return snv
+
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                          min_mapq=15, min_num_alleles=1, read_edge_conf=None):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
@@ -295,10 +339,14 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 min_mapq=min_mapq,
                                 min_num_alleles=min_num_alleles,
                                 read_edge_conf=read_edge_conf):
+            snv = _summarize_snv(snv)
             location = snv['ref_position']
             type_ = 'snv'
             qualifiers = {'alleles':snv['alleles'],
-                          'reference_allele':snv['reference_allele']}
+                          'reference_allele':snv['reference_allele'],
+                          'read_groups':snv['read_groups'],
+                          'mapping_quality': snv['mapping_quality'],
+                          'quality': snv['quality']}
             feat = SeqFeature(location=FeatureLocation(location, location),
                               type=type_,
                               qualifiers=qualifiers)
@@ -357,17 +405,44 @@ def snvs_in_window(snv, snvs, window):
             num_of_snvs += 1
     return num_of_snvs
 
+def _get_group(read_group, group_kind, read_groups):
+    'It returns the group (lb, rg, sm) for the given rg and group_kind'
+    if group_kind:
+        if group_kind == 'read_groups':
+            return read_group
+        else:
+            group_kind = group_kind.lower()
+            if group_kind in ('lb', 'library', 'libraries'):
+                group_kind = 'LB'
+            elif group_kind in ('sm', 'sample', 'samples'):
+                group_kind = 'SM'
+            elif group_kind in ('pl', 'platform', 'platforms'):
+                group_kind = 'PL'
+            return read_groups[read_group][group_kind]
+
+def _allele_count(allele, alleles, read_groups=None,
+                  groups=None, group_kind=None):
+    'It returns the number of reads for the given allele'
+
+    counts = []
+    for read_group, count in alleles[allele]['read_groups'].items():
+        #do we have to count this read_group?
+        group = _get_group(read_group, group_kind, read_groups)
+        if not groups or groups and group in groups:
+            counts.append(count)
+    return sum(counts)
+
 def calculate_maf_frequency(feature, groups=None, group_kind=None):
     'It returns the most frequent allele frequency'
+
     alleles = feature.qualifiers['alleles']
+    read_groups = feature.qualifiers['read_groups']
+
     major_number_reads = None
     total_number_reads = 0
-    for allele_info in alleles.values():
-        if not groups:
-            number_reads = len(allele_info['read_names'])
-        else:
-            number_reads = len([grp for grp in allele_info[group_kind]\
-                                                              if grp in groups])
+    for allele in alleles:
+        number_reads = _allele_count(allele, alleles, read_groups, groups,
+                                     group_kind)
         if major_number_reads is None or major_number_reads < number_reads:
             major_number_reads = number_reads
         total_number_reads += number_reads
@@ -459,12 +534,13 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
 
     return enzymes
 
-def variable_in_groupping(key, feature, items, in_union=False,
+def variable_in_groupping(group_kind, feature, groups, in_union=False,
                            in_all_groups=True):
-    'It looks if the given snv is variable for the given key/items'
+    'It looks if the given snv is variable for the given groups'
 
     alleles = _get_alleles_for_group(feature.qualifiers['alleles'],
-                                     items, key)
+                                     groups, group_kind,
+                                     feature.qualifiers['read_groups'])
     if in_union:
         alleles = _aggregate_alleles(alleles)
 
@@ -488,18 +564,19 @@ def _aggregate_alleles(alleles):
         aggregate = aggregate.union(allele_list)
     return {None: aggregate}
 
-def _get_alleles_for_group(alleles, read_groups, group_kind='read_groups'):
-    '''It get the alleles from the given items of type:key, separated by items.
+def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
+                           read_groups=None):
+    '''It gets the alleles from the given items of type:key, separated by items.
     For example, if you give key rg and items rg1, rg2, it will return
     alleles separated in rg1 and rg2 '''
 
-    alleles_for_read_groups = {}
+    alleles_for_groups = {}
     for allele, alleles_info in alleles.items():
         for read_group in alleles_info[group_kind]:
-            if read_group not in read_groups:
+            group = _get_group(read_group, group_kind, read_groups)
+            if group not in groups:
                 continue
-            if not read_group in alleles_for_read_groups:
-                alleles_for_read_groups[read_group] = set()
-            alleles_for_read_groups[read_group].add(allele)
-    return alleles_for_read_groups
-
+            if not group in alleles_for_groups:
+                alleles_for_groups[group] = set()
+            alleles_for_groups[group].add(allele)
+    return alleles_for_groups

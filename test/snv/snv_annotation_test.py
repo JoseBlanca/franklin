@@ -155,20 +155,22 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_maf_alleles():
         'It tests that we can calculate the major allele frequency'
-        alleles = {('A', INVARIANT): {'read_names':['r1']},
-                   ('A', DELETION): {'read_names':['r2', 'r3']}}
+        alleles = {('A', INVARIANT): {'read_groups':{'r1':1}},
+                   ('A', DELETION): {'read_groups':{'r2':1, 'r3':1}}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':{}})
         maf = calculate_maf_frequency(feat)
         assert maf == 2 / 3
 
         #with groups
-        alleles = {('A', INVARIANT): {'read_names':['r1'],
-                                      'libraries' :['l1']},
-                   ('A', DELETION):  {'read_names':['r2', 'r3'],
-                                      'libraries' :['l1', 'l2']}}
+        alleles = {('A', INVARIANT): {'read_groups':{'r1':1},},
+                   ('A', DELETION):  {'read_groups':{'r2':1, 'r3':1}}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'alleles':alleles,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'},
+                                                     'r3':{'LB':'l3'}}})
         maf = calculate_maf_frequency(feat, groups=['l1'],
                                       group_kind='libraries')
         assert maf == 1 / 2
@@ -304,11 +306,12 @@ class TestSnvPipeline(unittest.TestCase):
     def test_variable_in_read_group():
         'It test variable_in_reaggroups function'
 
-        alleles = {('A', SNP): {'read_groups':['rg1', 'rg2']},
-                   ('T', INVARIANT): {'read_groups':['rg1', 'rg3']}}
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':1}}}
 
         feature = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                             qualifiers={'alleles':alleles})
+                             qualifiers={'alleles':alleles,
+                                         'read_groups':{}})
         assert variable_in_groupping('read_groups', feature, ['rg1'])
         assert not variable_in_groupping('read_groups',
                                          feature, ['rg2', 'rg3'])
