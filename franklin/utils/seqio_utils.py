@@ -73,8 +73,8 @@ def seqio(in_seq_fhand, out_seq_fhand, out_format,
         in_format = guess_seq_file_format(in_seq_fhand)
     if (in_qual_fhand is not None or
         out_qual_fhand is not None or
-        in_format in ('repr', 'json') or
-        out_format in ('repr', 'json')) :
+        in_format in ('repr', 'json', 'pickle') or
+        out_format in ('repr', 'json', 'pickle')) :
         seqs = seqs_in_file(seq_fhand=in_seq_fhand,
                             qual_fhand=in_qual_fhand,
                             format=in_format)

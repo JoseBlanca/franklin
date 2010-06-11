@@ -223,6 +223,29 @@ class SequenceWriter(unittest.TestCase):
         assert seqs[1].features[0].qualifiers['alleles'] == alleles
         assert seqs[1].features[0].qualifiers['filters'] == filters
 
+    @staticmethod
+    def test_pickle_writer():
+        'It tests the pickle sequence writer'
+        seq0 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
+        alleles = {('G', 3): {}}
+        filters = {'a_filter':{('param',):False}}
+        snv_feature = SeqFeature(FeatureLocation(ExactPosition(3),
+                                                 ExactPosition(3)),
+                                                 type='snv',
+                                        qualifiers={'alleles':alleles,
+                                                    'filters':filters})
+        seq1 = SeqWithQuality(seq=Seq('GATACCA'), name='seq2',
+                              features=[snv_feature])
+        fhand = StringIO()
+        write_seqs_in_file([seq0, seq1], fhand, format='pickle')
+        #print fhand.getvalue()
+
+        fhand.seek(0)
+        seqs = list(seqs_in_file(fhand))
+        assert seqs[1].features[0].qualifiers['alleles'] == alleles
+        assert seqs[1].features[0].qualifiers['filters'] == filters
+
+
 class TestFastaFileUtils(unittest.TestCase):
     'Here we test a couple of utilities related to fast format'
 

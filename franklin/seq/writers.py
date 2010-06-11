@@ -21,6 +21,7 @@ feature) to the file.
 
 from __future__ import division
 import tempfile, json
+import cPickle as pickle
 
 from Bio import SeqIO
 
@@ -273,6 +274,9 @@ class SequenceWriter(object):
             struct = json.dumps(fix_seq_struct_for_json(sequence.struct,
                                                         alleles_to_string=True))
             self.fhand.write(struct + '\n\n')
+        elif format_ == 'pickle':
+            string = pickle.dumps(sequence)
+            self.fhand.write(string + '\n\n')
         else:
             SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])
             if self.qual_fhand and format_ == 'fasta':

@@ -26,6 +26,7 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import math, re, json
+import cPickle as pickle
 
 from Bio import SeqIO
 from Bio.Alphabet import (Alphabet, SingleLetterAlphabet, ProteinAlphabet,
@@ -59,6 +60,8 @@ def guess_seq_file_format(fhand):
         return None
     if line[0] == '{':
         format_ = 'json'
+    elif 'ccopy_reg' in line:
+        format_ = 'pickle'
     elif line[:4] in ('SeqW', 'SeqR'):
         format_ = 'repr'
     elif line[0] == '>':
@@ -139,32 +142,38 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
     if file_format == 'repr':
         return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
     if file_format == 'json':
-        return _seqs_in_file_with_json(seq_fhand=seq_fhand)
+        return _seqs_in_file_serialized(seq_fhand=seq_fhand,
+                                        serializer='json')
+    if file_format == 'pickle':
+        return _seqs_in_file_serialized(seq_fhand=seq_fhand,
+                                         serializer='pickle')
     else:
         return _seqs_in_file_with_bio(seq_fhand=seq_fhand,
                                       file_format=file_format,
                                       qual_fhand=qual_fhand)
 
-def _seq_from_json_string(string):
+def _seq_from_string(string, serializer):
     'Given a json string it returns a SeqRecord'
-    struct = json.loads(string)
-    struct = fix_seq_struct_for_json(struct, alleles_to_string=False)
-    return create_seq_from_struct(struct)
+    if serializer == 'json':
+        struct = json.loads(string)
+        struct = fix_seq_struct_for_json(struct, alleles_to_string=False)
+        return create_seq_from_struct(struct)
+    else:
+        return pickle.loads(string)
 
-def _seqs_in_file_with_json(seq_fhand):
-    'It yields all the sequences in json format in a file'
+def _seqs_in_file_serialized(seq_fhand, serializer):
+    'It yields all the sequences in json or pickle format in a file'
     buffer_ = ''
     for line in seq_fhand:
-        line = line.rstrip()
-        if not line:    #seqs are divided by empty lines
+        if not line.rstrip():    #seqs are divided by empty lines
             if buffer:
-                yield _seq_from_json_string(buffer_)
+                yield _seq_from_string(buffer_, serializer)
                 buffer_ = ''
         else:
             buffer_ += line
     else:
         if buffer_: #the last seq
-            yield _seq_from_json_string(buffer_)
+            yield _seq_from_string(buffer_, serializer)
 
 def _seqs_in_file_with_repr(seq_fhand):
     'It yields all the sequences in repr format in a file'
