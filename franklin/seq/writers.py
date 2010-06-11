@@ -23,7 +23,8 @@ from __future__ import division
 import tempfile, json
 
 from Bio import SeqIO
-from franklin.seq.seqs import get_seq_name
+
+from franklin.seq.seqs import get_seq_name, fix_seq_struct_for_json
 from franklin.seq.readers import BIOPYTHON_FORMATS
 
 class OrthologWriter(object):
@@ -64,9 +65,9 @@ class OrfWriter(object):
             end = int(str(orf.location.end)) + 1
             strand = orf.qualifiers['strand']
             seq_content = '>%s_orf_seq start=%d end=%d strand=%s\n%s\n' % \
-                               (name, start, end, strand, orf.qualifiers['dna'])
+                          (name, start, end, strand, str(orf.qualifiers['dna']))
             pep_content = '>%s_orf_pep start=%d end=%d strand=%s\n%s\n' % \
-                               (name, start, end, strand, orf.qualifiers['pep'])
+                          (name, start, end, strand, str(orf.qualifiers['pep']))
             self.fhand.write(seq_content)
             self.pep_fhand.write(pep_content)
             self.fhand.flush()
@@ -269,7 +270,8 @@ class SequenceWriter(object):
         if format_ == 'repr':
             self.fhand.write(repr(sequence) + '\n')
         elif format_ == 'json':
-            struct = json.dumps(sequence.struct)
+            struct = json.dumps(fix_seq_struct_for_json(sequence.struct,
+                                                        alleles_to_string=True))
             self.fhand.write(struct + '\n\n')
         else:
             SeqIO.write([sequence], self.fhand, BIOPYTHON_FORMATS[format_])

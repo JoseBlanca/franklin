@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'annotation'
+    #choice = 'snvs'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -173,4 +173,3 @@ def parse_options():
 if __name__ == '__main__':
     options = parse_options()
     test_backbone(**options)
-

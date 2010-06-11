@@ -250,8 +250,10 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             splitter = 'fastq'
         elif file_format == 'repr':
             splitter = 'SeqWithQual'
+        elif file_format == 'json':
+            splitter = 'blank_line'
         else:
-            raise NotImplementedError
+            raise NotImplementedError('No splitter for format ' + file_format)
         cmd_def = [{'options': 2, 'io': 'in', 'splitter':splitter},
                    {'options':-2, 'io': 'out'}]
         stdout = NamedTemporaryFile()

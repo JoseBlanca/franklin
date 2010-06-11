@@ -28,6 +28,8 @@ from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.seq.writers import (GffWriter, SsrWriter, OrfWriter,
                                   OrthologWriter, temp_fasta_file,
                                   write_seqs_in_file)
+from franklin.seq.readers import seqs_in_file
+
 from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
@@ -200,12 +202,26 @@ class SequenceWriter(unittest.TestCase):
     def test_json_writer():
         'It tests the json sequence writer'
         seq0 = SeqWithQuality(seq=Seq('ATGATAGATAGATGF'), name='seq1')
-        seq1 = SeqWithQuality(seq=Seq('GATACCA'), name='seq2')
+        alleles = {('G', 3): {}}
+        filters = {'a_filter':{('param',):False}}
+        snv_feature = SeqFeature(FeatureLocation(ExactPosition(3),
+                                                 ExactPosition(3)),
+                                                 type='snv',
+                                        qualifiers={'alleles':alleles,
+                                                    'filters':filters})
+        seq1 = SeqWithQuality(seq=Seq('GATACCA'), name='seq2',
+                              features=[snv_feature])
         fhand = StringIO()
         write_seqs_in_file([seq0, seq1], fhand, format='json')
         lines = fhand.getvalue().splitlines()
         struct1 = json.loads(lines[2])
         assert struct1['seq']['seq'] == 'GATACCA'
+        assert struct1['features'][0]['qualifiers']['alleles'].keys()[0] == "('G', 3)"
+
+        fhand.seek(0)
+        seqs = list(seqs_in_file(fhand))
+        assert seqs[1].features[0].qualifiers['alleles'] == alleles
+        assert seqs[1].features[0].qualifiers['filters'] == filters
 
 class TestFastaFileUtils(unittest.TestCase):
     'Here we test a couple of utilities related to fast format'

@@ -34,7 +34,7 @@ from Bio.SeqFeature import ExactPosition, FeatureLocation
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature,
-                               create_seq_from_struct)
+                               create_seq_from_struct, fix_seq_struct_for_json)
 from franklin.utils.itertools_ import take_sample
 from franklin.utils.misc_utils import get_fhand
 
@@ -145,23 +145,26 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
                                       file_format=file_format,
                                       qual_fhand=qual_fhand)
 
+def _seq_from_json_string(string):
+    'Given a json string it returns a SeqRecord'
+    struct = json.loads(string)
+    struct = fix_seq_struct_for_json(struct, alleles_to_string=False)
+    return create_seq_from_struct(struct)
+
 def _seqs_in_file_with_json(seq_fhand):
     'It yields all the sequences in json format in a file'
-
-    to_seq = lambda string: create_seq_from_struct(json.loads(string))
-
     buffer_ = ''
     for line in seq_fhand:
         line = line.rstrip()
         if not line:    #seqs are divided by empty lines
             if buffer:
-                yield to_seq(buffer_)
+                yield _seq_from_json_string(buffer_)
                 buffer_ = ''
         else:
             buffer_ += line
     else:
         if buffer_: #the last seq
-            yield to_seq(buffer_)
+            yield _seq_from_json_string(buffer_)
 
 def _seqs_in_file_with_repr(seq_fhand):
     'It yields all the sequences in repr format in a file'

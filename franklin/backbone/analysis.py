@@ -45,7 +45,7 @@ def scrape_info_from_fname(path):
 
 def _is_sequence_file(path):
     'It returns true if the function is a sequence'
-    return path.extension in ('fasta', 'fastq', 'sfastq', 'repr')
+    return path.extension in ('fasta', 'fastq', 'sfastq', 'repr', 'json')
 
 def _is_sequence_or_qual_file(path):
     'It returns true if the function is a sequence or quality file'

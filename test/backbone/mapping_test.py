@@ -25,6 +25,7 @@ from os.path import join, exists
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
+from franklin.backbone.analysis import BACKBONE_DIRECTORIES
 
 THREADS = 2
 
@@ -168,18 +169,18 @@ class TestBackboneMapping(unittest.TestCase):
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
         do_analysis(project_settings=settings_path, kind='annotate_snvs',
                     silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr',
-                          'reference.0.repr')
-        assert "type='snv'" in  open(repr_fpath).read()
+        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'reference.0.json')
+        assert '"type": "snv"' in  open(json_fpath).read()
 
         do_analysis(project_settings=settings_path, kind='filter_snvs',
                     silent=True)
-        repr_fpath = join(project_dir, 'annotations', 'repr',
-                          'reference.1.repr')
-        result = open(repr_fpath).read()
+        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'reference.1.json')
+        result = open(json_fpath).read()
         #print result
-        assert "type='snv'" in result
-        assert "'samples': ['adios_sanger', 'hola']" in result
+        assert '"type": "snv"' in result
+        assert '"samples": ["adios_sanger", "hola"]' in result
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)

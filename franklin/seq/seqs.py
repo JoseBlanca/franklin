@@ -146,7 +146,6 @@ def create_seq_from_struct(struct):
                     qualifiers['dna'] = _build_seq(qualifiers['dna'])
                 if 'pep' in qualifiers:
                     qualifiers['pep'] = _build_seq(qualifiers['pep'])
-
             feat = SeqFeature(location=FeatureLocation(int(feature['start']),
                                                        int(feature['end'])),
                               type=type_,
@@ -155,6 +154,46 @@ def create_seq_from_struct(struct):
     kwargs['features'] = features
 
     return SeqWithQuality(**kwargs)
+
+def fix_seq_struct_for_json(struct, alleles_to_string):
+    'It returns a new alleles dict'
+    for feature in struct['features']:
+        #the snvs have tuples as keys and json doesn't like that
+        if feature['type'] != 'snv':
+            continue
+
+        alleles = feature['qualifiers']['alleles']
+        new_alleles = {}
+        for allele_name, info in alleles.items():
+            #we fix the name of the allele
+            if alleles_to_string:
+                allele_name = str(allele_name)
+            else:
+                allele_name = allele_name.strip().lstrip('(').rstrip(')')
+                base, kind = allele_name.split(',')
+                if base[0] == 'u':  #the unicode bit
+                    base = base[1:]
+                base = base.strip(base[0])
+                kind = int(kind.strip())
+                allele_name = base, kind
+            new_alleles[allele_name] = info
+        feature['qualifiers']['alleles'] = new_alleles
+
+        #we fix the filter keys
+        new_filters = {}
+        if 'filters' in feature['qualifiers']:
+            for filter_name, info in feature['qualifiers']['filters'].items():
+                results = {}
+                #info is a dict with a key for each param set
+                for param_tuple, result in info.items():
+                    if alleles_to_string:
+                        param_tuple = repr(param_tuple)
+                    else:
+                        param_tuple = eval(param_tuple)
+                    results[param_tuple] = result
+                new_filters[filter_name] = results
+            feature['qualifiers']['filters'] = new_filters
+    return struct
 
 class SeqWithQuality(SeqRecord):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
@@ -283,7 +322,6 @@ class SeqWithQuality(SeqRecord):
                 if 'pep' in qualifiers:
                     qualifiers['pep'] = \
                                      self._from_seq_to_struct(qualifiers['pep'])
-
             loc = feat.location
             feat = {'start': loc.start.position,
                     'end':   loc.end.position,
