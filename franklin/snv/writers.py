@@ -96,6 +96,7 @@ class VariantCallFormatWriter(object):
         header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
         header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
         header.append('##INFO=GC,.,String,"Genotype counts for alleles"')
+        header.append('##INFO=EZ,.,String,"CAP enzymes"')
         header.append('##FORMAT=RG,.,String,"Read group Genotype genotype"')
         header.append('##FORMAT=AC,.,String,"Allele count"')
 
@@ -236,6 +237,11 @@ class VariantCallFormatWriter(object):
         number_of_groups = sum([count[1] for count in genotype_counts])
         genotype_polymorphism = 1 - genotype_counts[0][1] / float(number_of_groups)
         toprint_items.append('GP=%.2f' % genotype_polymorphism)
+
+        #cap enzymes
+        if 'cap_enzymes' in qualifiers and qualifiers['cap_enzymes']:
+            to_print = 'EZ=%s' % ','.join(qualifiers['cap_enzymes'])
+            toprint_items.append(to_print)
 
         if toprint_items:
             return ';'.join(toprint_items)

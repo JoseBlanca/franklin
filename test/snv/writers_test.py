@@ -42,7 +42,8 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                       'filters':{'by_kind':{SNP:False}},
                                       'reference_allele':'T',
                                       'mapping_quality': 47.9,
-                                      'quality': 30.1})
+                                      'quality': 30.1,
+                                      'cap_enzymes':['EcoRI']})
         alleles = {('T', INVARIANT):{'read_groups': {'hola_illumina':1},
                                      'quality': 57.0}}
         filters = {'by_kind':{SNP:True},
@@ -76,6 +77,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert 'HVR80;VLB1;VLB2;NVLB1;VKS' in vcf
         assert 'AF=0.2,0.5' in vcf
         assert 'GP=0.50' in vcf
+        assert 'EZ=EcoRI' in vcf
 
         seq_str = 'ATATATATATATATATATATATATAT' * 50
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
