@@ -165,12 +165,11 @@ class TestSnvAnnotation(unittest.TestCase):
 
         #with groups
         alleles = {('A', INVARIANT): {'read_groups':{'r1':1},},
-                   ('A', DELETION):  {'read_groups':{'r2':1, 'r3':1}}}
+                   ('A', DELETION):  {'read_groups':{'r1':1, 'r2':1}}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles,
                                       'read_groups':{'r1':{'LB':'l1'},
-                                                     'r2':{'LB':'l2'},
-                                                     'r3':{'LB':'l3'}}})
+                                                     'r2':{'LB':'l2'}}})
         maf = calculate_maf_frequency(feat, groups=['l1'],
                                       group_kind='libraries')
         assert maf == 1 / 2

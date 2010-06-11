@@ -31,40 +31,20 @@ class VariantCallFormatWriterTest(unittest.TestCase):
 
     def test_basic(self):
         seq_str = 'AAA'
-        alleles = {('A', SNP):{'read_groups': ['hola_illumina', 'hola2'],
-                               'samples': ['individual1', 'individual2'],
-                               'read_names': ['seq16', 'seq17'],
-                               'orientations': [True, False],
-                               'qualities': [57.0, 35.0],
-                               'quality': 57.0,
-                               'mapping_qualities': [37, 0]},
-                   ('T', INVARIANT):{'read_groups': ['sanger'],
-                                     'samples': ['individual2'],
-                                     'read_names': ['seq16'],
-                                     'orientations': [True],
-                                     'qualities': [57.0],
-                                     'quality': 57.0,
-                                     'mapping_qualities': [37]},
-                   ('C', SNP):{'read_groups': ['hola_illumina'],
-                               'samples': ['individual3'],
-                               'read_names': ['seq6'],
-                               'orientations': [True, False],
-                               'qualities': [57.0, 35.0],
-                               'quality': 57.0,
-                               'mapping_qualities': [37, 0]},
-                   }
+        alleles = {('A', SNP):{'read_groups': {'hola_illumina':1, 'hola2':1},
+                               'quality': 57.0},
+                   ('T', INVARIANT):{'read_groups': {'sanger':1},
+                                     'quality': 57.0},
+                   ('C', SNP):{'read_groups': {'hola_illumina':1},
+                               'quality': 57.0},}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(20, 20),
-                         qualifiers={'alleles':alleles,
-                                     'filters':{'by_kind':{SNP:False}},
-                                     'reference_allele':'T'})
-        alleles = {('T', INVARIANT):{'read_groups': ['hola_illumina'],
-                                     'samples': ['individual4'],
-                                     'read_names': ['seq16'],
-                                     'orientations': [True],
-                                     'qualities': [57.0],
-                                     'quality': 57.0,
-                                     'mapping_qualities': [37]},
-                   }
+                          qualifiers={'alleles':alleles,
+                                      'filters':{'by_kind':{SNP:False}},
+                                      'reference_allele':'T',
+                                      'mapping_quality': 47.9,
+                                      'quality': 30.1})
+        alleles = {('T', INVARIANT):{'read_groups': {'hola_illumina':1},
+                                     'quality': 57.0}}
         filters = {'by_kind':{SNP:True},
                    'high_variable_reg':{(0.8, 0):True},
                    'is_variable':{('libraries', ('lib1',), False):True,
@@ -74,7 +54,9 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         snv2 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
                          qualifiers={'alleles':alleles,
                                      'filters':filters,
-                                     'reference_allele':'T'})
+                                     'reference_allele':'T',
+                                     'mapping_quality': 35.6,
+                                     'quality': 29.4})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30, 30, 30],
                              name='AT1G55265.1', features=[snv1, snv2])
         fhand = NamedTemporaryFile(mode='a')

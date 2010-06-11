@@ -572,7 +572,7 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
 
     alleles_for_groups = {}
     for allele, alleles_info in alleles.items():
-        for read_group in alleles_info[group_kind]:
+        for read_group in alleles_info['read_groups']:
             group = _get_group(read_group, group_kind, read_groups)
             if group not in groups:
                 continue
