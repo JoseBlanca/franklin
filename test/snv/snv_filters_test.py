@@ -463,7 +463,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
                    ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
-                         qualifiers={'alleles':alleles})
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{'rg1':{'LB':1},
+                                                    'rg2':{'LB':2},
+                                                    'rg3':{'LB':3},
+                                                    'rg4':{'LB':4}}})
         seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
@@ -471,9 +475,12 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
         filter_ = create_min_groups_filter(min_groups=5)
         filter_(seq)
+        filter_ = create_min_groups_filter(min_groups=4, group_kind='libraries')
+        filter_(seq)
         results = seq.features[0].qualifiers['filters']['min_groups']
         assert not results[(4, 'read_groups')]
         assert results[(5, 'read_groups')]
+        assert not results[(4, 'libraries')]
 
     @staticmethod
     def test_get_filter_description():

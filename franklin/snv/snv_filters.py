@@ -30,7 +30,8 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
-                                         variable_in_groupping)
+                                         variable_in_groupping,
+                                         _get_group)
 from franklin.seq.seqs import get_seq_name
 
 # In a filter TRUE result means that a snv does NOT pass the filter.
@@ -540,8 +541,11 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
 
             #how many groups are in the alleles?
             groups = set()
-            for allele in  snv.qualifiers['alleles'].values():
-                groups = groups.union(set(allele[group_kind]))
+            rg_info = snv.qualifiers['read_groups']
+            for allele in snv.qualifiers['alleles'].values():
+                read_groups = allele['read_groups'].keys()
+                al_groups = [_get_group(rg, group_kind, rg_info) for rg in read_groups]
+                groups = groups.union(set(al_groups))
             result = False if len(groups) >= min_groups else True
 
             _add_filter_result(snv, 'min_groups', result, threshold=parameters)
