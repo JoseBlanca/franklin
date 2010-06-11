@@ -170,17 +170,17 @@ class TestBackboneMapping(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='annotate_snvs',
                     silent=True)
         json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'reference.0.json')
-        assert '"type": "snv"' in  open(json_fpath).read()
+                          'reference.0.pickle')
+        assert 'snv' in  open(json_fpath).read()
 
         do_analysis(project_settings=settings_path, kind='filter_snvs',
                     silent=True)
         json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'reference.1.json')
+                          'reference.1.pickle')
         result = open(json_fpath).read()
         #print result
-        assert '"type": "snv"' in result
-        assert '"samples": ["adios_sanger", "hola"]' in result
+        assert 'snv' in result
+        assert 'adios_sanger' in result
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)

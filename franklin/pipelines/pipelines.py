@@ -250,7 +250,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             splitter = 'fastq'
         elif file_format == 'repr':
             splitter = 'SeqWithQual'
-        elif file_format == 'json':
+        elif file_format in ('json', 'pickle'):
             splitter = 'blank_line'
         else:
             raise NotImplementedError('No splitter for format ' + file_format)

@@ -91,11 +91,11 @@ class AnnotationTest(unittest.TestCase):
 
         do_analysis(project_settings=settings_path, kind='annotate_orthologs',
                     silent=True)
-        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'melon.0.json')
-        json = open(json_fpath).read()
-        assert 'arabidopsis-orthologs' in json
-        assert 'arabidopsis2-orthologs' in json
+        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'melon.0.pickle')
+        pickle = open(pickle_fpath).read()
+        assert 'arabidopsis-orthologs' in pickle
+        assert 'arabidopsis2-orthologs' in pickle
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
@@ -144,7 +144,7 @@ class AnnotationTest(unittest.TestCase):
         do_analysis(project_settings=settings_path,
                     kind='annotate_descriptions', silent=True)
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'melon.0.json')
+                          'melon.0.pickle')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
 
@@ -187,9 +187,9 @@ class AnnotationTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path, kind='annotate_introns',
                     silent=True)
-        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'seqs.0.json')
-        assert '"type": "intron"' in open(json_fpath).read()
+        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.pickle')
+        assert 'intron' in open(pickle_fpath).read()
         os.chdir('/tmp')
         test_dir.close()
 
@@ -224,10 +224,10 @@ class AnnotationTest(unittest.TestCase):
         fhand.close()
         do_analysis(project_settings=settings_path,
                     kind='annotate_microsatellites', silent=True)
-        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'seqs.0.json')
-        result = open(json_fpath).read()
-        assert '"type": "microsatellite"' in  result
+        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+                          'seqs.0.pickle')
+        result = open(pickle_fpath).read()
+        assert 'microsatellite' in  result
 
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
@@ -271,9 +271,9 @@ class AnnotationTest(unittest.TestCase):
         do_analysis(project_settings=settings_path,
                     kind='annotate_orfs', silent=True)
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'seqs.0.json')
+                          'seqs.0.pickle')
         result = open(repr_fpath).read()
-        assert '"type": "orf"' in  result
+        assert 'orf' in  result
         do_analysis(project_settings=settings_path, kind='write_annotations',
                     silent=True)
 
@@ -331,7 +331,7 @@ class AnnotationTest(unittest.TestCase):
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'seqs.0.json')
+                          'seqs.0.pickle')
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',

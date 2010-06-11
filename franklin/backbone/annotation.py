@@ -69,20 +69,20 @@ class AnnotationAnalyzer(Analyzer):
         'It runs the analysis.'
 
         self._log({'analysis_started':True})
-        json_fpaths = inputs['json']
+        pickle_fpaths = inputs['pickle']
         try:
             seqs_fpaths = inputs['input']
         except KeyError:
             seqs_fpaths = []
-        seqs_paths = self._get_seq_or_json_path(seqs_fpaths, json_fpaths)
+        seqs_paths = self._get_seq_or_pickle_path(seqs_fpaths, pickle_fpaths)
         for seq_path in seqs_paths:
             seq_fpath = seq_path.last_version
-            temp_json = NamedTemporaryFile(suffix='.json', mode='a',
+            temp_pickle = NamedTemporaryFile(suffix='.pickle', mode='a',
                                            delete=False)
             in_fhands = {'in_seq': open(seq_fpath)}
 
-            writer = SequenceWriter(fhand=temp_json,
-                                    file_format='json')
+            writer = SequenceWriter(fhand=temp_pickle,
+                                    file_format='pickle')
 
             if seq_path.basename in configuration:
                 #there is a different configuration for every file to annotate
@@ -94,23 +94,23 @@ class AnnotationAnalyzer(Analyzer):
                                 in_fhands=in_fhands,
                                 processes=self.threads,
                                 writers={'repr': writer})
-            temp_json.close()
+            temp_pickle.close()
             repr_path = VersionedPath(os.path.join(output_dir,
-                                                   seq_path.basename + '.json'))
+                                                 seq_path.basename + '.pickle'))
             repr_fpath = repr_path.next_version
-            shutil.move(temp_json.name, repr_fpath)
+            shutil.move(temp_pickle.name, repr_fpath)
         self._log({'analysis_finished':True})
 
-    def _get_seq_or_json_path(self, seqs_paths, json_paths):
-        'It returns for every file the json or the seq file'
-        json_paths_ = dict([(path.basename, path) for path in json_paths])
+    def _get_seq_or_pickle_path(self, seqs_paths, pickle_paths):
+        'It returns for every file the pickle or the seq file'
+        pickle_paths_ = dict([(path.basename, path) for path in pickle_paths])
         if not seqs_paths:
-            return json_paths
+            return pickle_paths
         new_seq_paths = []
         for path in seqs_paths:
             basename = path.basename
-            if basename in json_paths_:
-                new_seq_paths.append(json_paths_[basename])
+            if basename in pickle_paths_:
+                new_seq_paths.append(pickle_paths_[basename])
             else:
                 new_seq_paths.append(path)
         return new_seq_paths
@@ -198,7 +198,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir = output_dirs['json_dir']
+        db_dir = output_dirs['db_dir']
         pipeline = [annotate_cdna_introns]
 
         general_settings = self._project_settings['General_settings']
@@ -217,7 +217,7 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=json_dir)
+                                    output_dir=db_dir)
 
 class SnvCallerAnalyzer(AnnotationAnalyzer):
     'It performs the calling of the snvs in a bam file'
@@ -266,7 +266,7 @@ class WriteAnnotationAnalyzer(Analyzer):
         'It runs the analysis.'
         output_dir = self._create_output_dirs()['result']
         inputs = self._get_input_fpaths()
-        json_paths = inputs['json']
+        pickle_paths = inputs['pickle']
 
         output_files = {'vcf': ('vcf',),
                         'orf':('orf_seq.fasta', 'orf_pep.fasta'),
@@ -274,7 +274,7 @@ class WriteAnnotationAnalyzer(Analyzer):
                         'gff':('gff3',),
                         'orthologs':('orthologs',),}
 
-        for seq_path in json_paths:
+        for seq_path in pickle_paths:
             outputs = {}
             for kind, extensions in output_files.items():
                 outputs[kind] = []
@@ -293,9 +293,9 @@ class WriteAnnotationAnalyzer(Analyzer):
             in_fhands = {'in_seq': open(seq_path.last_version)}
 
             writers = {}
-            if 'json' in outputs:
-                writers['json'] = SequenceWriter(fhand=outputs['json'],
-                                                 file_format='json')
+            if 'pickle' in outputs:
+                writers['pickle'] = SequenceWriter(fhand=outputs['pickle'],
+                                                 file_format='pickle')
 
             if 'vcf' in outputs:
                 ref_name = os.path.basename(in_fhands['in_seq'].name)
@@ -354,13 +354,13 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir = output_dirs['json_dir']
+        db_dir = output_dirs['db_dir']
         pipeline, configuration = self._get_snv_filter_specs()
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=json_dir)
+                                    output_dir=db_dir)
     def _get_snv_filter_specs(self):
         'It gets the pipeline and configuration from settings'
         configuration = {}
@@ -433,7 +433,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir = output_dirs['json_dir']
+        db_dir = output_dirs['db_dir']
         blast_settings = self._project_settings['blast']
 
         settings = self._project_settings['Annotation']
@@ -483,7 +483,7 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=json_dir)
+                                    output_dir=db_dir)
 
 class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
     '''This class is used to annotate the microsatellite of a sequence as a
@@ -492,14 +492,14 @@ class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir = output_dirs['json_dir']
+        db_dir = output_dirs['db_dir']
 
         pipeline = [annotate_microsatellites]
         configuration = {}
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=json_dir)
+                                    output_dir=db_dir)
 
 class AnnotateOrfAnalyzer(AnnotationAnalyzer):
     '''This class is used to annotate the orf of a sequence as a feature'''
@@ -508,14 +508,14 @@ class AnnotateOrfAnalyzer(AnnotationAnalyzer):
         'It runs the analysis.'
         matrix = self._project_settings['Annotation']['orf_annotation']['estscan_matrix']
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir = output_dirs['json_dir']
+        db_dir = output_dirs['db_dir']
         pipeline = [annotate_orfs]
 
         configuration = {'annotate_orfs': {'parameters':{'matrix':matrix}}}
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
-                                    output_dir=json_dir)
+                                    output_dir=db_dir)
 
 class AnnotateGoAnalyzer(AnnotationAnalyzer):
     'This class is used to annotate gos using blast2go'
@@ -523,7 +523,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        json_dir       = output_dirs['json_dir']
+        db_dir       = output_dirs['db_dir']
         result_dir     = output_dirs['result']
         blast_settings = self._project_settings['blast']
 
@@ -565,7 +565,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
             configuration[input_.basename] = {'annotate_gos': step_config}
         result = self._run_annotation(pipeline=pipeline,
                                       configuration=configuration,
-                                      inputs=inputs, output_dir=json_dir)
+                                      inputs=inputs, output_dir=db_dir)
 
         return result
 
@@ -605,15 +605,15 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 DEFINITIONS = {
     'filter_snvs':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'}},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': SnvFilterAnalyzer},
     'annotate_snvs':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'merged_bam':
@@ -627,18 +627,18 @@ DEFINITIONS = {
          'analyzer': SnvCallerAnalyzer},
     'annotate_introns':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'}},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateIntronsAnalyzer},
     'write_annotations':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             },
@@ -646,7 +646,7 @@ DEFINITIONS = {
          'analyzer': WriteAnnotationAnalyzer},
     'annotate_orthologs':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
@@ -657,48 +657,48 @@ DEFINITIONS = {
          'analyzer': AnnotateOrthologsAnalyzer},
     'annotate_descriptions':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'}},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateDescriptionAnalyzer},
 
     'annotate_microsatellites':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'}},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateMicrosatelliteAnalyzer},
     'annotate_orfs':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'}},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': AnnotateOrfAnalyzer},
     'annotate_gos':
         {'inputs':{
-            'json':
+            'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
             'input':
                 {'directory': 'annotation_input',
                  'file_kinds': 'sequence_files'},
             },
-         'outputs':{'json_dir':{'directory': 'annotation_dbs'},
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'},
                     'result':{'directory':'annotation_result'}},
          'analyzer': AnnotateGoAnalyzer},
     }
