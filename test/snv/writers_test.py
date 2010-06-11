@@ -37,13 +37,17 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                      'quality': 57.0},
                    ('C', SNP):{'read_groups': {'hola_illumina':1},
                                'quality': 57.0},}
+        read_groups = {'hola_illumina':{'LB':'lib1'},
+                       'hola2':{'LB':'lib2'},
+                       'sanger': {'LB': 'lib3'}}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(20, 20),
                           qualifiers={'alleles':alleles,
                                       'filters':{'by_kind':{SNP:False}},
                                       'reference_allele':'T',
                                       'mapping_quality': 47.9,
                                       'quality': 30.1,
-                                      'cap_enzymes':['EcoRI']})
+                                      'cap_enzymes':['EcoRI'],
+                                      'read_groups':read_groups})
         alleles = {('T', INVARIANT):{'read_groups': {'hola_illumina':1},
                                      'quality': 57.0}}
         filters = {'by_kind':{SNP:True},
@@ -53,11 +57,12 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                    'is_not_variable':{('libraries', ('lib1',), False):True},
                     }
         snv2 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
-                         qualifiers={'alleles':alleles,
-                                     'filters':filters,
-                                     'reference_allele':'T',
-                                     'mapping_quality': 35.6,
-                                     'quality': 29.4})
+                          qualifiers={'alleles':alleles,
+                                      'filters':filters,
+                                      'reference_allele':'T',
+                                      'mapping_quality': 35.6,
+                                      'quality': 29.4,
+                                      'read_groups':read_groups})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30, 30, 30],
                              name='AT1G55265.1', features=[snv1, snv2])
         fhand = NamedTemporaryFile(mode='a')
@@ -78,6 +83,14 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert 'AF=0.2,0.5' in vcf
         assert 'GP=0.50' in vcf
         assert 'EZ=EcoRI' in vcf
+
+        #test writer with a non read_groups grouping
+        fhand = NamedTemporaryFile(mode='a')
+        writer = VariantCallFormatWriter(fhand, 'ref1', grouping='libraries')
+        writer.write(seq)
+        writer.close()
+        vcf = open(fhand.name).read()
+        assert 'LIB1' in vcf
 
         seq_str = 'ATATATATATATATATATATATATAT' * 50
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),

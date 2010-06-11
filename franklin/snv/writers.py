@@ -24,6 +24,7 @@ import datetime, math
 from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
+from franklin.snv.snv_annotation import _allele_count, _get_group
 from franklin.utils.misc_utils import OrderedDict
 
 class SnvIlluminaWriter(object):
@@ -184,20 +185,20 @@ class VariantCallFormatWriter(object):
 
         alleles = qualifiers['alleles']
 
-        allele_count = lambda al: sum(alleles[al]['read_groups'].values())
-
         #AC allele count in genotypes, for each ALT allele, in the same order as
         #listed
         acounts = [] #allele_count
         for allele in alternative_alleles:
-            acounts.append(allele_count(allele))
+            acount = _allele_count(allele, alleles, group_kind='read_groups')
+            acounts.append(acount)
         if acounts:
             toprint_items.append('AC=%s' % ','.join(map(str, acounts)))
 
         #AF allele frequency for each ALT allele in the same order as listed:
         reference_allele = qualifiers['reference_allele'], INVARIANT
         if reference_allele in alleles:
-            ref_count = allele_count(reference_allele)
+            ref_count = _allele_count(reference_allele, alleles,
+                                      group_kind='read_groups')
         else:
             ref_count = 0
         total_count = float(sum(acounts) + ref_count)
@@ -221,10 +222,12 @@ class VariantCallFormatWriter(object):
                                                        alternative_alleles)
         #we count the number of times every allele appears in a group (sample)
         genotype_counts = []
-        for allele, allele_info in qualifiers['alleles'].items():
+        for allele in qualifiers['alleles']:
+            acount = _allele_count(allele, alleles,
+                                   read_groups=qualifiers['read_groups'],
+                                   group_kind=grouping_key)
             allele = allele_numb_coding[allele]
-            genotype_counts.append((allele,
-                                    len(set(allele_info[grouping_key]))))
+            genotype_counts.append((allele, acount))
         #we have to sort by the number of groups
         genotype_counts = sorted(genotype_counts, lambda x, y: y[1] - x[1])
         #now we print
@@ -282,12 +285,17 @@ class VariantCallFormatWriter(object):
         alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
         return alleles_index
 
-    def _create_genotypes(self, alleles, reference_allele, alternative_alleles):
+    def _create_genotypes(self, qualifiers, alternative_alleles):
         'It returns the genotype section for this snv'
+
+        alleles = qualifiers['alleles']
+        reference_allele = qualifiers['reference_allele']
+        read_groups = qualifiers['read_groups']
 
         items = []
         #the format
         items.append('RG:AC')
+
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = self._numbers_for_alleles(reference_allele,
                                                   alternative_alleles)
@@ -298,7 +306,8 @@ class VariantCallFormatWriter(object):
         for allele, allele_info in alleles.items():
             #we need the index for the allele
             allele_index = alleles_index[allele]
-            for group in allele_info[grouping_key]:
+            for read_group in allele_info['read_groups']:
+                group = _get_group(read_group, grouping_key, read_groups)
                 if group not in self._genotype_groups:
                     self._genotype_groups[group] = True
                 if group not in alleles_by_group:
@@ -344,8 +353,7 @@ class VariantCallFormatWriter(object):
         filters = self._create_filters(qualifiers)
         items.append(filters)
         items.append(self._create_info(qualifiers, alternative_alleles))
-        items.append(self._create_genotypes(qualifiers['alleles'],
-                                            qualifiers['reference_allele'],
+        items.append(self._create_genotypes(qualifiers,
                                             alternative_alleles))
         self._temp_fhand.write('%s\n' % '\t'.join(items))
         self._temp_fhand.flush()
