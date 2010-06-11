@@ -34,7 +34,8 @@ def prepare_release(indir):
 
     #the output name
     release_name = 'franklin-%s' % version
-    release_dir = join(work_dir, release_name)
+    tar_dir = join(work_dir, 'franklin')
+    release_dir = join(tar_dir, release_name)
     #copy the git dir
     shutil.copytree(indir, release_dir, ignore=shutil.ignore_patterns('.git*',
                                                                     '*project',
@@ -60,7 +61,7 @@ def prepare_release(indir):
     #now we can create the tar.gz
     tar_fpath = release_name + '.tar.gz'
     tar = tarfile.open(tar_fpath, 'w:gz')
-    tar.add(release_dir, arcname='')
+    tar.add(tar_dir, '')
     tar.close()
 
     shutil.rmtree(work_dir)
