@@ -21,7 +21,7 @@ Created on 05/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from tempfile import NamedTemporaryFile
-import unittest, os, pysam
+import unittest, os
 
 from franklin.utils.misc_utils import DATA_DIR
 from StringIO import StringIO
@@ -29,7 +29,7 @@ from StringIO import StringIO
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
-                          bam_distribs, create_bam_index, sample_bam)
+                          bam_distribs, sample_bam, bam_general_stats)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -235,7 +235,21 @@ class SamStatsTest(unittest.TestCase):
         sam = open(out_sam.name).read().splitlines()
         assert len(sam) == 6
 
+    @staticmethod
+    def test_general_mapping_stats():
+        'General mapping statistics'
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+
+        out_fhand = StringIO()
+
+        bam_general_stats(bam_fhand, out_fhand)
+
+        assert 'illumina\t4\n' in out_fhand.getvalue()
+
 if	__name__	==	"__main__":
-#    import sys;sys.argv = ['', 'SamStatsTest.test_basic_stats']
-#    import sys;sys.argv = ['', 'SamStatsTest.test_sample_bam']
+    #import sys;sys.argv = ['', 'SamStatsTest.test_general_mapping_stats']
     unittest.main()

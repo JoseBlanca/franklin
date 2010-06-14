@@ -450,6 +450,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
             grouping = 'PL'
         else:
             grouping = 'SM'
+
     item_values = value_calculator[kind](bam, rgs, grouping)
 
     results = {}
@@ -462,6 +463,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
                                  'w')
             plot_fhand = open('%s.%s_%s.png' % (basename, kind, group_name),
                               'w')
+
         if grouping == 'PL':
             grouping = 'platform'
         elif grouping == 'SM':
@@ -471,7 +473,8 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
 
         distrib = create_distribution(values, labels,
                                       distrib_fhand=distrib_fhand,
-                                   plot_fhand=plot_fhand, range_=range_)
+                                      plot_fhand=plot_fhand,
+                                      range_=range_)
 
         results[(grouping, group_name)] = distrib['distrib']
     return results
@@ -501,3 +504,31 @@ def _reads_in_sam(sam_fhand):
         if line[0] == '@':
             continue
         yield line
+
+def bam_general_stats(bam_fhand, out_fhand):
+    'It calculates some general statistics for the bam file'
+
+    bam_fpath = bam_fhand.name
+    create_bam_index(bam_fpath=bam_fpath)
+    bam = pysam.Samfile(bam_fpath, 'rb')
+
+    rg_stats = {}
+    for aligned_read in pysam.IteratorRowAll(bam):
+        read_group = aligned_read.opt('RG')
+        if read_group not in rg_stats:
+            rg_stats[read_group] = 0
+        rg_stats[read_group] += 1
+
+    out_fhand.write('General mapping statistics\n')
+    out_fhand.write('--------------------------\n')
+    out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
+                     'Num mapped reads', '\n']))
+    rg_info = get_read_group_info(bam)
+    read_groups = sorted(rg_info.keys())
+    for read_group in read_groups:
+        row = [read_group]
+        row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
+        count = rg_stats[read_group] if read_group in rg_stats else 0
+        row.append(str(count))
+        out_fhand.write('\t'.join(row) + '\n')
+    out_fhand.write('\n')
