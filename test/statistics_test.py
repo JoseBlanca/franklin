@@ -38,9 +38,7 @@ class DistributionTest(unittest.TestCase):
 
         create_distribution(numbers, distrib_fhand=distrib_fhand,
                             summary_fhand=summary_fhand)
-        result = '''Statistics for values
-----------------------
-minimum: 1
+        result = '''minimum: 1
 maximum: 101
 average: 10.56
 variance: 486.91

@@ -61,7 +61,7 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
     #now we write some basic stats
     format_num = lambda x: str(x) if isinstance(x, int) else '%.2f' % x
     if summary_fhand:
-        msg = 'Statistics for %s\n' % labels['xlabel']
+        msg = 'Statistics for %s\n' % labels['title']
         summary_fhand.write(msg)
         summary_fhand.write('-' * len(msg) + '\n')
         summary_fhand.write('minimum: %s\n' % format_num(numbers.min))
