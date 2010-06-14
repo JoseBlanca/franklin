@@ -253,7 +253,11 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         elif file_format in ('json', 'pickle'):
             splitter = 'blank_line'
         else:
-            raise NotImplementedError('No splitter for format ' + file_format)
+            if file_format:
+                msg = 'No parallel splitter for format ' + file_format
+            else:
+                msg = 'A file with an unknown format cannot be split'
+            raise NotImplementedError(msg)
         cmd_def = [{'options': 2, 'io': 'in', 'splitter':splitter},
                    {'options':-2, 'io': 'out'}]
         stdout = NamedTemporaryFile()
