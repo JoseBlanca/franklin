@@ -22,7 +22,7 @@ Created on 12/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import shutil, os, copy
-from os.path import join, exists
+from os.path import join, exists, getsize
 from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -109,7 +109,8 @@ class AnnotationAnalyzer(Analyzer):
         new_seq_paths = []
         for path in seqs_paths:
             basename = path.basename
-            if basename in pickle_paths_:
+            if (basename in pickle_paths_ and
+                getsize(pickle_paths_[basename].last_version)):
                 new_seq_paths.append(pickle_paths_[basename])
             else:
                 new_seq_paths.append(path)
