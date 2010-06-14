@@ -36,8 +36,7 @@ def _get_available_analyses():
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
-    msg  = 'Possible analyses to run(You can run more than one analysis. '
-    msg += 'list with commas): %s' % _get_available_analyses()
+    msg  = 'Possible analyses to run: %s' % _get_available_analyses()
     parser.add_option('-a', '--action', dest='action',  help=msg)
     parser.add_option('-s', '--settings', dest='settings',
                       help='Settings file path')
