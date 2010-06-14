@@ -47,13 +47,11 @@ class Minor_utilities_test(unittest.TestCase):
         rel_symlink(hola ,caracola)
         assert os.path.exists(caracola)
 
-
         fname = os.path.join(hola, 'fname')
-        fhand = open(fname, 'w')
+        open(fname, 'w')
         caracola2 = os.path.join(tempdir.name, 'caracola2')
         rel_symlink(fname ,caracola2)
         assert os.path.exists(caracola2)
-
 
         path2 = os.path.join(tempdir.name, 'dir1', 'dir2')
         os.makedirs(path2)

@@ -109,8 +109,13 @@ class AnnotationAnalyzer(Analyzer):
         new_seq_paths = []
         for path in seqs_paths:
             basename = path.basename
-            if (basename in pickle_paths_ and
-                getsize(pickle_paths_[basename].last_version)):
+            if basename in pickle_paths_:
+                #if the last version of these path is empty we have a problem
+                pickle_fpath = pickle_paths_[basename].last_version
+                if not getsize(pickle_fpath):
+                    msg = 'An annotation db path is empty, please fix it: '
+                    msg += pickle_fpath
+                    raise RuntimeError(msg)
                 new_seq_paths.append(pickle_paths_[basename])
             else:
                 new_seq_paths.append(path)
