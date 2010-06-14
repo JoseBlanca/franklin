@@ -93,7 +93,7 @@ class AnnotationAnalyzer(Analyzer):
             seq_pipeline_runner(pipeline, configuration=config,
                                 in_fhands=in_fhands,
                                 processes=self.threads,
-                                writers={'repr': [writer]})
+                                writers={'repr': writer})
             temp_pickle.close()
             repr_path = VersionedPath(os.path.join(output_dir,
                                                  seq_path.basename + '.pickle'))
