@@ -33,7 +33,7 @@ def write_distribution(fhand, distribution, bin_edges):
     fhand.flush()
 
 def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
-                        plot_fhand=None, range_=None):
+                        plot_fhand=None, range_=None, summary_fhand=None):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     if bins is None:
@@ -58,6 +58,19 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
                       title=labels['title'], xlabel=labels['xlabel'],
                       ylabel=labels['ylabel'],
                       fhand=plot_fhand)
+    #now we write some basic stats
+    format_num = lambda x: str(x) if isinstance(x, int) else '%.2f' % x
+    if summary_fhand:
+        msg = 'Statistics for %s\n' % labels['xlabel']
+        summary_fhand.write(msg)
+        summary_fhand.write('-' * len(msg) + '\n')
+        summary_fhand.write('minimum: %s\n' % format_num(numbers.min))
+        summary_fhand.write('maximum: %s\n' % format_num(numbers.max))
+        summary_fhand.write('average: %s\n' % format_num(numbers.average))
+        summary_fhand.write('variance: %s\n' % format_num(numbers.variance))
+        summary_fhand.write('sum: %s\n' % format_num(numbers.sum))
+        summary_fhand.write('items: %s\n' % len(numbers))
+        summary_fhand.write('\n')
     return {'distrib':list(distrib), 'bin_edges':list(bin_edges)}
 
 def _range(numbers):

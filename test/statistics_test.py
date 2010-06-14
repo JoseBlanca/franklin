@@ -20,34 +20,33 @@ Created on 10/07/2009
 import unittest
 from StringIO import StringIO
 import os
-from tempfile import NamedTemporaryFile
 
-from franklin.utils.misc_utils import float_lists_are_equal
-from franklin.utils.seqio_utils import seqs_in_file
-from franklin.statistics import CachedArray, histogram
+from franklin.statistics import CachedArray, histogram, create_distribution
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
-def _read_distrib_file(fhand):
-    '''Given an fhand with a distribution/histogram in it it returns the
-    distrib and the bin_edges'''
-    val_line = fhand.readline()
-    distri = [float(item) for item in val_line.split(':')[1].strip().split(',')]
-    bin_line = fhand.readline()
-    edges = [float(item) for item in bin_line.split(':')[1].strip().split(',')]
-    return distri, edges
+class DistributionTest(unittest.TestCase):
+    'It tests the create distribution function'
+    def test_basic_distribution(self):
+        'It tests the distribution'
+        summary_fhand = StringIO()
+        distrib_fhand = StringIO()
 
-def _check_distrib_file(fhand, distrib, bin_edges):
-    'Given an fhand, a distrib list and the bin_edges, it checks they match'
-    fhand.seek(0)
-    fdistrib, fbin_edges = _read_distrib_file(fhand)
-    assert distrib == fdistrib
-    float_lists_are_equal(fbin_edges, bin_edges)
+        numbers = CachedArray(typecode='I')
+        numbers.extend([1, 2, 3, 4, 5, 6, 7, 8, 9, 101, 2, 3, 4, 5, 6, 7, 8, 9])
 
-def _file_length(fhand):
-    'Given an fhand it returns the file length in bytes'
-    return os.stat(fhand.name)[6]
+        create_distribution(numbers, distrib_fhand=distrib_fhand,
+                            summary_fhand=summary_fhand)
+        result = '''Statistics for values
+----------------------
+minimum: 1
+maximum: 101
+average: 10.56
+variance: 486.91
+sum: 190
+items: 18'''
+        assert result in summary_fhand.getvalue()
 
 class HistogramTest(unittest.TestCase):
     'It checks our histogram/distribution implementation'
@@ -96,7 +95,6 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.min == min(item_list)
         assert storage.average == 2
         assert len(storage) == len(item_list)
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']
