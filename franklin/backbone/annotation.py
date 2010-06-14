@@ -565,10 +565,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
 
         for input_ in  inputs['input']:
             input_fpath = input_.last_version
-
             step_config = {'annot_fpath': blast2go[input_fpath]}
-
             configuration[input_.basename] = {'annotate_gos': step_config}
+
         result = self._run_annotation(pipeline=pipeline,
                                       configuration=configuration,
                                       inputs=inputs, output_dir=db_dir)

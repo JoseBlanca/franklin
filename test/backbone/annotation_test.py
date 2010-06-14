@@ -342,5 +342,5 @@ class AnnotationTest(unittest.TestCase):
                     silent=True)
 
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTest.test_orf_annotation_analysis']
+    #import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
     unittest.main()
