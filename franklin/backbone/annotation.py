@@ -211,8 +211,13 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
 
         settings = self._project_settings['Annotation']
         genomic_seqs = settings['Cdna_intron_annotation']['genomic_seq_file']
-        if settings['Cdna_intron_annotation']['genomic_db'] is None:
+        if not genomic_seqs:
+            msg = 'genomic_seq_file not set for cdna intron annotation'
+            raise ValueError(msg)
+        if not settings['Cdna_intron_annotation']['genomic_db']:
             project_path = general_settings['project_path']
+            print project_path
+            print genomic_seqs
             genomic_db = make_backbone_blast_db(project_path, genomic_seqs,
                                                 dbtype='nucl')
         else:
