@@ -413,7 +413,7 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
     return mquals
 
 def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
-                 sample_size=None):
+                 sample_size=None, summary_fhand=None):
     '''It makes the bam coverage distribution.
 
     It can make the distribution taking into account any of the readgroup items:
@@ -474,7 +474,8 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
         distrib = create_distribution(values, labels,
                                       distrib_fhand=distrib_fhand,
                                       plot_fhand=plot_fhand,
-                                      range_=range_)
+                                      range_=range_,
+                                      summary_fhand=summary_fhand)
 
         results[(grouping, group_name)] = distrib['distrib']
     return results

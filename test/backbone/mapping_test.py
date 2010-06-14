@@ -25,7 +25,7 @@ from os.path import join, exists
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
-from franklin.backbone.analysis import BACKBONE_DIRECTORIES
+from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
 
 THREADS = 2
 
@@ -152,8 +152,7 @@ class TestBackboneMapping(unittest.TestCase):
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
-        f1 = open(join(result_dir, 'merged.bam'), 'w')
-        f1.close()
+
         do_analysis(project_settings=settings_path, kind='merge_bams',
                     silent=True)
         assert exists(join(result_dir, 'merged.0.bam'))
@@ -162,8 +161,16 @@ class TestBackboneMapping(unittest.TestCase):
         #we realign the mapping using GATK
         do_analysis(project_settings=settings_path, kind='realign_bam',
                     silent=True)
-
         assert exists(join(result_dir, 'merged.1.bam'))
+
+        do_analysis(project_settings=settings_path, kind='mapping_stats',
+                    silent=True)
+        stats_fname = join(mapping_dir,
+                           BACKBONE_DIRECTORIES['mapping_stats'][1],
+                           BACKBONE_BASENAMES['statistics_file'])
+        result = open(stats_fname).read()
+        assert 'Statistics for Coverage for platform sanger' in result
+
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))

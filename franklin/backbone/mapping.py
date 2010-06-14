@@ -27,12 +27,12 @@ from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
                                         _LastAnalysisAnalyzer)
 from franklin.mapping import map_reads
-from franklin.utils.misc_utils import NamedTemporaryDir, VersionedPath,\
-    rel_symlink
+from franklin.utils.misc_utils import (NamedTemporaryDir, VersionedPath,
+                                       rel_symlink)
 from franklin.backbone.specifications import BACKBONE_BASENAMES
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
-                          bam_distribs, create_bam_index)
+                          bam_distribs, create_bam_index, bam_general_stats)
 
 class SetAssemblyAsReferenceAnalyzer(Analyzer):
     'It sets the reference assembly as mapping reference'
@@ -240,11 +240,19 @@ class BamStatsAnalyzer(Analyzer):
         bam_fhand = open(bam_fpath)
 
         out_dir = os.path.abspath(self._get_output_dirs()['result'])
+        summary_fname = os.path.join(out_dir,
+                                     BACKBONE_BASENAMES['statistics_file'])
+        summary_fhand = open(summary_fname, 'w')
+
+        #The general statistics
+        bam_general_stats(bam_fhand, summary_fhand)
+
         for kind in ('coverage', 'mapq'):
             basename = os.path.join(out_dir, "%s" % (project_name))
             bam_fhand.seek(0)
             bam_distribs(bam_fhand, kind, basename=basename,
-                         sample_size=sample_size)
+                         sample_size=sample_size, summary_fhand=summary_fhand)
+        summary_fhand.flush()
         bam_fhand.close()
 
 DEFINITIONS = {
