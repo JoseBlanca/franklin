@@ -222,6 +222,12 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                 'min_length_bp'  : 20,
                }
               ]
+    if not genomic_seqs_fpath:
+        msg = 'No genomic sequence file defined for unique SNV filter'
+        raise ValueError(msg)
+    if not genomic_db:
+        msg = 'No genomic blast database defined for unique SNV filter'
+        raise ValueError(msg)
     genomic_seqs_fhand = open(genomic_seqs_fpath)
     genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name,
                                      guess_seq_file_format(genomic_seqs_fhand))
