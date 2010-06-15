@@ -216,8 +216,6 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
             raise ValueError(msg)
         if not settings['Cdna_intron_annotation']['genomic_db']:
             project_path = general_settings['project_path']
-            print project_path
-            print genomic_seqs
             genomic_db = make_backbone_blast_db(project_path, genomic_seqs,
                                                 dbtype='nucl')
         else:
@@ -395,6 +393,17 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                     filter_config[argument] =  self._snv_kind_to_franklin(value)
 
             filter_config['name'] = name
+
+            #the uniq_continguous filter can have the genomic db not defined
+            if (name == 'uniq_contiguous' and
+                 ('genomic_db' not in filter_config or
+                  not filter_config['genomic_db'])):
+                project_path = self._project_settings['General_settings']['project_path']
+                genomic_db = make_backbone_blast_db(project_path,
+                                            filter_config['genomic_seqs_fpath'],
+                                                     dbtype='nucl')
+                filter_config['genomic_db'] = genomic_db
+
             configuration[unique_name] = filter_config
         pipeline = self._get_pipeline_from_step_name(configuration)
 
