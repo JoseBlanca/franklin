@@ -41,6 +41,12 @@ DELETION = 2
 INVARIANT = 3
 INDEL = 4
 COMPLEX = 5
+TRANSITION = 6
+TRANSVERSION = 7
+
+SNV_TYPES = {SNP:'SNP', INSERTION:'insertion', DELETION:'deletion',
+             INVARIANT:'invariant', INDEL:'indel', COMPLEX:'complex',
+             TRANSITION:'transition', TRANSVERSION:'transversion'}
 
 COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
                   'SalI', 'BglI', 'ClaI', 'TaqI',
@@ -354,13 +360,20 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
         return sequence
     return annotate_snps
 
-def calculate_snv_kind(feature):
+def calculate_snv_kind(feature, detailed=False):
     'It returns the snv kind for the given feature'
     snv_kind = INVARIANT
     alleles = feature.qualifiers['alleles']
     for allele in alleles.keys():
         allele_kind = allele[1]
         snv_kind = _calculate_kind(allele_kind, snv_kind)
+
+    _al_type = lambda x: 'purine' if x in ('A', 'G') else 'pirimidine'
+    if snv_kind == SNP and detailed:
+        alleles = alleles.keys()
+        al0 = _al_type(alleles[0][0])
+        al1 = _al_type(alleles[0][1])
+        snv_kind = TRANSITION  if al0 == al1 else TRANSVERSION
     return snv_kind
 
 def _calculate_kind(kind1, kind2):

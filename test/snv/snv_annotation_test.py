@@ -29,7 +29,8 @@ from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
 from franklin.seq.writers import SequenceWriter
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
-                                         INDEL, COMPLEX,
+                                         INDEL, COMPLEX, TRANSITION,
+                                         TRANSVERSION,
                                          _remove_bad_quality_alleles,
                                          _add_default_sanger_quality,
                                          calculate_snv_kind,
@@ -112,6 +113,21 @@ class TestSnvAnnotation(unittest.TestCase):
                           qualifiers={'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == COMPLEX
+
+        alleles = {('A', INVARIANT): {},
+                   ('T', SNP):{}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        assert calculate_snv_kind(feat) == SNP
+
+        #detailed
+        assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
+
+        alleles = {('A', INVARIANT): {},
+                   ('C', SNP):{}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        assert calculate_snv_kind(feat, detailed=True) == TRANSITION
 
     @staticmethod
     def test_bad_allele_removal():
