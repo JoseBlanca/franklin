@@ -40,6 +40,7 @@ BACKBONE_DIRECTORIES = {
     'annotation_dbs':'annotations/db',
     'annotation_input':'annotations/input',
     'annotation_result':'annotations/features',
+    'annotation_stats':'annotations/features/stats',
     'blast_dir':'annotations/blast',
     'blast_databases':'annotations/blast/databases',
     'error_dir': 'backbone_errors',

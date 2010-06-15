@@ -12,7 +12,6 @@ Created on 12/03/2010
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-
 # franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
@@ -51,6 +50,8 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             min_groups)
 from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
+from franklin.seq.readers import seqs_in_file
+from franklin.seq.seq_stats import do_annotation_statistics
 from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
 
 from franklin.utils.misc_utils import VersionedPath, xml_itemize
@@ -356,6 +357,19 @@ class WriteAnnotationAnalyzer(Analyzer):
             fhand.close()
             if not num_features and os.path.exists(fpath):
                 os.remove(fpath)
+
+class AnnotationStatsAnalyzer(Analyzer):
+    'It writes statistics for the annotation'
+    def run(self):
+        'It runs the analysis.'
+        output_dir = self._create_output_dirs()['result']
+        inputs = self._get_input_fpaths()
+        pickle_paths = inputs['pickle']
+
+        for seq_path in pickle_paths:
+            output_fpath = join(output_dir, seq_path.basename + '.txt')
+            seqs = seqs_in_file(open(seq_path.last_version, 'r'))
+            do_annotation_statistics(seqs, open(output_fpath, 'w'))
 
 class SnvFilterAnalyzer(AnnotationAnalyzer):
     'It performs the filtering analysis of the snvs'
@@ -663,6 +677,14 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'annotation_result'}},
          'analyzer': WriteAnnotationAnalyzer},
+    'annotation_stats':
+        {'inputs':{
+            'pickle':
+                {'directory': 'annotation_dbs',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'result':{'directory': 'annotation_stats'}},
+         'analyzer': AnnotationStatsAnalyzer},
     'annotate_orthologs':
         {'inputs':{
             'pickle':

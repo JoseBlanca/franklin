@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'snvs'
+    #choice = 'annotation'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -98,8 +98,20 @@ def test_backbone(analysis=None, analysis_dir=None):
                    join(project_dir, 'mapping', 'merged.bam'))
         shutil.copy(join(repository_dir, 'snvs', 'reference.fasta'),
                    join(project_dir, 'mapping', 'reference', 'reference.fasta'))
-        analyses = ['annotate_snvs', 'filter_snvs']
+        analyses = ['annotate_snvs', 'filter_snvs', 'annotation_stats']
         run_analysis(analyses, settings_path)
+
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                            'reference.txt')
+        result = open(stats_fpath).read()
+        expected = '''Sequences with SNVs: 57
+SNV types:
+\tinsertion: 4
+\tdeletion: 15
+\tcomplex: 1
+\ttransition: 106
+\ttransversion: 126'''
+        assert expected in result
 
     if choice in ('annotation', None):
         annot_dir = join(project_dir, 'annotations')
@@ -114,8 +126,19 @@ def test_backbone(analysis=None, analysis_dir=None):
         analyses = ['annotate_orfs', 'annotate_microsatellites',
                     'annotate_gos', 'annotate_descriptions',
                     'annotate_orthologs', 'annotate_introns',
-                    'write_annotations']
+                    'write_annotations', 'annotation_stats']
         run_analysis(analyses, settings_path)
+
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                            'tair7_cdna.txt')
+        result = open(stats_fpath).read()
+        expected = '''Number of sequences: 4
+Sequences with description: 4
+Sequences with ORF: 4
+Number of ORFs: 4
+Sequences with intron: 1
+Number of introns: 1'''
+        assert expected in result
 
     if not analysis_dir:
         analysis_fhand.close()

@@ -148,3 +148,9 @@ ________________________
 In the ngs_backbone.conf section Annotation, subsection Cdna_intron_annotation the parameter genomic_db should have one blast database. The blast database used should be defined in the corresponding section, see ::`blast-databases`. Also in the same section the parameter genomic_seqs should have the absolute path to the fasta file with the genomic sequences that make up the employed database.
 
 
+Annotation statistics
+---------------------
+
+Once we have annotated some sequences we can get a summary of the process by running the annotation_stats analysis. It will create one text file for each input annotation file with statistics about: description, microsatellites, SNVs, ORF, GO terms and orhologs.
+
+

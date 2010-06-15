@@ -85,7 +85,7 @@ Number of GOs: 2
 
 SNVs
 ____
-Sequences with SNVs: 2
+Sequences with SNVs: 1
 SNV types:
 \ttransversion: 1
 SNV locations:

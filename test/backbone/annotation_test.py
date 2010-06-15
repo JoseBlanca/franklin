@@ -108,6 +108,18 @@ class AnnotationTest(unittest.TestCase):
         orf_fpath = join(project_dir, 'annotations', 'features', 'melon.orf')
         assert not os.path.exists(orf_fpath)
 
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'melon.txt')
+        result = open(stats_fpath).read()
+        expected = '''Orthologs
+_________
+Sequences with arabidopsis orthologs: 1
+Number of arabidopsis orthologs: 1
+Sequences with arabidopsis2 orthologs: 1
+Number of arabidopsis2 orthologs: 1'''
+        assert expected in result
 
         os.chdir('/tmp')
         test_dir.close()
@@ -147,6 +159,17 @@ class AnnotationTest(unittest.TestCase):
                           'melon.0.pickle')
         result = open(repr_fpath).read()
         assert 'yet another one' in result
+
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'melon.txt')
+        result = open(stats_fpath).read()
+        expected = '''Annotation statistics
+---------------------
+Number of sequences: 2
+Sequences with description: 1'''
+        assert expected in result
 
         os.chdir('/tmp')
         test_dir.close()
@@ -190,6 +213,16 @@ class AnnotationTest(unittest.TestCase):
         pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'seqs.0.pickle')
         assert 'intron' in open(pickle_fpath).read()
+
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'seqs.txt')
+        result = open(stats_fpath).read()
+        expected = '''Sequences with intron: 1
+Number of introns: 3'''
+        assert expected in result
+
         os.chdir('/tmp')
         test_dir.close()
 
@@ -234,6 +267,18 @@ class AnnotationTest(unittest.TestCase):
         ssr_fpath = join(project_dir, 'annotations', 'features', 'seqs.ssr')
         assert os.path.exists(ssr_fpath)
         assert "Seqname"  in open(ssr_fpath).read()
+
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'seqs.txt')
+        result = open(stats_fpath).read()
+        expected = '''Sequences with microsatellites: 1
+Microsatellite types:
+\tdinucleotide: 1
+Microsatellite locations:
+\tunknown: 1'''
+        assert expected in result
 
         os.chdir('/tmp')
         test_dir.close()
@@ -284,6 +329,15 @@ class AnnotationTest(unittest.TestCase):
 
         assert 'ATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCT' in open(seq_fpath).read()
         assert 'QASMGAPFTGLKSAAAFPVTRXTNDITTLVSNG' in open(pep_fpath).read()
+
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'seqs.txt')
+        result = open(stats_fpath).read()
+        expected = '''Sequences with ORF: 1
+Number of ORFs: 1'''
+        assert expected in result
 
         os.chdir('/tmp')
         test_dir.close()
@@ -340,6 +394,15 @@ class AnnotationTest(unittest.TestCase):
                                            'features', 'seqs.b2g.annot'))
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
+
+        do_analysis(project_settings=settings_path, kind='annotation_stats',
+                    silent=True)
+        stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
+                           'seqs.txt')
+        result = open(stats_fpath).read()
+        expected = '''Sequences with GOs: 1
+Number of GOs: 12'''
+        assert expected in result
 
 if    __name__ == "__main__":
     #import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']

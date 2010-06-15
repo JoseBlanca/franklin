@@ -58,7 +58,9 @@ def _do_ssr_stats(stats, feats, orfs):
 
     types = dict([(index+2, type_) for index, type_ in enumerate(MICROSATELLITE_TYPES)])
 
+    some_feat = False
     for feat in feats:
+        some_feat = True
         unit = feat.qualifiers['unit']
         if unit not in stats['microsatellites']['units']:
             stats['microsatellites']['units'][unit] = 0
@@ -74,12 +76,16 @@ def _do_ssr_stats(stats, feats, orfs):
             if location not in stats['microsatellites']['locations']:
                 stats['microsatellites']['locations'][location] = 0
             stats['microsatellites']['locations'][location] += 1
-    stats['microsatellites']['n_seqs'] += 1
+
+    if some_feat:
+        stats['microsatellites']['n_seqs'] += 1
 
 def _do_snv_stats(stats, feats, orfs):
     'It adds the ssr stats'
 
+    some_feat = False
     for feat in feats:
+        some_feat = True
         type_ = calculate_snv_kind(feat, detailed=True)
         if type_ not in stats['snvs']['types']:
             stats['snvs']['types'][type_] = 0
@@ -90,7 +96,8 @@ def _do_snv_stats(stats, feats, orfs):
             if location not in stats['snvs']['locations']:
                 stats['snvs']['locations'][location] = 0
             stats['snvs']['locations'][location] += 1
-    stats['snvs']['n_seqs'] += 1
+    if some_feat:
+        stats['snvs']['n_seqs'] += 1
 
 
 def do_annotation_statistics(seqs, out_fhand):
@@ -200,7 +207,8 @@ def _calculate_annot_stats(seqs):
                    }
     for seq in seqs:
         #description
-        if seq.description != UNKNOWN_DESCRIPTION:
+        desc = seq.description
+        if desc and desc != UNKNOWN_DESCRIPTION:
             annot_stats['seqs_with_desc'] += 1
 
         #features
