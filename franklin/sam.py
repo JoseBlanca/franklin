@@ -70,7 +70,7 @@ def sam2bam(sam_path, bam_path):
     call(cmd, raise_on_error=True)
 
     #if we try to use this function with a sam with no header it would fail
-     #samtools view -bhS -o seqs.bam  seqs.2.sam
+    #samtools view -bhS -o seqs.bam  seqs.2.sam
     #[samopen] no @SQ lines in the header.
     #[sam_read1] missing header? Abort!
     #in that case we would have to use the -t option
@@ -202,7 +202,6 @@ def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
                                                  stdout)
         raise RuntimeError(msg)
 
-
 def guess_mapped(flag):
     'Giving the flag, guess if the read is mapped or not'
     non_mapped_flags = set()
@@ -217,7 +216,6 @@ def guess_mapped(flag):
         else:
             mapped = True
     return mapped
-
 
 def _fix_non_mapped_reads(items):
     'Given a list with sam line it removes MAPQ from non-mapped reads'
