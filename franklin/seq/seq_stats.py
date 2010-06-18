@@ -234,8 +234,8 @@ def _calculate_annot_stats(seqs):
                 annot = annot.split('-')[0]
                 if annot not in annot_stats['orthologs']:
                     annot_stats[annot_type][annot] = {'n_seqs':0, 'n_annots':0}
-                    annot_stats[annot_type][annot]['n_annots'] += len(value)
-                    annot_stats[annot_type][annot]['n_seqs'] += 1
+                annot_stats[annot_type][annot]['n_annots'] += len(value)
+                annot_stats[annot_type][annot]['n_seqs'] += 1
             elif 'GOs' == annot:
                 annot_stats[annot]['n_annots'] += len(value)
                 annot_stats[annot]['n_seqs'] += 1

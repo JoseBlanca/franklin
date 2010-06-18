@@ -50,6 +50,7 @@ class SeqStatsTest(unittest.TestCase):
         annots1 = {'arabidopsis-orthologs':['arab_1']}
 
         annots2 = {'melon-orthologs':['melon_1'],
+                   'arabidopsis-orthologs':['arab_2'],
                    'GOs':['Go1', 'Go2']}
 
         seq1 = SeqWithQuality(Seq('ACTG'), description='hola', features=feats1,
@@ -75,8 +76,8 @@ Orthologs
 _________
 Sequences with melon orthologs: 1
 Number of melon orthologs: 1
-Sequences with arabidopsis orthologs: 1
-Number of arabidopsis orthologs: 1
+Sequences with arabidopsis orthologs: 2
+Number of arabidopsis orthologs: 2
 
 GO terms
 ________
