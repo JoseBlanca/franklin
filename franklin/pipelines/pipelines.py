@@ -40,7 +40,11 @@ import cPickle as pickle
 from itertools import imap, ifilter
 from tempfile import gettempdir, NamedTemporaryFile
 
-import psubprocess
+try:
+    import psubprocess
+except ImportError:
+    pass
+
 import franklin
 from franklin.seq.readers import seqs_in_file
 from franklin.pipelines.seq_pipeline_steps import SEQPIPELINES, SEQ_STEPS

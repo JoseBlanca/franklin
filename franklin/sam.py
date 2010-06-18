@@ -24,8 +24,12 @@ from tempfile import NamedTemporaryFile
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, re, tempfile, copy
-from itertools import imap
-import pysam
+
+try:
+    import pysam
+except ImportError:
+    pass
+
 from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads

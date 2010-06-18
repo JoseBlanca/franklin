@@ -24,7 +24,10 @@ from collections import defaultdict
 from copy import copy
 import math
 
-import pysam
+try:
+    import pysam
+except ImportError:
+    pass
 
 from Bio.SeqFeature import FeatureLocation
 from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
