@@ -106,6 +106,14 @@ Two other requirements are blast and emboss, chances are that you can install th
 
   $ apt-get install emboss
   $ apt-get install blast2
+ 
+blast without databases is of no use, as an example we are going to install the Univec_ database. After downloading the fasta file we uncompress it in a directory and we format it.
+
+::
+
+  $ mkdir /srv/blast/
+  $ mv UniVec /srv/blast
+  $ formatdb -i UniVec -V -p F -o
 
 If you want to do an assembly you will also need mira_.
 
@@ -135,6 +143,9 @@ blast2go_, picard and GATK are easy to install, just download them and unpack th
   $ updatedb
 
 It is advisable to run updatedb after setting everything to ease the ngs_backbone configuration.
+
+After installing the whole pipeline you can run the :doc:`NGS workshop tutorial <ngs_workshop/index>` to test the whole system.
+
 
 .. _mira: http://sourceforge.net/apps/mediawiki/mira-assembler
 .. _bwa: http://bio-bwa.sourceforge.net/
