@@ -46,9 +46,24 @@ def prepare_release(indir):
 
     #build the documentation
     doc_dir = join(release_dir, 'doc')
+    #which kind of doc is this? do we have a source directory in the doc?
+    if 'source' is os.listdir(doc_dir):
+        doc_source_dir = True
+    else:
+        doc_source_dir = False
     #remove the download page from the doc
-    os.remove(join(doc_dir, 'source', 'download.rst'))
-    remove_download_link(join(doc_dir, 'source', 'index.rst'))
+    if doc_source_dir:
+        download_page = join(doc_dir, 'source', 'download.rst')
+    else:
+        download_page = join(doc_dir, 'download.rst')
+    os.remove(download_page)
+
+    if doc_source_dir:
+        index_page = join(doc_dir, 'source', 'index.rst')
+    else:
+        index_page = join(doc_dir, 'index.rst')
+
+    remove_download_link(index_page)
 
     cwd = os.getcwd()
     os.chdir(doc_dir)
@@ -56,10 +71,14 @@ def prepare_release(indir):
     subprocess.check_call(["make", "html"])
     os.chdir(cwd)
     temp_doc_dir = join(work_dir, 'html_doc')
-    shutil.move(join(doc_dir, 'build', 'html'), temp_doc_dir)
+
+    if doc_source_dir:
+        build_dir = join(doc_dir, 'build', 'html')
+    else:
+        build_dir = join(doc_dir, '_build', 'html')
+    shutil.move(build_dir, temp_doc_dir)
     shutil.rmtree(doc_dir)
     shutil.move(temp_doc_dir, doc_dir)
-
 
     #now we can create the tar.gz
     tar_fpath = release_name + '.tar.gz'
