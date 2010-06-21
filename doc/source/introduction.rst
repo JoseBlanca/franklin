@@ -1,6 +1,6 @@
 
-Philosophy
-==========
+Introduction
+============
 
 ngs_backbone is an easy to use application capable of doing in a reliable way some NGS analyses. The main design directives have been:
 
@@ -103,49 +103,4 @@ Parallel operation
 Running ngs_backbone with multiple subprocesses is as easy as setting the configuration option threads to True. ngs_backbone will run will as many subprocesses as cpu cores are found in the computer. Also the threads option can be set to an integer and ngs_backbone will run with as many subprocess as indicated.
 
 
-Installation
-============
-
-To install ngs_backbone python 2.6 is required. Also you need the following python libraries: Biopython_, psubprocess_, pysam_ and configobj_ . python is installed by default in the usual Linux distributions but you should check the version. Installing Biopython_ is as easy as installing ngs_backbone. Once the tarball is downloaded you have to run the following command::
-
-  $ python setup.py install
-
-ngs_backbone requires several external tools to run the analyses. So before running the analyses please install them.
-
-=============================  ================================================================
-analysis                       external tools required
-=============================  ================================================================
-:ref:`clean-reads`             lucy_, exonerate_, blast_, Univec_ (database), mdust_, trimpoly_
-:ref:`mira-assembly`           mira_
-:ref:`mapping`                 bwa_, samtools_, picard_
-:ref:`bam-realignment`         GATK_
-:ref:`snp-calling`             pysam_
-:ref:`orf-annotation`          ESTScan_
-:ref:`ortholog-annotation`     blast_
-:ref:`description-annotation`  blast_
-:ref:`ssr-annotation`          sputnik
-:ref:`intron-annotation`       blast_, emboss_
-:ref:`go-annotation`           blast_, blast2go_
-=============================  ================================================================
-
-
-
-.. _mira: http://sourceforge.net/apps/mediawiki/mira-assembler
-.. _bwa: http://bio-bwa.sourceforge.net/
-.. _samtools: http://samtools.sourceforge.net/
-.. _picard: http://picard.sourceforge.net/index.shtml
-.. _pysam: http://code.google.com/p/pysam/
-.. _psubprocess: http://bioinf.comav.upv.es/psubprocess/
-.. _GATK: http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit
-.. _Biopython: http://biopython.org/wiki/Main_Page
-.. _lucy: http://lucy.sourceforge.net/
-.. _exonerate: http://www.ebi.ac.uk/~guy/exonerate/
-.. _blast: http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
-.. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
-.. _mdust: http://compbio.dfci.harvard.edu/tgi/software/
-.. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
-.. _ESTScan: http://estscan.sourceforge.net/
-.. _emboss: http://emboss.sourceforge.net/
-.. _blast2go: http://www.blast2go.org/
-.. _configobj: http://pypi.python.org/pypi/configobj/
 

@@ -25,7 +25,10 @@ ngs_backbone is at this time beta software so it will not be bug free. It works 
    :hidden:
 
    introduction
-   cleaning_and_mapping
+   install
+   cleaning
+   assembly
+   mapping
    annotation
    snv_filters
    tutorials
