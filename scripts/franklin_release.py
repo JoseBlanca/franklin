@@ -3,7 +3,7 @@
 
 from optparse import OptionParser
 import tempfile, shutil, os, subprocess, tarfile
-from os.path import join, abspath
+from os.path import join, abspath, split
 
 def remove_download_link(index_fpath):
     'It removes the download link from the index page'
@@ -20,21 +20,24 @@ def remove_download_link(index_fpath):
 def prepare_release(indir):
     'It creates the tar.gz for the release'
 
+    #the relased tool
+    tool_name = split(indir)[-1]
+
     #we need a tempdir
     work_dir = tempfile.mkdtemp()
 
     #the version
     version = None
-    franklin_init = join(indir, 'franklin/__init__.py')
-    for line in open(franklin_init):
+    init_fname = join(indir, '%s/__init__.py' % tool_name)
+    for line in open(init_fname):
         if '__version__' in line:
             version = line.split('=')[1].strip().strip("'")
     if not version:
-        raise RuntimeError('version not found in ' + franklin_init)
+        raise RuntimeError('version not found in ' + init_fname)
 
     #the output name
-    release_name = 'franklin-%s' % version
-    tar_dir = join(work_dir, 'franklin')
+    release_name = '%s-%s' % (tool_name, version)
+    tar_dir = join(work_dir, tool_name)
     release_dir = join(tar_dir, release_name)
     #copy the git dir
     shutil.copytree(indir, release_dir, ignore=shutil.ignore_patterns('.git*',
@@ -70,11 +73,11 @@ def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
     parser.add_option('-d', '--directory', dest='directory',
-                    help='franklin git directory')
+                      help='tool git directory')
     opts = parser.parse_args()[0]
     opts = {'indir': abspath(opts.directory)}
     if not opts['indir']:
-        raise ValueError('a franklin git directory is required')
+        raise ValueError('a tool git directory is required')
     return opts
 
 if __name__ == '__main__':
