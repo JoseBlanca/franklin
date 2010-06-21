@@ -4,6 +4,21 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at `git <http://github.com/JoseBlanca/franklin>`_.
 
+ngs_backbone 0.3
+-----------------
+
+:download:`ngs_backbone 0.3.0 <downloads/ngs_backbone-0.3.0.tar.gz>`. Relased on 21-06-2010.
+
+Changes:
+
+ * Annotation statistics analysis added.
+ * The CAP enzymes are now written to the vcf file.
+ * SNV structure simplified to save memory (incompatible change with old projects).
+ * Database sequences moved from repr to pickle (memory improvement).
+ * Improved setup with dependency check.
+ * Install documentation expanded.
+ * Several bug fixes.
+
 ngs_backbone 0.2
 -----------------
 
