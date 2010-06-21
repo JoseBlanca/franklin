@@ -86,7 +86,7 @@ analysis                                    description
 ========================================    =================================================
 :ref:`clean-reads`                          sequence reads cleaning
 :ref:`mira-assembly`                        Assembly reads into a contig set with  mira
-:ref:`mapping`                              bwa read mapping against a reference sequence
+:doc:`mapping`                              bwa read mapping against a reference sequence
 :ref:`bam-realignment`                      GATK bam realignment
 :ref:`snp-calling`                          SNP annotation from a bam file
 :ref:`orf-annotation`                       ESTScan ORF annotation

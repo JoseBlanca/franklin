@@ -15,7 +15,7 @@ analysis                       external tools required
 =============================  ================================================================
 :ref:`clean-reads`             lucy_, exonerate_, blast_, Univec_ (database), mdust_, trimpoly_
 :ref:`mira-assembly`           mira_
-:ref:`mapping`                 bwa_, samtools_, picard_
+:doc:`mapping`                 bwa_, samtools_, picard_
 :ref:`bam-realignment`         GATK_
 :ref:`snp-calling`             pysam_
 :ref:`orf-annotation`          ESTScan_

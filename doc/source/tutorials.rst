@@ -2,7 +2,7 @@
 Tutorials
 =========
 
-In the tutorials we will do several analyses step by step. To understand how those analyses are done it would be advisable to read the document :doc:`cleaning_and_mapping` before or after going through the tutorials. This tutorial is a brief introduction, for a more lengthly document you can take a look at the ngs_workshop :doc:`notes <ngs_workshop/index>`. 
+In the tutorials we will do several analyses step by step. To understand how those analyses are done it would be advisable to read the documents :doc:`cleaning` and :doc:`mapping` before or after going through the tutorials. This tutorial is a brief introduction, for a more lengthly document you can take a look at the ngs_workshop :doc:`notes <ngs_workshop/index>`. 
 
 Cleaning sequences
 ------------------
