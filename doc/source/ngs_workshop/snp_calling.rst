@@ -103,7 +103,7 @@ Now that we have the file to annotate and the bam file in place we can call the 
   INFO:franklin:Time elapsed 0:01:52.395800
 
 
-Once the analysis is finished we will have a file in the directory annotations/repr/. These files hold all the annotations done. We could now annotate the ORFs and a new repr file would be generated with that annotation added. These files are versioned, it is safe to removed all of them but the last one.
+Once the analysis is finished we will have a file in the directory annotations/db/. These files hold all the annotations done. We could now annotate the ORFs and a new db file would be generated with that annotation added. These files are versioned, it is safe to removed all of them but the last one.
 
 To get the real annotations result files we have to do one last analysis::
 

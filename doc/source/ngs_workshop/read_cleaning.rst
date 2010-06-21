@@ -83,7 +83,7 @@ Now we create a directory named reads with a subdirectory named raw and we copy 
 
 Take into account that the read file name is quite special. This is a requirement of ngs_backbone, in this file name we have the information about the library (lb), sample(sm) and platform (454). ngs_backbone is quite strict about file and directory names, you can take a look at its file naming conventions in its documentation.
 
-Once we have everything in place we could run the cleaning analysis, but it would be wise though to take a look at the configuration file. There are some default parameters for the cleaning in there, but we might have to adapt them to our needs. You can take a look at this parameters in the configuration file by using a text editor and to better understand their meaning to go the cleaning section of the backbone documentation. Once everything is set up just run the analysis::
+Once we have everything in place we could run the cleaning analysis, but it would be wise though to take a look at the configuration file. There are some default parameters for the cleaning in there, but we might have to adapt them to our needs. You can take a look at this parameters in the configuration file by using a text editor and to better understand their meaning to go the cleaning section of the backbone documentation. Before runing the analysis at least make sure that the vector_database points to the Univec blast database. Once everything is set up just run the analysis::
 
   (devel)~/ngs_workshop/maize$ backbone_analysis.py -a clean_reads
   2010-05-25 15:19:38,183 INFO CleanReadsAnalyzer
