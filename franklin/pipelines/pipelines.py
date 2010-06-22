@@ -203,7 +203,7 @@ def process_sequences_for_script(in_fpath_seq, file_format,
     #now we write all seq in the file
     out_fhand = open(out_fpath, 'a')
     writer = SequenceWriter(fhand=out_fhand,
-                            file_format='repr')
+                            file_format='pickle')
     for sequence in processed_seqs:
         writer.write(sequence)
     out_fhand.close()
@@ -283,7 +283,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             raise RuntimeError(msg)
         stdout.close()
         stderr.close()
-    return seqs_in_file(DisposableFile(out_fpath), format='repr')
+    return seqs_in_file(DisposableFile(out_fpath), format='pickle')
 
 def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
                                           configuration):

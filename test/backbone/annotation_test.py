@@ -115,10 +115,11 @@ class AnnotationTest(unittest.TestCase):
         result = open(stats_fpath).read()
         expected = '''Orthologs
 _________
-Sequences with arabidopsis orthologs: 1
-Number of arabidopsis orthologs: 1
-Sequences with arabidopsis2 orthologs: 1
-Number of arabidopsis2 orthologs: 1'''
+Sequences with arabidopsis orthologs: 2
+Number of arabidopsis orthologs: 2
+Sequences with arabidopsis2 orthologs: 2
+Number of arabidopsis2 orthologs: 2'''
+        #print result
         assert expected in result
 
         os.chdir('/tmp')
