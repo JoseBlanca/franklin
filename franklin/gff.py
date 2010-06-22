@@ -47,6 +47,10 @@ def gff_parser(fhand, version):
             key, value = attribute.split(separator, 1)
             value = value.strip('"')
             attributes[key] = value
+            if key == 'Name':
+                feature['name'] = value
+            if key == 'ID':
+                feature['id'] = value
 
         feature['seqid']   = seqid
         feature['source']  = source
@@ -60,6 +64,48 @@ def gff_parser(fhand, version):
         yield feature
 
 def _feature_to_str(feature):
+    'Given a feature dict it returns a gff feature line'
+    feature_fields = []
+
+    feature_fields.append(feature['seqid'])
+
+    if 'source' in feature:
+        feature_fields.append(feature['source'])
+    else:
+        feature_fields.append('.')
+
+    feature_fields.append(feature['type'])
+    feature_fields.append('%d' % feature['start'])
+    feature_fields.append('%d' % feature['end'])
+
+    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
+        if tag in feature:
+            feature_fields.append(feature[tag])
+        else:
+            feature_fields.append(default)
+
+    # attributes
+    if 'attributes' in feature:
+        attributes = feature['attributes']
+    else:
+        attributes = {}
+
+    if 'id' in feature:
+        attributes['ID'] = feature['id']
+    if 'name' in feature:
+        attributes['Name'] = feature['name']
+
+    attribute_list = []
+    for attr_key, attr_value in attributes.items():
+        if isinstance(attr_value, list):
+            attr_value = ','.join(attr_value)
+        attribute_list.append('%s=%s' % (attr_key, attr_value))
+
+    feature_fields.append(';'.join(attribute_list))
+
+    return '\t'.join(feature_fields) + '\n'
+
+def _feature_to_str_old(feature):
     'Given a feature dict it returns a gff feature line'
     feat_str = []
 

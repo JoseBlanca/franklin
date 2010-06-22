@@ -46,6 +46,33 @@ def fpcgff2_parser(fhand):
 
         yield feature
 
+def fpcgff2_parser2(fhand):
+    'It parses a gff2_annotations file and yields converted gff3 features'
+
+    for feature in gff_parser(fhand, 2):
+        annotations = feature['attributes']
+        name        = annotations['Name']
+        type_ = feature['type']
+
+        feature['id']      = name
+        feature['name']    = name
+        if type_ in ('Chromosome','contig', 'marker', 'frameworkmarker',
+                     'placementmarker'):
+            pass
+
+        elif type_ == 'BAC':
+            if 'Marker_hit' in annotations:
+                feature['marker_hit'] = annotations['Marker_hit']
+
+        else:
+            raise ValueError('Unknown feature type: %s' % type_)
+
+        del feature['attributes']
+
+        yield feature
+
+
+
 class FPCMap(object):
     '''It parses and hold the information from an FPC map'''
 
