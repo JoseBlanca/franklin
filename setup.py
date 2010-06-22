@@ -44,11 +44,11 @@ try:
 except:
     print 'matplotlib is not installed for %s, some statistics will fail' % python_exec
     all_optionals = False
-
-answer = raw_input('Some optional requirements were not met, do you want to continue the installation (y/n)? ')
-if answer.lower() not in ('y', 'yes'):
-    print 'Installation aborted'
-    sys.exit()
+if not all_optionals:
+    answer = raw_input('Some optional requirements were not met, do you want to continue the installation (y/n)? ')
+    if answer.lower() not in ('y', 'yes'):
+        print 'Installation aborted'
+        sys.exit()
 
 def fullsplit(path, result=None):
     """
