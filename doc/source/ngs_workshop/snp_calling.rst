@@ -42,7 +42,7 @@ There are not yet too many tools capable of dealing with these files, but they a
 GFF format
 ==========
 
-The GFF files are used to store annotations. The SNPs are one of such annotations, but there are much more (introns, ORFs, UTRs, etc.). The GFF files are text files and every line represents a region on the annotated sequence and these regions are called features. Each of these features have a kind associated. The terms used to define these kinds should belong to the Sequence Ontology terms. If you are interested you can take a look at the `Sequence Ontology <http://www.sequenceontology.org/>`_ or at the `GFF <format http://www.sequenceontology.org/resources/gff3.html>`_ specification.
+The GFF files are used to store annotations. The SNPs are one of such annotations, but there are much more (introns, ORFs, UTRs, etc.). The GFF files are text files and every line represents a region on the annotated sequence and these regions are called features. Each of these features have a kind associated. The terms used to define these kinds should belong to the Sequence Ontology terms. If you are interested you can take a look at the `Sequence Ontology <http://www.sequenceontology.org/>`_ or at the `GFF format <http://www.sequenceontology.org/resources/gff3.html>`_ specification.
 
 
 
