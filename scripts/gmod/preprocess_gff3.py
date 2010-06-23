@@ -2,7 +2,7 @@
 '''This scripts preprocesses a gff3 file and coverts some feature_types to sofa
 compatible ones'''
 from optparse import OptionParser
-from franklin.gff import gff_parser, write_gff
+from franklin.gff import features_in_gff, write_gff, get_gff_header
 import sys
 
 def parse_options():
@@ -34,14 +34,17 @@ def main():
     # set parameters
     infhand, outfhand = set_parameters()
 
+    # get header
+    header = get_gff_header(infhand)
+
     #get features
-    features = gff_parser(infhand, version=3)
+    features = features_in_gff(infhand, version=3)
 
     # correct_feature_type
     features = correct_feature_type(features)
 
     # write_features
-    write_gff(features, outfhand)
+    write_gff(features, outfhand, header)
 
 def correct_feature_type(features):
     'it corrects  the feature_type'
@@ -63,9 +66,6 @@ def correct_feature_type2(line):
     elif feature_type in('frameworkmarker', 'marker', 'placementmarker'):
         items[2] = 'genetic_marker'
     return '\t'.join(items)
-
-
-
 
 if __name__ == '__main__':
     main()

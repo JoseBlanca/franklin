@@ -8,20 +8,22 @@ To point to chado, data needs to be loaded to chado.
 
 In both cases you need the dbxref database name.
 
-
 '''
-
 
 import sys, os
 from optparse import OptionParser
 from franklin.utils.misc_utils import get_db_connection
+from franklin.gff import (features_in_gff, get_gff_header, write_gff,
+                          add_dbxref_to_feature)
+
 def parse_options():
     'It parses the command line arguments'
     parser = OptionParser()
     parser.add_option('-i', '--infile', dest='infile', help='infile')
     parser.add_option('-o', '--outfile', dest='outfile', help='outfile')
     parser.add_option('-r', '--dbxref', dest='dbxref', help='dbxref db name')
-    parser.add_option('-k', '--kind', dest='kind', help='kind of dbxref to add')
+    parser.add_option('-k', '--kind', dest='kind',
+                      help='gbrowse2tripal or tripal2gbrowse')
     parser.add_option('-x', '--prefix', dest='prefix',
                       help='prefix used in tripal')
 
@@ -65,94 +67,100 @@ def set_parameters():
 
     return infhand, outfhand, dbxref, kind, db_data, prefix
 
-
 def main():
     'the main part'
-    infhand, outfhand, dbxref, kind, db_data, prefix = set_parameters()
+    infhand, outfhand, dbxref_db, kind, db_data, prefix = set_parameters()
 
-    if kind == 'gbrowse2tripal':
-        db_cursor = get_db_connection(db_data).cursor()
+    # It runs the script
+    run(infhand, outfhand, dbxref_db, kind, db_data, prefix)
 
-    elif kind == 'tripal2gbrowse':
-        prefix, db_cursor = None, None
+def run(infhand, outfhand, dbxref_db, kind, db_data, prefix, debug=False):
+    'It runs the script'
+    # get header
+    header = get_gff_header(infhand)
 
-    for line in infhand:
-        line = line.strip()
-        if not line:
-            continue
-        if line[0] == '#':
-            new_line = line
-        else:
-            gff3_fields = line.split()
-            new_gff3_fields = gff3_fields[:8]
+    # get features
+    features = features_in_gff(infhand, 3)
 
-            if len(gff3_fields) > 8:
-                gff3_attrs = gff3_fields[8]
-
-                # we need to get th dbxref for this kind of analysis
-                dbxref_id  = get_dbxref_id(kind, gff3_fields, db_cursor, prefix)
-                if dbxref_id is None:
-                    new_gff3_attrs = gff3_attrs
-                else:
-                    # once we have the dbxref we add it to the gff3 attributes field
-                    new_gff3_attrs = add_dbxref(gff3_attrs, dbxref, dbxref_id)
-
-                new_gff3_fields.append(new_gff3_attrs)
-            new_line = '\t'.join(new_gff3_fields)
-        outfhand.write(new_line + '\n')
-    outfhand.close()
-
-def get_dbxref_id(kind, gff3_fields, db_cursor=None, prefix=None):
-    'It uses different functions to  guess dbxref_id depending on the kind'
-    if kind == 'tripal2gbrowse':
-        return get_dbxref_id_for_gbrowse(gff3_fields)
-    elif kind == 'gbrowse2tripal':
-        return get_dbxref_id_from_chado(gff3_fields[8], prefix, db_cursor)
-
-
-def get_dbxref_id_for_gbrowse(gff3_fields):
-    'It gets the dbxref_if to use to link to gbrowse'
-    return "%s%%3A%s..%s" % (gff3_fields[0], gff3_fields[3], gff3_fields[4])
-
-def get_dbxref_id_from_chado(attrs, prefix, db_cursor):
-    '''I t gets the dbxref_id using the prefix and the feature_id that gets from
-    chado'''
-    #first we need a field to look at chado
-    unique_name = _get_value_from_gff3_attrs(attrs, field='ID')
-    select = "select * from feature where uniquename='%s'" % unique_name
-    #print select
-    db_cursor.execute(select)
-    row = db_cursor.fetchone()
-    if row is None:
-        return None
-    return '%s%d' % (prefix, row[0])
-
-
-def _get_value_from_gff3_attrs(attrs, field='ID'):
-    'It gets the the dbxref from a field of the attrs field. Fallbacks to ID'
-    for items in attrs.split(';'):
-        key, value = items.split('=')
-        if key == field:
-            return value
-    raise ValueError("the field  %s is not in this gff3 attr field" % field)
-
-def add_dbxref(attrs_, dbxref, dbxref_id):
-    'It modifies the attr field adding a dbxref'
-    attrs = {}
-    for items in attrs_.split(';'):
-        key, value = items.split('=')
-        attrs[key] = value
-
-    dbxref_field = '%s:%s' % (dbxref, dbxref_id)
-    if 'dbxref' in attrs:
-        attrs['dbxref'] += ',' + dbxref_field
+    # debugging
+    if debug:
+        chado_getter = _mock_chado_getter
     else:
-        attrs['dbxref'] = dbxref_field
+        chado_getter = _create_dbxref_id_getter_for_chado(db_data, prefix)
 
-    new_attrs = []
-    for key, value in attrs.items():
-        new_attrs.append('%s=%s' % (key, value))
-    return ';'.join(new_attrs)
+    # add dbxref to features
+    dbxref_id_getters = {'gbrowse2tripal': chado_getter,
+                         'tripal2gbrowse': _get_dbxref_id_for_gbrowse}
+
+    features = add_dbxref_to_features(features, dbxref_db,
+                                      dbxref_id_getters[kind])
+
+    # write features
+    write_gff(features, outfhand, header)
+
+def _mock_chado_getter(feature):
+    'It simulates a chado getter'
+    return 'melo000'
+
+
+def _create_dbxref_id_getter_for_chado(db_data, prefix):
+    def _get_dbxref_id_for_chado(feature):
+        '''I t gets the dbxref_id using the prefix and the feature_id that gets from
+        chado'''
+        db_cursor = get_db_connection(db_data).cursor()
+        feature_name = feature['id']
+        select = "select * from feature where uniquename='%s'" % feature_name
+        #print select
+        db_cursor.execute(select)
+        row = db_cursor.fetchone()
+        if row is None:
+            return None
+        return prefix + str(row[0])
+    return _get_dbxref_id_for_chado
+
+def _get_dbxref_id_for_gbrowse(feature):
+    'It gets the dbxref_if to use to link to gbrowse'
+    return "%s%%3A%s..%s" % (feature['seqid'],
+                             feature['start'], feature['end'])
+
+def add_dbxref_to_features(features, dbxref_db, dbxref_id_getter):
+    'It adds dbxref to feature taking into account the kind of dbxref to add'
+
+    for feature in  features:
+        dbxref_id  = dbxref_id_getter(feature)
+        add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
+        yield feature
+
+def test():
+    'Test for the script'
+    from franklin.utils.misc_utils import DATA_DIR
+    from StringIO import StringIO
+
+    # chado to tripal
+    gff_in  = open(os.path.join(DATA_DIR, 'map_fis.gff3'))
+    gff_out = StringIO()
+    dbxref  = 'tripal'
+    prefix  = 'melo'
+    kind    = 'gbrowse2tripal'
+    db_data = None
+    run(gff_in, gff_out, dbxref, kind, db_data, prefix, debug=True)
+    result = gff_out.getvalue()
+    assert 'Dbxref=tripal:melo000;ID=Cm50_A06' in result
+
+
+    # tripal to chado
+    gff_in  = open(os.path.join(DATA_DIR, 'map_fis.gff3'))
+    gff_out = StringIO()
+    dbxref  = 'melon_gbrowse'
+    prefix  = 'melo'
+    kind    = 'tripal2gbrowse'
+    db_data = None
+    run(gff_in, gff_out, dbxref, kind, db_data, prefix, debug=True)
+    result = gff_out.getvalue()
+    assert 'Dbxref=melon_gbrowse:Chrctg0%3A43286529..43761665' in result
+
+    print "test ok"
 
 if __name__ == '__main__':
     main()
+    #test()

@@ -18,7 +18,7 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-def gff_parser(fhand, version):
+def features_in_gff(fhand, version):
     '''It parses a gff file and returns an iterator of each line of the gff
     parsed'''
 
@@ -62,6 +62,30 @@ def gff_parser(fhand, version):
         feature['phase']   = phase
         feature['attributes'] = attributes
         yield feature
+
+def get_gff_header(fhand):
+    'it gets the gff headers of a gff file'
+    original_pos = fhand.tell()
+    fhand.seek(0)
+    headers = []
+    for line in fhand:
+        line = line.strip()
+        if not line:
+            continue
+        if not line.startswith('##'):
+            fhand.seek(original_pos)
+            return headers
+        headers.append(line)
+    return headers
+
+def add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
+    '''It adds the dbxref to the feature. If the dbxref tag is not in feature
+    attributes it creates it'''
+    dbxref = '%s:%s' % (dbxref_db, dbxref_id)
+    if 'Dbxref' in feature['attributes']:
+        feature['attributes']['Dbxref'] += ',%s' % dbxref
+    else:
+        feature['attributes']['Dbxref'] = dbxref
 
 def _feature_to_str(feature):
     'Given a feature dict it returns a gff feature line'
@@ -156,7 +180,7 @@ def _feature_to_str_old(feature):
     feat_str.append('\n')
     return ''.join(feat_str)
 
-def write_gff(features, out_fhand):
+def write_gff(features, out_fhand, header=None):
     '''It writes a gff file.
 
     It requires a list of features or directives.
@@ -165,7 +189,11 @@ def write_gff(features, out_fhand):
     dbxred, ontology_term, parents, and children.
     A directive is just a plain str.
     '''
-    out_fhand.write('##gff-version 3\n')
+    if header is None:
+        out_fhand.write('##gff-version 3\n')
+    else:
+        for header_line in header:
+            out_fhand.write('%s\n' % header_line)
 
     for feat in features:
         if isinstance(feat, dict):
