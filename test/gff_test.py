@@ -71,6 +71,23 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=23;Parent=p1,p2\n'''
         assert features[98]['name'] == 'Cm13_B04'
 
     @staticmethod
+    def test_from_2_to_3():
+        'It tests that we can go from gff2 to gff3'
+    	GFF2 = '''Chrctg0	assembly	Chromosome	1	140722177	.	.	.	Sequence "Chrctg0"; Name "Chrctg0"
+Chrctg0	FPC	contig	1	140722177	.	.	.	contig "ctg0"; Name "ctg0"
+Chrctg0	FPC	BAC	109076481	109461505	.	.	.	BAC "Cm45_J09"; Name "Cm45_J09"; Contig_hit "0"
+Chrctg0	FPC	BAC	97189889	97329153	.	.	.	BAC "Cm40_O16"; Name "Cm40_O16"; Contig_hit "0"
+Chrctg0	FPC	BAC	57982977	58302465	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_hit "0"
+Chrctg0	FPC	BAC	57982978	58302466	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_hit "0"
+'''
+        gff = StringIO(GFF2)
+        out_gff = StringIO()
+        features = features_in_gff(gff, 2)
+        write_gff(features, out_gff)
+        result = out_gff.getvalue()
+        assert 'ID=Cm22_F20_2' in result
+
+    @staticmethod
     def test_get_gff_header():
         'It test the features_in_gff function'
         gff_fhand = open(os.path.join(DATA_DIR, 'map_fis.gff3'))

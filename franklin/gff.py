@@ -18,9 +18,22 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+def _create_feature_id(feature_name, feature_ids):
+    'It returns a new unique feature_id based on the name'
+    if feature_name not in feature_ids:
+        feature_id = feature_name
+        feature_ids[feature_name] = 1
+    else:
+        feature_id = '%s_%i' % (feature_name, feature_ids[feature_name])
+
+    feature_ids[feature_name] += 1
+    return feature_id
+
 def features_in_gff(fhand, version):
     '''It parses a gff file and returns an iterator of each line of the gff
     parsed'''
+
+    feature_ids = {}
 
     for line in fhand:
         line = line.strip()
@@ -42,15 +55,26 @@ def features_in_gff(fhand, version):
         elif version == 3:
             separator = '='
 
+        feature_id = None
         for attribute in annots.split(';'):
             attribute = attribute.strip(' ')
-            key, value = attribute.split(separator, 1)
+            try:
+                key, value = attribute.split(separator, 1)
+            except ValueError:
+                msg = 'Malformed attribute: %s' % attribute
+                raise ValueError(msg)
+
             value = value.strip('"')
             attributes[key] = value
             if key == 'Name':
                 feature['name'] = value
             if key == 'ID':
-                feature['id'] = value
+                feature_id = value
+
+        if not feature_id:
+            feature_id = _create_feature_id(feature['name'], feature_ids)
+
+        feature['id'] = feature_id
 
         feature['seqid']   = seqid
         feature['source']  = source
@@ -128,57 +152,6 @@ def _feature_to_str(feature):
     feature_fields.append(';'.join(attribute_list))
 
     return '\t'.join(feature_fields) + '\n'
-
-def _feature_to_str_old(feature):
-    'Given a feature dict it returns a gff feature line'
-    feat_str = []
-
-    feat_str.append(feature['seqid'])
-    feat_str.append('\t')
-
-    if 'source' in feature:
-        feat_str.append(feature['source'])
-    else:
-        feat_str.append('.')
-    feat_str.append('\t')
-
-    feat_str.append(feature['type'])
-    feat_str.append('\t')
-
-    feat_str.append('%d' % feature['start'])
-    feat_str.append('\t')
-
-    feat_str.append('%d' % feature['end'])
-    feat_str.append('\t')
-
-    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
-        if tag in feature:
-            feat_str.append(feature[tag])
-        else:
-            feat_str.append(default)
-        feat_str.append('\t')
-
-    #the attributes
-    attributes = []
-
-    if 'id' in feature:
-        attributes.append('ID=%s' % feature['id'])
-    if 'name' in feature:
-        attributes.append('Name=%s' % feature['name'])
-    if 'parents' in feature:
-        attributes.append('Parent=%s' % ','.join(feature['parents']))
-
-    #the rest of the attributes
-    done_attrs = ('seqid', 'source', 'type', 'start', 'end', 'id', 'name',
-                  'parents', 'score', 'phase', 'strand')
-    for attribute, value in feature.items():
-        if attribute not in done_attrs:
-            attributes.append('%s=%s' % (attribute, value))
-
-    feat_str.append(';'.join(attributes))
-
-    feat_str.append('\n')
-    return ''.join(feat_str)
 
 def write_gff(features, out_fhand, header=None):
     '''It writes a gff file.
