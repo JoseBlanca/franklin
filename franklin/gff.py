@@ -153,6 +153,28 @@ def _feature_to_str(feature):
 
     return '\t'.join(feature_fields) + '\n'
 
+class GffWriter(object):
+    'It writes GFF files'
+    def __init__(self, fhand, header=None):
+        'It inits the class and writes the header'
+        self._fhand = fhand
+
+        #write the header
+        if header is None:
+            fhand.write('##gff-version 3\n')
+        else:
+            for header_line in header:
+                fhand.write('%s\n' % header_line)
+
+    def write(self, feature):
+        'It writes a feature in to the gff file'
+        if isinstance(feature, dict):
+            self._fhand.write(_feature_to_str(feature))
+        else:
+            self._fhand.write(feature)
+            self._fhand.write('\n')
+
+
 def write_gff(features, out_fhand, header=None):
     '''It writes a gff file.
 
@@ -162,15 +184,8 @@ def write_gff(features, out_fhand, header=None):
     dbxred, ontology_term, parents, and children.
     A directive is just a plain str.
     '''
-    if header is None:
-        out_fhand.write('##gff-version 3\n')
-    else:
-        for header_line in header:
-            out_fhand.write('%s\n' % header_line)
+    writer = GffWriter(fhand=out_fhand, header=header)
 
-    for feat in features:
-        if isinstance(feat, dict):
-            out_fhand.write(_feature_to_str(feat))
-        else:
-            out_fhand.write(feat)
-            out_fhand.write('\n')
+    for feature in features:
+        writer.write(feature)
+
