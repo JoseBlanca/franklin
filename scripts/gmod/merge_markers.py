@@ -102,9 +102,10 @@ def prepare_to_chado(features):
                                                     'Name':fake_region_name}}
     for feature in features:
         feature['seqid'] = fake_region_name
-
-        feature['end'] = feature['end'] - feature['start'] + 1
+        new_end          = feature['end'] - feature['start'] + 1
         feature['start'] = 1
+        feature['end'] = new_end
+
         yield feature
 
 def _get_longest_feature_lenght(features):

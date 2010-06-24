@@ -54,6 +54,16 @@ def correct_feature_type(features):
             feature['type'] = 'chromosome'
         elif feature_type in('frameworkmarker', 'marker', 'placementmarker'):
             feature['type'] = 'genetic_marker'
+        elif feature_type == 'rflp':
+            feature['type'] = 'RFLP_fragment'
+        elif feature_type == 'snp':
+            feature['type'] = 'SNP'
+        elif feature_type in ('issr', 'rapd', 'aflp', 'morphological',
+                              'isozyme', 'spelling error'):
+            feature['type'] = 'genetic_marker'
+            feature['attributes']['marker_type'] = feature_type
+        elif feature_type == 'sequence feature':
+            feature['type'] = 'sequence_feature'
         yield feature
 
 
