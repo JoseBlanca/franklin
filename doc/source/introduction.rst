@@ -16,7 +16,17 @@ An application like that in a fast moving field, as the NGS is, has the risk of 
 Usage
 =====
 
-The main ideas to consider when using ngs_backbone are: project and analysis. A *project* is a directory (with its subdirectories) that includes a configuration file and all input and output files. An *analysis* takes some inputs from the project and creates some outputs. ngs_backbone knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/.
+The main ideas to consider when using ngs_backbone are: project and analysis. A *project* is a directory (with its subdirectories) that includes a configuration file and all input and output files. An *analysis* takes some inputs from the project and creates some outputs. ngs_backbone knows where the input and output files are for every analysis because the project directory structure is the same for every project. For instance the reads to clean are always in the directory /reads/original and the cleaned reads always are in /reads/cleaned/. The main directories in this standard directory layout are:
+
+  * reads/raw
+  * reads/cleaned
+  * assembly/result
+  * annotations/input
+  * annotations/blast
+  * annotations/features
+  * mapping/reference
+  * mapping/bams
+  * tmp/
 
 The configuration parameters required for every analysis are stored in the configuration file (ngs_backbone.conf) located in the project directory. A sample of this configuration file is created by ngs_backbone when a new project is created. This file should be tweaked to adapt the analyses to your requirements before running them.
 
