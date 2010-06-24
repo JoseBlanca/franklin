@@ -53,13 +53,15 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
                  'type':  'gene',
                  'start': 1000,
                  'end':   9000,
+                 'name': 'hola',
                  'attributes' : {'Parent': ['p1', 'p2']}}
         feats = [feat1]
-        result = '''##gff-version 3
-ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=23;Parent=p1,p2\n'''
         outh = StringIO()
         write_gff(feats, outh)
-        assert result == outh.getvalue()
+        result = outh.getvalue()
+        expected = '##gff-version 3\nctg123\t.\tgene\t1000\t9000\t.\t.\t.\t'
+        assert expected in result
+        assert 'Name=hola' in result
 
     @staticmethod
     def test_features_in_gff():
@@ -73,10 +75,10 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=23;Parent=p1,p2\n'''
     @staticmethod
     def test_from_2_to_3():
         'It tests that we can go from gff2 to gff3'
-    	GFF2 = '''Chrctg0	assembly	Chromosome	1	140722177	.	.	.	Sequence "Chrctg0"; Name "Chrctg0"
+        GFF2 = '''Chrctg0	assembly	Chromosome	1	140722177	.	.	.	Sequence "Chrctg0"; Name "Chrctg0"
 Chrctg0	FPC	contig	1	140722177	.	.	.	contig "ctg0"; Name "ctg0"
 Chrctg0	FPC	BAC	109076481	109461505	.	.	.	BAC "Cm45_J09"; Name "Cm45_J09"; Contig_hit "0"
-Chrctg0	FPC	BAC	97189889	97329153	.	.	.	BAC "Cm40_O16"; Name "Cm40_O16"; Contig_hit "0"
+Chrctg0	FPC	BAC	97189889	97329153	.	.	.	BAC "Cm40_O16 3"; Name "Cm40_O16"; Contig_hit "0"
 Chrctg0	FPC	BAC	57982977	58302465	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_hit "0"
 Chrctg0	FPC	BAC	57982978	58302466	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_hit "0"
 '''
@@ -86,6 +88,7 @@ Chrctg0	FPC	BAC	57982978	58302466	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_
         write_gff(features, out_gff)
         result = out_gff.getvalue()
         assert 'ID=Cm22_F20_2' in result
+        assert 'BAC=Cm40_O16%203' in result
 
     @staticmethod
     def test_get_gff_header():
@@ -119,7 +122,6 @@ Chrctg0	FPC	BAC	57982978	58302466	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_
                    }
         add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
         assert feature['attributes']['Dbxref'] == 'test2:id101,test:id100'
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

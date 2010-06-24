@@ -143,7 +143,8 @@ class GffWriter(object):
                    '=': '%3D',
                    '%': '%25',
                    '&': '%26',
-                   ',': '%2C'}
+                   ',': '%2C',
+                   ' ': '%20'}
         new_string = []
         for char_ in string:
             if char_ in escapes:
