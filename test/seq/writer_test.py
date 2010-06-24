@@ -167,11 +167,11 @@ class WriterTest(unittest.TestCase):
 
         assert "description=equal 96%25;" in gff
         assert "Ontology_term=GO:0019253" in gff
-        assert 'seq1%3B_microsatellite_1'in gff
-        assert 'ID=seq1%3B_orf_1' in gff
-        assert 'ID=seq1%3B_intron_1' in gff
+        assert 'seq1%3B_microsatellite'in gff
+        assert 'ID=seq1%3B_ORF' in gff
+        assert 'ID=seq1%3B_intron' in gff
         assert 'orthologs=arabidopsis:ara1' in gff
-        assert 'ID=seq1%3B_snv_1' in gff
+        assert 'ID=seq1%3B_SNV' in gff
 
         orf_feature = SeqFeature(FeatureLocation(ExactPosition(3),
                                                  ExactPosition(5)),

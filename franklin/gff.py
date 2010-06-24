@@ -111,48 +111,6 @@ def add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
     else:
         feature['attributes']['Dbxref'] = dbxref
 
-def _feature_to_str(feature):
-    'Given a feature dict it returns a gff feature line'
-    feature_fields = []
-
-    feature_fields.append(feature['seqid'])
-
-    if 'source' in feature:
-        feature_fields.append(feature['source'])
-    else:
-        feature_fields.append('.')
-
-    feature_fields.append(feature['type'])
-    feature_fields.append('%d' % feature['start'])
-    feature_fields.append('%d' % feature['end'])
-
-    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
-        if tag in feature:
-            feature_fields.append(feature[tag])
-        else:
-            feature_fields.append(default)
-
-    # attributes
-    if 'attributes' in feature:
-        attributes = feature['attributes']
-    else:
-        attributes = {}
-
-    if 'id' in feature:
-        attributes['ID'] = feature['id']
-    if 'name' in feature:
-        attributes['Name'] = feature['name']
-
-    attribute_list = []
-    for attr_key, attr_value in attributes.items():
-        if isinstance(attr_value, list):
-            attr_value = ','.join(attr_value)
-        attribute_list.append('%s=%s' % (attr_key, attr_value))
-
-    feature_fields.append(';'.join(attribute_list))
-
-    return '\t'.join(feature_fields) + '\n'
-
 class GffWriter(object):
     'It writes GFF files'
     def __init__(self, fhand, header=None):
@@ -166,14 +124,90 @@ class GffWriter(object):
             for header_line in header:
                 fhand.write('%s\n' % header_line)
 
+        self._feature_ids ={}
+
     def write(self, feature):
         'It writes a feature in to the gff file'
         if isinstance(feature, dict):
-            self._fhand.write(_feature_to_str(feature))
+            self._fhand.write(self._feature_to_str(feature))
         else:
             self._fhand.write(feature)
             self._fhand.write('\n')
 
+    @staticmethod
+    def _escape(string):
+        'It returns an escaped string'
+        #codes taken from:
+        #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
+        escapes = {';': '%3B',
+                   '=': '%3D',
+                   '%': '%25',
+                   '&': '%26',
+                   ',': '%2C'}
+        new_string = []
+        for char_ in string:
+            if char_ in escapes:
+                char_ = escapes[char_]
+            new_string.append(char_)
+        return ''.join(new_string)
+
+
+    def _feature_to_str(self, feature):
+        'Given a feature dict it returns a gff feature line'
+        feature_fields = []
+
+        feature_fields.append(self._escape(feature['seqid']))
+
+        if 'source' in feature:
+            feature_fields.append(self._escape(feature['source']))
+        else:
+            feature_fields.append('.')
+
+        feature_fields.append(feature['type'])
+        feature_fields.append('%d' % int(feature['start']))
+        feature_fields.append('%d' % int(feature['end']))
+
+        for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
+            if tag in feature:
+                feature_fields.append(feature[tag])
+            else:
+                feature_fields.append(default)
+
+        # attributes
+        if 'attributes' in feature:
+            attributes = feature['attributes']
+        else:
+            attributes = {}
+
+        if 'name' in feature:
+            feat_name = feature['name']
+        elif 'name' in attributes:
+            feat_name = attributes['name']
+        elif 'Name' in attributes:
+            feat_name = attributes['Name']
+        attributes['Name'] = feat_name
+
+        if 'id' in feature:
+            feature_id = feature['id']
+        elif 'ID' in attributes:
+            feature_id = attributes['ID']
+        else:
+            feature_id = _create_feature_id(attributes['Name'],
+                                            self._feature_ids)
+
+        attributes['ID'] = feature_id
+
+        attribute_list = []
+        for attr_key, attr_value in attributes.items():
+            if isinstance(attr_value, list):
+                attr_value = ','.join(attr_value)
+            attr_key = self._escape(attr_key)
+            attr_value = self._escape(attr_value)
+            attribute_list.append('%s=%s' % (attr_key, attr_value))
+
+        feature_fields.append(';'.join(attribute_list))
+
+        return '\t'.join(feature_fields) + '\n'
 
 def write_gff(features, out_fhand, header=None):
     '''It writes a gff file.

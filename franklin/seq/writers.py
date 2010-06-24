@@ -27,6 +27,7 @@ from Bio import SeqIO
 
 from franklin.seq.seqs import get_seq_name, fix_seq_struct_for_json
 from franklin.seq.readers import BIOPYTHON_FORMATS
+from franklin.gff import GffWriter as RawGffWriter
 
 class OrthologWriter(object):
     'It writes the orthoolog annotation into a file'
@@ -106,30 +107,23 @@ class GffWriter(object):
     'It writes sequences in an gff style'
     def __init__(self, fhand, default_type=None, source='.'):
         'It inits the class'
-        self.fhand = fhand
         self.num_features = 0
-        self._offset = 0
 
         if default_type is None:
             default_type = 'region' # SO:000001
         self._default_type = default_type
         self._source = source
-        self._write_gff_header()
-
-    def _write_gff_header(self):
-        'It writes the gff header'
-        self.fhand.write('##gff-version 3\n')
+        self._writer = RawGffWriter(fhand)
 
     def write(self, sequence):
         'It does the real write of the features'
-        seq_offset = self._offset
-        seq_feature = self._get_seq_feature(sequence, seq_offset)
-        self.fhand.write('\t'.join(seq_feature) + '\n')
+        seq_feature = self._get_seq_feature(sequence)
+        self._writer.write(seq_feature)
+
         #subfeature
-        for feature in self._get_sub_features(sequence, seq_offset):
+        for feature in self._get_sub_features(sequence):
+            self._writer.write(feature)
             self.num_features += 1
-            self.fhand.write('\t'.join(feature) + '\n')
-        self._offset += len(sequence)
 
     def _get_seq_sofa_type(self, sequence):
         'It gets the type of the feature'
@@ -138,115 +132,69 @@ class GffWriter(object):
         else:
             return self._default_type
 
-    @staticmethod
-    def _escape(string):
-        'It returns an escaped string'
-        #codes taken from:
-        #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
-        escapes = {';': '%3B',
-                   '=': '%3D',
-                   '%': '%25',
-                   '&': '%26',
-                   ',': '%2C'}
-        new_string = []
-        for char_ in string:
-            if char_ in escapes:
-                char_ = escapes[char_]
-            new_string.append(char_)
-        return ''.join(new_string)
-
     def _get_sequence_attributes(self, sequence):
         '''It writes gff attributes looking in features and annotations of the
         sequnce'''
-        attributes = ['ID=%s;name=%s' % (self._escape(sequence.id),
-                                         self._escape(sequence.name))]
+        attributes = {}
+        attributes['name'] = sequence.name
 
         if (sequence.description and
             sequence.description != "<unknown description>"):
-            desc = self._escape(sequence.description)
-            attributes.append('description=%s' % desc)
+            attributes['description'] = sequence.description
 
         if 'GOs' in sequence.annotations:
             gos = ','.join(sequence.annotations['GOs'])
-            attributes.append('Ontology_term=%s' % gos)
+            attributes['Ontology_term'] = gos
 
         #orthologs
         orthologs = []
         for annot in sequence.annotations:
             if 'orthologs' in annot:
-                specie = self._escape(annot.split('-')[0])
+                specie = annot.split('-')[0]
                 for ortholog_names in sequence.annotations[annot]:
-                    orthologs.append('%s:%s' % (specie,
-                                                self._escape(ortholog_names)))
+                    orthologs.append('%s:%s' % (specie, ortholog_names))
         if orthologs:
-            attributes.append('orthologs=%s' % ",".join(orthologs))
+            attributes['orthologs'] = ",".join(orthologs)
 
-        return ';'.join(attributes)
+        return attributes
 
-    def _get_seq_feature(self, sequence, seq_offset):
+    def _get_seq_feature(self, sequence):
         'It gets the gff section of the sequence. The parent'
-        seqid = self._escape(sequence.id)
-        source = self._escape(self._source)
-        type_ = self._get_seq_sofa_type(sequence)
-        start = 1
-        end = len(sequence)
-        start = str(start)
-        end = str(end)
+        feature = {}
+        feature['seqid'] = sequence.id
+        feature['source'] = self._source
+        feature['type'] = self._get_seq_sofa_type(sequence)
+        feature['start'] = 1
+        feature['end'] = len(sequence)
 
-        score = '.'
-        strand = '.'
-        phase = '.'
-        attributes = self._get_sequence_attributes(sequence)
+        feature['attributes'] = self._get_sequence_attributes(sequence)
 
-        return  [seqid, source, type_, start, end, score, strand, phase,
-                attributes]
+        return feature
 
-    def _get_sub_features(self, sequence, seq_offset):
+    def _get_sub_features(self, sequence):
         'It gets the features of the sequence feature'
-        srr_cont, intron_cont, orf_cont, snv_cont = 0, 0, 0, 0
-        for feature in sequence.features:
-            kind = feature.type
-            seq_name = self._escape(sequence.name)
-            seqid = self._escape(sequence.id)
-            start = int(str(feature.location.start)) + 1
-            end = int(str(feature.location.end)) + 1
-            start = str(start)
-            end = str(end)
-            strand = '.'
-            phase = '.'
-            score = '.'
-            source = 'franklin'
-            if kind == 'microsatellite':
-                srr_cont += 1
-                #source = 'sputnik'
-                type_ = 'microsatellite' #SO:0000289
-                score = str(feature.qualifiers['score'])
-                attributes = self._get_subfeature_attributes(seqid,
-                                                             seq_name,
-                                                             kind, srr_cont)
-            elif kind == 'intron':
-                intron_cont += 1
-                type_ = 'intron_' #SO:0000188
-                attributes = self._get_subfeature_attributes(seqid,
-                                                             seq_name,
-                                                             kind, intron_cont)
-            elif kind == 'orf':
-                orf_cont += 1
-                type_ = 'ORF' #SO:0000236
-                strand = feature.qualifiers['strand']
-                strand = '+' if strand == 'forward' else '-'
-                attributes = self._get_subfeature_attributes(seqid,
-                                                             seq_name,
-                                                             kind, orf_cont)
-            elif kind == 'snv':
-                snv_cont += 1
-                type_ = 'SNV' #SO:0001483
-                attributes = self._get_subfeature_attributes(seqid,
-                                                             seq_name,
-                                                             kind, snv_cont)
-
-            yield [seqid, source, type_, start, end, score, strand,
-                           phase, attributes]
+        for seq_feature in sequence.features:
+            feature = {}
+            feature['type'] = seq_feature.type
+            feature['seqid'] = sequence.id
+            feature['start'] = int(str(seq_feature.location.start)) + 1
+            feature['end'] = int(str(seq_feature.location.end)) + 1
+            feature['source'] = 'franklin'
+            attributes = {}
+            if feature['type'] == 'microsatellite':
+                #'microsatellite' #SO:0000289
+                attributes['score'] = str(seq_feature.qualifiers['score'])
+            elif feature['type'] == 'intron':
+                feature['type'] = 'intron_' #SO:0000188
+            elif feature['type'] == 'orf':
+                feature['type'] = 'ORF' #SO:0000236
+                strand = seq_feature.qualifiers['strand']
+                attributes['strand'] = '+' if strand == 'forward' else '-'
+            elif feature['type'] == 'snv':
+                feature['type'] = 'SNV' #SO:0001483
+            attributes['name'] = feature['seqid'] + '_' + feature['type']
+            feature['attributes'] = attributes
+            yield feature
 
     @staticmethod
     def _get_subfeature_attributes(id, name, kind, num):
