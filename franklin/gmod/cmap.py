@@ -60,7 +60,7 @@ def _map_pragma(map_, map_set_accession):
     return str_
 
 def _map_features(map_, features, map_set_accession, marker_count,
-                  marker_id_map):
+                  marker_id_map, features_in_mapset):
     'It returns the list of features for this map'
     feats = []
 
@@ -68,6 +68,12 @@ def _map_features(map_, features, map_set_accession, marker_count,
         feat = copy(features[feat_loc['feature']])
         feat['seqid'] = '%s_%s' % (map_set_accession, map_['name'])
         marker_name = feat['name']
+
+        if marker_name not in features_in_mapset:
+            features_in_mapset.add(marker_name)
+        else:
+            raise RuntimeError('%s marker  already in %s mapset' % (marker_name,
+                                                             map_set_accession))
 
         if marker_name not in marker_count:
             marker_count[marker_name] = []
@@ -85,6 +91,11 @@ def _map_features(map_, features, map_set_accession, marker_count,
             feat['end'] = feat_loc['end']
         else:
             feat['end'] = feat_loc['start']
+        if 'attributes' not in feat:
+            feat['attributes'] = {}
+        feat['attributes']['feature_accs'] = '%s_%s' %  (feat['seqid'],
+                                                         marker_name)
+
         feats.append(feat)
     return feats
 
@@ -117,6 +128,7 @@ def cmap_to_gff(data, fhand):
         gff.append(_species_pragma(species))
         gff.append('###')
         gff.append(_map_set_pragma(mapset))
+        features_in_mapset = set()
         for map_ in mapset['maps']:
             #start and end
             start = None
@@ -136,7 +148,8 @@ def cmap_to_gff(data, fhand):
             gff.append(_map_pragma(map_, mapset['accession']))
             gff.extend(_map_features(map_, data['features'],
                                      mapset['accession'], marker_count,
-                                     marker_id_map))
+                                     marker_id_map,
+                                     features_in_mapset))
     #the correspondences
     gff.extend(_cmap_correspondences(marker_count, marker_id_map))
 
