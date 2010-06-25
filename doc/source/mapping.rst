@@ -31,7 +31,7 @@ merge_bam
 Bam realignment
 ---------------
 
-This analysis does a `GATK <http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit>`_ `realignment <http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels>`_. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.
+This analysis does a GATK realignment_. The mappings are usually done aligning each read with the reference genome at a time. These methodology can cause artifacts in the multiple sequence alignment obtained. GATK is capable of solving these artifacts. Their algorithm is described in its own site.
 
 Input and output files
 ______________________
@@ -43,4 +43,6 @@ ____________________
 
 The corresponding ngs_backbone is realign_bam.
 
+
+.. include:: links.txt
 

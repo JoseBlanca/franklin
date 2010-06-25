@@ -199,15 +199,5 @@ The result is the file found in the annotations/repr/ directory. This is again a
 Now we the results files are found in annotations/result/. In this case a GFF_  and a vcf_ files have been generated.
 
 
-
-.. _lucy: http://lucy.sourceforge.net/
-.. _exonerate: http://www.ebi.ac.uk/~guy/exonerate/
-.. _blast: http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
-.. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
-.. _mdust: http://compbio.dfci.harvard.edu/tgi/software/
-.. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
-.. _bwa: http://bio-bwa.sourceforge.net/
-.. _GATK: http://www.broadinstitute.org/gsa/wiki/index.php/Local_realignment_around_indels
-.. _GFF: http://www.sequenceontology.org/resources/gff3.html
-.. _vcf: http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
+.. include:: links.txt
 

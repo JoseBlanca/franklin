@@ -4,10 +4,10 @@ Annotation
 
 There are different annotation analyses for the sequences, but they all operate in a similar way, so it is worth to explain the general annotation process. The sequences to annotate should be placed in one or several files at annotations/input/. When an annotation is done the results are stored in a kind of database at annotations/repr/. There is a versioned file in annotations/repr/ for each original file set to annotate. The annotations are cumulative, so if we annotate the ORF and after that the SSRs both will be stored at annotations/repr/. At every time after an annotation the real output files can be generated running the write_annotation analysis. The output files will be found at annotations/result/. The output files are:
 
-* `vcf <http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3>`_. It stores the SNP and indel information.
+* VCF_ file. It stores the SNP and indel information.
 * DNA and pep ORF fasta files. The DNA to translate and the translation.
 * a csv file for the SSR (microsatellite) information.
-* `gff <http://www.sequenceontology.org/resources/gff3.html>`_. Stores all found sequence features.
+* GFF_ file. It stores all found sequence features.
 * annot and dat files for Blast2Go.
 * a text file with the orthologs.
 
@@ -77,7 +77,7 @@ In the ngs_backbone.conf section Annotation, subsection description_annotation t
 GO annotation
 -------------
 
-ngs_backbone annotates the `Gene Ontology <http://www.geneontology.org/>` ontology terms by using `Blast2GO <http://www.blast2go.org/>`. Blast2GO uses the results of a blast nr search to infer the relevant GO terms for every sequence. The corresponding blast analysis is annotate_go.
+ngs_backbone annotates the `Gene Ontology`_ ontology terms by using blast2go_. Blast2GO uses the results of a blast nr search to infer the relevant GO terms for every sequence. The corresponding blast analysis is annotate_go.
 
 Output files
 ____________
@@ -153,4 +153,6 @@ Annotation statistics
 
 Once we have annotated some sequences we can get a summary of the process by running the annotation_stats analysis. It will create one text file for each input annotation file with statistics about: description, microsatellites, SNVs, ORF, GO terms and orhologs.
 
+
+.. include:: links.txt
 
