@@ -135,19 +135,30 @@ class GffWriter(object):
             self._fhand.write('\n')
 
     @staticmethod
-    def _escape(string):
+    def _escape(string, escape_coma=True):
         'It returns an escaped string'
         #codes taken from:
         #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
         escapes = {';': '%3B',
                    '=': '%3D',
-                   '%': '%25',
                    '&': '%26',
-                   ',': '%2C',
                    ' ': '%20'}
+        if escape_coma:
+            escapes[','] = '%2C'
+
+
         new_string = []
-        for char_ in string:
-            if char_ in escapes:
+        for index, char_ in enumerate(string):
+            if char_ == '%':
+                try:
+                    full_escape = string[index:index + 3]
+                except IndexError:
+                    new_string.append(char_)
+                    continue
+                if full_escape != '%25':
+                    char_ = '%25'
+
+            elif char_ in escapes:
                 char_ = escapes[char_]
             new_string.append(char_)
         return ''.join(new_string)
@@ -203,7 +214,7 @@ class GffWriter(object):
             if isinstance(attr_value, list):
                 attr_value = ','.join(attr_value)
             attr_key = self._escape(attr_key)
-            attr_value = self._escape(attr_value)
+            attr_value = self._escape(attr_value, escape_coma=False)
             attribute_list.append('%s=%s' % (attr_key, attr_value))
 
         feature_fields.append(';'.join(attribute_list))

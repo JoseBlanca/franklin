@@ -63,6 +63,21 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
         assert expected in result
         assert 'Name=hola' in result
 
+        #escaping some caracteres
+        feat1 = {'id':'23',
+                 'seqid': 'ctg123',
+                 'type':  'gene',
+                 'start': 1000,
+                 'end':   9000,
+                 'name': 'hola',
+                 'attributes':{'Dbxref':'peoi%25lak%s'}}
+        feats = [feat1]
+        outh = StringIO()
+        write_gff(feats, outh)
+        result = outh.getvalue()
+        assert 'Dbxref=peoi%25lak%25s' in  result
+
+
     @staticmethod
     def test_features_in_gff():
         'It test the features_in_gff function'
@@ -122,6 +137,9 @@ Chrctg0	FPC	BAC	57982978	58302466	.	.	.	BAC "Cm22_F20"; Name "Cm22_F20"; Contig_
                    }
         add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
         assert feature['attributes']['Dbxref'] == 'test2:id101,test:id100'
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
