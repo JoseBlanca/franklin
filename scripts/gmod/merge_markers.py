@@ -68,8 +68,9 @@ def run(physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref_db):
     physical_header = get_gff_header(physical_fhand)
 
     genetic_features = features_in_gff(genetic_fhand, 3)
+
     # get genetic markers
-    genetic_markers = get_indexed_features(genetic_features)
+    genetic_markers = index_features_by_name(genetic_features)
 
     # insert genetic_markers in physical markers
     merged_features, orphan_features = merge_markers(physical_fhand,
@@ -142,7 +143,7 @@ def get_orphaned_features(physical_features, genetic_markers):
 
 def add_dbxref_to_orphans(features, dbxref_db):
     'It builds the dbxref within the genetic feature information'
-    indexed_orphans = get_indexed_features(features)
+    indexed_orphans = index_features_by_name(features)
     for feature_list in indexed_orphans.values():
         dbxref_ids = get_genetic_dbxrefs(feature_list)
         for index, feature in enumerate(feature_list):
@@ -167,19 +168,13 @@ def add_dbxref_to_common_features(physical_features, genetic_markers,
 def get_genetic_dbxrefs(features):
     'It builds the dbxrefs taking into account the genetic_feature_data'
     feature_dbxrefs = []
-    if len(features) > 1:
-        for index, feature in enumerate(features):
-            letter = chr(65 + index)
-            feature_dbxref = '%s_%s_%s' % (feature['seqid'], feature['name'],
-                                           letter)
-            feature_dbxrefs.append(feature_dbxref)
-    else:
-        feature = features[0]
+    for feature in enumerate(features):
         feature_dbxref = '%s_%s' % (feature['seqid'], feature['name'])
         feature_dbxrefs.append(feature_dbxref)
+
     return feature_dbxrefs
 
-def get_indexed_features(features):
+def index_features_by_name(features):
     'It indexes the genetic markers'
     markers = {}
     for feature in features:
