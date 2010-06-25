@@ -74,12 +74,39 @@ class CmapTest(unittest.TestCase):
 ##cmap_corr evidence_type_acc=ANB;ID1=marker1_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker1_1;map_set_acc2=ms2;map_acc2=gl2;
 ##cmap_corr evidence_type_acc=ANB;ID1=marker2_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker2_1;map_set_acc2=ms2;map_acc2=gl2;
 '''
-        assert correspondences in fhand.getvalue()
-        #print fhand.getvalue()
+        result = fhand.getvalue()
+        assert correspondences in result
+        assert "feature_accs=ms2_group2_marker1" in  result
+
 
         fhand = StringIO()
         cmap_to_mcf(cmap, fhand)
-        #print fhand.getvalue()
+
+        # No repeated markers in mapset allowed
+        feat_loc2 = [{'feature':'marker1', 'start':1, 'end':5},
+                    {'feature':'marker2', 'start':20},
+                    {'feature':'marker2', 'start':20}]
+        map2 = {'accession': 'gl2',
+                'name': 'group2',
+                'display_order':2,
+                'feature_locations':feat_loc2}
+        map_set2 = {'species':'cmelo',
+                   'accession':'ms2',
+                   'name':'map set 2',
+                   'short_name':'ms2',
+                   'type':'Genetic',
+                   'unit_modifier':0.01,
+                   'maps' : [map2]}
+        cmap = {'features': markers,
+                'map_sets':[map_set2],
+                'species':{'cmelo': species}}
+
+        try:
+            cmap_to_gff(cmap, fhand)
+            self.fail()
+        except RuntimeError:
+            pass
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

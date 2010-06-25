@@ -18,9 +18,22 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+def _create_feature_id(feature_name, feature_ids):
+    'It returns a new unique feature_id based on the name'
+    if feature_name not in feature_ids:
+        feature_id = feature_name
+        feature_ids[feature_name] = 1
+    else:
+        feature_id = '%s_%i' % (feature_name, feature_ids[feature_name])
+
+    feature_ids[feature_name] += 1
+    return feature_id
+
 def features_in_gff(fhand, version):
     '''It parses a gff file and returns an iterator of each line of the gff
     parsed'''
+
+    feature_ids = {}
 
     for line in fhand:
         line = line.strip()
@@ -42,15 +55,26 @@ def features_in_gff(fhand, version):
         elif version == 3:
             separator = '='
 
+        feature_id = None
         for attribute in annots.split(';'):
             attribute = attribute.strip(' ')
-            key, value = attribute.split(separator, 1)
+            try:
+                key, value = attribute.split(separator, 1)
+            except ValueError:
+                msg = 'Malformed attribute: %s' % attribute
+                raise ValueError(msg)
+
             value = value.strip('"')
             attributes[key] = value
             if key == 'Name':
                 feature['name'] = value
             if key == 'ID':
-                feature['id'] = value
+                feature_id = value
+
+        if not feature_id:
+            feature_id = _create_feature_id(feature['name'], feature_ids)
+
+        feature['id'] = feature_id
 
         feature['seqid']   = seqid
         feature['source']  = source
@@ -87,98 +111,104 @@ def add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
     else:
         feature['attributes']['Dbxref'] = dbxref
 
-def _feature_to_str(feature):
-    'Given a feature dict it returns a gff feature line'
-    feature_fields = []
+class GffWriter(object):
+    'It writes GFF files'
+    def __init__(self, fhand, header=None):
+        'It inits the class and writes the header'
+        self._fhand = fhand
 
-    feature_fields.append(feature['seqid'])
-
-    if 'source' in feature:
-        feature_fields.append(feature['source'])
-    else:
-        feature_fields.append('.')
-
-    feature_fields.append(feature['type'])
-    feature_fields.append('%d' % feature['start'])
-    feature_fields.append('%d' % feature['end'])
-
-    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
-        if tag in feature:
-            feature_fields.append(feature[tag])
+        #write the header
+        if header is None:
+            fhand.write('##gff-version 3\n')
         else:
-            feature_fields.append(default)
+            for header_line in header:
+                fhand.write('%s\n' % header_line)
 
-    # attributes
-    if 'attributes' in feature:
-        attributes = feature['attributes']
-    else:
-        attributes = {}
+        self._feature_ids ={}
 
-    if 'id' in feature:
-        attributes['ID'] = feature['id']
-    if 'name' in feature:
-        attributes['Name'] = feature['name']
-
-    attribute_list = []
-    for attr_key, attr_value in attributes.items():
-        if isinstance(attr_value, list):
-            attr_value = ','.join(attr_value)
-        attribute_list.append('%s=%s' % (attr_key, attr_value))
-
-    feature_fields.append(';'.join(attribute_list))
-
-    return '\t'.join(feature_fields) + '\n'
-
-def _feature_to_str_old(feature):
-    'Given a feature dict it returns a gff feature line'
-    feat_str = []
-
-    feat_str.append(feature['seqid'])
-    feat_str.append('\t')
-
-    if 'source' in feature:
-        feat_str.append(feature['source'])
-    else:
-        feat_str.append('.')
-    feat_str.append('\t')
-
-    feat_str.append(feature['type'])
-    feat_str.append('\t')
-
-    feat_str.append('%d' % feature['start'])
-    feat_str.append('\t')
-
-    feat_str.append('%d' % feature['end'])
-    feat_str.append('\t')
-
-    for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
-        if tag in feature:
-            feat_str.append(feature[tag])
+    def write(self, feature):
+        'It writes a feature in to the gff file'
+        if isinstance(feature, dict):
+            self._fhand.write(self._feature_to_str(feature))
         else:
-            feat_str.append(default)
-        feat_str.append('\t')
+            self._fhand.write(feature)
+            self._fhand.write('\n')
 
-    #the attributes
-    attributes = []
+    @staticmethod
+    def _escape(string):
+        'It returns an escaped string'
+        #codes taken from:
+        #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
+        escapes = {';': '%3B',
+                   '=': '%3D',
+                   '%': '%25',
+                   '&': '%26',
+                   ',': '%2C',
+                   ' ': '%20'}
+        new_string = []
+        for char_ in string:
+            if char_ in escapes:
+                char_ = escapes[char_]
+            new_string.append(char_)
+        return ''.join(new_string)
 
-    if 'id' in feature:
-        attributes.append('ID=%s' % feature['id'])
-    if 'name' in feature:
-        attributes.append('Name=%s' % feature['name'])
-    if 'parents' in feature:
-        attributes.append('Parent=%s' % ','.join(feature['parents']))
 
-    #the rest of the attributes
-    done_attrs = ('seqid', 'source', 'type', 'start', 'end', 'id', 'name',
-                  'parents', 'score', 'phase', 'strand')
-    for attribute, value in feature.items():
-        if attribute not in done_attrs:
-            attributes.append('%s=%s' % (attribute, value))
+    def _feature_to_str(self, feature):
+        'Given a feature dict it returns a gff feature line'
+        feature_fields = []
 
-    feat_str.append(';'.join(attributes))
+        feature_fields.append(self._escape(feature['seqid']))
 
-    feat_str.append('\n')
-    return ''.join(feat_str)
+        if 'source' in feature:
+            feature_fields.append(self._escape(feature['source']))
+        else:
+            feature_fields.append('.')
+
+        feature_fields.append(feature['type'])
+        feature_fields.append('%d' % int(feature['start']))
+        feature_fields.append('%d' % int(feature['end']))
+
+        for tag, default in (('score', '.'), ('strand', '.'), ('phase', '.')):
+            if tag in feature:
+                feature_fields.append(feature[tag])
+            else:
+                feature_fields.append(default)
+
+        # attributes
+        if 'attributes' in feature:
+            attributes = feature['attributes']
+        else:
+            attributes = {}
+
+        if 'name' in feature:
+            feat_name = feature['name']
+        elif 'name' in attributes:
+            feat_name = attributes['name']
+        elif 'Name' in attributes:
+            feat_name = attributes['Name']
+        attributes['Name'] = feat_name
+
+        if 'id' in feature:
+            feature_id = feature['id']
+        elif 'ID' in attributes:
+            feature_id = attributes['ID']
+        else:
+            feature_id = _create_feature_id(attributes['Name'],
+                                            self._feature_ids)
+
+        attributes['ID'] = feature_id
+
+        attribute_list = []
+        for attr_key, attr_value in attributes.items():
+            if isinstance(attr_value, list):
+                attr_value = ','.join(attr_value)
+            attr_key = self._escape(attr_key)
+            attr_value = self._escape(attr_value)
+            attribute_list.append('%s=%s' % (attr_key, attr_value))
+
+        feature_fields.append(';'.join(attribute_list))
+
+        return '\t'.join(feature_fields) + '\n'
 
 def write_gff(features, out_fhand, header=None):
     '''It writes a gff file.
@@ -189,15 +219,8 @@ def write_gff(features, out_fhand, header=None):
     dbxred, ontology_term, parents, and children.
     A directive is just a plain str.
     '''
-    if header is None:
-        out_fhand.write('##gff-version 3\n')
-    else:
-        for header_line in header:
-            out_fhand.write('%s\n' % header_line)
+    writer = GffWriter(fhand=out_fhand, header=header)
 
-    for feat in features:
-        if isinstance(feat, dict):
-            out_fhand.write(_feature_to_str(feat))
-        else:
-            out_fhand.write(feat)
-            out_fhand.write('\n')
+    for feature in features:
+        writer.write(feature)
+
