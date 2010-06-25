@@ -4,7 +4,8 @@ updates it with feature_name '''
 
 from optparse import OptionParser
 from franklin.utils.misc_utils import get_db_connection
-import os
+import os, getpass
+from franklin.gff import features_in_gff
 
 def parse_options():
     'It parses the command line arguments'
@@ -14,7 +15,7 @@ def parse_options():
     parser.add_option('-u', '--db_user', dest='dbuser', help='chado db user')
     parser.add_option('-p', '--db_pass', dest='dbpass', help='chado db pass')
     parser.add_option('-t', '--db_host', dest='dbhost', help='chado db host')
-
+    parser.add_option('-g', '--gff_file', dest='gff', help='gff file')
     return parser
 
 def set_parameters():
@@ -23,65 +24,64 @@ def set_parameters():
     options = parser.parse_args()[0]
 
     dbuser = os.environ['USER'] if options.dbuser is None else options.dbuser
-    dbpass = options.dbpass
+    if options.dbpass is None:
+        dbpass = getpass.getpass('Password for user %s: ' % dbuser)
+    else:
+        dbpass = options.dbpass
+
     dbhost = 'localhost' if options.dbhost is None else options.dbhost
     dbname = 'CMAP' if options.dbname is None else options.dbname
 
     db_data = {'user' : dbuser, 'name' : dbname, 'pass' : dbpass,
                'host': dbhost, 'adaptor':'mysql'}
+    if options.gff is None:
+        parser.error('gff file needed')
+    else:
+        gff = options.gff
 
-    return db_data
+    return db_data, gff
 
 def main():
     'The main part'
     # get parameters
-    db_data = set_parameters()
+    db_data, gff = set_parameters()
 
     # get a db connection
     connection  = get_db_connection(db_data)
 
-    # get id name mapping
-    feat_accs = get_feat_accs(connection)
+    # It index the feature accs in the gff by seqid and name
+    indexed_feature_accs = index_feat_accs_by_seqid_and_name(gff)
 
     #update db changing feature_acc using feature_name in cmap_feature
-    update_acc_with_name(connection, feat_accs)
+    update_acc_with_name(connection, indexed_feature_accs)
 
-def update_acc_with_name(connection, feat_accs):
-    'It updates the acc field with the feature name '
-    cursor = connection.cursor()
-    for id_, feat_acc in feat_accs:
-        statement = "update cmap_feature set feature_acc='%s' where feature_id=%d" %\
-                                                                 (feat_acc, id_)
-        cursor.execute(statement)
+def index_feat_accs_by_seqid_and_name(gff):
+    '''It indexes the gff's feature accs  using the seqid and the name'''
+    feature_accs = {}
 
-def get_feat_accs(connection):
-    'It get s the id name mapping'
+    for feature in features_in_gff(gff, 3):
+        seq_id = feature['seqid']
+        name   = feature['name']
+        index = (seq_id, name)
+        if index in  feature_accs:
+            raise RuntimeError('Repeated marker %s not allowed in mapsert %s' %\
+                               (name, seq_id))
+        feature_accs[index] = '%s_%s' % index
+    return feature_accs
+
+def update_acc_with_name(connection, feature_accs):
+    'It updates the acc field with the feature_acc of the gff'
     cursor = connection.cursor()
     cursor2 = connection.cursor()
     cursor.execute("select * from cmap_feature")
-    feat_accs = {}
     for row in cursor.fetchall():
         cursor2.execute('select map_acc from cmap_map where map_id=%d' % row[2])
-        map_name = cursor2.fetchone()[0]
-        feat_id   = row[0]
+        map_name  = cursor2.fetchone()[0]
         feat_name = row[4]
-        feat_acc = '%s_%s' % (map_name, feat_name)
-        if feat_acc not in feat_accs:
-            feat_accs[feat_acc] = []
-        feat_accs[feat_acc].append(feat_id)
-
-    # now we put A B if there is more than one feature in a mapset
-    feat_accs_ = []
-    for feat_acc, ids in feat_accs.items():
-        if len(ids) > 1:
-            for index, id_ in enumerate(ids):
-                letter = chr(65 + index)
-                final_feat_acc = feat_acc + '_' + letter
-                feat_accs_.append((id_, final_feat_acc))
-        else:
-            feat_accs_.append((ids[0], feat_acc))
-
-    return feat_accs_
+        feature_acc = feature_accs(map_name, feat_name)
+        statement  = "update cmap_feature set "
+        statement += "feature_acc='%s' where feature_id=%d" % feature_acc
+        cursor2.execute(statement)
 
 if __name__ == '__main__':
     main()
