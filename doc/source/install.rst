@@ -39,7 +39,7 @@ ngs_backbone requires python2.6. If you don't have it already installed in your 
 
 If your distribution include python2.6 chances are that Biopython and ConfigObj might be packages by your distribution, but we are going to explain here the manual process. The install process is simple, you just have to download a bunch of python tools, unpack them and run "python2.6 install" on them.
 
-To install Biopython you need `Numpy <http://new.scipy.org/download.html>`_. Download Biopython_ and install it.
+To install Biopython you need Numpy_. Download Biopython_ and install it.
 
 ::
   $ tar -xvzf numpy-1.4.1.tar.gz
@@ -147,23 +147,5 @@ It is advisable to run updatedb after setting everything to ease the ngs_backbon
 After installing the whole pipeline you can run the :doc:`NGS workshop tutorial <ngs_workshop/index>` to test the whole system.
 
 
-.. _mira: http://sourceforge.net/apps/mediawiki/mira-assembler
-.. _bwa: http://bio-bwa.sourceforge.net/
-.. _samtools: http://samtools.sourceforge.net/
-.. _picard: http://picard.sourceforge.net/index.shtml
-.. _pysam: http://code.google.com/p/pysam/
-.. _psubprocess: http://bioinf.comav.upv.es/psubprocess/
-.. _GATK: http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit
-.. _Biopython: http://biopython.org/wiki/Main_Page
-.. _lucy: http://lucy.sourceforge.net/
-.. _exonerate: http://www.ebi.ac.uk/~guy/exonerate/
-.. _blast: http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
-.. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
-.. _mdust: http://compbio.dfci.harvard.edu/tgi/software/
-.. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
-.. _ESTScan: http://estscan.sourceforge.net/
-.. _emboss: http://emboss.sourceforge.net/
-.. _blast2go: http://www.blast2go.org/
-.. _configobj: http://pypi.python.org/pypi/configobj/
-.. _matplotlib: http://matplotlib.sourceforge.net/
+.. include:: links.txt
 

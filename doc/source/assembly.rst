@@ -4,7 +4,7 @@
 Mira assembly
 -------------
 
-The `mira <http://sourceforge.net/apps/mediawiki/mira-assembler/index.php?title=Main_Page>`_ assembler is used to create a set of contigs with the sequence reads. The reads can come from 454, sanger and illumina sequencing. Hybrid assembly are possible. For mira configuration details refer to its documentation.
+The mira_ assembler is used to create a set of contigs with the sequence reads. The reads can come from 454, sanger and illumina sequencing. Hybrid assembly are possible. For mira configuration details refer to its documentation.
 
 Input and output files
 ______________________
@@ -41,3 +41,6 @@ The select_last_assembly will just make a soft link named assembly/result that p
 
 
 .. _mapping:
+
+.. include:: links.txt
+
