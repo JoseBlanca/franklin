@@ -168,7 +168,7 @@ def add_dbxref_to_common_features(physical_features, genetic_markers,
 def get_genetic_dbxrefs(features):
     'It builds the dbxrefs taking into account the genetic_feature_data'
     feature_dbxrefs = []
-    for feature in enumerate(features):
+    for feature in features:
         feature_dbxref = '%s_%s' % (feature['seqid'], feature['name'])
         feature_dbxrefs.append(feature_dbxref)
 
