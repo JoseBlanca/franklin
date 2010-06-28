@@ -70,12 +70,12 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
                  'start': 1000,
                  'end':   9000,
                  'name': 'hola',
-                 'attributes':{'Dbxref':'peoi%25lak%s'}}
+                 'attributes':{'Dbxref':'peoi%25l a%20k%s'}}
         feats = [feat1]
         outh = StringIO()
         write_gff(feats, outh)
         result = outh.getvalue()
-        assert 'Dbxref=peoi%25lak%25s' in  result
+        assert 'Dbxref=peoi%25l%20a%20k%25s' in  result
 
 
     @staticmethod

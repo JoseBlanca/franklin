@@ -142,22 +142,26 @@ class GffWriter(object):
         escapes = {';': '%3B',
                    '=': '%3D',
                    '&': '%26',
-                   ' ': '%20'}
+                   ' ': '%20',
+                   '%': '%25'}
+        escape_strings = escapes.values()
         if escape_coma:
             escapes[','] = '%2C'
 
 
         new_string = []
         for index, char_ in enumerate(string):
+            #it might be already escaped
             if char_ == '%':
+                is_escaped = False
                 try:
                     full_escape = string[index:index + 3]
+                    if full_escape in escape_strings:
+                        is_escaped = True
                 except IndexError:
                     new_string.append(char_)
-                    continue
-                if full_escape != '%25':
-                    char_ = '%25'
-
+                if not is_escaped:
+                    char_ = escapes[char_]
             elif char_ in escapes:
                 char_ = escapes[char_]
             new_string.append(char_)
