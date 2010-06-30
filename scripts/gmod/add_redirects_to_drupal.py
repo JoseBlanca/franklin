@@ -81,20 +81,9 @@ def redirect_inserted(name, cursor):
 def get_feat_id_name(connection):
     'It gets the features id and name'
     cursor = connection.cursor()
-    names = []
     cursor.execute("select feature_id, name from feature")
     for id_, name in cursor.fetchall():
-        if name in names:
-            print name
-        names.append(name)
         yield (id_, name)
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     main()
