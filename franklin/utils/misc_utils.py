@@ -457,22 +457,22 @@ def rel_symlink(path1, path2):
 
 def get_db_connection(db_data):
     'It connects to a db using python dbi api. Returns a connection'
-    try:
-        if db_data['adaptor'] == 'mysql':
-            import MySQLdb
-            conn = MySQLdb.connect(db=db_data['dbname'],
-                                   user=db_data['dbuser'],
-                                   host=db_data['host'],
-                                   passwd=db_data['dbpass'])
-        elif db_data['adaptor'] == 'psql':
-            import psycopg2
-            conn = psycopg2.connect(database = db_data['name'],
-                                    user = db_data['user'],
-                                    host = db_data['host'] ,
-                                    password = db_data['pass'])
+    if db_data['pass'] is None:
+        db_data['pass'] = ''
+    if db_data['adaptor'] == 'mysql':
+        import MySQLdb
+        conn = MySQLdb.connect(db=db_data['name'],
+                               user=db_data['user'],
+                               host=db_data['host'],
+                               passwd=db_data['pass'])
+    elif db_data['adaptor'] == 'psql':
+        import psycopg2
+        conn = psycopg2.connect(database = db_data['name'],
+                                user = db_data['user'],
+                                password = db_data['pass'],
+                                host = db_data['host'])
 
-        return conn
-    except:
-        raise RuntimeError("I am  unable to connect to the database")
+
+    return conn
 
 
