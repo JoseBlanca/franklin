@@ -51,7 +51,7 @@ def set_parameters():
     else:
         orphan_fhand = open(options.orphan, 'w')
 
-    dbxref_db = 'melon_cmap' if options.dbxref is None else options.dbxref
+    dbxref_db = 'mapa_genetico_melon' if options.dbxref is None else options.dbxref
 
     return physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref_db
 
@@ -103,8 +103,12 @@ def prepare_to_chado(features):
                                                     'Name':fake_region_name}}
     for feature in features:
         feature['seqid'] = fake_region_name
-        new_end          = feature['end'] - feature['start'] + 1
+        if feature['end'] >= feature['start']:
+            new_end = feature['end'] - feature['start'] + 1
+        else:
+            new_end = feature['start'] - feature['end'] + 1
         feature['start'] = 1
+
         feature['end'] = new_end
 
         yield feature
@@ -168,11 +172,29 @@ def add_dbxref_to_common_features(physical_features, genetic_markers,
 def get_genetic_dbxrefs(features):
     'It builds the dbxrefs taking into account the genetic_feature_data'
     feature_dbxrefs = []
+    repeted_feature_dbxrefs = {}
     for feature in features:
         feature_dbxref = '%s_%s' % (feature['seqid'], feature['name'])
-        feature_dbxrefs.append(feature_dbxref)
+        if feature_dbxref in repeted_feature_dbxrefs:
+            num = repeted_feature_dbxrefs[feature_dbxref]
+            new_feature_dbxref = make_unique_feat_dbxref(feature_dbxref, num)
+            repeted_feature_dbxrefs[feature_dbxref] += 1
 
+        else:
+            new_feature_dbxref = feature_dbxref
+            repeted_feature_dbxrefs[feature_dbxref] = 65
+
+        feature_dbxrefs.append(new_feature_dbxref)
     return feature_dbxrefs
+
+def make_unique_feat_dbxref(feature_dbxref, num):
+    'it makes a feature_accs unique giving the number'
+    letter = chr(num)
+    if letter == 'A':
+        feature_dbxref += '_%s' % letter
+    else:
+        feature_dbxref = feature_dbxref[:-1] + letter
+    return feature_dbxref
 
 def index_features_by_name(features):
     'It indexes the genetic markers'
@@ -200,6 +222,7 @@ def test():
     result = outfhand.getvalue()
     assert 'Dbxref=cmap_melon:Chrctg0_Cm13_B04;' in result
     print 'Test OK'
+
 
 
 if __name__ == '__main__':

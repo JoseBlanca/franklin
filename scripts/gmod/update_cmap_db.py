@@ -37,7 +37,7 @@ def set_parameters():
     if options.gff is None:
         parser.error('gff file needed')
     else:
-        gff = options.gff
+        gff = open(options.gff)
 
     return db_data, gff
 
@@ -58,19 +58,18 @@ def main():
 def index_feat_accs_by_seqid_and_name(gff):
     '''It indexes the gff's feature accs  using the seqid and the name'''
     feature_accs = {}
-
     for feature in features_in_gff(gff, 3):
         seq_id = feature['seqid']
         name   = feature['name']
         index = (seq_id, name)
         if index in  feature_accs:
-            raise RuntimeError('Repeated marker %s not allowed in mapsert %s' %\
-                               (name, seq_id))
+            continue
         feature_accs[index] = '%s_%s' % index
     return feature_accs
 
 def update_acc_with_name(connection, feature_accs):
     'It updates the acc field with the feature_acc of the gff'
+    repeated_features = {}
     cursor = connection.cursor()
     cursor2 = connection.cursor()
     cursor.execute("select * from cmap_feature")
@@ -78,10 +77,31 @@ def update_acc_with_name(connection, feature_accs):
         cursor2.execute('select map_acc from cmap_map where map_id=%d' % row[2])
         map_name  = cursor2.fetchone()[0]
         feat_name = row[4]
-        feature_acc = feature_accs(map_name, feat_name)
+        feature_acc = feature_accs[(map_name, feat_name)]
+        if feature_acc in repeated_features:
+            num = repeated_features[feature_acc]
+            new_feature_acc = make_unique_feat_accs(feature_acc, num)
+            repeated_features[feature_acc] += 1
+        else:
+            new_feature_acc = feature_acc
+            repeated_features[feature_acc] = 65
         statement  = "update cmap_feature set "
-        statement += "feature_acc='%s' where feature_id=%d" % feature_acc
+        statement += "feature_acc='%s' where feature_id=%d" % (new_feature_acc,
+                                                               row[0])
+
         cursor2.execute(statement)
+
+def make_unique_feat_accs(feature_acc, num):
+    'it makes a feature_accs unique giving the number'
+    letter = chr(num)
+    if letter == 'A':
+        feature_acc += '_%s' % letter
+    else:
+        feature_acc = feature_acc[:-1] + letter
+    return feature_acc
+
+
+
 
 if __name__ == '__main__':
     main()
