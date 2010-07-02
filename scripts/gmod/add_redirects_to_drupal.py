@@ -14,9 +14,9 @@ def parse_options():
     parser = OptionParser('usage: %prog -d directory [-t tables]',
                           version='%prog 1.0')
     parser.add_option('-d', '--chado_dbname', dest='cdbname', help='chado db name',
-                      default= 'chado')
+                      default= 'chado_melon')
     parser.add_option('-D', '--drupal_dbname', dest='ddbname',
-                      help='drupal db name', default= 'drupaldb')
+                      help='drupal db name', default= 'drupal_melon')
     parser.add_option('-u', '--dbuser', dest='dbuser', help='chado db user',
                       default='postgres')
     parser.add_option('-p', '--dbpass', dest='dbpass', help='chado db pass',
