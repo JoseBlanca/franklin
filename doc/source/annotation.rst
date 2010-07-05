@@ -2,7 +2,7 @@
 Annotation
 ==========
 
-There are different annotation analyses for the sequences, but they all operate in a similar way, so it is worth to explain the general annotation process. The sequences to annotate should be placed in one or several files at annotations/input/. When an annotation is done the results are stored in a kind of database at annotations/repr/. There is a versioned file in annotations/repr/ for each original file set to annotate. The annotations are cumulative, so if we annotate the ORF and after that the SSRs both will be stored at annotations/repr/. At every time after an annotation the real output files can be generated running the write_annotation analysis. The output files will be found at annotations/result/. The output files are:
+There are different annotation analyses for the sequences, but they all operate in a similar way, so it is worth to explain the general annotation process. The sequences to annotate should be placed in one or several files at annotations/input/. When an annotation is done the results are stored in a kind of database at annotations/db/. There is a versioned file in annotations/db/ for each original file set to annotate. The annotations are cumulative, so if we annotate the ORF and after that the SSRs both will be stored at annotations/db/. At every time after an annotation the real output files can be generated running the write_annotation analysis. The output files will be found at annotations/features/. The output files are:
 
 * VCF_ file. It stores the SNP and indel information.
 * DNA and pep ORF fasta files. The DNA to translate and the translation.
@@ -17,7 +17,7 @@ There are different annotation analyses for the sequences, but they all operate 
 SNP calling
 -----------
 
-SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/results/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The ngs_backbone analysis is: annotate_snv.
+SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/bams/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The ngs_backbone analysis is: annotate_snv.
 
 Configuration parameters
 ________________________
@@ -82,7 +82,7 @@ ngs_backbone annotates the `Gene Ontology`_ ontology terms by using blast2go_. B
 Output files
 ____________
 
-The Blast2GO executable creates two files that can be loaded by the graphical Blast2GO interface, the annot and the dat file. Both will be present at the directory annotations/result. Be aware that generating the dat file will require quite memory.
+The Blast2GO executable creates two files that can be loaded by the graphical Blast2GO interface, the annot and the dat file. Both will be present at the directory annotations/features. Be aware that generating the dat file will require quite memory.
 
 
 Configuration parameters
@@ -126,7 +126,7 @@ The SSRs can be annotated just by running the ngs_backbone analysis annotate_mic
 Ortholog annotation
 -------------------
 
-ngs_backbone can annotate the orthologs doing a reciprocal blast search. It can be done on one or several blast databases. The ngs_backbone analysis is called ortholog_annotation. The list of orthologs will be found in annotations/result/
+ngs_backbone can annotate the orthologs doing a reciprocal blast search. It can be done on one or several blast databases. The ngs_backbone analysis is called ortholog_annotation. The list of orthologs will be found in annotations/features/
 
 
 Configuration parameters

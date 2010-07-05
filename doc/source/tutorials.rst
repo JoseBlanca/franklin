@@ -121,22 +121,14 @@ Now that we have the inputs set up we can do the mapping using bwa_.
   20100428_0746/ reference/
   $ ls mapping/20100428_0746/
   result
-  $ ls mapping/20100428_0746/result/by_readgroup/
+  $ ls mapping/20100428_0746/bams/by_readgroup/
   lb_microtom_gb.pl_sanger.sm_microtom.bam
   lb_mu16.pl_454.sm_mu16.bam
   lb_microtom_sgn.pl_sanger.sm_microtom.bam
 
-The result of the analysis is a timestamped directory with the bam files in result/by_readgroup. The directory is timestamped to allow for different mappings done with different parameters or mapping tools.
+The result of the analysis is a timestamped directory with the bam files in mapping/bams/by_readgroup. The directory is timestamped to allow for different mappings done with different parameters or mapping tools.
 
-For every input read file a bam file has been generated in the directory result/by_readgroup. To be able to continue the analysis we have to select one of the timestamped mappings.
-
-::
-
-  $ backbone_analysis.py -a select_last_assembly
-  $ ls mapping/
-  20100428_0746  reference  result
-
-Now in mapping we have a result directory with a by_readgroup subdirectory. To continue the analysis we are going to merge all bam files into one merged bam file.
+For every input read file a bam file has been generated in the directory mapping/bams/by_readgroup. To continue the analysis we are going to merge all bam files into one merged bam file.
 
 ::
 
@@ -146,7 +138,7 @@ Now in mapping we have a result directory with a by_readgroup subdirectory. To c
   2010-04-28 12:37:52,817 INFO Analysis started
   2010-04-28 12:37:55,497 INFO Analysis finished
   2010-04-28 12:37:55,498 INFO Time elapsed 0:00:02.713902
-  $ ls mapping/result
+  $ ls mapping/bams
   by_readgroup  merged.0.bam
 
 The resulting merged bam have all the information from the individual bam. Every bam is now a readgroup inside the merged bam. Every readgroup holds the information about its sample, platform and library. In this step the resulting bam file has also been sorted and made picard compatible.
@@ -161,7 +153,7 @@ The next step is to realign the bam file using GATK. This step is optional and c
   2010-04-28 13:00:38,148 INFO Analysis started
   2010-04-28 13:01:42,884 INFO Analysis finished
   2010-04-28 13:01:42,884 INFO Time elapsed 0:01:04.775819
-  $ ls mapping/result/
+  $ ls mapping/bams/
   by_readgroup/
   merged.0.bam
   merged.0.bam.bai
@@ -184,19 +176,19 @@ Now we want to annotate a some sequences with the SNPs found when comparing the 
   INFO:franklin:Analysis finished
   2010-04-28 14:37:17,509 INFO Time elapsed 0:00:58.963646
   INFO:franklin:Time elapsed 0:00:58.963646
-  $ ls annotations/repr/
-  reference.0.repr
+  $ ls annotations/db/
+  reference.0.pickle
 
-The result is the file found in the annotations/repr/ directory. This is again a versioned file that holds all the information about the annotated sequences. This file is of no direct interest because its format is quite cumbersome. Every time that we do an annotation analysis a new version of this file will be generated. To get the real result files after doing all the annotations required we do a final analysis.
+The result is the file found in the annotations/db/ directory. This is again a versioned file that holds all the information about the annotated sequences. This file is of no direct interest because its format is quite cumbersome. Every time that we do an annotation analysis a new version of this file will be generated. To get the real result files after doing all the annotations required we do a final analysis.
 
 ::
 
   ~/personal/devel/franklin/scripts/backbone/backbone_analysis.py -a write_annotation
   2010-04-28 14:42:42,361 INFO Time elapsed 0:00:00.289912
-  $ ls annotations/result/
+  $ ls annotations/features/
   reference.gff  reference.vcf
 
-Now we the results files are found in annotations/result/. In this case a GFF_  and a vcf_ files have been generated.
+Now we the results files are found in annotations/features/. In this case a GFF_  and a vcf_ files have been generated.
 
 
 .. include:: links.txt

@@ -156,6 +156,7 @@ def _write_annot_stats(stats, out_fhand):
     out_fhand.write('-' * len(msg) + '\n')
 
     out_fhand.write('Number of sequences: %i\n' % stats['total_seqs'])
+    print stats['seqs_with_desc']
     out_fhand.write('Sequences with description: %i\n' %
                                                         stats['seqs_with_desc'])
 
@@ -243,5 +244,5 @@ def _calculate_annot_stats(seqs):
                 continue
 
         annot_stats['total_seqs'] += 1
-
+    print annot_stats['seqs_with_desc']
     return annot_stats
