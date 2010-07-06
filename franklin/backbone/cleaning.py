@@ -40,6 +40,9 @@ class CleanReadsAnalyzer(Analyzer):
     @staticmethod
     def _guess_cleaning_pipepile(file_info):
         'It returns the pipeline suited to clean the given file'
+        if 'pl' not in file_info:
+            raise RuntimeError('platform not in the file name: %s' %
+                               file_info['fpath'])
         if file_info['format'] == 'fasta':
             return 'sanger_without_qual'
         elif file_info['pl'] == 'illumina':
