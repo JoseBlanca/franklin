@@ -41,51 +41,54 @@ def features_in_gff(fhand, version):
             continue
         if line.startswith('##'):
             continue
+        yield create_feature(line, version, feature_ids)
 
-        feature = {}
+def create_feature(line, version, feature_ids=None):
+    'It creates a feature from a line of a gff'
+    feature = {}
 
-        seqid, source, type_, start, end, score, strand, phase, annots = \
-                                                            line.split("\t" , 8)
-        start = int(start)
-        end   = int(end)
+    seqid, source, type_, start, end, score, strand, phase, annots = \
+                                                        line.split("\t" , 8)
+    start = int(start)
+    end   = int(end)
 
-        attributes = {}
-        if version == 2:
-            separator = ' '
-        elif version == 3:
-            separator = '='
+    attributes = {}
+    if version == 2:
+        separator = ' '
+    elif version == 3:
+        separator = '='
 
-        feature_id = None
-        for attribute in annots.split(';'):
-            attribute = attribute.strip(' ')
-            try:
-                key, value = attribute.split(separator, 1)
-            except ValueError:
-                msg = 'Malformed attribute: %s' % attribute
-                raise ValueError(msg)
+    feature_id = None
+    for attribute in annots.split(';'):
+        attribute = attribute.strip(' ')
+        try:
+            key, value = attribute.split(separator, 1)
+        except ValueError:
+            msg = 'Malformed attribute: %s' % attribute
+            raise ValueError(msg)
 
-            value = value.strip('"')
-            attributes[key] = value
-            if key == 'Name':
-                feature['name'] = value
-            if key == 'ID':
-                feature_id = value
+        value = value.strip('"')
+        attributes[key] = value
+        if key == 'Name':
+            feature['name'] = value
+        if key == 'ID':
+            feature_id = value
 
-        if not feature_id:
-            feature_id = _create_feature_id(feature['name'], feature_ids)
+    if not feature_id:
+        feature_id = _create_feature_id(feature['name'], feature_ids)
 
-        feature['id'] = feature_id
+    feature['id'] = feature_id
 
-        feature['seqid']   = seqid
-        feature['source']  = source
-        feature['type']    = type_
-        feature['start']   = start
-        feature['end']     = end
-        feature['score']   = score
-        feature['strand']  = strand
-        feature['phase']   = phase
-        feature['attributes'] = attributes
-        yield feature
+    feature['seqid']   = seqid
+    feature['source']  = source
+    feature['type']    = type_
+    feature['start']   = start
+    feature['end']     = end
+    feature['score']   = score
+    feature['strand']  = strand
+    feature['phase']   = phase
+    feature['attributes'] = attributes
+    return feature
 
 def get_gff_header(fhand):
     'it gets the gff headers of a gff file'
