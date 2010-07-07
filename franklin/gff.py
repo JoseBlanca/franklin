@@ -18,7 +18,7 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-def _create_feature_id(feature_name, feature_ids):
+def create_feature_id(feature_name, feature_ids):
     'It returns a new unique feature_id based on the name'
     if feature_name not in feature_ids:
         feature_id = feature_name
@@ -75,7 +75,7 @@ def create_feature(line, version, feature_ids=None):
             feature_id = value
 
     if not feature_id:
-        feature_id = _create_feature_id(feature['name'], feature_ids)
+        feature_id = create_feature_id(feature['name'], feature_ids)
 
     feature['id'] = feature_id
 
@@ -211,7 +211,7 @@ class GffWriter(object):
         elif 'ID' in attributes:
             feature_id = attributes['ID']
         else:
-            feature_id = _create_feature_id(attributes['Name'],
+            feature_id = create_feature_id(attributes['Name'],
                                             self._feature_ids)
 
         attributes['ID'] = feature_id
