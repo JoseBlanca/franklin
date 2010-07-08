@@ -8,7 +8,8 @@ normalize all marker name and type fields
 '''
 from optparse import OptionParser
 import os
-from franklin.gff import features_in_gff
+from franklin.gmod.markers import (write_markers, parse_markersfile,
+                                   add_markers_gff3)
 
 SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
                   'snp' : 'SNP',
@@ -116,63 +117,7 @@ def add_markers(infhand, markers, name_cor=None, type_cor=None,
     # guess file type
     file_type = _guess_file_type(infhand)
     if file_type == 'gff3':
-        _add_markers_gff3(infhand, markers, name_cor, type_cor, sequence_cor)
-
-def _add_markers_gff3(infhand, markers, name_cor=None, type_cor=None,
-                      sequence_cor = None):
-    'It adds markers using a gff3 file'
-    for feature in features_in_gff(infhand, 3):
-        if feature['type'] not in ACCEPTED_MARKERS:
-            continue
-        original_name = feature['name'].lower()
-        original_type = feature['type']
-        if name_cor is not None and original_name in name_cor:
-            name  = name_cor[original_name].lower()
-            alias = original_name
-
-        else:
-            name  = original_name
-            alias = None
-
-        # Use the types found in correlation file
-        if type_cor is not None and name in type_cor:
-            type_ = type_cor[name]
-        else:
-            type_ = original_type
-        # traduce from type_ to sofa
-        if type_ in SOFA_TRADUCTOR:
-            sofa_type = SOFA_TRADUCTOR[type_]
-        else:
-            sofa_type = type_
-
-        if (('sequence' not in  feature or not feature['sequence'])
-            and sequence_cor is not None and name in sequence_cor):
-            sequence = sequence_cor[name]
-        else:
-            sequence = None
-
-        if 'Publications' in feature['attributes']:
-            pub = feature['attributes']['Publications']
-        else:
-            pub = None
-        # name, alias , type_, sofa_type, sequence, pub
-        add_marker(markers, name, alias , original_type, sofa_type, sequence, pub)
-
-def add_marker(markers, name, alias , type_, sofa_type, sequence, pub):
-    'It adds a marker to markers'
-    if name not in markers:
-        markers[name] = {}
-
-    if 'alias' not in markers[name]:
-        markers[name]['alias'] = set()
-    if alias is not None:
-        markers[name]['alias'].add(alias)
-
-    for field, value in (('type', type_), ('sofa', sofa_type),
-                  ('sequence', sequence), ('publication', pub), ('name',name)):
-        if field not in markers[name] or markers[name][field] is None:
-
-            markers[name][field] = value
+        add_markers_gff3(infhand, markers, name_cor, type_cor, sequence_cor)
 
 def _guess_file_type(infhand):
     'It guesses file type'
@@ -182,62 +127,6 @@ def _guess_file_type(infhand):
 
     infhand.seek(0)
     return file_type
-
-def parse_markersfile(markersfhand):
-    'It parses the markers file'
-    markers = {}
-    for line in markersfhand:
-        line = line.strip()
-        if not line or line[0] == '#':
-            continue
-
-        marker_name, sofa, type_, alias, sequence, pub = line.split('\t')
-        if sofa == '.':
-            sofa = None
-        if type_ == '.':
-            type_ = None
-        if alias == '.':
-            alias = set()
-        else:
-            alias = set(alias.split(','))
-        if sequence == '.':
-            sequence = None
-        if pub == '.':
-            pub = None
-        markers[marker_name] = {'sofa':sofa, 'type':type_,
-                                'alias':alias, 'sequence':sequence,
-                                'publication':pub, 'name':marker_name}
-    return markers
-
-def write_markers(outfhand, markers):
-    'It writes the markers to a file'
-    outfhand.write('#markers file\n')
-    outfhand.write('#name\tsofa\toriginal_type\talias\tsequence\tpublications\n')
-    for marker_name in markers:
-        if 'sofa' in markers[marker_name]:
-            sofa = markers[marker_name]['sofa']
-        else:
-            sofa = '.'
-        if 'type' in markers[marker_name]:
-            type_ = markers[marker_name]['type']
-        else:
-            type_ = '.'
-        if ('alias' in markers[marker_name] and markers[marker_name]['alias']):
-            alias = ','.join(markers[marker_name]['alias'])
-        else:
-            alias = '.'
-        if ('sequence' in markers[marker_name] and
-                                markers[marker_name]['sequence'] is not None):
-            sequence = markers[marker_name]['sequence']
-        else:
-            sequence = '.'
-        if ('publication' in markers[marker_name] and
-                                markers[marker_name]['publication'] is not None):
-            publication = markers[marker_name]['publication']
-        else:
-            publication = '.'
-        outfhand.write('%s\t%s\t%s\t%s\t%s\t%s\n' % (marker_name, sofa, type_,
-                                                  alias, sequence, publication))
 
 if __name__ == '__main__':
     main()
