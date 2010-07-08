@@ -17,7 +17,20 @@ SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
                   'SNP-INDEL':'indel',
                   'SSR':'microsatellite',
                   'EST-SSR':'microsatellite',
+                  'aflp':'genetic_marker',
+                  'isozyme':'genetic_marker',
+                  'issr':'genetic_marker',
+                  'morphological':'genetic_marker',
+                  'spelling error':'genetic_marker',
+                  'rapd':'genetic_marker',
+                  'placementmarker': 'biological_region' ,
+                  'frameworkmarker': 'biological_region',
+                  'marker':'biological_region',
                   }
+ACCEPTED_MARKERS = ['genetic_marker', 'frameworkmarker', 'indel', 'marker',
+                        'microsatellite', 'placementmarker', 'rflp', 'snp',
+                        'isozyme', 'aflp', 'issr', 'morphological', 'rapd',
+                        'spelling error']
 
 def parse_options():
     'It parses the command line arguments'
@@ -83,7 +96,7 @@ def main():
 
     # write markers to file:
     markersfhand = open(markersfname, 'w')
-    write_markers(markersfname, markers)
+    write_markers(markersfhand, markers)
     markersfhand.close()
 
 def correlations_in_file(fhand):
@@ -108,18 +121,15 @@ def add_markers(infhand, markers, name_cor=None, type_cor=None,
 def _add_markers_gff3(infhand, markers, name_cor=None, type_cor=None,
                       sequence_cor = None):
     'It adds markers using a gff3 file'
-    accepted_markers = ['genetic_marker', 'frameworkmarker', 'indel', 'marker',
-                        'microsatellite', 'placementmarker', 'rflp', 'snp',
-                        'isozyme', 'aflp', 'issr', 'morphological', 'rapd']
-
     for feature in features_in_gff(infhand, 3):
-        if feature['type'] not in accepted_markers:
+        if feature['type'] not in ACCEPTED_MARKERS:
             continue
         original_name = feature['name'].lower()
         original_type = feature['type']
         if name_cor is not None and original_name in name_cor:
-            name  = name_cor[original_name]
+            name  = name_cor[original_name].lower()
             alias = original_name
+
         else:
             name  = original_name
             alias = None
@@ -153,14 +163,15 @@ def add_marker(markers, name, alias , type_, sofa_type, sequence, pub):
     if name not in markers:
         markers[name] = {}
 
-    if 'alias' not in markers[name] :
+    if 'alias' not in markers[name]:
         markers[name]['alias'] = set()
-    elif alias is not None:
+    if alias is not None:
         markers[name]['alias'].add(alias)
 
     for field, value in (('type', type_), ('sofa', sofa_type),
                   ('sequence', sequence), ('publication', pub), ('name',name)):
-        if field not in markers[name]:
+        if field not in markers[name] or markers[name][field] is None:
+
             markers[name][field] = value
 
 def _guess_file_type(infhand):
@@ -180,7 +191,7 @@ def parse_markersfile(markersfhand):
         if not line or line[0] == '#':
             continue
 
-        marker_name, sofa, type_, alias, sequence, pub = line.split()
+        marker_name, sofa, type_, alias, sequence, pub = line.split('\t')
         if sofa == '.':
             sofa = None
         if type_ == '.':
