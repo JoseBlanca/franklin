@@ -10,6 +10,7 @@ from optparse import OptionParser
 from franklin.gff import (features_in_gff, get_gff_header,
                           add_dbxref_to_feature, write_gff)
 from itertools import tee
+from centralize_markers import parse_markersfile
 
 def parse_options():
     'It parses the command line arguments'
@@ -51,6 +52,7 @@ def set_parameters():
     else:
         orphan_fhand = open(options.orphan, 'w')
 
+
     dbxref_db = 'mapa_genetico_melon' if options.dbxref is None else options.dbxref
 
     return physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref_db
@@ -67,13 +69,15 @@ def run(physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref_db):
     # get gff3 header
     physical_header = get_gff_header(physical_fhand)
 
-    genetic_features = features_in_gff(genetic_fhand, 3)
+    # get features
+    genetic_features  = features_in_gff(genetic_fhand, 3)
+    physical_features = features_in_gff(physical_fhand, version=3)
 
-    # get genetic markers
+    # get genetic markers and correct them
     genetic_markers = index_features_by_name(genetic_features)
 
     # insert genetic_markers in physical markers
-    merged_features, orphan_features = merge_markers(physical_fhand,
+    merged_features, orphan_features = merge_markers(physical_features,
                                                      genetic_markers, dbxref_db)
 
     # write merged gff
@@ -89,6 +93,16 @@ def run(physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref_db):
 
     write_gff(orphan_features, orphan_fhand)
 
+def index_features_by_name(features):
+    'It indexes the genetic indexed_features'
+    indexed_features = {}
+    for feature in features:
+        name = feature['name']
+        if name not in indexed_features:
+            indexed_features[name] = []
+        indexed_features[name].append(feature)
+    return indexed_features
+
 def prepare_to_chado(features):
     '''It prepares the features to load in chado. It adds a fake region were all
      features are located'''
@@ -102,6 +116,7 @@ def prepare_to_chado(features):
            'strand':'.', 'phase':'.', 'attributes':{'ID':fake_region_name,
                                                     'Name':fake_region_name}}
     for feature in features:
+        feature['name'] = feature['name'].lower()
         feature['seqid'] = fake_region_name
         if feature['end'] >= feature['start']:
             new_end = feature['end'] - feature['start'] + 1
@@ -122,12 +137,11 @@ def _get_longest_feature_lenght(features):
             length = new_length
     return length
 
-def merge_markers(physical_fhand, genetic_markers, dbxref_db):
+def merge_markers(physical_features, genetic_markers, dbxref_db,
+                  correlations=None):
     '''It merges the markers in the given outfhand. The orpahned ones are
     returned as a list'''
-    physical_features = features_in_gff(physical_fhand, version=3)
-
-    merged_features = add_dbxref_to_common_features(physical_features,
+    merged_features = merge_common_features(physical_features,
                                                     genetic_markers, dbxref_db)
     merged_features, merged_features2 = tee(merged_features, 2)
 
@@ -144,7 +158,6 @@ def get_orphaned_features(physical_features, genetic_markers):
         for orphan_feature in genetic_markers[orphan_feat_name]:
             yield orphan_feature
 
-
 def add_dbxref_to_orphans(features, dbxref_db):
     'It builds the dbxref within the genetic feature information'
     indexed_orphans = index_features_by_name(features)
@@ -154,16 +167,13 @@ def add_dbxref_to_orphans(features, dbxref_db):
             add_dbxref_to_feature(feature, dbxref_db, dbxref_ids[index])
             yield feature
 
-def add_dbxref_to_common_features(physical_features, genetic_markers,
-                                  dbxref_db):
+def merge_common_features(physical_features, genetic_markers, dbxref_db):
     'It yields common genetic_markers'
-
     genetic_marker_names = genetic_markers.keys()
     for feature in physical_features:
         name = feature['name']
         if name in genetic_marker_names:
             genet_features = genetic_markers[name]
-
             genetic_dbxref_ids =  get_genetic_dbxrefs(genet_features)
             for genetic_dbxref_id in genetic_dbxref_ids:
                 add_dbxref_to_feature(feature, dbxref_db, genetic_dbxref_id)
@@ -196,15 +206,7 @@ def make_unique_feat_dbxref(feature_dbxref, num):
         feature_dbxref = feature_dbxref[:-1] + letter
     return feature_dbxref
 
-def index_features_by_name(features):
-    'It indexes the genetic markers'
-    markers = {}
-    for feature in features:
-        name = feature['name']
-        if name not in markers:
-            markers[name] = []
-        markers[name].append(feature)
-    return markers
+
 
 def test():
     'It test the script'
@@ -221,14 +223,7 @@ def test():
     run(physical_fhand, genetic_fhand, outfhand, orphan_fhand, dbxref)
     result = outfhand.getvalue()
     assert 'Dbxref=cmap_melon:Chrctg0_Cm13_B04;' in result
-    print 'Test OK'
-
-
 
 if __name__ == '__main__':
-    #test()
+    test()
     main()
-
-
-
-
