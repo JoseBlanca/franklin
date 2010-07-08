@@ -17,8 +17,9 @@
 
 from __future__  import division
 
-import itertools, tempfile
+import itertools, tempfile, sys
 from array import array
+
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -309,6 +310,71 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         plt.show()
     else:
         fig.savefig(fhand)
+
+def _float_to_str(num, precision=2):
+    'It returns a float representation'
+    if 1 < num < 100:
+        format_ = '%%.%if' % precision
+    else:
+        format_ = '%%.%ie' % precision
+    return format_ % num
+
+def _calculate_percentiles(numpy_vects, stats_fhand):
+    'It calculates the boxplot stats from the given lists'
+
+    import matplotlib.mlab as mlab
+    import numpy
+
+    sep = '\t'
+
+    stats_fhand.write(sep.join(['distrib', 'mean', 'std_deviation',
+                                '1st_quartile', 'median', '3rd_qualtile']))
+    stats_fhand.write('\n')
+    for index, vect in enumerate(numpy_vects):
+        result = ['%.2i' % index]
+        result.append(_float_to_str(numpy.mean(vect)))
+        result.append(_float_to_str(numpy.std(vect)))
+        #the percentiles are calculated with
+        quarts = mlab.prctile(vect, [25, 50, 75])
+        result.extend([_float_to_str(num) for num in quarts])
+        stats_fhand.write(sep.join(result))
+        stats_fhand.write('\n')
+
+def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
+                 ylabel=None, stats_fhand=None):
+    'Given a list of lists it draws a boxplot'
+
+    if 'matplotlib' not in sys.modules.keys():
+        import matplotlib
+        if fhand:
+            matplotlib.use('AGG')
+        from matplotlib import pyplot as plt
+    import numpy
+
+    numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
+
+    if stats_fhand:
+        _calculate_percentiles(numpy_vects, stats_fhand)
+    #the percentiles are calculated with
+    #q1, med, q3 = mlab.prctile(d,[25,50,75])
+
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+
+    axes.boxplot(numpy_vects)
+
+    if fhand is None:
+        plt.show()
+    else:
+        fig.savefig(fhand)
+
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
