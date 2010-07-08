@@ -10,7 +10,6 @@ from optparse import OptionParser
 from franklin.gff import (features_in_gff, get_gff_header,
                           add_dbxref_to_feature, write_gff)
 from itertools import tee
-from centralize_markers import parse_markersfile
 
 def parse_options():
     'It parses the command line arguments'
