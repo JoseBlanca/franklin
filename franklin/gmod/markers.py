@@ -1,8 +1,44 @@
 '''
+This script provides the tools to deal with markers. It provides tools to read,
+write and search the markers data structure
+
 Created on 08/07/2010
 
 @author: peio
 '''
+from franklin.gff import features_in_gff
+
+SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
+                  'snp' : 'SNP',
+                  'SNP-CAPS': 'SNP',
+                  'SNP-Snapshot': 'SNP',
+                  'SNP-INDEL':'indel',
+                  'SSR':'microsatellite',
+                  'EST-SSR':'microsatellite',
+                  'aflp':'genetic_marker',
+                  'isozyme':'genetic_marker',
+                  'issr':'genetic_marker',
+                  'morphological':'genetic_marker',
+                  'spelling error':'genetic_marker',
+                  'rapd':'genetic_marker',
+                  'placementmarker': 'biological_region' ,
+                  'frameworkmarker': 'biological_region',
+                  'marker':'biological_region',
+                  }
+ACCEPTED_MARKERS = ['genetic_marker', 'frameworkmarker', 'indel', 'marker',
+                        'microsatellite', 'placementmarker', 'rflp', 'snp',
+                        'isozyme', 'aflp', 'issr', 'morphological', 'rapd',
+                        'spelling error']
+
+def get_marker_from_correlations(name, correlations=None):
+    'It gets the marker from correlations. It look in the name and alias field'
+    if correlations is None:
+        return None
+    for marker in correlations.values():
+        if name == marker['name'] or name in marker['alias']:
+            return marker
+    return None
+
 def parse_markersfile(markersfhand):
     'It parses the markers file'
     markers = {}

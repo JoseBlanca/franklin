@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 '''
 It creates a marker centralized file to be used for the rest of the scripts to
 normalize all marker name and type fields
@@ -11,27 +10,6 @@ import os
 from franklin.gmod.markers import (write_markers, parse_markersfile,
                                    add_markers_gff3)
 
-SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
-                  'snp' : 'SNP',
-                  'SNP-CAPS': 'SNP',
-                  'SNP-Snapshot': 'SNP',
-                  'SNP-INDEL':'indel',
-                  'SSR':'microsatellite',
-                  'EST-SSR':'microsatellite',
-                  'aflp':'genetic_marker',
-                  'isozyme':'genetic_marker',
-                  'issr':'genetic_marker',
-                  'morphological':'genetic_marker',
-                  'spelling error':'genetic_marker',
-                  'rapd':'genetic_marker',
-                  'placementmarker': 'biological_region' ,
-                  'frameworkmarker': 'biological_region',
-                  'marker':'biological_region',
-                  }
-ACCEPTED_MARKERS = ['genetic_marker', 'frameworkmarker', 'indel', 'marker',
-                        'microsatellite', 'placementmarker', 'rflp', 'snp',
-                        'isozyme', 'aflp', 'issr', 'morphological', 'rapd',
-                        'spelling error']
 
 def parse_options():
     'It parses the command line arguments'
