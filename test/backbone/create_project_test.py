@@ -293,6 +293,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
             assert fname + '.dat' in clean_fnames
             assert fname + '.png' in clean_fnames
 
+
+
         statistics_fpath = join(clean_stats_dir,
                                 BACKBONE_BASENAMES['statistics_file'])
         content = open(statistics_fpath).read()
@@ -323,6 +325,11 @@ Sequence qualities average: 36.99
 Sequence qualities variance: 8.19
 
 '''
+
+        boxplot_fpath = join(clean_stats_dir,
+                             'pl_illumina.lb_no_raw' + '.qual.boxplot.dat')
+        exp = 'distrib\tmean\tstd_deviation\t1st_quartile\tmedian\t3rd_qualtile'
+        assert exp in open(boxplot_fpath).read()
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'

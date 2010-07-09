@@ -22,8 +22,9 @@ Created on 15/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging
+import os, logging, array
 from tempfile import NamedTemporaryFile
+
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
@@ -32,7 +33,7 @@ from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
 from franklin.statistics import (create_distribution, write_distribution,
-                                 draw_histogram, CachedArray)
+                                 draw_histogram, CachedArray, draw_boxplot)
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -195,6 +196,9 @@ PLOT_LABELS = {
         'seq_qual'      :{'title':'Sequence quality distribution',
                               'xlabel':'quality',
                               'ylabel':'Number of bp'},
+        'qual_boxplot'  :{'title':'Qualities along the sequence',
+                              'xlabel':'seqence position',
+                              'ylabel':'quality distribution'},
         }
 
 class ReadsStatsAnalyzer(Analyzer):
@@ -299,6 +303,14 @@ class ReadsStatsAnalyzer(Analyzer):
                 #the statistics for the statistics file
                 self._write_statistics(stats_fhand, fpath, lengths_, quals_)
 
+        #the boxplot for the qualities along the sequence length
+        for seq_type in ('raw', 'cleaned'):
+            stats_dir = get_stats_dir(seq_type)
+
+            stats_fpath = os.path.join(stats_dir,
+                                       BACKBONE_BASENAMES['statistics_file'])
+            stats_fhand = open(stats_fpath, 'a')
+
         #the statistics for the differences
         if 'raw' in pair and 'cleaned' in pair:
             fpath = pair['cleaned'].last_version
@@ -333,6 +345,45 @@ class ReadsStatsAnalyzer(Analyzer):
                                                                  'w'),
                                              dist_type='seq_qual')
                 del quals
+
+        for seq_type in ('raw', 'cleaned'):
+            if seq_type in pair:
+                fpath = pair[seq_type].last_version
+                basename = pair[seq_type].basename
+
+                #the names for the output files
+                out_fpath = os.path.join(stats_dir, basename + '.qual.boxplot')
+                plot_fpath = out_fpath + '.png'
+                distrib_fpath = out_fpath + '.dat'
+
+                if os.path.exists(plot_fpath):
+                    continue
+
+                quals_ = self._get_quals_by_length_from_file(fpath)
+
+                if quals_ and quals_[0]:
+                    #boxplot
+                    draw_boxplot(quals_, fhand=open(plot_fpath, 'w'),
+                                 title=PLOT_LABELS['qual_boxplot']['title'],
+                                 xlabel=PLOT_LABELS['qual_boxplot']['xlabel'],
+                                 ylabel=PLOT_LABELS['qual_boxplot']['ylabel'],
+                                 stats_fhand=open(distrib_fpath, 'w'))
+
+    @staticmethod
+    def _get_quals_by_length_from_file(fpath):
+        'It returns the qualities along the sequence as a list of lists'
+
+        quals_by_position = []
+        for seq in seqs_in_file(open(fpath)):
+            quals = seq.qual
+            if quals:
+                for base_number, qual in enumerate(quals):
+                    try:
+                        quals_by_position[base_number]
+                    except IndexError:
+                        quals_by_position.append(array.array('B'))
+                    quals_by_position[base_number].append(qual)
+        return quals_by_position
 
     @staticmethod
     def _write_statistics(stats_fhand, seq_fpath, lengths, quals):
