@@ -303,14 +303,6 @@ class ReadsStatsAnalyzer(Analyzer):
                 #the statistics for the statistics file
                 self._write_statistics(stats_fhand, fpath, lengths_, quals_)
 
-        #the boxplot for the qualities along the sequence length
-        for seq_type in ('raw', 'cleaned'):
-            stats_dir = get_stats_dir(seq_type)
-
-            stats_fpath = os.path.join(stats_dir,
-                                       BACKBONE_BASENAMES['statistics_file'])
-            stats_fhand = open(stats_fpath, 'a')
-
         #the statistics for the differences
         if 'raw' in pair and 'cleaned' in pair:
             fpath = pair['cleaned'].last_version
@@ -326,10 +318,9 @@ class ReadsStatsAnalyzer(Analyzer):
                 #the distributions for the lengths
                 lengths = lengths['raw'], lengths['cleaned']
                 self._do_diff_distrib_for_numbers(lengths,
-                                             plot_fhand= open(plot_fpath, 'w'),
-                                             distrib_fhand= open(distrib_fpath,
-                                                                 'w'),
-                                             dist_type='seq_length')
+                                          plot_fhand= open(plot_fpath, 'w'),
+                                    distrib_fhand= open(distrib_fpath, 'w'),
+                                                  dist_type='seq_length')
                 del lengths
 
                 #the distributions for the quals
@@ -340,10 +331,9 @@ class ReadsStatsAnalyzer(Analyzer):
                 quals = quals['raw'], quals['cleaned']
                 if quals[0]:
                     self._do_diff_distrib_for_numbers(quals,
-                                             plot_fhand= open(plot_fpath, 'w'),
-                                             distrib_fhand= open(distrib_fpath,
-                                                                 'w'),
-                                             dist_type='seq_qual')
+                                          plot_fhand= open(plot_fpath, 'w'),
+                                    distrib_fhand= open(distrib_fpath, 'w'),
+                                                      dist_type='seq_qual')
                 del quals
 
         for seq_type in ('raw', 'cleaned'):
@@ -367,7 +357,8 @@ class ReadsStatsAnalyzer(Analyzer):
                                  title=PLOT_LABELS['qual_boxplot']['title'],
                                  xlabel=PLOT_LABELS['qual_boxplot']['xlabel'],
                                  ylabel=PLOT_LABELS['qual_boxplot']['ylabel'],
-                                 stats_fhand=open(distrib_fpath, 'w'))
+                                 stats_fhand=open(distrib_fpath, 'w'),
+                                 max_plotted_boxes=30)
 
     @staticmethod
     def _get_quals_by_length_from_file(fpath):

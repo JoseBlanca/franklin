@@ -85,11 +85,18 @@ class BoxPlotTest(unittest.TestCase):
                      title='boxplot', fhand=open(plot_fhand.name, 'w'),
                      stats_fhand=stats_fhand)
         assert 'PNG' in  open(plot_fhand.name).read(10)
-        plot_fhand.close()
+
 
         result = stats_fhand.getvalue()
         assert '09' in result
         assert 'median' in result
+
+        #the not to draw all boxes
+        draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
+                     title='boxplot', fhand=open(plot_fhand.name, 'w'),
+                     stats_fhand=stats_fhand, max_plotted_boxes=5)
+
+        plot_fhand.close()
 
 class CachedArrayTest(unittest.TestCase):
     'It tests the store for iterables'

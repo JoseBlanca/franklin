@@ -326,7 +326,7 @@ def _float_to_str(num, precision=2):
         format_ = '%%.%ie' % precision
     return format_ % num
 
-def _calculate_percentiles(numpy_vects, stats_fhand):
+def _calculate_percentiles(numpy_vects, stats_fhand, xlabels=None):
     'It calculates the boxplot stats from the given lists'
 
     modules = sys.modules
@@ -341,6 +341,8 @@ def _calculate_percentiles(numpy_vects, stats_fhand):
                                 '1st_quartile', 'median', '3rd_qualtile']))
     stats_fhand.write('\n')
     for index, vect in enumerate(numpy_vects):
+        if xlabels:
+            index = int(xlabels[index])
         result = ['%.2i' % index]
         result.append(_float_to_str(numpy.mean(vect)))
         result.append(_float_to_str(numpy.std(vect)))
@@ -351,7 +353,8 @@ def _calculate_percentiles(numpy_vects, stats_fhand):
         stats_fhand.write('\n')
 
 def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
-                 ylabel=None, stats_fhand=None):
+                 ylabel=None, stats_fhand=None, xlabels=None,
+                 max_plotted_boxes=None):
     'Given a list of lists it draws a boxplot'
 
     modules = sys.modules.keys()
@@ -367,9 +370,7 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
 
     if stats_fhand:
-        _calculate_percentiles(numpy_vects, stats_fhand)
-    #the percentiles are calculated with
-    #q1, med, q3 = mlab.prctile(d,[25,50,75])
+        _calculate_percentiles(numpy_vects, stats_fhand, xlabels)
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -381,6 +382,9 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if title:
         axes.set_title(title)
 
+    if max_plotted_boxes:
+        step = len(numpy_vects)//max_plotted_boxes
+        numpy_vects = numpy_vects[::step]
     axes.boxplot(numpy_vects)
 
     if fhand is None:
