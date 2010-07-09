@@ -20,6 +20,11 @@ from __future__  import division
 import itertools, tempfile, sys
 from array import array
 
+try:
+    import numpy
+except ImportError:
+    pass
+
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -129,18 +134,18 @@ def histogram(numbers, bins, range_= None):
             distrib[bin_] += 1
     return (distrib, bin_edges)
 
-IMPORTED_MATPLOTLIB = None
-
 def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
                    fhand=None):
     'It draws an histogram and if the fhand is given it saves it'
-    global IMPORTED_MATPLOTLIB
-    if IMPORTED_MATPLOTLIB is None:
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
         import matplotlib
-        matplotlib.use('AGG')
-        IMPORTED_MATPLOTLIB = matplotlib
-
-    import matplotlib.pyplot as plt
+        if fhand:
+            matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot as plt
+    else:
+        plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -233,13 +238,15 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
     #in those occasions
-    global IMPORTED_MATPLOTLIB
-    if IMPORTED_MATPLOTLIB is None:
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
         import matplotlib
-        matplotlib.use('AGG')
-        IMPORTED_MATPLOTLIB = matplotlib
-
-    import matplotlib.pyplot as plt
+        if fhand:
+            matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot as plt
+    else:
+        plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -322,8 +329,11 @@ def _float_to_str(num, precision=2):
 def _calculate_percentiles(numpy_vects, stats_fhand):
     'It calculates the boxplot stats from the given lists'
 
-    import matplotlib.mlab as mlab
-    import numpy
+    modules = sys.modules
+    if 'matplotlib.mlab' not in modules.keys():
+        import matplotlib.mlab as mlab
+    else:
+        mlab = modules['matplotlib.mlab']
 
     sep = '\t'
 
@@ -344,12 +354,15 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
                  ylabel=None, stats_fhand=None):
     'Given a list of lists it draws a boxplot'
 
-    if 'matplotlib' not in sys.modules.keys():
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
         import matplotlib
         if fhand:
             matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
         from matplotlib import pyplot as plt
-    import numpy
+    else:
+        plt = sys.modules['matplotlib.pyplot']
 
     numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
 

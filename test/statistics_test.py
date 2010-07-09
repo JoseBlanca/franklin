@@ -73,9 +73,11 @@ class BoxPlotTest(unittest.TestCase):
         num_values = 1000
         lists = []
         for index in range(5):
-            values = [random.normalvariate(mu, sigma) for i in range(num_values)]
+            values = [random.normalvariate(mu, sigma)
+                                                for index_ in range(num_values)]
             lists.append(values)
-            values = [random.uniform(mu+sigma, mu-sigma) for i in range(num_values)]
+            values = [random.uniform(mu+sigma, mu-sigma)
+                                                for index_ in range(num_values)]
             lists.append(values)
         plot_fhand = tempfile.NamedTemporaryFile()
         stats_fhand = StringIO()
