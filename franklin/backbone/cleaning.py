@@ -359,6 +359,7 @@ class ReadsStatsAnalyzer(Analyzer):
                                  ylabel=PLOT_LABELS['qual_boxplot']['ylabel'],
                                  stats_fhand=open(distrib_fpath, 'w'),
                                  max_plotted_boxes=30)
+                del quals_
 
     @staticmethod
     def _get_quals_by_length_from_file(fpath):
