@@ -40,6 +40,7 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
         self._log({'analysis_started':True})
+        files_illumina = []
         files_454 = []
         files_sanger_with_qual = []
         files_sanger_without_qual = []
@@ -49,6 +50,8 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
             fname = os.path.split(fpath)[-1]
             if 'pl_454' in fname.lower():
                 files_454.append(fhand)
+            if 'pl_illumina' in fname.lower():
+                files_illumina.append(fhand)
             elif 'pl_sanger' in fname.lower():
                 format_ = guess_seq_file_format(fhand)
                 if format_ == 'fasta':
@@ -64,7 +67,8 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
         output_dir = self._create_output_dirs()['assembly_input']
         project_name = self._get_project_name()
         for ext, files in (('_in.454', files_454),
-                           ('_in.sanger', files_sanger)):
+                           ('_in.sanger', files_sanger),
+                           ('_in.illumina', files_illumina),):
             base_name = os.path.join(output_dir, project_name + ext)
             fasta_fpath = base_name + '.fasta'
             qual_fpath = base_name + '.fasta.qual'
@@ -77,7 +81,7 @@ class PrepareMiraAssemblyAnalyzer(Analyzer):
             qual_fhand.close()
 
         # close all files
-        for file_ in files_454 + files_sanger:
+        for file_ in files_454 + files_sanger + files_illumina:
             file_.close()
         self._log({'analysis_finished':True})
 

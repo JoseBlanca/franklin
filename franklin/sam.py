@@ -364,8 +364,6 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '--output', out_bam_fpath])
-    if parallel:
-        cmd.extend(['--numthreads', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
 
 def _get_bam_coverage(bam, rgs, grouping):

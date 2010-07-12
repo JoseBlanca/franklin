@@ -18,7 +18,7 @@ The application works on Linux so experience with that operating system is requi
 
 ngs_backbone is free software so contributions and shared development will be welcomed.
 
-ngs_backbone is at this time beta software so it will not be bug free. It works for us and we hope that it will work for you, but if you find any problem, please inform us.
+If you find any problem when running ngs_backbone please inform us.
 
 .. toctree::
    :maxdepth: 2

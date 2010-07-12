@@ -243,5 +243,4 @@ def _calculate_annot_stats(seqs):
                 continue
 
         annot_stats['total_seqs'] += 1
-
     return annot_stats

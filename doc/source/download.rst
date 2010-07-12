@@ -4,8 +4,18 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at github_.
 
+ngs_backbone 1.0.0
+------------------
+
+:download:`ngs_backbone 1.0.0 <downloads/ngs_backbone-1.0.0.tar.gz>`. Relased on 12-07-2010.
+
+Changes:
+
+ * box plots added for for the sequence quality along the sequence.
+ * Several bug fixes.
+
 ngs_backbone 0.3
------------------
+----------------
 
 :download:`ngs_backbone 0.3.0 <downloads/ngs_backbone-0.3.0.tar.gz>`. Relased on 21-06-2010.
 

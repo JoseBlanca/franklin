@@ -36,6 +36,8 @@ def prepare_release(indir):
         raise RuntimeError('version not found in ' + init_fname)
 
     #the output name
+    if tool_name == 'franklin':
+        tool_name = 'ngs_backbone'
     release_name = '%s-%s' % (tool_name, version)
     tar_dir = join(work_dir, tool_name)
     release_dir = join(tar_dir, release_name)
@@ -47,7 +49,7 @@ def prepare_release(indir):
     #build the documentation
     doc_dir = join(release_dir, 'doc')
     #which kind of doc is this? do we have a source directory in the doc?
-    if 'source' is os.listdir(doc_dir):
+    if 'source' in os.listdir(doc_dir):
         doc_source_dir = True
     else:
         doc_source_dir = False

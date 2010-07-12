@@ -8,7 +8,7 @@ To install ngs_backbone python 2.6 is required. Also you need the python librari
 
   $ python2.6 setup.py install
 
-ngs_backbone requires also several external tools to run the analyses. You don't need all of them for every analysis, depending on the analysis that you want to do you will require some subset of these tools. If you happen to run a x64 linux box installing the majority of these tools is a breeze, just download the :download:`3erd party tools bundle <downloads/backbone_3er_party.tar.gz>` and copy them to somewhere in your path. If you want to compile them get the `source <downloads/backbone_3er_party_src.tar.gz>`.
+ngs_backbone requires also several external tools to run the analyses. You don't need all of them for every analysis, depending on the analysis that you want to do you will require some subset of these tools. If you happen to run a x64 linux box installing the majority of these tools is a breeze, just download the :download:`x64 3erd party tools bundle <downloads/backbone_3er_party.tar.gz>` and copy them to somewhere in your path. If you want to compile them get the :download:`source <downloads/backbone_3er_party_src.tar.gz>`.
 
 =============================  ================================================================
 analysis                       external tools required

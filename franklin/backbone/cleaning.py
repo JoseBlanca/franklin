@@ -22,8 +22,9 @@ Created on 15/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging
+import os, logging, array
 from tempfile import NamedTemporaryFile
+
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
@@ -32,7 +33,7 @@ from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
 from franklin.statistics import (create_distribution, write_distribution,
-                                 draw_histogram, CachedArray)
+                                 draw_histogram, CachedArray, draw_boxplot)
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -40,6 +41,9 @@ class CleanReadsAnalyzer(Analyzer):
     @staticmethod
     def _guess_cleaning_pipepile(file_info):
         'It returns the pipeline suited to clean the given file'
+        if 'pl' not in file_info:
+            raise RuntimeError('platform not in the file name: %s' %
+                               file_info['fpath'])
         if file_info['format'] == 'fasta':
             return 'sanger_without_qual'
         elif file_info['pl'] == 'illumina':
@@ -192,6 +196,9 @@ PLOT_LABELS = {
         'seq_qual'      :{'title':'Sequence quality distribution',
                               'xlabel':'quality',
                               'ylabel':'Number of bp'},
+        'qual_boxplot'  :{'title':'Qualities along the sequence',
+                              'xlabel':'seqence position',
+                              'ylabel':'quality distribution'},
         }
 
 class ReadsStatsAnalyzer(Analyzer):
@@ -311,10 +318,9 @@ class ReadsStatsAnalyzer(Analyzer):
                 #the distributions for the lengths
                 lengths = lengths['raw'], lengths['cleaned']
                 self._do_diff_distrib_for_numbers(lengths,
-                                             plot_fhand= open(plot_fpath, 'w'),
-                                             distrib_fhand= open(distrib_fpath,
-                                                                 'w'),
-                                             dist_type='seq_length')
+                                          plot_fhand= open(plot_fpath, 'w'),
+                                    distrib_fhand= open(distrib_fpath, 'w'),
+                                                  dist_type='seq_length')
                 del lengths
 
                 #the distributions for the quals
@@ -325,11 +331,51 @@ class ReadsStatsAnalyzer(Analyzer):
                 quals = quals['raw'], quals['cleaned']
                 if quals[0]:
                     self._do_diff_distrib_for_numbers(quals,
-                                             plot_fhand= open(plot_fpath, 'w'),
-                                             distrib_fhand= open(distrib_fpath,
-                                                                 'w'),
-                                             dist_type='seq_qual')
+                                          plot_fhand= open(plot_fpath, 'w'),
+                                    distrib_fhand= open(distrib_fpath, 'w'),
+                                                      dist_type='seq_qual')
                 del quals
+
+        for seq_type in ('raw', 'cleaned'):
+            if seq_type in pair:
+                fpath = pair[seq_type].last_version
+                basename = pair[seq_type].basename
+
+                #the names for the output files
+                out_fpath = os.path.join(stats_dir, basename + '.qual.boxplot')
+                plot_fpath = out_fpath + '.png'
+                distrib_fpath = out_fpath + '.dat'
+
+                if os.path.exists(plot_fpath):
+                    continue
+
+                quals_ = self._get_quals_by_length_from_file(fpath)
+
+                if quals_ and quals_[0]:
+                    #boxplot
+                    draw_boxplot(quals_, fhand=open(plot_fpath, 'w'),
+                                 title=PLOT_LABELS['qual_boxplot']['title'],
+                                 xlabel=PLOT_LABELS['qual_boxplot']['xlabel'],
+                                 ylabel=PLOT_LABELS['qual_boxplot']['ylabel'],
+                                 stats_fhand=open(distrib_fpath, 'w'),
+                                 max_plotted_boxes=30)
+                del quals_
+
+    @staticmethod
+    def _get_quals_by_length_from_file(fpath):
+        'It returns the qualities along the sequence as a list of lists'
+
+        quals_by_position = []
+        for seq in seqs_in_file(open(fpath)):
+            quals = seq.qual
+            if quals:
+                for base_number, qual in enumerate(quals):
+                    try:
+                        quals_by_position[base_number]
+                    except IndexError:
+                        quals_by_position.append(array.array('B'))
+                    quals_by_position[base_number].append(qual)
+        return quals_by_position
 
     @staticmethod
     def _write_statistics(stats_fhand, seq_fpath, lengths, quals):

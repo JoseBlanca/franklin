@@ -17,8 +17,14 @@
 
 from __future__  import division
 
-import itertools, tempfile
+import itertools, tempfile, sys
 from array import array
+
+try:
+    import numpy
+except ImportError:
+    pass
+
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -128,18 +134,18 @@ def histogram(numbers, bins, range_= None):
             distrib[bin_] += 1
     return (distrib, bin_edges)
 
-IMPORTED_MATPLOTLIB = None
-
 def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
                    fhand=None):
     'It draws an histogram and if the fhand is given it saves it'
-    global IMPORTED_MATPLOTLIB
-    if IMPORTED_MATPLOTLIB is None:
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
         import matplotlib
-        matplotlib.use('AGG')
-        IMPORTED_MATPLOTLIB = matplotlib
-
-    import matplotlib.pyplot as plt
+        if fhand:
+            matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot as plt
+    else:
+        plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -232,13 +238,15 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
     #in those occasions
-    global IMPORTED_MATPLOTLIB
-    if IMPORTED_MATPLOTLIB is None:
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
         import matplotlib
-        matplotlib.use('AGG')
-        IMPORTED_MATPLOTLIB = matplotlib
-
-    import matplotlib.pyplot as plt
+        if fhand:
+            matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot as plt
+    else:
+        plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -309,6 +317,84 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         plt.show()
     else:
         fig.savefig(fhand)
+
+def _float_to_str(num, precision=2):
+    'It returns a float representation'
+    if 1 < num < 100:
+        format_ = '%%.%if' % precision
+    else:
+        format_ = '%%.%ie' % precision
+    return format_ % num
+
+def _calculate_percentiles(numpy_vects, stats_fhand, xlabels=None):
+    'It calculates the boxplot stats from the given lists'
+
+    modules = sys.modules
+    if 'matplotlib.mlab' not in modules.keys():
+        import matplotlib.mlab as mlab
+    else:
+        mlab = modules['matplotlib.mlab']
+
+    sep = '\t'
+
+    stats_fhand.write(sep.join(['distrib', 'mean', 'std_deviation',
+                                '1st_quartile', 'median', '3rd_qualtile']))
+    stats_fhand.write('\n')
+    for index, vect in enumerate(numpy_vects):
+        if xlabels:
+            index = int(xlabels[index])
+        result = ['%.2i' % index]
+        result.append(_float_to_str(numpy.mean(vect)))
+        result.append(_float_to_str(numpy.std(vect)))
+        #the percentiles are calculated with
+        quarts = mlab.prctile(vect, [25, 50, 75])
+        result.extend([_float_to_str(num) for num in quarts])
+        stats_fhand.write(sep.join(result))
+        stats_fhand.write('\n')
+
+def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
+                 ylabel=None, stats_fhand=None, xlabels=None,
+                 max_plotted_boxes=None):
+    'Given a list of lists it draws a boxplot'
+
+    if not vectors_list or not vectors_list[0]:
+        raise ValueError('No values to process')
+
+    modules = sys.modules.keys()
+    if 'matplotlib' not in modules:
+        import matplotlib
+        if fhand:
+            matplotlib.use('AGG')
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot as plt
+    else:
+        plt = sys.modules['matplotlib.pyplot']
+
+    numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
+
+    if stats_fhand:
+        _calculate_percentiles(numpy_vects, stats_fhand, xlabels)
+
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+
+    if max_plotted_boxes:
+        step = len(numpy_vects)//max_plotted_boxes
+        numpy_vects = numpy_vects[::step]
+    axes.boxplot(numpy_vects)
+
+    if fhand is None:
+        plt.show()
+    else:
+        fig.savefig(fhand)
+
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000

@@ -41,6 +41,7 @@ def scrape_info_from_fname(path):
     for item in fname.split('.'):
         key, value = item.split('_', 1)
         file_info[key] = value
+    file_info['fpath'] = path
     return file_info
 
 def _is_sequence_file(path):

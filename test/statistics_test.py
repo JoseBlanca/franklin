@@ -19,9 +19,10 @@ Created on 10/07/2009
 
 import unittest
 from StringIO import StringIO
-import os
+import os, random, tempfile
 
-from franklin.statistics import CachedArray, histogram, create_distribution
+from franklin.statistics import (CachedArray, histogram, create_distribution,
+                                 draw_boxplot)
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -61,6 +62,42 @@ class HistogramTest(unittest.TestCase):
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
 
+class BoxPlotTest(unittest.TestCase):
+    'It checks the boxplot drawing'
+
+    def test_boxplot(self):
+        'It checks the boxplot drawing'
+        #some data
+        mu = 10
+        sigma = 3
+        num_values = 1000
+        lists = []
+        for index in range(5):
+            values = [random.normalvariate(mu, sigma)
+                                                for index_ in range(num_values)]
+            lists.append(values)
+            values = [random.uniform(mu+sigma, mu-sigma)
+                                                for index_ in range(num_values)]
+            lists.append(values)
+        plot_fhand = tempfile.NamedTemporaryFile()
+        stats_fhand = StringIO()
+        draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
+                     title='boxplot', fhand=open(plot_fhand.name, 'w'),
+                     stats_fhand=stats_fhand)
+        assert 'PNG' in  open(plot_fhand.name).read(10)
+
+
+        result = stats_fhand.getvalue()
+        assert '09' in result
+        assert 'median' in result
+
+        #the not to draw all boxes
+        draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
+                     title='boxplot', fhand=open(plot_fhand.name, 'w'),
+                     stats_fhand=stats_fhand, max_plotted_boxes=5)
+
+        plot_fhand.close()
+
 class CachedArrayTest(unittest.TestCase):
     'It tests the store for iterables'
     @staticmethod
@@ -95,5 +132,5 @@ class CachedArrayTest(unittest.TestCase):
         assert len(storage) == len(item_list)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.test_sequence_length_distrib']
+    #import sys;sys.argv = ['', 'BoxPlotTest.test_boxplot']
     unittest.main()
