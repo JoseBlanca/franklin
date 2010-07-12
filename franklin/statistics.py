@@ -357,6 +357,9 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
                  max_plotted_boxes=None):
     'Given a list of lists it draws a boxplot'
 
+    if not vectors_list or not vectors_list[0]:
+        raise ValueError('No values to process')
+
     modules = sys.modules.keys()
     if 'matplotlib' not in modules:
         import matplotlib
