@@ -292,6 +292,9 @@ def create_runner(tool, parameters=None, environment=None):
         parameters = {}
     if environment is None:
         environment = {}
+
+    # You can pass the runner definition to create_runner directly in the tool
+    # argument
     if isinstance(tool, str):
         runner_def = RUNNER_DEFINITIONS[tool]
     else:
