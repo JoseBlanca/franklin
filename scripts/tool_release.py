@@ -36,6 +36,8 @@ def prepare_release(indir):
         raise RuntimeError('version not found in ' + init_fname)
 
     #the output name
+    if tool_name == 'franklin':
+        tool_name = 'ngs_backbone'
     release_name = '%s-%s' % (tool_name, version)
     tar_dir = join(work_dir, tool_name)
     release_dir = join(tar_dir, release_name)
@@ -56,6 +58,7 @@ def prepare_release(indir):
         download_page = join(doc_dir, 'source', 'download.rst')
     else:
         download_page = join(doc_dir, 'download.rst')
+    os.remove(download_page)
 
     if doc_source_dir:
         index_page = join(doc_dir, 'source', 'index.rst')
