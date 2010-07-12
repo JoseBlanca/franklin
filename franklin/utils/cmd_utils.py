@@ -166,6 +166,7 @@ RUNNER_DEFINITIONS = {
              'input':{'sequence':{'option': '-sequence',
                                   'files_format':['fasta']}}
             },
+
     }
 
 def _process_parameters(parameters, parameters_def):
@@ -291,14 +292,18 @@ def create_runner(tool, parameters=None, environment=None):
         parameters = {}
     if environment is None:
         environment = {}
-    general_cmd_param = _process_parameters(parameters,
-                                    RUNNER_DEFINITIONS[tool]['parameters'])
+    if isinstance(tool, str):
+        runner_def = RUNNER_DEFINITIONS[tool]
+    else:
+        runner_def = tool
+        tool       =  runner_def['binary']
+    general_cmd_param = _process_parameters(parameters, runner_def['parameters'])
 
     def run_cmd_for_sequence(sequence):
         'It returns a result for the given sequence or sequences'
         #parameters should be in the scope because some tempfile could be in
         #there. In some pythons this has been a problem.
-        runner_data = copy.deepcopy(RUNNER_DEFINITIONS[tool])
+        runner_data = copy.deepcopy(runner_def)
         cmd_param = copy.deepcopy(general_cmd_param)
         assert type(parameters)
 
