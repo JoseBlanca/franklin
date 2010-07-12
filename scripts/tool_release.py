@@ -47,7 +47,7 @@ def prepare_release(indir):
     #build the documentation
     doc_dir = join(release_dir, 'doc')
     #which kind of doc is this? do we have a source directory in the doc?
-    if 'source' is os.listdir(doc_dir):
+    if 'source' in os.listdir(doc_dir):
         doc_source_dir = True
     else:
         doc_source_dir = False
@@ -56,7 +56,6 @@ def prepare_release(indir):
         download_page = join(doc_dir, 'source', 'download.rst')
     else:
         download_page = join(doc_dir, 'download.rst')
-    os.remove(download_page)
 
     if doc_source_dir:
         index_page = join(doc_dir, 'source', 'index.rst')
