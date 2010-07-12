@@ -17,9 +17,9 @@ The first step is to create a ngs_backbone project.
   $ cd tutorial/
   $ head -n 5 backbone.conf
   [General_settings]
-  tmpdir = '/home/jose/tmp/tutorial/tutorial/tmp'
+  tmpdir = '/home/jose/tmp/tutorial/tmp'
   project_name = 'tutorial'
-  project_path = '/home/jose/tmp/tutorial/tutorial'
+  project_path = '/home/jose/tmp/tutorial'
 
 The create_project scripts makes a directory for the project and creates a configuration file template in it. This file will hold all the information about the parameters required to run the analysis.
 
@@ -84,9 +84,9 @@ Again the first step is to create a ngs_backbone project.
   $ cd tutorial/
   $ head -n 5 backbone.conf
   [General_settings]
-  tmpdir = '/home/jose/tmp/tutorial/tutorial/tmp'
+  tmpdir = '/home/jose/tmp/tutorial/tmp'
   project_name = 'tutorial'
-  project_path = '/home/jose/tmp/tutorial/tutorial'
+  project_path = '/home/jose/tmp/tutorial'
 
 The inputs required are the cleaned reads and a reference genome. The reads should be located at reads/cleaned and the reference genome at mapping/reference/reference.fasta. For the tutorial we will use the example files distributed with ngs_backbone.
 
