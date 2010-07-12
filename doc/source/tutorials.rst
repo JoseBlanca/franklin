@@ -2,7 +2,7 @@
 Tutorials
 =========
 
-In the tutorials we will do several analyses step by step. To understand how those analyses are done it would be advisable to read the documents :doc:`cleaning` and :doc:`mapping` before or after going through the tutorials. This tutorial is a brief introduction, for a more lengthly document you can take a look at the ngs_workshop :doc:`notes <ngs_workshop/index>`. 
+In the tutorials we will do several analyses step by step. To understand how those analyses are done it would be advisable to read the documents :doc:`cleaning` and :doc:`mapping` before or after going through the tutorials. This tutorial is a brief introduction, for a more lengthly document you can take a look at the ngs_workshop :doc:`notes <ngs_workshop/index>`.
 
 Cleaning sequences
 ------------------
@@ -15,7 +15,7 @@ The first step is to create a ngs_backbone project.
 
   $ backbone_create_project.py -p tutorial
   $ cd tutorial/
-  $ head -n 4 ngs_backbone.conf
+  $ head -n 5 backbone.conf
   [General_settings]
   tmpdir = '/home/jose/tmp/tutorial/tutorial/tmp'
   project_name = 'tutorial'
@@ -29,7 +29,7 @@ For the tutorial I will clean the demo reads distributed with ngs_backbone, you 
 
   $ mkdir reads
   $ mkdir reads/raw
-  $ cp ~/franklin/franklin/data/acceptance/cleaning/* reads/raw/
+  $ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/cleaning/* reads/raw/
   $ ls reads/raw/
   lb_microtom_gb.pl_sanger.sm_microtom.fasta
   lb_mu16.pl_454.sm_mu16.sfastq
@@ -61,7 +61,7 @@ Several files and directories have been generated. ngs_backbone.log is just a lo
 
 To finish up the analysis we can create some statistics about both the raw and the cleaned files doing a new analysis::
 
-  $ backbone_analysis.py -a clean_read_stats
+  $ backbone_analysis.py -a read_stats
   2010-04-28 08:31:48,404 INFO ReadsStatsAnalyzer
   2010-04-28 08:31:48,404 INFO Franklin VERSION: 0.01
   2010-04-28 08:31:48,404 INFO Analysis started
@@ -82,7 +82,7 @@ Again the first step is to create a ngs_backbone project.
 
   $ backbone_create_project.py -p tutorial
   $ cd tutorial/
-  $ head -n 4 ngs_backbone.conf
+  $ head -n 5 backbone.conf
   [General_settings]
   tmpdir = '/home/jose/tmp/tutorial/tutorial/tmp'
   project_name = 'tutorial'
@@ -94,14 +94,14 @@ The inputs required are the cleaned reads and a reference genome. The reads shou
 
   $ mkdir reads
   $ mkdir reads/cleaned
-  $ cp ~/franklin/franklin/data/acceptance/assembling/lb* reads/cleaned/
+  $ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/assembling/lb* reads/cleaned/
   $ ls reads/cleaned/
   lb_microtom_gb.pl_sanger.sm_microtom.fasta
   lb_mu16.pl_454.sm_mu16.sfastq
   lb_microtom_sgn.pl_sanger.sm_microtom.sfastq
   $ mkdir mapping
   $ mkdir mapping/reference
-  $ cp ~/franklin/franklin/data/acceptance/mapping/reference.fasta mapping/reference/
+  $ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/mapping/reference.fasta mapping/reference/
   $ ls mapping/reference/
   reference.fasta
 
@@ -140,7 +140,7 @@ Now in mapping we have a result directory with a by_readgroup subdirectory. To c
 
 ::
 
-  $ backbone_analysis.py -a merge_bam
+  $ backbone_analysis.py -a merge_bams
   2010-04-28 12:37:52,817 INFO MergeBamAnalyzer
   2010-04-28 12:37:52,817 INFO Franklin VERSION: 0.01
   2010-04-28 12:37:52,817 INFO Analysis started
@@ -151,10 +151,10 @@ Now in mapping we have a result directory with a by_readgroup subdirectory. To c
 
 The resulting merged bam have all the information from the individual bam. Every bam is now a readgroup inside the merged bam. Every readgroup holds the information about its sample, platform and library. In this step the resulting bam file has also been sorted and made picard compatible.
 
-The next step is to realign the bam file using GATK. This step is optional and can be skipped. You have more information about this analysis in the GATK_  site. 
+The next step is to realign the bam file using GATK. This step is optional and can be skipped. You have more information about this analysis in the GATK_  site.
 
 ::
-  
+
   $ backbone_analysis.py -a realign_bam
   2010-04-28 13:00:38,147 INFO RealignBamAnalyzer
   2010-04-28 13:00:38,148 INFO Franklin VERSION: 0.1.0
@@ -169,14 +169,15 @@ The next step is to realign the bam file using GATK. This step is optional and c
 
 The result is the file merged.1.bam. The file merged.bam is versioned in the ngs_backbone system. Several versions of the same file can be located on the same directory and only the last one will be used for the following analysis. The old files can be safely deleted.
 
-Now we want to annotate a some sequences with the SNPs found when comparing the mapped reads from the bam file. To do that we have to put the sequences to annotate in  annotations/input. Let's annotate the reference sequence with the SNPs.
+Now we want to annotate some sequences with the SNPs found when comparing the mapped reads from the bam file. To do that we have to put the sequences to annotate in  annotations/input. Let's annotate the reference sequence with the SNPs.
 
 ::
 
   $ mkdir annotations
   $ mkdir annotations/input
-  $ ln -s ~/tutorial/mapping/reference/reference.fasta ~/tutorial/annotations/input/reference.fasta
-  $ backbone_analysis.py -a annotate_snv
+  $ cd annotations/input
+  $ ln -s ../../mapping/reference/reference.fasta .
+  $ backbone_analysis.py -a annotate_snvs
   2010-04-28 14:36:18,593 INFO SnvCallerAnalyzer
   2010-04-28 14:36:18,593 INFO Franklin VERSION: 0.1.0
   2010-04-28 14:36:18,594 INFO Analysis started
