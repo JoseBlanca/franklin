@@ -256,14 +256,36 @@ def _remove_alleles_n(alleles):
 def _remove_bad_quality_alleles(alleles, min_quality):
     'It adds the quality to the alleles dict and it removes the bad alleles'
 
+    orientations_independent = False
+    if orientations_independent:
+        qual_calculator = _calculate_allele_quality_oriented
+    else:
+        qual_calculator = _calculate_allele_quality
     for allele, allele_info in alleles.items():
-        qual = _calculate_allele_quality(allele_info)
+        qual = qual_calculator(allele_info)
         allele_info['quality'] = qual
         if qual < min_quality:
             del alleles[allele]
 
 def _calculate_allele_quality(allele_info):
     'It returns the quality for the given allele'
+
+    #we sort all qualities
+    quals = allele_info['qualities'][:]
+    quals.sort(lambda x, y: int(y - x))
+
+    total_qual = 0
+    if quals:
+        total_qual += quals[0]
+        if len(quals) > 1:
+            total_qual += quals[1] / 4.0
+            if len(quals) > 2:
+                total_qual += quals[2] / 4.0
+    return total_qual
+
+def _calculate_allele_quality_oriented(allele_info):
+    '''It returns the quality for the given allele
+    It assumes that reads with different orientations are independent'''
     #we gather all qualities for independent groups
     quals = defaultdict(list)
     for qual, orientation in zip(allele_info['qualities'],

@@ -104,13 +104,13 @@ def test_backbone(analysis=None, analysis_dir=None):
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
                             'reference.txt')
         result = open(stats_fpath).read()
-        expected = '''Sequences with SNVs: 57
+        expected = '''Sequences with SNVs: 51
 SNV types:
 \tinsertion: 4
-\tdeletion: 15
+\tdeletion: 14
 \tcomplex: 1
-\ttransition: 106
-\ttransversion: 126'''
+\ttransition: 86
+\ttransversion: 104'''
         assert expected in result
 
     if choice in ('annotation', None):
