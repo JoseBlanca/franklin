@@ -79,8 +79,8 @@ def joined_features(feature_list):
                     new_attributes[attr_key] +=',%s' % str(attr_value)
 
         new_feature = feature_list[0]
-        new_feature['id'] = new_feature['name']
         new_feature['attributes'] = new_attributes
+    new_feature['id'] = new_feature['name']
 
     return new_feature
 def test():
