@@ -63,19 +63,16 @@ class TestSnvAnnotation(unittest.TestCase):
 
     def test_snv_remove_edges(self):
         'It test that ww do not annotate snv in the edges'
-        'It tests the annotation of SeqRecords with snvs'
         edge_remove_settings = {'454':(30, None),
                                 'sanger':(None, None)}
-
 
         bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
                                          read_edge_conf=edge_remove_settings)
-        seqs = seqs_in_file(seq_fhand)
-        seqs.next()
-        seq = seqs.next()
+        seqs = list(seqs_in_file(seq_fhand))
+        seq = seqs[1]
         seq = annotator(seq)
         assert len(seq.features) == 2
 
@@ -148,7 +145,7 @@ class TestSnvAnnotation(unittest.TestCase):
         alleles = {('A', SNP): {'qualities':[23, 22],
                                 'orientations':[True, False]}}
         _remove_bad_quality_alleles(alleles, min_quality)
-        assert len(alleles) == 1
+        assert len(alleles) == 0
 
         alleles = {('A', SNP): {'qualities':[20, 22, None],
                                 'orientations':[True, True, False],
@@ -156,7 +153,7 @@ class TestSnvAnnotation(unittest.TestCase):
         _add_default_sanger_quality(alleles, default_sanger_quality,
                                     read_groups_info={'rg1':{'PL':'sanger'}})
         _remove_bad_quality_alleles(alleles, min_quality)
-        assert len(alleles) == 1
+        assert len(alleles) == 0
 
     @staticmethod
     def test_sort_alleles():
