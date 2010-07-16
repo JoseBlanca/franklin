@@ -22,7 +22,7 @@ from StringIO import StringIO
 import os, random, tempfile
 
 from franklin.statistics import (CachedArray, histogram, create_distribution,
-                                 draw_boxplot)
+                                 draw_boxplot, Distributions)
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -130,6 +130,25 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.min == min(item_list)
         assert storage.average == 2
         assert len(storage) == len(item_list)
+
+
+class DisttibutionsTest(unittest.TestCase):
+    'It test the distributions class'
+    @staticmethod
+    def test_create_def():
+        'test create distributions method'
+        distributions = Distributions()
+
+        distrib = random.gauss
+        params = (1, 0.05)
+        distrib = distributions.create_distributions(distrib, params,
+                                                     num_samples=1000)
+        assert 'distrib' in distrib
+        assert len(distrib['distrib']) == 20
+
+        # now we nedd the freq of a value
+        freq = distributions.get_freq(distrib, random.gauss(1, 0.05))
+        assert isinstance(freq, int)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'BoxPlotTest.test_boxplot']

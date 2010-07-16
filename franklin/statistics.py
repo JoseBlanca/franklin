@@ -39,7 +39,8 @@ def write_distribution(fhand, distribution, bin_edges):
     fhand.flush()
 
 def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
-                        plot_fhand=None, range_=None, summary_fhand=None):
+                        plot_fhand=None, range_=None, summary_fhand=None,
+                        calculate_freqs=False):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     if bins is None:
@@ -49,7 +50,8 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
     if labels is None:
         labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count'}
     #we do the distribution
-    result = histogram(numbers, bins=bins, range_=range_)
+    result = histogram(numbers, bins=bins, range_=range_,
+                       calculate_freqs=calculate_freqs)
     if result:
         distrib, bin_edges = result
     else:
@@ -89,7 +91,7 @@ def _range(numbers):
             max_ = number
     return min_, max_
 
-def histogram(numbers, bins, range_= None):
+def histogram(numbers, bins, range_= None, calculate_freqs=False):
     '''An alternative implementation to the numpy.histogram.
 
     The main difference is that it accepts iterators
@@ -122,6 +124,7 @@ def histogram(numbers, bins, range_= None):
     #now we calculate the distribution
     distrib = [0] * bins
     #an iterator for the numbers
+    len_numbers = 0
     for number in numbers:
         if number > max_ or number < min_:
             continue
@@ -132,6 +135,12 @@ def histogram(numbers, bins, range_= None):
             bin_ = int(float(number - min_) / bin_span)
         if bin_ >= 0:
             distrib[bin_] += 1
+        len_numbers += 1
+
+    if calculate_freqs:
+        len_numbers = float(len_numbers)
+        distrib = [(num / bin_span) /len_numbers for num in distrib]
+
     return (distrib, bin_edges)
 
 def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
@@ -346,9 +355,12 @@ def _calculate_percentiles(numpy_vects, stats_fhand, xlabels=None):
         result = ['%.2i' % index]
         result.append(_float_to_str(numpy.mean(vect)))
         result.append(_float_to_str(numpy.std(vect)))
-        #the percentiles are calculated with
-        quarts = mlab.prctile(vect, [25, 50, 75])
-        result.extend([_float_to_str(num) for num in quarts])
+        #the percentiles are calculated with. The vector may be empty, so we
+        #don't calculate the percentile
+        if vect.any():
+            quarts = mlab.prctile(vect, [25, 50, 75])
+            result.extend([_float_to_str(num) for num in quarts])
+
         stats_fhand.write(sep.join(result))
         stats_fhand.write('\n')
 
@@ -357,7 +369,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
                  max_plotted_boxes=None):
     'Given a list of lists it draws a boxplot'
 
-    if not vectors_list or not vectors_list[0]:
+    if not vectors_list:# or not vectors_list[0]:
+        print vectors_list[0]
         raise ValueError('No values to process')
 
     modules = sys.modules.keys()
@@ -533,3 +546,89 @@ class CachedArray(object):
         else:
             return (sum_ / float(count))
     variance = property(_get_variance)
+
+class Distributions(object):
+    'It generates distributions using provided number generator function'
+    _distribs = {}
+
+    def __init__(self, num_samples=50000):
+        'It inits the instance'
+        self._num_samples = num_samples
+
+    def _get_distribution(self, distrib, params, num_samples=None):
+        'It creates the distributions for the given number generator function'
+        if num_samples is None:
+            num_samples = self._num_samples
+
+        index = (distrib, params, num_samples)
+
+        if index in self._distribs:
+            return self._distribs[index]
+
+        numbers = [distrib(*params) for ind in range(num_samples)]
+
+        bins = _calculate_bins(numbers)
+
+        distrib = create_distribution(numbers, bins=bins, calculate_freqs=True)
+        print index
+        if index[1] == (1, ):
+            draw_histogram(distrib['distrib'], bin_edges=distrib['bin_edges'],
+                           title=str(index))
+
+        self._distribs[index] = distrib
+        return distrib
+
+    def get_freq(self, distrib, params, value):
+        'It returns the freq of the value in the given distribution'
+        distrib_dat = self._get_distribution(distrib, params)
+        bins    = distrib_dat['bin_edges']
+        distrib = distrib_dat['distrib']
+        bin_index = _find_index(bins, value, index_buffer=0)
+        if bin_index == len(bins):
+            bin_index = bin_index -1
+        return distrib[bin_index - 1]
+
+def _calculate_bins(values):
+    'It calculates how many binds to use giving a list of values'
+    num_values = len(values)
+    if num_values < 1000:
+        return ValueError('Need al least 1000 values')
+
+    bins = int((num_values * 0.1) / 100)
+    if bins < 20:
+        bins = 20
+    return bins
+
+#taken from http://code.activestate.com/recipes/278260/
+def _find_index(sorted_list, value, index_buffer=0):
+    ''' Given a sorted_list and value, return the index i where
+    sorted_list[i-1] <= value < sorted_list[i]
+    Which means,
+    sorted_list.insert( findIndex(sorted_list, value), value )
+    will give a sorted list
+    '''
+    if len(sorted_list) == 2:
+        if value == sorted_list[-1]:
+            return index_buffer + 2
+        elif value >= sorted_list[0]:
+            return index_buffer + 1
+        else:
+            return 0
+    else:
+        length_ = len(sorted_list)
+        first_half  = sorted_list[:length_//2 + 1]
+        second_half = sorted_list[(length_//2):]
+
+        if second_half[-1] <= value:
+            return index_buffer + len(sorted_list)
+        elif value < first_half[0]:
+            return index_buffer
+        else:
+            if first_half[-1] < value:
+                return _find_index(second_half, value,
+                                   index_buffer=length_//2 + index_buffer)
+            else:
+                return _find_index(first_half, value, index_buffer=index_buffer)
+
+
+
