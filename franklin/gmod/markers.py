@@ -10,20 +10,33 @@ from franklin.gff import features_in_gff
 
 SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
                   'snp' : 'SNP',
+                  'RFLP': 'RFLP_fragment',
                   'SNP-CAPS': 'SNP',
                   'SNP-Snapshot': 'SNP',
                   'SNP-INDEL':'indel',
+                  'ssr':'microsatellite',
                   'SSR':'microsatellite',
                   'EST-SSR':'microsatellite',
                   'aflp':'genetic_marker',
+                  'AFLP':'genetic_marker',
                   'isozyme':'genetic_marker',
                   'issr':'genetic_marker',
                   'morphological':'genetic_marker',
+                  'Morphological':'genetic_marker',
                   'spelling error':'genetic_marker',
                   'rapd':'genetic_marker',
+                  'RAPD':'genetic_marker',
+                  'RAPDS':'genetic_marker',
                   'placementmarker': 'biological_region' ,
                   'frameworkmarker': 'biological_region',
                   'marker':'biological_region',
+                  'Indel':'indel',
+                  'IMA':'genetic_marker',
+                  'trait':'genetic_marker',
+                  'Trait':'genetic_marker',
+                  'sequence':'sequence_feature'
+
+
                   }
 ACCEPTED_MARKERS = ['genetic_marker', 'frameworkmarker', 'indel', 'marker',
                         'microsatellite', 'placementmarker', 'rflp', 'snp',
