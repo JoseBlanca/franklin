@@ -59,8 +59,11 @@ def parse_markersfile(markersfhand):
         line = line.strip()
         if not line or line[0] == '#':
             continue
-
-        marker_name, sofa, type_, alias, sequence, pub = line.split('\t')
+        try:
+            marker_name, sofa, type_, alias, sequence, pub = line.split('\t')
+        except ValueError:
+            #print line
+            raise ValueError(line + ': Malformed')
         if sofa == '.':
             sofa = None
         if type_ == '.':
