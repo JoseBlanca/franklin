@@ -314,7 +314,8 @@ class VariantCallFormatWriter(object):
                     alleles_by_group[group] = {}
                 if allele_index not in alleles_by_group[group]:
                     alleles_by_group[group][allele_index] = 0
-                alleles_by_group[group][allele_index] += 1
+                allele_seen_times = allele_info['read_groups'][read_group]
+                alleles_by_group[group][allele_index] += allele_seen_times
 
         #now we can build the info for every sample
         for group in self._genotype_groups.keys():
