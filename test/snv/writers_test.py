@@ -72,7 +72,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         vcf = open(fhand.name).read()
         #print vcf
 
-        assert 'GC=2|1|0:2,1,1'
+        assert 'GC=0|1|2:2,2,1' in vcf or 'GC=0|2|1:2,2,1' in vcf
         assert 'VKS' in vcf
         assert '##FILTER=VKS' in vcf
         assert '##FILTER=VLB1' in vcf
@@ -81,7 +81,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert '.:.' in vcf
         assert 'HVR80;VLB1;VLB2;NVLB1;VKS' in vcf
         assert 'AF=0.3,0.2' in vcf
-        assert 'GP=0.55' in vcf
+        assert 'GP=0.60' in vcf
         assert 'EZ=EcoRI' in vcf
 
         #test writer with a non read_groups grouping
