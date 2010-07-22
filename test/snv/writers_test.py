@@ -31,11 +31,11 @@ class VariantCallFormatWriterTest(unittest.TestCase):
 
     def test_basic(self):
         seq_str = 'AAA'
-        alleles = {('A', SNP):{'read_groups': {'hola_illumina':1, 'hola2':1},
+        alleles = {('A', SNP):{'read_groups': {'hola_illumina':2, 'hola2':3},
                                'quality': 57.0},
-                   ('T', INVARIANT):{'read_groups': {'sanger':1},
+                   ('T', INVARIANT):{'read_groups': {'sanger':5, 'hola2':4},
                                      'quality': 57.0},
-                   ('C', SNP):{'read_groups': {'hola_illumina':1},
+                   ('C', SNP):{'read_groups': {'hola_illumina':6},
                                'quality': 57.0},}
         read_groups = {'hola_illumina':{'LB':'lib1'},
                        'hola2':{'LB':'lib2'},
@@ -72,16 +72,16 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         vcf = open(fhand.name).read()
         #print vcf
 
-        assert 'GC=2|1|0:2,1,1'
+        assert 'GC=0|1|2:2,2,1' in vcf or 'GC=0|2|1:2,2,1' in vcf
         assert 'VKS' in vcf
         assert '##FILTER=VKS' in vcf
         assert '##FILTER=VLB1' in vcf
         assert '##FILTER=VLB2' in vcf
-        assert '1|2:1,1' in vcf
+        assert '1|2:6,2' in vcf
         assert '.:.' in vcf
         assert 'HVR80;VLB1;VLB2;NVLB1;VKS' in vcf
-        assert 'AF=0.2,0.5' in vcf
-        assert 'GP=0.50' in vcf
+        assert 'AF=0.3,0.2' in vcf
+        assert 'GP=0.60' in vcf
         assert 'EZ=EcoRI' in vcf
 
         #test writer with a non read_groups grouping

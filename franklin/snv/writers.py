@@ -217,26 +217,26 @@ class VariantCallFormatWriter(object):
 
         #genotype count
         #we count in how many genotypes every allele has been found.
-        grouping_key = self._genotype_grouping_key
-        allele_numb_coding = self._numbers_for_alleles(reference_allele[0],
-                                                       alternative_alleles)
-        #we count the number of times every allele appears in a group (sample)
-        genotype_counts = []
-        for allele in qualifiers['alleles']:
-            acount = _allele_count(allele, alleles,
-                                   read_groups=qualifiers['read_groups'],
-                                   group_kind=grouping_key)
-            allele = allele_numb_coding[allele]
-            genotype_counts.append((allele, acount))
+        allele_counts = self._allele_count_by_group(alleles=alleles,
+                                           reference_allele=reference_allele[0],
+                                        alternative_alleles=alternative_alleles,
+                                          read_groups=qualifiers['read_groups'],
+                                                              count_reads=False)
+        genotype_counts = [(al, len(groups))for al, groups in allele_counts.items()]
         #we have to sort by the number of groups
-        genotype_counts = sorted(genotype_counts, lambda x, y: y[1] - x[1])
+        #sort on allele index (secondary key)
+        genotype_counts = sorted(genotype_counts, key=lambda x: x[0])
+        #sort on number of genotypes (primary_key)
+        genotype_counts = sorted(genotype_counts, key=lambda x: x[1],
+                                 reverse=True)
+
         #now we print
         alleles = [str(count[0]) for count in genotype_counts]
         counts = [str(count[1]) for count in genotype_counts]
         toprint_items.append('GC=%s:%s' % ('|'.join(alleles), ','.join(counts)))
 
         #genotype polymorphism
-        #1 - (number_groups_for_the_allele_with_more_groups) / number_groups
+        #1 - (number_groups_for_the_allele_with_more_groups / number_groups)
         number_of_groups = sum([count[1] for count in genotype_counts])
         genotype_polymorphism = 1 - genotype_counts[0][1] / float(number_of_groups)
         toprint_items.append('GP=%.2f' % genotype_polymorphism)
@@ -285,6 +285,50 @@ class VariantCallFormatWriter(object):
         alleles_index = dict(zip(alleles_index, range(len(alleles_index))))
         return alleles_index
 
+    def _allele_count_by_group(self, alleles, reference_allele,
+                               alternative_alleles, read_groups, count_reads):
+        '''It returns the allele counts by group
+
+        It can answer to two questions:
+            - How many times have the allele been found in every group?
+              (count_reads = True)
+              It returns a dict indexed by group and the alleles
+              (with the vcf number coding)
+            - in which groups the allele have been found?
+              (count_reads= False)
+              It returns a dict indexed by the alleles
+              (with the vcf number coding)
+        It takes into account the grouping_key (read_group, sample or library)
+        It requires the dict with the information about the read_groups.
+        '''
+
+        #a map from alleles to allele index (0 for reference, etc)
+        alleles_index = self._numbers_for_alleles(reference_allele,
+                                                  alternative_alleles)
+        grouping_key = self._genotype_grouping_key
+
+        alleles_by_group = {}
+        for allele, allele_info in alleles.items():
+            #we need the index for the allele
+            allele_index = alleles_index[allele]
+            for read_group in allele_info['read_groups']:
+                group = _get_group(read_group, grouping_key, read_groups)
+                if group not in self._genotype_groups:
+                    self._genotype_groups[group] = True
+                if count_reads:
+                    if group not in alleles_by_group:
+                        alleles_by_group[group] = {}
+                    if allele_index not in alleles_by_group[group]:
+                        alleles_by_group[group][allele_index] = 0
+                    count = allele_info['read_groups'][read_group]
+                    alleles_by_group[group][allele_index] += count
+                else:
+                    if allele_index not in alleles_by_group:
+                        alleles_by_group[allele_index] = set()
+                    alleles_by_group[allele_index].add(group)
+
+        return alleles_by_group
+
     def _create_genotypes(self, qualifiers, alternative_alleles):
         'It returns the genotype section for this snv'
 
@@ -301,20 +345,12 @@ class VariantCallFormatWriter(object):
                                                   alternative_alleles)
 
         #now we need the alleles for every sample
-        grouping_key = self._genotype_grouping_key
-        alleles_by_group = {}
-        for allele, allele_info in alleles.items():
-            #we need the index for the allele
-            allele_index = alleles_index[allele]
-            for read_group in allele_info['read_groups']:
-                group = _get_group(read_group, grouping_key, read_groups)
-                if group not in self._genotype_groups:
-                    self._genotype_groups[group] = True
-                if group not in alleles_by_group:
-                    alleles_by_group[group] = {}
-                if allele_index not in alleles_by_group[group]:
-                    alleles_by_group[group][allele_index] = 0
-                alleles_by_group[group][allele_index] += 1
+
+        alleles_by_group = self._allele_count_by_group(alleles=alleles,
+                                              reference_allele=reference_allele,
+                                        alternative_alleles=alternative_alleles,
+                                                        read_groups=read_groups,
+                                                               count_reads=True)
 
         #now we can build the info for every sample
         for group in self._genotype_groups.keys():
