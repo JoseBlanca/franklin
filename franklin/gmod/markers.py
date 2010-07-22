@@ -7,6 +7,7 @@ Created on 08/07/2010
 @author: peio
 '''
 from franklin.gff import features_in_gff
+import csv
 
 SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
                   'snp' : 'SNP',
@@ -86,11 +87,11 @@ def write_markers(outfhand, markers):
     outfhand.write('#markers file\n')
     outfhand.write('#name\tsofa\toriginal_type\talias\tsequence\tpublications\n')
     for marker_name in markers:
-        if 'sofa' in markers[marker_name]:
+        if 'sofa' in markers[marker_name] and markers[marker_name]['sofa'] is not None:
             sofa = markers[marker_name]['sofa']
         else:
             sofa = '.'
-        if 'type' in markers[marker_name]:
+        if 'type' in markers[marker_name] and markers[marker_name]['type'] is not None:
             type_ = markers[marker_name]['type']
         else:
             type_ = '.'
@@ -166,3 +167,29 @@ def add_markers_gff3(infhand, markers, name_cor=None, type_cor=None,
             pub = None
         # name, alias , type_, sofa_type, sequence, pub
         add_marker(markers, name, alias , original_type, sofa_type, sequence, pub)
+
+
+def add_markers_custom_csv(infhand, markers):
+    '''It adds the markes from a custom csv file. It is not a general function
+    for all csvs.
+    The format of the csv is:
+    name       type      pub
+    '''
+
+    for marker in csv.reader(infhand, delimiter='\t'):
+        alias = marker[0]
+        name  = marker[0].lower()
+        type_ = marker[1]
+        if type_ in SOFA_TRADUCTOR:
+            sofa_type = SOFA_TRADUCTOR[type_]
+            original_type = type_
+        else:
+            sofa_type = type_
+            original_type = None
+
+        pub = marker[2]
+        if not pub:
+            pub = None
+        sequence = None
+        add_marker(markers, name, alias, original_type, sofa_type, sequence,
+                   pub)
