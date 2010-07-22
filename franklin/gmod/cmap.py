@@ -68,18 +68,21 @@ def _map_features(map_, features, map_set_accession, marker_count,
         feat = copy(features[feat_loc['feature']])
         feat['seqid'] = '%s_%s' % (map_set_accession, map_['name'])
         marker_name = feat['name']
-        feat_acc = (feat['seqid'], marker_name)
+        #feat_acc = (feat['seqid'], marker_name)
+
+        if marker_name not in marker_count:
+            marker_count[marker_name] = []
+        feat_acc = (feat['seqid'], marker_name, len(marker_count[marker_name]))
+        marker_id = '%s_%d' % (marker_name, len(marker_count[marker_name]))
+
+        marker_count[marker_name].append(marker_id)
+
         if  feat_acc not in features_in_mapset:
             features_in_mapset.add(feat_acc)
         else:
             raise RuntimeError('%s marker already in %s mapset' % \
                                             (marker_name, feat['seqid']))
 
-        if marker_name not in marker_count:
-            marker_count[marker_name] = []
-
-        marker_id = '%s_%d' % (marker_name, len(marker_count[marker_name]))
-        marker_count[marker_name].append(marker_id)
 
         # construction of marker id map
         marker_id_map[marker_id] = (map_set_accession, map_['accession'])

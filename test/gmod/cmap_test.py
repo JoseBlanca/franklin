@@ -82,7 +82,7 @@ class CmapTest(unittest.TestCase):
         fhand = StringIO()
         cmap_to_mcf(cmap, fhand)
 
-        # No repeated markers in mapset allowed
+        # Repeated markers allowed
         feat_loc2 = [{'feature':'marker1', 'start':1, 'end':5},
                     {'feature':'marker2', 'start':20},
                     {'feature':'marker2', 'start':20}]
@@ -101,12 +101,8 @@ class CmapTest(unittest.TestCase):
                 'map_sets':[map_set2],
                 'species':{'cmelo': species}}
 
-        try:
-            cmap_to_gff(cmap, fhand)
-            self.fail()
-        except RuntimeError:
-            pass
-
+        cmap_to_gff(cmap, fhand)
+        print fhand.getvalue()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
