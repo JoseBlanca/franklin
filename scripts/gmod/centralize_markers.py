@@ -8,7 +8,7 @@ normalize all marker name and type fields
 from optparse import OptionParser
 import os
 from franklin.gmod.markers import (write_markers, parse_markersfile,
-                                   add_markers_gff3)
+                                   add_markers_gff3, add_markers_custom_csv)
 
 
 def parse_options():
@@ -96,12 +96,17 @@ def add_markers(infhand, markers, name_cor=None, type_cor=None,
     file_type = _guess_file_type(infhand)
     if file_type == 'gff3':
         add_markers_gff3(infhand, markers, name_cor, type_cor, sequence_cor)
+    if file_type == 'cvs':
+        add_markers_custom_csv(infhand, markers)
+
 
 def _guess_file_type(infhand):
     'It guesses file type'
     first_line = infhand.readline()
     if first_line.strip() == '##gff-version 3':
         file_type = 'gff3'
+    else:
+        file_type = 'cvs'
 
     infhand.seek(0)
     return file_type
