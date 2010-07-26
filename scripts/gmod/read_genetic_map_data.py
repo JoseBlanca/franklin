@@ -200,22 +200,22 @@ def fix_marker_types(cmap):
         'ima': ('issr', ),
         'indel': ('indel', 'SO:1000032'),
         'snp-indel': ('indel', 'SO:1000032'),
-        'marker' : ('sequence feature', 'SO:0000110'),
+        'marker' : ('sequence_feature', 'SO:0000110'),
         'morhological': ('morphological', ),
         'morphological': ('morphological', ),
         'trait': ('morphological', ''),
         'rapd': ('rapd', ),
         'rapds': ('rapd',),
-        'rflp': ('rflp', ),
-        'snp': ('snp', 'SO:0000694'),
-        'snp-caps': ('snp', 'SO:0000694', 'caps'),
-        'snp-snapshot-caps': ('snp', 'SO:0000694', 'caps'),
-        'snp-scar': ('snp', 'SO:0000694', 'caps'),
-        'scar': ('snp', 'SO:0000694', 'caps'),
-        'snp-sequencing': ('snp', 'SO:0000694'),
-        'snp-snapshot': ('snp', 'SO:0000694'),
+        'rflp': ('RFLP_fragment', ),
+        'snp': ('SNP', 'SO:0000694'),
+        'snp-caps': ('SNP', 'SO:0000694', 'caps'),
+        'snp-snapshot-caps': ('SNP', 'SO:0000694', 'caps'),
+        'snp-scar': ('SNP', 'SO:0000694', 'caps'),
+        'scar': ('SNP', 'SO:0000694', 'caps'),
+        'snp-sequencing': ('SNP', 'SO:0000694'),
+        'snp-snapshot': ('SNP', 'SO:0000694'),
         'spelling error': ('spelling error',),
-        'unknown': ('sequence feature', 'SO:0000110'),
+        'unknown': ('sequence_feature', 'SO:0000110'),
         'isozyme' : ('isozyme', )
     }
 
@@ -286,7 +286,7 @@ class Cmap(object):
         if 'end' in feat_loc:
             end = feat_loc['end']
         else:
-            end = None
+            end = start
         return mapset, map_, start, end
 
     def get_map(self, mapset, map_):
@@ -309,9 +309,12 @@ def read_bin_map(fhand, cmap, correlations):
         if not group and not bin_:
             continue
         marker_name = get_correlated_name(marker, correlations)
+        marker_ =  get_marker_from_correlations(marker_name, correlations)
+        feature_type = marker_['sofa']
 
         data = { 'group': group.lower(), 'marker':marker_name,
-                        'marker_type': marker_type, 'bin': bin_}
+                        'marker_type': marker_type, 'bin': bin_,
+                        'feature_type':feature_type}
         map_data.append(data)
 
 
@@ -333,7 +336,8 @@ def read_bin_map(fhand, cmap, correlations):
 
         if kind in ('bin', 'binint'):
             bin_marker = {'start_marker': None, 'end_marker': None,
-                          'type':kind, 'name':marker_name, 'map': group}
+                          'type':kind, 'name':marker_name, 'map': group,
+                          'feature_type':marker['feature_type']}
             if ref is None:
                 bin_marker['start_marker'] = None
             else:
@@ -388,7 +392,7 @@ def read_bin_map(fhand, cmap, correlations):
     for bin in all_bins:
         #add to markers
         marker_name = bin['name']
-        sofa = '###'
+        sofa = bin['feature_type']
         cmap['features'][marker_name] = {'type':sofa, 'name':marker_name}
         # add to mapset(icugi)
         feat_loc = {'feature':marker_name, 'start':bin['start_position'],
@@ -402,88 +406,6 @@ def read_bin_map(fhand, cmap, correlations):
                     if map_['accession'] == bin['map']:
                         map_index = index2
         cmap['map_sets'][icugi_index]['maps'][map_index]['feature_locations'].append(feat_loc)
-
-def read_bin_map_old(fhand, cmap, correlations):
-    'It loads the bin map '
-
-    map_reader = csv.reader(fhand, delimiter='\t')
-    map_reader.next() #ignore fist line
-
-    map_data = []
-    for row in map_reader:
-        group       = row[1]
-        marker      = row[2].lower().strip()
-        marker_type = row[3]
-        bin_        = row[5]
-        if not group and not bin_:
-            continue
-        marker_name = get_correlated_name(marker, correlations)
-        data = { 'group': group.lower(), 'marker':marker_name,
-                        'marker_type': marker_type, 'bin': bin_}
-        map_data.append(data)
-    maps = Cmap(cmap)
-    #we need the bin limits
-    group      = None
-    ref_marker = None
-    bin_limits = {}
-    for marker_data in map_data:
-        if marker_data['marker_type'] == 'bin':
-            continue
-        #the first marker for each group
-        if group is None or group != marker_data['group']:
-            #if there was a previous group we have to store the reference
-            if group:
-                bin_limits[group][ref_marker] = (bin_end, bin_end)
-            group      = marker_data['group']
-            bin_start  = None
-            bin_end    = None
-            ref_marker = None
-            bin_limits[group] = {}
-
-        if marker_data['marker_type'] == 'ref':
-        #print markers[marker]
-            #the position of the reference marker in the icugi mapset
-            try:
-                start = maps.feature_location(feature=marker_data['marker'],
-                                                    mapset='icugi',
-                                                    map_=group)[2]
-            except KeyError :
-                print 'marker not found in reference ->',
-                print group, marker_data['marker']
-                continue
-        #elif marker_data['marker_type'] == 'binint':
-            # In this case the start is unknown, so we decide to put in the
-            # midle of the two references
-
-        else:
-            start = int(marker_data['bin'])
-        #print marker_data['marker']
-        #we change the limits for the next bin
-        #print marker_data['marker_type'], type(start), type(end)
-        bin_start, bin_end = bin_end, start
-        #we store the limits defined by this marker
-        bin_limits[group][ref_marker] = (bin_start, bin_end)
-        #print marker_data['marker_type'], '-> ',
-        #print ref_marker, group, bin_start, bin_end
-        #the next reference marker
-        ref_marker = marker_data['marker']
-
-    #now for each bin marker we set its start and end
-    ref_marker = None
-    for marker_data in map_data:
-        if marker_data['marker_type'] == 'bin':
-            group = marker_data['group']
-            map_features = maps.get_map('icugi', group)['feature_locations']
-            try:
-                bin_ = bin_limits[group][ref_marker]
-            except KeyError:
-                print 'bin not defined ->', group, ref_marker
-            map_features.append({'feature':marker_data['marker'],
-                                 'start': bin_[0],
-                                 'end': bin_[1]})
-            #print marker_data['marker'], bin
-        else:
-            ref_marker = marker_data['marker']
 
 def read_qtls(fhand, cmap, correlations=None):
     'It reads the qtls markers for the icugi map'
@@ -517,7 +439,7 @@ def read_qtls(fhand, cmap, correlations=None):
                 result         = cmap_.feature_location(feature=start_marker,
                                                         mapset='icugi')
                 start_map      = result[1]
-                start_position = result[3]
+                start_position = result[2]
             except ValueError:
                 print 'for qtl %s start marker not found %s' % (qtl_id,
                                                                 start_marker)
@@ -532,13 +454,22 @@ def read_qtls(fhand, cmap, correlations=None):
                                                               end_marker)
 
         if start_map and end_map:
-            assert start_map == end_map
+            #assert start_map == end_map
+            if start_map != end_map:
+                print '%s %s not in the same map %s %s' % (start_marker,
+                                                          end_marker, start_map,
+                                                          end_map)
+
         map_ = start_map
-        if not start_position:
-            start_position = qtl['start_position']
-        if not end_position:
-            end_position = qtl['end_position']
-        qtls[qtl_id]['map'] = map_
+        if start_position is not None:
+            qtl['start_position'] = start_position
+
+        if end_position is not None:
+            qtl['end_position'] = end_position
+
+        qtl['map']   = map_
+        qtls[qtl_id] = qtl
+
 
     for qtl_id, qtl_data in qtls.items():
         #add to markers
@@ -566,7 +497,7 @@ def main():
 
     bin_map_path    = 'mapa_icugi/bin_mapping.csv'
 
-    out_path        = 'out.gff'
+    out_path        = 'out.gff3'
     mcf_path        = 'out.mcf'
 
 
@@ -575,6 +506,7 @@ def main():
     merged_map_path = os.path.join(base_path, merged_map_path)
     irta_maps_path  = os.path.join(base_path, irta_maps_path)
     out_path        = os.path.join(base_path, out_path)
+    mcf_path        = os.path.join(base_path, mcf_path)
     bin_map_path    = os.path.join(base_path, bin_map_path)
     qtls_path       = os.path.join(base_path, icugi_qtls)
     #qtls_fix_path   = os.path.join(base_path, icugi_fix_qtls)
@@ -612,7 +544,6 @@ def main():
     cmap_to_gff(cmap, gff_fhand)
 
     #write mcf file
-
     mcf_fhand  = open(mcf_path, 'w')
     cmap_to_mcf(cmap, mcf_fhand)
 
