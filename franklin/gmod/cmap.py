@@ -158,9 +158,20 @@ def cmap_to_gff(data, fhand):
 
     write_gff(gff, fhand)
 
+COLORS = {'aflp': '', # black
+          'SNP':'',  # blue
+          'microsatellites':'', # green
+          'RFLP_fragment':'', # red
+          'rapd':'', # grey
+          'issr':'',  # orange
+          'morphological':'', # purple
+          'indel': '',# brown
+          }
+
 def cmap_to_mcf(data, fhand):
     'Given a dict with the cmap data and an output fhand it writes a mcf file'
 
+    colors = []
     for mapset in data['map_sets']:
         fhand.write('**************************************************\n')
         fhand.write('map: %s\n' % mapset['name'])
@@ -169,7 +180,14 @@ def cmap_to_mcf(data, fhand):
             fhand.write(map_['name'] + '\n')
             markers = []
             qtls = []
+
             for feat_loc in map_['feature_locations']:
+                marker_name = feat_loc['feature']
+                marker_type = data['features'][marker_name]['type']
+                if marker_type not in colors:
+                    colors.append(marker_type)
+                color_code = 'C%02d' % (colors.index(marker_type) + 1)
+
                 start = feat_loc['start']
                 if 'end' in feat_loc:
                     end = feat_loc['end']
@@ -177,22 +195,25 @@ def cmap_to_mcf(data, fhand):
                     end = feat_loc['start']
                 if start == end:
                     markers.append({'name':feat_loc['feature'],
-                                    'start':start})
+                                    'start':start, 'color':color_code})
                 else:
                     qtls.append({'name':feat_loc['feature'],
                                  'start':start,
-                                 'end':end})
+                                 'end':end,
+                                 'color':color_code})
             #now we sort the markers
             numeric_sort = lambda x, y: int(x['start'] - y['start'])
             markers = sorted(markers, numeric_sort)
             for marker in markers:
-                fhand.write('%s\t%s\n' % (marker['name'], marker['start']))
+                fhand.write('%s\t%s\t%s\n' % (marker['name'], marker['start'],
+                                              marker['color']))
             fhand.write('qtls\n')
             qtls = sorted(qtls, numeric_sort)
             for marker in qtls:
                 location = float(marker['start'] + marker['end']) / 2.0
                 location = '%.1f' % location
-                fhand.write('%s\t%s\t%s\t%s\t%s\n' % (marker['name'], location,
+                fhand.write('%s\t%s\t%s\t%s\t%s\t%s\n' % (marker['name'], location,
                                                     location, location,
-                                                    location))
+                                                    location,
+                                                    marker['color']))
         fhand.write('\n\n')

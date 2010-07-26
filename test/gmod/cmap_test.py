@@ -36,7 +36,7 @@ class CmapTest(unittest.TestCase):
         marker1 = {'type':'marker',
                    'name':'marker1',
                    'alias':'also_marker_1'}
-        marker2 = {'type':'marker',
+        marker2 = {'type':'marker_',
                    'name':'marker2'}
         markers = {'marker1':marker1, 'marker2':marker2}
         feat_loc = [{'feature':'marker1', 'start':5, 'end':10},
@@ -81,6 +81,10 @@ class CmapTest(unittest.TestCase):
 
         fhand = StringIO()
         cmap_to_mcf(cmap, fhand)
+        result = fhand.getvalue()
+        assert "marker2\t20\tC02" in result
+        assert "qtls\nmarker1\t7.5\t7.5\t7.5\t7.5\tC01" in result
+
 
         # Repeated markers allowed
         feat_loc2 = [{'feature':'marker1', 'start':1, 'end':5},
@@ -102,7 +106,8 @@ class CmapTest(unittest.TestCase):
                 'species':{'cmelo': species}}
 
         cmap_to_gff(cmap, fhand)
-        print fhand.getvalue()
+        result = fhand.getvalue()
+        assert 'ID=marker2_1' in result
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
