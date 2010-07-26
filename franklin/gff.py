@@ -220,6 +220,8 @@ class GffWriter(object):
         for attr_key, attr_value in attributes.items():
             if isinstance(attr_value, list):
                 attr_value = ','.join(attr_value)
+            if attr_value is None:
+                continue
             attr_key = self._escape(attr_key)
             attr_value = self._escape(attr_value, escape_coma=False)
             attribute_list.append('%s=%s' % (attr_key, attr_value))
