@@ -128,6 +128,7 @@ deleu_IX	CMap	snp	0	0	.	.	.	ID=mc088_3;Name=mc088;est=MRGH21;publication=van Lee
 deleu_IX	CMap	rflp	81	81	.	.	.	ID=mc092_0;Name=mc092;est=MC092;publication=Oliver et al 2001
 ##cmap lalalal
 deleu_IX	CMap	microsatellite	134	134	.	.	.	ID=cmtc47_0;Name=cmxth4;publication=Danin-Poleg et al 2001
+deleu_IX	CMap	microsatellite	134	134	.	.	.	ID=cmtc48_0;Name=cmtc48;publication=Danin-Poleg et al 2001
 '''
 
     correlations	=	'''#markers	file
@@ -144,6 +145,7 @@ cmxth4	SNP	frameworkmarker	.	.	.
     assert 'original_type=placementmarker;est=MRGH21;ID=mc88;Name=mc88' in res
     assert 'ID=mc88_2' in res
     assert '##cmap lalalal' in res
+    assert 'ID=cmtc48' in res
 
 if	__name__	==	'__main__':
     test()
