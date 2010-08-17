@@ -193,9 +193,16 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
         'It adds the orf to the SeqFeatures'
         if sequence is None:
             return
-        introns = infer_introns_for_cdna(sequence=sequence,
+        try:
+            introns = infer_introns_for_cdna(sequence=sequence,
                                           genomic_db=genomic_db,
                                           genomic_seqs_index=genomic_seqs_index)
+        except KeyError as error:
+            error = str(error).lstrip('u').strip("'")
+            if 'not found' in error:
+                error += ' in seq file %s, but present in blast db %s' % \
+                                           (genomic_seqs_fhand.name, genomic_db)
+            raise RuntimeError(error)
 
         for intron_pos in introns:
             feature = SeqFeature(location=FeatureLocation(intron_pos,

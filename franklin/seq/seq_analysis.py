@@ -82,7 +82,11 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
         similar_seq = similar_sequence
     start = similar_seq['subject_start']
     end = similar_seq['subject_end']
-    similar_seq = genomic_seqs_index[similar_seq['name']]
+    try:
+        similar_seq = genomic_seqs_index[similar_seq['name']]
+    except KeyError:
+        msg = 'Sequence %s was not found' % similar_seq['name']
+        raise KeyError(msg)
 
     #now we run est2genome for this cdna
     cdna_file = temp_fasta_file(seqs=[sequence])

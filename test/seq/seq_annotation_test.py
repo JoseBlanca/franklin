@@ -18,6 +18,8 @@ Created on 15/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import unittest, tempfile, os
+
 from franklin.seq.seq_annotation import (create_microsatellite_annotator,
                                          create_ortholog_annotator,
                                          create_description_annotator,
@@ -27,7 +29,6 @@ from franklin.seq.seq_annotation import (create_microsatellite_annotator,
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.utils.cmd_utils import b2gpipe_runner
-import unittest, tempfile, os
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -90,9 +91,7 @@ class AnnotationTests(unittest.TestCase):
         assert len(seq1.features) == 1
         assert seq1.features[0].type == 'orf'
 
-
-    @staticmethod
-    def test_intron_annotator():
+    def test_intron_annotator(self):
         'We can annotate introns in cdnas comparing with genomic'
         seq = 'GAAAAGATGTGATTGGTGAAATAAGTTTGCCTCAATTCTCTTGTGCCGAAGTTCCAAAGAAGC'
         seq += 'AGTTGGTGAATGAGCAGCCAGTACCCGAAAAATCGAGCAAAGATTTTGTGATGTATGTTGGAG'
@@ -114,6 +113,17 @@ class AnnotationTests(unittest.TestCase):
         intron_feat = seq.features[0]
         assert intron_feat.location.start.position == 478
         assert intron_feat.type == 'intron'
+
+        #test an error
+        genomic_seqs = tempfile.NamedTemporaryFile(suffix='.fasta')
+        genomic_seqs.write('>a_seq\nATCGTG\n')
+        intron_annotator = create_cdna_intron_annotator(genomic_db=genomic_db,
+                                                genomic_seqs_fhand=genomic_seqs)
+        try:
+            intron_annotator(seq)
+            self.fail('RuntimeError expected')
+        except RuntimeError as error:
+            assert genomic_seqs.name in str(error)
 
     @staticmethod
     def test_go_annotator():
