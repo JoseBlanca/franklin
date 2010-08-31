@@ -44,7 +44,8 @@ def prepare_release(indir):
     #copy the git dir
     shutil.copytree(indir, release_dir, ignore=shutil.ignore_patterns('.git*',
                                                                     '*project',
-                                                        '*franklin_release.py'))
+                                                            '*tool_release.py',
+                                                                    '*.pyc'))
 
     #build the documentation
     doc_dir = join(release_dir, 'doc')
