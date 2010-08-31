@@ -82,6 +82,11 @@ def prepare_release(indir):
     shutil.rmtree(doc_dir)
     shutil.move(temp_doc_dir, doc_dir)
 
+    #remove the build directory
+    build_dir = join(release_dir, 'build')
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+
     #now we can create the tar.gz
     tar_fpath = release_name + '.tar.gz'
     tar = tarfile.open(tar_fpath, 'w:gz')
