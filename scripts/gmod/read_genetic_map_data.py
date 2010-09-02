@@ -40,7 +40,7 @@ def read_icugi_map(fhand, cmap, correlations=None):
             continue
         #the group
         if line.startswith('group'):
-            group = line.split()[1].split('_')[1].lower()
+            group = line.split()[1].lower()#.split('_')[1].lower()
             #print group
             icugi_mapset['maps'].append({'accession': group,
                                           'name': group,
