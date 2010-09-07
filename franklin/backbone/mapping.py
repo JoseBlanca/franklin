@@ -252,7 +252,6 @@ class BamStatsAnalyzer(Analyzer):
             bam_fhand.seek(0)
             bam_distribs(bam_fhand, kind, basename=basename,
                          sample_size=sample_size, summary_fhand=summary_fhand)
-        summary_fhand.flush()
         bam_fhand.close()
 
 DEFINITIONS = {

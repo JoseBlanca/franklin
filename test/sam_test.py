@@ -210,10 +210,14 @@ class SamStatsTest(unittest.TestCase):
         bam_fhand = NamedTemporaryFile()
         sam2bam(sam.name, bam_fhand.name)
 
-        distribs = bam_distribs(bam_fhand, 'coverage')
+        summary_fhand = StringIO()
+
+        distribs = bam_distribs(bam_fhand, 'coverage',
+                                summary_fhand=summary_fhand)
         expected = [2211, 0, 0, 0, 0, 0, 0, 0, 0, 0, 168, 0, 0, 0, 0, 0, 0, 0,
                     0, 168]
         assert distribs[('platform', '454')] == expected
+        assert 'average: 0.20' in  summary_fhand.getvalue()
 
         distribs = bam_distribs(bam_fhand, 'mapq')
         assert distribs[('platform', '454')][0] == 1

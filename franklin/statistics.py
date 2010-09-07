@@ -47,8 +47,15 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
         bins = 20
     if range_ == (None, None):
         range_ = None
+    default_labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count',
+                  'minimum':'minimum', 'maximum':'maximum', 'average':'average',
+                  'variance':'variance', 'sum':'sum', 'items':'items'}
     if labels is None:
-        labels = {'title':'histogram', 'xlabel':'values', 'ylabel':'count'}
+        labels = default_labels
+    else:
+        for label, value in default_labels.items():
+            if label not in labels:
+                labels[label] = value
     #we do the distribution
     result = histogram(numbers, bins=bins, range_=range_,
                        calculate_freqs=calculate_freqs)
@@ -72,12 +79,19 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
         msg = 'Statistics for %s\n' % labels['title']
         summary_fhand.write(msg)
         summary_fhand.write('-' * len(msg) + '\n')
-        summary_fhand.write('minimum: %s\n' % format_num(numbers.min))
-        summary_fhand.write('maximum: %s\n' % format_num(numbers.max))
-        summary_fhand.write('average: %s\n' % format_num(numbers.average))
-        summary_fhand.write('variance: %s\n' % format_num(numbers.variance))
-        summary_fhand.write('sum: %s\n' % format_num(numbers.sum))
-        summary_fhand.write('items: %s\n' % len(numbers))
+        summary_fhand.write('%s: %s\n' % (labels['minimum'],
+                                          format_num(numbers.min)))
+        summary_fhand.write('%s: %s\n' % (labels['maximum'],
+                                          format_num(numbers.max)))
+        summary_fhand.write('%s: %s\n' % (labels['average'],
+                                          format_num(numbers.average)))
+        summary_fhand.write('%s: %s\n' % (labels['variance'],
+                                          format_num(numbers.variance)))
+        if labels['sum'] is not None:
+            summary_fhand.write('%s: %s\n' % (labels['sum'],
+                                              format_num(numbers.sum)))
+        summary_fhand.write('%s: %s\n' % (labels['items'], len(numbers)))
+
         summary_fhand.write('\n')
     return {'distrib':list(distrib), 'bin_edges':list(bin_edges)}
 
