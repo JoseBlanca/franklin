@@ -33,7 +33,7 @@ except ImportError:
 from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
-from franklin.utils.itertools_ import ungroup, classify, take_sample
+from franklin.utils.itertools_ import take_sample
 from franklin.statistics import create_distribution, CachedArray
 
 def get_read_group_info(bam):
@@ -373,6 +373,7 @@ def _get_bam_coverage(bam, rgs, grouping):
     '''
     coverages = {}
 
+    positions_covered = {}
     for column in bam.pileup():
         reads_per_colum = {}
         for pileup_read in column.pileups:
@@ -384,16 +385,32 @@ def _get_bam_coverage(bam, rgs, grouping):
 
         #we group by the grouping key
         new_reads_per_colum = {}
+        groups_in_column = set()
         for read_group, value in reads_per_colum.items():
             group = rgs[read_group][grouping]
             if group not in new_reads_per_colum:
                 new_reads_per_colum[group] = 0
             new_reads_per_colum[group] += value
+            groups_in_column.add(group)
+        for group in groups_in_column:
+            try:
+                positions_covered[group] += 1
+            except KeyError:
+                positions_covered[group] = 1
 
         for group, value in new_reads_per_colum.items():
             if group not in coverages:
                 coverages[group] = CachedArray('I')
             coverages[group].append(value)
+
+    #we need the total length covered by the references
+    total_length = 0
+    for reference in bam.header['SQ']:
+        total_length += reference['LN']
+
+    #we have to add the zero coverage regions
+    for group in coverages:
+        coverages[group].extend([0] * (total_length - positions_covered[group]))
 
     return coverages
 
@@ -412,8 +429,9 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
         mquals[group].append(read_mapping_qual)
     return mquals
 
-def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
-                 sample_size=None, summary_fhand=None):
+def bam_distribs(bam_fhand, kind, basename=None, range_=None,
+                 grouping=None, sample_size=None, summary_fhand=None,
+                 labels=None):
     '''It makes the bam coverage distribution.
 
     It can make the distribution taking into account any of the readgroup items:
@@ -421,14 +439,16 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
     '''
     value_calculator = {'coverage':_get_bam_coverage,
                        'mapq':_get_bam_mapping_quality}
-
     coverage_labels = {'title': "Coverage for %s %s",
-                       'xlabel': 'Coverage' ,
-                       'ylabel': 'Num. of positions'
+                       'xlabel': 'Coverage',
+                       'ylabel': 'Num. of positions',
+                       'sum':None,
+                       'items':'total sequence length'
                        }
     mapping_labels = {'title': "Mapping qualities for %s %s",
-                       'xlabel': "mapping quality" ,
-                       'ylabel': 'Num. of reads'
+                       'xlabel': "mapping quality",
+                       'ylabel': 'Num. of reads',
+                       'sum':None, 'items':'number reads mapped'
                        }
     plot_labels = {'coverage': coverage_labels,
                    'mapq':mapping_labels}
@@ -471,7 +491,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
         labels = copy.deepcopy(plot_labels[kind])
         labels['title'] = labels['title'] % (grouping, group_name)
 
-        distrib = create_distribution(values, labels,
+        distrib = create_distribution(values, labels=labels,
                                       distrib_fhand=distrib_fhand,
                                       plot_fhand=plot_fhand,
                                       range_=range_,
