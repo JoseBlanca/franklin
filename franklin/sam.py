@@ -33,7 +33,7 @@ except ImportError:
 from franklin.utils.cmd_utils import call, java_cmd, guess_java_install_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
-from franklin.utils.itertools_ import ungroup, classify, take_sample
+from franklin.utils.itertools_ import take_sample
 from franklin.statistics import create_distribution, CachedArray
 
 def get_read_group_info(bam):
@@ -373,6 +373,9 @@ def _get_bam_coverage(bam, rgs, grouping):
     '''
     coverages = {}
 
+    positions_covered = {}
+    total_length = 0
+    previous_reference = None
     for column in bam.pileup():
         reads_per_colum = {}
         for pileup_read in column.pileups:
@@ -389,11 +392,25 @@ def _get_bam_coverage(bam, rgs, grouping):
             if group not in new_reads_per_colum:
                 new_reads_per_colum[group] = 0
             new_reads_per_colum[group] += value
+            try:
+                positions_covered[group] += 1
+            except KeyError:
+                positions_covered[group] = 1
 
         for group, value in new_reads_per_colum.items():
             if group not in coverages:
                 coverages[group] = CachedArray('I')
             coverages[group].append(value)
+
+        #we add the length of the reference to the total length
+        reference = column.tid
+        if previous_reference != reference or previous_reference is None:
+            total_length += bam.header['SQ'][reference]['LN']
+            previous_reference = reference
+
+    #we have to add the zero coverage regions
+    for group in coverages:
+        coverages[group].extend([0] * (total_length - positions_covered[group]))
 
     return coverages
 
@@ -412,8 +429,8 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
         mquals[group].append(read_mapping_qual)
     return mquals
 
-def bam_distribs(bam_fhand, kind, basename=None, range_=None, grouping=None,
-                 sample_size=None, summary_fhand=None):
+def bam_distribs(bam_fhand, kind, basename=None, range_=None,
+                 grouping=None, sample_size=None, summary_fhand=None):
     '''It makes the bam coverage distribution.
 
     It can make the distribution taking into account any of the readgroup items:

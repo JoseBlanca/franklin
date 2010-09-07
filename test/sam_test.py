@@ -197,6 +197,7 @@ SGN-E221404\t0\tSGN-U576692\t1416\t167\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTG
 SGN-E221405\t0\tSGN-U576692\t1416\t304\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
 SGN-E221406\t0\tSGN-U576692\t1416\t100\t168M\t*\t0\t0\tAGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGGAATCCGTTTCCCCATGTCCAAACCTTCTAAATAGTTTTTTGTGTTAGTTCTTGTATGCCACATACAAAAATTAACAAACTCTTTTGCCACATATGTTCCAGCACGTCAAAGCAACATGTATTTGAGCTACTTT\t558<///035EB@;550300094>>FBF>>88>BBB200>@FFMMMJJ@@755225889>0..14444::FMF@@764444448@;;84444<//,4,.,<<QFBB;::/,,,.69FBB>9:2/.409;@@>88.7,//55;BDK@11,,093777777884241<:7\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g1
 '''
+
 class SamStatsTest(unittest.TestCase):
     'Tests sam stat calculators'
 
@@ -210,7 +211,9 @@ class SamStatsTest(unittest.TestCase):
         sam2bam(sam.name, bam_fhand.name)
 
         distribs = bam_distribs(bam_fhand, 'coverage')
-        assert distribs[('platform', '454')][0] ==  168
+        expected = [2211, 0, 0, 0, 0, 0, 0, 0, 0, 0, 168, 0, 0, 0, 0, 0, 0, 0,
+                    0, 168]
+        assert distribs[('platform', '454')] == expected
 
         distribs = bam_distribs(bam_fhand, 'mapq')
         assert distribs[('platform', '454')][0] == 1
@@ -251,5 +254,5 @@ class SamStatsTest(unittest.TestCase):
         assert 'illumina\t4\n' in out_fhand.getvalue()
 
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamStatsTest.test_general_mapping_stats']
+    #import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
     unittest.main()
