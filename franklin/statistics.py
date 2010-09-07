@@ -17,7 +17,7 @@
 
 from __future__  import division
 
-import itertools, tempfile, sys
+import itertools, tempfile, sys, random
 from array import array
 
 try:
@@ -446,12 +446,19 @@ class CachedArray(object):
         'The init '
         self._typecode = typecode
         self._array = array(typecode)
+        self._sample = array(typecode)  #this sample will always be in memory
+        self._sample_length = 10000
         self._cache_fhand = None
         self._max = None
         self._min = None
         self._len = 0
         self._sum = 0
         self._check_in_cycles = MEMORY_CHECK_CYCLES
+
+    def _get_sample_length(self):
+        'it returns the sample length'
+        return self._sample_length
+    sample_length = property(_get_sample_length)
 
     def extend(self, items):
         'It adds all items to the store'
@@ -486,6 +493,21 @@ class CachedArray(object):
             self._array.append(item)
         else:
             self._cache_fhand.write(str(item) + '\n')
+
+        #the sample
+        sample = self._sample
+        sample_length = self._sample_length
+        if len(sample) < sample_length:
+            sample.append(item)
+        else:
+            random_draw = random.randint(0, self._len - 2)
+            if random_draw < sample_length:
+                sample[random_draw] = item
+
+    def _get_sample(self):
+        'It returns the sample'
+        return self._sample
+    sample = property(_get_sample)
 
     def _generate_file_items(self):
         'It yields all items from the file cache'
@@ -602,6 +624,3 @@ def _find_index(sorted_list, value, index_buffer=0):
                                    index_buffer=length_//2 + index_buffer)
             else:
                 return _find_index(first_half, value, index_buffer=index_buffer)
-
-
-

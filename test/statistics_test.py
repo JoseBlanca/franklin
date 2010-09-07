@@ -131,6 +131,24 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.average == 2
         assert len(storage) == len(item_list)
 
+    @staticmethod
+    def test_sample():
+        'It tests the random sample'
+        storage = CachedArray(typecode='I')
+        storage.extend([0] * 10000)
+        storage.extend([1] * 10000)
+        storage.extend([2] * 10000)
+        count = {}
+        for item in storage.sample:
+            try:
+                count[item] += 1
+            except KeyError:
+                count[item] = 1
+        len_sample = len(storage.sample)
+        assert len_sample == storage.sample_length
+
+        assert count[1] / (len_sample * 1.0) - 1/3.0 < 0.05
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'BoxPlotTest.test_boxplot']
     unittest.main()
