@@ -409,10 +409,11 @@ class DisposableFile(file):
         file.close(self)
         os.remove(self.name)
 
-def get_fhand(file_):
+def get_fhand(file_, writable=False):
     'Given an fhand or and fpath it returns an fhand'
     if isinstance(file_, basestring):
-        file_ = open(file_, 'r')
+        mode = 'w' if  writable else 'r'
+        file_ = open(file_, mode)
     return file_
 
 def _common_base(path1, path2):
