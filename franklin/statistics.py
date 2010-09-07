@@ -561,47 +561,6 @@ class CachedArray(object):
             return (sum_ / float(count))
     variance = property(_get_variance)
 
-class Distributions(object):
-    'It generates distributions using provided number generator function'
-    _distribs = {}
-
-    def __init__(self, num_samples=50000):
-        'It inits the instance'
-        self._num_samples = num_samples
-
-    def _get_distribution(self, distrib, params, num_samples=None):
-        'It creates the distributions for the given number generator function'
-        if num_samples is None:
-            num_samples = self._num_samples
-
-        index = (distrib, params, num_samples)
-
-        if index in self._distribs:
-            return self._distribs[index]
-
-        numbers = [distrib(*params) for ind in range(num_samples)]
-
-        bins = _calculate_bins(numbers)
-
-        distrib = create_distribution(numbers, bins=bins, calculate_freqs=True)
-        print index
-        if index[1] == (1, ):
-            draw_histogram(distrib['distrib'], bin_edges=distrib['bin_edges'],
-                           title=str(index))
-
-        self._distribs[index] = distrib
-        return distrib
-
-    def get_freq(self, distrib, params, value):
-        'It returns the freq of the value in the given distribution'
-        distrib_dat = self._get_distribution(distrib, params)
-        bins    = distrib_dat['bin_edges']
-        distrib = distrib_dat['distrib']
-        bin_index = _find_index(bins, value, index_buffer=0)
-        if bin_index == len(bins):
-            bin_index = bin_index -1
-        return distrib[bin_index - 1]
-
 def _calculate_bins(values):
     'It calculates how many binds to use giving a list of values'
     num_values = len(values)
