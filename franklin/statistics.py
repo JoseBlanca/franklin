@@ -41,7 +41,7 @@ def write_distribution(fhand, distribution, bin_edges):
 
 def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
                         plot_fhand=None, range_=None, summary_fhand=None,
-                        calculate_freqs=False):
+                        calculate_freqs=False, remove_outliers=False):
     ''''Given a list of numbers it returns the distribution and it plots the
     histogram'''
     if bins is None:
@@ -58,22 +58,18 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
             if label not in labels:
                 labels[label] = value
     #we do the distribution
-    result = histogram(numbers, bins=bins, range_=range_,
-                       calculate_freqs=calculate_freqs)
-    if result:
-        distrib, bin_edges = result
-    else:
-        #there is no numbers
-        return
+    hist = histogram(numbers, bins=bins, range_=range_,
+                       calculate_freqs=calculate_freqs,
+                       remove_outliers=remove_outliers)
     #we write the output
     if distrib_fhand is not None:
-        write_distribution(distrib_fhand, distrib, bin_edges)
+        write_distribution(distrib_fhand, hist[0], hist[1])
     #do we have to plot it?
     if plot_fhand is not None:
-        draw_histogram(distrib, bin_edges,
-                      title=labels['title'], xlabel=labels['xlabel'],
-                      ylabel=labels['ylabel'],
-                      fhand=plot_fhand)
+        draw_histogram(hist[0], hist[1],
+                       title=labels['title'], xlabel=labels['xlabel'],
+                       ylabel=labels['ylabel'],
+                       fhand=plot_fhand)
     #now we write some basic stats
     format_num = lambda x: str(x) if isinstance(x, int) else '%.2f' % x
     if summary_fhand:
@@ -94,7 +90,7 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
         summary_fhand.write('%s: %s\n' % (labels['items'], len(numbers)))
 
         summary_fhand.write('\n')
-    return {'distrib':list(distrib), 'bin_edges':list(bin_edges)}
+    return {'distrib':list(hist[0]), 'bin_edges':list(hist[1])}
 
 def _range(numbers):
     'Given an iterator with numbers it returns the min and max'

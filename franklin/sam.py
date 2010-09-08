@@ -490,12 +490,13 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
             grouping = 'sample'
         labels = copy.deepcopy(plot_labels[kind])
         labels['title'] = labels['title'] % (grouping, group_name)
-
+        remove_outliers = True if kind == 'coverage' else False
         distrib = create_distribution(values, labels=labels,
                                       distrib_fhand=distrib_fhand,
                                       plot_fhand=plot_fhand,
                                       range_=range_,
-                                      summary_fhand=summary_fhand)
+                                      summary_fhand=summary_fhand,
+                                      remove_outliers=remove_outliers)
 
         results[(grouping, group_name)] = distrib['distrib']
     return results
