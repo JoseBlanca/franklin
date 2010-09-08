@@ -37,19 +37,28 @@ class SnvSequenomWriter(object):
         self.num_features = 0
         self._length = length
 
+    @staticmethod
+    def snv_in_illumina(snv):
+        "it checks if the snp is only for illumina"
+        return not snv.qualifiers['filters']['is_variable'][('samples', ('rp_75_59_uc82',), True)]
+
     def write(self, sequence, position):
         'It does the real write of the features'
         seq = list(sequence.seq)
         # put N in the snps near of the position
         for snv in sequence.get_features(kind='snv'):
             location = snv.location.start.position
+            if location == position:
+                mysnv = snv
+
             if abs(location - position) < self._length:
+#                if not self.snv_in_illumina(snv):
+#                    continue
                 genotype = _snv_to_n(snv, sequence, position)
                 for index, allele in enumerate(genotype):
                     seq[location + index] = allele
-            # locate our snv
-            if location == position:
-                mysnv = snv
+
+
 
         # Calculate sequence limits
         left_limit  = position - self._length
@@ -67,7 +76,7 @@ class SnvSequenomWriter(object):
         seq_to_print.extend(list(seq[position + 1 + size - 1: rigth_limit]))
         seq_to_print = ''.join(seq_to_print)
 
-        name = sequence.name + '_' + str(position)
+        name = sequence.name + '_' + str(position + 1)
         self.fhand.write('>%s\n%s\n' % (name, seq_to_print))
         self.fhand.flush()
 

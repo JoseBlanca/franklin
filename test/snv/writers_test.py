@@ -115,9 +115,11 @@ class SequenomWriterTest(unittest.TestCase):
     def test_basic(self):
         seq_str = 'ATGCATGCATGCACTG'
 
+        filters = 'hola'
         alleles1 = {('A', SNP):{}, ('T', INVARIANT):{}, ('C', SNP):{}}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
-                        qualifiers={'alleles':alleles1, 'reference_allele':'T'})
+                        qualifiers={'alleles':alleles1, 'reference_allele':'T',
+                        'filters':filters})
 
         alleles2 = {('T', INVARIANT):{}, ('---', DELETION):{}}
         snv2 = SeqFeature(type='snv', location=FeatureLocation(8, 8),
