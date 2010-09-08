@@ -293,8 +293,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
             assert fname + '.dat' in clean_fnames
             assert fname + '.png' in clean_fnames
 
-
-
         statistics_fpath = join(clean_stats_dir,
                                 BACKBONE_BASENAMES['statistics_file'])
         content = open(statistics_fpath).read()

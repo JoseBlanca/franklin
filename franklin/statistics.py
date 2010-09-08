@@ -440,10 +440,15 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if title:
         axes.set_title(title)
 
+    if not xlabels:
+        xlabels = range(1, len(numpy_vects))
+
     if max_plotted_boxes:
         step = len(numpy_vects)//max_plotted_boxes
         numpy_vects = numpy_vects[::step]
+        xlabels = xlabels[::step]
     axes.boxplot(numpy_vects)
+    axes.set_xticklabels([str(lab)for lab in xlabels], rotation='vertical')
 
     if fhand is None:
         plt.show()
