@@ -62,6 +62,15 @@ class HistogramTest(unittest.TestCase):
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
 
+    @staticmethod
+    def test_remove_outliers():
+        'It tests the histogram removing the outliers'
+        numbers = [random.gauss(5, 1) for index in range(100)]
+        numbers.append(5000)
+        bins = 10
+        distrib = histogram(numbers, bins=bins, remove_outliers=True)
+        assert int(distrib[1][-1]) < 20
+
 class BoxPlotTest(unittest.TestCase):
     'It checks the boxplot drawing'
 
@@ -130,6 +139,26 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.min == min(item_list)
         assert storage.average == 2
         assert len(storage) == len(item_list)
+
+    @staticmethod
+    def test_sample():
+        'It tests the random sample'
+        storage = CachedArray(typecode='I')
+        storage.extend([0] * 10000)
+        storage.extend([1] * 10000)
+        storage.extend([2] * 10000)
+        count = {}
+        for item in storage.sample:
+            try:
+                count[item] += 1
+            except KeyError:
+                count[item] = 1
+        len_sample = len(storage.sample)
+        assert len_sample == storage.sample_length
+
+        assert count[1] / (len_sample * 1.0) - 1/3.0 < 0.05
+
+        assert storage.get_sample_percentiles([5, 95]) == [0, 2]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'BoxPlotTest.test_boxplot']
