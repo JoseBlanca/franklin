@@ -139,10 +139,12 @@ def _calculate_range_for_histogram(numbers, range_, remove_outliers):
             outliers_range = _calculate_percentiles(sample, percents)
         #if the limits are close to the real limits we use the real limits
         closeness = outliers_range[1] - outliers_range[0] / 10
-        if outliers_range[0] - closeness > real_range[0]:
-            real_range[0] = outliers_range[0]
-        if outliers_range[1] + closeness < real_range[1]:
-            real_range[1] = outliers_range[1]
+        if not not closeness:   #the range starts and do not finish
+                                #at the same point
+            if outliers_range[0] - closeness > real_range[0]:
+                real_range[0] = outliers_range[0]
+            if outliers_range[1] + closeness < real_range[1]:
+                real_range[1] = outliers_range[1]
 
     if min_ is None:
         min_ = real_range[0]
@@ -161,8 +163,7 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
                                                 remove_outliers)
 
     if not min_ and not max_:
-        #there's no numbers
-        return
+        raise ValueError('No numbers found')
 
     #now we can calculate the bin egdes
     distrib_span = max_ - min_
