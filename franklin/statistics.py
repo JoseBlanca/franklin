@@ -25,6 +25,7 @@ try:
 except ImportError:
     pass
 
+SAMPLE_LENGTH = 10000
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -103,28 +104,65 @@ def _range(numbers):
             min_ = number
         if max_ is None or max_ < number:
             max_ = number
+    return [min_, max_]
+
+def _calculate_range_for_histogram(numbers, range_, remove_outliers):
+    'Given a list of numbers it returns a reasonable range'
+
+    if range_ is not None:
+        min_, max_ = range_
+    else:
+        min_, max_ = None, None
+    if min_ is not None and max_ is not None:
+        return min_, max_
+
+    #min or max is not specified, so we have to calculate them
+    if 'min' in dir(numbers):   #is a Storage
+        real_range = [numbers.min, numbers.max]
+    else:
+        nums, numbers = itertools.tee(numbers)
+        real_range = _range(nums)
+
+    if remove_outliers:
+        percents = [5, 95]
+        if 'min' in dir(numbers):   #is a Storage
+            outliers_range = numbers.get_sample_percentiles(percents)
+        else:
+            #we take a sample
+            if '__len__' not in dir(numbers):
+                #if we have an iterator we have to tee
+                nums, numbers = itertools.tee(numbers)
+                sample = []
+                for index in range(SAMPLE_LENGTH):
+                    try:
+                        sample.append(nums.next())
+                    except StopIteration:
+                        break
+            else:
+                sample = numbers[:SAMPLE_LENGTH]
+            outliers_range = _calculate_percentiles(sample, percents)
+        #if the limits are close to the real limits we use the real limits
+        closeness = outliers_range[1] - outliers_range[0] / 10
+        if outliers_range[0] - closeness > real_range[0]:
+            real_range[0] = outliers_range[0]
+        if outliers_range[1] + closeness < real_range[1]:
+            real_range[1] = outliers_range[1]
+
+    if min_ is None:
+        min_ = real_range[0]
+    if max_ is None:
+        max_ = real_range[1]
+
     return min_, max_
 
-def histogram(numbers, bins, range_= None, calculate_freqs=False):
+def histogram(numbers, bins, range_= None, calculate_freqs=False,
+              remove_outliers=False):
     '''An alternative implementation to the numpy.histogram.
 
     The main difference is that it accepts iterators
     '''
-    #an iterator for the numbers
-    if range_ is None or None in range_ :
-        if 'min' in dir(numbers):
-            calc_range = numbers.min, numbers.max
-        else:
-            nums, numbers = itertools.tee(numbers)
-            calc_range = _range(nums)
-        if range_ is None:          #min and max
-            range_ = calc_range
-        elif range_[0] is None:     #min
-            range_[0] = calc_range[0]
-        elif range_[1] is None:     #max
-            range_[1] = calc_range[1]
-
-    min_, max_ = range_
+    min_, max_ = _calculate_range_for_histogram(numbers, range_,
+                                                remove_outliers)
 
     if not min_ and not max_:
         #there's no numbers
@@ -349,14 +387,8 @@ def _float_to_str(num, precision=2):
         format_ = '%%.%ie' % precision
     return format_ % num
 
-def _calculate_percentiles(numpy_vects, stats_fhand, xlabels=None):
+def _calculate_boxplot_percentiles(numpy_vects, stats_fhand, xlabels=None):
     'It calculates the boxplot stats from the given lists'
-
-    modules = sys.modules
-    if 'matplotlib.mlab' not in modules.keys():
-        import matplotlib.mlab as mlab
-    else:
-        mlab = modules['matplotlib.mlab']
 
     sep = '\t'
 
@@ -372,7 +404,7 @@ def _calculate_percentiles(numpy_vects, stats_fhand, xlabels=None):
         #the percentiles are calculated with. The vector may be empty, so we
         #don't calculate the percentile
         if vect.any():
-            quarts = mlab.prctile(vect, [25, 50, 75])
+            quarts = _calculate_percentiles(vect, [25, 50, 75])
             result.extend([_float_to_str(num) for num in quarts])
 
         stats_fhand.write(sep.join(result))
@@ -384,7 +416,6 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     'Given a list of lists it draws a boxplot'
 
     if not vectors_list:# or not vectors_list[0]:
-        print vectors_list[0]
         raise ValueError('No values to process')
 
     modules = sys.modules.keys()
@@ -400,7 +431,7 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
 
     if stats_fhand:
-        _calculate_percentiles(numpy_vects, stats_fhand, xlabels)
+        _calculate_boxplot_percentiles(numpy_vects, stats_fhand, xlabels)
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -422,7 +453,6 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     else:
         fig.savefig(fhand)
 
-
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
 
@@ -437,6 +467,27 @@ def _check_free_memory(percent=None):
     if percent > free_percent:
         raise RuntimeError('Scarce memory')
 
+def _calculate_percentiles(numbers, percents):
+    'It calculates the percentiles for some numbers'
+    #we need a numpy array
+    if 'any' not in dir(numbers):
+        numbers = numpy.ravel(numbers)
+    if not numbers.any():
+        raise ValueError('No data to calculate percentiles')
+
+    modules = sys.modules
+    if 'matplotlib' not in modules.keys():
+        import matplotlib
+        matplotlib.use('AGG')
+
+    if 'matplotlib.mlab' not in modules.keys():
+        import matplotlib.mlab as mlab
+    else:
+        mlab = modules['matplotlib.mlab']
+
+    percentiles = mlab.prctile(numbers, percents)
+    return list(percentiles)
+
 class CachedArray(object):
     '''It stores numbers for future use.
 
@@ -447,7 +498,7 @@ class CachedArray(object):
         self._typecode = typecode
         self._array = array(typecode)
         self._sample = array(typecode)  #this sample will always be in memory
-        self._sample_length = 10000
+        self._sample_length = SAMPLE_LENGTH
         self._cache_fhand = None
         self._max = None
         self._min = None
@@ -508,6 +559,25 @@ class CachedArray(object):
         'It returns the sample'
         return self._sample
     sample = property(_get_sample)
+
+    def get_sample_percentiles(self, percents):
+        'It returns the percentiles given a percent list'
+        if not self._sample:
+            raise ValueError('No data to calculate percentiles')
+
+        modules = sys.modules
+        if 'matplotlib' not in modules.keys():
+            import matplotlib
+            matplotlib.use('AGG')
+
+        if 'matplotlib.mlab' not in modules.keys():
+            import matplotlib.mlab as mlab
+        else:
+            mlab = modules['matplotlib.mlab']
+
+        vect = numpy.ravel(self.sample)
+        percentiles = mlab.prctile(vect, percents)
+        return list(percentiles)
 
     def _generate_file_items(self):
         'It yields all items from the file cache'
