@@ -22,9 +22,10 @@ Created on 05/03/2010
 import unittest
 from franklin.seq.seqs import  SeqFeature, SeqWithQuality, Seq
 from Bio.SeqFeature import FeatureLocation, ExactPosition
-from franklin.snv.snv_annotation import SNP, INVARIANT
+from franklin.snv.snv_annotation import SNP, INVARIANT, INSERTION, DELETION
 from tempfile import NamedTemporaryFile
-from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
+from franklin.snv.writers import (VariantCallFormatWriter, SnvIlluminaWriter,
+                                  SnvSequenomWriter)
 
 class VariantCallFormatWriterTest(unittest.TestCase):
     'VariantCallFormatWrite tests'
@@ -107,6 +108,59 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         writer.write(seq)
         illumina_snv = open(fhand.name).read()
         assert 'ATATATAT[A/C/T]TATATATATA' in illumina_snv
+
+class SequenomWriterTest(unittest.TestCase):
+    'VariantCallFormatWrite tests'
+
+    def test_basic(self):
+        seq_str = 'ATGCATGCATGCACTG'
+
+        alleles1 = {('A', SNP):{}, ('T', INVARIANT):{}, ('C', SNP):{}}
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
+                        qualifiers={'alleles':alleles1, 'reference_allele':'T'})
+
+        alleles2 = {('T', INVARIANT):{}, ('---', DELETION):{}}
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(8, 8),
+                        qualifiers={'alleles':alleles2, 'reference_allele':'T'})
+
+        alleles3 = {('AT', INSERTION):{}, ('T', INVARIANT):{}}
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(12, 12),
+                        qualifiers={'alleles':alleles3, 'reference_allele':'T'})
+
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
+                             name='AT1G55265.1', features=[snv1, snv2, snv3])
+
+        # try with SNP
+        fhand = NamedTemporaryFile(mode='a')
+        writer = SnvSequenomWriter(fhand)
+        position = 4
+        writer.write(seq, position)
+        sequenom_snv = open(fhand.name).read()
+#        print sequenom_snv
+        assert 'ATGC[T/A/C]TGCNNNCANNCTG' in sequenom_snv
+
+        # try with Deletion
+        fhand = NamedTemporaryFile(mode='a')
+        writer = SnvSequenomWriter(fhand)
+        position = 8
+        writer.write(seq, position)
+        sequenom_snv = open(fhand.name).read()
+#        print sequenom_snv
+        assert 'ATGCNTGC[ATG/-]CANNCTG' in sequenom_snv
+
+
+        # try with Insertion
+        fhand = NamedTemporaryFile(mode='a')
+        writer = SnvSequenomWriter(fhand)
+        position = 12
+        writer.write(seq, position)
+        sequenom_snv = open(fhand.name).read()
+#        print sequenom_snv
+        assert 'ATGCNTGCNNNC[-/AT]CTG' in sequenom_snv
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -21,11 +21,104 @@ Created on 19/02/2010
 from tempfile import NamedTemporaryFile
 import datetime, math
 
-from franklin.snv.snv_annotation import INVARIANT, INSERTION, DELETION, SNP
+from franklin.snv.snv_annotation import (INVARIANT, INSERTION, DELETION, SNP,
+                                         COMPLEX, INDEL)
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import get_filter_description
-from franklin.snv.snv_annotation import _allele_count, _get_group
+from franklin.snv.snv_annotation import (_allele_count, _get_group,
+                                         calculate_snv_kind)
 from franklin.utils.misc_utils import OrderedDict
+
+class SnvSequenomWriter(object):
+    'It writes the snv in the sequenom format'
+    def __init__(self, fhand, length=150):
+        'It initiates the class'
+        self.fhand = fhand
+        self.num_features = 0
+        self._length = length
+
+    def write(self, sequence, position):
+        'It does the real write of the features'
+        seq = list(sequence.seq)
+        # put N in the snps near of the position
+        for snv in sequence.get_features(kind='snv'):
+            location = snv.location.start.position
+            if abs(location - position) < self._length:
+                genotype = _snv_to_n(snv, sequence, position)
+                for index, allele in enumerate(genotype):
+                    seq[location + index] = allele
+            # locate our snv
+            if location == position:
+                mysnv = snv
+
+        # Calculate sequence limits
+        left_limit  = position - self._length
+        rigth_limit = position + self._length + 1
+        if left_limit < 0:
+            left_limit = 0
+        if rigth_limit > len(sequence):
+            rigth_limit = len(sequence)
+
+        # sequence as a list, adding
+        seq_to_print = list(seq[left_limit: position])
+        allele, size = _snv_to_string(mysnv, sequence, position)
+        seq_to_print.append(allele)
+
+        seq_to_print.extend(list(seq[position + 1 + size - 1: rigth_limit]))
+        seq_to_print = ''.join(seq_to_print)
+
+        name = sequence.name + '_' + str(position)
+        self.fhand.write('>%s\n%s\n' % (name, seq_to_print))
+        self.fhand.flush()
+
+def _snv_to_n(snv, sequence, position):
+    'It returns the n for each snp'
+    genotype = []
+    for allele, kind in snv.qualifiers['alleles'].keys():
+        if kind == SNP and not genotype:
+            genotype = ['N']
+        elif kind == DELETION:
+            len_del = len(allele)
+            genotype.extend(['N'] * (len_del - len(genotype)))
+        elif kind == INSERTION:
+            geno = sequence[position] + len(allele) * 'N'
+            if genotype:
+                genotype[0] = geno
+            else:
+                genotype.append(geno)
+    return genotype
+
+def _snv_to_string(snv, sequence, position):
+    '''it writes the snv in a format with braquets and with all alleles:
+    [A/T], [-/ATG]...'''
+    snv_kind = calculate_snv_kind(snv)
+
+    reference_allele = snv.qualifiers['reference_allele']
+    alleles = [allele[0] for allele in snv.qualifiers['alleles'].keys()  if allele[1] != INVARIANT]
+    alleles = set(alleles)
+    assert reference_allele.upper() in ['A', 'T', 'C', 'G']
+
+    if snv_kind == SNP:
+        to_print = "%s/%s" % (reference_allele, "/".join(alleles))
+        size     = 1
+    elif snv_kind == COMPLEX:
+        raise RuntimeError('Complex type not implemented')
+    elif snv_kind == INDEL:
+        if len(alleles) > 1:
+            raise RuntimeError('INDEL type not implemented')
+    elif snv_kind == INSERTION:
+        allele = list(alleles)[0]
+        size = 1
+        to_print = '-/' + allele
+    elif snv_kind == DELETION:
+        allele = list(alleles)[0]
+        size   = len(allele)
+
+        deleted_alleles = sequence[position:position+size]
+        to_print = '%s/-' % ''.join(deleted_alleles)
+
+    to_print = '[%s]' % to_print
+    return to_print, size
 
 class SnvIlluminaWriter(object):
     'It writes the snv in the illumina genotyper format'
