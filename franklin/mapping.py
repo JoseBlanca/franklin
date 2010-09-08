@@ -24,7 +24,7 @@ from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.sam import sam2bam, sort_bam_sam
 import os
 
-def create_bwa_reference(reference_fpath):
+def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
     #how many sequences do we have?
     n_seqs = 0
@@ -35,7 +35,11 @@ def create_bwa_reference(reference_fpath):
         algorithm = 'bwtsw'
     else:
         algorithm = 'is'
+
     cmd = ['bwa', 'index', '-a', algorithm, reference_fpath]
+    if color:
+        cmd.append('-c')
+
     call(cmd, raise_on_error=True)
 
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,

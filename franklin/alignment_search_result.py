@@ -181,7 +181,7 @@ class BlastParser(object):
                     match_start = query_start
                 if match_end is None or query_end > match_end:
                     match_end = query_end
-                if match_subject_start is None or subject_start < subject_start:
+                if match_subject_start is None or subject_start < match_subject_start:
                     match_subject_start = subject_start
                 if match_subject_end is None or subject_end > match_subject_end:
                     match_subject_end = subject_end
