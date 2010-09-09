@@ -95,7 +95,6 @@ class BoxPlotTest(unittest.TestCase):
                      stats_fhand=stats_fhand)
         assert 'PNG' in  open(plot_fhand.name).read(10)
 
-
         result = stats_fhand.getvalue()
         assert '09' in result
         assert 'median' in result
