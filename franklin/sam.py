@@ -378,6 +378,8 @@ def _get_bam_coverage(bam, rgs, grouping):
         reads_per_colum = {}
         for pileup_read in column.pileups:
             aligned_read = pileup_read.alignment
+            if not guess_mapped(aligned_read.flag):
+                continue
             read_group = aligned_read.opt('RG')
             if read_group not in reads_per_colum:
                 reads_per_colum[read_group] = 0
