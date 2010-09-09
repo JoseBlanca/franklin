@@ -447,7 +447,7 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
         step = len(numpy_vects)//max_plotted_boxes
         numpy_vects = numpy_vects[::step]
         xlabels = xlabels[::step]
-    axes.boxplot(numpy_vects)
+    axes.boxplot(numpy_vects, notch=1, sym='')
     axes.set_xticklabels([str(lab)for lab in xlabels], rotation='vertical')
 
     if fhand is None:
