@@ -136,8 +136,9 @@ SNV types:
 Sequences with description: 4
 Sequences with ORF: 4
 Number of ORFs: 4
-Sequences with intron: 1
-Number of introns: 1'''
+Sequences with intron: 2
+Number of introns: 3'''
+
         assert expected in result
 
     if not analysis_dir:
