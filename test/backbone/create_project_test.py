@@ -291,7 +291,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
                            'pl_454.lb_a.length.diff']
         for fname in expected_fnames:
             assert fname + '.dat' in clean_fnames
-            assert fname + '.png' in clean_fnames
+            assert fname + '.svg' in clean_fnames
 
         statistics_fpath = join(clean_stats_dir,
                                 BACKBONE_BASENAMES['statistics_file'])
