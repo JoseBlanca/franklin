@@ -22,7 +22,7 @@ from StringIO import StringIO
 import os, random, tempfile
 
 from franklin.statistics import (CachedArray, histogram, create_distribution,
-                                 draw_boxplot)
+                                 draw_boxplot, draw_histogram)
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -73,6 +73,15 @@ class HistogramTest(unittest.TestCase):
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
             assert isinstance(num2, float)
+
+        #now we draw the histogram
+        #draw_histogram(our_distrib[0], our_distrib[1])
+        png_file = tempfile.NamedTemporaryFile(suffix='.png')
+        #draw_histogram(our_distrib[0], our_distrib[1], fhand=png_file)
+        #assert 'PNG' in open(png_file.name).read(4)
+        svg_file = tempfile.NamedTemporaryFile(suffix='.svg')
+        draw_histogram(our_distrib[0], our_distrib[1], fhand=svg_file)
+        assert 'xml' in open(svg_file.name).read(5).lower()
 
     @staticmethod
     def test_remove_outliers():
@@ -172,5 +181,5 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.get_sample_percentiles([5, 95]) == [0, 2]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'BoxPlotTest.test_boxplot']
+    #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
     unittest.main()
