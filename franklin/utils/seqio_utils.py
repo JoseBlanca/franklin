@@ -38,6 +38,8 @@ def parse_fasta(seq_fhand, qual_fhand=None):
         return SeqWithQuality(seq=seq, qual=qual, name=name,
                           description=description)
 
+
+
 def get_content_from_fasta(fhand, kind='seq'):
     '''It returns the seq/qual from a fasta file, it need a fhand'''
     seq         = []

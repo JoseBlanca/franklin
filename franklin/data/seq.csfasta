@@ -1,0 +1,9 @@
+# Thu Jul 15 13:25:41 2010 /share/apps/corona/bin/filter_fasta.pl --output=/data/results/solid0065/solid0065_20100630_FRAG_FC1_BC_Melonomics/bc_Melonomics/results.F1B1/primary.20100715091354338 --name=solid0065_20100630_FRAG_FC1_BC_Melonomics_bc_Melonomics --tag=F3 --minlength=50 --prefix=T --librarytype=fragment --stringency=20 /data/results/solid0065/solid0065_20100630_FRAG_FC1_BC_Melonomics/bc_Melonomics/jobs/postPrimerSetPrimary.2198/rawseq
+# Cwd: /home/pipeline
+# Title: solid0065_20100630_FRAG_FC1_BC_Melonomics_bc_Melonomics
+>2_21_490_F3
+T3.23121101332.0133.2221.23.2.2103.330320302..32320
+>2_22_386_F3
+T3.00222003211.1011.2122.30.0.3210.013012201..20222
+>2_22_431_F3
+T0.03020122002.2022.2122.21.2.2122.222102322..12221
