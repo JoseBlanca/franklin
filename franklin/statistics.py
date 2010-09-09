@@ -26,6 +26,8 @@ try:
 except ImportError:
     pass
 
+from franklin.utils.misc_utils import floats_are_equal
+
 SAMPLE_LENGTH = 10000
 
 def write_distribution(fhand, distribution, bin_edges):
@@ -211,13 +213,13 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
     for number in numbers:
         if number > max_ or number < min_:
             continue
-        if number == max_:
+        if (isinstance(max_, int) and number == max_ or
+            floats_are_equal(number, max_)):
             #the last value go into the last bin
             bin_ = bins - 1
         else:
             bin_ = int(float(number - min_) / bin_span)
         if bin_ >= 0:
-            print number, distrib, bin_, min_, max_
             distrib[bin_] += 1
         len_numbers += 1
 
