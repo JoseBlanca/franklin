@@ -39,7 +39,7 @@ def parse_fasta(seq_fhand, qual_fhand=None):
                           description=description)
 
 
-def fasta_content_iterator(fhand, kind='seq'):
+def fasta_contents_in_file(fhand, kind='seq'):
     'it iterates over a fasta fhand and yields the conten of each fasta item'
     seq         = []
     name        = None
