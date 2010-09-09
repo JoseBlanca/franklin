@@ -10,6 +10,7 @@ Created on 2009 uzt 28
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 
+
 # franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
@@ -20,17 +21,10 @@ Created on 2009 uzt 28
 
 
 import unittest
-import StringIO, tempfile
+import StringIO, tempfile, os
 
-from franklin.seq.seqs import SeqWithQuality, Seq
-from franklin.seq.readers import seqs_in_file
-from franklin.seq.writers import  write_seqs_in_file
-from franklin.utils.seqio_utils import cat, seqio
-
-from Bio.SeqFeature import FeatureLocation
-from franklin.seq.seqs import SeqFeature
-
-
+from franklin.utils.seqio_utils import cat, seqio, fasta_content_iterator
+from franklin.utils.misc_utils import DATA_DIR
 
 class TestSeqio(unittest.TestCase):
     'It test the converter'
@@ -77,6 +71,14 @@ class TestSeqio(unittest.TestCase):
         result = '@seq1\nCCCT\n+\nZZRZ\n@SRR001666.1\nGTTGC\n+\nZZZZZ\n'
         assert out_seq_fhand.getvalue() == result
 
+    @staticmethod
+    def test_fasta_content_iterator():
+        'it test fasta_content_iterator'
+        fhand = open(os.path.join(DATA_DIR, 'seq.fasta'))
+        fastas = list(fasta_content_iterator(fhand))
+        assert fastas[0][0] == 'seq1'
+        assert fastas[1][1] == 'polya'
+        assert 'TAGTCTATGATGCATCAGATGCATGA' in fastas[2][2]
 
 class TestCat(unittest.TestCase):
     'It tests the sequence converter'

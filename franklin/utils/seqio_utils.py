@@ -38,6 +38,50 @@ def parse_fasta(seq_fhand, qual_fhand=None):
         return SeqWithQuality(seq=seq, qual=qual, name=name,
                           description=description)
 
+
+def fasta_content_iterator(fhand, kind='seq'):
+    'it iterates over a fasta fhand and yields the conten of each fasta item'
+    seq         = []
+    name        = None
+    description = None
+    for line in fhand:
+        line = line.strip()
+        if not line or line[0] == '#':
+            continue
+        if line.startswith('>'):
+            if seq:
+                if kind == 'seq':
+                    seq = ''.join(seq)
+                else:
+                    qual = []
+                    for item in seq:
+                        qual.extend(item.split())
+                    qual = [int(qitem) for qitem in qual]
+                    seq = qual
+                yield name, description, seq
+                seq         = []
+                name        = None
+                description = None
+
+            items = line.split(' ', 1)
+            name  = items[0][1:]
+            try:
+                description = items[1]
+            except IndexError:
+                description = None
+        else:
+            seq.append(line)
+    else:
+        if kind == 'seq':
+            seq = ''.join(seq)
+        else:
+            qual = []
+            for item in seq:
+                qual.extend(item.split())
+            qual = [int(qitem) for qitem in qual]
+            seq = qual
+        yield name, description, seq
+
 def get_content_from_fasta(fhand, kind='seq'):
     '''It returns the seq/qual from a fasta file, it need a fhand'''
     seq         = []
