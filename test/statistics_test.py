@@ -54,13 +54,25 @@ class HistogramTest(unittest.TestCase):
         'It test our histogram implementation'
         numbers = [0, 1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9, 10]
         bins    = 5
-        numpy_distrib = ([2, 2, 4, 2, 3], [  0.,   2.,   4.,   6.,   8.,  10.])
+        numpy_distrib = ([2, 2, 4, 2, 3], [0, 2, 4, 6, 8, 10])
+        our_distrib = histogram(numbers, bins=bins)
+        for num1, num2 in zip(numpy_distrib[0], our_distrib[0]):
+            assert num1 == num2
+        for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
+            assert num1 == num2
+            assert isinstance(num2, int)
+
+        #with floats
+        numbers = [0.0, 1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9, 10]
+        bins    = 5
+        numpy_distrib = ([2, 2, 4, 2, 3], [0.0, 2.0, 4.0, 6.0, 8.0, 10.0])
         our_distrib = histogram(numbers, bins=bins)
 
         for num1, num2 in zip(numpy_distrib[0], our_distrib[0]):
             assert num1 == num2
         for num1, num2 in zip(numpy_distrib[1], our_distrib[1]):
             assert num1 == num2
+            assert isinstance(num2, float)
 
     @staticmethod
     def test_remove_outliers():

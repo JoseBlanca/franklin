@@ -537,6 +537,8 @@ def bam_general_stats(bam_fhand, out_fhand):
     rg_stats = {}
     for aligned_read in pysam.IteratorRowAll(bam):
         read_group = aligned_read.opt('RG')
+        if not guess_mapped(aligned_read.flag):
+            continue
         if read_group not in rg_stats:
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1

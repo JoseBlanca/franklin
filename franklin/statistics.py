@@ -17,7 +17,7 @@
 
 from __future__  import division
 
-import itertools, tempfile, sys, random
+import itertools, tempfile, sys, random, math
 from array import array
 
 try:
@@ -105,19 +105,33 @@ def _range(numbers):
 def _calculate_range_for_histogram(numbers, range_, remove_outliers):
     'Given a list of numbers it returns a reasonable range'
 
-    if range_ is not None:
-        min_, max_ = range_
-    else:
-        min_, max_ = None, None
-    if min_ is not None and max_ is not None:
-        return min_, max_
-
-    #min or max is not specified, so we have to calculate them
+    #we need a number to guess the type
     if 'min' in dir(numbers):   #is a Storage
-        real_range = [numbers.min, numbers.max]
+        number = numbers.min
     else:
         nums, numbers = itertools.tee(numbers)
-        real_range = _range(nums)
+        try:
+            number = nums.next()
+        except StopIteration:
+            raise ValueError('No numbers found')
+    type_ = type(number)
+
+    if range_ is None:
+        range_ = [None, None]
+    else:
+        range_ = list(range_)
+    if range_[0] is None or range_[1] is None:
+        #min or max is not specified, so we have to calculate them
+        if 'min' in dir(numbers):   #is a Storage
+            real_range = [numbers.min, numbers.max]
+        else:
+            nums, numbers = itertools.tee(numbers)
+            real_range = _range(nums)
+
+        if range_[0] is None:
+            range_[0] = real_range[0]
+        if range_[1] is None:
+            range_[1] = real_range[1]
 
     if remove_outliers:
         percents = [5, 95]
@@ -141,17 +155,34 @@ def _calculate_range_for_histogram(numbers, range_, remove_outliers):
         closeness = outliers_range[1] - outliers_range[0] / 10
         if not not closeness:   #the range starts and do not finish
                                 #at the same point
-            if outliers_range[0] - closeness > real_range[0]:
-                real_range[0] = outliers_range[0]
-            if outliers_range[1] + closeness < real_range[1]:
-                real_range[1] = outliers_range[1]
+            if outliers_range[0] - closeness > range_[0]:
+                range_[0] = outliers_range[0]
+            if outliers_range[1] + closeness < range_[1]:
+                range_[1] = outliers_range[1]
 
-    if min_ is None:
-        min_ = real_range[0]
-    if max_ is None:
-        max_ = real_range[1]
+    if type_ == int:
+        range_[0] = int(math.floor(range_[0]))
+        range_[1] = int(math.ceil(range_[1]))
 
-    return min_, max_
+    if range_[0] == range_[1]:
+        range_[1] = range_[0] + 1
+
+    return range_[0], range_[1], type_
+
+def _calculate_bin_edges(min_, max_, n_bins, type_):
+    'It calculates the bin edges'
+    if type_ == int and (max_ - min_) < n_bins:
+        n_bins = max_ - min_
+
+    #now we can calculate the bin edges
+    distrib_span = max_ - min_
+    bin_span     = distrib_span / float(n_bins)
+    if type_ == int:
+        if distrib_span % n_bins:
+            distrib_span = distrib_span + n_bins - (distrib_span % n_bins)
+        bin_span = distrib_span // n_bins
+    bin_edges = [min_ + bin_ * bin_span for bin_ in range(n_bins + 1)]
+    return bin_edges, min_, min_ + distrib_span
 
 def histogram(numbers, bins, range_= None, calculate_freqs=False,
               remove_outliers=False):
@@ -159,16 +190,18 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
 
     The main difference is that it accepts iterators
     '''
-    min_, max_ = _calculate_range_for_histogram(numbers, range_,
-                                                remove_outliers)
+    min_, max_, type_ = _calculate_range_for_histogram(numbers, range_,
+                                                       remove_outliers)
 
     if not min_ and not max_:
         raise ValueError('No numbers found')
 
-    #now we can calculate the bin egdes
-    distrib_span = max_ - min_
-    bin_span     = distrib_span / float(bins)
-    bin_edges = [min_ + bin_ * bin_span for bin_ in range(bins + 1)]
+    #now we can calculate the bin edges
+    bin_edges, min_, max_ = _calculate_bin_edges(min_, max_, bins, type_)
+    bins = len(bin_edges) - 1
+    bin_span = (max_ - min_) / bins
+    if type_ == int:
+        bin_span = int(bin_span)
 
     #now we calculate the distribution
     distrib = [0] * bins
