@@ -4,7 +4,7 @@ Created on 11/05/2010
 @author: peio
 '''
 from franklin.utils.misc_utils import DATA_DIR
-import unittest, StringIO, tempfile
+import unittest, StringIO, tempfile, os
 
 from Bio.Alphabet import SingleLetterAlphabet, DNAAlphabet
 from Bio.SeqFeature import ExactPosition, FeatureLocation
@@ -12,7 +12,7 @@ from Bio.SeqFeature import ExactPosition, FeatureLocation
 from franklin.seq.writers import write_seqs_in_file
 from franklin.seq.readers import (seqs_in_file, guess_seq_file_format,
                                   guess_seq_type, num_seqs_in_file,
-                                  _cast_to_class)
+                                  _cast_to_class, fasta_contents_in_file)
 from franklin.seq.seqs import Seq, SeqWithQuality, SeqFeature
 from os.path import join
 
@@ -280,6 +280,22 @@ class SeqsInFileTests(unittest.TestCase):
         assert seqs[1].seq == seq1.seq
         assert str(seqs[1].seq.alphabet) == str(seq1.seq.alphabet)
 
+    @staticmethod
+    def test_csfasta_reader():
+        'It test a csfasta reader'
+        seq_fhand = open(os.path.join(DATA_DIR, 'seq.csfasta'))
+        qual_fhand = open(os.path.join(DATA_DIR, 'solid_qual.qual'))
+
+        seqs = list(seqs_in_file(seq_fhand, qual_fhand, format='csfasta'))
+        print seqs
+    @staticmethod
+    def test_fasta_content_iterator():
+        'it test fasta_content_iterator'
+        fhand = open(os.path.join(DATA_DIR, 'seq.fasta'))
+        fastas = list(fasta_contents_in_file(fhand))
+        assert fastas[0][0] == 'seq1'
+        assert fastas[1][1] == 'polya'
+        assert 'TAGTCTATGATGCATCAGATGCATGA' in fastas[2][2]
 class TestNumSeqsInFile(unittest.TestCase):
     'tests num_seqs_in_file'
 

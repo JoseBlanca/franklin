@@ -23,7 +23,7 @@ Created on 2009 uzt 28
 import unittest
 import StringIO, tempfile, os
 
-from franklin.utils.seqio_utils import cat, seqio, fasta_contents_in_file
+from franklin.utils.seqio_utils import cat, seqio
 from franklin.utils.misc_utils import DATA_DIR
 
 class TestSeqio(unittest.TestCase):
@@ -71,14 +71,7 @@ class TestSeqio(unittest.TestCase):
         result = '@seq1\nCCCT\n+\nZZRZ\n@SRR001666.1\nGTTGC\n+\nZZZZZ\n'
         assert out_seq_fhand.getvalue() == result
 
-    @staticmethod
-    def test_fasta_content_iterator():
-        'it test fasta_content_iterator'
-        fhand = open(os.path.join(DATA_DIR, 'seq.fasta'))
-        fastas = list(fasta_contents_in_file(fhand))
-        assert fastas[0][0] == 'seq1'
-        assert fastas[1][1] == 'polya'
-        assert 'TAGTCTATGATGCATCAGATGCATGA' in fastas[2][2]
+   
 
 class TestCat(unittest.TestCase):
     'It tests the sequence converter'

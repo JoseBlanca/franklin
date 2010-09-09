@@ -14,9 +14,6 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-
-
-
 # franklin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
@@ -27,7 +24,7 @@ Reader capaple of taking a bam file and adding the SNPs to the SeqRecords.
 
 import math, re, json
 import cPickle as pickle
-
+from itertools import izip
 from Bio import SeqIO
 from Bio.Alphabet import (Alphabet, SingleLetterAlphabet, ProteinAlphabet,
                           DNAAlphabet)
@@ -38,7 +35,6 @@ from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature,
                                create_seq_from_struct, fix_seq_struct_for_json)
 from franklin.utils.itertools_ import take_sample
 from franklin.utils.misc_utils import get_fhand
-
 #the translation between our formats and the biopython formats
 BIOPYTHON_FORMATS = {'fasta': 'fasta',
                      'fastq': 'fastq',
@@ -141,16 +137,82 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
 
     if file_format == 'repr':
         return _seqs_in_file_with_repr(seq_fhand=seq_fhand)
-    if file_format == 'json':
+    elif file_format == 'json':
         return _seqs_in_file_serialized(seq_fhand=seq_fhand,
                                         serializer='json')
-    if file_format == 'pickle':
+    elif file_format == 'pickle':
         return _seqs_in_file_serialized(seq_fhand=seq_fhand,
                                          serializer='pickle')
+    elif file_format == 'csfasta':
+        return _seqs_in_file_csfasta(seq_fhand=seq_fhand,
+                                     qual_fhand=qual_fhand)
     else:
         return _seqs_in_file_with_bio(seq_fhand=seq_fhand,
                                       file_format=file_format,
                                       qual_fhand=qual_fhand)
+
+def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
+    'It reads a csfile and a qual file and it returns a seqrecord'
+    seqs = fasta_contents_in_file(seq_fhand)
+    quals = fasta_contents_in_file(qual_fhand, kind='qual')
+    for seq, qual in izip(seqs, quals):
+        name, desc, sequence = seq
+        qual_name, qual_desc, qual_seq = qual
+        if name != qual_name:
+            raise ValueError('seq and qual file nor ordered in the same order')
+
+        # fix quality. turn -1 values to 0 to adapt to phred values
+        mincero = lambda x: 0 if x < 0 else x
+        new_qual = [ mincero(num) for num in qual_seq]
+
+        sequence = Seq(sequence[1:])
+        desc     = '' if desc is None else desc
+        seqrec = SeqWithQuality(seq=sequence, qual=new_qual, name=name,
+                                description=desc)
+        yield seqrec
+
+def fasta_contents_in_file(fhand, kind='seq'):
+    'it iterates over a fasta fhand and yields the conten of each fasta item'
+    seq         = []
+    name        = None
+    description = None
+    for line in fhand:
+        line = line.strip()
+        if not line or line[0] == '#':
+            continue
+        if line.startswith('>'):
+            if seq:
+                if kind == 'seq':
+                    seq = ''.join(seq)
+                else:
+                    qual = []
+                    for item in seq:
+                        qual.extend(item.split())
+                    qual = [int(qitem) for qitem in qual]
+                    seq = qual
+                yield name, description, seq
+                seq         = []
+                name        = None
+                description = None
+
+            items = line.split(' ', 1)
+            name  = items[0][1:]
+            try:
+                description = items[1]
+            except IndexError:
+                description = None
+        else:
+            seq.append(line)
+    else:
+        if kind == 'seq':
+            seq = ''.join(seq)
+        else:
+            qual = []
+            for item in seq:
+                qual.extend(item.split())
+            qual = [int(qitem) for qitem in qual]
+            seq = qual
+        yield name, description, seq
 
 def _seq_from_string(string, serializer):
     'Given a json string it returns a SeqRecord'
