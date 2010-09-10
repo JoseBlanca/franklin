@@ -450,7 +450,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
     mapping_labels = {'title': "Mapping qualities for %s %s",
                        'xlabel': "mapping quality",
                        'ylabel': 'Num. of reads',
-                       'sum':None, 'items':'number reads mapped'
+                       'sum':None, 'items':'number reads in the sam file'
                        }
     plot_labels = {'coverage': coverage_labels,
                    'mapq':mapping_labels}
