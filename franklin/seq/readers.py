@@ -152,7 +152,14 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
                                       qual_fhand=qual_fhand)
 
 def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
-    'It reads a csfile and a qual file and it returns a seqrecord'
+    '''It reads a csfile and a qual file and it returns a seqrecord, it codifies
+     the sequence in color space but using ATGC instead of 1234.
+     correspondences:   . - N
+                        0 - A
+                        1 - C
+                        2 - G
+                        3 - T
+         '''
     seqs = fasta_contents_in_file(seq_fhand)
     quals = fasta_contents_in_file(qual_fhand, kind='qual')
     for seq, qual in izip(seqs, quals):
@@ -164,12 +171,26 @@ def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
         # fix quality. turn -1 values to 0 to adapt to phred values
         mincero = lambda x: 0 if x < 0 else x
         new_qual = [ mincero(num) for num in qual_seq]
+        # remove from sequence the first nucleotide and the first color.
+        # They are not useful.
+        new_qual = new_qual[1:]
+        sequence = sequence[2:]
 
-        sequence = Seq(sequence[1:])
+        sequence = _codified_in_atgc(sequence)
+
+        sequence = Seq(sequence)
         desc     = '' if desc is None else desc
         seqrec = SeqWithQuality(seq=sequence, qual=new_qual, name=name,
                                 description=desc)
         yield seqrec
+
+def _codified_in_atgc(string):
+    'It codifies the sequence in atgc instead of 0123. Keeps color space'
+    code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
+    new_string = []
+    for letter in string:
+        new_string.append(code[letter])
+    return ''.join(new_string)
 
 def fasta_contents_in_file(fhand, kind='seq'):
     'it iterates over a fasta fhand and yields the conten of each fasta item'
