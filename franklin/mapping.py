@@ -43,13 +43,14 @@ def create_bwa_reference(reference_fpath, color=False):
     call(cmd, raise_on_error=True)
 
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
-                       parameters, threads=False, java_conf=None):
+                       parameters, threads=False, java_conf=None,
+                       colorspace=False):
     'It maps the reads to the reference using bwa and returns a bam file'
     threads = get_num_threads(threads)
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
     if not os.path.exists(bwt_fpath):
-        create_bwa_reference(reference_fpath)
+        create_bwa_reference(reference_fpath, color=colorspace)
     reads_length = parameters['reads_length']
 
     temp_dir = NamedTemporaryDir()
@@ -59,6 +60,8 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     if reads_length == 'short':
         cmd = ['bwa', 'aln', reference_fpath, reads_fpath,
                '-t', str(threads)]
+        if colorspace:
+            cmd.append('-c')
         sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
