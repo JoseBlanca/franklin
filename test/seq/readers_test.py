@@ -287,7 +287,9 @@ class SeqsInFileTests(unittest.TestCase):
         qual_fhand = open(os.path.join(DATA_DIR, 'solid_qual.qual'))
 
         seqs = list(seqs_in_file(seq_fhand, qual_fhand, format='csfasta'))
-        print seqs
+
+        assert len(seqs) == 3
+
     @staticmethod
     def test_fasta_content_iterator():
         'it test fasta_content_iterator'
