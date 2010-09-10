@@ -215,6 +215,7 @@ class SamStatsTest(unittest.TestCase):
         distribs = bam_distribs(bam_fhand, 'coverage',
                                 summary_fhand=summary_fhand)
         expected = [2211, 336]
+        print distribs
         assert distribs[('platform', '454')] == expected
         assert 'average: 0.20' in  summary_fhand.getvalue()
 
