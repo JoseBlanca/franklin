@@ -18,6 +18,7 @@
 from __future__  import division
 
 import itertools, tempfile, sys, random, math
+from os.path import splitext
 from array import array
 
 try:
@@ -210,7 +211,7 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
     for number in numbers:
         if number > max_ or number < min_:
             continue
-        if number == max_:
+        if number >= max_:
             #the last value go into the last bin
             bin_ = bins - 1
         else:
@@ -225,18 +226,56 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
 
     return (distrib, bin_edges)
 
+def _import_matplotlib(output):
+    'It imports the matplotlib library'
+    #in some circunstances matplot lib could generate this error
+    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
+    #writable directory for matplotlib configuration data
+    #in that case we don't know how to use matplotlib, it would require
+    #to set the MPLCONFIGDIR variable, but we can't do that in the
+    #current shell, so the matplotlib greatness wouldn't be available
+    #in those occasions
+    warn = True
+    modules = sys.modules
+    if 'matplotlib' not in modules:
+        import matplotlib
+    else:
+        matplotlib = modules['matplotlib']
+    if 'matplotlib.pyplot' not in modules:
+        from matplotlib import pyplot
+    else:
+        pyplot = modules['matplotlib.pyplot']
+
+    backend = 'agg'
+    #if output in ['png' or 'show']:
+    #    backend = 'agg'
+    #elif output == 'svg':
+    #    backend = 'svg'
+    #else:
+    #    backend = 'agg'
+    pyplot.switch_backend(backend)
+
+def _import_mlab():
+    if 'matplotlib.mlab' not in sys.modules.keys():
+        import matplotlib.mlab
+
+def _guess_output_for_matplotlib(fhand):
+    'Given an fhand it guesses if we need png or svg'
+    if fhand is not None:
+        output = splitext(fhand.name)[-1].strip('.')
+        if not output:
+            output = 'png'
+    else:
+        output = 'show'
+    return output
+
 def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
                    fhand=None):
     'It draws an histogram and if the fhand is given it saves it'
-    modules = sys.modules.keys()
-    if 'matplotlib' not in modules:
-        import matplotlib
-        if fhand:
-            matplotlib.use('AGG')
-    if 'matplotlib.pyplot' not in modules:
-        from matplotlib import pyplot as plt
-    else:
-        plt = sys.modules['matplotlib.pyplot']
+
+    plot_format = _guess_output_for_matplotlib(fhand)
+    _import_matplotlib(plot_format)
+    plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -279,7 +318,8 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
     if fhand is None:
         plt.show()
     else:
-        plt.savefig(fhand)
+        plt.savefig(fhand, format=plot_format)
+    plt.close('all')
 
 def _color_by_index(index, kind='str'):
     'Given an int index it returns a color'
@@ -322,22 +362,10 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     will be drawn with the same color.
     If an fhand is given the scatter plot will be saved.
     '''
-    #in some circunstances matplot lib could generate this error
-    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
-    #writable directory for matplotlib configuration data
-    #in that case we don't know how to use matplotlib, it would require
-    #to set the MPLCONFIGDIR variable, but we can't do that in the
-    #current shell, so the matplotlib greatness wouldn't be available
-    #in those occasions
-    modules = sys.modules.keys()
-    if 'matplotlib' not in modules:
-        import matplotlib
-        if fhand:
-            matplotlib.use('AGG')
-    if 'matplotlib.pyplot' not in modules:
-        from matplotlib import pyplot as plt
-    else:
-        plt = sys.modules['matplotlib.pyplot']
+
+    plot_format = _guess_output_for_matplotlib(fhand)
+    _import_matplotlib(plot_format)
+    plt = sys.modules['matplotlib.pyplot']
 
     fig = plt.figure()
     axes = fig.add_subplot(111)
@@ -407,7 +435,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     if fhand is None:
         plt.show()
     else:
-        fig.savefig(fhand)
+        plt.savefig(fhand, format=plot_format)
+    plt.close('all')
 
 def _float_to_str(num, precision=2):
     'It returns a float representation'
@@ -448,15 +477,9 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if not vectors_list:# or not vectors_list[0]:
         raise ValueError('No values to process')
 
-    modules = sys.modules.keys()
-    if 'matplotlib' not in modules:
-        import matplotlib
-        if fhand:
-            matplotlib.use('AGG')
-    if 'matplotlib.pyplot' not in modules:
-        from matplotlib import pyplot as plt
-    else:
-        plt = sys.modules['matplotlib.pyplot']
+    plot_format = _guess_output_for_matplotlib(fhand)
+    _import_matplotlib(plot_format)
+    plt = sys.modules['matplotlib.pyplot']
 
     numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
 
@@ -486,7 +509,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if fhand is None:
         plt.show()
     else:
-        fig.savefig(fhand)
+        plt.savefig(fhand, format=plot_format)
+    plt.close('all')
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
@@ -510,15 +534,8 @@ def _calculate_percentiles(numbers, percents):
     if not numbers.any():
         raise ValueError('No data to calculate percentiles')
 
-    modules = sys.modules
-    if 'matplotlib' not in modules.keys():
-        import matplotlib
-        matplotlib.use('AGG')
-
-    if 'matplotlib.mlab' not in modules.keys():
-        import matplotlib.mlab as mlab
-    else:
-        mlab = modules['matplotlib.mlab']
+    _import_mlab()
+    mlab = sys.modules['matplotlib.mlab']
 
     percentiles = mlab.prctile(numbers, percents)
     return list(percentiles)

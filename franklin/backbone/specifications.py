@@ -54,3 +54,5 @@ BACKBONE_BASENAMES = {
     'blast_basename':'blast',
     'statistics_file': 'statistics.txt',
 }
+
+PLOT_FILE_FORMAT = 'svg'

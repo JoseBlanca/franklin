@@ -378,6 +378,8 @@ def _get_bam_coverage(bam, rgs, grouping):
         reads_per_colum = {}
         for pileup_read in column.pileups:
             aligned_read = pileup_read.alignment
+            if not guess_mapped(aligned_read.flag):
+                continue
             read_group = aligned_read.opt('RG')
             if read_group not in reads_per_colum:
                 reads_per_colum[read_group] = 0
@@ -431,7 +433,7 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
 
 def bam_distribs(bam_fhand, kind, basename=None, range_=None,
                  grouping=None, sample_size=None, summary_fhand=None,
-                 labels=None):
+                 labels=None, plot_file_format='svg'):
     '''It makes the bam coverage distribution.
 
     It can make the distribution taking into account any of the readgroup items:
@@ -481,7 +483,8 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
         else:
             distrib_fhand = open('%s.%s_%s.dat' % (basename, kind, group_name),
                                  'w')
-            plot_fhand = open('%s.%s_%s.png' % (basename, kind, group_name),
+            plot_fhand = open('%s.%s_%s.%s' % (basename, kind, group_name,
+                                               plot_file_format),
                               'w')
 
         if grouping == 'PL':

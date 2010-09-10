@@ -28,7 +28,8 @@ from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
-                                              BACKBONE_BASENAMES)
+                                              BACKBONE_BASENAMES,
+                                              PLOT_FILE_FORMAT)
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
@@ -274,7 +275,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 #the names for the output files
                 out_fpath = os.path.join(stats_dir, basename + '.length')
-                plot_fpath = out_fpath + '.png'
+                plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
 
                 if os.path.exists(plot_fpath):
@@ -292,7 +293,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 #the distributions for the quals
                 out_fpath = os.path.join(stats_dir, basename + '.qual')
-                plot_fpath = out_fpath + '.png'
+                plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
                 if quals_:
                     create_distribution(quals_, PLOT_LABELS['seq_qual'],
@@ -311,7 +312,7 @@ class ReadsStatsAnalyzer(Analyzer):
             #the names for the output files
             stats_dir = get_stats_dir('cleaned')
             out_fpath = os.path.join(stats_dir, basename + '.length.diff')
-            plot_fpath = out_fpath + '.png'
+            plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
             distrib_fpath = out_fpath + '.dat'
 
             if not os.path.exists(plot_fpath):
@@ -325,7 +326,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 #the distributions for the quals
                 out_fpath = os.path.join(stats_dir, basename + '.qual.diff')
-                plot_fpath = out_fpath + '.png'
+                plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
 
                 quals = quals['raw'], quals['cleaned']
@@ -343,7 +344,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 #the names for the output files
                 out_fpath = os.path.join(stats_dir, basename + '.qual.boxplot')
-                plot_fpath = out_fpath + '.png'
+                plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
 
                 if os.path.exists(plot_fpath):

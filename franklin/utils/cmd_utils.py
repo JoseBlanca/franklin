@@ -371,7 +371,7 @@ def create_runner(tool, parameters=None, environment=None):
 def _which_binary(binary):
     'It return the full path of the binary if exists'
     stdout = subprocess.PIPE
-    process = subprocess.Popen(['/bin/which', binary], stdout=stdout)
+    process = subprocess.Popen(['which', binary], stdout=stdout)
     stdout = process.communicate()[0]
 
     if stdout and stdout[0] == '/':

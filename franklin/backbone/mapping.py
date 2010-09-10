@@ -29,7 +29,8 @@ from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
 from franklin.mapping import map_reads
 from franklin.utils.misc_utils import (NamedTemporaryDir, VersionedPath,
                                        rel_symlink)
-from franklin.backbone.specifications import BACKBONE_BASENAMES
+from franklin.backbone.specifications import (BACKBONE_BASENAMES,
+                                              PLOT_FILE_FORMAT)
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
                           bam_distribs, create_bam_index, bam_general_stats)
@@ -251,7 +252,8 @@ class BamStatsAnalyzer(Analyzer):
             basename = os.path.join(out_dir, "%s" % (project_name))
             bam_fhand.seek(0)
             bam_distribs(bam_fhand, kind, basename=basename,
-                         sample_size=sample_size, summary_fhand=summary_fhand)
+                         sample_size=sample_size, summary_fhand=summary_fhand,
+                         plot_file_format=PLOT_FILE_FORMAT)
         bam_fhand.close()
 
 DEFINITIONS = {
