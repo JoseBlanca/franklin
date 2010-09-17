@@ -253,7 +253,6 @@ class SamStatsTest(unittest.TestCase):
         out_fhand = StringIO()
 
         bam_general_stats(bam_fhand, out_fhand)
-
         assert 'illumina\t4\n' in out_fhand.getvalue()
 
 if	__name__	==	"__main__":

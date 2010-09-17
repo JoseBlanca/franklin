@@ -17,7 +17,7 @@
 
 from __future__  import division
 
-import itertools, tempfile, sys, random, math
+import itertools, tempfile, sys, random, math, os
 from os.path import splitext
 from array import array
 
@@ -235,18 +235,19 @@ def _import_matplotlib(output):
     #to set the MPLCONFIGDIR variable, but we can't do that in the
     #current shell, so the matplotlib greatness wouldn't be available
     #in those occasions
-    warn = True
+    backend = 'agg'
+    warn = False
     modules = sys.modules
     if 'matplotlib' not in modules:
         import matplotlib
     else:
         matplotlib = modules['matplotlib']
+        matplotlib.use(backend, warn)
     if 'matplotlib.pyplot' not in modules:
         from matplotlib import pyplot
     else:
         pyplot = modules['matplotlib.pyplot']
 
-    backend = 'agg'
     #if output in ['png' or 'show']:
     #    backend = 'agg'
     #elif output == 'svg':
@@ -269,15 +270,45 @@ def _guess_output_for_matplotlib(fhand):
         output = 'show'
     return output
 
+def _get_figure(plot_format, fhand):
+    'It returns a pyplot figure'
+    try:
+        _import_matplotlib(plot_format)
+        plt = sys.modules['matplotlib.pyplot']
+        fig = plt.figure()
+    except Exception:
+        _remove_fhand(fhand)
+        raise
+    return fig, plt
+
+def _show_image(fhand, plot_format):
+    'It shows or draws an image'
+    plt = sys.modules['matplotlib.pyplot']
+    try:
+        if fhand is None:
+            plt.show()
+        else:
+            plt.savefig(fhand, format=plot_format)
+    except Exception:
+        _remove_fhand(fhand)
+        raise
+    plt.close('all')
+
+def _remove_fhand(fhand):
+    'It removes the given file'
+    fpath = fhand.name
+    fhand.close()
+    if os.path.exists(fpath):
+        os.remove(fpath)
+
 def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
                    fhand=None):
     'It draws an histogram and if the fhand is given it saves it'
 
     plot_format = _guess_output_for_matplotlib(fhand)
-    _import_matplotlib(plot_format)
-    plt = sys.modules['matplotlib.pyplot']
 
-    fig = plt.figure()
+    fig, plt = _get_figure(plot_format, fhand)
+
     axes = fig.add_subplot(111)
     if xlabel:
         axes.set_xlabel(xlabel)
@@ -315,11 +346,7 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
     xticks_labels = xticks_labels[::2]
     plt.xticks(xticks_pos, xticks_labels)
 
-    if fhand is None:
-        plt.show()
-    else:
-        plt.savefig(fhand, format=plot_format)
-    plt.close('all')
+    _show_image(fhand, plot_format)
 
 def _color_by_index(index, kind='str'):
     'Given an int index it returns a color'
@@ -364,10 +391,9 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     '''
 
     plot_format = _guess_output_for_matplotlib(fhand)
-    _import_matplotlib(plot_format)
-    plt = sys.modules['matplotlib.pyplot']
 
-    fig = plt.figure()
+    fig, plt = _get_figure(plot_format, fhand)
+
     axes = fig.add_subplot(111)
     if xlabel:
         axes.set_xlabel(xlabel)
@@ -432,11 +458,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         scat = scatters[scat_index]
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
                      marker=scat['shape'], s=60)
-    if fhand is None:
-        plt.show()
-    else:
-        plt.savefig(fhand, format=plot_format)
-    plt.close('all')
+
+    _show_image(fhand, plot_format)
 
 def _float_to_str(num, precision=2):
     'It returns a float representation'
@@ -478,15 +501,14 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
         raise ValueError('No values to process')
 
     plot_format = _guess_output_for_matplotlib(fhand)
-    _import_matplotlib(plot_format)
-    plt = sys.modules['matplotlib.pyplot']
 
     numpy_vects = [numpy.ravel(vect) for vect in vectors_list]
 
     if stats_fhand:
         _calculate_boxplot_percentiles(numpy_vects, stats_fhand, xlabels)
 
-    fig = plt.figure()
+    fig, plt = _get_figure(plot_format, fhand)
+
     axes = fig.add_subplot(111)
 
     if xlabel:
@@ -506,11 +528,7 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     axes.boxplot(numpy_vects, notch=1, sym='')
     axes.set_xticklabels([str(lab)for lab in xlabels], rotation='vertical')
 
-    if fhand is None:
-        plt.show()
-    else:
-        plt.savefig(fhand, format=plot_format)
-    plt.close('all')
+    _show_image(fhand, plot_format)
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
