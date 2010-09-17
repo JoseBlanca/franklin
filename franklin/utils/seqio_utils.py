@@ -97,3 +97,4 @@ def cat(infiles, outfile):
         infile.seek(0)
         for line in infile:
             outfile.write(line)
+    outfile.flush()
