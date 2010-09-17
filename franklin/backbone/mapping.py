@@ -30,7 +30,8 @@ from franklin.mapping import map_reads
 from franklin.utils.misc_utils import (NamedTemporaryDir, VersionedPath,
                                        rel_symlink)
 from franklin.backbone.specifications import (BACKBONE_BASENAMES,
-                                              PLOT_FILE_FORMAT)
+                                              PLOT_FILE_FORMAT,
+                                              BACKBONE_DIRECTORIES)
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
                           bam_distribs, create_bam_index, bam_general_stats)
@@ -61,29 +62,42 @@ class MappingAnalyzer(Analyzer):
         settings = self._project_settings['Mappers']
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
-        reference_fpath = inputs['reference']
         output_dir = self._create_output_dirs(timestamped=True)['result']
+
+        # define color and sequence references
+        reference_path   = inputs['reference']
+        mapping_index_dir = inputs['maping_index']
+
 
         #memory for the java programs
         java_mem = self._project_settings['Other_settings']['java_memory']
         picard_path = self._project_settings['Other_settings']['picard_path']
 
         for read_fpath in reads_fpaths:
+            mapping_parameters = {}
             read_info = scrape_info_from_fname(read_fpath)
             platform = read_info['pl']
             #which maper are we using for this platform
             mapper = settings['mapper_for_%s' % platform]
+
+            (reference_fpath,
+             color_space) = self._prepare_mapper_index(mapping_index_dir,
+                                                      reference_path,
+                                                      platform, mapper)
+            mapping_parameters['colorspace'] = color_space
             out_bam_fpath = os.path.join(output_dir,
                                          read_fpath.basename + '.bam')
-            mapping_parameters = {}
+
             if platform in ('454', 'sanger'):
                 mapping_parameters['reads_length'] = 'long'
             else:
                 mapping_parameters['reads_length'] = 'short'
+
             if not os.path.exists(out_bam_fpath):
+
                 map_reads(mapper,
                           reads_fpath=read_fpath.last_version,
-                          reference_fpath=reference_fpath.last_version,
+                          reference_fpath=reference_fpath,
                           out_bam_fpath=out_bam_fpath,
                           parameters=mapping_parameters,
                           threads=self.threads,
@@ -95,6 +109,22 @@ class MappingAnalyzer(Analyzer):
 
         self._log({'analysis_finished':True})
 
+    def _prepare_mapper_index(self, mapping_index_dir, reference_path, platform,
+                              mapper):
+        'It creates reference_fpath depending in the mapper and the platform'
+        kind        = 'color' if platform == 'solid' else 'sequence'
+        color_space = True if kind == 'color' else False
+        index_dir   = mapping_index_dir % (mapper, kind)
+        if not os.path.exists(index_dir):
+            os.mkdir(index_dir)
+
+        reference_fpath = reference_path.last_version
+        reference_fname = os.path.basename(reference_fpath)
+        index_fpath     = os.path.join(index_dir, reference_fname)
+        if not os.path.exists(index_fpath):
+            rel_symlink(reference_fpath, index_fpath)
+        return index_fpath, color_space
+ 
 class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
     def run(self):
@@ -274,6 +304,8 @@ DEFINITIONS = {
             'reference':
                 {'directory': 'mapping_reference',
                 'file': 'mapping_reference'},
+            'mapping_index':
+                {'directory': 'mapping_index'},
             },
          'outputs':{'result':{'directory': 'mappings_by_readgroup'}},
          'analyzer': MappingAnalyzer,
