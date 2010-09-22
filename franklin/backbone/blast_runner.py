@@ -22,7 +22,7 @@ from os.path import join, exists, splitext, basename, split
 from os import makedirs, remove, listdir
 from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
-from franklin.utils.cmd_utils import call
+from franklin.utils.cmd_utils import call, BLAST_TOOL
 from franklin.utils.misc_utils import get_num_threads, rel_symlink
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
@@ -35,6 +35,48 @@ class NullHandler(logging.Handler):
 MOCK_HANDLER = NullHandler()
 LOGGER_NAME = 'franklin'
 logging.getLogger(LOGGER_NAME).addHandler(MOCK_HANDLER)
+
+
+
+def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath, 
+                       threads=False):
+    'It runs a blast giving a file and a database path'
+    cmd = [blast_type, '-db', blast_db, '-num_alignments', '25',
+           '-num_descriptions', '25', '-evalue', '0.0001', '-outfmt', '5',
+           '-query', seq_fpath, '-out', result_fpath]
+    if threads:
+        cmd.extend(['-num_threads', threads])
+    call(cmd, raise_on_error=True, log=True)
+    
+def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
+                 threads=False):
+    'It runs a blast giving a file and a database path'
+    threads = get_num_threads(threads)
+    cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
+           '-b', '25', '-e', '0.0001', '-m', '7',
+           '-i', seq_fpath, '-o', result_fpath,
+           '-a', str(threads)]
+
+    call(cmd, raise_on_error=True, log=True)
+
+def makeblastdb(seq_fpath, dbtype):
+    'It creates the blast db database'
+    dbtype = 'T' if dbtype == 'prot' else 'F'
+    cmd = ['formatdb', '-i', seq_fpath, '-V', '-p', dbtype, '-o']
+    call(cmd, raise_on_error=True)
+    
+def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
+    'It creates the blast db database'
+    cmd = ['makeblastdb', '-in', seq_fpath, '-dbtype', dbtype]
+    if outputdb is not None:
+        cmd.extend(['-out', outputdb])
+    call(cmd, raise_on_error=True)
+
+BLAST_RUNNER = {'blast' : blast_runner,
+                'blast+': blast_runner_plus}
+
+BLAST_FORMAT = {'blast' : makeblastdb,
+                'blast+': makeblastdb_plus}
 
 def _get_basename(fpath):
     'It returns the base name without path and extension'
@@ -99,8 +141,8 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     logger.info('Running the blast %s' % result_fpath)
     try:
-        blast_runner(query_fpath, blast_db, blast_program, result_fpath,
-                     threads=threads)
+        BLAST_RUNNER[BLAST_TOOL](query_fpath, blast_db, blast_program, 
+                                 result_fpath, threads=threads)
     except RuntimeError as error:
         if exists(result_fpath):
             remove(result_fpath)
@@ -114,17 +156,6 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
         fasta_db_fhand.close()
 
     return result_fpath
-
-def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
-                 threads=False):
-    'It runs a blast giving a file and a database path'
-    threads = get_num_threads(threads)
-    cmd = ['blast2', '-d', blast_db, '-p', blast_type, '-v', '25',
-           '-b', '25', '-e', '0.0001', '-m', '7',
-           '-i', seq_fpath, '-o', result_fpath,
-           '-a', str(threads)]
-
-    call(cmd, raise_on_error=True, log=True)
 
 def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
     'It formats a blastdb when need it'
@@ -145,7 +176,7 @@ def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
                   out_format='fasta')
         logger.info('Formatting the database %s' % db_seq_fpath)
         try:
-            makeblastdb(db_seq_fpath, dbtype=dbtype)
+            BLAST_FORMAT[BLAST_TOOL](db_seq_fpath, dbtype=dbtype)
         except RuntimeError:
             msg = 'Error making blastdb. db:%s\n dbtype:%s\n' % \
                                                (db_seq_fpath, dbtype)
@@ -153,22 +184,4 @@ def make_backbone_blast_db(project_dir, blast_db_seq, dbtype):
             raise RuntimeError(msg)
     return db_seq_fpath
 
-def makeblastdb(seq_fpath, dbtype):
-    'It creates the blast db database'
-    dbtype = 'T' if dbtype == 'prot' else 'F'
-    cmd = ['formatdb', '-i', seq_fpath, '-V', '-p', dbtype, '-o']
-    call(cmd, raise_on_error=True)
 
-def blast_runner_plust(seq_fpath, blast_db, blast_type, result_fpath):
-    'It runs a blast giving a file and a database path'
-    cmd = [blast_type, '-db', blast_db, '-num_alignments', '25',
-           '-num_descriptions', '25', '-evalue', '0.0001', '-outfmt', '5',
-           '-query', seq_fpath, '-out', result_fpath]
-    call(cmd, raise_on_error=True, log=True)
-
-def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
-    'It creates the blast db database'
-    cmd = ['makeblastdb', '-in', seq_fpath, '-dbtype', dbtype]
-    if outputdb is not None:
-        cmd.extend(['-out', outputdb])
-    call(cmd, raise_on_error=True)
