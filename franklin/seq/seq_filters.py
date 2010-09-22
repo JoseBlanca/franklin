@@ -21,7 +21,7 @@ can also return None if no sequence is left after the filtering process.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.utils.cmd_utils import create_runner
+from franklin.utils.cmd_utils import create_runner, BLAST_TOOL
 from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
@@ -151,7 +151,7 @@ def create_comtaminant_filter(contaminant_db, environment=None):
                       {'kind'          : 'min_length',
                        'min_length_query_%' :60 }]
     result_filters = [{'kind': 'max_num_matches', 'value':0}]
-    match_filter = create_aligner_filter(aligner_cmd='blast',
+    match_filter = create_aligner_filter(aligner_cmd=BLAST_TOOL,
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
                                     result_filters=result_filters,

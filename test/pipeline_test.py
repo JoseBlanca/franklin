@@ -26,6 +26,7 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
                                          seq_pipeline_runner,
                                          _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
+from franklin.utils.cmd_utils import BLAST_TOOL
 from franklin.seq.writers import SequenceWriter
 
 from franklin.utils.misc_utils import DATA_DIR
@@ -55,15 +56,19 @@ class PipelineTests(unittest.TestCase):
     def test_configure_pipeline(self):
         'It tests configure pipeline'
         pipeline = 'sanger_with_qual'
-        configuration = {'remove_vectors': {'vectors':'Univec'},
+        if BLAST_TOOL == 'blast+':
+            Univec = 'Univec+' 
+        else:
+            Univec = 'Univec'
+        configuration = {'remove_vectors': {'vectors':Univec},
                          'remove_adaptors':{'vectors':'hola'}}
         pipeline = configure_pipeline(pipeline, configuration)
 
         assert pipeline[1]['arguments']['vectors'] == 'hola'
-        assert pipeline[3]['arguments']['vectors'] == 'Univec'
+        assert pipeline[3]['arguments']['vectors'] == Univec
 
         # Now it should fail because one of the arguments is Not set
-        configuration = {'remove_vectors': {'vectors':'Univec'}}
+        configuration = {'remove_vectors': {'vectors':Univec}}
         try:
             pipeline = configure_pipeline(pipeline, configuration)
             self.fail()
@@ -79,7 +84,13 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        
+        if BLAST_TOOL == 'blast+':
+            arabidopsis_genes = 'arabidopsis_genes+' 
+        else:
+            arabidopsis_genes = 'arabidopsis_genes'
+            
+        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
@@ -102,7 +113,11 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        if BLAST_TOOL == 'blast+':
+            arabidopsis_genes = 'arabidopsis_genes+' 
+        else:
+            arabidopsis_genes = 'arabidopsis_genes'
+        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 
@@ -130,7 +145,11 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        univec = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        if BLAST_TOOL == 'blast+':
+            arabidopsis_genes = 'arabidopsis_genes+' 
+        else:
+            arabidopsis_genes = 'arabidopsis_genes'
+        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
 

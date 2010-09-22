@@ -26,6 +26,8 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DisposableFile
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy, shutil
 
+BLAST_TOOL = 'blast+'
+
 def _locate_file(fpath):
     cmd = ['locate', fpath]
     stdout, stderr, retcode = call(cmd, raise_on_error=False)
@@ -71,18 +73,18 @@ RUNNER_DEFINITIONS = {
               'input':{'sequence':{'option':'-i', 'files_format':['fasta']}},
               'ignore_stderrs': ['Karlin-Altschul']
               },
-#    'blast+': {'binary':'blast+',
-#            'parameters': {'database' :{'required':True,  'option': '-db'},
-#                   'program'  :{'required':True,  'option':'-p'},
-#                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-#                  'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
-#                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
-#                   'alig_format': {'default':5, 'option':'-outfmt'}
-#                            },
-#            'output':{'blast+':{'option':STDOUT}},
-#            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
-#            'ignore_stderrs': ['Karlin-Altschul']
-#              },
+    'blast+': {'binary':'blast+',
+            'parameters': {'database' :{'required':True,  'option': '-db'},
+                   'program'  :{'required':True,  'option':'-p'},
+                   'expect'   :{'default': 0.0001,'option': '-evalue'},
+                  'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
+                   'alig_format': {'default':5, 'option':'-outfmt'}
+                            },
+            'output':{'blast+':{'option':STDOUT}},
+            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
+            'ignore_stderrs': ['Karlin-Altschul']
+              },
     'seqclean_vect':{'binary':'seqclean_vect',
                      'parameters':{'vector_db':{'required':True, 'option':'-v'},
                                  'no_trim_end':{'default':None, 'option':'-N'},

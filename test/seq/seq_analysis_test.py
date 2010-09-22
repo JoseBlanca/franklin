@@ -49,7 +49,7 @@ class IntronTest(unittest.TestCase):
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq1 = SeqWithQuality(seq = Seq(seq))
-        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome2')
+        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome2+')
         genomic_seqs_index = SeqIO.index(genomic_db, 'fasta')
         introns = infer_introns_for_cdna(seq1, genomic_db,
                                          genomic_seqs_index=genomic_seqs_index)
@@ -93,7 +93,7 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         similar_seqs = look_for_similar_sequences(seq1, database=database,
                                                   blast_program='blastn')
 
