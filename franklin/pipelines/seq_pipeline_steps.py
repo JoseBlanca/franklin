@@ -30,7 +30,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_word_striper_by_alignment,
                                     create_edge_stripper, create_upper_mapper)
 
-from franklin.seq.seq_filters import create_length_filter
+from franklin.seq.seq_filters import (create_length_filter, create_solid_quality_filter)
 
 up_case = {'function':create_upper_mapper,
            'arguments':{},
@@ -117,6 +117,13 @@ remove_short_adaptors = {'function': create_word_striper_by_alignment,
                    'comment'   : 'It removes the given regexs from the sequence'
               }
 
+solid_quality = {'function': create_solid_quality_filter,
+                'arguments' : {},
+                'type'      : 'filter',
+                'name'      : 'solid_quality',
+                'comment'   : 'It filter by solid quality'
+                }
+
 
 ################################################################################
 # PIPELINES
@@ -141,9 +148,12 @@ SEQPIPELINES = {
 
     'mask_dust'          : [mask_polia, mask_low_complexity],
 
-    'word_masker'        : [remove_short_adaptors, filter_short_seqs]}
+    'word_masker'        : [remove_short_adaptors, filter_short_seqs],
+
+    'solid'              :[create_solid_quality_filter]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
              mask_polia, mask_low_complexity, mask_repeats,
-             filter_short_seqs, edge_remover, remove_short_adaptors, up_case]
+             filter_short_seqs, edge_remover, remove_short_adaptors, up_case,
+             solid_quality]

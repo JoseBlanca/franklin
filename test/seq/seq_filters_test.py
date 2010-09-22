@@ -135,7 +135,7 @@ class SolidFilters(unittest.TestCase):
     @staticmethod
     def solid_quality_filter():
         'It test solid quality filters'
-        quality = [30, 23, 43, 12, 25, 23, 30, 12, 0, 34]
+        quality = [30, 23, 43, 12, 25, 23, 30, 12, 0]
         seq = 'A' * len(quality)
         sequence =  SeqWithQuality(seq=Seq(seq), qual=quality)
         
@@ -145,6 +145,9 @@ class SolidFilters(unittest.TestCase):
         filter_ = create_solid_quality_filter(length=5, threshold=35)
         assert not filter_(sequence)
         
+        quality = [30, 23, 43, 12, 25, 23, 30, 12, 0, 0]
+        seq = 'A' * len(quality)
+        sequence =  SeqWithQuality(seq=Seq(seq), qual=quality)
         filter_ = create_solid_quality_filter(length=5, threshold=25, 
                                               call_missing=True)
         assert not filter_(sequence)

@@ -162,8 +162,8 @@ def create_comtaminant_filter(contaminant_db, environment=None):
         return match_filter(sequence)
     return filter_
 
-def create_solid_quality_filter(length=10, threshold=15, call_missing=False):
-    '''It creates a filter that removesthe sequences looking in the quality of 
+def create_solid_quality_filter(length=10, threshold=15, call_missing=True):
+    '''It creates a filter that removes the sequences looking in the quality of 
     the sequence. 
     We perform two kind of filters.
         1.- We look into the first 10 nucleotides and if the mean is less than 
@@ -178,8 +178,9 @@ def create_solid_quality_filter(length=10, threshold=15, call_missing=False):
             return False
         quality = sequence.qual
         
-        if call_missing and 0 in quality:
-            return None
+        if call_missing:
+            if len(filter(lambda x: x==0, quality)) >=2:
+                return None
         
         mean_qual = sum(quality[:length+1]) / float(length)
         

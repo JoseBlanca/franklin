@@ -45,14 +45,17 @@ class CleanReadsAnalyzer(Analyzer):
         if 'pl' not in file_info:
             raise RuntimeError('platform not in the file name: %s' %
                                file_info['fpath'])
+        platform = file_info['pl']
         if file_info['format'] == 'fasta':
             return 'sanger_without_qual'
-        elif file_info['pl'] == 'illumina':
+        elif platform == 'illumina':
             return 'solexa'
-        elif file_info['pl'] == '454':
+        elif platform == '454':
             return 'sanger_with_qual'
-        elif file_info['pl'] == 'sanger':
+        elif platform == 'sanger':
             return 'sanger_with_qual'
+        elif platform == 'solid':
+            return 'solid'
         else:
             raise ValueError('Unable to guess the cleaning pipeline: %s' %
                              str(file_info))
