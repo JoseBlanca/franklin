@@ -162,7 +162,32 @@ def create_comtaminant_filter(contaminant_db, environment=None):
         return match_filter(sequence)
     return filter_
 
-
+def create_solid_quality_filter(length=10, threshold=15, call_missing=False):
+    '''It creates a filter that removesthe sequences looking in the quality of 
+    the sequence. 
+    We perform two kind of filters.
+        1.- We look into the first 10 nucleotides and if the mean is less than 
+        the threshold, we filetr it.
+        2.- It the option is given we remove the sequences with one colorcall 
+        missing
+    '''
+    
+    def solid_quality_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return False
+        quality = sequence.qual
+        
+        if call_missing and 0 in quality:
+            return None
+        
+        mean_qual = sum(quality[:length+1]) / float(length)
+        
+        if mean_qual >= threshold:
+            return True
+        else:
+            return False
+    return solid_quality_filter
 
 
 

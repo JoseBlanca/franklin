@@ -18,7 +18,8 @@
 from franklin.seq.seq_filters import (create_aligner_filter, create_length_filter,
                                 create_adaptor_matches_filter,
                                 create_comtaminant_filter,
-                                create_similar_seqs_filter)
+                                create_similar_seqs_filter,
+                                create_solid_quality_filter)
 from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.utils.misc_utils import DATA_DIR
 from Bio.Seq import UnknownSeq
@@ -129,10 +130,25 @@ class SimilarSeqTest(unittest.TestCase):
                                              min_sim_seqs=2)
         assert not filter_(seq1)
 
+class SolidFilters(unittest.TestCase):
+    'It tests solid filters'
+    @staticmethod
+    def solid_quality_filter():
+        'It test solid quality filters'
+        quality = [30, 23, 43, 12, 25, 23, 30, 12, 0, 34]
+        seq = 'A' * len(quality)
+        sequence =  SeqWithQuality(seq=Seq(seq), qual=quality)
+        
+        filter_ = create_solid_quality_filter(length=5, threshold=25)
+        assert filter_(sequence)
 
-
-
+        filter_ = create_solid_quality_filter(length=5, threshold=35)
+        assert not filter_(sequence)
+        
+        filter_ = create_solid_quality_filter(length=5, threshold=25, 
+                                              call_missing=True)
+        assert not filter_(sequence)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testiprscan_parse']
+#    import sys;sys.argv = ['', 'SolidFilters.solid_quality_filter']
     unittest.main()
