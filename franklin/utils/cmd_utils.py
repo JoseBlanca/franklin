@@ -45,7 +45,7 @@ def _locate_file(fpath):
             break
     return found_path
 
-def guess_java_install_dir(jar_fpath):
+def _guess_java_install_dir(jar_fpath):
     'It returns the dir path using locate on a jar file'
     java_dir_path = _locate_file(jar_fpath)
     if not java_dir_path:
@@ -53,6 +53,19 @@ def guess_java_install_dir(jar_fpath):
         raise RuntimeError(msg)
     java_dir_path = java_dir_path.replace(jar_fpath, '')
     return java_dir_path
+
+def guess_jar_dir(jar_name, java_conf=None):
+    'It returns the jar_name path using locate'
+    conf_variables = {'SortSam.jar': 'picard_path',
+                      'GenomeAnalysisTK.jar': 'gatk_path',
+                      'blast2go.jar': 'blast2go_path'}
+    jar_path = None
+    if jar_name in conf_variables:
+        conf_var = conf_variables[jar_name]
+        if java_conf and conf_var in java_conf and java_conf[conf_var]:
+            jar_path = java_conf[conf_var]
+    if not jar_path:
+        return _guess_java_install_dir(jar_name)
 
 # Runner definitions, Define here the parameters of the programs you want to
 # use with this class
