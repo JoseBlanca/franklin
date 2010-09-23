@@ -45,7 +45,7 @@ def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath,
            '-num_descriptions', '25', '-evalue', '0.0001', '-outfmt', '5',
            '-query', seq_fpath, '-out', result_fpath]
     if threads:
-        cmd.extend(['-num_threads', threads])
+        cmd.extend(['-num_threads', str(threads)])
     call(cmd, raise_on_error=True, log=True)
     
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
