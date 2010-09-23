@@ -65,9 +65,9 @@ class MappingAnalyzer(Analyzer):
         output_dir = self._create_output_dirs(timestamped=True)['result']
 
         # define color and sequence references
-        reference_path   = inputs['reference']
-        mapping_index_dir = inputs['maping_index']
-
+        reference_path    = inputs['reference']
+        mapping_index_dir = inputs['mapping_index']
+        #print reference_path, mapping_index_dir
 
         #memory for the java programs
         java_mem = self._project_settings['Other_settings']['java_memory']
@@ -111,9 +111,10 @@ class MappingAnalyzer(Analyzer):
 
     def _prepare_mapper_index(self, mapping_index_dir, reference_path, platform,
                               mapper):
-        'It creates reference_fpath depending in the mapper and the platform'
+        'It creates reference_fpath depending on the mapper and the platform'
         kind        = 'color' if platform == 'solid' else 'sequence'
         color_space = True if kind == 'color' else False
+        mapping_index_dir = mapping_index_dir[0].original_path
         index_dir   = mapping_index_dir % (mapper, kind)
         if not os.path.exists(index_dir):
             os.mkdir(index_dir)

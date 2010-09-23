@@ -169,8 +169,10 @@ class Analyzer(object):
         input_dirs = self._get_input_dirs()
         for input_kind, input_def in inputs_def.items():
             backbone_dir = input_dirs[input_kind]
-            paths = VersionedPath(backbone_dir).list_paths_versioned()
-
+            
+            paths = [VersionedPath(backbone_dir)]
+            if 'file_kinds' in input_def or 'file' in input_def:
+                paths = paths[0].list_paths_versioned()
             if 'file_kinds' in input_def:
                 if input_def['file_kinds'] == 'sequence_files':
                     paths = filter(_is_sequence_file, paths)
