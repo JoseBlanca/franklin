@@ -69,7 +69,7 @@ class BlastParser(object):
         self._blast_file.seek(0, 0)
         
         if ((blast_version and plus) or 
-                                (blast_version and blast_version >= '2.2.21')):
+                                (blast_version and blast_version > '2.2.21')):
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = True
         
@@ -200,13 +200,15 @@ class BlastParser(object):
         return result
     def _get_blast_version(self):
         'It gets blast parser version'
+        version = None
+        plus    = False
         for line in self._blast_file:
             line = line.strip()
             if line.startswith('<BlastOutput_version>'):
                 version = line.split('>')[1].split('<')[0].split()[1]
                 break
-        plus = False
-        if '+' in version:
+        
+        if version and '+' in version:
             plus = True
             version = version[:-1] 
         return version, plus
