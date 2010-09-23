@@ -52,8 +52,13 @@ class SamTest(unittest.TestCase):
 
         newbam = NamedTemporaryFile(suffix='.bam')
         sam2bam(sampath, newbam.name)
-        assert newbam.read() == open(bampath).read()
-
+        newsam = NamedTemporaryFile(suffix='.sam')
+        bam2sam(newbam.name, newsam.name, header=True)
+        newsam_content = open(newsam.name).read()
+        oldsam_content = open(sampath).read()
+        
+        assert newsam_content == oldsam_content
+        
     @staticmethod
     def test_format_converter():
         'It test BAM SAM converter'
