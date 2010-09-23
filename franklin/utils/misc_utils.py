@@ -198,6 +198,12 @@ class VersionedPath(object):
         else:
             self.directory, self.basename, version, self.extension = self._get_info(self._path)
 
+    def _get_original_path(self):
+        'it return original path'
+        return self._path
+    
+    original_path = property(_get_original_path)
+    
     @staticmethod
     def _get_info(fpath):
         'It returns all information about a given path'
