@@ -171,43 +171,6 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
                              })
     return similar_seqs
 
-def build_sequence_clusters(aligner_config, filters=None):
-    '''It builds sequence clusters. It need sequences or the blast results of
-    all against all alignment'''
-
-    alignment_result = aligner_config['results']['blast']
-    if filters is None:
-        filters = [{'kind' : 'min_scores',
-                    'score_key'      : 'similarity',
-                    'min_score_value': 96},
-                   {'kind'          : 'min_length',
-                    'min_length_bp' : 15}]
-    pairs = get_hit_pairs_fom_blast(alignment_result, filters=filters)
-    # run of to run tclust
-    input_fhand = NamedTemporaryFile()
-    for pair1, pair2 in pairs:
-        if pair1 != pair2:
-            input_fhand.write("%s\t%s\n" % (pair1, pair2))
-    input_fhand.flush()
-    #print open(input_fhand.name).read()
-    cmd = ['tclust', input_fhand.name]
-    tclust_result = call(cmd, raise_on_error=True)[0]
-    if tclust_result:
-        return _parse_tclust_result(tclust_result)
-    else:
-        return None
-
-def _parse_tclust_result(result):
-    '''It parses tcust result. It return a list of clusters as listt of elements
-    [['element1', 'element2'], ['element3', 'element4']]
-    '''
-    clusters = []
-    for line in result.split('\n'):
-        line = line.strip()
-        if not line or line[0] == '>':
-            continue
-        clusters.append(line.split())
-    return clusters
 
 def _find_matches(string, word):
     'It returns the spans covered for the word matches in the string'
