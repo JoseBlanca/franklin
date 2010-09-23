@@ -65,12 +65,14 @@ class BlastParser(object):
         'The init requires a file to be parser'
         fhand.seek(0, 0)
         self._blast_file = fhand
-        blast_version = self._get_blast_version()
+        blast_version, plus = self._get_blast_version()
         self._blast_file.seek(0, 0)
-
-        if blast_version and '+' in blast_version:
+        
+        if ((blast_version and plus) or 
+                                (blast_version and blast_version >= '2.2.21')):
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = True
+        
         else:
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = False
@@ -201,7 +203,14 @@ class BlastParser(object):
         for line in self._blast_file:
             line = line.strip()
             if line.startswith('<BlastOutput_version>'):
-                return line.split('>')[1].split('<')[0]
+                version = line.split('>')[1].split('<')[0].split()[1]
+                break
+        plus = False
+        if '+' in version:
+            plus = True
+            version = version[:-1] 
+        return version, plus
+        
 
     def next(self):
         'It returns the next blast result'
