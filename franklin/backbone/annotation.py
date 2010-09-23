@@ -567,6 +567,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         create_dat  = go_settings['create_dat_file']
         java_memory = go_settings['java_memory']
         prop_fpath  = go_settings['b2g_properties_file']
+        blast2go_dir = go_settings['blast2go_path']
 
         blast2go = {}
         for input_ in inputs['input']:
@@ -579,9 +580,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                     dat_fpath = join(result_dir, input_.basename + '.b2g.dat')
                 else:
                     dat_fpath = None
-
+                    
+                java_conf = {'java_memory':java_memory,
+                             'blast2gopath':blast2go_dir}
                 b2gpipe_runner(blast, annot_fpath=annot_fpath,
-                               dat_fpath=dat_fpath, java_memory=java_memory,
+                               dat_fpath=dat_fpath, java_conf=java_conf,
                                prop_fpath=prop_fpath)
                 blast.close()
 

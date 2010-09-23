@@ -199,6 +199,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     ('java_memory', (INTEGER, None)),
                     ('picard_path', (STRING, None)),
                     ('gatk_path',   (STRING, None)),
+                    ('blast2go_path', (STRING, None)),
                 ])
             ),
            ('Cleaning',

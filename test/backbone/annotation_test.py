@@ -359,7 +359,8 @@ Number of ORFs: 1'''
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
                                                  'java_memory':2048,
-                                                 'b2g_properties_file':b2g}
+                                                 'b2g_properties_file':b2g,
+                                                 'blast2go_path':None}
                  }, 'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
