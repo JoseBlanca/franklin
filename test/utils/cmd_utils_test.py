@@ -81,13 +81,13 @@ class RunnerFactorytest(unittest.TestCase):
         'We can create a runner class for blast'
         blastpath = os.path.join(DATA_DIR, 'blast')
         run_blast_for_seq = create_runner(tool=BLAST_TOOL,
-                                    parameters={'database':'arabidopsis_genes',
+                                    parameters={'database':'arabidopsis_genes+',
                                                 'program':'blastn'},
                                           environment={'BLASTDB':blastpath})
         seq = 'AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT'
         seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
-        result = run_blast_for_seq(seq1)['blast']
+        result = run_blast_for_seq(seq1)[BLAST_TOOL]
         assert result.read()[0] == '<'
     @staticmethod
     def test_create_mdust_runner():

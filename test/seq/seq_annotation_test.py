@@ -28,7 +28,7 @@ from franklin.seq.seq_annotation import (create_microsatellite_annotator,
                                          create_cdna_intron_annotator)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.utils.cmd_utils import b2gpipe_runner
+from franklin.utils.cmd_utils import b2gpipe_runner, BLAST_TOOL
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -106,7 +106,11 @@ class AnnotationTests(unittest.TestCase):
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq = SeqWithQuality(name='seq', seq=Seq(seq))
         blast_db_path = os.path.join(DATA_DIR, 'blast')
-        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+        if BLAST_TOOL == 'blast':
+            tomato_genome = 'tomato_genome2'
+        else:
+            tomato_genome = 'tomato_genome2+'
+        genomic_db = os.path.join(blast_db_path, tomato_genome)
         intron_annotator = create_cdna_intron_annotator(genomic_db=genomic_db,
                                             genomic_seqs_fhand=open(genomic_db))
         intron_annotator(seq)

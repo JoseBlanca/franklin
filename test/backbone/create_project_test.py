@@ -181,7 +181,7 @@ class TestBackbone(unittest.TestCase):
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
         words = ['^ATGAAC']
-        univec = os.path.join(DATA_DIR, 'blast', 'univec')
+        univec = os.path.join(DATA_DIR, 'blast', 'univec+')
         configuration = {'Cleaning':{'vector_database':univec,
                                      'adaptors_file_454':adaptors_path_454,
                                      'short_adaptors_454':words,

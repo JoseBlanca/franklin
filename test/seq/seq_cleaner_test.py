@@ -42,6 +42,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_upper_mapper)
 
 from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.cmd_utils import BLAST_TOOL
 
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
@@ -426,14 +427,15 @@ class SeqCleanerTest(unittest.TestCase):
     @staticmethod
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
-        vector = os.path.join(DATA_DIR, 'blast', 'univec')
+        vector = os.path.join(DATA_DIR, 'blast', 'univec+')
         vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'
         seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
         strip_vector_by_alignment = \
-                            create_vector_striper_by_alignment(vector, 'blast')
+                            create_vector_striper_by_alignment(vector, 
+                                                               BLAST_TOOL)
         striped_seq = strip_vector_by_alignment(seq)
         striped_seq = str(striped_seq.seq)
 

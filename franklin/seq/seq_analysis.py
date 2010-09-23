@@ -140,7 +140,7 @@ def look_for_similar_sequences(sequence, database, blast_program, filters=None):
 def similar_sequences_for_blast(blast_fhand, filters=None):
     'It look fro similar sequences ina blast result'
     #now we parse the blast
-    blast_parser = get_alignment_parser('blast')
+    blast_parser = get_alignment_parser(BLAST_TOOL)
     blast_result = blast_parser(blast_fhand)
 
     # We filter the results with appropiate  filters

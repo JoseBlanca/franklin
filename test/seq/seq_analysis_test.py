@@ -27,9 +27,9 @@ from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      look_for_similar_sequences,
                                      est2genome_parser,
-                                     build_sequence_clusters,
                                      match_words)
 from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.cmd_utils import BLAST_TOOL
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
@@ -49,7 +49,12 @@ class IntronTest(unittest.TestCase):
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq1 = SeqWithQuality(seq = Seq(seq))
-        genomic_db = os.path.join(DATA_DIR, 'blast', 'tomato_genome2+')
+        if BLAST_TOOL == 'blast':
+            tomato_genome = 'tomato_genome2'
+        else:
+            tomato_genome = 'tomato_genome2+'
+        
+        genomic_db = os.path.join(DATA_DIR, 'blast', tomato_genome)
         genomic_seqs_index = SeqIO.index(genomic_db, 'fasta')
         introns = infer_introns_for_cdna(seq1, genomic_db,
                                          genomic_seqs_index=genomic_seqs_index)
@@ -93,22 +98,16 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        if BLAST_TOOL == 'blast':
+            database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        else:
+            database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         similar_seqs = look_for_similar_sequences(seq1, database=database,
                                                   blast_program='blastn')
 
         assert similar_seqs[0]['name']          == 'AT5G19860.1'
         assert similar_seqs[0]['query_start']   == 1
         assert similar_seqs[0]['subject_start'] == 323
-
-    @staticmethod
-    def test_build_sequence_clusters():
-        'It test the build sequences_cluster function'
-        blast_fhand = open(os.path.join(DATA_DIR, 'cluster_blast.xml'))
-        aligner_config = {'results':{'blast':blast_fhand}}
-        clusters = build_sequence_clusters(aligner_config)
-        assert len(clusters) == 1
-        assert clusters[0] == ['seq1', 'seq2']
 
 class WordMatchTest(unittest.TestCase):
     'It test that we can match words against sequences'

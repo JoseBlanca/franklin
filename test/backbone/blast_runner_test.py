@@ -144,7 +144,7 @@ class BlastTest(unittest.TestCase):
                            '%s.%s.xml' % (BACKBONE_BASENAMES['blast_basename'],
                                           blast_program))
         result = open(blast_fpath).read()
-        assert '<Hit_accession>0</Hit_accession>' in result
+        assert '<Hit_num>1</Hit_num>' in result
     @staticmethod
     def test_blastdb_seq_kind():
         'It test the blastdb kind'

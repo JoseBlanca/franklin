@@ -29,6 +29,7 @@ from franklin.seq.writers import write_seqs_in_file
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
+from franklin.utils.cmd_utils import BLAST_TOOL
 
 THREADS = 2
 
@@ -181,7 +182,10 @@ Sequences with description: 1'''
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         blast_db_path = os.path.join(DATA_DIR, 'blast')
-        genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+        if BLAST_TOOL == 'blast':
+            genomic_db = os.path.join(blast_db_path, 'tomato_genome2')
+        else:
+            genomic_db = os.path.join(blast_db_path, 'tomato_genome2+')
         config = {'Annotation':
                         {'Cdna_intron_annotation':{'genomic_db': genomic_db,
                                                 'genomic_seq_file':genomic_db}},

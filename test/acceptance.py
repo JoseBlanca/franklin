@@ -161,7 +161,7 @@ def run_analysis(analyses, settings_path):
 def prepare_conf(project_dir, repository_dir):
     'It prepares the backbone configuration file'
 
-    univec_database = join(DATA_DIR, 'blast', 'univec')
+    univec_database = join(DATA_DIR, 'blast', 'univec+')
     estscan_matrix = join(repository_dir, 'config_data', 'At.smat')
     tair7_seq = join(repository_dir, 'annotation', 'tair7_genomic.fasta')
 
