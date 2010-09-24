@@ -20,15 +20,12 @@ ngs_backbone is free software so contributions and shared development will be we
 
 If you find any problem when running ngs_backbone please inform us.
 
------
 
 **Help**
 
 To get help there is a mailing list to help with ngs_backbone. If you have any question send an email to the list: ngs_backbone@upv.es
 
-To subscribe, unsubscribe or see the archive list:
-
-https://listas.upv.es/mailman/listinfo/ngs_backbone
+To subscribe, unsubscribe or see the archive `list <https://listas.upv.es/mailman/listinfo/ngs_backbone>`_.
 
 
 .. toctree::
