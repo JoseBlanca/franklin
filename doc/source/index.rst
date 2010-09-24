@@ -43,7 +43,6 @@ https://listas.upv.es/mailman/listinfo/ngs_backbone
    annotation
    snv_filters
    tutorials
-   ngs_workshop <ngs_workshop/index>
    seqio
    architecture
    download
