@@ -199,7 +199,6 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     ('java_memory', (INTEGER, None)),
                     ('picard_path', (STRING, None)),
                     ('gatk_path',   (STRING, None)),
-                    ('blast2go_path', (STRING, None)),
                 ])
             ),
            ('Cleaning',
@@ -276,7 +275,8 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     'blast_database': (STRING, 'nr'),
                     'java_memory': (INTEGER, 2048),
                     'create_dat_file': (BOOLEAN, False),
-                    'b2g_properties_file': (STRING, None)}
+                    'b2g_properties_file': (STRING, None),
+                    'blast2go_path': (STRING, None)}
                 },
             ),
         ('blast', {
