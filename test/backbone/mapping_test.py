@@ -19,7 +19,7 @@ Created on 29/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os
+import unittest, os, shutil
 from os.path import join, exists
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
@@ -216,7 +216,89 @@ class TestBackboneMapping(unittest.TestCase):
 
         os.chdir('/tmp')
         test_dir.close()
+        
+    @staticmethod
+    def test_mapping_color():
+        'It test the mapping of the mapper with color space'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        
+        if BLAST_TOOL == 'blast':
+            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
+        else:
+            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        
+        snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
+                                  'genomic_db':blastdb_seq,
+                                  'genomic_seqs_fpath':blastdb_seq},
+
+                       'filter7':{'name':'by_kind', 'use':True,
+                                  'kind':'SNP'},
+                       'filter12':{'name':'ref_not_in_list', 'use':True,
+                                'list_path':os.path.join(DATA_DIR, 'cos_list')},
+                       'filter10':{'unique_name': 'variable_in_sm',
+                                   'name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['hola']},
+                       'filter11':{'unique_name': 'variable_in_adios',
+                                   'name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['adios']},
+                       'filter13':{'unique_name': 'variable_in_caracola',
+                                   'name': 'is_variable', 'use':True,
+                                   'group_kind':'libraries',
+                                   'groups':['caracola']}, }
+
+        configuration = {'Snvs':{'min_quality':20},
+                         'Sam_processing':{'add_default_qualities':True},
+                         'snv_filters':snv_filters,
+                         'General_settings':{'threads':THREADS}}
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+        project_dir = join(test_dir.name, project_name)
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        clean_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(reads_dir)
+        os.mkdir(clean_reads_dir)
+        shutil.copy(os.path.join(DATA_DIR, 'solid.fastq'), 
+               os.path.join(clean_reads_dir, 'pl_solid.lb_hola.sm_hola.sfastq'))
+        
+        #the reference
+        reference_dir = join(project_dir, 'mapping/reference')
+        os.makedirs(reference_dir)
+        reference_fpath = join(reference_dir, 'reference.fasta')
+        out = open(reference_fpath, 'w')
+        for line in open(join(DATA_DIR, 'samtools/colorspace/reference')):
+            out.write(line)
+            
+        do_analysis(project_settings=settings_path, kind='mapping', silent=True)
+        mapping_dir = join(project_dir, 'mapping')
+        singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
+        singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
+        assert exists(join(singular_mapping_dir, 'bams',
+                            'by_readgroup', 'pl_solid.lb_hola.sm_hola.bam'))
+        result_dir = join(mapping_dir, 'bams')
+        assert exists(result_dir)
+        result_dir_by_lib = join(result_dir, 'by_readgroup')
+        assert exists(result_dir_by_lib)
+        
+        do_analysis(project_settings=settings_path, kind='merge_bams',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.0.bam'))
+        assert exists(join(result_dir, 'merged.0.bam.bai'))
+
+        #we realign the mapping using GATK
+        do_analysis(project_settings=settings_path, kind='realign_bam',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.1.bam'))
+
+        os.chdir('/tmp')
+        test_dir.close()
+        
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['TestBackbone.test_mapping_analysis']#, 'Test.testName']
+    import sys;sys.argv = ['TestBackbone.test_mapping_color']#, 'Test.testName']
     unittest.main()
