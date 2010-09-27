@@ -25,6 +25,13 @@ from franklin.seq.seqs import SeqWithQuality
 from franklin.seq.readers import seqs_in_file, guess_seq_file_format
 from franklin.seq.writers import write_seqs_in_file
 
+COLORSPACE_CODE = {'AA':0, 'AC':1, 'AG':2, 'AT':3,
+                   'CA':1, 'CC':0, 'CG':3, 'CT':2,
+                   'GA':2, 'GC':3, 'GG':0 , 'GT':1,
+                   'TA':3, 'TC':2, 'TG':1, 'TT':0}
+COLOR_IN_NUCLCODE = {0:'A', 1:'T', 2:'G', 3:'G', '.':'N'}
+
+
 def parse_fasta(seq_fhand, qual_fhand=None):
     '''It returns the fasta file content giving a file hanler'''
     qual = None
@@ -98,3 +105,24 @@ def cat(infiles, outfile):
         for line in infile:
             outfile.write(line)
     outfile.flush()
+
+def seq_space_to_color_space(seq, out_code='color'):
+    'It converts a sequence from sequence space to color space'
+    new_seq = []
+    for index, nucl in enumerate(seq):
+        if index == 0:
+            new_seq.append(nucl)
+            continue
+        two_nucl = seq[index -1] + nucl
+        try:
+            color_space  =  COLORSPACE_CODE[two_nucl]
+        except KeyError:
+            color_space = '.'
+            
+        if out_code != 'color':
+            color_space = COLOR_IN_NUCLCODE[color_space]
+            
+        new_seq.append(color_space)
+    return ''.join(new_seq)
+      
+    
