@@ -215,6 +215,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                                       '454' : (INTEGER, 100),
                                       'sanger': (INTEGER, 100),
                                       'illumina': (INTEGER, 22),
+                                      'solid': (INTEGER, 22),
                     }),
                     ('edge_removal',
                          OrderedDict([
@@ -297,6 +298,8 @@ DEFAULT_CONFIGURATION = OrderedDict([
                             ('sanger_right', (INTEGER, None)),
                             ('illumina_left', (INTEGER, None)),
                             ('illumina_right', (INTEGER, None)),
+                            ('solid_left', (INTEGER, None)),
+                            ('solid_right', (INTEGER, None))
                         ]),
                 ),
                 ('vcf_grouping', (STRING, 'read_groups')),

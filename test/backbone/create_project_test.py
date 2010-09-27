@@ -47,7 +47,33 @@ ACCGTCTCGACGAGATCGTGATCTTCGATCCTCTGTCCCACGAGCAGCTGAGGAAGGTCG
 CTCGCCTTCAGATGAAGGATGTGGCCGTCCGTCTTGCCGAANNNNNCATCGCTCTGGCTG
 TGACCGANNNNNCATTGGACATCATCTTGTCTCTCTCTNNNNNNTCNNNNT
 '''
+READS_SOLID='''@10_1824_570_F3
+NAGATACGTTACGGTCATCCGGGCCAGCTCATCGCNGAAANGNAAGTCA
++
+!@A=BB+@:)@9@.<B=67/B=>;@B><@<B)75?!:@=2!7!::>/?;
+@10_1993_178_F3
+NGCACATACTGGATAGGCCATTCAGAGGAGACAGACAAGGTCAAGGACA
++
+!9,=:===5;-;??<A=;4>@?=@>(*(?@?8;6=<8?<;7%??<989@
+@10_212_402_F3
+NCTGTTAGGACGTTGTCCGACTAGCGTTCTGTCAGACTAACATAACCAA
++
+!;?;<9B:?>,:AB;B;>7B=BA??ABB:BA?7?4?<9':>'@8<B%2:
+@10_51_1274_F3
+NGATCCCGACTCGGAATCTAGAACTCGCCTAGGCTCTCACGACGCTAGG
++
+!@??7:9?<<:??*=@B=<;@?@<B?=>?@<>=?AAA9:6<;:54B;@4
+@10_577_337_F3
+NCACGGACCTCAGTTAACCTAGCTAGGCGTCTGCGATGGTTACTTTCAT
++
+!=8%@5?ABB&BBBB@BB7B@<BB<:BA-A:B?;@<?>@B4@?+,6@B8
+@10_796_926_F3
+NAAGAAGTCGGTCAGCTTGTAATTACACGAGCACCGTGCGAACTGCAAG
++
+!9@B8?5?A67B<@>9'B@/=4B;5+@77>;15:/A;>=%>:2):1@><
 
+
+'''
 READS_454 = '''@FKU4KFK07H6D2L
 GGTTCAAGGTTTGAGAAAGGATGGGAAGAAGCCAAATGCCTACATTGCTGATACCACTACGGCAAATGCTCAAGTTCGGACGCTTGCTGAGACGGTGAGACTGGATGCAAGAACTAAGTTATTGAATAGTCAGCATGCATGATTAGGCTAAGCCGTAAGCATAGCATGACCCCATTGGCAAAGCTAGCATGATACGACATCATTATAGCGAGAGACGCATATCGAGAATGAGCGATCAGCACATGTCAGCGAGCTACTGACTATCATATATAGCGCAGAGACGACTAGCATCGAT
 +
@@ -171,7 +197,7 @@ class TestBackbone(unittest.TestCase):
         cleaned_noqual = join(cleaned_dir, os.path.basename(fpath_noqual))
         clean_seqs =  open(cleaned_noqual).read()
         assert clean_seqs.startswith('>FM195262.1\nGCATTCTCG')
-
+        
     @staticmethod
     def test_cleaning_analysis():
         'We can clean the reads'
@@ -208,6 +234,9 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         #print original_reads_dir
         fpath_454 = join(original_reads_dir, 'pl_454.lb_a.sfastq')
         fpath_ill = join(original_reads_dir, 'pl_illumina.lb_b.sfastq')
+        fpath_solid = join(original_reads_dir, 'pl_solid.lb_prueba.sfastq')
+        
+        open(fpath_solid, 'w').write(READS_SOLID)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
@@ -223,6 +252,12 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         seq = seqs[2].seq
         # It means that the starting word has been removed
         assert  seq.startswith('CAAGATTCTTCCCACAT')
+
+        # solid
+        cleaned_solid =  join(cleaned_dir, os.path.basename(fpath_solid))
+        clean_seqs =  open(cleaned_solid).read()
+        assert '10_1824_570_F3' not in clean_seqs
+
 
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly')
@@ -250,7 +285,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
                     kind='set_assembly_as_reference')
         os.chdir('/tmp')
         test_dir.close()
-
+        
     @staticmethod
     def test_read_stats_analysis():
         'It test the read statistics'

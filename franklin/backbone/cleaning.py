@@ -82,9 +82,21 @@ class CleanReadsAnalyzer(Analyzer):
             return None, short_adaptors     #we do not return the adaptor file
         else:
             return long_adap_fhand.name, short_adaptors
+        
+    def _create_cleaning_configuration_solid(self, platform):
+        '''It returns the pipeline configuration for solid pipeline looking at 
+        the project settings'''
+        settings = self._project_settings['Cleaning']
+        configuration = {}
+        # min length settings
+        min_length = settings['min_seq_length'][platform]
+        configuration['remove_short'] = {}
+        configuration['remove_short']['length'] = min_length
+        return configuration
 
-    def create_cleaning_configuration(self, platform, library=None):
-        'It returns the pipeline configuration looking at the project settings'
+    def _create_cleaning_configuration_no_solid(self, platform, library=None):
+        '''It returns the pipeline configuration for no solid pipeline looking 
+        at the project settings'''
         settings = self._project_settings['Cleaning']
         configuration = {}
 
@@ -110,13 +122,6 @@ class CleanReadsAnalyzer(Analyzer):
             words.extend(settings[word_param])
         configuration['remove_short_adaptors'] = {}
         configuration['remove_short_adaptors']['words'] = words
-
-        #edge_remover
-        left =  settings['edge_removal']['%s_left' % platform]
-        right = settings['edge_removal']['%s_right' % platform]
-        configuration['edge_removal'] = {}
-        configuration['edge_removal']['left_length'] = left
-        configuration['edge_removal']['right_length'] = right
 
         # lucy settings.
         lucy_settings = settings['lucy']
@@ -150,6 +155,13 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['strip_trimpoly'] = {}
         configuration['strip_trimpoly']['ntrim_above_percent'] = n_trim
 
+        #edge_remover
+        left =  settings['edge_removal']['%s_left' % platform]
+        right = settings['edge_removal']['%s_right' % platform]
+        configuration['edge_removal'] = {}
+        configuration['edge_removal']['left_length'] = left
+        configuration['edge_removal']['right_length'] = right
+
         # min length settings
         min_length = settings['min_seq_length'][platform]
         configuration['remove_short'] = {}
@@ -157,6 +169,14 @@ class CleanReadsAnalyzer(Analyzer):
 
         return configuration
 
+    def create_cleaning_configuration(self, platform, library=None):
+        'It returns the pipeline configuration looking at the project settings'
+        if platform == 'solid':
+            return self._create_cleaning_configuration_solid(platform)
+        else:
+            return self._create_cleaning_configuration_no_solid(platform, 
+                                                                library=library)
+        
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''

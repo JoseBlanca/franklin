@@ -151,7 +151,7 @@ SEQPIPELINES = {
 
     'word_masker'        : [remove_short_adaptors, filter_short_seqs],
 
-    'solid'              :[create_solid_quality_filter]}
+    'solid'              : [solid_quality, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
