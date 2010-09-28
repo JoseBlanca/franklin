@@ -271,7 +271,7 @@ class TestBackboneMapping(unittest.TestCase):
         os.makedirs(reference_dir)
         reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(join(DATA_DIR, 'samtools/colorspace/reference')):
+        for line in open(join(DATA_DIR, 'samtools_color/reference')):
             out.write(line)
             
         do_analysis(project_settings=settings_path, kind='mapping', silent=True)
