@@ -21,7 +21,7 @@ Created on 2009 mar 27
 
 import unittest
 from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature, get_seq_name,
-                               create_seq_from_struct)
+                               create_seq_from_struct, UNKNOWN_DESCRIPTION)
 from Bio.SeqFeature import FeatureLocation, ExactPosition
 from Bio.Alphabet import Alphabet, DNAAlphabet
 
@@ -128,7 +128,33 @@ class SeqsTest(unittest.TestCase):
         seq = SeqWithQuality(Seq('actg'))
         seq.upper()
         assert seq.seq == 'actg'
-
+    
+    @staticmethod
+    def test_remove_annotations():
+        'It test ermove annotations from seq_with quality'
+        seq = SeqWithQuality(Seq('actg'), qual=[30, 30, 30, 30])
+        seq.description = 'Description'
+        annotations = {'arabidopsis-orthologs':'justone',
+                       'GOs':'GO12345',
+                       }
+        snv = SeqFeature(location=FeatureLocation(4, 4), type='snv')
+        intron = SeqFeature(location=FeatureLocation(4, 4), type='intron')
+        orf = SeqFeature(location=FeatureLocation(4, 4), type='orf')
+        ssr = SeqFeature(location=FeatureLocation(4, 4), type='microsatellite')
+        features = [snv, intron, orf, ssr] 
+        seq.annotations = annotations
+        seq.features    = features
+        seq.remove_annotations('GOs')
+        seq.remove_annotations('orthologs')
+        assert seq.annotations == {}
+        seq.remove_annotations('snv')
+        seq.remove_annotations('intron')
+        seq.remove_annotations('microsatellite')
+        seq.remove_annotations('orf')
+        seq.remove_annotations('description')
+        assert seq.features == []
+        assert seq.description == UNKNOWN_DESCRIPTION
+        
 class SeqTest(unittest.TestCase):
     'It tests the Seq object.'
     @staticmethod
@@ -160,6 +186,11 @@ class SeqTest(unittest.TestCase):
         text = 'A' * 100
         seq = Seq(text)
         assert text in repr(seq)
+    
+    @staticmethod
+    def test_remove_annotations():
+        'It test ermove annotations from seq_with quality'
+        
 
 class TestGetSeqName(unittest.TestCase):
     'It tests that we can get a sequence name'
@@ -215,6 +246,9 @@ class TestCreateSeqStruct(unittest.TestCase):
 
         seq = SeqWithQuality(Seq('ACTG', DNAAlphabet()))
         assert seq.struct['seq']['alphabet'] == 'dnaalphabet'
+        
+        
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
