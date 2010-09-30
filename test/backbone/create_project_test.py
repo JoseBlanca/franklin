@@ -184,7 +184,8 @@ class TestBackbone(unittest.TestCase):
         open(fpath_qual, 'w').write(SANGER_QUAL)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
-        do_analysis(project_settings=settings_path, kind='clean_reads')
+        do_analysis(project_settings=settings_path, kind='clean_reads', 
+                    silent=True)
         cleaned_dir = join(project_dir, 'reads', 'cleaned')
         assert exists(cleaned_dir)
 
@@ -240,7 +241,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
-        do_analysis(project_settings=settings_path, kind='clean_reads')
+        do_analysis(project_settings=settings_path, kind='clean_reads', 
+                    silent=True)
         cleaned_dir = join(project_dir, 'reads', 'cleaned')
         assert exists(cleaned_dir)
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
@@ -260,7 +262,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
 
 
         do_analysis(project_settings=settings_path,
-                    kind='prepare_mira_assembly')
+                    kind='prepare_mira_assembly', silent=True)
         assembly_input = join(project_dir, 'assembly', 'input')
         assert exists(assembly_input)
         mira_in_454 = join(assembly_input, 'backbone_in.454.fasta')
@@ -268,7 +270,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         assert exists(mira_in_454)
         assert exists(mira_in_qul)
 
-        do_analysis(project_settings=settings_path, kind='mira_assembly')
+        do_analysis(project_settings=settings_path, kind='mira_assembly', 
+                    silent=True)
         assembly_dir = join(project_dir, 'assembly')
         singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
         assert exists(join(assembly_dir, singular_assembly_dir,
@@ -282,7 +285,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         open(join(result_dir, 'contigs.fasta'), 'w')
         open(join(result_dir, 'contigs.qual'), 'w')
         do_analysis(project_settings=settings_path,
-                    kind='set_assembly_as_reference')
+                    kind='set_assembly_as_reference', silent=True)
         os.chdir('/tmp')
         test_dir.close()
         
@@ -314,7 +317,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
-        do_analysis(project_settings=settings_path, kind='read_stats')
+        do_analysis(project_settings=settings_path, kind='read_stats', 
+                    silent=True)
 
         clean_stats_dir = join(cleaned_reads_dir, 'stats')
         clean_fnames = os.listdir(clean_stats_dir)

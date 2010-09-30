@@ -105,7 +105,8 @@ class MappingAnalyzer(Analyzer):
                                      'picard_path':picard_path})
 
         # Now we run the select _last mapping
-        self._spawn_analysis(DEFINITIONS['_select_last_mapping'])
+        self._spawn_analysis(DEFINITIONS['_select_last_mapping'],
+                             silent=self._silent)
 
         self._log({'analysis_finished':True})
 

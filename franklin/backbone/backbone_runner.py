@@ -23,8 +23,8 @@ Created on 12/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, logging
-from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 
+from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from franklin.backbone.annotation import DEFINITIONS as annot_defs
 from franklin.backbone.cleaning import DEFINITIONS as clean_defs
 from franklin.backbone.assembling import DEFINITIONS as assembly_defs
@@ -44,21 +44,49 @@ def get_analysis_especifications():
             specifications[key] = value
     return specifications
 
+class NullHandler(logging.Handler):
+    
+    def emit(self, record):
+        'This method does nothing.'
+        pass
+
+    def handle(self, record):
+        'This method does nothing.'
+        pass
+
+    def createLock(self, record):
+        'This method does nothing.'
+        return None
+    def _set_level(self, level):
+        'set level'
+        self.level = level
+    def _get_level(self, level):
+        'set level'
+        return  level
+    level = property(_get_level, _set_level)
+
 def _configure_logging(log_fpath, silent):
     'It prepares the logging infraestructure'
     logger = logging.getLogger('franklin')
     logger.setLevel(logging.INFO)
     #the format
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    #create a handler for the log file
-    log_hand = logging.FileHandler(log_fpath)
-    log_hand.setFormatter(formatter)
-    logger.addHandler(log_hand)
-    #create console handler and set level to info
+
     if not silent:
+        #create a handler for the log file
+        log_hand = logging.FileHandler(log_fpath)
+        log_hand.setFormatter(formatter)
+        logger.addHandler(log_hand)
+        #create console handler and set level to info
+    
         console_hand = logging.StreamHandler()
         console_hand.setFormatter(formatter)
         logger.addHandler(console_hand)
+    else:
+        #pass
+        logger.addHandler(NullHandler)
+        
+        
 
 def do_analysis(kind, project_settings=None, analysis_config=None,
                 silent=False):

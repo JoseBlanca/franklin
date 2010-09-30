@@ -200,7 +200,8 @@ class MiraAssemblyAnalyzer(Analyzer):
                                                   BACKBONE_DIRECTORIES['info']))
 
         # Now we run the select _last mapping
-        self._spawn_analysis(DEFINITIONS['_select_last_assembly'])
+        self._spawn_analysis(DEFINITIONS['_select_last_assembly'], 
+                             silent=self._silent)
 
         self._log({'analysis_finished':True})
         os.chdir(original_dir)

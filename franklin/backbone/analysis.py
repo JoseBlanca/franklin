@@ -251,12 +251,13 @@ class Analyzer(object):
             elif 'analysis_finished' in messages:
                 logger.info('Analysis finished')
 
-    def _spawn_analysis(self, analysis_def):
+    def _spawn_analysis(self, analysis_def, silent=False):
         'Spawn a new analysis'
         p_settings     = self._project_settings
         analyzer_klass = analysis_def['analyzer']
         analyzer       = analyzer_klass(project_settings=p_settings,
-                                        analysis_definition=analysis_def)
+                                        analysis_definition=analysis_def,
+                                        silent=silent)
         analyzer.run()
 
 class _LastAnalysisAnalyzer(Analyzer):
