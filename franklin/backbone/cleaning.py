@@ -362,6 +362,7 @@ class ReadsStatsAnalyzer(Analyzer):
 
         for seq_type in ('raw', 'cleaned'):
             if seq_type in pair:
+                stats_dir = get_stats_dir(seq_type)
                 fpath = pair[seq_type].last_version
                 basename = pair[seq_type].basename
 

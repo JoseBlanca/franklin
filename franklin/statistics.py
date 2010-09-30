@@ -519,7 +519,7 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
         axes.set_title(title)
 
     if not xlabels:
-        xlabels = range(1, len(numpy_vects))
+        xlabels = range(1, len(numpy_vects) + 1)
 
     if max_plotted_boxes:
         step = len(numpy_vects)//max_plotted_boxes
