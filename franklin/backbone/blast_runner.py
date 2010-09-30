@@ -28,15 +28,7 @@ from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
 
-
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
-MOCK_HANDLER = NullHandler()
 LOGGER_NAME = 'franklin'
-logging.getLogger(LOGGER_NAME).addHandler(MOCK_HANDLER)
-
-
 
 def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath, 
                        threads=False):
@@ -110,7 +102,6 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     #create a logger
     logger = logging.getLogger(LOGGER_NAME)
-
     query_basename = _get_basename(query_fpath)
     blast_dir = join(project_dir, BACKBONE_DIRECTORIES['blast_dir'])
 

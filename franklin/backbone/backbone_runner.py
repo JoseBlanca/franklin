@@ -46,6 +46,8 @@ def get_analysis_especifications():
 
 class NullHandler(logging.Handler):
     
+    def __init__(self):
+        logging.Handler.__init__()
     def emit(self, record):
         'This method does nothing.'
         pass
@@ -85,9 +87,8 @@ def _configure_logging(log_fpath, silent):
     else:
         #pass
         logger.addHandler(NullHandler)
+        logger.setLevel(logging.CRITICAL)
         
-        
-
 def do_analysis(kind, project_settings=None, analysis_config=None,
                 silent=False):
     'It does one of the predefined analyses'
@@ -108,7 +109,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None,
     log_fpath = os.path.join(settings['General_settings']['project_path'],
                              BACKBONE_DIRECTORIES['log_file'])
     _configure_logging(log_fpath, silent)
-
+    
     try:
         analysis_def = specifications[kind]
     except KeyError:
