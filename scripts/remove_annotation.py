@@ -82,6 +82,7 @@ def remove_annotation(in_fhand, format_, rm_annots):
         
     
     
-    
+if __name__ == '__main__':
+    main()   
     
     
