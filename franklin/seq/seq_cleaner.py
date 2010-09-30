@@ -285,13 +285,6 @@ def create_striper_by_quality_trimpoly(ntrim_above_percent=2):
             return None
 
         if len(sequence) < 80:
-            if sequence.name is None:
-                print_name = ''
-            else:
-                print_name = sequence.name
-            msg = 'trimpoly: Sequence %s shorter than 80 nt removed' % \
-                                                                    print_name
-            logging.warning(msg)
             return None
 
         parameters = {'only_n_trim':None,
