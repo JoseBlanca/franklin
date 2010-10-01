@@ -300,18 +300,18 @@ def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
      trim option is used to trim os mask the low quality sequence '''
 
     trimp_data = fhand_trimpoly_out.readline().split()
-    end3 = int(trimp_data[2]) - 1
-    end5 = int(trimp_data[3])
+    end5 = int(trimp_data[2]) - 1
+    end3 = int(trimp_data[3])
     new_sequence = ''
     str_seq = str(sequence.seq)
     if not trim:
-        new_sequence  += str_seq[:end3].lower()
-    new_sequence += str_seq[end3:end5]
+        new_sequence  += str_seq[:end5].lower()
+    new_sequence += str_seq[end5:end3]
 
     if trim:
-        return sequence[end3:end5]
+        return sequence[end5:end3]
     else:
-        new_sequence += str_seq[end5:].lower()
+        new_sequence += str_seq[end3:].lower()
         return copy_seq_with_quality(sequence, seq=Seq(new_sequence,
                                                        sequence.seq.alphabet))
 
