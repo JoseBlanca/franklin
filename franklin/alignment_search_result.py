@@ -58,6 +58,13 @@ from franklin.seq.seqs import SeqWithQuality
 from Bio.Seq import UnknownSeq
 from math import log10
 
+class TabularBlastParser(object):
+    'It parses the tabular output of a blast result'
+    def __init__(self, fhand):
+        'The init requires a file to be parser'
+        fhand.seek(0, 0)
+        self._blast_file = fhand
+
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
@@ -67,12 +74,12 @@ class BlastParser(object):
         self._blast_file = fhand
         blast_version, plus = self._get_blast_version()
         self._blast_file.seek(0, 0)
-        
-        if ((blast_version and plus) or 
+
+        if ((blast_version and plus) or
                                 (blast_version and blast_version > '2.2.21')):
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = True
-        
+
         else:
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = False
@@ -207,12 +214,12 @@ class BlastParser(object):
             if line.startswith('<BlastOutput_version>'):
                 version = line.split('>')[1].split('<')[0].split()[1]
                 break
-        
+
         if version and '+' in version:
             plus = True
-            version = version[:-1] 
+            version = version[:-1]
         return version, plus
-        
+
 
     def next(self):
         'It returns the next blast result'
@@ -909,3 +916,77 @@ for the different amounts of hits).
     % incompatibility
 
 '''
+
+def build_relations_from_aligment(fhand, query_name, subject_name):
+    '''It returns a relations dict given an alignment in markx10 format
+
+    The alignment must be only between two sequences query against subject
+    '''
+
+    #we parse the aligment
+    in_seq_section = 0
+    seq, seq_len, al_start = None, None, None
+    for line in fhand:
+        line = line.strip()
+        if not line:
+            continue
+        if line[0] == '>' and line[1] != '>':
+            if in_seq_section:
+                seq = {'seq': seq,
+                       'length': seq_len,
+                       'al_start': al_start - 1,
+                       'name': query_name}
+                if in_seq_section == 1:
+                    seq0 = seq
+            in_seq_section += 1
+            seq = ''
+            continue
+        if not in_seq_section:
+            continue
+        if '; sq_len:' in line:
+            seq_len = int(line.split(':')[-1])
+        if '; al_display_start:' in line:
+            al_start = int(line.split(':')[-1])
+        if line[0] not in (';', '#'):
+            seq += line
+    seq1 = {'seq': seq,
+            'length': seq_len,
+            'al_start': al_start - 1,
+            'name': subject_name}
+
+    #now we get the segments
+    gap = '-'
+    pos_seq0 = seq0['al_start']
+    pos_seq1 = seq1['al_start']
+    segment_start = None
+    segments = []
+    for ali_pos in range(len(seq1['seq'])):
+        try:
+            nucl0, nucl1 = seq0['seq'][ali_pos+1], seq1['seq'][ali_pos+1]
+            if (nucl0 == gap or nucl1 == gap) and segment_start:
+                do_segment = True
+                segment_end = pos_seq0 - 1, pos_seq1 - 1
+            else:
+                do_segment = False
+        except IndexError:
+            do_segment = True
+            segment_end = pos_seq0, pos_seq1
+        if do_segment:
+            segment= {seq0['name']: (segment_start[0], segment_end[0]),
+                      seq1['name']: (segment_start[1], segment_end[1]),}
+            segments.append(segment)
+            segment_start = None
+        if nucl0 != gap and nucl1 != gap and segment_start is None:
+            segment_start = pos_seq0, pos_seq1
+        if nucl0 != gap:
+            pos_seq0 += 1
+        if nucl1 != gap:
+            pos_seq1 += 1
+
+    relations = {}
+    for seg in segments:
+        for seq_name, limits in seg.items():
+            if seq_name not in relations:
+                relations[seq_name] = []
+            relations[seq_name].append(limits)
+    return relations
