@@ -3,7 +3,7 @@ Created on Oct 4, 2010
 
 @author: peio
 '''
-from human_mut.genome import (CoordSystem, CodonPosition)
+from franklin.coordsystem import (CoordSystem, CodonPosition)
 import unittest
 
 class CodonPositionTest(unittest.TestCase):
