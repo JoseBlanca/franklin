@@ -392,7 +392,7 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
     genomic_seqs_fhand = get_fhand(genomic_seqs_fhand)
     genomic_seqs_index = SeqIO.index(genomic_seqs_fhand.name,
                                      guess_seq_file_format(genomic_seqs_fhand))
-    def annotate_orf(sequence):
+    def annotate_intron(sequence):
         'It adds the orf to the SeqFeatures'
         if sequence is None:
             return
@@ -414,7 +414,7 @@ def create_cdna_intron_annotator(genomic_db, genomic_seqs_fhand):
                                  qualifiers={'genomic_db':genomic_db})
             sequence.features.append(feature)
         return sequence
-    return annotate_orf
+    return annotate_intron
 
 def create_go_annotator(annot_fpath):
     'It annotates GOs using blast2go4pipe'
