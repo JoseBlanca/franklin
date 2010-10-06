@@ -25,7 +25,8 @@ from franklin.seq.seq_annotation import (create_cdna_intron_annotator,
                                          create_description_annotator,
                                          create_microsatellite_annotator,
                                          create_orf_annotator,
-                                         create_go_annotator)
+                                         create_go_annotator,
+                                         create_prot_change_annotator)
 
 annotate_cdna_introns = {'function': create_cdna_intron_annotator,
                          'arguments':{'genomic_db':None,
@@ -65,7 +66,14 @@ annotate_gos = {'function': create_go_annotator,
                  'name':'annotate_gos',
                  'comment': 'It annotates the gos'}
 
+annotate_protein_change = {'function': create_prot_change_annotator,
+                 'arguments':{},
+                 'type':'mapper' ,
+                 'name':'annotate_protein_change',
+                 'comment': 'It annotates the protein changes'}
+
+
 
 ANNOT_STEPS = [annotate_cdna_introns, annotate_orthologs,
                annotate_with_descriptions, annotate_microsatellites,
-               annotate_orfs, annotate_gos]
+               annotate_orfs, annotate_gos, annotate_protein_change]

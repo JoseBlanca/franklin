@@ -158,21 +158,23 @@ def create_prot_change_annotator():
         for orf in sequence.get_features(kind='orf'):
             for snv in sequence.get_features(kind='snv'):
                 protein_change = protein_change_annotator(sequence, orf, snv)
-                snv.qualifiers['protein_change'] = protein_change
-
+                if protein_change is not None:
+                    snv.qualifiers['protein_change'] = protein_change
+        return sequence
     return prot_change_annotator
 
 def  protein_change_annotator(sequence, orf, snv):
     '''It annotates the protein changes and stores it in the snv qualifiers
     structure'''
     codons, location, snv_pos_in_orf = _get_codons(sequence, orf, snv)
-
+    if codons is None:
+        return None
     protein_changes = {}
     protein_changes['alleles'] = {}
     for allele in snv.qualifiers['alleles']:
         protein_changes['alleles'][allele] = {}
         allele_kind = allele[1]
-        aa = _translate(codons[allele])
+        aa = codons[allele].translate()
         #print aa, codons[allele]
         protein_changes['alleles'][allele]['aa'] = aa
         if aa == '*':
@@ -275,11 +277,6 @@ def _locate_codons_in_orf(sequence, orf, snv):
 
     return (position, codon_start, snv_in_orf)
 
-def _translate(seq):
-    'it translates a sequence into a protein'
-    rna = Seq(seq, IUPAC.ambiguous_rna)
-    return str(rna.translate())
-
 def _get_codons_with_alleles(codon_pos, snv_pos, alleles, sequence):
     'It get codons sequence giving section'
     codons = {}
@@ -324,82 +321,6 @@ def _get_codons(sequence, orf, snv):
     else:
         codons =  None
     return codons, location, snv_pos
-
-
-#def _locate_codons_and_snvs_in_orf(sequence, orf, snv):
-#    'It locates the snv in the orf coordinate system'
-#    query_name = sequence.name
-#    orf_seq = orf.qualifiers['dna']
-#    subject_name = 'subject'
-#    subject_fhand = NamedTemporaryFile(suffix='.fasta')
-#    subject_fhand.write('>%s\n%s\n' % (subject_name, orf_seq))
-#    subject_fhand.flush()
-#    parameters   = {'subject':subject_fhand.name}
-#    aligner      = create_runner(tool='water', parameters=parameters)
-#    result_fhand = aligner(sequence)['water']
-#    relations = build_relations_from_aligment(result_fhand,
-#                                              query_name=sequence.name,
-#                                              subject_name=subject_name)
-#    #print relations
-#    coord = CoordSystem(relations=[relations])
-#
-#    # snv .positions
-#    snv_start_pos = snv.location.start.position
-#    snv_end_pos   = snv.location.end.position
-#
-#    try:
-#        snv_in_orf_start = coord.transform(from_mol=query_name,
-#                                           to_mol=subject_name,
-#                                           position=snv_start_pos)
-#    except RuntimeError:
-#        snv_in_orf_start = None
-#    try:
-#        snv_in_orf_end = coord.transform(from_mol=query_name,
-#                                         to_mol=subject_name,
-#                                         position=snv_end_pos)
-#    except RuntimeError:
-#        snv_in_orf_end = None
-#
-#    #print snv_in_orf_start, snv_in_orf_end
-#
-#    orf_start = 0
-#    orf_end   = len(orf.qualifiers['dna']) - 1
-#    orf_start_limit_in_seq = coord.transform(from_mol=subject_name,
-#                                             to_mol=query_name,
-#                                             position=orf_start)
-#    orf_end_limit_in_seq   = coord.transform(from_mol=subject_name,
-#                                             to_mol=query_name,
-#                                             position=orf_end)
-#
-#    if snv_in_orf_start is None and snv_in_orf_end is None:
-#        # if we don't now any position, we can not know the change between
-#        # codons
-#        pass
-#    elif snv_in_orf_start is None:
-#        # if start in utr5, use orf start as start of protein coding
-#        if  snv_start_pos < orf_start_limit_in_seq:
-#            snv_in_orf_start = orf_start
-#        else:
-#            snv_in_orf_start = None
-#    elif snv_in_orf_end is None:
-#        # if end in utr3, use end of orf as end of pretein coding
-#        if snv_end_pos > orf_end_limit_in_seq:
-#            snv_in_orf_end = orf_end
-#        else:
-#            snv_in_orf_end = None
-#
-#    if snv_in_orf_start is not None and snv_in_orf_end is not None:
-#        start_codon_pos = snv_in_orf_start % 3
-#        end_codon_pos   = snv_in_orf_end  % 3
-#
-#        codon_start = snv_in_orf_start - start_codon_pos
-#        codon_end   = snv_in_orf_end - end_codon_pos + 3
-#
-#        return (codon_start, codon_end), (snv_in_orf_start, snv_in_orf_end)
-#    return None, None
-
-
-
 
 def create_microsatellite_annotator():
     'It creates a function that'

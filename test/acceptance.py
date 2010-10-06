@@ -126,6 +126,7 @@ SNV types:
         analyses = ['annotate_orfs', 'annotate_microsatellites',
                     'annotate_gos', 'annotate_descriptions',
                     'annotate_orthologs', 'annotate_introns',
+                    'annotate_prot_change',
                     'write_annotations', 'annotation_stats']
         run_analysis(analyses, settings_path)
 

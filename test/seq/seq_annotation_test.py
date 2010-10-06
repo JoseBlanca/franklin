@@ -109,7 +109,7 @@ class AnnotationTests(unittest.TestCase):
         orf += 'TCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTAC'
         orf += 'TGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
 
-        qualifiers = {'strand':'forward', 'dna':orf, 'prot':'prot'}
+        qualifiers = {'strand':'forward', 'dna':Seq(orf), 'prot':'prot'}
         feature = SeqFeature(location=FeatureLocation(0, len(seq)), type='orf',
                              qualifiers=qualifiers)
         alleles = {('A', SNP): None, ('G', INVARIANT):None}
@@ -138,9 +138,9 @@ class AnnotationTests(unittest.TestCase):
         annotator(sequence)
         [feature, snv, snv2, snv3, snv4, snv5] = sequence.features
         assert snv.qualifiers['protein_change']['kind'] == 'substitution'
-        assert snv3.qualifiers['protein_change']['kind'] == 'synonym'
+        assert snv3.qualifiers['protein_change']['kind'] == 'substitution'
         assert snv4.qualifiers['protein_change']['kind'] == 'breakage'
-
+#
         assert snv.qualifiers['protein_change']['location'] == 'codon_1'
 
 
@@ -227,5 +227,5 @@ class AnnotationTests(unittest.TestCase):
         os.remove(annot_fpath)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTests.test_snv_prot_change_annotator']
+#   import sys;sys.argv = ['', 'AnnotationTests.test_snv_prot_change_annotator']
     unittest.main()
