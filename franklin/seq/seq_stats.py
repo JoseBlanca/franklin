@@ -68,14 +68,15 @@ def _do_ssr_stats(stats, feats, orfs):
 
         type_ = types[len(unit)]
         if type_ not in stats['microsatellites']['types']:
-            stats['microsatellites']['types'][type_] = 0
-        stats['microsatellites']['types'][type_] += 1
-
+            stats['microsatellites']['types'][type_]['num'] = 0
+            stats['microsatellites']['types'][type_]['location'] = {}
+        stats['microsatellites']['types'][type_]['num'] += 1
         location = _location_to_orf(orfs, feat)
+
         if location:
-            if location not in stats['microsatellites']['locations']:
-                stats['microsatellites']['locations'][location] = 0
-            stats['microsatellites']['locations'][location] += 1
+            if location not in stats['microsatellites']['types'][type_]['location']:
+                stats['microsatellites']['types'][type_]['location'][location] = 0
+            stats['microsatellites']['types'][type_]['location'][location] += 1
 
     if some_feat:
         stats['microsatellites']['n_seqs'] += 1
@@ -137,7 +138,7 @@ def _write_ssr_annot_stats(stats, out_fhand):
 
     out_fhand.write('Sequences with microsatellites: %i\n' % stats['n_seqs'])
 
-    out_fhand.write('Microsatellite types:\n')
+    out_fhand.write('%s|%s|%s|%s|%s|%s\n' % () )
     for type_ in MICROSATELLITE_TYPES:
         if type_ in stats['types']:
             out_fhand.write('\t%s: %i\n' % (type_, stats['types'][type_]))

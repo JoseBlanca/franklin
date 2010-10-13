@@ -395,9 +395,8 @@ def calculate_snv_kind(feature, detailed=False):
         allele_kind = allele[1]
         snv_kind = _calculate_kind(allele_kind, snv_kind)
 
-
     if snv_kind == SNP and detailed:
-        snv_kind = _guess_snv_kind(alleles)
+        snv_kind = _guess_snp_kind(alleles)
 
     return snv_kind
 
@@ -408,15 +407,14 @@ def _al_type(allele):
         return 'purine'
     elif allele in ('T', 'C'):
         return 'pirimidine'
-    return 'unknown'
+    return UNKNOWN
 
-def _guess_snv_kind(alleles):
-    'It guesses the type of the snv'
+def _guess_snp_kind(alleles):
+    'It guesses the type of the snp'
     alleles = alleles.keys()
     al0 = _al_type(alleles[0][0])
     al1 = _al_type(alleles[1][0])
-    if ((al0 == 'unknown' or al1 == 'unknown') or
-        (al0 == 'unknown' and al1 == 'unknown')):
+    if al0 == UNKNOWN or al1 == UNKNOWN:
         snv_kind = UNKNOWN
     elif al0 == al1:
         snv_kind = TRANSITION
