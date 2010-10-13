@@ -43,9 +43,11 @@ class SeqStatsTest(unittest.TestCase):
                           qualifiers={'unit':'GAA'})
         snv = SeqFeature(FeatureLocation(7, 7), type='snv',
                           qualifiers={'alleles':{('T',0):'', ('G',0):''}})
+        snv2 = SeqFeature(FeatureLocation(7, 7), type='snv',
+                          qualifiers={'alleles':{('T',0):'', ('R',0):''}})
 
         feats1 = [intron, ssr1]
-        feats2 = [orf, ssr2, snv]
+        feats2 = [orf, ssr2, snv, snv2]
 
         annots1 = {'arabidopsis-orthologs':['arab_1']}
 
@@ -89,8 +91,9 @@ ____
 Sequences with SNVs: 1
 SNV types:
 \ttransversion: 1
-SNV locations:
 \tunknown: 1
+SNV locations:
+\tunknown: 2
 
 Microsatellites
 _______________
@@ -102,10 +105,10 @@ Microsatellite locations:
 \tunknown: 1
 
 '''
+
         result = result.splitlines()
         expected = expected.splitlines()
         for index, line in enumerate(result):
-            #print line, expected[index]
             assert line == expected[index]
 
     @staticmethod

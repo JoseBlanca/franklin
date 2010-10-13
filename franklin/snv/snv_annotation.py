@@ -46,10 +46,12 @@ INDEL = 4
 COMPLEX = 5
 TRANSITION = 6
 TRANSVERSION = 7
+UNKNOWN = 8
 
 SNV_TYPES = {SNP:'SNP', INSERTION:'insertion', DELETION:'deletion',
              INVARIANT:'invariant', INDEL:'indel', COMPLEX:'complex',
-             TRANSITION:'transition', TRANSVERSION:'transversion'}
+             TRANSITION:'transition', TRANSVERSION:'transversion',
+             UNKNOWN:'unknown'}
 
 COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
                   'SalI', 'BglI', 'ClaI', 'TaqI',
@@ -393,12 +395,33 @@ def calculate_snv_kind(feature, detailed=False):
         allele_kind = allele[1]
         snv_kind = _calculate_kind(allele_kind, snv_kind)
 
-    _al_type = lambda x: 'purine' if x in ('A', 'G') else 'pirimidine'
+
     if snv_kind == SNP and detailed:
-        alleles = alleles.keys()
-        al0 = _al_type(alleles[0][0])
-        al1 = _al_type(alleles[0][1])
-        snv_kind = TRANSITION  if al0 == al1 else TRANSVERSION
+        snv_kind = _guess_snv_kind(alleles)
+
+    return snv_kind
+
+def _al_type(allele):
+    'I guesses the type of the allele'
+    allele = allele.upper()
+    if allele in ('A', 'G'):
+        return 'purine'
+    elif allele in ('T', 'C'):
+        return 'pirimidine'
+    return 'unknown'
+
+def _guess_snv_kind(alleles):
+    'It guesses the type of the snv'
+    alleles = alleles.keys()
+    al0 = _al_type(alleles[0][0])
+    al1 = _al_type(alleles[1][0])
+    if ((al0 == 'unknown' or al1 == 'unknown') or
+        (al0 == 'unknown' and al1 == 'unknown')):
+        snv_kind = UNKNOWN
+    elif al0 == al1:
+        snv_kind = TRANSITION
+    else:
+        snv_kind = TRANSVERSION
     return snv_kind
 
 def _calculate_kind(kind1, kind2):
