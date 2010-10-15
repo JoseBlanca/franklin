@@ -332,8 +332,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     #the intervals to realign
     gatk_path = guess_jar_dir('GenomeAnalysisTK.jar', java_conf)
     gatk_jar = os.path.join(gatk_path, 'GenomeAnalysisTK.jar')
-    intervals_fhand = tempfile.NamedTemporaryFile(prefix='intervals',
-                                                  suffix='.txt')
+    intervals_fhand = tempfile.NamedTemporaryFile(suffix='.intervals')
     cmd = java_cmd(java_conf=java_conf)
     cmd.extend(['-jar', gatk_jar, '-T', 'RealignerTargetCreator',
            '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name])
@@ -349,7 +348,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     cmd.extend(['-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
-           '--output', out_bam_fpath])
+           '-o', out_bam_fpath])
     call(cmd, raise_on_error=True)
 
 def _get_bam_coverage(bam, rgs, grouping):
