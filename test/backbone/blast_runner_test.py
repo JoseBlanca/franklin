@@ -150,7 +150,8 @@ class BlastTest(unittest.TestCase):
         'It test the blastdb kind'
         blastdb = join(DATA_DIR, 'blast', 'tomato_genome2')
         assert  guess_blastdb_kind(blastdb) == 'nucl'
-        blastdb = '/srv/databases/blast/tair7_pep'
+        blastdb = join(DATA_DIR, 'blast', 'tair7_pep')
+
         assert  guess_blastdb_kind(blastdb) == 'prot'
 
 if    __name__ == "__main__":
