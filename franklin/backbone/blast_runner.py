@@ -30,7 +30,7 @@ from tempfile import NamedTemporaryFile
 
 LOGGER_NAME = 'franklin'
 
-def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath, 
+def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath,
                        threads=False):
     'It runs a blast giving a file and a database path'
     cmd = [blast_type, '-db', blast_db, '-num_alignments', '25',
@@ -39,7 +39,7 @@ def blast_runner_plus(seq_fpath, blast_db, blast_type, result_fpath,
     if threads:
         cmd.extend(['-num_threads', str(threads)])
     call(cmd, raise_on_error=True, log=True)
-    
+
 def blast_runner(seq_fpath, blast_db, blast_type, result_fpath,
                  threads=False):
     'It runs a blast giving a file and a database path'
@@ -56,7 +56,7 @@ def makeblastdb(seq_fpath, dbtype):
     dbtype = 'T' if dbtype == 'prot' else 'F'
     cmd = ['formatdb', '-i', seq_fpath, '-V', '-p', dbtype, '-o']
     call(cmd, raise_on_error=True)
-    
+
 def makeblastdb_plus(seq_fpath, dbtype, outputdb=None):
     'It creates the blast db database'
     cmd = ['makeblastdb', '-in', seq_fpath, '-dbtype', dbtype]
@@ -87,7 +87,7 @@ def guess_blastdb_kind(blastdb):
 
     blastdir, basename_ = split(blastdb)
     for file_ in listdir(blastdir):
-        if file_.startswith(basename_) and file_ != basename_:
+        if file_.startswith(basename_ + '.') and file_ != basename_ :
             if splitext(file_)[1][1] == 'n':
                 return 'nucl'
             elif splitext(file_)[1][1] == 'p':
@@ -132,7 +132,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
 
     logger.info('Running the blast %s' % result_fpath)
     try:
-        BLAST_RUNNER[BLAST_TOOL](query_fpath, blast_db, blast_program, 
+        BLAST_RUNNER[BLAST_TOOL](query_fpath, blast_db, blast_program,
                                  result_fpath, threads=threads)
     except RuntimeError as error:
         if exists(result_fpath):
