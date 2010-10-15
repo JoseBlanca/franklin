@@ -336,9 +336,11 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     cmd = java_cmd(java_conf=java_conf)
     cmd.extend(['-jar', gatk_jar, '-T', 'RealignerTargetCreator',
            '-I', bam_fpath, '-R', reference_fpath, '-o', intervals_fhand.name])
+
     #according to GATK this is experimental, so it might be a good idea to
-    #do it in just one thread
-    parallel = True
+    #do it in just one thread. In version 1.0.4498. This options is removed
+    # so parallel = False
+    parallel = False
     if parallel and threads and threads > 1:
         cmd.extend(['-nt', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True)
