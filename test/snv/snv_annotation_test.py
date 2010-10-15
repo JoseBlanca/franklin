@@ -124,7 +124,7 @@ class TestSnvAnnotation(unittest.TestCase):
                    ('C', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
-        assert calculate_snv_kind(feat, detailed=True) == TRANSITION
+        assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
 
     @staticmethod
     def test_bad_allele_removal():
