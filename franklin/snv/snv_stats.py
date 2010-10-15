@@ -24,6 +24,30 @@ from franklin.snv.snv import reference_variability, major_allele_frequency
 from franklin.utils.collections_ import item_context_iter, FileCachedList
 
 
+def calculate_ref_variability_ditrib(seqs, distrib_fhand=None, plot_fhand=None,
+                                     range_=None):
+    '''It calculates an snv distribution.
+
+    How many snv are located in sequence reference with some variability.
+    The variability is calculated as number of snps / lenght(context)
+    '''
+    variabilities = FileCachedList(float)
+    for seq in seqs:
+        for snv in seq.get_features():
+
+    for snv, context in snv_contexts:
+        region_variability = reference_variability(snv, context, window=window)
+        variabilities.append(region_variability)
+    return create_distribution(variabilities,
+                       labels={'title':'Snv reference variability distribution',
+                                'xlabel':'reference variablity (snv / 100pb)',
+                                'ylabel': 'Number of snvs'},
+                        distrib_fhand=distrib_fhand,
+                        plot_fhand=plot_fhand,
+                        range_=range_, low_memory=True)
+
+
+
 def calculate_ref_variability_ditrib(snv_contexts, window=None,
                                      distrib_fhand=None, plot_fhand=None,
                                      range_=None):
@@ -62,6 +86,9 @@ def calculate_snv_distrib(snvs, distrib_info, distrib_fhand=None,
                                distrib_fhand=distrib_fhand,
                                plot_fhand=plot_fhand,
                                range_=range_, low_memory=True)
+
+
+
 
 DISTRIBUTIONS = {
                  'ref_variability':{

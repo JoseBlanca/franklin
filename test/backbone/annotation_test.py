@@ -279,11 +279,7 @@ Number of introns: 3'''
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
                            'seqs.txt')
         result = open(stats_fpath).read()
-        expected = '''Sequences with microsatellites: 1
-Microsatellite types:
-\tdinucleotide: 1
-Microsatellite locations:
-\tunknown: 1'''
+        expected ='Sequences with microsatellites: 1'
         assert expected in result
 
         os.chdir('/tmp')
