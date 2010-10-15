@@ -344,12 +344,17 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     call(cmd, raise_on_error=True)
 
     #the realignment itself
+    unsorted_bam = NamedTemporaryFile(suffix='.bam')
     cmd = java_cmd(java_conf=java_conf)
     cmd.extend(['-Djava.io.tmpdir=%s' % tempfile.gettempdir(),
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
-           '-o', out_bam_fpath])
+           '-o', unsorted_bam.name])
     call(cmd, raise_on_error=True)
+
+    # now we have to realign the bam
+    sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf)
+
 
 def _get_bam_coverage(bam, rgs, grouping):
     '''This function gets data to make stats of a sam file.
