@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'read_stats'
+    #choice = 'snvs'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -110,7 +110,8 @@ SNV types:
 \tdeletion: 14
 \tcomplex: 1
 \ttransition: 86
-\ttransversion: 104'''
+\ttransversion: 104
+\tunknown: 124'''
         assert expected in result
 
     if choice in ('annotation', None):
