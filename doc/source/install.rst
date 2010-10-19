@@ -144,7 +144,7 @@ blast2go_, picard and GATK are easy to install, just download them and unpack th
 
 It is advisable to run updatedb after setting everything to ease the ngs_backbone configuration.
 
-After installing the whole pipeline you can run the :doc:`NGS workshop tutorial <ngs_workshop/index>` to test the whole system.
+After installing the whole pipeline you can run the `NGS workshop tutorial <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_ to test the whole system.
 
 
 .. include:: links.txt
