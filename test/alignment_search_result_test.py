@@ -20,9 +20,11 @@ from franklin.alignment_search_result import (BlastParser,
                                             FilteredAlignmentResults,
                                             alignment_results_scores,
                                             _compatible_incompatible_length,
-                                             ExonerateParser)
-from franklin.seq.seqs import SeqWithQuality
+                                             ExonerateParser,
+                                             build_relations_from_aligment)
+from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
+from franklin.utils.cmd_utils import create_runner
 
 import unittest
 import os
@@ -30,6 +32,7 @@ from StringIO import StringIO
 from tempfile import NamedTemporaryFile
 from Bio.Seq import UnknownSeq
 from franklin.utils.misc_utils import DATA_DIR
+from franklin.seq.writers import temp_fasta_file
 
 def _check_sequence(sequence, expected):
     'It matches a sequence against an expected result'
@@ -677,6 +680,42 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
                                                     'd_incompatibility'],
                                                 filter_same_query_subject=False)
         assert scores == [[90.0, 80.0], [16.0, 16.0]]
+
+class WaterTests(unittest.TestCase):
+    'Water related tests'
+    @staticmethod
+    def test_build_water_relations():
+        '''it test the function that makes the relations between two sequences
+         using a markx10 format file'''
+        seq  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
+        seq += 'AGCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTTTTATGTA'
+        seq += 'CTGTTTTNACTCGCANGACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAG'
+        seq += 'GGCNTGAAGGTGTGCCCACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGA'
+        seq += 'TATGAGTAACGAGCAATTGGGAAAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCT'
+        seq += 'GCATTGAATTCGACATTCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATAC'
+        seq += 'TTCGATGGACGCTACTGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+
+        seq2  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
+        seq2 += 'GCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCAN'
+        seq2 += 'GACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCC'
+        seq2 += 'CACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAA'
+        seq2 += 'TTGGGAAAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACAT'
+        seq2 += 'TCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTAC'
+        seq2 += 'TGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+
+        subject_seq = SeqWithQuality(seq=Seq(seq),  name='subject')
+        query_seq   = SeqWithQuality(seq=Seq(seq2), name='query')
+
+        subject_fhand = temp_fasta_file(subject_seq)
+        parameters = {'subject':subject_fhand.name}
+        aligner = create_runner(tool='water', parameters=parameters)
+        result_fhand = aligner(query_seq)['water']
+        relations = build_relations_from_aligment(result_fhand,
+                                                  query_name=query_seq.name,
+                                                  subject_name=subject_seq.name)
+        assert relations == {'query': [(0, 50), (51, 112), (113, 409)],
+                             'subject': [(0, 50), (52, 113), (129, 425)]}
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testiprscan_parse']

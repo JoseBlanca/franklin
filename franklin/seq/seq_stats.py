@@ -36,16 +36,16 @@ def _location_to_orf(orfs, feat):
     #do they overlap?
     if (feat_loc[0] >= orf_loc[0] and feat_loc[0] <= orf_loc[1] or
         feat_loc[1] >= orf_loc[0] and feat_loc[1] <= orf_loc[1]):
-        return 'in orf'
+        return 'orf'
     #is feat before orf?
     in_5_prime = True if feat_loc[0] < orf_loc[0] else False
     #is the orf reversed?
     if orfs[0].qualifiers['strand'] != 'forward':
         in_5_prime = not (in_5_prime)
     if in_5_prime:
-        return 'in 5 prime'
+        return 'utr5'
     else:
-        return 'in 3 prime'
+        return 'utr3'
 
 MICROSATELLITE_TYPES = ['dinucleotide',
                         'trinucleotide',
@@ -68,14 +68,17 @@ def _do_ssr_stats(stats, feats, orfs):
 
         type_ = types[len(unit)]
         if type_ not in stats['microsatellites']['types']:
-            stats['microsatellites']['types'][type_] = 0
-        stats['microsatellites']['types'][type_] += 1
+            stats['microsatellites']['types'][type_] = {}
+            stats['microsatellites']['types'][type_]['num'] = 0
+            stats['microsatellites']['types'][type_]['location'] = {}
 
+        stats['microsatellites']['types'][type_]['num'] += 1
         location = _location_to_orf(orfs, feat)
+
         if location:
-            if location not in stats['microsatellites']['locations']:
-                stats['microsatellites']['locations'][location] = 0
-            stats['microsatellites']['locations'][location] += 1
+            if location not in stats['microsatellites']['types'][type_]['location']:
+                stats['microsatellites']['types'][type_]['location'][location] = 0
+            stats['microsatellites']['types'][type_]['location'][location] += 1
 
     if some_feat:
         stats['microsatellites']['n_seqs'] += 1
@@ -129,6 +132,7 @@ def _write_snp_annot_stats(stats, out_fhand):
 def _write_ssr_annot_stats(stats, out_fhand):
     'It writes the ssr annot stats to a file'
     stats = stats['microsatellites']
+
     if not stats['n_seqs']:
         return
 
@@ -137,15 +141,44 @@ def _write_ssr_annot_stats(stats, out_fhand):
 
     out_fhand.write('Sequences with microsatellites: %i\n' % stats['n_seqs'])
 
-    out_fhand.write('Microsatellite types:\n')
-    for type_ in MICROSATELLITE_TYPES:
-        if type_ in stats['types']:
-            out_fhand.write('\t%s: %i\n' % (type_, stats['types'][type_]))
+    header = '%8s|%15s|%15s|%15s|%15s|%15s|%8s|' % (' ',
+                                                      MICROSATELLITE_TYPES[0],
+                                                      MICROSATELLITE_TYPES[1],
+                                                      MICROSATELLITE_TYPES[2],
+                                                      MICROSATELLITE_TYPES[3],
+                                                      MICROSATELLITE_TYPES[4],
+                                                      'Total')
+    out_fhand.write(header + '\n')
+    out_fhand.write('-' * len(header) + '\n' )
 
-    out_fhand.write('Microsatellite locations:\n')
-    for type_ in ('in 5 prime', 'in orf', 'in 3 prime', 'unknown'):
-        if type_ in stats['locations']:
-            out_fhand.write('\t%s: %i\n' % (type_, stats['locations'][type_]))
+
+    for loc in ('utr3', 'utr5', 'orf', 'unknown'):
+        out_fhand.write('%8s|' % loc)
+        loc_sum = 0
+        for type_ in MICROSATELLITE_TYPES:
+            try:
+                ssr_stat = stats['types'][type_]['location']
+
+                value = ssr_stat.get(loc, 0)
+            except KeyError:
+                value = 0
+
+            out_fhand.write('%15s|' % (value))
+            loc_sum += value
+        out_fhand.write('%8s|\n' % loc_sum)
+
+    out_fhand.write('-' * len(header) + '\n' )
+    out_fhand.write('%8s|' % 'total')
+
+    for type_ in MICROSATELLITE_TYPES:
+        try:
+            value = stats['types'][type_]['num']
+        except KeyError:
+            value = 0
+        out_fhand.write('%15s|' % value)
+    out_fhand.write('%8s|\n' % ' ')
+
+
 
 
 def _write_annot_stats(stats, out_fhand):

@@ -21,7 +21,7 @@ Created on 16/03/2010
 
 import unittest, os, shutil
 
-from os.path import join
+from os.path import join, exists
 
 from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.seq.seqs import SeqWithQuality, Seq
@@ -30,8 +30,9 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 from franklin.utils.cmd_utils import BLAST_TOOL
+from franklin.seq.readers import seqs_in_file
 
-THREADS = 2
+THREADS = False
 
 class AnnotationTest(unittest.TestCase):
     'It test the ortholog analysis'
@@ -278,11 +279,7 @@ Number of introns: 3'''
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
                            'seqs.txt')
         result = open(stats_fpath).read()
-        expected = '''Sequences with microsatellites: 1
-Microsatellite types:
-\tdinucleotide: 1
-Microsatellite locations:
-\tunknown: 1'''
+        expected ='Sequences with microsatellites: 1'
         assert expected in result
 
         os.chdir('/tmp')
@@ -410,6 +407,142 @@ Number of ORFs: 1'''
 Number of GOs: 12'''
         assert expected in result
 
+    @staticmethod
+    def test_protein_change_annotation_analysis():
+        'We can annotate protein changes'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        matrix = os.path.join(DATA_DIR, 'At.smat')
+        configuration = {'Snvs':{'min_quality':20},
+                         'Sam_processing':{'add_default_qualities':True},
+                         'Annotation':{'orf_annotation':
+                                                     {'estscan_matrix':matrix}},
+                         'General_settings':{'threads':THREADS}}
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+        project_dir = join(test_dir.name, project_name)
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        clean_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(reads_dir)
+        os.mkdir(clean_reads_dir)
+
+        solexa = '@seq1\n'
+        solexa += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq2\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq14\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq15\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq12\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq13\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa = '@seq16\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+
+        sanger = '>seq3\n'
+        sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
+        sanger += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
+        sanger += 'TTGTTTCTTCTTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATA'
+        sanger += 'TCTGTTGAATGCAATTTACACATTGACTGAGGAACAACATGAACATGGCAGCTTTCTCAA'
+        sanger += 'AATTGAACCACAGAAGGCTTAAAAGCAAAGTCTTTGGAGAATCAGACTAAGCTTGAGA\n'
+        sanger += '>seq4\n'
+        sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sanger += 'CTATATATTCTAATGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+        sanger += '>seq5\n'
+        sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sanger += 'CTATATATTCTAAAGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+
+        fpath_sanger = join(clean_reads_dir, 'lb_hola1.pl_sanger.sm_hola.fasta')
+        fpath_solexa = join(clean_reads_dir,
+                                    'lb_hola2.pl_illumina.sm_hola.sfastq')
+        open(fpath_sanger, 'w').write(sanger)
+        open(fpath_solexa, 'w').write(solexa)
+
+        fpath_sanger2 = join(clean_reads_dir, 'lb_adios.pl_sanger.fasta')
+        fpath_solexa2 = join(clean_reads_dir,
+                                    'lb_adios.pl_illumina.sfastq')
+        open(fpath_sanger2, 'w').write(sanger)
+        open(fpath_solexa2, 'w').write(solexa)
+
+        #the reference
+        reference_dir = join(project_dir, 'mapping/reference')
+        os.makedirs(reference_dir)
+        reference_fpath = join(reference_dir, 'reference.fasta')
+        out = open(reference_fpath, 'w')
+        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+            out.write(line)
+
+        do_analysis(project_settings=settings_path, kind='mapping', silent=True)
+        mapping_dir = join(project_dir, 'mapping')
+        singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
+        singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
+        assert exists(join(singular_mapping_dir, 'bams',
+                            'by_readgroup', 'lb_hola2.pl_illumina.sm_hola.bam'))
+        result_dir = join(mapping_dir, 'bams')
+        assert exists(result_dir)
+        result_dir_by_lib = join(result_dir, 'by_readgroup')
+        assert exists(result_dir_by_lib)
+
+        do_analysis(project_settings=settings_path, kind='merge_bams',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.0.bam'))
+        assert exists(join(result_dir, 'merged.0.bam.bai'))
+
+        #we realign the mapping using GATK
+        do_analysis(project_settings=settings_path, kind='realign_bam',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.1.bam'))
+
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+        os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
+        do_analysis(project_settings=settings_path, kind='annotate_snvs',
+                    silent=True)
+
+        do_analysis(project_settings=settings_path, kind='annotate_orfs',
+                    silent=True)
+
+        do_analysis(project_settings=settings_path, kind='annotate_prot_change',
+                    silent=True)
+
+        result_file = join(project_dir, 'annotations', 'db',
+                           'reference.2.pickle')
+
+        seqs = list(seqs_in_file(open(result_file)))
+        snv = seqs[2].features[0]
+        assert snv.qualifiers['protein_change']['kind'] == 'substitution'
+        assert snv.qualifiers['protein_change']['location'] == 'codon_1'
+
+        os.chdir('/tmp')
+        test_dir.close()
+
+
+
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
+    #import sys;sys.argv = ['', 'AnnotationTest.test_protein_change_annotation_analysis']
     unittest.main()

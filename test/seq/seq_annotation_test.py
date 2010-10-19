@@ -19,14 +19,18 @@ Created on 15/01/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, tempfile, os
-
+from Bio.SeqFeature import  FeatureLocation
+from franklin.snv.snv_annotation import INVARIANT, SNP, INSERTION, DELETION
 from franklin.seq.seq_annotation import (create_microsatellite_annotator,
                                          create_ortholog_annotator,
                                          create_description_annotator,
                                          create_orf_annotator,
                                          create_go_annotator,
-                                         create_cdna_intron_annotator)
-from franklin.seq.seqs import SeqWithQuality, Seq
+                                         create_cdna_intron_annotator,
+                                         create_prot_change_annotator)
+#                                         create_polia_annotator)
+
+from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.utils.cmd_utils import b2gpipe_runner, BLAST_TOOL
 
@@ -63,6 +67,82 @@ class AnnotationTests(unittest.TestCase):
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021853')
         sequence = descrip_annotator(sequence)
         assert sequence.description == 'Similar to DNA-binding protein-related'
+
+    @staticmethod
+    def xtest_polia_annotator():
+        'It test the polia annotator'
+        polia_annot = create_polia_annotator()
+
+        seq = 'TCGCATCGATCATCGCAGATCGACTGATCGATCGATCAAAAAAAAAAAAAAAAAAAAAAA'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        polia_annot(seq1)
+        print seq1.features
+
+        seq = 'TTTTTTTTTTTTTTTTTTTTCGCATCGATCATCGCAGATCGACTGATCGAGTAGTGATGT'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        polia_annot(seq1)
+        print seq1.features
+
+
+        seq = 'CGCATCGATCATCAAAAAAAAAAAAAAAAAAAAAAAAAAAGCAGATCGACTGATCGAGTA'
+        seq1 = SeqWithQuality(seq=Seq(seq))
+        polia_annot(seq1)
+        print seq1.features
+
+    @staticmethod
+    def test_snv_prot_change_annotator():
+        'It test the snv_prot_changepolia annotator'
+        # first annotate orf
+        seq  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
+        seq += 'AGCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTTTTATGTA'
+        seq += 'CTGTTTTNACTCGCANGACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAG'
+        seq += 'GGCNTGAAGGTGTGCCCACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGA'
+        seq += 'TATGAGTAACGAGCAATTGGGAAAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCT'
+        seq += 'GCATTGAATTCGACATTCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATAC'
+        seq += 'TTCGATGGACGCTACTGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+
+        orf  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
+        orf += 'GCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCAN'
+        orf += 'GACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCC'
+        orf += 'CACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAA'
+        orf += 'TTGGGAAAGGAAGTTGACTACCTTCTCAGGAAGGGATGGATTCCCTGCATTGAATTCGACAT'
+        orf += 'TCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTAC'
+        orf += 'TGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
+
+        qualifiers = {'strand':'forward', 'dna':Seq(orf), 'prot':'prot'}
+        feature = SeqFeature(location=FeatureLocation(0, len(seq)), type='orf',
+                             qualifiers=qualifiers)
+        alleles = {('A', SNP): None, ('G', INVARIANT):None}
+        snv = SeqFeature(location=FeatureLocation(24, 24), type='snv',
+                          qualifiers = {'alleles':alleles})
+        alleles = {('A', SNP): None, ('T', INVARIANT):None}
+        snv2 = SeqFeature(location=FeatureLocation(56, 56), type='snv',
+                          qualifiers = {'alleles':alleles})
+        alleles = {('T', SNP): None, ('A', INVARIANT):None}
+        snv3 = SeqFeature(location=FeatureLocation(399, 399), type='snv',
+                          qualifiers = {'alleles':alleles})
+        alleles = {('T', INVARIANT):None, ('AG', INSERTION):None}
+        snv4 = SeqFeature(location=FeatureLocation(250, 250), type='snv',
+                          qualifiers = {'alleles':alleles})
+        alleles = {('G', INVARIANT):None, ('--', DELETION):None}
+        snv5 = SeqFeature(location=FeatureLocation(251, 251), type='snv',
+                          qualifiers = {'alleles':alleles})
+
+
+
+        sequence = SeqWithQuality(seq=Seq(seq), name='query')
+        #print str(sequence[257:265].seq)
+        #print sequence[256]
+        sequence.features = [feature, snv, snv2, snv3, snv4, snv5]
+        annotator = create_prot_change_annotator()
+        annotator(sequence)
+        [feature, snv, snv2, snv3, snv4, snv5] = sequence.features
+        assert snv.qualifiers['protein_change']['kind'] == 'substitution'
+        assert snv3.qualifiers['protein_change']['kind'] == 'substitution'
+        assert snv4.qualifiers['protein_change']['kind'] == 'breakage'
+#
+        assert snv.qualifiers['protein_change']['location'] == 'codon_1'
+
 
     @staticmethod
     def test_microsatelite_annotator():
@@ -133,9 +213,10 @@ class AnnotationTests(unittest.TestCase):
     def test_go_annotator():
         'It test the go annotator'
         blast = open(os.path.join(DATA_DIR, 'blastResult.xml'))
+        prop_fpath = os.path.join(DATA_DIR, 'b2gPipe.properties')
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
-        b2gpipe_runner(blast, annot_fpath)
+        b2gpipe_runner(blast, annot_fpath, prop_fpath=prop_fpath)
         blast2go = annot_fpath
         go_annotator = create_go_annotator(blast2go)
         seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))
@@ -146,5 +227,5 @@ class AnnotationTests(unittest.TestCase):
         os.remove(annot_fpath)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testiprscan_parse']
+#   import sys;sys.argv = ['', 'AnnotationTests.test_snv_prot_change_annotator']
     unittest.main()

@@ -39,7 +39,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          calculate_snv_variability,
                                          calculate_cap_enzymes,
                                          create_snv_annotator,
-                                         variable_in_groupping)
+                                         variable_in_groupping, UNKNOWN)
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -124,8 +124,12 @@ class TestSnvAnnotation(unittest.TestCase):
                    ('C', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
-        assert calculate_snv_kind(feat, detailed=True) == TRANSITION
+        assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
 
+        alleles = {('A', SNP): {}}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
     @staticmethod
     def test_bad_allele_removal():
         'It tests that we can get rid of the alleles with not enough quality'

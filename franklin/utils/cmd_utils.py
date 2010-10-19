@@ -87,16 +87,26 @@ RUNNER_DEFINITIONS = {
               'ignore_stderrs': ['Karlin-Altschul']
               },
     'blast+': {'binary':'blast+',
-            'parameters': {'database' :{'required':True,  'option': '-db'},
+            'parameters': {'database' :{'option': '-db'},
                    'program'  :{'required':True,  'option':'-p'},
                    'expect'   :{'default': 0.0001,'option': '-evalue'},
                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
                    'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
-                   'alig_format': {'default':5, 'option':'-outfmt'}
+                   'alig_format': {'default':5, 'option':'-outfmt'},
+                   'subject':{'option':'-subject'}
                             },
             'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
             'ignore_stderrs': ['Karlin-Altschul']
+              },
+    'water': {'binary':'water',
+            'parameters': {'subject' :{'required':True, 'option': '-bsequence'},
+                           'gapopen'   :{'default': 10.0,'option': '-gapopen'},
+                           'gapextend' :{'default': 0.5, 'option':'-gapextend'},
+                    'outformat'   :{'default': 'markx10', 'option':'-aformat3'},
+                    },
+            'output':{'water':{'option':'-outfile'}},
+            'input':{'sequence':{'option':'-asequence', 'files_format':['fasta']}}
               },
     'seqclean_vect':{'binary':'seqclean_vect',
                      'parameters':{'vector_db':{'required':True, 'option':'-v'},

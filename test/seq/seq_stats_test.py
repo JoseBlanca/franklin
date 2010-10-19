@@ -43,9 +43,11 @@ class SeqStatsTest(unittest.TestCase):
                           qualifiers={'unit':'GAA'})
         snv = SeqFeature(FeatureLocation(7, 7), type='snv',
                           qualifiers={'alleles':{('T',0):'', ('G',0):''}})
+        snv2 = SeqFeature(FeatureLocation(7, 7), type='snv',
+                          qualifiers={'alleles':{('T',0):'', ('R',0):''}})
 
         feats1 = [intron, ssr1]
-        feats2 = [orf, ssr2, snv]
+        feats2 = [orf, ssr2, snv, snv2]
 
         annots1 = {'arabidopsis-orthologs':['arab_1']}
 
@@ -89,23 +91,27 @@ ____
 Sequences with SNVs: 1
 SNV types:
 \ttransversion: 1
-SNV locations:
 \tunknown: 1
+SNV locations:
+\tunknown: 2
 
 Microsatellites
 _______________
 Sequences with microsatellites: 2
-Microsatellite types:
-\ttrinucleotide: 2
-Microsatellite locations:
-\tin 5 prime: 1
-\tunknown: 1
+        |   dinucleotide|  trinucleotide|tetranucleotide|pentanucleotide| hexanucleotide|   Total|
+--------------------------------------------------------------------------------------------------
+    utr3|              0|              0|              0|              0|              0|       0|
+    utr5|              0|              1|              0|              0|              0|       1|
+     orf|              0|              0|              0|              0|              0|       0|
+ unknown|              0|              1|              0|              0|              0|       1|
+--------------------------------------------------------------------------------------------------
+   total|              0|              2|              0|              0|              0|        |
 
 '''
+
         result = result.splitlines()
         expected = expected.splitlines()
         for index, line in enumerate(result):
-            #print line, expected[index]
             assert line == expected[index]
 
     @staticmethod
@@ -116,17 +122,17 @@ Microsatellite locations:
 
         feat = SeqFeature(FeatureLocation(5, 5), type='snv')
 
-        assert _location_to_orf([orf], feat) == 'in 3 prime'
+        assert _location_to_orf([orf], feat) == 'utr3'
 
         orf = SeqFeature(FeatureLocation(10, 20), type='orf',
                          qualifiers={'strand':'forward'})
-        assert _location_to_orf([orf], feat) == 'in 5 prime'
+        assert _location_to_orf([orf], feat) == 'utr5'
 
         feat = SeqFeature(FeatureLocation(15, 15), type='snv')
-        assert _location_to_orf([orf], feat) == 'in orf'
+        assert _location_to_orf([orf], feat) == 'orf'
 
         feat = SeqFeature(FeatureLocation(25, 25), type='snv')
-        assert _location_to_orf([orf], feat) == 'in 3 prime'
+        assert _location_to_orf([orf], feat) == 'utr3'
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

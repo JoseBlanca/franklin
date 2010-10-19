@@ -333,6 +333,28 @@ class SeqWithQuality(SeqRecord):
         return struct
 
     struct = property(_get_struct)
+    
+    def remove_annotations(self, kind):
+        'It removes from seq annotations of any kind with any parameters'
+        if kind == 'GOs':
+            if  kind in self.annotations:
+                del(self.annotations[kind])
+        elif kind == 'orthologs':
+            annotations = self.annotations
+            for key in annotations.keys():
+                if kind in key:
+                    del(self.annotations[key])
+                
+        elif kind in ['microsatellite', 'orf', 'snv', 'intron']:
+            new_features = []
+            for feature in self.features:
+                feat_kind = feature.type
+                if feat_kind == kind:
+                    continue
+                new_features.append(feature)
+            self.features = new_features
+        elif kind == 'description':
+            self.description = UNKNOWN_DESCRIPTION
 
 class SeqFeature(BioSeqFeature):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience

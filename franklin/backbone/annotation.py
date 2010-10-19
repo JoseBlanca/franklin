@@ -33,7 +33,8 @@ from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_with_descriptions,
                                                  annotate_microsatellites,
                                                  annotate_orfs,
-                                                 annotate_gos)
+                                                 annotate_gos,
+                                                 annotate_protein_change)
 from franklin.sam import create_bam_index
 from franklin.pipelines.snv_pipeline_steps import (
                                             unique_contiguous_region_filter,
@@ -535,6 +536,22 @@ class AnnotateMicrosatelliteAnalyzer(AnnotationAnalyzer):
                                     inputs=inputs,
                                     output_dir=db_dir)
 
+class AnnotateProteinChangeAnalyzer(AnnotationAnalyzer):
+    '''This class is used to annotate the protein changes produced by a snv'''
+
+    def run(self):
+        'It runs the analysis.'
+        inputs, output_dirs = self._get_inputs_and_prepare_outputs()
+        db_dir = output_dirs['db_dir']
+
+        pipeline = [annotate_protein_change]
+        configuration = {}
+        return self._run_annotation(pipeline=pipeline,
+                                    configuration=configuration,
+                                    inputs=inputs,
+                                    output_dir=db_dir)
+
+
 class AnnotateOrfAnalyzer(AnnotationAnalyzer):
     '''This class is used to annotate the orf of a sequence as a feature'''
 
@@ -580,7 +597,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                     dat_fpath = join(result_dir, input_.basename + '.b2g.dat')
                 else:
                     dat_fpath = None
-                    
+
                 java_conf = {'java_memory':java_memory,
                              'blast2gopath':blast2go_dir}
                 b2gpipe_runner(blast, annot_fpath=annot_fpath,
@@ -745,4 +762,16 @@ DEFINITIONS = {
          'outputs':{'db_dir':{'directory': 'annotation_dbs'},
                     'result':{'directory':'annotation_result'}},
          'analyzer': AnnotateGoAnalyzer},
+    'annotate_prot_change':
+        {'inputs':{
+            'pickle':
+                {'directory': 'annotation_dbs',
+                 'file_kinds': 'sequence_files'},
+            'input':
+                {'directory': 'annotation_input',
+                 'file_kinds': 'sequence_files'},
+            },
+         'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
+         'analyzer': AnnotateProteinChangeAnalyzer},
     }
+
