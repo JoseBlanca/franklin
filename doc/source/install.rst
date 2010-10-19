@@ -4,7 +4,10 @@ Installation
 
 This is a summary on how to install ngs_backbone, below you have a :ref:`detailed explanation <step_by_step>`.
 
-To install ngs_backbone python 2.6 is required. Also you need the python libraries Biopython_, and ConfigObj_. Other optional, but highly recommended, dependencies are: psubprocess_, pysam_ and matplotlib_. python is installed by default in the usual Linux distributions but you should check the version. Installing a python library is as easy as installing ngs_backbone. Once you have the tarball downloaded just run the following command::
+If you just want to check out how ngs_backbone works you could also download a complete `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
+Although this machine will not be powerful enough to run most real sized analyses it can be an easy way to get a felling of the analysis process without spending any time at all setting up the environment.
+
+To install ngs_backbone python 2.6 or better is required. Also you need the python libraries Biopython_, and ConfigObj_. Other optional, but highly recommended, dependencies are: psubprocess_, pysam_ and matplotlib_. python is installed by default in the usual Linux distributions but you should check the version. Installing a python library is as easy as installing ngs_backbone. Once you have the tarball downloaded just run the following command::
 
   $ python2.6 setup.py install
 
