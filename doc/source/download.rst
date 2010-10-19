@@ -4,6 +4,12 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at github_.
 
+Virtual Machine
+---------------
+
+To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
+Be aware that this machine won't be able to run any real sized experiment and it will only be useful for testing and evaluation purposes.
+
 ngs_backbone 1.1.0
 ------------------
 
