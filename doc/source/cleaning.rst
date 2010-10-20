@@ -22,7 +22,7 @@ adaptor removal
   Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is exonerate. If a match is found this section of the read is removed. Short adaptors will be treated as such.
 
 short adaptor removal
-  ngs_backbone will look for adaptors shorter than 15 bp with exact matches.
+  ngs_backbone will look for adaptors shorter than 20 bp with exact matches.
 
 precise vector removal
   If the vector and cloning site is known lucy can be used to remove the vector in a precise way.
