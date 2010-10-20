@@ -54,16 +54,20 @@ def get_hit_pairs_fom_blast(blast1_fhand, filters=None):
                     'score_tolerance': 10}]
     filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                 results=blasts)
+    get_id = lambda x : x.split()[0]
+
     for match in filtered_results:
         try:
             query = match['query'].id
         except AttributeError:
             query = match['query'].name
+        query = get_id(query)
         for match_hit in match['matches']:
             try:
                 subject = match_hit['subject'].id
             except AttributeError:
                 subject = match_hit['subject'].name
+            subject = get_id(subject)
             yield(query, subject)
 
 def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
