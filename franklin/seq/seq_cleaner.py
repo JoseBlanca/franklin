@@ -40,7 +40,7 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 #The adaptors shorter than this length can not be processed by blast or
 #exonerate, they should be processed by the word remover function
-MIN_LONG_ADAPTOR_LENGTH = 15
+MIN_LONG_ADAPTOR_LENGTH = 20
 
 def create_upper_mapper():
     'It returns a function that uppers the sequence'
