@@ -29,9 +29,9 @@ def parse_options():
     parser = OptionParser()
     parser.add_option('-i', '--inseqfile', dest='infile',
                     help='input sequence file')
-    parser.add_option('-o', '--outseqfile', dest='outseqfile',
+    parser.add_option('-o', '--outseqfile', dest='outfile',
                     help='output sequence file')
-    parser.add_option('-r', '--remove_annotations', dest='rm_annot', 
+    parser.add_option('-r', '--remove_annotations', dest='rm_annot',
                       help='Annotation to remove. comma separated')
 
     return parser
@@ -41,21 +41,21 @@ def set_parameters():
     # Set parameters
     parser  = parse_options()
     options = parser.parse_args()[0]
-    
+
     if options.infile is None:
         parser.error = 'Infile needed'
     else:
         infhand = open(options.infile)
-        
+
     if options.outfile is None:
         outfhand = sys.stdout
     else:
-        outfhand = open(options.outfile)
-    
+        outfhand = open(options.outfile, 'w')
+
     if options.rm_annot is None:
         parser.error = 'Need annotation name to remove'
     else:
-        rm_annots = options.rm_annots.split(',')
+        rm_annots = options.rm_annot.split(',')
 
     return infhand,  outfhand, rm_annots
 
@@ -63,26 +63,22 @@ def main():
     'The main'
     # get parameters
     infhand, outfhand, rm_annots = set_parameters()
-    
+
     # guess file format
     format_ = guess_seq_file_format(infhand)
-    
+
     #remove annotations
-    seqs = remove_annotation(infhand, format_)
-    
+    seqs = remove_annotation(infhand, format_, rm_annots)
+
     # write seqs in file
     write_seqs_in_file(seqs, seq_fhand=outfhand, format=format_)
-    
+
 def remove_annotation(in_fhand, format_, rm_annots):
     'it remoes annotations and yields the seqs'
     for seq in seqs_in_file(in_fhand, format=format_):
         for rm_annot in rm_annots:
             seq.remove_annotations(rm_annot)
         yield seq
-        
-    
-    
+
 if __name__ == '__main__':
-    main()   
-    
-    
+    main()
