@@ -29,27 +29,27 @@ from franklin.alignment_search_result import (FilteredAlignmentResults,
 from franklin.alignment_search_result import BlastParser
 from tempfile import NamedTemporaryFile
 
-def get_orthologs(blast1_fhand, blast2_fhand):
+def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
+                  sub2_def_as_acc=None):
     '''It return orthologs from two pools. It needs the xml otput blast of the
     pools'''
     # First we have to get hist from the first blast. We will put the in a set
     blast1_hits = set()
-    for hits in get_hit_pairs_fom_blast(get_fhand(blast1_fhand)):
+    for hits in get_hit_pairs_fom_blast(get_fhand(blast1_fhand),
+                                        sub_def_as_acc=sub1_def_as_acc):
         blast1_hits.add(hits)
 
     # Know we will see if the hits in the second blast in the first too
-    for hits in get_hit_pairs_fom_blast(get_fhand(blast2_fhand)):
+    for hits in get_hit_pairs_fom_blast(get_fhand(blast2_fhand),
+                                        sub_def_as_acc=sub2_def_as_acc):
         hits = (hits[1], hits[0])
         if hits in blast1_hits:
             yield hits
 
-def get_hit_pairs_fom_blast(blast_fhand, filters=None):
+def get_hit_pairs_fom_blast(blast_fhand, sub_def_as_acc=None, filters=None):
     'It return a iterator with query subjetc tuples of the hist in the blast'
-    def_as_acc = None
-    if 'tair9_pep_20090619/blast.blastx.xml' in blast_fhand.name:
-        def_as_acc = True
 
-    blasts = BlastParser(fhand=blast_fhand, subj_def_as_accesion= def_as_acc)
+    blasts = BlastParser(fhand=blast_fhand, subj_def_as_accesion=sub_def_as_acc)
     if filters is None:
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',

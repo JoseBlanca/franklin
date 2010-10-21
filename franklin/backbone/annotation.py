@@ -153,6 +153,12 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                 else:
                     blast_program = 'blastx'
                 blastdb = blast_settings[database]['path']
+                if 'subj_def_as_acc' in blast_settings[database]:
+                    subj_def_as_acc = blast_settings[database]['subj_def_as_acc']
+                else:
+                    subj_def_as_acc = None
+
+
                 #this could be different adding something to the settings
                 blastdb_seq_fpath = blastdb
                 blast = backbone_blast_runner(query_fpath=input_.last_version,
@@ -161,6 +167,9 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               blast_db=blastdb,
                                               dbtype=db_kind,
                                               threads=self.threads)
+
+                blast = {'fpath':blast,
+                         'subj_def_as_acc': subj_def_as_acc}
                 if db_kind == 'nucl':
                     blast_program = 'tblastx'
                 else:
@@ -172,6 +181,9 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                                               blast_db_seq=input_.last_version,
                                               dbtype='nucl',
                                               threads=self.threads)
+                reverse_blast = {'fpath':reverse_blast,
+                                  'subj_def_as_acc':None}
+
                 if input_ not in blasts:
                     blasts[input_] = {}
                 blasts[input_][database] = {'blast':blast,
@@ -187,9 +199,11 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
             for input_ in inputs['input']:
                 reverse_blast = ''
                 step_config = {
-                    'blast':{'blast': blasts[input_][database]['blast']},
+                    'blast':{'blast': blasts[input_][database]['blast']['fpath'],
+                             'subj_def_as_acc':blasts[input_][database]['blast']['subj_def_as_acc']},
                     'reverse_blast':{'blast':
-                                     blasts[input_][database]['reverse_blast']},
+                                     blasts[input_][database]['reverse_blast']['fpath'],
+                                     'subj_def_as_acc':blasts[input_][database]['reverse_blast']['subj_def_as_acc']},
                     'species': database}
                 if input_.basename not in configuration:
                     configuration[input_.basename] = {}

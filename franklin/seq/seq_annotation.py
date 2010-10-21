@@ -46,11 +46,14 @@ def create_ortholog_annotator(blast, reverse_blast, species):
     '''It creates a function factory that calculates all the orthologs between
      crossed species. First it calculates all the orthologs'''
     blast_fhand = blast['blast']
+    blast_subj_def_as_acc = blast.get('subj_def_as_acc', None)
     reverse_blast_fhand = reverse_blast['blast']
+    reverse_blast_subj_def_as_acc = reverse_blast.get('subj_def_as_acc', None)
 
     #we index the orthologs by the first one
     orthologs = {}
-    for ortholog in get_orthologs(blast_fhand, reverse_blast_fhand):
+    for ortholog in get_orthologs(blast_fhand, reverse_blast_fhand, blast_subj_def_as_acc,
+                                  reverse_blast_subj_def_as_acc):
         if ortholog[0] not in orthologs:
             orthologs[ortholog[0]] = [ortholog[1]]
         else:

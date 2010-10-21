@@ -103,6 +103,7 @@ def _add_some_settings(config, project_path, name, config_data):
     config['blast']['nr'] = {}
     config['blast']['nr']['path'] = "/path/to/nr/database"
     config['blast']['nr']['species'] = 'all'
+    config['blast']['nr']['subj_def_as_acc'] = None
     comments = []
     comments.append('Add as much blast databases as you need. Here a example')
     config['blast'].comments = {'nr':comments}
