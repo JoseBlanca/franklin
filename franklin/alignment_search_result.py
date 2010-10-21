@@ -68,7 +68,7 @@ class TabularBlastParser(object):
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
-    def __init__(self, fhand):
+    def __init__(self, fhand, subj_def_as_accesion=None):
         'The init requires a file to be parser'
         fhand.seek(0, 0)
         self._blast_file = fhand
@@ -83,6 +83,9 @@ class BlastParser(object):
         else:
             self.use_query_def_as_accession = True
             self.use_subject_def_as_accession = False
+
+        if subj_def_as_accesion is not None:
+            self.use_subject_def_as_accession = subj_def_as_accesion
 
         #we use the biopython parser
         #if there are no results we put None in our blast_parse results

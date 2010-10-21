@@ -43,10 +43,13 @@ def get_orthologs(blast1_fhand, blast2_fhand):
         if hits in blast1_hits:
             yield hits
 
-def get_hit_pairs_fom_blast(blast1_fhand, filters=None):
+def get_hit_pairs_fom_blast(blast_fhand, filters=None):
     'It return a iterator with query subjetc tuples of the hist in the blast'
+    def_as_acc = None
+    if 'tair9_pep_20090619/blast.blastx.xml' in blast_fhand.name:
+        def_as_acc = True
 
-    blasts = BlastParser(fhand=blast1_fhand)
+    blasts = BlastParser(fhand=blast_fhand, subj_def_as_accesion= def_as_acc)
     if filters is None:
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
