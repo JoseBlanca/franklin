@@ -123,14 +123,12 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 wanted_scripts = ['backbone_analysis.py', 'seqio.py',
-                  'backbone_create_project.py']
+                  'backbone_create_project.py', 'blast+']
 scripts = []
 for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
                                                          SCRIPTS_DIR)):
     for filename in filenames:
-        if filename not in wanted_scripts:
-            continue
-        elif filename.endswith('.py') or filename == 'blast+':
+        if filename in wanted_scripts:
             scripts.append(os.path.join(dirpath, filename))
 
 setup(
