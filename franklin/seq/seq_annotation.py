@@ -379,10 +379,10 @@ def create_orf_annotator(parameters):
         seq = Seq(seq, generic_dna)
         pep = Seq(pep, generic_protein)
         qualifiers = {'dna':seq, 'pep':pep}
-        if len(items) > 3:
-            qualifiers['strand'] = 'reverse'
-        else:
+        if start < end:
             qualifiers['strand'] = 'forward'
+        else:
+            qualifiers['strand'] = 'reverse'
         feature = SeqFeature(location=FeatureLocation(start, end), type='orf',
                              qualifiers=qualifiers)
 
