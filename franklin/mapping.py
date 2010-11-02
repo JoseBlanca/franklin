@@ -80,7 +80,7 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
     sam2bam(ali_fhand.name, unsorted_bam)
     # sort bam file
     sort_bam_sam(unsorted_bam, bam_fpath, sort_method='coordinate',
-                 java_conf=java_conf)
+                 java_conf=java_conf, strict_validation=False)
     temp_dir.close()
 
 

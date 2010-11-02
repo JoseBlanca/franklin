@@ -171,13 +171,16 @@ def merge_sam(infiles, outfile, reference):
     outfile.flush()
 
 def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
-                 java_conf=None, tmp_dir=None):
+                 java_conf=None, tmp_dir=None, strict_validation=True):
     'It sorts a bam file using picard'
     picard_path = guess_jar_dir('SortSam.jar', java_conf)
     picard_sort_jar = os.path.join(picard_path, 'SortSam.jar')
     java_cmd_ = java_cmd(java_conf)
     java_cmd_.extend(['-jar', picard_sort_jar, 'INPUT=' + in_fpath,
            'OUTPUT=' + out_fpath, 'SORT_ORDER=' + sort_method])
+
+    if not strict_validation:
+        java_cmd_.append('VALIDATION_STRINGENCY=LENIENT')
 
     if tmp_dir:
         java_cmd_.append('TMP_DIR=%s' % tmp_dir)
