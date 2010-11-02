@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'annotation'
+    #choice = 'snvs'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -98,7 +98,8 @@ def test_backbone(analysis=None, analysis_dir=None):
                    join(project_dir, 'mapping', 'merged.bam'))
         shutil.copy(join(repository_dir, 'snvs', 'reference.fasta'),
                    join(project_dir, 'mapping', 'reference', 'reference.fasta'))
-        analyses = ['annotate_snvs', 'filter_snvs', 'annotation_stats']
+        analyses = ['annotate_snvs', 'filter_snvs', 'annotation_stats',
+                    'write_annotations']
         run_analysis(analyses, settings_path)
 
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
@@ -109,9 +110,10 @@ SNV types:
 \tinsertion: 4
 \tdeletion: 14
 \tcomplex: 1
-\ttransition: 86
-\ttransversion: 104
+\ttransition: 48
+\ttransversion: 18
 \tunknown: 124'''
+
         assert expected in result
 
     if choice in ('annotation', None):
@@ -140,7 +142,7 @@ Sequences with ORF: 4
 Number of ORFs: 4
 Sequences with intron: 2
 Number of introns: 3'''
-
+        print result
         assert expected in result
 
     if not analysis_dir:
