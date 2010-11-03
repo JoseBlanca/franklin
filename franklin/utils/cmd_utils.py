@@ -66,6 +66,8 @@ def guess_jar_dir(jar_name, java_conf=None):
             jar_path = java_conf[conf_var]
     if not jar_path:
         return _guess_java_install_dir(jar_name)
+    else:
+        return jar_path
 
 # Runner definitions, Define here the parameters of the programs you want to
 # use with this class
