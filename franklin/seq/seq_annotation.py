@@ -96,7 +96,7 @@ def _get_descriptions_from_blasts(blasts):
     seq_annot = {}
     filters = [{'kind'           : 'best_scores',
                 'score_key'      : 'expect',
-                'max_score_value': 1e-4,
+                'max_score_value': 1e-20,
                 'score_tolerance': 10}]
     for blast in blasts:
         blast_fhand = blast['blast']
