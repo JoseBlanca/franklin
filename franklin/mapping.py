@@ -22,7 +22,7 @@ Created on 05/02/2010
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.sam import sam2bam, sort_bam_sam
-import os
+import os, shutil
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -41,6 +41,7 @@ def create_bwa_reference(reference_fpath, color=False):
         cmd.append('-c')
 
     call(cmd, raise_on_error=True)
+
 
 def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
                        parameters, threads=False, java_conf=None):
@@ -83,8 +84,40 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
                  java_conf=java_conf, strict_validation=False)
     temp_dir.close()
 
+def create_bowtie_reference(reference_fpath):
+    'It creates the bowtie index used by bowtie and tophat'
+    bowtie_index = os.path.splitext(reference_fpath)[0]
+    cmd = ['bowtie-build', reference_fpath, bowtie_index]
+    call(cmd, raise_on_error=True)
 
-MAPPER_FUNCS = {'bwa': map_reads_with_bwa}
+def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
+                           parameters, threads=None, java_conf=None):
+    'It maps the reads using tophat'
+    threads      = get_num_threads(threads)
+    colorspace   = parameters['colorspace']
+
+    # create needed index
+    bowtie_index = os.path.splitext(reference_fpath)[0]
+    if not os.path.exists(bowtie_index + '.1.ebwt'):
+        create_bowtie_reference(reference_fpath)
+
+    # run tophat
+    temp_dir = NamedTemporaryDir()
+    cmd      = ['tophat', '-o', temp_dir.name]
+    if colorspace:
+        cmd.append('-C')
+    if threads:
+        cmd.extend(['-p', str(threads)])
+
+    cmd.extend([bowtie_index, reads_fpath])
+    call(cmd, raise_on_error=True)
+
+    # copy the output
+    shutil.copy(os.path.join(temp_dir.name, 'accepted_hits.bam'), out_bam_fpath)
+    temp_dir.close()
+
+MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
+                'tophat':map_reads_with_tophat}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
               parameters=None, threads=False, java_conf=None):
