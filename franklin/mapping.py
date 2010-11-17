@@ -21,8 +21,10 @@ Created on 05/02/2010
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
-from franklin.sam import sam2bam, sort_bam_sam
+from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
+                          remove_unmapped_reads)
 import os, shutil
+from tempfile import NamedTemporaryFile
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -116,8 +118,64 @@ def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
     shutil.copy(os.path.join(temp_dir.name, 'accepted_hits.bam'), out_bam_fpath)
     temp_dir.close()
 
+def map_reads_with_boina(reference_fpath, reads_fpath, out_bam_fpath,
+                         parameters=None, threads=False, java_conf=None):
+    'It maps the reads using first bwa and then tophat'
+    # first we are going to map with bwa
+    bwa_bam_fhand = NamedTemporaryFile(suffix='.bam')
+    bwa_bam_fpath = bwa_bam_fhand.name
+    map_reads_with_bwa(reference_fpath, reads_fpath, bwa_bam_fpath,
+                       parameters, threads=threads, java_conf=java_conf)
+
+    # get unmapped_reads and create new read file
+    mapped_bam_fhand        = NamedTemporaryFile(suffix='.bam')
+    out_removed_reads_fhand = NamedTemporaryFile(suffix='.sfastq')
+    remove_unmapped_reads(open(bwa_bam_fhand.name), mapped_bam_fhand,
+                          out_removed_reads_fhand)
+    # if the read fileis empty all reads are mapped with bwa
+    # it doesn't need to map with tophat
+    firstline = open(out_removed_reads_fhand.name).readline()
+    if firstline:
+        # map with tophat
+        tophat_bam_fhand = NamedTemporaryFile(suffix='.bam')
+        tophat_bam_fpath = tophat_bam_fhand.name
+#        print out_removed_reads_fhand.name
+#        raw_input()
+        map_reads_with_tophat(reference_fpath, out_removed_reads_fhand.name,
+                              tophat_bam_fpath, parameters, threads=threads,
+                              java_conf=java_conf)
+
+        # merge both bams
+        temp_bwa_sam_fhand = NamedTemporaryFile(suffix='.sam')
+        bam2sam(mapped_bam_fhand.name, temp_bwa_sam_fhand.name, header=True)
+        temp_tophat_sam_fhand = NamedTemporaryFile(suffix='.sam')
+        bam2sam(tophat_bam_fpath, temp_tophat_sam_fhand.name, header=True)
+        temp_out_bam_fhand = NamedTemporaryFile(suffix='.bam')
+        merge_sam([open(temp_bwa_sam_fhand.name),
+                   open(temp_tophat_sam_fhand.name)],
+                   temp_out_bam_fhand, open(reference_fpath))
+#        print open(out_bam_fhand.name).read()
+#        raw_input()
+        tophat_bam_fhand.close()
+        temp_tophat_sam_fhand.close()
+        temp_bwa_sam_fhand.close()
+    else:
+        temp_out_bam_fhand = NamedTemporaryFile(suffix='.bam')
+        temp_out_bam_fhand.write(open(bwa_bam_fpath).read())
+        temp_out_bam_fhand.flush()
+
+    #sort bam
+    sort_bam_sam(temp_out_bam_fhand.name, out_bam_fpath, sort_method='coordinate',
+                 java_conf=java_conf)
+    #close all temp files
+    bwa_bam_fhand.close()
+    temp_out_bam_fhand.close()
+    out_removed_reads_fhand.close()
+    mapped_bam_fhand.close()
+
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
-                'tophat':map_reads_with_tophat}
+                'tophat':map_reads_with_tophat,
+                'boina':map_reads_with_boina}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
               parameters=None, threads=False, java_conf=None):

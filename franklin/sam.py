@@ -148,16 +148,22 @@ def merge_sam(infiles, outfile, reference):
         input_.seek(0)
         for line in input_:
             line = line.strip()
-            if line.startswith('@SQ'):
+            if not line:
+                continue
+            if line.startswith('@SQ') or line.startswith('@PG'):
                 continue
             elif line.startswith('@'):
-                headers.add(tuple(line.split()))
+                if 'SO:' in line:
+                    continue
+                else:
+                    headers.add(tuple(line.split()))
             else:
                 break
 
     #join and write both header parts
-    ref_header.extend(headers)
-    for header in ref_header:
+    headers = list(headers)
+    headers.extend(ref_header)
+    for header in headers:
         outfile.write('\t'.join(header))
         outfile.write('\n')
 
@@ -168,7 +174,9 @@ def merge_sam(infiles, outfile, reference):
             if line.startswith('@'):
                 continue
             outfile.write(line)
+
     outfile.flush()
+
 
 def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
                  java_conf=None, tmp_dir=None, strict_validation=True):
@@ -578,6 +586,7 @@ def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
             out_removed_reads_fhand.write('@%s\n%s\n+\n%s\n' %(read_name,
                                                                read_seq,
                                                                read_qual))
+
     out_sam_fhand.flush()
     sam2bam(out_sam_fhand.name, out_bam_fhand.name)
     sam_fhand.close()
@@ -586,3 +595,4 @@ def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
     out_removed_reads_fhand.seek(0)
     out_bam_fhand.flush()
     out_bam_fhand.seek(0)
+

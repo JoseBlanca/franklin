@@ -216,18 +216,18 @@ class TestBackboneMapping(unittest.TestCase):
 
         os.chdir('/tmp')
         test_dir.close()
-        
+
     @staticmethod
     def test_mapping_color():
         'It test the mapping of the mapper with color space'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        
+
         if BLAST_TOOL == 'blast':
             blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
         else:
             blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
-        
+
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
                                   'genomic_seqs_fpath':blastdb_seq},
@@ -263,9 +263,9 @@ class TestBackboneMapping(unittest.TestCase):
         clean_reads_dir = join(reads_dir, 'cleaned')
         os.mkdir(reads_dir)
         os.mkdir(clean_reads_dir)
-        shutil.copy(os.path.join(DATA_DIR, 'solid.fastq'), 
+        shutil.copy(os.path.join(DATA_DIR, 'solid.fastq'),
                os.path.join(clean_reads_dir, 'pl_solid.lb_hola.sm_hola.sfastq'))
-        
+
         #the reference
         reference_dir = join(project_dir, 'mapping/reference')
         os.makedirs(reference_dir)
@@ -273,7 +273,7 @@ class TestBackboneMapping(unittest.TestCase):
         out = open(reference_fpath, 'w')
         for line in open(join(DATA_DIR, 'samtools_color/reference')):
             out.write(line)
-            
+
         do_analysis(project_settings=settings_path, kind='mapping', silent=True)
         mapping_dir = join(project_dir, 'mapping')
         singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
@@ -284,7 +284,7 @@ class TestBackboneMapping(unittest.TestCase):
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
-        
+
         do_analysis(project_settings=settings_path, kind='merge_bams',
                     silent=True)
         assert exists(join(result_dir, 'merged.0.bam'))
@@ -297,8 +297,125 @@ class TestBackboneMapping(unittest.TestCase):
 
         os.chdir('/tmp')
         test_dir.close()
-        
+
+    @staticmethod
+    def test_mapping_analysis_boina():
+        'We can map the reads'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+
+        configuration = {'Sam_processing':{'add_default_qualities':True},
+                         'General_settings':{'threads':THREADS},
+                         'Mappers':{'mapper_for_illumina':'boina',
+                                    'mapper_for_sanger':'bwa'}}
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+        project_dir = join(test_dir.name, project_name)
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        clean_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(reads_dir)
+        os.mkdir(clean_reads_dir)
+
+        solexa = '@seq1\n'
+        solexa += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq2\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq14\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq15\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq12\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq13\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq16\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq17\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGACTGCTAAGGGTTCTTGAGGATTTAT\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq18\n'
+        solexa += 'ATATGATTGAAGATATTTCTGGATGATCTAGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+
+        sanger = '>seq3\n'
+        sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
+        sanger += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
+        sanger += 'TTGTTTCTTCTTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATA'
+        sanger += 'TCTGTTGAATGCAATTTACACATTGACTGAGGAACAACATGAACATGGCAGCTTTCTCAA'
+        sanger += 'AATTGAACCACAGAAGGCTTAAAAGCAAAGTCTTTGGAGAATCAGACTAAGCTTGAGA\n'
+        sanger += '>seq4\n'
+        sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sanger += 'CTATATATTCTAATGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+        sanger += '>seq5\n'
+        sanger += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sanger += 'CTATATATTCTAAAGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sanger += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+
+        fpath_sanger = join(clean_reads_dir, 'lb_hola1.pl_sanger.sm_hola.fasta')
+        fpath_solexa = join(clean_reads_dir,
+                                    'lb_hola2.pl_illumina.sm_hola.sfastq')
+        open(fpath_sanger, 'w').write(sanger)
+        open(fpath_solexa, 'w').write(solexa)
+
+        fpath_sanger2 = join(clean_reads_dir, 'lb_adios.pl_sanger.fasta')
+        fpath_solexa2 = join(clean_reads_dir,
+                                    'lb_adios.pl_illumina.sfastq')
+        open(fpath_sanger2, 'w').write(sanger)
+        open(fpath_solexa2, 'w').write(solexa)
+
+        #the reference
+        reference_dir = join(project_dir, 'mapping/reference')
+        os.makedirs(reference_dir)
+        reference_fpath = join(reference_dir, 'reference.fasta')
+        out = open(reference_fpath, 'w')
+        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+            out.write(line)
+
+        do_analysis(project_settings=settings_path, kind='mapping', silent=True)
+        mapping_dir = join(project_dir, 'mapping')
+        singular_mapping_dir = sorted(os.listdir(mapping_dir))[0]
+        singular_mapping_dir = join(mapping_dir, singular_mapping_dir)
+        assert exists(join(singular_mapping_dir, 'bams',
+                            'by_readgroup', 'lb_hola2.pl_illumina.sm_hola.bam'))
+        result_dir = join(mapping_dir, 'bams')
+        assert exists(result_dir)
+        result_dir_by_lib = join(result_dir, 'by_readgroup')
+        assert exists(result_dir_by_lib)
+#        print result_dir_by_lib
+#        raw_input()
+        do_analysis(project_settings=settings_path, kind='merge_bams',
+                    silent=True)
+        assert exists(join(result_dir, 'merged.0.bam'))
+        assert exists(join(result_dir, 'merged.0.bam.bai'))
+
+        os.chdir('/tmp')
+        test_dir.close()
+
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['TestBackbone.test_mapping_color']#, 'Test.testName']
+    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_analysis_boina']
     unittest.main()

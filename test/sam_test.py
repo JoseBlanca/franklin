@@ -105,7 +105,8 @@ SGN-E40000	0	SGN-U576692	1416	207	168M	*	0	0	AGCCTGATAAAGGTCTGCCTACGTGTTTTAAGTGG
         merge_sam(infiles=[sam1,	sam2],	outfile=sam3,	reference=reference)
         sam3.seek(0)
         sam3_content = sam3.read()
-        assert	'SN:SGN-U572743'	in	sam3_content.split('\n')[0]
+
+        assert	'SN:SGN-U572743'	in	sam3_content
         assert	'SGN-E200000'	in	sam3_content
         assert	'SGN-E221664'	in	sam3_content
 
@@ -286,5 +287,5 @@ class SamStatsTest(unittest.TestCase):
 
 
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamTest.test_remove_unmapped_reads']
+    #import sys;sys.argv = ['', 'SamTest.test_merge_sam']
     unittest.main()
