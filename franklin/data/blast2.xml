@@ -250,7 +250,7 @@
               <Hsp_num>1</Hsp_num>
               <Hsp_bit-score>56.6101750288867</Hsp_bit-score>
               <Hsp_score>135</Hsp_score>
-              <Hsp_evalue>1.92965485118997e-08</Hsp_evalue>
+              <Hsp_evalue>1.92965485118997e-28</Hsp_evalue>
               <Hsp_query-from>318</Hsp_query-from>
               <Hsp_query-to>860</Hsp_query-to>
               <Hsp_hit-from>359</Hsp_hit-from>

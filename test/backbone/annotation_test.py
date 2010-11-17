@@ -149,7 +149,11 @@ Number of arabidopsis2 orthologs: 2'''
         #some melon file to annotate
         input_dir = join(project_dir, BACKBONE_DIRECTORIES['annotation_input'])
         os.makedirs(input_dir)
-        seq1 = SeqWithQuality(Seq('GGGTCAGCGAAGAACCACTACAAGAGGTGGAAGAGCGAAA'),
+        seq_  = 'AGGTGTCACCGTTCACGAGGGCGACTGGGACTCCCACGGGGCCATCAAGTCCTGGAACTACA'
+        seq_ += 'CATGCGGTCCTCTATCTCATTCTCTATTTGTATGAATATGTGTTTATTACTAGCTAGGGTTT'
+        seq_ += 'CTATTAATGAAAGGTTCATGTAAATATATGAAGATGGGAAGCAAGAGGTGTTCAAGGAGAAG'
+        seq_ += 'AGGGAGTTAGACGACCAGAAGAT'
+        seq1 = SeqWithQuality(Seq(seq_),
                               id='CUTC021854')
         seq2 = SeqWithQuality(Seq('Atagtagcatcagatgagcatcgacttctagctagctagct'),
                                id='CUTC021853')
@@ -161,6 +165,7 @@ Number of arabidopsis2 orthologs: 2'''
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'melon.0.pickle')
         result = open(repr_fpath).read()
+        print result
         assert 'yet another one' in result
 
         do_analysis(project_settings=settings_path, kind='annotation_stats',
@@ -544,5 +549,5 @@ Number of GOs: 12'''
 
 
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTest.test_protein_change_annotation_analysis']
+    #import sys;sys.argv = ['', 'AnnotationTest.test_description_annotation_analysis']
     unittest.main()

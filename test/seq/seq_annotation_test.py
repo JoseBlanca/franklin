@@ -229,5 +229,5 @@ class AnnotationTests(unittest.TestCase):
         os.remove(annot_fpath)
 
 if __name__ == "__main__":
-#   import sys;sys.argv = ['', 'AnnotationTests.test_snv_prot_change_annotator']
+    #import sys;sys.argv = ['', 'AnnotationTests.test_get_description_with_funct']
     unittest.main()
