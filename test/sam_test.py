@@ -29,7 +29,8 @@ from StringIO import StringIO
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
-                          bam_distribs, sample_bam, bam_general_stats)
+                          bam_distribs, sample_bam, bam_general_stats,
+                          remove_unmapped_reads)
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -56,9 +57,9 @@ class SamTest(unittest.TestCase):
         bam2sam(newbam.name, newsam.name, header=True)
         newsam_content = open(newsam.name).read()
         oldsam_content = open(sampath).read()
-        
+
         assert newsam_content == oldsam_content
-        
+
     @staticmethod
     def test_format_converter():
         'It test BAM SAM converter'
@@ -190,6 +191,29 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         realign_bam(bam_path, reference_path, out_bam.name)
         out_bam.close()
 
+    @staticmethod
+    def test_remove_unmapped_reads():
+        'Tests remove_unmapped_reads'
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+
+        out_bam_fhand = NamedTemporaryFile()
+        out_removed_reads_fhand = NamedTemporaryFile()
+        remove_unmapped_reads(bam_fhand, out_bam_fhand, out_removed_reads_fhand)
+        reads = open(out_removed_reads_fhand.name).read()
+        assert '@SGN-E221406' in reads
+        assert 'FFMMMJJ@@755225889>0.' in reads
+
+        out_sam = NamedTemporaryFile(suffix='.sam')
+        bam2sam(out_bam_fhand.name, out_sam.name, header=True)
+        sam_out = open(out_sam.name).read()
+        assert 'SGN-U572743' in sam_out
+        assert 'SGN-E221403' in sam_out
+
+
 SAM = '''@SQ\tSN:SGN-U576692\tLN:1714
 @SQ\tSN:SGN-U572743\tLN:833
 @RG\tID:g1\tLB:g1\tSM:g1\tPL:454
@@ -260,6 +284,7 @@ class SamStatsTest(unittest.TestCase):
         bam_general_stats(bam_fhand, out_fhand)
         assert 'illumina\t4\n' in out_fhand.getvalue()
 
+
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
+    #import sys;sys.argv = ['', 'SamTest.test_remove_unmapped_reads']
     unittest.main()

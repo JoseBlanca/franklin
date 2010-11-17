@@ -188,7 +188,7 @@ def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
     stdout, stderr, retcode = call(java_cmd_, raise_on_error=False)
     err_msg = 'No space left on device'
     if retcode and (err_msg in stdout or err_msg in stderr):
-        raise RuntimeError('Picard sort consumed all space in device.')
+        raise RuntimeError('Picard sort consumed all space in device.' + stderr)
     elif retcode:
         msg = 'Error running picard: %s\n stderr: %s\n stdout: %s' % \
                                                 (' '.join(java_cmd_), stderr,
@@ -554,3 +554,35 @@ def bam_general_stats(bam_fhand, out_fhand):
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
     out_fhand.write('\n')
+
+
+def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
+    '''Create a file with the reads that are unmapped and remove them from
+    the bam'''
+    sam_fhand = NamedTemporaryFile(suffix='.sam')
+    bam2sam(in_bam_fhand.name, sam_fhand.name, header=True)
+    out_sam_fhand = NamedTemporaryFile(suffix='.sam')
+
+    for line in open(sam_fhand.name):
+        if line[0] == '@':
+            out_sam_fhand.write(line)
+            continue
+        items = line.split()
+        map_flag  = int(items[1])
+        if guess_mapped(map_flag):
+            out_sam_fhand.write(line)
+        else:
+            read_name = items[0]
+            read_seq  = items[9]
+            read_qual = items[10]
+            out_removed_reads_fhand.write('@%s\n%s\n+\n%s\n' %(read_name,
+                                                               read_seq,
+                                                               read_qual))
+    out_sam_fhand.flush()
+    sam2bam(out_sam_fhand.name, out_bam_fhand.name)
+    sam_fhand.close()
+    out_sam_fhand.close()
+    out_removed_reads_fhand.flush()
+    out_removed_reads_fhand.seek(0)
+    out_bam_fhand.flush()
+    out_bam_fhand.seek(0)
