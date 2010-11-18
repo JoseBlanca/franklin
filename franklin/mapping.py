@@ -45,11 +45,12 @@ def create_bwa_reference(reference_fpath, color=False):
     call(cmd, raise_on_error=True)
 
 
-def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath,
-                       parameters, threads=False, java_conf=None):
+def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
     'It maps the reads to the reference using bwa and returns a bam file'
     colorspace   = parameters['colorspace']
     reads_length = parameters['reads_length']
+    threads      = parameters['threads']
+    java_conf    = parameters['java_conf']
     threads = get_num_threads(threads)
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
@@ -93,10 +94,11 @@ def create_bowtie_reference(reference_fpath):
     call(cmd, raise_on_error=True)
 
 def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
-                           parameters, threads=None, java_conf=None):
+                           parameters):
     'It maps the reads using tophat'
-    threads      = get_num_threads(threads)
-    colorspace   = parameters['colorspace']
+    colorspace = parameters['colorspace']
+    threads    = parameters['threads']
+    threads    = get_num_threads(threads)
 
     # create needed index
     bowtie_index = os.path.splitext(reference_fpath)[0]
@@ -119,13 +121,12 @@ def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
     temp_dir.close()
 
 def map_reads_with_boina(reference_fpath, reads_fpath, out_bam_fpath,
-                         parameters=None, threads=False, java_conf=None):
+                         parameters):
     'It maps the reads using first bwa and then tophat'
     # first we are going to map with bwa
     bwa_bam_fhand = NamedTemporaryFile(suffix='.bam')
     bwa_bam_fpath = bwa_bam_fhand.name
-    map_reads_with_bwa(reference_fpath, reads_fpath, bwa_bam_fpath,
-                       parameters, threads=threads, java_conf=java_conf)
+    map_reads_with_bwa(reference_fpath, reads_fpath, bwa_bam_fpath, parameters)
 
     # get unmapped_reads and create new read file
     mapped_bam_fhand        = NamedTemporaryFile(suffix='.bam')
@@ -142,8 +143,7 @@ def map_reads_with_boina(reference_fpath, reads_fpath, out_bam_fpath,
 #        print out_removed_reads_fhand.name
 #        raw_input()
         map_reads_with_tophat(reference_fpath, out_removed_reads_fhand.name,
-                              tophat_bam_fpath, parameters, threads=threads,
-                              java_conf=java_conf)
+                              tophat_bam_fpath, parameters)
 
         # merge both bams
         temp_bwa_sam_fhand = NamedTemporaryFile(suffix='.sam')
@@ -165,23 +165,39 @@ def map_reads_with_boina(reference_fpath, reads_fpath, out_bam_fpath,
         temp_out_bam_fhand.flush()
 
     #sort bam
-    sort_bam_sam(temp_out_bam_fhand.name, out_bam_fpath, sort_method='coordinate',
-                 java_conf=java_conf)
+    java_conf = parameters['java_conf']
+    sort_bam_sam(temp_out_bam_fhand.name, out_bam_fpath,
+                 sort_method='coordinate', java_conf=java_conf)
     #close all temp files
     bwa_bam_fhand.close()
     temp_out_bam_fhand.close()
     out_removed_reads_fhand.close()
     mapped_bam_fhand.close()
 
+def create_gmap_reference(reference_fpath):
+    'It creates the reference fpath'
+    dir_, name = os.path.split(reference_fpath)
+    cmd = ['gmap_setup', '-d', name, '-D', dir_, reference_fpath]
+    call(cmd, raise_on_error=True)
+
+    cmd = ['make', '-f', 'Makefile.%s' % name, 'coords']
+    call(cmd, raise_on_error=True)
+
+    cmd = ['make', '-f', 'Makefile.%s' % name, 'gmapdb']
+    call(cmd, raise_on_error=True)
+
+    cmd = ['make', '-f', 'Makefile.%s' % name, 'install']
+    call(cmd, raise_on_error=True)
+
+
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
                 'tophat':map_reads_with_tophat,
                 'boina':map_reads_with_boina}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
-              parameters=None, threads=False, java_conf=None):
+              parameters=None):
     'It maps the reads to the reference and returns a bam file'
     if parameters is None:
         parameters = {}
     mapper_func = MAPPER_FUNCS[mapper]
-    return mapper_func(reference_fpath, reads_fpath, out_bam_fpath, parameters,
-                       threads=threads, java_conf=java_conf)
+    return mapper_func(reference_fpath, reads_fpath, out_bam_fpath, parameters)

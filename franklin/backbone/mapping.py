@@ -94,15 +94,14 @@ class MappingAnalyzer(Analyzer):
                 mapping_parameters['reads_length'] = 'short'
 
             if not os.path.exists(out_bam_fpath):
-
+                mapping_parameters['threads']   = self.threads
+                mapping_parameters['java_conf'] = {'java_memory':java_mem,
+                                                   'picard_path':picard_path}
                 map_reads(mapper,
                           reads_fpath=read_fpath.last_version,
                           reference_fpath=reference_fpath,
                           out_bam_fpath=out_bam_fpath,
-                          parameters=mapping_parameters,
-                          threads=self.threads,
-                          java_conf={'java_memory':java_mem,
-                                     'picard_path':picard_path})
+                          parameters=mapping_parameters)
 
         # Now we run the select _last mapping
         self._spawn_analysis(DEFINITIONS['_select_last_mapping'],
@@ -126,7 +125,7 @@ class MappingAnalyzer(Analyzer):
         if not os.path.exists(index_fpath):
             rel_symlink(reference_fpath, index_fpath)
         return index_fpath, color_space
- 
+
 class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
     def run(self):
