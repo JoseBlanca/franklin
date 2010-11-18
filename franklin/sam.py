@@ -329,7 +329,7 @@ def create_sam_reference_index(reference_fpath):
 
 
 def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
-                threads=False):
+                threads=False, tmp_dir=None):
     'It realigns the bam using GATK Local realignment around indels'
     #reference sam index
     create_sam_reference_index(reference_fpath)
@@ -364,9 +364,9 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '-o', unsorted_bam.name])
     call(cmd, raise_on_error=True)
-
     # now we have to realign the bam
-    sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf)
+    sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf,
+                 tmp_dir=tmp_dir)
 
 
 def _get_bam_coverage(bam, rgs, grouping):

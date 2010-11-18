@@ -126,7 +126,7 @@ class MappingAnalyzer(Analyzer):
         if not os.path.exists(index_fpath):
             rel_symlink(reference_fpath, index_fpath)
         return index_fpath, color_space
- 
+
 class MergeBamAnalyzer(Analyzer):
     'It performs the merge of various bams into only one'
     def run(self):
@@ -225,6 +225,7 @@ class RealignBamAnalyzer(Analyzer):
         self._log({'analysis_started':True})
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
+        tmp_dir      = settings['General_settings']['tmpdir']
         os.chdir(project_path)
         inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
@@ -249,7 +250,8 @@ class RealignBamAnalyzer(Analyzer):
                     java_conf={'java_memory':java_mem,
                                'picard_path':picard_path,
                                'gatk_path':gatk_path},
-                    threads=self.threads)
+                    threads=self.threads,
+                    tmp_dir=tmp_dir)
         #a new version for the original bam
         out_bam_fpath = bam_path.next_version
         shutil.move(temp_bam_fpath, out_bam_fpath)
