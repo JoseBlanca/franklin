@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'snvs'
+    choice = 'snvs'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -105,15 +105,17 @@ def test_backbone(analysis=None, analysis_dir=None):
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
                             'reference.txt')
         result = open(stats_fpath).read()
-        expected = '''Sequences with SNVs: 51
+        expected = '''Sequences with SNVs: 26
+SNVs found: 72
 SNV types:
-\tinsertion: 4
-\tdeletion: 14
+\tinsertion: 2
+\tdeletion: 7
 \tcomplex: 1
-\ttransition: 48
-\ttransversion: 18
-\tunknown: 124'''
-
+\ttransition: 47
+\ttransversion: 15
+SNV locations:
+\tunknown: 72'''
+        #print  result
         assert expected in result
 
     if choice in ('annotation', None):

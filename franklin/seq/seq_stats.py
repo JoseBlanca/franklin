@@ -99,6 +99,7 @@ def _do_snv_stats(stats, feats, orfs):
             if location not in stats['snvs']['locations']:
                 stats['snvs']['locations'][location] = 0
             stats['snvs']['locations'][location] += 1
+        stats['snvs']['n_snvs'] += 1
     if some_feat:
         stats['snvs']['n_seqs'] += 1
 
@@ -118,7 +119,7 @@ def _write_snp_annot_stats(stats, out_fhand):
     out_fhand.write('____\n')
 
     out_fhand.write('Sequences with SNVs: %i\n' % stats['n_seqs'])
-
+    out_fhand.write('SNVs found: %i\n' % stats['n_snvs'])
     out_fhand.write('SNV types:\n')
     for type_ in sorted(stats['types']):
         str_type = SNV_TYPES[type_]
@@ -232,7 +233,8 @@ def _calculate_annot_stats(seqs):
                                        'units':{},
                                        'types':{},
                                        'locations':{},},
-                   'snvs': {'n_seqs':0,
+                   'snvs': {'n_snvs':0,
+                            'n_seqs':0,
                             'types':{},
                             'locations':{},},
                    'orthologs':{},
