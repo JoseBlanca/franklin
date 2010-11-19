@@ -31,7 +31,7 @@ from franklin.utils.misc_utils import OrderedDict
 from franklin.utils.config_utils import (pretyfy_config, add_default_values,
                                          validate_config, STRING, INTEGER,
                                          NUMBER, BOOLEAN, INTEGER_OR_BOOL,
-                                         STRING_LIST, NUMBER_LIST)
+                                         STRING_LIST, NUMBER_LIST, FLOAT)
 
 def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
@@ -291,6 +291,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                 ('min_quality', (INTEGER, 45)),
                 ('min_mapq', (INTEGER, 15)),
                 ('min_num_alleles', (INTEGER, 1)),
+                ('max_maf', (FLOAT, 0.9)),
                 ('edge_removal',
                          OrderedDict([
                             ('454_left', (INTEGER, None)),

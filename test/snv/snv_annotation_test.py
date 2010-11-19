@@ -316,7 +316,8 @@ class TestSnvPipeline(unittest.TestCase):
         num_alleles = 0
         for seq in sequences:
             num_alleles += len(list(seq.get_features('snv')))
-        assert num_alleles == 9
+
+        assert num_alleles == 8
 
     @staticmethod
     def test_variable_in_read_group():

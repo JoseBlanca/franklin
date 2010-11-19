@@ -105,7 +105,7 @@ def _normalize_read_edge_conf(read_edge_conf):
     return read_edge_conf
 
 def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
-                 min_mapq, min_num_alleles, read_edge_conf=None):
+                 min_mapq, min_num_alleles, max_maf, read_edge_conf=None):
     'It yields the snv information for every snv in the given reference'
 
     min_num_alleles = int(min_num_alleles)
@@ -215,6 +215,10 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
 
         #remove bad quality alleles
         _remove_bad_quality_alleles(alleles, min_quality)
+
+        #check maf
+        if not check_maf_ok(alleles, max_maf):
+            continue
 
         #if there are a min_num number of alleles requested and there are more
         #alleles than that
@@ -354,7 +358,8 @@ def _summarize_snv(snv):
     return snv
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
-                         min_mapq=15, min_num_alleles=1, read_edge_conf=None):
+                         min_mapq=15, min_num_alleles=1, max_maf=0.9,
+                         read_edge_conf=None):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -371,6 +376,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 default_sanger_quality=default_sanger_quality,
                                 min_mapq=min_mapq,
                                 min_num_alleles=min_num_alleles,
+                                max_maf=max_maf,
                                 read_edge_conf=read_edge_conf):
             snv = _summarize_snv(snv)
             location = snv['ref_position']
@@ -482,11 +488,23 @@ def _get_group(read_group, group_kind, read_groups):
                 group_kind = 'PL'
             return read_groups[read_group][group_kind]
 
+def check_maf_ok(alleles, max_maf):
+    'It checks that the major allele freq is less than maximun limit'
+    if max_maf is None:
+        return True
+    maf = _calculate_maf_frequency_for_alleles(alleles,alleles_is_dict=False)
+    if maf > max_maf:
+        return False
+    else:
+        return True
+
 def _allele_count(allele, alleles, read_groups=None,
-                  groups=None, group_kind=None):
+                  groups=None, group_kind=None, alleles_is_dict=True):
     'It returns the number of reads for the given allele'
 
     counts = []
+    if not alleles_is_dict:
+        return len(alleles[allele]['read_groups'])
     for read_group, count in alleles[allele]['read_groups'].items():
         #do we have to count this read_group?
         group = _get_group(read_group, group_kind, read_groups)
@@ -496,15 +514,21 @@ def _allele_count(allele, alleles, read_groups=None,
 
 def calculate_maf_frequency(feature, groups=None, group_kind=None):
     'It returns the most frequent allele frequency'
-
-    alleles = feature.qualifiers['alleles']
+    alleles     = feature.qualifiers['alleles']
     read_groups = feature.qualifiers['read_groups']
 
+    return _calculate_maf_frequency_for_alleles(alleles, groups=groups,
+                                                group_kind=group_kind,
+                                                read_groups=read_groups)
+
+def _calculate_maf_frequency_for_alleles(alleles, groups=None, group_kind=None,
+                                        read_groups=None, alleles_is_dict=True):
+    'It returns the most frequent allele frequency'
     major_number_reads = None
     total_number_reads = 0
     for allele in alleles:
         number_reads = _allele_count(allele, alleles, read_groups, groups,
-                                     group_kind)
+                                     group_kind, alleles_is_dict)
         if major_number_reads is None or major_number_reads < number_reads:
             major_number_reads = number_reads
         total_number_reads += number_reads

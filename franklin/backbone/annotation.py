@@ -263,8 +263,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
             # read egde conf
             read_edge_conf = self._configure_read_edge_conf(snv_settings)
             configuration['snv_bam_annotator']['read_edge_conf'] = read_edge_conf
-            for config_param in ('min_quality', 'min_mapq', 'min_num_alleles'):
-                param_value = int(snv_settings[config_param])
+            for config_param in ('min_quality', 'min_mapq', 'min_num_alleles',
+                                 'max_maf'):
+                param_value = float(snv_settings[config_param])
                 configuration['snv_bam_annotator'][config_param] = param_value
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
