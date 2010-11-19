@@ -27,7 +27,7 @@ from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
 from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.seq.writers import (GffWriter, SsrWriter, OrfWriter,
                                   OrthologWriter, temp_fasta_file,
-                                  write_seqs_in_file)
+                                  write_seqs_in_file, SamWriter)
 from franklin.seq.readers import seqs_in_file
 
 from tempfile import NamedTemporaryFile
@@ -194,6 +194,69 @@ class WriterTest(unittest.TestCase):
         gff_writer.write(seq2)
         gff = fhand.getvalue()
         assert 'description' not in gff
+    @staticmethod
+    def test_sam_writer():
+        'It test sam writer'
+        reference = '>ref1\natatagatagatagatagat'
+        reads = '>read1\ngatgatagatgatagata'
+        ref_fhand = NamedTemporaryFile()
+        read_fhand = NamedTemporaryFile()
+        out_fhand = NamedTemporaryFile()
+
+        ref_fhand.write(reference)
+        read_fhand.write(reads)
+        ref_fhand.flush()
+        read_fhand.flush()
+        ref_fhand.seek(0)
+        read_fhand.seek(0)
+
+
+        alignment = {'reference_name':'ref1',
+                     'query_name': 'read1',
+                     'mapped': False,
+                     'ref_position': 1,
+                     'query_position':1,
+                     'cigar': 'M12',
+                     'mapq':255,
+                     'cosas_raras':[]}
+        sam_writer = SamWriter(ref_fhand, read_fhand, out_fhand)
+        sam_writer.write(alignment)
+
+        result = open(out_fhand.name).read()
+        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*\tgatgatagatgatagata'
+        assert line in result
+
+
+        reference='>ref1\natatagatagatagatagat'
+        reads='@read1\ngatgatagatgatagata\n+\ngatgatagatgatagata'
+        ref_fhand = NamedTemporaryFile()
+        read_fhand = NamedTemporaryFile(suffix='.sfastq')
+
+        out_fhand = NamedTemporaryFile()
+
+        ref_fhand.write(reference)
+        read_fhand.write(reads)
+        ref_fhand.flush()
+        read_fhand.flush()
+        ref_fhand.seek(0)
+        read_fhand.seek(0)
+
+
+        alignment = {'reference_name':'ref1',
+                     'query_name': 'read1',
+                     'mapped': False,
+                     'ref_position': 1,
+                     'query_position':1,
+                     'cigar': 'M12',
+                     'mapq':255,
+                     'cosas_raras':[]}
+        sam_writer = SamWriter(ref_fhand, read_fhand, out_fhand)
+        sam_writer.write(alignment)
+
+        result = open(out_fhand.name).read()
+        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*\tgatgatagatgatagata'
+        assert line in result
+
 
 class SequenceWriter(unittest.TestCase):
     'It tests that we can write a stream of SeqWithQuality into a file'

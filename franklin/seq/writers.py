@@ -26,7 +26,8 @@ import cPickle as pickle
 from Bio import SeqIO
 
 from franklin.seq.seqs import get_seq_name, fix_seq_struct_for_json
-from franklin.seq.readers import BIOPYTHON_FORMATS
+from franklin.seq.readers import (BIOPYTHON_FORMATS, guess_seq_file_format,
+                                  seqs_in_file)
 from franklin.gff import GffWriter as RawGffWriter
 
 class OrthologWriter(object):
@@ -200,6 +201,60 @@ class GffWriter(object):
     def _get_subfeature_attributes(id, name, kind, num):
         '''It gets the attribute section of a sequence's  subfeature'''
         return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
+
+class SamWriter(object):
+    'it writes sam file'
+    def __init__(self, reference_fhand, reads_fhand, output_fhand,
+                 default_sanger_qual=23):
+        "the initiator"
+        self._reference_fhand = reference_fhand
+        self._output_fhand    = output_fhand
+        self._write_header()
+        self._sanger_qual = default_sanger_qual
+        format_ = guess_seq_file_format(reads_fhand)
+        self._read_index = SeqIO.index(reads_fhand.name, format=format_)
+
+    def _write_header(self):
+        'It writes the header of the sam file'
+        for seq in seqs_in_file(self._reference_fhand):
+            self._output_fhand.write("@SQ\tSN:%s\tLN:%d\n" % (seq.name, len(seq)))
+        self._output_fhand.flush()
+
+    def write(self, alignment):
+        'It writes each alignment of the sam'
+#        alignment = {'reference_name':'name',
+#                     'query_name': 'name',
+#                     'mapped': False,
+#                     'ref_position': 1,
+#                     'query_position':1,
+#                     'cigar': 'M12',
+#                     'mapq':255,
+#                     'cosas_raras':[]}
+
+        read_name = alignment['query_name']
+        seqrecord = self._read_index[read_name]
+        seq       = str(seqrecord.seq)
+        try:
+            qual  = str(seqrecord.letter_annotations["phred_quality"])
+        except KeyError:
+            qual = chr(23 + 33) *  len(seq)
+
+        flag     = '0' if alignment['mapped'] else '4'
+        ref_name = alignment['reference_name']
+        ref_pos  = str(alignment['ref_position'])
+        mapq     = str(alignment['mapq'])
+        cigar    = alignment['cigar']
+        mrnm     = alignment['mrnm'] if 'mrnm' in alignment else '*'
+        isize    = alignment['isize'] if 'isize' in alignment else '*'
+        tag      = alignment['tag'] if 'tag' in alignment else '*'
+        vtype    = alignment['vtype'] if 'vtype' in alignment else '*'
+        value    = alignment['vtype'] if 'vtype' in alignment else '*'
+
+        sam_attrs = (read_name, flag, ref_name, ref_pos, mapq, cigar, mrnm,
+                     isize, seq, qual, tag,  vtype, value)
+
+        self._output_fhand.write('\t'.join(sam_attrs) + '\n')
+        self._output_fhand.flush()
 
 class SequenceWriter(object):
     'It writes sequences one by one'
