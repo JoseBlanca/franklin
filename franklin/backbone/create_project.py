@@ -196,7 +196,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
             ),
            ('Other_settings',
                 OrderedDict([
-                    ('default_sanger_quality', (INTEGER, 20)),
+                    ('default_sanger_quality', (INTEGER, 23)),
                     ('java_memory', (INTEGER, None)),
                     ('picard_path', (STRING, None)),
                     ('gatk_path',   (STRING, None)),
