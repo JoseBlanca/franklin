@@ -223,7 +223,7 @@ class WriterTest(unittest.TestCase):
         sam_writer.write(alignment)
 
         result = open(out_fhand.name).read()
-        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*\tgatgatagatgatagata'
+        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*'
         assert line in result
 
 

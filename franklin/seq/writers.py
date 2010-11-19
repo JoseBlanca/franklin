@@ -204,13 +204,11 @@ class GffWriter(object):
 
 class SamWriter(object):
     'it writes sam file'
-    def __init__(self, reference_fhand, reads_fhand, output_fhand,
-                 default_sanger_qual=23):
+    def __init__(self, reference_fhand, reads_fhand, output_fhand):
         "the initiator"
         self._reference_fhand = reference_fhand
         self._output_fhand    = output_fhand
         self._write_header()
-        self._sanger_qual = default_sanger_qual
         format_ = guess_seq_file_format(reads_fhand)
         self._read_index = SeqIO.index(reads_fhand.name, format=format_)
 
@@ -230,6 +228,7 @@ class SamWriter(object):
 #                     'cigar': 'M12',
 #                     'mapq':255,
 #                     'cosas_raras':[]}
+        # TODO- dealing of vtype an value
 
         read_name = alignment['query_name']
         seqrecord = self._read_index[read_name]
@@ -237,7 +236,7 @@ class SamWriter(object):
         try:
             qual  = str(seqrecord.letter_annotations["phred_quality"])
         except KeyError:
-            qual = chr(23 + 33) *  len(seq)
+            qual = '*'
 
         flag     = '0' if alignment['mapped'] else '4'
         ref_name = alignment['reference_name']
