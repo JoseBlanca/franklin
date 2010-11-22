@@ -89,6 +89,7 @@ Number of GOs: 2
 SNVs
 ____
 Sequences with SNVs: 1
+SNVs found: 2
 SNV types:
 \ttransversion: 1
 \tunknown: 1
