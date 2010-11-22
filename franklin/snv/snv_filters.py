@@ -54,8 +54,8 @@ FILTER_DESCRIPTIONS = {
         {'id':'cl%2d',
       'description':'The snv is closer than %d nucleotides the reference edge'},
     'maf':
-        {'id':'maf%.2f',
-       'description':'The most frequent allele frequency is greater than %.2f'},
+        {'id':'maf%d',
+       'description':'The most frequent allele in %s: %s. frequency greater than %.2f'},
     'by_kind':
         {'id':'vk%s',
          'description':'It is not an %s'},
@@ -97,6 +97,9 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
         short_name, description = _get_nd_hvr(id_, desc, parameters)
     elif filter_name == 'min_groups':
         short_name, description = _get_min_groups_desc(id_, desc, parameters)
+    elif filter_name == 'maf':
+        short_name, description = _get_nd_maf(id_, desc, parameters)
+
     else:
         if '%' in id_:
             short_name = id_ % parameters
@@ -110,6 +113,23 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
     filter_descriptions[filter_name, parameters] = short_name, description
 
     return short_name, description
+def _get_nd_maf(id_, desc, parameters):
+    'It returns the name an id of the maf filter'
+    global FILTER_COUNTS
+    if desc not in FILTER_COUNTS:
+        FILTER_COUNTS[desc] = 0
+    FILTER_COUNTS[desc] += 1
+
+    short_name = id_ % FILTER_COUNTS[desc]
+    if isinstance(parameters, tuple) and len(parameters) > 1:
+        groups = ','.join(parameters[1])
+        kind   = parameters[2]
+        description = desc % (kind, groups, parameters[0])
+    else:
+        description = desc % ('All', 'All', parameters)
+
+    return short_name, description
+
 
 def _get_min_groups_desc(id_, desc, parameters):
     'It returns the name and id of the snv filter for min_groups'

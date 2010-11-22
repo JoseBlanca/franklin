@@ -522,9 +522,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_descriptions = {}
         name, desc = get_filter_description(filter_name, parameters,
                                             filter_descriptions)
+        assert name == 'maf1'
+        assert desc == 'The most frequent allele in All: All. frequency greater than 0.60'
 
-        assert name == 'maf0.60'
-        assert desc == 'The most frequent allele frequency is greater than 0.60'
+        filter_name = 'maf'
+        parameters = (0.6, ('1', '2'), 'read_group')
+        filter_descriptions = {}
+        name, desc = get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name == 'maf2'
+        assert desc == 'The most frequent allele in read_group: 1,2. frequency greater than 0.60'
+
+
 
         filter_name = 'by_kind'
         parameters = SNP
