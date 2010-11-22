@@ -625,6 +625,9 @@ def variable_in_groupping(group_kind, feature, groups, in_union=False,
     alleles = _get_alleles_for_group(feature.qualifiers['alleles'],
                                      groups, group_kind,
                                      feature.qualifiers['read_groups'])
+    if not alleles:
+        return None
+
     if in_union:
         alleles = _aggregate_alleles(alleles)
 
@@ -632,9 +635,9 @@ def variable_in_groupping(group_kind, feature, groups, in_union=False,
     for allele_list in alleles.values():
         variable_in_read_groups_.append(True if len(allele_list) > 1 else False)
 
-    #For the case in which there are no alleles
-    if not variable_in_read_groups_:
-        return False
+#    #For the case in which there are no alleles
+#    if not variable_in_read_groups_:
+#        return None
 
     if in_all_groups:
         return all(variable_in_read_groups_)
