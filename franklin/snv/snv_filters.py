@@ -119,7 +119,7 @@ def _get_nd_maf(id_, desc, parameters):
     if desc not in FILTER_COUNTS:
         FILTER_COUNTS[desc] = 0
     FILTER_COUNTS[desc] += 1
-
+    #print parameters
     short_name = id_ % FILTER_COUNTS[desc]
     if isinstance(parameters, tuple) and len(parameters) > 1:
         groups = ','.join(parameters[1])
@@ -431,13 +431,17 @@ def create_snv_close_to_limit_filter(distance):
 
 def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
     'It filters the snv in a seq by the frequency of the more frequent allele'
+    if groups is None:
+        parameters = (frequency,)
+    else:
+        parameters = (frequency, tuple(groups), group_kind)
     def major_allele_freq_filter(sequence):
         'The filter'
         if sequence is None:
             return None
         for snv in sequence.get_features(kind='snv'):
             previous_result = _get_filter_result(snv, 'maf',
-                                                 threshold=frequency)
+                                                 threshold=parameters)
             if previous_result is not None:
                 continue
             maf = calculate_maf_frequency(snv, groups=groups,
@@ -448,7 +452,7 @@ def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
             else:
                 result = False
             _add_filter_result(snv, 'maf', result,
-                               threshold=frequency)
+                               threshold=parameters)
         return sequence
     return major_allele_freq_filter
 
