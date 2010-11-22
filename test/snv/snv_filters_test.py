@@ -72,10 +72,10 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         filter_id = 'uniq_contiguous'
         if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
+            arabidopsis_genes = 'arabidopsis_genes+'
         else:
             arabidopsis_genes = 'arabidopsis_genes'
-            
+
         genomic_db = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         distance = 60
         filter_ = create_unique_contiguous_region_filter(distance=distance,
@@ -373,6 +373,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                                       in_union=False)
         filter_(seq)
 
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                                      groups=['rg5'],
+                                                      in_union=True)
+        filter_(seq)
+
         snv1 = seq.features[0].qualifiers['filters']['is_not_variable']
         snv2 = seq.features[1].qualifiers['filters']['is_not_variable']
 
@@ -385,6 +390,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         assert snv1['read_groups', ('rg3', 'rg4'), True]
         assert not snv1['read_groups', ('rg3', 'rg4'), False]
+
+        assert not snv1['read_groups', ('rg5',), True]
 
     @staticmethod
     def test_is_variable_filter():
@@ -450,6 +457,15 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filters.append(create_is_variable_filter(*params))
         results.append(False)
 
+        kind = 'read_groups'
+        groups = ('rg5',)
+        in_union = True
+        params = (kind, groups, in_union)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(True)
+
+
         for filter_ in filters:
             filter_(seq)
             filter_(seq2)
@@ -462,6 +478,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         for params in parameters:
             for snv in seq2.get_features(kind='snv'):
                 assert snv.qualifiers['filters']['is_variable'][params]
+
+
 
     @staticmethod
     def test_min_num_groups_filter():

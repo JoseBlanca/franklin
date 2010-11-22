@@ -495,7 +495,8 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
                 continue
             result = variable_in_groupping(group_kind, snv, groups, in_union,
                                            in_all_groups=False)
-            result = bool(result)
+            result = False if result is None else  bool(result)
+            #result = bool(result)
             _add_filter_result(snv, 'is_not_variable', result,
                                threshold=parameters)
         return sequence
