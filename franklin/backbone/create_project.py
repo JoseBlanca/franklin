@@ -154,22 +154,22 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter8']['all_enzymes'] = True
 
     config['snv_filters']['filter9'] = {}
-    config['snv_filters']['filter9']['name'] = 'is_variable_in_rg'
-    config['snv_filters']['filter9']['step_name'] = 'is_variable'
+    config['snv_filters']['filter9']['unique_name'] = 'is_variable_in_rg'
+    config['snv_filters']['filter9']['name'] = 'is_variable'
     config['snv_filters']['filter9']['use'] = False
     config['snv_filters']['filter9']['group_kind'] = 'read_groups'
     config['snv_filters']['filter9']['groups'] = []
 
     config['snv_filters']['filter10'] = {}
-    config['snv_filters']['filter10']['name'] = 'is_variable_in_lb'
-    config['snv_filters']['filter10']['step_name'] = 'is_variable'
+    config['snv_filters']['filter10']['unique_name'] = 'is_variable_in_lb'
+    config['snv_filters']['filter10']['name'] = 'is_variable'
     config['snv_filters']['filter10']['use'] = False
     config['snv_filters']['filter10']['group_kind'] = 'libraries'
     config['snv_filters']['filter10']['groups'] = []
 
     config['snv_filters']['filter11'] = {}
-    config['snv_filters']['filter11']['name'] = 'is_variable_in_sm'
-    config['snv_filters']['filter11']['step_name'] = 'is_variable'
+    config['snv_filters']['filter11']['unique_name'] = 'is_variable_in_sm'
+    config['snv_filters']['filter11']['name'] = 'is_variable'
     config['snv_filters']['filter11']['use'] = False
     config['snv_filters']['filter11']['group_kind'] = 'samples'
     config['snv_filters']['filter11']['groups'] = []

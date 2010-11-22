@@ -23,8 +23,11 @@ from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
                           remove_unmapped_reads)
+from gff import features_in_gff
 import os, shutil
+
 from tempfile import NamedTemporaryFile
+from franklin.seq.writers import SamWriter
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -189,9 +192,57 @@ def create_gmap_reference(reference_fpath):
     cmd = ['make', '-f', 'Makefile.%s' % name, 'install']
     call(cmd, raise_on_error=True)
 
+def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
+                        parameters):
+    'It maps the reads with gmap'
+    threads = parameters['treads']
+    reference_dir, reference_name = os.path.split(reference_fpath)
+    if not os.path.exists(reference_fpath + '.chromosome'):
+        create_gmap_reference(reference_fpath)
+
+    # create command
+    cmd  = ['gmap' '-d', reference_name, '-D', reference_dir, '-f', '4']
+    if threads:
+        cmd.extend(['-t', threads])
+    cmd.append(reads_fpath)
+
+
+    gff3_fhand = NamedTemporaryFile(suffix='.gff3')
+    call(cmd, stdout=gff3_fhand, raise_on_error=True)
+
+    out_bam_fhand = open(out_bam_fpath)
+    _gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
+                     open(reads_fpath), out_bam_fhand)
+
+    out_bam_fhand.close()
+    gff3_fhand.close()
+
+def _gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand):
+    'It converts the gmap gff3 to sam format'
+    samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand)
+    for feature, mapped in features_in_gff(in_gmap_gff3, version=3):
+        alignment = gff_feature_to_alignment(feature, mapped)
+        samwriter.write(alignment)
+
+
+def gff_feature_to_alignment(feature, mapped):
+    'converts a gff feature into an alignment struct'
+    alignment = {'reference_name':feature['seqid'],
+                 'query_name': feature['attributes']['Name'],
+                 'mapped':mapped,
+                 'ref_positions':'',
+                 'query_positions':''}
+
+
+
+
+
+
+
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
                 'tophat':map_reads_with_tophat,
+                'gmap':map_reads_with_gmap,
                 'boina':map_reads_with_boina}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
