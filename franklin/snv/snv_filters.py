@@ -31,6 +31,7 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
                                          variable_in_groupping,
+                                         invariant_in_groupping,
                                          _get_group)
 from franklin.seq.seqs import get_seq_name
 
@@ -498,7 +499,8 @@ def create_cap_enzyme_filter(all_enzymes):
         return sequence
     return cap_enzyme_filter
 
-def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
+def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
+                                        reference_free=True):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
 
@@ -506,7 +508,7 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
         groups = (groups,)
     else:
         groups = tuple(groups)
-    parameters = (group_kind, groups, in_union)
+    parameters = (group_kind, groups, in_union, reference_free)
 
     def is_not_variable_filter(sequence):
         'The filter'
@@ -517,18 +519,19 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True):
                                                  threshold=parameters)
             if previous_result is not None:
                 continue
-            result = variable_in_groupping(group_kind, snv, groups, in_union,
-                                           in_all_groups=False)
-            result = False if result is None else  bool(result)
-            #result = bool(result)
-            _add_filter_result(snv, 'is_not_variable', result,
+            result = invariant_in_groupping(snv, group_kind, groups,
+                                            in_union, in_all_groups=False,
+                                            reference_free=reference_free)
+
+            _add_filter_result(snv, 'is_not_variable', not result,
                                threshold=parameters)
         return sequence
 
     return is_not_variable_filter
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
-                              in_all_groups=True):
+                              in_all_groups=True, reference_free=True,
+                              maf=None):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
 
@@ -536,7 +539,8 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
         groups = (groups,)
     else:
         groups = tuple(groups)
-    parameters = (group_kind, groups, in_union)
+    parameters = (group_kind, groups, in_union,in_all_groups, reference_free,
+                  maf)
 
     def is_variable_filter(sequence):
         'The filter'
@@ -547,11 +551,15 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
                                                  threshold=parameters)
             if previous_result is not None:
                 continue
-            result = variable_in_groupping(group_kind, snv, groups, in_union,
-                                          in_all_groups=in_all_groups)
-            result = True if result is None else not result
+            result = variable_in_groupping(snv, group_kind, groups,
+                                           in_union=in_union,
+                                           in_all_groups=in_all_groups,
+                                           reference_free=reference_free,
+                                           maf=maf)
 
-            _add_filter_result(snv, 'is_variable', result, threshold=parameters)
+
+            _add_filter_result(snv, 'is_variable', not result,
+                               threshold=parameters)
         return sequence
 
     return is_variable_filter

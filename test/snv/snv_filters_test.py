@@ -253,11 +253,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features=[snv1, snv2])
-        frecuency = 0.6
+        frecuency = 0.59999999999999998
         filter_ = create_major_allele_freq_filter(frecuency)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [True, False]):
-            result = snv.qualifiers['filters']['maf'][frecuency]
+            result = snv.qualifiers['filters']['maf'][(frecuency, )]
             assert result == expected
 
         #now we do it only for one read group
@@ -269,13 +269,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                       'read_groups':read_groups})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features=[snv1, snv2])
-        frecuency = 0.6
+        frecuency = 0.59999999999999998
         filter_ = create_major_allele_freq_filter(frecuency,
                                                    groups=['g1'],
                                                    group_kind='read_groups')
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [True, True]):
-            result = snv.qualifiers['filters']['maf'][frecuency]
+            parameters = (0.59999999999999998, ('g1',), 'read_groups')
+            result = snv.qualifiers['filters']['maf'][parameters]
             assert result == expected
 
     @staticmethod
@@ -359,18 +360,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
 
         filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
-                                                      groups=['rg2', 'rg4'],
-                                                      in_union=True)
+                                                      groups=['rg1'],
+                                                      in_union=True,
+                                                      reference_free=False)
         filter_(seq)
 
         filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
-                                                      groups=['rg3', 'rg4'],
-                                                      in_union=True)
+                           groups=['rg1'], in_union=False, reference_free=False)
         filter_(seq)
 
         filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
-                                                      groups=['rg3', 'rg4'],
-                                                      in_union=False)
+                                           groups=['rg2', 'rg4'], in_union=True)
+        filter_(seq)
+
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                        groups=['rg3', 'rg4'], in_union=True)
+        filter_(seq)
+
+        filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
+                                        groups=['rg3', 'rg4'], in_union=False)
         filter_(seq)
 
         filter_ = create_not_variable_in_group_filter(group_kind= 'read_groups',
@@ -381,17 +389,20 @@ class SeqVariationFilteringTest(unittest.TestCase):
         snv1 = seq.features[0].qualifiers['filters']['is_not_variable']
         snv2 = seq.features[1].qualifiers['filters']['is_not_variable']
 
-        assert snv1['read_groups', ('rg1',), True]
-        assert not snv2['read_groups', ('rg1',), True]
+        assert snv1['read_groups', ('rg1',), True, True]
+        assert snv1['read_groups', ('rg1',), True, False]
+        assert snv1['read_groups', ('rg1',), False, False]
+        assert not snv2['read_groups', ('rg1',), True, True]
 
 
-        assert not snv1['read_groups', ('rg2', 'rg4'), True]
-        assert not snv2['read_groups', ('rg2', 'rg4'), True]
+        assert not snv1['read_groups', ('rg2', 'rg4'), True, True]
+        assert snv2['read_groups', ('rg2', 'rg4'), True, True]
 
-        assert snv1['read_groups', ('rg3', 'rg4'), True]
-        assert not snv1['read_groups', ('rg3', 'rg4'), False]
 
-        assert not snv1['read_groups', ('rg5',), True]
+        assert  snv1['read_groups', ('rg3', 'rg4'), True, True]
+        assert  not snv1['read_groups', ('rg3', 'rg4'), False, True]
+
+        assert snv1['read_groups', ('rg5',), True, True]
 
     @staticmethod
     def test_is_variable_filter():
@@ -414,11 +425,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filters = []
         parameters = []
         results = []
+        reference_free = True
+        maf= None
+        in_all_groups = True
 
         kind = 'read_groups'
         groups = ('rg1',)
         in_union = False
-        params = (kind, groups, in_union)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
@@ -428,7 +442,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg2', 'rg4')
         in_union = True
-        params = (kind, groups, in_union)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -436,7 +450,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = 'fake'
         in_union = True
-        params = (kind, (groups,), in_union)
+        params = (kind, (groups,), in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -444,7 +458,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = False
-        params = (kind, groups, in_union)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -452,7 +466,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = True
-        params = (kind, groups, in_union)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(False)
@@ -460,7 +474,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg5',)
         in_union = True
-        params = (kind, groups, in_union)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(True)
+
+        kind = 'read_groups'
+        groups = ('rg2',)
+        in_union = True
+        reference_free = False
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        parameters.append(params)
+        filters.append(create_is_variable_filter(*params))
+        results.append(False)
+
+        kind = 'read_groups'
+        groups = ('rg2',)
+        in_union = True
+        reference_free = True
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -478,7 +510,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         for params in parameters:
             for snv in seq2.get_features(kind='snv'):
                 assert snv.qualifiers['filters']['is_variable'][params]
-
 
 
     @staticmethod

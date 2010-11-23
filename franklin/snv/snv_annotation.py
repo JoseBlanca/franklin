@@ -617,8 +617,133 @@ def create_alleles(name, allele, kind, ref, loc):
         seq = sseq[0:loc] + allele + sseq[loc:]
     return seq
 
+def variable_in_groupping(snv, group_kind, groups, in_union=True,
+                           in_all_groups=True, reference_free=True, maf=None):
+    'It looks if the given snv is variable for the given groups'
 
-def variable_in_groupping(group_kind, feature, groups, in_union=False,
+    alleles = _get_alleles_for_group(snv.qualifiers['alleles'],
+                                     groups, group_kind,
+                                     snv.qualifiers['read_groups'])
+    if not alleles:
+        return False
+
+    if in_union:
+        alleles = _aggregate_alleles(alleles)
+
+    variable_per_read_group = []
+    for alleles_in_rg in alleles.values():
+        variable = _is_rg_variable(alleles_in_rg, reference_free=reference_free,
+                                       maf=maf)
+        variable_per_read_group.append(variable)
+
+    if in_all_groups:
+        return all(variable_per_read_group)
+    else:
+        return any(variable_per_read_group)
+
+def invariant_in_groupping(snv, group_kind, groups, in_union=True,
+                              in_all_groups=True, reference_free=True):
+    'it check if the given snv is invariant form the given groups'
+    alleles = _get_alleles_for_group(snv.qualifiers['alleles'],
+                                     groups, group_kind,
+                                     snv.qualifiers['read_groups'])
+    if not alleles and reference_free:
+        return False
+    elif not alleles and not reference_free:
+        return True
+
+    if in_union:
+        alleles = _aggregate_alleles(alleles)
+
+    invariable_per_read_group = []
+    for alleles_in_rg in alleles.values():
+        invariable = not _is_rg_variable(alleles_in_rg,
+                                         reference_free=reference_free)
+        invariable_per_read_group.append(invariable)
+
+    if in_all_groups:
+        return all(invariable_per_read_group)
+    else:
+        return any(invariable_per_read_group)
+
+
+#def _is_rg_invariable(alleles, reference_free=True):
+#    'It checks if the allele is variable'
+#    allele_count = len(alleles)
+#
+#    ref_in_alleles = False
+#    for allele in alleles.keys():
+#        if allele[1] == INVARIANT:
+#            ref_in_alleles = True
+#
+#    if allele_count == 1:
+#        if reference_free:
+#            return True
+#        elif not reference_free and ref_in_alleles:
+#            return True
+#
+#    return False
+
+def _is_rg_variable(alleles, reference_free=True, maf=None):
+    'It checks if the allele is variable'
+    allele_count = len(alleles)
+
+    ref_in_alleles = False
+    for allele in alleles.keys():
+        if allele[1] == INVARIANT:
+            ref_in_alleles = True
+
+    if allele_count == 1:
+        if reference_free:
+            return False
+        elif not reference_free and ref_in_alleles:
+            return False
+
+    if maf and maf < calc_maf(alleles):
+        return False
+
+    return True
+
+def calc_maf(alleles):
+    'It calculates the maf'
+    values = alleles.values()
+    major = max(values)
+    sum_  = sum(values)
+    return  major/float(sum_)
+
+def _aggregate_alleles(alleles):
+    'It joins all alleles for the read groups into one'
+    aggregate = {}
+    for alleles in alleles.values():
+        for allele, allele_count in alleles.items():
+            if allele not in aggregate:
+                aggregate[allele] = 0
+            aggregate[allele] += allele_count
+    return {None: aggregate}
+
+def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
+                           read_groups=None):
+    '''It gets the alleles from the given items of type:key, separated by items.
+    For example, if you give key rg and items rg1, rg2, it will return
+    alleles separated in rg1 and rg2 '''
+
+    alleles_for_groups = {}
+    for allele, alleles_info in alleles.items():
+        #print allele, alleles_info
+        for read_group in alleles_info['read_groups']:
+            group = _get_group(read_group, group_kind, read_groups)
+            if group not in groups:
+                continue
+            if not group in alleles_for_groups:
+                alleles_for_groups[group] = {}
+#            if allele not in alleles_for_groups[group]:
+#                alleles_for_groups[group][allele] = 0
+            alleles_for_groups[group][allele] = alleles_info['read_groups'][read_group]
+    return alleles_for_groups
+
+
+
+def variable_in_groupping_old(group_kind, feature, groups, in_union=False,
                            in_all_groups=True):
     'It looks if the given snv is variable for the given groups'
 
@@ -644,14 +769,14 @@ def variable_in_groupping(group_kind, feature, groups, in_union=False,
     else:
         return any(variable_in_read_groups_)
 
-def _aggregate_alleles(alleles):
+def _aggregate_alleles_old(alleles):
     'It joins all alleles for the read groups into one'
     aggregate = set()
     for allele_list in alleles.values():
         aggregate = aggregate.union(allele_list)
     return {None: aggregate}
 
-def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
+def _get_alleles_for_group_old(alleles, groups, group_kind='read_groups',
                            read_groups=None):
     '''It gets the alleles from the given items of type:key, separated by items.
     For example, if you give key rg and items rg1, rg2, it will return

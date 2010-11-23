@@ -39,7 +39,9 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          calculate_snv_variability,
                                          calculate_cap_enzymes,
                                          create_snv_annotator,
-                                         variable_in_groupping, UNKNOWN)
+                                         UNKNOWN,
+                                         variable_in_groupping,
+                                         invariant_in_groupping)
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -324,16 +326,78 @@ class TestSnvPipeline(unittest.TestCase):
         'It test variable_in_reaggroups function'
 
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1}},
-                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':1}}}
+                   ('T', INVARIANT): {'read_groups':{'rg1':2, 'rg3':2}}}
 
-        feature = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                             qualifiers={'alleles':alleles,
-                                         'read_groups':{}})
-        assert variable_in_groupping('read_groups', feature, ['rg1'])
-        assert not variable_in_groupping('read_groups',
-                                         feature, ['rg2', 'rg3'])
-        assert variable_in_groupping('read_groups', feature, ['rg2', 'rg3'],
-                                     in_union=True)
+        snv = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                             qualifiers={'alleles':alleles, 'read_groups':{}})
+
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg5'],
+                                         reference_free=True)
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=True)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=False)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=False)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=False, maf=0.7)
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=False, maf=0.6)
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=False, in_union=False)
+
+    @staticmethod
+    def test_not_variable_in_read_group():
+        'It test variable_in_reaggroups function'
+
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':2, 'rg3':2}}}
+
+        snv = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                             qualifiers={'alleles':alleles, 'read_groups':{}})
+
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg5'],
+                                             reference_free=True)
+        assert invariant_in_groupping(snv, 'read_groups', ['rg5'],
+                                         reference_free=False)
+
+
+
+        assert invariant_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=True)
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=False)
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=False)
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=False)
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=True)
+
+        assert invariant_in_groupping(snv, 'read_groups', ['rg3'],
+                                     reference_free=False)
+        assert invariant_in_groupping(snv, 'read_groups', ['rg3'],
+                                      reference_free=True)
+
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=False, in_union=False)
+
+        assert invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=True, in_union=False)
+
+
 
 
 if __name__ == "__main__":
