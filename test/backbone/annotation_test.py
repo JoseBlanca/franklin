@@ -165,7 +165,7 @@ Number of arabidopsis2 orthologs: 2'''
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'melon.0.pickle')
         result = open(repr_fpath).read()
-        print result
+        #print result
         assert 'yet another one' in result
 
         do_analysis(project_settings=settings_path, kind='annotation_stats',
