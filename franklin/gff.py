@@ -39,14 +39,13 @@ def features_in_gff(fhand, version):
         line = line.strip()
         if not line:
             continue
-        if line.startswith('##'):
+        if line.startswith('#'):
             continue
         yield create_feature(line, version, feature_ids)
 
 def create_feature(line, version, feature_ids=None):
     'It creates a feature from a line of a gff'
     feature = {}
-
     seqid, source, type_, start, end, score, strand, phase, annots = \
                                                         line.split("\t" , 8)
     start = int(start)
