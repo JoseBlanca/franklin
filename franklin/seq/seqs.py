@@ -333,7 +333,7 @@ class SeqWithQuality(SeqRecord):
         return struct
 
     struct = property(_get_struct)
-    
+
     def remove_annotations(self, kind):
         'It removes from seq annotations of any kind with any parameters'
         if kind == 'GOs':
@@ -344,7 +344,7 @@ class SeqWithQuality(SeqRecord):
             for key in annotations.keys():
                 if kind in key:
                     del(self.annotations[key])
-                
+
         elif kind in ['microsatellite', 'orf', 'snv', 'intron']:
             new_features = []
             for feature in self.features:
@@ -473,5 +473,6 @@ class Seq(BioSeq):
     def __repr__(self):
         """Returns the representation of the sequence."""
         return "%s(%s, %s)" % (self.__class__.__name__,
-                               repr(self.data),
+                               #repr(self.data),
+                               repr(self.tostring()),
                                repr(self.alphabet))
