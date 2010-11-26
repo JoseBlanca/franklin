@@ -413,6 +413,10 @@ class TestSnvPipeline(unittest.TestCase):
                                           reference_free=False, in_union=False)
 
 
+        assert invariant_in_groupping(snv, 'read_groups', ['rg5', 'rg6'],
+                                          reference_free=False)
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg5', 'rg6'],
+                                          reference_free=True)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
