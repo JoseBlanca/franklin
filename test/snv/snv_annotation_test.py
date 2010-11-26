@@ -334,15 +334,8 @@ class TestSnvPipeline(unittest.TestCase):
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg5'],
                                          reference_free=True)
-
-        assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
-                                     reference_free=True)
-
-        assert variable_in_groupping(snv, 'read_groups', ['rg2'],
-                                     reference_free=False)
-
-        assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
-                                     reference_free=False)
+        assert not variable_in_groupping(snv, 'read_groups', ['rg5'],
+                                         reference_free=False)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg1'],
                                      reference_free=False, maf=0.7)
@@ -350,8 +343,29 @@ class TestSnvPipeline(unittest.TestCase):
         assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
                                      reference_free=False, maf=0.6)
 
+        assert variable_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=True, maf=0.7)
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=True, maf=0.6)
+
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=True)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=False)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'])
+
         assert not variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
-                                     reference_free=False, in_union=False)
+                                         in_union=False)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                     reference_free=False)
+
+        assert not variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                         reference_free=False, in_union=False)
 
     @staticmethod
     def test_not_variable_in_read_group():
@@ -365,38 +379,38 @@ class TestSnvPipeline(unittest.TestCase):
 
 
         assert not invariant_in_groupping(snv, 'read_groups', ['rg5'],
-                                             reference_free=True)
+                                          reference_free=True)
         assert invariant_in_groupping(snv, 'read_groups', ['rg5'],
-                                         reference_free=False)
+                                      reference_free=False)
 
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=False)
 
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
+                                     reference_free=True)
 
         assert invariant_in_groupping(snv, 'read_groups', ['rg2'],
-                                     reference_free=True)
+                                      reference_free=True)
 
         assert not invariant_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False)
 
-        assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
-                                     reference_free=False)
-
-        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
-                                     reference_free=False)
-
-        assert not invariant_in_groupping(snv, 'read_groups', ['rg1'],
-                                     reference_free=True)
-
         assert invariant_in_groupping(snv, 'read_groups', ['rg3'],
                                      reference_free=False)
+
         assert invariant_in_groupping(snv, 'read_groups', ['rg3'],
                                       reference_free=True)
 
         assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
-                                     reference_free=False, in_union=False)
+                                          reference_free=False)
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                          reference_free=True)
 
         assert invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
-                                     reference_free=True, in_union=False)
+                                          reference_free=True, in_union=False)
 
+        assert not invariant_in_groupping(snv, 'read_groups', ['rg2', 'rg3'],
+                                          reference_free=False, in_union=False)
 
 
 

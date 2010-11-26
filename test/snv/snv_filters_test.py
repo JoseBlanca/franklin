@@ -404,6 +404,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
 
         assert snv1['read_groups', ('rg5',), True, True]
 
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{'rg1':{'SM':'sm1'},
+                                                    'rg2':{'SM':'sm2'},
+                                                    'rg3':{'SM':'sm3'},
+                                                    'rg4':{'SM':'sm4'}}})
+
+        seq = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+        seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
+
+        filter_ = create_not_variable_in_group_filter(group_kind= 'samples',
+                                                      groups=['sm1'],
+                                                      in_union=True)
+        filter_(seq)
+        snv1 = seq.features[0].qualifiers['filters']['is_not_variable']
+        assert snv1['samples', ('sm1',), True, True]
+
     @staticmethod
     def test_is_variable_filter():
         'It tets variable filter function'
@@ -437,7 +456,15 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
         results.append(False)
-        filter_(seq2)
+
+        kind = 'read_groups'
+        groups = ('rg1',)
+        in_union = True
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        parameters.append(params)
+        filter_ = create_is_variable_filter(*params)
+        filters.append(filter_)
+        results.append(False)
 
         kind = 'read_groups'
         groups = ('rg2', 'rg4')
