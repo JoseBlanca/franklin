@@ -200,14 +200,16 @@ def reverse_complement(seqrecord):
     try:
         qual = seqrecord.qual
     except AttributeError:
-        qual = seqrecord.letter_annotations['phred_quality']
-
+        try:
+            qual = seqrecord.letter_annotations['phred_quality']
+        except:
+            qual = None
     seqwithqual =  SeqWithQuality(id=seqrecord.id, name=seqrecord.name,
                                   description=seqrecord.description,
                                   dbxrefs=seqrecord.dbxrefs,
                                   features=seqrecord.features,
                                   annotations=seqrecord.annotations,
-                                  qual=qual, seq=seqrecord.seq)
+                                  qual=qual, seq=Seq(str(seqrecord.seq)))
     seqwithqual = seqwithqual.complement()
 
     return seqwithqual[::-1]
