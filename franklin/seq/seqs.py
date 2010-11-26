@@ -195,6 +195,23 @@ def fix_seq_struct_for_json(struct, alleles_to_string):
             feature['qualifiers']['filters'] = new_filters
     return struct
 
+def reverse_complement(seqrecord):
+    'It return the reverse and complement sequence'
+    try:
+        qual = seqrecord.qual
+    except AttributeError:
+        qual = seqrecord.letter_annotations['phred_quality']
+
+    seqwithqual =  SeqWithQuality(id=seqrecord.id, name=seqrecord.name,
+                                  description=seqrecord.description,
+                                  dbxrefs=seqrecord.dbxrefs,
+                                  features=seqrecord.features,
+                                  annotations=seqrecord.annotations,
+                                  qual=qual, seq=seqrecord.seq)
+    seqwithqual = seqwithqual.complement()
+
+    return seqwithqual[::-1]
+
 class SeqWithQuality(SeqRecord):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''

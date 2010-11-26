@@ -21,7 +21,8 @@ Created on 2009 mar 27
 
 import unittest
 from franklin.seq.seqs import (SeqWithQuality, Seq, SeqFeature, get_seq_name,
-                               create_seq_from_struct, UNKNOWN_DESCRIPTION)
+                               create_seq_from_struct, UNKNOWN_DESCRIPTION,
+                               reverse_complement)
 from Bio.SeqFeature import FeatureLocation, ExactPosition
 from Bio.Alphabet import Alphabet, DNAAlphabet
 
@@ -128,7 +129,7 @@ class SeqsTest(unittest.TestCase):
         seq = SeqWithQuality(Seq('actg'))
         seq.upper()
         assert seq.seq == 'actg'
-    
+
     @staticmethod
     def test_remove_annotations():
         'It test ermove annotations from seq_with quality'
@@ -141,7 +142,7 @@ class SeqsTest(unittest.TestCase):
         intron = SeqFeature(location=FeatureLocation(4, 4), type='intron')
         orf = SeqFeature(location=FeatureLocation(4, 4), type='orf')
         ssr = SeqFeature(location=FeatureLocation(4, 4), type='microsatellite')
-        features = [snv, intron, orf, ssr] 
+        features = [snv, intron, orf, ssr]
         seq.annotations = annotations
         seq.features    = features
         seq.remove_annotations('GOs')
@@ -154,7 +155,20 @@ class SeqsTest(unittest.TestCase):
         seq.remove_annotations('description')
         assert seq.features == []
         assert seq.description == UNKNOWN_DESCRIPTION
-        
+
+    @staticmethod
+    def test_reverse_complement():
+        'It test the reverse complement fucntion'
+        sequence1 = Seq('aaaccttt')
+
+        # First we initialice the quality in the init
+        seq1 = SeqWithQuality(name='seq1', seq=sequence1, \
+                               qual=[2, 4 , 1, 4, 5, 6, 12, 34])
+        seq2 = reverse_complement(seq1)
+        assert seq2.seq == sequence1.reverse_complement()
+        assert seq2.qual == seq1.qual[::-1]
+
+
 class SeqTest(unittest.TestCase):
     'It tests the Seq object.'
     @staticmethod
@@ -186,11 +200,6 @@ class SeqTest(unittest.TestCase):
         text = 'A' * 100
         seq = Seq(text)
         assert text in repr(seq)
-    
-    @staticmethod
-    def test_remove_annotations():
-        'It test ermove annotations from seq_with quality'
-        
 
 class TestGetSeqName(unittest.TestCase):
     'It tests that we can get a sequence name'
@@ -246,9 +255,9 @@ class TestCreateSeqStruct(unittest.TestCase):
 
         seq = SeqWithQuality(Seq('ACTG', DNAAlphabet()))
         assert seq.struct['seq']['alphabet'] == 'dnaalphabet'
-        
-        
-    
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
