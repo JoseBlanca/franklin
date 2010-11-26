@@ -53,7 +53,7 @@ def get_hit_pairs_fom_blast(blast_fhand, sub_def_as_acc=None, filters=None):
     if filters is None:
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-4,
+                    'max_score_value': 1e-20,
                     'score_tolerance': 10}]
     filtered_results = FilteredAlignmentResults(match_filters=filters,
                                                 results=blasts)
