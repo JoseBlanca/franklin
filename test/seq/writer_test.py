@@ -214,16 +214,18 @@ class WriterTest(unittest.TestCase):
         alignment = {'reference_name':'ref1',
                      'query_name': 'read1',
                      'mapped': False,
-                     'ref_position': 1,
+                     'strand':'+',
+                     'position': 1,
                      'query_position':1,
-                     'cigar': 'M12',
+                     'cigar': '12M',
                      'mapq':255,
-                     'cosas_raras':[]}
+                     }
         sam_writer = SamWriter(ref_fhand, read_fhand, out_fhand)
         sam_writer.write(alignment)
 
         result = open(out_fhand.name).read()
-        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*'
+        line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0'
+#        print result
         assert line in result
 
 
@@ -245,17 +247,21 @@ class WriterTest(unittest.TestCase):
         alignment = {'reference_name':'ref1',
                      'query_name': 'read1',
                      'mapped': False,
-                     'ref_position': 1,
-                     'query_position':1,
-                     'cigar': 'M12',
+                     'position': 1,
+                     'cigar': '12M',
                      'mapq':255,
-                     'cosas_raras':[]}
+                     'opt_files':[]}
         sam_writer = SamWriter(ref_fhand, read_fhand, out_fhand)
         sam_writer.write(alignment)
 
         result = open(out_fhand.name).read()
-        line = 'read1\t4\tref1\t1\t255\tM12\t*\t*\tgatgatagatgatagata'
+        line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata'
         assert line in result
+
+
+
+
+
 
 
 class SequenceWriter(unittest.TestCase):

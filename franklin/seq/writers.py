@@ -22,10 +22,12 @@ feature) to the file.
 from __future__ import division
 import tempfile, json
 import cPickle as pickle
+import re
 
 from Bio import SeqIO
 
-from franklin.seq.seqs import get_seq_name, fix_seq_struct_for_json
+from franklin.seq.seqs import (get_seq_name, fix_seq_struct_for_json,
+                               reverse_complement)
 from franklin.seq.readers import (BIOPYTHON_FORMATS, guess_seq_file_format,
                                   seqs_in_file)
 from franklin.gff import GffWriter as RawGffWriter
@@ -223,37 +225,90 @@ class SamWriter(object):
 #        alignment = {'reference_name':'name',
 #                     'query_name': 'name',
 #                     'mapped': False,
-#                     'ref_position': 1,
-#                     'query_position':1,
-#                     'cigar': 'M12',
+#                     'position': 1,
+#                     'strand':'+/-'
+#                     'cigar': '12M',
 #                     'mapq':255,
-#                     'cosas_raras':[]}
-        # TODO- dealing of vtype an value
+#                     'mrnm':*,
+#                     'isize':*,
+#                     'opt_fields':[]}
+        strand    = '+' if 'strand' not in alignment else alignment['strand']
 
         read_name = alignment['query_name']
         seqrecord = self._read_index[read_name]
+        cigar     = self._clipp_cigar(alignment['cigar'], len(seqrecord))
+        if strand == '-':
+            seqrecord = reverse_complement(seqrecord)
+            cigar = self._reverse_cigar(cigar)
+
+
+        flag = self._guess_flag(alignment['mapped'], strand)
         seq       = str(seqrecord.seq)
         try:
-            qual  = str(seqrecord.letter_annotations["phred_quality"])
+            qual  = seqrecord.letter_annotations["phred_quality"]
+            qual = [chr(num + 33) for num in qual]
+            qual = ''.join(qual)
         except KeyError:
             qual = '*'
 
-        flag     = '0' if alignment['mapped'] else '4'
-        ref_name = alignment['reference_name']
-        ref_pos  = str(alignment['ref_position'])
-        mapq     = str(alignment['mapq'])
-        cigar    = alignment['cigar']
-        mrnm     = alignment['mrnm'] if 'mrnm' in alignment else '*'
-        isize    = alignment['isize'] if 'isize' in alignment else '*'
-        tag      = alignment['tag'] if 'tag' in alignment else '*'
-        vtype    = alignment['vtype'] if 'vtype' in alignment else '*'
-        value    = alignment['vtype'] if 'vtype' in alignment else '*'
+        if not alignment['mapped']:
+            ref_name = '*'
+            ref_pos  = '0'
+        else:
+            ref_name = alignment['reference_name']
+            ref_pos  = str(alignment['position'])
+        mapq     = str(alignment['mapq']) if 'mapq' in alignment else '255'
 
-        sam_attrs = (read_name, flag, ref_name, ref_pos, mapq, cigar, mrnm,
-                     isize, seq, qual, tag,  vtype, value)
+        rnext    = alignment['rnext'] if 'rnext' in alignment else '*'
+        pnext    = alignment['pnext'] if 'pnext' in alignment else '0'
+        tlen     = alignment['tlen'] if 'tlen' in alignment else '0'
+        sam_attrs = [read_name, flag, ref_name, ref_pos, mapq, cigar, rnext,
+                     pnext, tlen, seq, qual]
+
+        if 'opt_fields' in alignment:
+            opt_fields = '/t'.join(alignment['opt_fields'])
+            sam_attrs.append(opt_fields)
 
         self._output_fhand.write('\t'.join(sam_attrs) + '\n')
         self._output_fhand.flush()
+
+
+    @staticmethod
+    def _guess_flag(mapped, strand):
+        'It guess the mapping flag'
+        if not mapped:
+            return '4'
+        elif mapped and strand == '+':
+            return '0'
+        else:
+            return '16'
+
+    @staticmethod
+    def _reverse_cigar(cigar):
+        'It return the resverse complement of a cigar alignment'
+        cigar_items = re.findall('[0-9]+[^0-9]*', cigar)
+        rever_cigar = reversed(cigar_items)
+        return ''.join(rever_cigar)
+
+    @staticmethod
+    def _clipp_cigar(cigar, seq_length):
+        'It adds the soft clipping information if needed to cigar'
+        def sum_cigar(cigar):
+            'It sums the length of a cigar aligment'
+            numbers = []
+            for align in re.findall('[0-9]+[^0-9]*', cigar):
+                type_ = align[-1]
+                num   = int(align[:-1])
+                if type_ in ('M', 'I', 'S'):
+                    numbers.append(num)
+            return sum(numbers)
+
+        cigar_sum = sum_cigar(cigar)
+        diff = seq_length - cigar_sum
+        if diff != 0:
+            cigar += '%dS' % diff
+        return cigar
+
 
 class SequenceWriter(object):
     'It writes sequences one by one'

@@ -195,13 +195,13 @@ def create_gmap_reference(reference_fpath):
 def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
     'It maps the reads with gmap'
-    threads = parameters['treads']
+    threads = parameters['threads']
     reference_dir, reference_name = os.path.split(reference_fpath)
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 
     # create command
-    cmd  = ['gmap' '-d', reference_name, '-D', reference_dir, '-f', '4']
+    cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', '4']
     if threads:
         cmd.extend(['-t', threads])
     cmd.append(reads_fpath)
@@ -210,35 +210,78 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     gff3_fhand = NamedTemporaryFile(suffix='.gff3')
     call(cmd, stdout=gff3_fhand, raise_on_error=True)
 
-    out_bam_fhand = open(out_bam_fpath)
-    _gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
-                     open(reads_fpath), out_bam_fhand)
+    out_sam_fhand = NamedTemporaryFile(suffix='.sam')
+    gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
+                     open(reads_fpath), out_sam_fhand)
+    #print open(out_sam_fhand.name).read()
+    sam2bam(out_sam_fhand.name, out_bam_fpath)
 
-    out_bam_fhand.close()
+    out_sam_fhand.close()
     gff3_fhand.close()
 
-def _gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand):
+def gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand):
     'It converts the gmap gff3 to sam format'
     samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand)
-    for feature, mapped in features_in_gff(in_gmap_gff3, version=3):
+    for feature, mapped in features_in_gmap_gff(in_gmap_gff3):
         alignment = gff_feature_to_alignment(feature, mapped)
         samwriter.write(alignment)
+
+def features_in_gmap_gff(in_gmap_gff3):
+    '''It returns features in a gmap gff3 and analices if a feature is
+    already mapped. The gff must be ordered'''
+    old_name     = None
+    new_features = []
+    for feature in features_in_gff(in_gmap_gff3, version=3):
+        feat_name = feature['attributes']['Name']
+        if old_name is None:
+            pass
+        elif old_name  == feat_name:
+            new_features.append(feature)
+        else:
+
+            if len(new_features) > 1:
+                mapped = False
+            else:
+                mapped = True
+            for new_feature in new_features:
+                yield new_feature, mapped
+            new_features = []
+        old_name = feat_name
+    else:
+        if len(new_features) > 1:
+            mapped = False
+        else:
+            mapped = True
+        for new_feature in new_features:
+            yield new_feature, mapped
 
 
 def gff_feature_to_alignment(feature, mapped):
     'converts a gff feature into an alignment struct'
+    items       = feature['attributes']['Target'].split()
+    query_start = int(items[1])
+    strand      = items[3]
+    cigar       = _get_cigar_from_feature(feature, query_start)
     alignment = {'reference_name':feature['seqid'],
                  'query_name': feature['attributes']['Name'],
                  'mapped':mapped,
-                 'ref_positions':'',
-                 'query_positions':''}
+                 'position':feature['start'],
+                 'cigar':cigar,
+                 'strand':strand}
+    return alignment
 
+def _get_cigar_from_feature(feature, query_start):
+    'It converts an unclipeed cigar into a clipped cigar alignment'
+    cigar = []
+    for cigar_item in feature['attributes']['Gap'].split():
+        type_ = cigar_item[0]
+        num   = cigar_item[1:]
+        cigar.append(num + type_)
 
+    if query_start != 1:
+        cigar.insert(0, '%dS' % (query_start - 1))
 
-
-
-
-
+    return ''.join(cigar)
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
                 'tophat':map_reads_with_tophat,
