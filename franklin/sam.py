@@ -45,6 +45,19 @@ def get_read_group_info(bam):
         rg_info[name] = read_group
     return rg_info
 
+def get_read_group_sets(bam):
+    'It gets sets for each of the groups'
+    groups = {'read_groups':set(), 'samples':set(), 'libraries':set(),
+              'platforms':set()}
+    for read_group in bam.header['RG']:
+        groups['read_groups'].add(read_group['ID'])
+        groups['samples'].add(read_group['SM'])
+        groups['libraries'].add(read_group['LB'])
+        groups['platforms'].add(read_group['PL'])
+    return groups
+
+
+
 def bam2sam(bam_path, sam_path, header=False):
     '''It converts between bam and sam.'''
     cmd = ['samtools', 'view']
