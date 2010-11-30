@@ -325,7 +325,7 @@ class TestSnvPipeline(unittest.TestCase):
     def test_variable_in_read_group():
         'It test variable_in_reaggroups function'
 
-        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1}},
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':2}},
                    ('T', INVARIANT): {'read_groups':{'rg1':2, 'rg3':2}}}
 
         snv = SeqFeature(location=FeatureLocation(3, 3), type='snv',
@@ -349,12 +349,22 @@ class TestSnvPipeline(unittest.TestCase):
         assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
                                      reference_free=True, maf=0.6)
 
+        assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
+                                     min_reads_per_allele=2)
+
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=True)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False)
+
+        assert variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=False,
+                                     min_reads_per_allele=2)
+        assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
+                                     reference_free=False,
+                                     min_reads_per_allele=3)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'])
 

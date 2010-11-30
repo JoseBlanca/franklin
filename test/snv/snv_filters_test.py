@@ -447,11 +447,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
         reference_free = True
         maf= None
         in_all_groups = True
+        min_reads_per_allele = None
+
 
         kind = 'read_groups'
         groups = ('rg1',)
         in_union = False
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
@@ -460,16 +463,32 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg1',)
         in_union = True
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filter_ = create_is_variable_filter(*params)
         filters.append(filter_)
         results.append(False)
 
         kind = 'read_groups'
+        groups = ('rg1',)
+        in_union = True
+        min_reads_per_allele = 2
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
+        parameters.append(params)
+        filter_ = create_is_variable_filter(*params)
+        filters.append(filter_)
+        results.append(True)
+
+        min_reads_per_allele = None
+
+
+        kind = 'read_groups'
         groups = ('rg2', 'rg4')
         in_union = True
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -477,7 +496,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = 'fake'
         in_union = True
-        params = (kind, (groups,), in_union, in_all_groups, reference_free, maf)
+        params = (kind, (groups,), in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -485,7 +505,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = False
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -493,7 +514,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg2', 'rg3')
         in_union = True
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(False)
@@ -501,7 +523,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         kind = 'read_groups'
         groups = ('rg5',)
         in_union = True
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)
@@ -510,7 +533,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         groups = ('rg2',)
         in_union = True
         reference_free = False
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(False)
@@ -519,7 +543,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         groups = ('rg2',)
         in_union = True
         reference_free = True
-        params = (kind, groups, in_union, in_all_groups, reference_free, maf)
+        params = (kind, groups, in_union, in_all_groups, reference_free, maf,
+                  min_reads_per_allele)
         parameters.append(params)
         filters.append(create_is_variable_filter(*params))
         results.append(True)

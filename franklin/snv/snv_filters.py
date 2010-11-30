@@ -531,7 +531,7 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_groups=True, reference_free=True,
-                              maf=None):
+                              maf=None, min_reads_per_allele=3):
     '''it filters looking if the list of reads is variable in the given
     conditions. It look in the'''
 
@@ -540,7 +540,7 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
     else:
         groups = tuple(groups)
     parameters = (group_kind, groups, in_union,in_all_groups, reference_free,
-                  maf)
+                  maf, min_reads_per_allele)
 
     def is_variable_filter(sequence):
         'The filter'
@@ -552,10 +552,11 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
             if previous_result is not None:
                 continue
             result = variable_in_groupping(snv, group_kind, groups,
-                                           in_union=in_union,
-                                           in_all_groups=in_all_groups,
-                                           reference_free=reference_free,
-                                           maf=maf)
+                                      in_union=in_union,
+                                      in_all_groups=in_all_groups,
+                                      reference_free=reference_free,
+                                      maf=maf,
+                                      min_reads_per_allele=min_reads_per_allele)
 
 
             _add_filter_result(snv, 'is_variable', not result,
