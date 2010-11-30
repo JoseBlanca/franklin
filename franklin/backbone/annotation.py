@@ -22,6 +22,10 @@ Created on 12/03/2010
 
 import shutil, os, copy
 from os.path import join, exists, getsize
+try:
+    import pysam
+except ImportError:
+    pass
 from franklin.backbone.analysis import Analyzer
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -57,6 +61,7 @@ from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
 
 from franklin.utils.misc_utils import VersionedPath, xml_itemize
 from franklin.utils.cmd_utils import b2gpipe_runner
+from franklin.sam import get_read_group_sets
 
 class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
@@ -399,10 +404,39 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
         db_dir = output_dirs['db_dir']
         pipeline, configuration = self._get_snv_filter_specs()
 
+        self._check_readgroup_configuration(inputs, configuration)
+
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,
                                     inputs=inputs,
                                     output_dir=db_dir)
+    @staticmethod
+    def _check_readgroup_configuration(inputs, configuration):
+        '''It checks if the readgroups in the sam file are correct
+        None if correct, list if error'''
+        bads = set()
+
+        if 'merged_bam' in inputs:
+            bam_fpath = inputs['merged_bam'].last_version
+            if not os.path.exists(bam_fpath):
+                return
+        else:
+            return
+        sam_groups = get_read_group_sets(pysam.Samfile(bam_fpath, 'rb'))
+
+        for conf_step in configuration.values():
+            if 'group_kind' not in conf_step:
+                continue
+            group_kind = conf_step['group_kind']
+            groups     = set(conf_step['groups'])
+            diffs      = groups.difference(sam_groups[group_kind])
+            for diff in diffs:
+                bads.add(diff)
+        if bads:
+            bads_str = ','.join(bads)
+            raise RuntimeError('wrong group names in filters: %s' % bads_str)
+
+
     def _get_snv_filter_specs(self):
         'It gets the pipeline and configuration from settings'
         configuration = {}
@@ -679,6 +713,9 @@ DEFINITIONS = {
             'pickle':
                 {'directory': 'annotation_dbs',
                  'file_kinds': 'sequence_files'},
+            'merged_bam':
+                {'directory':'mapping_result',
+                 'file': 'merged_bam'},
             },
          'outputs':{'db_dir':{'directory': 'annotation_dbs'}},
          'analyzer': SnvFilterAnalyzer},
