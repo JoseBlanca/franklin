@@ -224,7 +224,17 @@ class WriterTest(unittest.TestCase):
         sam_writer.write(alignment)
 
         result = open(out_fhand.name).read()
-        line = 'read1\t4\t*\t0\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata\t*'
+        line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata\t*'
+        assert line in result
+
+
+        sam_writer = SamWriter(ref_fhand, read_fhand, out_fhand,
+                               keep_unmapped=False)
+        sam_writer.write(alignment)
+
+        result = open(out_fhand.name).read()
+        line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata\t*'
+        print result
         assert line in result
 
 
@@ -254,7 +264,7 @@ class WriterTest(unittest.TestCase):
         sam_writer.write(alignment)
 
         result = open(out_fhand.name).read()
-        line = 'read1\t4\t*\t0\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata'
+        line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata'
 
         assert line in result
 
