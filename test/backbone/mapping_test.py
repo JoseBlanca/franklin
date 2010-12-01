@@ -52,7 +52,7 @@ class TestBackboneMapping(unittest.TestCase):
                        'filter10':{'unique_name': 'variable_in_sm',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
-                                   'groups':['hola']},
+                                   'groups':['hola1']},
                        'filter11':{'unique_name': 'variable_in_adios',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
@@ -60,7 +60,7 @@ class TestBackboneMapping(unittest.TestCase):
                        'filter13':{'unique_name': 'variable_in_caracola',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
-                                   'groups':['caracola']}, }
+                                   'groups':['hola2']}, }
 
         configuration = {'Snvs':{'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},

@@ -21,6 +21,7 @@ Created on 05/02/2010
 
 from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
+from franklin.utils.seqio_utils import seqio
 from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
                           remove_unmapped_reads)
 from gff import features_in_gff
@@ -28,6 +29,7 @@ import os, shutil
 
 from tempfile import NamedTemporaryFile
 from franklin.seq.writers import SamWriter
+from franklin.seq.readers import guess_seq_file_format
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -200,11 +202,21 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 
+    # gmap needs the reads to be fasta and not fastq
+    reads_fhand = open(reads_fpath)
+    reads_format = guess_seq_file_format(reads_fhand)
+    if reads_format != 'fasta':
+        out_fhand = NamedTemporaryFile(suffix='.fasta')
+        seqio(reads_fhand, out_fhand, 'fasta')
+        reads_to_cmap = out_fhand.name
+    else:
+        reads_to_cmap = reads_fpath
+
     # create command
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', '4']
     if threads:
         cmd.extend(['-t', threads])
-    cmd.append(reads_fpath)
+    cmd.append(reads_to_cmap)
 
 
     gff3_fhand = NamedTemporaryFile(suffix='.gff3')
@@ -219,9 +231,11 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     out_sam_fhand.close()
     gff3_fhand.close()
 
-def gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand):
+def gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand,
+                    keep_unmapped=False):
     'It converts the gmap gff3 to sam format'
-    samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand)
+    samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand,
+                          keep_unmapped=keep_unmapped)
     for feature, mapped in features_in_gmap_gff(in_gmap_gff3):
         alignment = gff_feature_to_alignment(feature, mapped)
         samwriter.write(alignment)
@@ -233,12 +247,7 @@ def features_in_gmap_gff(in_gmap_gff3):
     new_features = []
     for feature in features_in_gff(in_gmap_gff3, version=3):
         feat_name = feature['attributes']['Name']
-        if old_name is None:
-            pass
-        elif old_name  == feat_name:
-            new_features.append(feature)
-        else:
-
+        if old_name is not None and old_name != feat_name:
             if len(new_features) > 1:
                 mapped = False
             else:
@@ -246,6 +255,7 @@ def features_in_gmap_gff(in_gmap_gff3):
             for new_feature in new_features:
                 yield new_feature, mapped
             new_features = []
+        new_features.append(feature)
         old_name = feat_name
     else:
         if len(new_features) > 1:

@@ -47,20 +47,35 @@ class CmapTest(unittest.TestCase):
 
     @staticmethod
     def test_cmap_gff3_writer():
-        'It tests the cmap gff3 parser'
+        'It test the cmap mapper'
         cmap_dir = join(DATA_DIR, 'mappers', 'gmap')
-        reads_fpath = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam1.fa')
-        ref_fpath   = join(cmap_dir, 'genome.fa')
-        out_sam_fhand = StringIO.StringIO()
-        cmap_gff3_fpath = join(cmap_dir, 'gmap_output.gff3')
-        gmap_gff_to_sam(open(cmap_gff3_fpath), open(ref_fpath),
+
+        genome_fpath = join(cmap_dir, 'genome.fa')
+        in_gmap_gff3 = join(cmap_dir, 'gmap_output.gff3')
+        reads_fpath  = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam2.fa')
+        out_sam_fhand = NamedTemporaryFile(suffix='.bam')
+        gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
                         open(reads_fpath), out_sam_fhand)
 
-        print out_sam_fhand.getvalue()
+        result = open(out_sam_fhand.name).read()
+        out_sam_fhand.close()
+        assert 'seq2\t0\tSL2.30ch00\t241\t255\t36M2I204M' in result
+        assert 'seq3\t0\tSL2.30ch00\t241\t255\t48M1D191M' in result
+        assert 'seq8_rev\t16\tSL2.30ch00\t3441\t255\t240M' in result
+        assert 'seq10_repeated\t4\tSL2.30ch01\t1\t255\t240M' not in result
+
+
+        out_sam_fhand = NamedTemporaryFile(suffix='.bam')
+        gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
+                        open(reads_fpath), out_sam_fhand, keep_unmapped=True)
+        result = open(out_sam_fhand.name).read()
+        #print result
+        out_sam_fhand.close()
+        assert 'seq10_repeated\t4\tSL2.30ch01\t1\t255\t240M' in result
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.test_gff_writer']
+    #import sys;sys.argv = ['', 'CmapTest.test_cmap_gff3_writer']
     unittest.main()
 
 

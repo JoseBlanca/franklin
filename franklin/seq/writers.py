@@ -206,11 +206,13 @@ class GffWriter(object):
 
 class SamWriter(object):
     'it writes sam file'
-    def __init__(self, reference_fhand, reads_fhand, output_fhand):
+    def __init__(self, reference_fhand, reads_fhand, output_fhand,
+                 keep_unmapped=True):
         "the initiator"
         self._reference_fhand = reference_fhand
         self._output_fhand    = output_fhand
         self._write_header()
+        self._keep_unmapped = keep_unmapped
         format_ = guess_seq_file_format(reads_fhand)
         self._read_index = SeqIO.index(reads_fhand.name, format=format_)
 
@@ -222,25 +224,21 @@ class SamWriter(object):
 
     def write(self, alignment):
         'It writes each alignment of the sam'
-#        alignment = {'reference_name':'name',
-#                     'query_name': 'name',
-#                     'mapped': False,
-#                     'position': 1,
-#                     'strand':'+/-'
-#                     'cigar': '12M',
-#                     'mapq':255,
-#                     'mrnm':*,
-#                     'isize':*,
-#                     'opt_fields':[]}
-        strand    = '+' if 'strand' not in alignment else alignment['strand']
+        mapped = alignment['mapped']
+        if not mapped and not self._keep_unmapped:
+            return
 
+        strand    = '+' if 'strand' not in alignment else alignment['strand']
         read_name = alignment['query_name']
         seqrecord = self._read_index[read_name]
         cigar     = self._clipp_cigar(alignment['cigar'], len(seqrecord))
+
         if strand == '-':
             seqrecord = reverse_complement(seqrecord)
             cigar = self._reverse_cigar(cigar)
 
+        # check cigar length
+        assert len(seqrecord) == self._sum_cigar(cigar)
 
         flag = self._guess_flag(alignment['mapped'], strand)
         seq       = str(seqrecord.seq)
@@ -251,12 +249,8 @@ class SamWriter(object):
         except KeyError:
             qual = '*'
 
-        if not alignment['mapped']:
-            ref_name = '*'
-            ref_pos  = '0'
-        else:
-            ref_name = alignment['reference_name']
-            ref_pos  = str(alignment['position'])
+        ref_name = alignment['reference_name']
+        ref_pos  = str(alignment['position'])
         mapq     = str(alignment['mapq']) if 'mapq' in alignment else '255'
 
         rnext    = alignment['rnext'] if 'rnext' in alignment else '*'
@@ -291,19 +285,19 @@ class SamWriter(object):
         return ''.join(rever_cigar)
 
     @staticmethod
-    def _clipp_cigar(cigar, seq_length):
-        'It adds the soft clipping information if needed to cigar'
-        def sum_cigar(cigar):
-            'It sums the length of a cigar aligment'
-            numbers = []
-            for align in re.findall('[0-9]+[^0-9]*', cigar):
-                type_ = align[-1]
-                num   = int(align[:-1])
-                if type_ in ('M', 'I', 'S'):
-                    numbers.append(num)
-            return sum(numbers)
+    def _sum_cigar(cigar):
+        'It sums the length of a cigar aligment'
+        numbers = []
+        for align in re.findall('[0-9]+[^0-9]*', cigar):
+            type_ = align[-1]
+            num   = int(align[:-1])
+            if type_ in ('M', 'I', 'S'):
+                numbers.append(num)
+        return sum(numbers)
 
-        cigar_sum = sum_cigar(cigar)
+    def _clipp_cigar(self, cigar, seq_length):
+        'It adds the soft clipping information if needed to cigar'
+        cigar_sum = self._sum_cigar(cigar)
         diff = seq_length - cigar_sum
         if diff != 0:
             cigar += '%dS' % diff
