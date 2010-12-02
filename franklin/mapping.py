@@ -92,10 +92,14 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
                  java_conf=java_conf, strict_validation=False)
     temp_dir.close()
 
-def create_bowtie_reference(reference_fpath):
+def create_bowtie_reference(reference_fpath, color=False):
     'It creates the bowtie index used by bowtie and tophat'
     bowtie_index = os.path.splitext(reference_fpath)[0]
-    cmd = ['bowtie-build', reference_fpath, bowtie_index]
+    cmd = ['bowtie-build']
+    if color:
+        cmd.append('-C')
+
+    cmd.extend([reference_fpath, bowtie_index])
     call(cmd, raise_on_error=True)
 
 def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
@@ -215,7 +219,7 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     # create command
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', '4']
     if threads:
-        cmd.extend(['-t', threads])
+        cmd.extend(['-t', str(threads)])
     cmd.append(reads_to_cmap)
 
 
