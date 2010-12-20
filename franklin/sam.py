@@ -216,17 +216,19 @@ def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
                                                  stdout)
         raise RuntimeError(msg)
 
+NON_MAPPED_FLAGS = set()
+
 def guess_mapped(flag):
     'Giving the flag, guess if the read is mapped or not'
-    non_mapped_flags = set()
+    global NON_MAPPED_FLAGS
     if flag == 0:
         mapped = True
-    elif flag in non_mapped_flags:  #just a sohortcut
+    elif flag in NON_MAPPED_FLAGS:  #just a sohortcut
         mapped = False
     else:
         if bin(flag)[-3] == '1':
             mapped = False
-            non_mapped_flags.add(flag)
+            NON_MAPPED_FLAGS.add(flag)
         else:
             mapped = True
     return mapped
@@ -546,6 +548,10 @@ def _reads_in_sam(sam_fhand):
             continue
         yield line
 
+def get_binary_flag(flag):
+    'It converts the bam decimal flag into binary'
+    return bin(flag | 0b10000000000000000)[3:]
+
 def bam_general_stats(bam_fhand, out_fhand):
     'It calculates some general statistics for the bam file'
 
@@ -554,9 +560,15 @@ def bam_general_stats(bam_fhand, out_fhand):
     bam = pysam.Samfile(bam_fpath, 'rb')
 
     rg_stats = {}
+    secondary_alignments = 0
     for aligned_read in pysam.IteratorRowAll(bam):
+        flag    = aligned_read.flag
+        binflag = get_binary_flag(flag)
+        if binflag[7] == '1':
+            secondary_alignments += 1
+
         read_group = aligned_read.opt('RG')
-        if not guess_mapped(aligned_read.flag):
+        if not guess_mapped(flag):
             continue
         if read_group not in rg_stats:
             rg_stats[read_group] = 0
@@ -575,6 +587,7 @@ def bam_general_stats(bam_fhand, out_fhand):
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
     out_fhand.write('\n')
+    out_fhand.write('Secondary alignments: %d\n' % secondary_alignments)
 
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
