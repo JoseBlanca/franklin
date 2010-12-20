@@ -12,10 +12,10 @@ from tempfile import NamedTemporaryFile
 
 from franklin.utils.misc_utils import DATA_DIR, NamedTemporaryDir
 from franklin.mapping import (map_reads_with_gmap, gmap_gff_to_sam,
-                              map_reads_with_boina)
+                              map_reads_with_boina, _correct_cigar)
 from franklin.sam import bam2sam
 
-class CmapTest(unittest.TestCase):
+class GmapTest(unittest.TestCase):
     'It test the cmap mapper'
 
     @staticmethod
@@ -76,6 +76,18 @@ class CmapTest(unittest.TestCase):
         out_sam_fhand.close()
         assert 'seq10_repeated\t4\tSL2.30ch01\t1\t255\t240M' in result
 
+    @staticmethod
+    def test_correct_cigar():
+        'It tests cigar gmap bug corrector'
+        cigar = ['2M', '1I', '1D', '3S']
+        assert _correct_cigar(cigar) == ['3M', '3S']
+        cigar = ['2M', '1I', '1D', '3M']
+        assert _correct_cigar(cigar) == ['6M']
+        cigar = ['2S', '1I', '1D', '3S']
+        assert _correct_cigar(cigar) == ['2S', '1M', '3S']
+        cigar = ['2S', '1I', '1M', '3S']
+        assert _correct_cigar(cigar) == ['2S', '1I', '1M', '3S']
+
 class BoinaTest(unittest.TestCase):
     'It test the gmap mapper'
 
@@ -103,7 +115,7 @@ class BoinaTest(unittest.TestCase):
         #print result
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CmapTest.test_cmap_gff3_writer']
+#    import sys;sys.argv = ['', 'GmapTest.test_correct_cigar']
     unittest.main()
 
 

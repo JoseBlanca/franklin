@@ -295,7 +295,37 @@ def _get_cigar_from_feature(feature, query_start):
     if query_start != 1:
         cigar.insert(0, '%dS' % (query_start - 1))
 
+    cigar = _correct_cigar(cigar)
+
     return ''.join(cigar)
+
+def _correct_cigar(cigar):
+    'It correct the bug of gmap with indels: one insertion along a deletion'
+    new_cigar     = []
+    indel         = ('I', 'D')
+    previous_type = None
+
+    for cigar_element in cigar:
+        type_ = cigar_element[-1]
+        num   = cigar_element[:-1]
+        if type_ in indel and previous_type in indel:
+            new_cigar[-1] = '%sM' % num
+        else:
+            new_cigar.append(cigar_element)
+        previous_type = type_
+
+    previous_type = None
+    cigar = []
+    for cigar_element in new_cigar:
+        type_ = cigar_element[-1]
+        num   = cigar_element[:-1]
+        if type_ == 'M' and previous_type == 'M':
+            prev_num = cigar[-1][:-1]
+            cigar[-1] = '%dM' % (int(prev_num) + int(num))
+        else:
+            cigar.append(cigar_element)
+        previous_type = type_
+    return cigar
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
                 'tophat':map_reads_with_tophat,
