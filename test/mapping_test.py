@@ -87,6 +87,8 @@ class GmapTest(unittest.TestCase):
         assert _correct_cigar(cigar) == ['2S', '1M', '3S']
         cigar = ['2S', '1I', '1M', '3S']
         assert _correct_cigar(cigar) == ['2S', '1I', '1M', '3S']
+        cigar = ['90M', '1D', '375M', '1I', '1D', '42M']
+        assert _correct_cigar(cigar) == ['90M', '1D', '418M']
 
 class BoinaTest(unittest.TestCase):
     'It test the gmap mapper'
