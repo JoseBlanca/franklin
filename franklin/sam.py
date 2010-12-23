@@ -440,7 +440,7 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
     It extracts mapping quality per read
     '''
     mquals = {}
-    for aligned_read in pysam.IteratorRowAll(bam):
+    for aligned_read in bam.fetch(until_eof=True):
         read_mapping_qual = aligned_read.mapq
         read_group = aligned_read.opt('RG')
         group = rgs[read_group][grouping]
@@ -561,7 +561,7 @@ def bam_general_stats(bam_fhand, out_fhand):
 
     rg_stats = {}
     secondary_alignments = 0
-    for aligned_read in pysam.IteratorRowAll(bam):
+    for aligned_read in bam.fetch(until_eof=True):
         flag    = aligned_read.flag
         binflag = get_binary_flag(flag)
         if binflag[7] == '1':
