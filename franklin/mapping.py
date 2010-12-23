@@ -304,15 +304,16 @@ def _correct_cigar(cigar):
     new_cigar     = []
     indel         = ('I', 'D')
     previous_type = None
-
+    prev_num      = None
     for cigar_element in cigar:
         type_ = cigar_element[-1]
         num   = cigar_element[:-1]
-        if type_ in indel and previous_type in indel:
+        if type_ in indel and previous_type in indel and num == prev_num:
             new_cigar[-1] = '%sM' % num
         else:
             new_cigar.append(cigar_element)
         previous_type = type_
+        prev_num      = num
 
     previous_type = None
     cigar = []
