@@ -307,8 +307,8 @@ def _correct_cigar(cigar):
     prev_num      = None
     for cigar_element in cigar:
         type_ = cigar_element[-1]
-        num   = cigar_element[:-1]
-        if type_ in indel and previous_type in indel and num == prev_num:
+        num   = int(cigar_element[:-1])
+        if (type_ in indel and previous_type in indel and num == prev_num == 1):
             new_cigar[-1] = '%sM' % num
         else:
             new_cigar.append(cigar_element)
