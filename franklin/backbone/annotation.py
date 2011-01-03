@@ -425,7 +425,7 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
         sam_groups = get_read_group_sets(pysam.Samfile(bam_fpath, 'rb'))
 
         for conf_step in configuration.values():
-            if 'group_kind' not in conf_step:
+            if 'group_kind' not in conf_step or 'groups' not in conf_step:
                 continue
             group_kind = conf_step['group_kind']
             groups     = set(conf_step['groups'])
