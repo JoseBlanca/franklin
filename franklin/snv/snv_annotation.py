@@ -461,16 +461,23 @@ def sorted_alleles(feature):
         alleles_list.append(allele_info)
     return sorted(alleles_list, _cmp_by_read_num)
 
-def snvs_in_window(snv, snvs, window):
+def snvs_in_window(snv, snvs, window, snv_type=None):
     'it gets all the snvs  in a window taking a snv as reference'
     num_of_snvs = 0
     location = int(str(snv.location.start))
     left_margin = location - (window / 2)
     rigth_margin = location + (window / 2)
     for snv in snvs:
+
         location = int(str(snv.location.start))
         if location > left_margin and location < rigth_margin:
-            num_of_snvs += 1
+            if  snv_type is None:
+                num_of_snvs += 1
+            else:
+                type_ = calculate_snv_kind(snv)
+                if ((snv_type == type_) or
+                    (snv_type == INDEL and type_ in(INSERTION, DELETION))):
+                    num_of_snvs += 1
     return num_of_snvs
 
 def _get_group(read_group, group_kind, read_groups):

@@ -25,7 +25,8 @@ from Bio.SeqFeature import FeatureLocation
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.utils.cmd_utils import BLAST_TOOL
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
-from franklin.snv.snv_annotation import INVARIANT, SNP, INDEL, DELETION
+from franklin.snv.snv_annotation import (INVARIANT, SNP, INDEL, DELETION,
+                                         INSERTION)
 from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_close_to_intron_filter,
                                       create_high_variable_region_filter,
@@ -195,12 +196,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_close_to_seqvar_filter():
         'It tests that we can detect snvs by its proximity to another snv'
+        alleles = {('A', SNP): None, ('T', INVARIANT):None}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
-                          qualifiers={})
+                          qualifiers={'alleles':alleles})
         snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
-                          qualifiers={})
+                          qualifiers={'alleles':alleles})
         snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
-                          qualifiers={})
+                          qualifiers={'alleles':alleles})
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features=[snv1, snv2, snv3])
@@ -210,8 +212,29 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
                                  [False, True, True]):
-            result = snv.qualifiers['filters']['close_to_snv'][proximity]
+            result = snv.qualifiers['filters']['close_to_snv'][(proximity, None)]
             assert result == expected
+
+
+        alleles2 = {('A', DELETION): None, ('T', INVARIANT):None}
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
+                          qualifiers={'alleles':alleles2})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
+                          qualifiers={'alleles':alleles2})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
+                          qualifiers={'alleles':alleles2})
+        alleles3 = {('A', INSERTION): None, ('T', INVARIANT):None}
+        snv4 = SeqFeature(type='snv', location=FeatureLocation(9, 9),
+                          qualifiers={'alleles':alleles3})
+        seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
+                             features=[snv1, snv2, snv3, snv4])
+        filter_ = create_close_to_snv_filter(proximity, INDEL)
+        filter_(seq)
+        for snv, expected in zip(seq.get_features(kind='snv'),
+                                 [False, True, True, False]):
+            result = snv.qualifiers['filters']['close_to_snv'][(proximity, INDEL)]
+            assert result == expected
+
 
     @staticmethod
     def test_close_to_limit_filter():

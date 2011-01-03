@@ -32,7 +32,8 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          calculate_cap_enzymes,
                                          variable_in_groupping,
                                          invariant_in_groupping,
-                                         _get_group)
+                                         _get_group, SNP,
+                                         SNV_TYPES)
 from franklin.seq.seqs import get_seq_name
 
 # In a filter TRUE result means that a snv does NOT pass the filter.
@@ -49,8 +50,8 @@ FILTER_DESCRIPTIONS = {
         {'id': 'HVR%d',
     'description':'The region has more than %d snvs per 100 bases'},
     'close_to_snv':
-        {'id':'cs%2d',
-         'description':'The snv is closer than %d nucleotides to another snv'},
+        {'id':'cs%s%2d',
+         'description':'The snv is closer than %d nucleotides to another %s'},
     'close_to_limit':
         {'id':'cl%2d',
       'description':'The snv is closer than %d nucleotides the reference edge'},
@@ -100,7 +101,8 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
         short_name, description = _get_min_groups_desc(id_, desc, parameters)
     elif filter_name == 'maf':
         short_name, description = _get_nd_maf(id_, desc, parameters)
-
+    elif filter_name == 'close_to_snv':
+        short_name, description = _get_nd_cs(id_, desc, parameters)
     else:
         if '%' in id_:
             short_name = id_ % parameters
@@ -114,6 +116,26 @@ def get_filter_description(filter_name, parameters, filter_descriptions):
     filter_descriptions[filter_name, parameters] = short_name, description
 
     return short_name, description
+
+def _get_nd_cs(id_, desc, parameters):
+    'It returns the name an id of the close to snv filter'
+    limit, snv_type = parameters
+    if snv_type is not None:
+        snv_type = SNV_TYPES[snv_type]
+
+    if snv_type is None:
+        fist_letter = ''
+        snv_type_name = 'all'
+    else:
+        fist_letter = snv_type[0]
+        snv_type_name = snv_type
+
+    short_name = id_ % (fist_letter, limit)
+    description = desc % (limit, snv_type_name)
+
+    return short_name, description
+
+
 def _get_nd_maf(id_, desc, parameters):
     'It returns the name an id of the maf filter'
     global FILTER_COUNTS
@@ -127,7 +149,11 @@ def _get_nd_maf(id_, desc, parameters):
         kind   = parameters[2]
         description = desc % (kind, groups, parameters[0])
     else:
-        description = desc % ('All', 'All', parameters)
+        if isinstance(parameters, tuple):
+            param = parameters[0]
+        else:
+            param = parameters
+        description = desc % ('All', 'All', param)
 
     return short_name, description
 
@@ -374,7 +400,7 @@ def create_high_variable_region_filter(max_variability, window=0):
         return sequence
     return high_variable_region_filter
 
-def create_close_to_snv_filter(distance):
+def create_close_to_snv_filter(distance, snv_type=None):
     '''It returns a filter that filters snv by the distance to other snvs.
 
     If the snv has another snv closer than DISTANCE, then this snv is
@@ -386,18 +412,18 @@ def create_close_to_snv_filter(distance):
         snvs = list(sequence.get_features(kind='snv'))
         for snv in snvs:
             previous_result = _get_filter_result(snv, 'close_to_snv',
-                                                 threshold=distance)
+                                                 threshold=(distance, snv_type))
             if previous_result is not None:
                 continue
 
-            num_snvs = snvs_in_window(snv, snvs, distance * 2)
+            num_snvs = snvs_in_window(snv, snvs, distance * 2, snv_type)
             if num_snvs > 1:
                 result = True
             else:
                 result = False
 
             _add_filter_result(snv, 'close_to_snv', result,
-                               threshold=distance)
+                               threshold=(distance, snv_type))
         return sequence
     return close_to_snv_filter
 
