@@ -156,6 +156,20 @@ class SeqsTest(unittest.TestCase):
         assert seq.features == []
         assert seq.description == UNKNOWN_DESCRIPTION
 
+        # remome snv filters
+        seq = SeqWithQuality(Seq('actg'), qual=[30, 30, 30, 30])
+        seq.description = 'Description'
+        filters = {'not_intron':True, 'puff':False}
+        snv = SeqFeature(location=FeatureLocation(4, 4), type='snv',
+                         qualifiers={'alleles':'alleles',
+                                     'filters':filters})
+        seq.features = [snv]
+
+        seq.remove_annotations('snv_filters')
+
+        assert seq.features[0].qualifiers['filters'] == {}
+        assert seq.features[0].qualifiers['alleles'] == 'alleles'
+
     @staticmethod
     def test_reverse_complement():
         'It test the reverse complement fucntion'

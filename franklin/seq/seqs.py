@@ -363,7 +363,14 @@ class SeqWithQuality(SeqRecord):
             for key in annotations.keys():
                 if kind in key:
                     del(self.annotations[key])
-
+        elif kind == 'snv_filters':
+            new_features = []
+            for feature in self.features:
+                feat_kind = feature.type
+                if feat_kind == 'snv' and 'filters' in feature.qualifiers:
+                    feature.qualifiers['filters'] = {}
+                new_features.append(feature)
+            self.features = new_features
         elif kind in ['microsatellite', 'orf', 'snv', 'intron']:
             new_features = []
             for feature in self.features:
