@@ -18,6 +18,20 @@ Created on 26/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+ESCAPES = {';': '%3B',
+           '=': '%3D',
+           '&': '%26',
+           ' ': '%20',
+           '%': '%25',
+           ',': '%2C'}
+
+def _deescape(string):
+    'It replaces the escaped sequences with the real characters'
+
+    for character, escape in ESCAPES.items():
+        string = string.replace(escape, character)
+    return string
+
 def create_feature_id(feature_name, feature_ids):
     'It returns a new unique feature_id based on the name'
     if feature_name not in feature_ids:
@@ -67,6 +81,8 @@ def create_feature(line, version, feature_ids=None):
             raise ValueError(msg)
 
         value = value.strip('"')
+        key = _deescape(key)
+        value = _deescape(value)
         attributes[key] = value
         if key == 'Name':
             feature['name'] = value
@@ -76,10 +92,9 @@ def create_feature(line, version, feature_ids=None):
     if not feature_id:
         feature_id = create_feature_id(feature['name'], feature_ids)
 
-    feature['id'] = feature_id
-
-    feature['seqid']   = seqid
-    feature['source']  = source
+    feature['id'] = _deescape(feature_id)
+    feature['seqid']   = _deescape(seqid)
+    feature['source']  = _deescape(source)
     feature['type']    = type_
     feature['start']   = start
     feature['end']     = end
@@ -140,16 +155,12 @@ class GffWriter(object):
     def _escape(string, escape_coma=True):
         'It returns an escaped string'
         #codes taken from:
-        #http://www.blooberry.com/indexdot/html/topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
-        escapes = {';': '%3B',
-                   '=': '%3D',
-                   '&': '%26',
-                   ' ': '%20',
-                   '%': '%25'}
+        #http://www.blooberry.com/indexdot/html/
+        #topics/urlencoding.htm?state=urlenc&origval=%5Ct&enc=on
+        escapes = ESCAPES.copy()
         escape_strings = escapes.values()
-        if escape_coma:
-            escapes[','] = '%2C'
-
+        if not escape_coma:
+            del escapes[',']
 
         new_string = []
         for index, char_ in enumerate(string):
@@ -168,7 +179,6 @@ class GffWriter(object):
                 char_ = escapes[char_]
             new_string.append(char_)
         return ''.join(new_string)
-
 
     def _feature_to_str(self, feature):
         'Given a feature dict it returns a gff feature line'
