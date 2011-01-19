@@ -58,7 +58,7 @@ def create_feature(line, version, feature_ids=None):
         separator = '='
 
     feature_id = None
-    for attribute in annots.split(';'):
+    for attribute in annots.rstrip(';').split(';'):
         attribute = attribute.strip(' ')
         try:
             key, value = attribute.split(separator, 1)
