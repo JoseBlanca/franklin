@@ -1,6 +1,6 @@
 ##gff-version 3
 Chrctg0	assembly	chromosome	1	140722177	.	.	.	ID=Chrctg0;Name=Chrctg0
-Chrctg0	FPC	contig	1	140722177	.	.	.	ID=ctg0;Name=ctg0
+Chrctg0	F%3DPC	contig	1	140722177	.	.	.	ID=ctg%200;Name=ctg%2C0
 Chrctg0	FPC	BAC	109076481	109461505	.	.	.	ID=Cm45_J09;Name=Cm45_J09
 Chrctg0	FPC	BAC	97189889	97329153	.	.	.	ID=Cm40_O16;Name=Cm40_O16
 Chrctg0	FPC	BAC	57982977	58302465	.	.	.	ID=Cm22_F20;Name=Cm22_F20

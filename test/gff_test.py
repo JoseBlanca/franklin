@@ -84,7 +84,10 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
         gff_fhand = open(os.path.join(DATA_DIR, 'map_fis.gff3'))
         features  = list(features_in_gff(gff_fhand, 3))
         assert len(features) == 99
-        assert features[1]['name'] == 'ctg0'
+        assert features[1]['name'] == 'ctg,0'
+        assert features[1]['source'] == 'F=PC'
+        assert features[1]['attributes']['Name'] == 'ctg,0'
+        assert features[1]['id'] == 'ctg 0'
         assert features[98]['name'] == 'Cm13_B04'
 
     @staticmethod
