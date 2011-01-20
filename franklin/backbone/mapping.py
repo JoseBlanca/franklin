@@ -227,7 +227,7 @@ class CalmdBamAnalyzer(Analyzer):
         bam_fpath = bam_path.last_version
         reference_fpath = inputs['reference'].last_version
         out_fhand = open(bam_path.next_version, 'w')
-        cmd = ['samtools', 'calmd', '-Abr', bam_fpath, reference_fpath]
+        cmd = ['samtools', 'calmd', '-br', bam_fpath, reference_fpath]
         call(cmd, raise_on_error=True, stdout=out_fhand)
         out_fhand.close()
         self._log({'analysis_finished':True})
