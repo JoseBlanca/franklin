@@ -78,6 +78,16 @@ def sam2bam(sam_path, bam_path):
     #[sam_read1] missing header? Abort!
     #in that case we would have to use the -t option
 
+def sam_is_only_header(sam_fhand):
+    tell_ = sam_fhand.tell()
+    sam_fhand.seek(0)
+    for line in  sam_fhand:
+        if line[0] != '@':
+            return False
+
+    sam_fhand.seek(tell_)
+    return True
+
 def bamsam_converter(input_fhand, output_fhand, java_conf=None):
     'Converts between sam and bam'
     picard_path = guess_jar_dir('SortSam.jar', java_conf)

@@ -29,6 +29,7 @@ class GmapTest(unittest.TestCase):
         os.chdir(work_dir.name)
 
         reads_fpath = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam1.fa')
+
         out_bam_fhand = NamedTemporaryFile(suffix='.bam')
         parameters = {'threads':None}
         map_reads_with_gmap(temp_genome, reads_fpath, out_bam_fhand.name,
@@ -70,6 +71,34 @@ class GmapTest(unittest.TestCase):
         work_dir.close()
         out_bam_fhand.close()
         sam_fhand.close()
+
+    @staticmethod
+    def test_gmap_without_mapping_output():
+        '''It test that the gmap doesn't map anything'''
+
+        mappers_dir = join(DATA_DIR, 'mappers')
+        cmap_dir = join(DATA_DIR, 'mappers', 'gmap')
+        work_dir = NamedTemporaryDir()
+        temp_genome = join(work_dir.name, 'genome.fa')
+        os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
+        os.chdir(work_dir.name)
+
+        reads_fhand = NamedTemporaryFile()
+        reads_fhand.write('>seq\natgtgatagat\n')
+        reads_fhand.flush()
+
+
+        out_bam_fhand = NamedTemporaryFile()
+        out_bam_fpath = out_bam_fhand.name
+        out_bam_fhand.close()
+        parameters = {'threads':None}
+        map_reads_with_gmap(temp_genome, reads_fhand.name, out_bam_fpath,
+                            parameters)
+        reads_fhand.close()
+        assert not os.path.exists(out_bam_fpath)
+
+
+
 
 
 
@@ -127,7 +156,7 @@ class BoinaTest(unittest.TestCase):
     'It test the gmap mapper'
 
     @staticmethod
-    def test_gmap_mapper():
+    def xtest_boina_mapper():
         'It test the cmap mapper'
         mappers_dir = join(DATA_DIR, 'mappers')
         boina_dir = join(DATA_DIR, 'mappers', 'boina')
