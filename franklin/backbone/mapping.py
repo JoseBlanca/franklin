@@ -229,6 +229,9 @@ class CalmdBamAnalyzer(Analyzer):
         out_fhand = open(bam_path.next_version, 'w')
         cmd = ['samtools', 'calmd', '-br', bam_fpath, reference_fpath]
         call(cmd, raise_on_error=True, stdout=out_fhand)
+
+        create_bam_index(out_fhand.name)
+
         out_fhand.close()
         self._log({'analysis_finished':True})
 
