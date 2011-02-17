@@ -123,6 +123,8 @@ def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
         cmd.extend(['-p', str(threads)])
 
     cmd.extend([bowtie_index, reads_fpath])
+#    print " ".join(cmd)
+#    raw_input()
     call(cmd, raise_on_error=True)
 
     # copy the output
@@ -187,7 +189,10 @@ def create_gmap_reference(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
     cmd = ['gmap_setup', '-d', name, '-D', dir_, reference_fpath]
-    call(cmd, raise_on_error=True)
+    try:
+        call(cmd, raise_on_error=True)
+    except OSError:
+        raise OSError('Gmap mapper is not installed or not in the path')
 
     cmd = ['make', '-f', 'Makefile.%s' % name, 'coords']
     call(cmd, raise_on_error=True)

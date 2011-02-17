@@ -137,7 +137,7 @@ def backbone_blast_runner(query_fpath, project_dir, blast_program,
     except RuntimeError as error:
         if exists(result_fpath):
             remove(result_fpath)
-        msg = '%s \n database: %s\ndatabase type: %s' % (str(error),
+        msg = '%s \n database: %s\n database type: %s' % (str(error),
                                                              blast_db, dbtype)
         raise RuntimeError(msg)
 

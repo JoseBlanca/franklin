@@ -57,7 +57,7 @@ class PipelineTests(unittest.TestCase):
         'It tests configure pipeline'
         pipeline = 'sanger_with_qual'
         if BLAST_TOOL == 'blast+':
-            Univec = 'Univec+' 
+            Univec = 'Univec+'
         else:
             Univec = 'Univec'
         configuration = {'remove_vectors': {'vectors':Univec},
@@ -84,12 +84,12 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        
+
         if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
+            arabidopsis_genes = 'arabidopsis_genes+'
         else:
             arabidopsis_genes = 'arabidopsis_genes'
-            
+
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
@@ -114,7 +114,7 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
         if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
+            arabidopsis_genes = 'arabidopsis_genes+'
         else:
             arabidopsis_genes = 'arabidopsis_genes'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
@@ -146,7 +146,7 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
         if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
+            arabidopsis_genes = 'arabidopsis_genes+'
         else:
             arabidopsis_genes = 'arabidopsis_genes'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
