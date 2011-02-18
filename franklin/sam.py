@@ -459,6 +459,24 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
         mquals[group].append(read_mapping_qual)
     return mquals
 
+def _get_bam_edit_distance(bam, rgs, grouping):
+    '''This function get data to make stats of a sam file.
+
+    It extracts edit distance per read
+    '''
+    edit_dists = {}
+    for aligned_read in bam.fetch(until_eof=True):
+        read_edit_distances = aligned_read.tags
+        edit_distance = dict(read_edit_distances).get('NM', None)
+        if edit_distance == None:
+            continue
+        read_group = aligned_read.opt('RG')
+        group = rgs[read_group][grouping]
+        if group not in edit_dists:
+            edit_dists[group] = CachedArray('H')
+        edit_dists[group].append(edit_distance)
+    return edit_dists
+
 def bam_distribs(bam_fhand, kind, basename=None, range_=None,
                  grouping=None, sample_size=None, summary_fhand=None,
                  labels=None, plot_file_format='svg'):
@@ -468,7 +486,8 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
     platform, sample and library
     '''
     value_calculator = {'coverage':_get_bam_coverage,
-                       'mapq':_get_bam_mapping_quality}
+                       'mapq':_get_bam_mapping_quality,
+                       'edit_distance': _get_bam_edit_distance}
     coverage_labels = {'title': "Coverage for %s %s",
                        'xlabel': 'Coverage',
                        'ylabel': 'Num. of positions',
@@ -480,8 +499,14 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
                        'ylabel': 'Num. of reads',
                        'sum':None, 'items':'number reads in the sam file'
                        }
+    edit_distance_labels = {'title': "Edit distances for %s %s",
+                       'xlabel': "edit distance",
+                       'ylabel': 'Num. of reads',
+                       'sum':None, 'items':'number reads in the sam file'
+                       }
     plot_labels = {'coverage': coverage_labels,
-                   'mapq':mapping_labels}
+                   'mapq':mapping_labels,
+                   'edit_distance': edit_distance_labels}
 
     if sample_size is not None:
         sampled_bam_fhand = NamedTemporaryFile(suffix='.bam')
@@ -528,8 +553,7 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
                                       range_=range_,
                                       summary_fhand=summary_fhand,
                                       remove_outliers=remove_outliers)
-
-        results[(grouping, group_name)] = distrib['distrib']
+        results[(grouping, group_name)] = distrib
     return results
 
 def sample_bam(bam_fhand, out_bam_fhand, sample_size):
@@ -571,6 +595,7 @@ def bam_general_stats(bam_fhand, out_fhand):
 
     rg_stats = {}
     secondary_alignments = 0
+    not_mapped_reads = 0
     for aligned_read in bam.fetch(until_eof=True):
         flag    = aligned_read.flag
         binflag = get_binary_flag(flag)
@@ -579,7 +604,7 @@ def bam_general_stats(bam_fhand, out_fhand):
 
         read_group = aligned_read.opt('RG')
         if not guess_mapped(flag):
-            continue
+            not_mapped_reads += 1
         if read_group not in rg_stats:
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1
@@ -598,6 +623,7 @@ def bam_general_stats(bam_fhand, out_fhand):
         out_fhand.write('\t'.join(row) + '\n')
     out_fhand.write('\n')
     out_fhand.write('Secondary alignments: %d\n' % secondary_alignments)
+    out_fhand.write('Reads not aligned: %d\n' % not_mapped_reads)
 
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
