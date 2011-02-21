@@ -166,6 +166,14 @@ class TestBackboneMapping(unittest.TestCase):
                     silent=True)
         assert exists(join(result_dir, 'merged.1.bam'))
 
+        #we calculate BAQ
+        do_analysis(project_settings=settings_path, kind='calmd_bam',
+                    silent=True)
+
+        assert exists(join(result_dir, 'merged.2.bam'))
+        assert exists(join(result_dir, 'merged.2.bam.bai'))
+
+
         do_analysis(project_settings=settings_path, kind='mapping_stats',
                     silent=True)
         stats_fname = join(mapping_dir,

@@ -350,9 +350,27 @@ def create_runner(tool, parameters=None, environment=None):
 
         #print ' '.join(cmd)
         #raw_input()
-
-        stdout, stderr, retcode = call(cmd, stdin=stdin,
-                                       environment=environment)
+        try:
+            stdout, stderr, retcode = call(cmd, stdin=stdin,
+                                           environment=environment)
+        except OSError as error:
+            if 'water' in str(error):
+                error = 'Water aligner is not installed or not configured properly'
+            elif 'exonerate' in str(error):
+                error = 'Exonerate aligner is not installed or not configured properly'
+            elif 'blast+' in str(error):
+                error = 'Blast+ aligner is not installed or not configured properly'
+            elif 'lucy' in str(error):
+                error = 'Lucy sequence cleaner is not installed or not configured properly'
+            elif 'mdust' in str(error):
+                error = 'Mdust is not installed or not configured properly'
+            elif 'trimpoly' in str(error):
+                error = 'Trimpoly sequence cleaner is not installed or not configured properly'
+            elif 'sputnik' in str(error):
+                error = 'Sputnik microsatellite searcher is not installed or not configured properly'
+            elif 'estcan' in str(error):
+                error = 'Estcan is not installed or not configured properly'
+            raise OSError(error)
 
 
         for key, value in runner_data['input'].items():
@@ -445,7 +463,10 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         #if it fails let's be sure that the binary is not on the system
         binary = _which_binary(cmd[0])
         if binary is None:
-            raise OSError('The binary was not found: ' + cmd[0])
+            if 'makeblastdb' in cmd[0]:
+                raise OSError('This program is not installed or not configured properly: ' + cmd[0] + ', part of Blast')
+            else:
+                raise OSError('This program is not installed or not configured properly: ' + cmd[0])
         #let's try with an absolute path, sometimes works
         cmd.pop(0)
         cmd.insert(0, binary)

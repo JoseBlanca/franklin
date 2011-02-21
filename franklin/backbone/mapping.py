@@ -27,11 +27,11 @@ from tempfile import NamedTemporaryFile
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
                                         _LastAnalysisAnalyzer)
 from franklin.mapping import map_reads
+from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import (NamedTemporaryDir, VersionedPath,
                                        rel_symlink)
 from franklin.backbone.specifications import (BACKBONE_BASENAMES,
-                                              PLOT_FILE_FORMAT,
-                                              BACKBONE_DIRECTORIES)
+                                              PLOT_FILE_FORMAT)
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
                           bam_distribs, create_bam_index, bam_general_stats)
@@ -217,6 +217,25 @@ class MergeBamAnalyzer(Analyzer):
 
         self._log({'analysis_finished':True})
 
+class CalmdBamAnalyzer(Analyzer):
+    'It runs samtools calmd '
+    def run(self):
+        '''It runs the analysis.'''
+        self._log({'analysis_started':True})
+        inputs = self._get_input_fpaths()
+        bam_path = inputs['bam']
+        bam_fpath = bam_path.last_version
+        reference_fpath = inputs['reference'].last_version
+        out_fhand = open(bam_path.next_version, 'w')
+        cmd = ['samtools', 'calmd', '-br', bam_fpath, reference_fpath]
+        call(cmd, raise_on_error=True, stdout=out_fhand)
+
+        create_bam_index(out_fhand.name)
+
+        out_fhand.close()
+        self._log({'analysis_finished':True})
+
+
 class RealignBamAnalyzer(Analyzer):
     'It realigns the bam using GATK'
     def run(self):
@@ -342,6 +361,18 @@ DEFINITIONS = {
             },
          'outputs':{'result':{'directory': 'mapping_result'}},
          'analyzer': RealignBamAnalyzer,
+        },
+    'calmd_bam':
+        {'inputs':{
+            'bam':
+                {'directory': 'mapping_result',
+                 'file': 'merged_bam'},
+            'reference':
+                {'directory': 'mapping_reference',
+                'file': 'mapping_reference'},
+            },
+         'outputs':{'result':{'directory': 'mapping_result'}},
+         'analyzer': CalmdBamAnalyzer,
         },
     'mapping_stats':
         {'inputs':{

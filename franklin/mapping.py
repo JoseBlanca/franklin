@@ -23,7 +23,7 @@ from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.utils.seqio_utils import seqio
 from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
-                          remove_unmapped_reads)
+                          remove_unmapped_reads, sam_is_only_header)
 from gff import features_in_gff
 import os, shutil
 
@@ -123,6 +123,8 @@ def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
         cmd.extend(['-p', str(threads)])
 
     cmd.extend([bowtie_index, reads_fpath])
+#    print " ".join(cmd)
+#    raw_input()
     call(cmd, raise_on_error=True)
 
     # copy the output
@@ -187,7 +189,10 @@ def create_gmap_reference(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
     cmd = ['gmap_setup', '-d', name, '-D', dir_, reference_fpath]
-    call(cmd, raise_on_error=True)
+    try:
+        call(cmd, raise_on_error=True)
+    except OSError:
+        raise OSError('Gmap mapper is not installed or not in the path')
 
     cmd = ['make', '-f', 'Makefile.%s' % name, 'coords']
     call(cmd, raise_on_error=True)
@@ -230,7 +235,9 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
                      open(reads_fpath), out_sam_fhand)
     #print open(out_sam_fhand.name).read()
-    sam2bam(out_sam_fhand.name, out_bam_fpath)
+
+    if not sam_is_only_header(out_sam_fhand):
+        sam2bam(out_sam_fhand.name, out_bam_fpath)
 
     out_sam_fhand.close()
     gff3_fhand.close()
