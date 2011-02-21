@@ -7,7 +7,7 @@ The recommended method to get ngs_backbone is to download one of the releases, b
 Virtual Machine
 ---------------
 
-To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
+To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine_v2.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
 Be aware that this machine won't be able to run any real sized experiment and it will only be useful for testing and evaluation purposes.
 
 ngs_backbone 1.2.0
@@ -18,10 +18,9 @@ ngs_backbone 1.2.0
 Changes:
 
  * Solid support added
-  * Seqio csfasta support
-  * Quality filtering
-  * Solid mapping with bwa
-
+ * Seqio csfasta support
+ * Quality filtering
+ * Solid mapping with bwa
  * Improved microsatellite statistics
  * Several bug fixes.
  * Experimental support for SNP effect on proteins.
