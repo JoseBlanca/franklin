@@ -41,7 +41,7 @@ def get_parameters():
     if not options.relations:
         parser.error('A file with the relations between accessions is required')
     else:
-        params['rels_fhand'] = open(options.ingff)
+        params['rels_fhand'] = open(options.relations)
     if not options.database:
         parser.error('A database name for the dbxref is required')
     else:
