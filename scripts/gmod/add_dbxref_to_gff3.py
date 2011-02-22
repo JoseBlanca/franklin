@@ -45,7 +45,7 @@ def get_parameters():
     if not options.database:
         parser.error('A database name for the dbxref is required')
     else:
-        params['database'] = open(options.database)
+        params['database'] = options.database
     return params
 
 def _add_dbxref_to_features(features, dbxref_db, acc_relations):
