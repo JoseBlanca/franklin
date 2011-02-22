@@ -55,6 +55,25 @@ def _add_dbxref_to_features(features, dbxref_db, acc_relations):
         add_dbxref_to_feature(feature, dbxref_db, acc_relations[feature['id']])
         yield feature
 
+def _get_relations(rels_fhand):
+    'It returns a dict with the relations between accessions'
+
+    rels_fhand.seek(0)
+
+    acc_relations = {}
+    for line_index, line in enumerate(rels_fhand):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            acc1, acc2 = line.split()
+        except ValueError:
+            msg = 'Malformed relations file in line number %i: %s' % \
+                                                          (line_index + 1, line)
+            raise ValueError(msg)
+        acc_relations[acc1] = acc2
+    return acc_relations
+
 def add_dbxref_to_gff3(ingff3_fhand, outgff3_fhand, database, rels_fhand):
     'It adds a new dbxref to a GFF3 file'
 
@@ -62,10 +81,7 @@ def add_dbxref_to_gff3(ingff3_fhand, outgff3_fhand, database, rels_fhand):
 
     features = features_in_gff(ingff3_fhand, 3)
 
-    #if transforms the file in a dict
-    rels_fhand.seek(0)
-    acc_relations = dict(line.strip().split() for line in rels_fhand if not \
-                                                                 line.isspace())
+    acc_relations = _get_relations(rels_fhand)
 
     features = _add_dbxref_to_features(features, database, acc_relations)
 
@@ -118,6 +134,20 @@ ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
         assert 'database:acc1' in result
         assert 'database2:acc1' in result
         assert result.count('database2:acc1') == 1
+
+        #test error malformed line
+        relations = 'gene00001\tacc1\n1\t2\t3\t4\n'
+        rels_fhand = StringIO(relations)
+        ingff3_fhand = StringIO(in_gff3)
+        outgff3_fhand = StringIO()
+        try:
+            add_dbxref_to_gff3(ingff3_fhand=ingff3_fhand,
+                       outgff3_fhand=outgff3_fhand,
+                       database='database2',
+                       rels_fhand=rels_fhand)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
 
 def _test():
     'It tests the script'
