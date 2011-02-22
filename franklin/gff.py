@@ -122,11 +122,18 @@ def get_gff_header(fhand):
 def add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
     '''It adds the dbxref to the feature. If the dbxref tag is not in feature
     attributes it creates it'''
-    dbxref = '%s:%s' % (dbxref_db, dbxref_id)
+    #if the dbxref_db is already in the feature we have to update
     if 'Dbxref' in feature['attributes']:
-        feature['attributes']['Dbxref'] += ',%s' % dbxref
+        dbxrefs = feature['attributes']['Dbxref'].split(',')
+        dbxrefs = dict(dbxref.split(':') for dbxref in dbxrefs)
     else:
-        feature['attributes']['Dbxref'] = dbxref
+        dbxrefs = {}
+
+    dbxrefs[dbxref_db] = dbxref_id
+
+    dbxrefs = ['%s:%s' % (db, acc) for db, acc in dbxrefs.items()]
+    dbxrefs = ','.join(dbxrefs)
+    feature['attributes']['Dbxref'] = dbxrefs
 
 class GffWriter(object):
     'It writes GFF files'

@@ -10,6 +10,8 @@ In both cases you need the dbxref database name.
 
 '''
 
+print 'DEPRECATED, TO BE REMOVED ONCE MELONOMICS VERSION 2 IS FINISHED'
+
 import sys, os
 from optparse import OptionParser
 from franklin.utils.misc_utils import get_db_connection
