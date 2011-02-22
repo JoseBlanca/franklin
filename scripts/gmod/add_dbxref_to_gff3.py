@@ -33,11 +33,11 @@ def get_parameters():
     if not options.ingff:
         parser.error('An input GFF3 file is required')
     else:
-        params['ingff_fhand'] = open(options.ingff)
+        params['ingff3_fhand'] = open(options.ingff)
     if not options.outgff:
         parser.error('An output GFF3 file is required')
     else:
-        params['outgff_fhand'] = open(options.outgff, 'w')
+        params['outgff3_fhand'] = open(options.outgff, 'w')
     if not options.relations:
         parser.error('A file with the relations between accessions is required')
     else:
