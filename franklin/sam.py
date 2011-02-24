@@ -37,7 +37,7 @@ from franklin.utils.itertools_ import take_sample
 from franklin.statistics import create_distribution, CachedArray
 
 def get_read_group_info(bam):
-    'It returns a dict witht the read group info: platform, lb, etc'
+    'It returns a dictionary with the read group info: platform, lb, etc'
     rg_info = {}
     for read_group in bam.header['RG']:
         name = read_group['ID']
@@ -233,7 +233,7 @@ def guess_mapped(flag):
     global NON_MAPPED_FLAGS
     if flag == 0:
         mapped = True
-    elif flag in NON_MAPPED_FLAGS:  #just a sohortcut
+    elif flag in NON_MAPPED_FLAGS:  #just a shortcut
         mapped = False
     else:
         if bin(flag)[-3] == '1':
@@ -594,17 +594,22 @@ def bam_general_stats(bam_fhand, out_fhand):
     bam = pysam.Samfile(bam_fpath, 'rb')
 
     rg_stats = {}
-    secondary_alignments = 0
     not_mapped_reads = 0
+    mapped_reads = 0
+
+    stats_array = [0]*16
     for aligned_read in bam.fetch(until_eof=True):
         flag    = aligned_read.flag
         binflag = get_binary_flag(flag)
-        if binflag[7] == '1':
-            secondary_alignments += 1
+        for bit in range(len(binflag)):
+            if binflag[bit] == '1':
+                stats_array[bit] += 1
 
         read_group = aligned_read.opt('RG')
         if not guess_mapped(flag):
             not_mapped_reads += 1
+        else:
+            mapped_reads += 1
         if read_group not in rg_stats:
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1
@@ -612,7 +617,8 @@ def bam_general_stats(bam_fhand, out_fhand):
     out_fhand.write('General mapping statistics\n')
     out_fhand.write('--------------------------\n')
     out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
-                     'Num mapped reads', '\n']))
+                               'Num mapped reads']))
+    out_fhand.write('\n')
     rg_info = get_read_group_info(bam)
     read_groups = sorted(rg_info.keys())
     for read_group in read_groups:
@@ -622,9 +628,15 @@ def bam_general_stats(bam_fhand, out_fhand):
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
     out_fhand.write('\n')
-    out_fhand.write('Secondary alignments: %d\n' % secondary_alignments)
+    out_fhand.write('Reads aligned: %d\n' % mapped_reads)
     out_fhand.write('Reads not aligned: %d\n' % not_mapped_reads)
-
+    out_fhand.write('Reads properly aligned according to the aligner: %d\n'
+                    % stats_array[-2])
+    out_fhand.write('Reads reverse complemented: %d\n' % stats_array[-5])
+    out_fhand.write('Secondary alignments: %d\n' % stats_array[-9])
+    out_fhand.write('Reads rejected by quality controls: %d\n'
+                    % stats_array[-10])
+    out_fhand.write('PCR or optical duplicates: %d\n' % stats_array[-11])
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
     '''Create a file with the reads that are unmapped and remove them from
