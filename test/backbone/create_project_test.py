@@ -184,7 +184,7 @@ class TestBackbone(unittest.TestCase):
         open(fpath_qual, 'w').write(SANGER_QUAL)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
-        do_analysis(project_settings=settings_path, kind='clean_reads', 
+        do_analysis(project_settings=settings_path, kind='clean_reads',
                     silent=True)
         cleaned_dir = join(project_dir, 'reads', 'cleaned')
         assert exists(cleaned_dir)
@@ -198,7 +198,7 @@ class TestBackbone(unittest.TestCase):
         cleaned_noqual = join(cleaned_dir, os.path.basename(fpath_noqual))
         clean_seqs =  open(cleaned_noqual).read()
         assert clean_seqs.startswith('>FM195262.1\nGCATTCTCG')
-        
+
     @staticmethod
     def test_cleaning_analysis():
         'We can clean the reads'
@@ -236,12 +236,12 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         fpath_454 = join(original_reads_dir, 'pl_454.lb_a.sfastq')
         fpath_ill = join(original_reads_dir, 'pl_illumina.lb_b.sfastq')
         fpath_solid = join(original_reads_dir, 'pl_solid.lb_prueba.sfastq')
-        
+
         open(fpath_solid, 'w').write(READS_SOLID)
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
-        do_analysis(project_settings=settings_path, kind='clean_reads', 
+        do_analysis(project_settings=settings_path, kind='clean_reads',
                     silent=True)
         cleaned_dir = join(project_dir, 'reads', 'cleaned')
         assert exists(cleaned_dir)
@@ -270,25 +270,13 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         assert exists(mira_in_454)
         assert exists(mira_in_qul)
 
-        do_analysis(project_settings=settings_path, kind='mira_assembly', 
+        do_analysis(project_settings=settings_path, kind='mira_assembly',
                     silent=True)
         assembly_dir = join(project_dir, 'assembly')
         singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
-        assert exists(join(assembly_dir, singular_assembly_dir,
-                                           'stderr.txt'))
-        assem_result_dir = join(assembly_dir, 'result')
-        assert exists(assem_result_dir)
-        assert exists(join(assem_result_dir, 'info'))
-
-        #mira does not do any contig
-        result_dir = join(assembly_dir, 'result')
-        open(join(result_dir, 'contigs.fasta'), 'w')
-        open(join(result_dir, 'contigs.qual'), 'w')
-        do_analysis(project_settings=settings_path,
-                    kind='set_assembly_as_reference', silent=True)
         os.chdir('/tmp')
         test_dir.close()
-        
+
     @staticmethod
     def test_read_stats_analysis():
         'It test the read statistics'
@@ -317,7 +305,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         open(fpath_454, 'w').write(READS_454)
         open(fpath_ill, 'w').write(READS_ILL)
 
-        do_analysis(project_settings=settings_path, kind='read_stats', 
+        do_analysis(project_settings=settings_path, kind='read_stats',
                     silent=True)
 
         clean_stats_dir = join(cleaned_reads_dir, 'stats')

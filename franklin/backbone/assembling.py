@@ -25,7 +25,7 @@ Created on 15/03/2010
 
 from tempfile import NamedTemporaryFile
 from franklin.utils.misc_utils import rel_symlink
-import os, shutil
+import os, logging
 from franklin.backbone.analysis import (Analyzer, _LastAnalysisAnalyzer)
 from franklin.utils.cmd_utils import call
 from franklin.seq.readers import guess_seq_file_format
@@ -126,7 +126,6 @@ class MiraAssemblyAnalyzer(Analyzer):
         assembly_dir = output_dirs['analysis']
         mira_dir  = os.path.join(assembly_dir, '%s_assembly' % proj_name)
         original_dir = os.getcwd()
-        os.chdir(assembly_dir)
         #with technologies have we used?
         #each input file should have a link in the assembly dir
         techs = set()
@@ -158,53 +157,12 @@ class MiraAssemblyAnalyzer(Analyzer):
             if tech_str in settings:
                 cmd.append(tech_str.upper())
                 cmd.extend(settings[tech_str])
-
-        stdout = open(os.path.join(assembly_dir, 'stdout.txt'), 'w')
-        stderr = open(os.path.join(assembly_dir, 'stderr.txt'), 'w')
-        retcode = call(cmd, stdout=stdout, stderr=stderr)[-1]
-        if retcode:
-            stdout.flush()
-            stdout.seek(0)
-            stderr.flush()
-            stderr.seek(0)
-            raise RuntimeError(open(stdout.name).read() + \
-                               open(stderr.name).read())
-
-        stdout.close()
-        stderr.close()
-        #remove the log directory
-        mirachkpt_dir = os.path.join(mira_dir,  "%s_d_chkpt" % proj_name)
-        if os.path.exists(mirachkpt_dir):
-            shutil.rmtree(mirachkpt_dir)
-
-        #results
-        mira_results_dir = os.path.join(mira_dir, '%s_d_results' % proj_name)
-        results_dir = output_dirs['result']
-        mira_basename = '%s_out' % proj_name
-        file_exts = (('.ace', '.ace'),
-                     ('.caf', '.caf'),
-                     ('.unpadded.fasta', '.fasta'),
-                     ('.unpadded.fasta.qual', '.qual'))
-        for mira_ext, result_ext in file_exts:
-            mira_fpath = os.path.join(mira_results_dir,
-                                      mira_basename + mira_ext)
-            res_fpath = os.path.join(results_dir,
-                                     BACKBONE_BASENAMES['contigs'] + result_ext)
-            if os.path.exists(mira_fpath):
-                rel_symlink(mira_fpath, res_fpath)
-
-
-        mira_info_dir = os.path.join(mira_dir, '%s_d_info' % proj_name)
-        if os.path.exists(mira_info_dir):
-            rel_symlink(mira_info_dir, os.path.join(results_dir,
-                                                  BACKBONE_DIRECTORIES['info']))
-
-        # Now we run the select _last mapping
-        self._spawn_analysis(DEFINITIONS['_select_last_assembly'], 
-                             silent=self._silent)
+        logger = logging.getLogger("franklin")
+        logger.info('The input files for Mira has been created')
+        logger.info('To run Mira go to the directory: %s' % assembly_dir)
+        logger.info('and run the command: %s' % ' '.join(cmd))
 
         self._log({'analysis_finished':True})
-        os.chdir(original_dir)
 
 DEFINITIONS ={
     'prepare_mira_assembly':
