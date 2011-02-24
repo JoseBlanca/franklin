@@ -19,12 +19,13 @@ This module has been coded looking at the bioperl equivalent module
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from franklin.gff import features_in_gff
+from franklin.gff import GffFile
 
 def fpcgff2_parser(fhand):
     'It parses a gff2_annotations file and yields converted gff3 features'
 
-    for feature in features_in_gff(fhand, 2):
+    gff = GffFile(fhand.name)
+    for feature in gff.features:
         annotations = feature['attributes']
         name        = annotations['Name']
         type_ = feature['type']

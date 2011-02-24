@@ -11,7 +11,7 @@ from os.path import join, exists
 from tempfile import NamedTemporaryFile
 
 from franklin.utils.misc_utils import DATA_DIR, NamedTemporaryDir
-from franklin.mapping import (map_reads_with_gmap, gmap_gff_to_sam,
+from franklin.mapping import (map_reads_with_gmap, _gmap_gff_to_sam,
                               map_reads_with_boina, _correct_cigar)
 from franklin.sam import bam2sam
 
@@ -112,7 +112,7 @@ class GmapTest(unittest.TestCase):
         in_gmap_gff3 = join(cmap_dir, 'gmap_output.gff3')
         reads_fpath  = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam2.fa')
         out_sam_fhand = NamedTemporaryFile(suffix='.bam')
-        gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
+        _gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
                         open(reads_fpath), out_sam_fhand)
 
         result = open(out_sam_fhand.name).read()
@@ -124,7 +124,7 @@ class GmapTest(unittest.TestCase):
 
 
         out_sam_fhand = NamedTemporaryFile(suffix='.bam')
-        gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
+        _gmap_gff_to_sam(open(in_gmap_gff3), open(genome_fpath),
                         open(reads_fpath), out_sam_fhand, keep_unmapped=True)
         result = open(out_sam_fhand.name).read()
         #print result

@@ -24,12 +24,12 @@ from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.utils.seqio_utils import seqio
 from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
                           remove_unmapped_reads, sam_is_only_header)
-from gff import features_in_gff
 import os, shutil
 
 from tempfile import NamedTemporaryFile
 from franklin.seq.writers import SamWriter
 from franklin.seq.readers import guess_seq_file_format
+from franklin.gff import GffFile
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -232,7 +232,7 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     call(cmd, stdout=gff3_fhand, raise_on_error=True)
 
     out_sam_fhand = NamedTemporaryFile(suffix='.sam')
-    gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
+    _gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
                      open(reads_fpath), out_sam_fhand)
     #print open(out_sam_fhand.name).read()
 
@@ -242,21 +242,22 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     out_sam_fhand.close()
     gff3_fhand.close()
 
-def gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand,
+def _gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand,
                     keep_unmapped=False):
     'It converts the gmap gff3 to sam format'
     samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand,
                           keep_unmapped=keep_unmapped)
-    for feature, mapped in features_in_gmap_gff(in_gmap_gff3):
-        alignment = gff_feature_to_alignment(feature, mapped)
+    for feature, mapped in _features_in_gmap_gff(in_gmap_gff3):
+        alignment = _gff_feature_to_alignment(feature, mapped)
         samwriter.write(alignment)
 
-def features_in_gmap_gff(in_gmap_gff3):
+def _features_in_gmap_gff(in_gmap_gff3):
     '''It returns features in a gmap gff3 and analices if a feature is
     already mapped. The gff must be ordered'''
     old_name     = None
     new_features = []
-    for feature in features_in_gff(in_gmap_gff3, version=3):
+    gff = GffFile(in_gmap_gff3.name)
+    for feature in gff.features:
         feat_name = feature['attributes']['Name']
         if old_name is not None and old_name != feat_name:
             if len(new_features) > 1:
@@ -277,7 +278,7 @@ def features_in_gmap_gff(in_gmap_gff3):
             yield new_feature, mapped
 
 
-def gff_feature_to_alignment(feature, mapped):
+def _gff_feature_to_alignment(feature, mapped):
     'converts a gff feature into an alignment struct'
     items       = feature['attributes']['Target'].split()
     query_start = int(items[1])

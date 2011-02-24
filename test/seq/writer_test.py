@@ -25,7 +25,7 @@ from StringIO import StringIO
 from Bio.Alphabet import ProteinAlphabet, DNAAlphabet
 
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.seq.writers import (GffWriter, SsrWriter, OrfWriter,
+from franklin.seq.writers import (SsrWriter, OrfWriter,
                                   OrthologWriter, temp_fasta_file,
                                   write_seqs_in_file, SamWriter)
 from franklin.seq.readers import seqs_in_file
@@ -96,104 +96,7 @@ class WriterTest(unittest.TestCase):
         result = open(fhand.name).read()
         assert "seq1\t0\t29\t30\t27\ttrinucleotide\tATC" in result
 
-    @staticmethod
-    def test_gff_writer():
-        'it tests gff writer'
-        srr_feature = SeqFeature(FeatureLocation(ExactPosition(0),
-                                                 ExactPosition(29)),
-                                                 type='microsatellite',
-                                                 qualifiers={'score': 27,
-                                                       'type': 'trinucleotide',
-                                                       'unit': 'ATC'})
-        intron_feature = SeqFeature(FeatureLocation(ExactPosition(30),
-                                                    ExactPosition(30)),
-                                                    type='intron',
-                                          qualifiers={'genomic_db': 'pathtodb'})
-        orf_feature = SeqFeature(FeatureLocation(ExactPosition(2),
-                                                 ExactPosition(35)),
-                                                 type='orf',
-                                        qualifiers={'pep': Seq('MASSILSSAXVA'),
-                                                    'dna': Seq('ATGGCTTCATCC'),
-                                                    'strand':'forward'})
-        alleles = {('A', 0): {'read_names':['r1']}}
-        snv = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
-        features = [srr_feature, intron_feature, orf_feature, snv]
 
-        annotations = {'GOs': ['GO:0019253', 'GO:0016984', ],
-                     'arabidopsis-orthologs':['ara1', 'ara2'],
-                     'melo-orthologs':['mel1', 'mel2']}
-
-        seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
-                             id='seq1;', name='seq1',
-                             description='equal 96%',
-                             dbxrefs=[], features=features,
-                             annotations=annotations)
-
-        srr_feature = SeqFeature(FeatureLocation(ExactPosition(0),
-                                                 ExactPosition(29)),
-                                                 type='microsatellite',
-                                                 qualifiers={'score': 27,
-                                                       'type': 'trinucleotide',
-                                                       'unit': 'ATC'})
-        intron_feature = SeqFeature(FeatureLocation(ExactPosition(34),
-                                                    ExactPosition(34)),
-                                                    type='intron',
-                                          qualifiers={'genomic_db': 'pathtodb'})
-        orf_feature = SeqFeature(FeatureLocation(ExactPosition(10),
-                                                 ExactPosition(15)),
-                                                 type='orf',
-                                        qualifiers={'pep': Seq('MASSILSSAXVA'),
-                                                    'dna': Seq('ATGGCTTCATCC'),
-                                                    'strand':'forward'})
-        alleles = {('A', 0): {'read_names':['r1']}}
-        snv = SeqFeature(location=FeatureLocation(18, 18), type='snv',
-                          qualifiers={'alleles':alleles})
-        features = [srr_feature, intron_feature, orf_feature, snv]
-
-        annotations = {'GOs': ['GO:0019253', 'GO:0016984', ],
-                     'arabidopsis-orthologs':['ara1', 'ara2'],
-                     'melo-orthologs':['mel1', 'mel2']}
-
-        seq2 = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
-                             id='seq2', name='seq2',
-                             dbxrefs=[], features=features,
-                             annotations=annotations)
-        fhand = StringIO()
-        gff_writer = GffWriter(fhand, source='454_roche')
-        gff_writer.write(seq)
-        gff_writer.write(seq2)
-        gff = fhand.getvalue()
-
-        assert "description=equal%2096%25;" in gff
-        assert "Ontology_term=GO:0019253" in gff
-        assert 'seq1%3B_microsatellite'in gff
-        assert 'ID=seq1%3B_ORF' in gff
-        assert 'ID=seq1%3B_intron' in gff
-        assert 'orthologs=arabidopsis:ara1' in gff
-        assert 'ID=seq1%3B_SNV' in gff
-
-        orf_feature = SeqFeature(FeatureLocation(ExactPosition(3),
-                                                 ExactPosition(5)),
-                                                 type='orf',
-                                        qualifiers={'pep': Seq('MASSILSSAXVA'),
-                                                    'dna': Seq('ATGGCTTCATCC'),
-                                                    'strand':'forward'})
-
-        seq1 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
-                             id='seq1', name='seq1',
-                             dbxrefs=[], features=[orf_feature], description='',
-                             annotations=annotations)
-        seq2 = SeqWithQuality(seq=Seq('CTTCATCCAT'),
-                             id='seq2', name='seq2',
-                             dbxrefs=[], features=[orf_feature],
-                             annotations=annotations)
-        fhand = StringIO()
-        gff_writer = GffWriter(fhand, source='454_roche')
-        gff_writer.write(seq1)
-        gff_writer.write(seq2)
-        gff = fhand.getvalue()
-        assert 'description' not in gff
     @staticmethod
     def test_sam_writer():
         'It test sam writer'
@@ -234,9 +137,7 @@ class WriterTest(unittest.TestCase):
 
         result = open(out_fhand.name).read()
         line = 'read1\t4\tref1\t1\t255\t12M6S\t*\t0\t0\tgatgatagatgatagata\t*'
-        print result
         assert line in result
-
 
         reference='>ref1\natatagatagatagatagat'
         reads='@read1\ngatgatagatgatagata\n+\ngatgatagatgatagata'

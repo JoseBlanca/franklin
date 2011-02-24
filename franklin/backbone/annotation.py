@@ -53,8 +53,9 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             is_not_variable_filter,
                                             ref_not_in_list,
                                             min_groups)
-from franklin.seq.writers import (SequenceWriter, GffWriter, SsrWriter,
+from franklin.seq.writers import (SequenceWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
+from franklin.gff import SeqGffWriter
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seq_stats import do_annotation_statistics
 from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
@@ -340,7 +341,7 @@ class WriteAnnotationAnalyzer(Analyzer):
                                                         grouping=grouping)
             if 'gff' in outputs:
                 default_type = None
-                writers['gff'] = GffWriter(fhand=outputs['gff'],
+                writers['gff'] = SeqGffWriter(fhand=outputs['gff'],
                                            default_type=default_type)
             if 'orf' in outputs:
                 fhand, pep_fhand = outputs['orf']

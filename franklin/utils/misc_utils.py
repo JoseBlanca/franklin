@@ -20,7 +20,7 @@ Created on 2009 api 30
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import tempfile, shutil
-import os, re, math
+import os, re, math, subprocess
 from UserDict import DictMixin
 import franklin
 
@@ -201,9 +201,9 @@ class VersionedPath(object):
     def _get_original_path(self):
         'it return original path'
         return self._path
-    
+
     original_path = property(_get_original_path)
-    
+
     @staticmethod
     def _get_info(fpath):
         'It returns all information about a given path'
@@ -450,17 +450,36 @@ def _rel_path(path1, path2):
     path.extend(uncommon1)
     return os.sep.join(path)
 
+def _check_call(cmd):
+    'It checks the call and if retcode raises a nice error'
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    stderr = process.communicate()[1]
+    retcode = process.poll()
+    if retcode:
+        msg = 'Problem creating relative path, command was: %s\nerror was: %s\n'
+        msg %= ' '.join(cmd), stderr
+        raise ValueError(msg)
+    return
+
 def rel_symlink(path1, path2):
     'It makes the relative symlink'
     path1 = os.path.abspath(path1)
     path2 = os.path.abspath(path2)
-    original_cwd = os.getcwd()
-    dir2, fname2 = os.path.split(path2)
-    os.chdir(dir2)
-    rel_path = _rel_path(path1, path2)
+    dest_dir, fname2 = os.path.split(path2)
+    rel_path1 = _rel_path(path1, path2)
 
-    os.symlink(rel_path, fname2)
-    os.chdir(original_cwd)
+    #we need a temp dir to be thread safe when creating the link
+    #we cannot use chdir, that is not threadsafe
+    temp_dir = tempfile.mkdtemp()
+    temp_link_path = os.path.join(temp_dir, fname2)
+
+    cmd = ['ln', '-s', '-T', rel_path1, temp_link_path]
+    _check_call(cmd)
+    cmd2 = ['mv', temp_link_path, path2]
+    _check_call(cmd2)
+
+    os.rmdir(temp_dir)
 
 def get_db_connection(db_data):
     'It connects to a db using python dbi api. Returns a connection'
