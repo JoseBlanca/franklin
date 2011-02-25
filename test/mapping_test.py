@@ -26,7 +26,6 @@ class GmapTest(unittest.TestCase):
         work_dir = NamedTemporaryDir()
         temp_genome = join(work_dir.name, 'genome.fa')
         os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
-        os.chdir(work_dir.name)
 
         reads_fpath = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam1.fa')
 
@@ -43,7 +42,6 @@ class GmapTest(unittest.TestCase):
         assert 'SN:SL2.30ch00' in result
         assert 'seq9_rev_MOD' in result
 
-        os.chdir('/tmp')
         work_dir.close()
         out_bam_fhand.close()
         sam_fhand.close()
@@ -51,7 +49,6 @@ class GmapTest(unittest.TestCase):
         work_dir = NamedTemporaryDir()
         temp_genome = join(work_dir.name, 'genome.fa')
         os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
-        os.chdir(work_dir.name)
 
         reads_fpath = join(cmap_dir, 'lb_lib1.pl_sanger.sm_sam1.sfastq')
         out_bam_fhand = NamedTemporaryFile(suffix='.bam')
@@ -67,7 +64,6 @@ class GmapTest(unittest.TestCase):
         assert 'SN:SL2.30ch00' in result
         assert 'seq9_rev_MOD' in result
         assert '?????????????????' in result
-        os.chdir('/tmp')
         work_dir.close()
         out_bam_fhand.close()
         sam_fhand.close()
@@ -81,7 +77,6 @@ class GmapTest(unittest.TestCase):
         work_dir = NamedTemporaryDir()
         temp_genome = join(work_dir.name, 'genome.fa')
         os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
-        os.chdir(work_dir.name)
 
         reads_fhand = NamedTemporaryFile()
         reads_fhand.write('>seq\natgtgatagat\n')
@@ -150,5 +145,3 @@ class GmapTest(unittest.TestCase):
 if __name__ == "__main__":
 #    import sys;sys.argv = ['', 'GmapTest.test_correct_cigar']
     unittest.main()
-
-
