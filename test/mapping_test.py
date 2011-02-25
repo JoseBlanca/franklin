@@ -12,7 +12,7 @@ from tempfile import NamedTemporaryFile
 
 from franklin.utils.misc_utils import DATA_DIR, NamedTemporaryDir
 from franklin.mapping import (map_reads_with_gmap, _gmap_gff_to_sam,
-                              map_reads_with_boina, _correct_cigar)
+                              _correct_cigar)
 from franklin.sam import bam2sam
 
 class GmapTest(unittest.TestCase):
@@ -97,11 +97,6 @@ class GmapTest(unittest.TestCase):
         reads_fhand.close()
         assert not os.path.exists(out_bam_fpath)
 
-
-
-
-
-
     @staticmethod
     def test_gmap_gff3_writer():
         'It test the cmap mapper'
@@ -151,32 +146,6 @@ class GmapTest(unittest.TestCase):
         cigar = ['218M', '3D', '96M',  '1D', '24M', '1I', '3D', '15M', '2I',
                  '16M', '1I', '27M']
         assert _correct_cigar(cigar) == cigar
-
-class BoinaTest(unittest.TestCase):
-    'It test the gmap mapper'
-
-    @staticmethod
-    def xtest_boina_mapper():
-        'It test the cmap mapper'
-        mappers_dir = join(DATA_DIR, 'mappers')
-        boina_dir = join(DATA_DIR, 'mappers', 'boina')
-        work_dir = NamedTemporaryDir()
-        temp_genome = join(work_dir.name, 'genome.fa')
-        os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
-        os.chdir(work_dir.name)
-
-        reads_fpath = join(boina_dir, 'lb_lib2.pl_illumina.sm_sam2.sfastq')
-        out_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        parameters = {'threads':None,
-                      'colorspace':False,
-                      'reads_length':'short',
-                      'java_conf':{}}
-        map_reads_with_boina(temp_genome, reads_fpath, out_bam_fhand.name,
-                            parameters)
-        sam_fhand = NamedTemporaryFile(suffix='.sam')
-        bam2sam(out_bam_fhand.name, sam_fhand.name, header=True)
-        result = open(sam_fhand.name).read()
-        #print result
 
 if __name__ == "__main__":
 #    import sys;sys.argv = ['', 'GmapTest.test_correct_cigar']

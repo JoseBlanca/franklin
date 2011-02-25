@@ -102,89 +102,6 @@ def create_bowtie_reference(reference_fpath, color=False):
     cmd.extend([reference_fpath, bowtie_index])
     call(cmd, raise_on_error=True)
 
-def map_reads_with_tophat(reference_fpath, reads_fpath, out_bam_fpath,
-                           parameters):
-    'It maps the reads using tophat'
-    colorspace = parameters['colorspace']
-    threads    = parameters['threads']
-    threads    = get_num_threads(threads)
-
-    # create needed index
-    bowtie_index = os.path.splitext(reference_fpath)[0]
-    if not os.path.exists(bowtie_index + '.1.ebwt'):
-        create_bowtie_reference(reference_fpath)
-
-    # run tophat
-    temp_dir = NamedTemporaryDir()
-    cmd      = ['tophat', '-o', temp_dir.name]
-    if colorspace:
-        cmd.append('-C')
-    if threads:
-        cmd.extend(['-p', str(threads)])
-
-    cmd.extend([bowtie_index, reads_fpath])
-#    print " ".join(cmd)
-#    raw_input()
-    call(cmd, raise_on_error=True)
-
-    # copy the output
-    shutil.copy(os.path.join(temp_dir.name, 'accepted_hits.bam'), out_bam_fpath)
-    temp_dir.close()
-
-def map_reads_with_boina(reference_fpath, reads_fpath, out_bam_fpath,
-                         parameters):
-    'It maps the reads using first bwa and then tophat'
-    # first we are going to map with bwa
-    bwa_bam_fhand = NamedTemporaryFile(suffix='.bam')
-    bwa_bam_fpath = bwa_bam_fhand.name
-    map_reads_with_bwa(reference_fpath, reads_fpath, bwa_bam_fpath, parameters)
-
-    # get unmapped_reads and create new read file
-    mapped_bam_fhand        = NamedTemporaryFile(suffix='.bam')
-    out_removed_reads_fhand = NamedTemporaryFile(suffix='.sfastq')
-    remove_unmapped_reads(open(bwa_bam_fhand.name), mapped_bam_fhand,
-                          out_removed_reads_fhand)
-    # if the read fileis empty all reads are mapped with bwa
-    # it doesn't need to map with tophat
-    firstline = open(out_removed_reads_fhand.name).readline()
-    if firstline:
-        # map with tophat
-        tophat_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        tophat_bam_fpath = tophat_bam_fhand.name
-#        print out_removed_reads_fhand.name
-#        raw_input()
-        map_reads_with_tophat(reference_fpath, out_removed_reads_fhand.name,
-                              tophat_bam_fpath, parameters)
-
-        # merge both bams
-        temp_bwa_sam_fhand = NamedTemporaryFile(suffix='.sam')
-        bam2sam(mapped_bam_fhand.name, temp_bwa_sam_fhand.name, header=True)
-        temp_tophat_sam_fhand = NamedTemporaryFile(suffix='.sam')
-        bam2sam(tophat_bam_fpath, temp_tophat_sam_fhand.name, header=True)
-        temp_out_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        merge_sam([open(temp_bwa_sam_fhand.name),
-                   open(temp_tophat_sam_fhand.name)],
-                   temp_out_bam_fhand, open(reference_fpath))
-#        print open(out_bam_fhand.name).read()
-#        raw_input()
-        tophat_bam_fhand.close()
-        temp_tophat_sam_fhand.close()
-        temp_bwa_sam_fhand.close()
-    else:
-        temp_out_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        temp_out_bam_fhand.write(open(bwa_bam_fpath).read())
-        temp_out_bam_fhand.flush()
-
-    #sort bam
-    java_conf = parameters['java_conf']
-    sort_bam_sam(temp_out_bam_fhand.name, out_bam_fpath,
-                 sort_method='coordinate', java_conf=java_conf)
-    #close all temp files
-    bwa_bam_fhand.close()
-    temp_out_bam_fhand.close()
-    out_removed_reads_fhand.close()
-    mapped_bam_fhand.close()
-
 def create_gmap_reference(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
@@ -337,9 +254,7 @@ def _correct_cigar(cigar):
     return cigar
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
-                'tophat':map_reads_with_tophat,
-                'gmap':map_reads_with_gmap,
-                'boina':map_reads_with_boina}
+                'gmap':map_reads_with_gmap}
 
 def map_reads(mapper, reference_fpath, reads_fpath, out_bam_fpath,
               parameters=None):
