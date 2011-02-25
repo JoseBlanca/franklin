@@ -26,11 +26,10 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_striper_by_quality_trimpoly,
                                     create_masker_for_polia,
                                     create_masker_for_low_complexity,
-                                    create_masker_repeats_by_repeatmasker,
                                     create_word_striper_by_alignment,
                                     create_edge_stripper, create_upper_mapper)
-
-from franklin.seq.seq_filters import (create_length_filter, create_solid_quality_filter)
+from franklin.seq.seq_filters import (create_length_filter,
+                                      create_solid_quality_filter)
 from franklin.utils.cmd_utils import BLAST_TOOL
 
 up_case = {'function':create_upper_mapper,
@@ -92,12 +91,6 @@ mask_low_complexity = {'function': create_masker_for_low_complexity,
                        'name':'mask_low_complex',
                        'comment':'Mask low complexity regions'}
 
-mask_repeats = {'function':create_masker_repeats_by_repeatmasker ,
-                'arguments':{'species':'eudicotyledons'},
-                'type': 'mapper',
-                'name': 'mask_repeats',
-                'comment':'Mask repeats with repeatmasker'}
-
 filter_short_seqs = {'function': create_length_filter,
                      'arguments':{'length':None, 'count_masked': False},
                      'type':'filter' ,
@@ -140,8 +133,6 @@ SEQPIPELINES = {
                             mask_low_complexity, remove_short_adaptors,
                             edge_remover, filter_short_seqs],
 
-    'repeatmasker'       : [mask_repeats, filter_short_seqs],
-
     'solexa'             : [up_case, remove_adaptors, strip_quality,
                             filter_short_seqs],
 
@@ -155,6 +146,6 @@ SEQPIPELINES = {
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
-             mask_polia, mask_low_complexity, mask_repeats,
+             mask_polia, mask_low_complexity,
              filter_short_seqs, edge_remover, remove_short_adaptors, up_case,
              solid_quality]
