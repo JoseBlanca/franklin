@@ -24,7 +24,7 @@ import datetime, math
 from franklin.snv.snv_annotation import (INVARIANT, INSERTION, DELETION, SNP,
                                          COMPLEX, INDEL)
 from franklin.seq.seqs import get_seq_name
-from franklin.snv.snv_filters import get_filter_description
+from franklin.snv.snv_filters import SnvNamer
 from franklin.snv.snv_annotation import (_allele_count, _get_group,
                                          calculate_snv_kind)
 from franklin.utils.misc_utils import OrderedDict
@@ -52,13 +52,9 @@ class SnvSequenomWriter(object):
                 mysnv = snv
 
             if abs(location - position) < self._length:
-#                if not self.snv_in_illumina(snv):
-#                    continue
                 genotype = _snv_to_n(snv, sequence, position)
                 for index, allele in enumerate(genotype):
                     seq[location + index] = allele
-
-
 
         # Calculate sequence limits
         left_limit  = position - self._length
@@ -174,6 +170,7 @@ class VariantCallFormatWriter(object):
         # The fhand is as it arrives
         open(fhand.name, 'w')
         self.fhand = open(fhand.name, 'a')
+        self._namer = SnvNamer()
 
         self._temp_fhand = NamedTemporaryFile(mode='a')
         self._filter_descriptions = {}
@@ -269,8 +266,8 @@ class VariantCallFormatWriter(object):
             for parameters, result in filters_data.items():
                 if not result:
                     continue
-                short_name, description = get_filter_description(name,
-                                                                 parameters,
+                short_name, description = self._namer.get_filter_description(
+                                                      name, parameters,
                                                       self._filter_descriptions)
                 short_name = short_name.upper()
                 filter_strs.append(short_name)

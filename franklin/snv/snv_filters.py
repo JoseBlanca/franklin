@@ -57,7 +57,8 @@ FILTER_DESCRIPTIONS = {
       'description':'The snv is closer than %d nucleotides the reference edge'},
     'maf':
         {'id':'maf%d',
-       'description':'The most frequent allele in %s: %s. frequency greater than %.2f'},
+         'description':
+             'The most frequent allele in %s: %s. frequency greater than %.2f'},
     'by_kind':
         {'id':'vk%s',
          'description':'It is not an %s'},
@@ -78,138 +79,148 @@ FILTER_DESCRIPTIONS = {
         'description':'SNV read in less than %i %s'},
     }
 
-FILTER_COUNTS = {}
+class SnvNamer(object):
+    'It gives names to the snvs'
+    def __init__(self):
+        'It inits the objects'
+        self._filter_counts = {}
 
-def get_filter_description(filter_name, parameters, filter_descriptions):
-    'It returns the short id and the description'
-    if (filter_name, parameters) in filter_descriptions:
-        return filter_descriptions[filter_name, parameters]
-    id_ = FILTER_DESCRIPTIONS[filter_name]['id']
-    desc = FILTER_DESCRIPTIONS[filter_name]['description']
+    def get_filter_description(self, filter_name, parameters,
+                               filter_descriptions):
+        'It returns the short id and the description'
+        if (filter_name, parameters) in filter_descriptions:
+            return filter_descriptions[filter_name, parameters]
+        id_ = FILTER_DESCRIPTIONS[filter_name]['id']
+        desc = FILTER_DESCRIPTIONS[filter_name]['description']
 
-    if filter_name == 'by_kind':
-        short_name, description = _get_nd_kind(id_, desc, parameters)
-    elif filter_name == 'cap_enzymes':
-        short_name, description = _get_nd_ce(id_, desc, parameters)
-    elif filter_name == 'is_variable':
-        short_name, description = _get_nd_iv(id_, desc, parameters)
-    elif filter_name == 'is_not_variable':
-        short_name, description = _get_nd_iv(id_, desc, parameters)
-    elif filter_name == 'high_variable_reg':
-        short_name, description = _get_nd_hvr(id_, desc, parameters)
-    elif filter_name == 'min_groups':
-        short_name, description = _get_min_groups_desc(id_, desc, parameters)
-    elif filter_name == 'maf':
-        short_name, description = _get_nd_maf(id_, desc, parameters)
-    elif filter_name == 'close_to_snv':
-        short_name, description = _get_nd_cs(id_, desc, parameters)
-    else:
-        if '%' in id_:
-            short_name = id_ % parameters
+        if filter_name == 'by_kind':
+            short_name, description = self._get_nd_kind(id_, desc, parameters)
+        elif filter_name == 'cap_enzymes':
+            short_name, description = self._get_nd_ce(id_, desc, parameters)
+        elif filter_name == 'is_variable':
+            short_name, description = self._get_nd_iv(id_, desc, parameters)
+        elif filter_name == 'is_not_variable':
+            short_name, description = self._get_nd_iv(id_, desc, parameters)
+        elif filter_name == 'high_variable_reg':
+            short_name, description = self._get_nd_hvr(id_, desc, parameters)
+        elif filter_name == 'min_groups':
+            short_name, description = self._get_min_groups_desc(id_, desc,
+                                                                parameters)
+        elif filter_name == 'maf':
+            short_name, description = self._get_nd_maf(id_, desc, parameters)
+        elif filter_name == 'close_to_snv':
+            short_name, description = self._get_nd_cs(id_, desc, parameters)
         else:
-            short_name = id_
-        if '%' in desc:
-            description = desc % parameters
+            if '%' in id_:
+                short_name = id_ % parameters
+            else:
+                short_name = id_
+            if '%' in desc:
+                description = desc % parameters
+            else:
+                description = desc
+
+        filter_descriptions[filter_name, parameters] = short_name, description
+
+        return short_name, description
+
+    @staticmethod
+    def _get_nd_cs(id_, desc, parameters):
+        'It returns the name an id of the close to snv filter'
+        limit, snv_type = parameters
+        if snv_type is not None:
+            snv_type = SNV_TYPES[snv_type]
+
+        if snv_type is None:
+            fist_letter = ''
+            snv_type_name = 'all'
         else:
-            description = desc
+            fist_letter = snv_type[0]
+            snv_type_name = snv_type
 
-    filter_descriptions[filter_name, parameters] = short_name, description
+        short_name = id_ % (fist_letter, limit)
+        description = desc % (limit, snv_type_name)
 
-    return short_name, description
-
-def _get_nd_cs(id_, desc, parameters):
-    'It returns the name an id of the close to snv filter'
-    limit, snv_type = parameters
-    if snv_type is not None:
-        snv_type = SNV_TYPES[snv_type]
-
-    if snv_type is None:
-        fist_letter = ''
-        snv_type_name = 'all'
-    else:
-        fist_letter = snv_type[0]
-        snv_type_name = snv_type
-
-    short_name = id_ % (fist_letter, limit)
-    description = desc % (limit, snv_type_name)
-
-    return short_name, description
+        return short_name, description
 
 
-def _get_nd_maf(id_, desc, parameters):
-    'It returns the name an id of the maf filter'
-    global FILTER_COUNTS
-    if desc not in FILTER_COUNTS:
-        FILTER_COUNTS[desc] = 0
-    FILTER_COUNTS[desc] += 1
-    #print parameters
-    short_name = id_ % FILTER_COUNTS[desc]
-    if isinstance(parameters, tuple) and len(parameters) > 1:
+    def _get_nd_maf(self, id_, desc, parameters):
+        'It returns the name an id of the maf filter'
+        filter_counts = self._filter_counts
+        if desc not in filter_counts:
+            filter_counts[desc] = 0
+        filter_counts[desc] += 1
+        #print parameters
+        short_name = id_ % filter_counts[desc]
+        if isinstance(parameters, tuple) and len(parameters) > 1:
+            groups = ','.join(parameters[1])
+            kind   = parameters[2]
+            description = desc % (kind, groups, parameters[0])
+        else:
+            if isinstance(parameters, tuple):
+                param = parameters[0]
+            else:
+                param = parameters
+            description = desc % ('All', 'All', param)
+
+        return short_name, description
+
+    @staticmethod
+    def _get_min_groups_desc(id_, desc, parameters):
+        'It returns the name and id of the snv filter for min_groups'
+        group_letter = parameters[1][0]
+        min_group_num = parameters[0]
+        short_name = id_ % (group_letter, min_group_num)
+        description = desc % (min_group_num, parameters[1])
+        return short_name, description
+
+    @staticmethod
+    def _get_nd_hvr(id_, desc, parameters):
+        'It returns the name and id of the snv filter for by is_variable filter'
+        number = int(parameters[0] * 100)
+        short_name = id_ % number
+        description = desc % number
+
+        return short_name, description
+
+    def _get_nd_iv(self, id_, desc, parameters):
+        'It returns the name and id of the snv filter for by is_variable filter'
+        filter_counts = self._filter_counts
+        if desc not in filter_counts:
+            filter_counts[desc] = 0
+        filter_counts[desc] += 1
+        groups = {'libraries':'lb', 'read_groups':'rg', 'samples':'sm'}
+        short_name = id_ % (groups[parameters[0]], filter_counts[desc])
         groups = ','.join(parameters[1])
-        kind   = parameters[2]
-        description = desc % (kind, groups, parameters[0])
-    else:
-        if isinstance(parameters, tuple):
-            param = parameters[0]
+        description = desc % (parameters[0], groups, parameters[2])
+
+        return short_name, description
+
+    @staticmethod
+    def _get_nd_kind(id_, desc, parameters):
+        'It returns the name and id of the snv filter for by kind filter'
+        vkinds = {0:'snp', 1:'insertion', 2:'deletion', 3:'invariant',
+                  4:'indel', 5:'complex'}
+        kind = vkinds[parameters]
+        short_name = id_ % kind[0]
+        description = desc % kind
+        return short_name, description
+
+    @staticmethod
+    def _get_nd_ce(id_, desc, parameters):
+        'It returns the name and id of the snv filter for cap_enzyme filter'
+        if parameters:
+            enzymes = 'all'
+            booltag = 't'
         else:
-            param = parameters
-        description = desc % ('All', 'All', param)
+            enzymes = 'cheap ones'
+            booltag = 'f'
 
-    return short_name, description
+        short_name = id_ % booltag
+        description = desc % enzymes
 
+        return short_name, description
 
-def _get_min_groups_desc(id_, desc, parameters):
-    'It returns the name and id of the snv filter for min_groups'
-    group_letter = parameters[1][0]
-    min_group_num = parameters[0]
-    short_name = id_ % (group_letter, min_group_num)
-    description = desc % (min_group_num, parameters[1])
-
-    return short_name, description
-
-def _get_nd_hvr(id_, desc, parameters):
-    'It returns the name and id of the snv filter for by is_variable filter'
-    number = int(parameters[0] * 100)
-    short_name = id_ % number
-    description = desc % number
-
-    return short_name, description
-
-def _get_nd_iv(id_, desc, parameters):
-    'It returns the name and id of the snv filter for by is_variable filter'
-    global FILTER_COUNTS
-    if desc not in FILTER_COUNTS:
-        FILTER_COUNTS[desc] = 0
-    FILTER_COUNTS[desc] += 1
-    groups = {'libraries':'lb', 'read_groups':'rg', 'samples':'sm'}
-    short_name = id_ % (groups[parameters[0]], FILTER_COUNTS[desc])
-    groups = ','.join(parameters[1])
-    description = desc % (parameters[0], groups, parameters[2])
-
-    return short_name, description
-
-def _get_nd_kind(id_, desc, parameters):
-    'It returns the name and id of the snv filter for by kind filter'
-    vkinds = {0:'snp', 1:'insertion', 2:'deletion', 3:'invariant', 4:'indel',
-              5:'complex'}
-    kind = vkinds[parameters]
-    short_name = id_ % kind[0]
-    description = desc % kind
-    return short_name, description
-
-def _get_nd_ce(id_, desc, parameters):
-    'It returns the name and id of the snv filter for cap_enzyme filter'
-    if parameters:
-        enzymes = 'all'
-        booltag = 't'
-    else:
-        enzymes = 'cheap ones'
-        booltag = 'f'
-
-    short_name = id_ % booltag
-    description = desc % enzymes
-
-    return short_name, description
 
 def _add_filter_result(snv, filter_name, result, threshold=None):
     'It adds the filter to the SeqFeature qualifiers'

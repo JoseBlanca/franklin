@@ -36,10 +36,10 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_kind_filter,
                                       create_cap_enzyme_filter,
                                       create_is_variable_filter,
-                                      get_filter_description,
                                       create_reference_in_list_filter,
                                       create_not_variable_in_group_filter,
-                                      create_min_groups_filter)
+                                      create_min_groups_filter,
+                                      SnvNamer)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -618,7 +618,8 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_name = 'close_to_intron'
         parameters = 30
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        namer = SnvNamer()
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name == 'I30'
         assert desc == 'An intron is located closer than 30 base pairs'
@@ -626,7 +627,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_name = 'maf'
         parameters = 0.6
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name == 'maf1'
         assert desc == 'The most frequent allele in All: All. frequency greater than 0.60'
@@ -634,7 +635,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_name = 'maf'
         parameters = (0.6, ('1', '2'), 'read_group')
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name == 'maf2'
         assert desc == 'The most frequent allele in read_group: 1,2. frequency greater than 0.60'
@@ -644,7 +645,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_name = 'by_kind'
         parameters = SNP
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         filter_name = 'is_variable'
         kind = 'read_groups'
@@ -652,14 +653,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
         in_union = True
         parameters = (kind, tuple(groups), in_union)
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
         descrip = "It is not variable in the read_groups : rg1,rg2."
         descrip += ' All together: True'
         assert desc == descrip
 
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
 
@@ -669,7 +670,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         in_union = True
         parameters = (kind, tuple(groups), in_union)
         filter_descriptions = {}
-        name, desc = get_filter_description(filter_name, parameters,
+        name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:4] == 'nvrg'
         descrip = "It is variable in the read_groups : rg1,rg2."
@@ -677,21 +678,21 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert desc == descrip
 
         parameters = (4, 'read_groups')
-        name, desc = get_filter_description('min_groups',
+        name, desc = namer.get_filter_description('min_groups',
                                             parameters,
                                             filter_descriptions)
         assert name == 'mr4'
         assert desc == 'SNV read in less than 4 read_groups'
 
         parameters = (True)
-        name, desc = get_filter_description('cap_enzymes',
+        name, desc = namer.get_filter_description('cap_enzymes',
                                             parameters,
                                             filter_descriptions)
         assert name == 'cet'
         assert desc == 'SNV is not a CAP detectable by the enzymes: all'
 
         parameters = (False)
-        name, desc = get_filter_description('cap_enzymes',
+        name, desc = namer.get_filter_description('cap_enzymes',
                                             parameters,
                                             filter_descriptions)
         assert name == 'cef'
