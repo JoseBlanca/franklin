@@ -148,7 +148,6 @@ class TestBackbone(unittest.TestCase):
         assert settings['Cleaning']['strip_n_percent'] == 2.0
         content = open(settings_path).read()
         assert 'strip_n_percent' in content
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -274,7 +273,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
                     silent=True)
         assembly_dir = join(project_dir, 'assembly')
         singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
