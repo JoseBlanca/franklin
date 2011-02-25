@@ -19,11 +19,11 @@ Created on 27/10/2009
 from copy import copy
 
 from itertools import combinations
-from franklin.gff import write_gff
+from franklin.gff import write_gff, FEATURE, METADATA
 
 def _species_pragma(species):
     'It returns the species pragma line'
-    str_ = '##cmap_species '
+    str_ = 'cmap_species '
     str_ += 'species_acc=%s;' % species['accession']
     if 'full_name' in species:
         str_ += 'species_full_name=%s;' % species['full_name']
@@ -31,11 +31,11 @@ def _species_pragma(species):
         str_ += 'species_common_name=%s;' % species['common_name']
     if 'display_order' in species:
         str_ += 'display_order=%s;' % str(species['display_order'])
-    return str_
+    return METADATA, str_
 
 def _map_set_pragma(map_set):
     'It returns the map set pragma line'
-    str_ = '##cmap_map_set map_set_acc=%s;' % map_set['accession']
+    str_ = 'cmap_map_set map_set_acc=%s;' % map_set['accession']
     str_ += 'map_set_name=%s;' % map_set['name']
     if 'short_name' in map_set['short_name']:
         str_ += 'map_set_short_name=%s;' % map_set['short_name']
@@ -43,21 +43,23 @@ def _map_set_pragma(map_set):
         str_ += 'map_set_short_name=%s;' % map_set['accession']
     str_ += 'map_type_acc=%s;' % map_set['type']
     str_ += 'unit_modifier=%.2f;' % map_set['unit_modifier']
-    return str_
+    return METADATA, str_
 
 def _map_pragma(map_, map_set_accession):
     'It returns the map_ pragma line'
-    str_ = '##cmap_map map_acc=%s_%s;' % (map_set_accession, map_['accession'])
+    str_ = 'cmap_map map_acc=%s_%s;' % (map_set_accession, map_['accession'])
     str_ += 'map_name=%s_%s;' % (map_set_accession, map_['name'])
     str_ += 'map_start=%d;' % (map_['start'])
     str_ += 'map_stop=%d;' % map_['end']
     if 'display_order' in map_:
         str_ += 'display_order=%s;' % str(map_['display_order'])
     str_ += 'map_set_acc=%s;' % map_set_accession
-    str_ += '\n'
-    str_ += '##sequence-region %s_%s %d %d' % (map_set_accession, map_['name'],
+    pragma = [(METADATA, str_)]
+    str_ += ''
+    str_ += 'sequence-region %s_%s %d %d' % (map_set_accession, map_['name'],
                                                map_['start'], map_['end'])
-    return str_
+    pragma.append((METADATA, str_))
+    return pragma
 
 def _map_features(map_, features, map_set_accession, marker_count,
                   marker_id_map, features_in_mapset):
@@ -99,29 +101,29 @@ def _map_features(map_, features, map_set_accession, marker_count,
         feat['attributes']['feature_accs'] = '%s_%s' %  (feat['seqid'],
                                                          marker_name)
 
-        feats.append(feat)
+        feats.append((FEATURE, feat))
     return feats
 
 def _cmap_correspondences(marker_count, marker_id_map):
     '''It prints the correspondence pragmas. It needs a list of all the
     correspondences'''
-    strs = []
+    pragmas = []
     for correspondences in marker_count.values():
         for marker1, marker2 in combinations(correspondences, 2):
-            str_ = ['##cmap_corr evidence_type_acc=ANB;']
+            str_ = ['cmap_corr evidence_type_acc=ANB;']
             str_.append('ID1=%s;map_set_acc1=%s;map_acc1=%s;' % (marker1,
                                                  marker_id_map[marker1][0],
                                                  marker_id_map[marker1][1]))
             str_.append('ID2=%s;map_set_acc2=%s;map_acc2=%s;' % (marker2,
                                                  marker_id_map[marker2][0],
                                                  marker_id_map[marker2][1]))
-            strs.append(''.join(str_))
-    return strs
+            pragmas.append((METADATA, ''.join(str_)))
+    return pragmas
 
 def cmap_to_gff(data, fhand):
     'Given a dict with the cmap data and an output fhand it writes a gff3 file'
     gff = []
-    gff.append('##cmap-gff-version 1')
+    gff.append((METADATA, 'cmap-gff-version 1'))
     # This marker count is used where there is a  markers in two maps.
     marker_count = {}
     marker_id_map = {}
@@ -129,7 +131,7 @@ def cmap_to_gff(data, fhand):
         species_name = mapset['species']
         species = data['species'][species_name]
         gff.append(_species_pragma(species))
-        gff.append('###')
+        gff.append((METADATA, '#'))
         gff.append(_map_set_pragma(mapset))
         features_in_mapset = set()
         for map_ in mapset['maps']:
@@ -148,7 +150,7 @@ def cmap_to_gff(data, fhand):
                     end = this_end
             map_['start'] = start
             map_['end'] = end
-            gff.append(_map_pragma(map_, mapset['accession']))
+            gff.extend(_map_pragma(map_, mapset['accession']))
             gff.extend(_map_features(map_, data['features'],
                                      mapset['accession'], marker_count,
                                      marker_id_map,
@@ -156,7 +158,7 @@ def cmap_to_gff(data, fhand):
     #the correspondences
     gff.extend(_cmap_correspondences(marker_count, marker_id_map))
 
-    write_gff(gff, fhand)
+    write_gff(fhand.name, gff)
 
 COLORS = {'aflp': '', # black
           'SNP':'',  # blue
@@ -212,8 +214,11 @@ def cmap_to_mcf(data, fhand):
             for marker in qtls:
                 location = float(marker['start'] + marker['end']) / 2.0
                 location = '%.1f' % location
-                fhand.write('%s\t%s\t%s\t%s\t%s\t%s\n' % (marker['name'], location,
-                                                    location, location,
-                                                    location,
-                                                    marker['color']))
+                fhand.write('%s\t%s\t%s\t%s\t%s\t%s\n' % (marker['name'],
+                                                          location,
+                                                          location,
+                                                          location,
+                                                          location,
+                                                          marker['color']))
         fhand.write('\n\n')
+        fhand.flush()

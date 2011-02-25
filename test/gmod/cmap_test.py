@@ -21,6 +21,7 @@ Created on 27/10/2009
 
 import unittest
 from StringIO import StringIO
+from tempfile import NamedTemporaryFile
 
 from franklin.gmod.cmap import cmap_to_gff, cmap_to_mcf
 
@@ -68,23 +69,22 @@ class CmapTest(unittest.TestCase):
         cmap = {'features': markers,
                 'map_sets':[map_set1, map_set2],
                 'species':{'cmelo': species}}
-        fhand = StringIO()
+        fhand = NamedTemporaryFile()
         cmap_to_gff(cmap, fhand)
         correspondences = '''
 ##cmap_corr evidence_type_acc=ANB;ID1=marker1_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker1_1;map_set_acc2=ms2;map_acc2=gl2;
 ##cmap_corr evidence_type_acc=ANB;ID1=marker2_0;map_set_acc1=ms1;map_acc1=gl1;ID2=marker2_1;map_set_acc2=ms2;map_acc2=gl2;
 '''
-        result = fhand.getvalue()
+        result = open(fhand.name).read()
         assert correspondences in result
         assert "feature_accs=ms2_group2_marker1" in  result
 
 
-        fhand = StringIO()
+        fhand = NamedTemporaryFile()
         cmap_to_mcf(cmap, fhand)
-        result = fhand.getvalue()
+        result = open(fhand.name).read()
         assert "marker2\t20\tC02" in result
         assert "qtls\nmarker1\t7.5\t7.5\t7.5\t7.5\tC01" in result
-
 
         # Repeated markers allowed
         feat_loc2 = [{'feature':'marker1', 'start':1, 'end':5},
@@ -106,7 +106,7 @@ class CmapTest(unittest.TestCase):
                 'species':{'cmelo': species}}
 
         cmap_to_gff(cmap, fhand)
-        result = fhand.getvalue()
+        result = open(fhand.name).read()
         assert 'ID=marker2_1' in result
 
 if __name__ == "__main__":

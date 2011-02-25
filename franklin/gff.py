@@ -35,7 +35,6 @@ FEATURE = 'feature'
 FASTA = 'fasta'
 _ATTRIBUTE_KEYVAL_SEPARATORS = {'2': ' ', '3':'='}
 
-
 def _deescape(string):
     'It replaces the escaped sequences with the real characters'
 
