@@ -71,7 +71,6 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         writer.write(seq)
         writer.close()
         vcf = open(fhand.name).read()
-        #print vcf
 
         assert 'GC=0|1|2:2,2,1' in vcf or 'GC=0|2|1:2,2,1' in vcf
         assert 'VKS' in vcf

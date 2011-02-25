@@ -143,5 +143,5 @@ class GmapTest(unittest.TestCase):
         assert _correct_cigar(cigar) == cigar
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'GmapTest.test_correct_cigar']
+    #import sys;sys.argv = ['', 'GmapTest.test_gmap_gff3_writer']
     unittest.main()

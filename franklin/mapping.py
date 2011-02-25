@@ -111,14 +111,24 @@ def create_gmap_reference(reference_fpath):
     except OSError:
         raise OSError('Gmap mapper is not installed or not in the path')
 
-    cmd = ['make', '-f', 'Makefile.%s' % name, 'coords']
+    makefile = 'Makefile.%s' % name
+
+    cmd = ['make', '-f', makefile , 'coords']
     call(cmd, raise_on_error=True)
 
-    cmd = ['make', '-f', 'Makefile.%s' % name, 'gmapdb']
+    cmd = ['make', '-f', makefile, 'gmapdb']
     call(cmd, raise_on_error=True)
 
-    cmd = ['make', '-f', 'Makefile.%s' % name, 'install']
+    cmd = ['make', '-f', makefile, 'install']
     call(cmd, raise_on_error=True)
+
+    #we remove the makefile and an extra file with some instructions
+    os.remove(makefile)
+    coords_fpath = 'coords.%s' % name
+    install_fpath = 'INSTALL.%s' % name
+    for fpath in (coords_fpath, install_fpath):
+        if os.path.exists(fpath):
+            os.remove(fpath)
 
 def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
