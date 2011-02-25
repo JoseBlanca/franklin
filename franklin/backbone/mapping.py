@@ -134,7 +134,7 @@ class MergeBamAnalyzer(Analyzer):
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         tmp_dir      = settings['General_settings']['tmpdir']
-        os.chdir(project_path)
+
         inputs = self._get_input_fpaths()
         bam_paths = inputs['bams']
         reference_path = inputs['reference']
@@ -235,7 +235,6 @@ class CalmdBamAnalyzer(Analyzer):
         out_fhand.close()
         self._log({'analysis_finished':True})
 
-
 class RealignBamAnalyzer(Analyzer):
     'It realigns the bam using GATK'
     def run(self):
@@ -244,7 +243,7 @@ class RealignBamAnalyzer(Analyzer):
         settings = self._project_settings
         project_path = settings['General_settings']['project_path']
         tmp_dir      = settings['General_settings']['tmpdir']
-        os.chdir(project_path)
+
         inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
         bam_fpath = bam_path.last_version
@@ -286,7 +285,7 @@ class BamStatsAnalyzer(Analyzer):
         project_path = settings['General_settings']['project_path']
         project_name = settings['General_settings']['project_name']
         sample_size = settings['Sam_stats']['sampling_size']
-        os.chdir(project_path)
+
         inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
         bam_fpath = bam_path.last_version

@@ -222,7 +222,6 @@ class TestBackboneMapping(unittest.TestCase):
         expected = 'average: 0.45\nvariance: 1.30\ntotal sequence length: 3941'
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -303,11 +302,8 @@ class TestBackboneMapping(unittest.TestCase):
                     silent=True)
         assert exists(join(result_dir, 'merged.1.bam'))
 
-        os.chdir('/tmp')
         test_dir.close()
 
-
-
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_analysis_boina']
+    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_color']
     unittest.main()
