@@ -121,10 +121,9 @@ Sequences with arabidopsis orthologs: 2
 Number of arabidopsis orthologs: 2
 Sequences with arabidopsis2 orthologs: 2
 Number of arabidopsis2 orthologs: 2'''
-        #print result
+
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -179,7 +178,6 @@ Number of sequences: 2
 Sequences with description: 1'''
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -234,7 +232,6 @@ Sequences with description: 1'''
 Number of introns: 3'''
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -287,7 +284,6 @@ Number of introns: 3'''
         expected ='Sequences with microsatellites: 1'
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -346,7 +342,6 @@ Number of introns: 3'''
 Number of ORFs: 1'''
         assert expected in result
 
-        os.chdir('/tmp')
         test_dir.close()
 
     @staticmethod
@@ -543,10 +538,7 @@ Number of GOs: 12'''
         assert snv.qualifiers['protein_change']['kind'] == 'substitution'
         assert snv.qualifiers['protein_change']['location'] == 'codon_1'
 
-        os.chdir('/tmp')
         test_dir.close()
-
-
 
 if    __name__ == "__main__":
     #import sys;sys.argv = ['', 'AnnotationTest.test_description_annotation_analysis']
