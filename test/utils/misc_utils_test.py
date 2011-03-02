@@ -46,8 +46,6 @@ class Minor_utilities_test(unittest.TestCase):
         assert 1 <= get_num_threads(threads, limit_by_memory) <= os.sysconf('SC_NPROCESSORS_ONLN')
 #        assert  get_num_threads(threads, limit_by_memory)== os.sysconf('SC_NPROCESSORS_ONLN')
 
-
-
     def test_rel_symlink(self):
         'It tests various cases of rel symlinks'
         tempdir = NamedTemporaryDir()
