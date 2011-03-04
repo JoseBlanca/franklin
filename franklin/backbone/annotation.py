@@ -60,9 +60,13 @@ from franklin.seq.readers import seqs_in_file
 from franklin.seq.seq_stats import do_annotation_statistics
 from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
 
-from franklin.utils.misc_utils import VersionedPath, xml_itemize
+from franklin.utils.misc_utils import (VersionedPath, xml_itemize,
+                                       get_num_threads)
 from franklin.utils.cmd_utils import b2gpipe_runner
 from franklin.sam import get_read_group_sets
+
+#pysam memory limit in megabytes. Used to calculate number of threads
+PYSAM_MEMORY_LIMIT = 3584
 
 class AnnotationAnalyzer(Analyzer):
     'It annotates the introns in cdna sequences'
@@ -252,6 +256,11 @@ class AnnotateIntronsAnalyzer(AnnotationAnalyzer):
 
 class SnvCallerAnalyzer(AnnotationAnalyzer):
     'It performs the calling of the snvs in a bam file'
+
+    def _get_num_threads(self):
+        'It calculates the number of threads for snv calling analisys'
+        threads = self._project_settings['General_settings']['threads']
+        return get_num_threads(threads, PYSAM_MEMORY_LIMIT)
 
     def run(self):
         'It runs the analysis.'

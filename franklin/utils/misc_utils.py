@@ -27,14 +27,53 @@ import franklin
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'franklin',
                          'data')
 
-def get_num_threads(threads):
-    "It returns num of threads to use in parallel"
+def avail_phymem():
+    """Return the amount of physical memory available, in bytes."""
+    f = open('/proc/meminfo', 'r')
+    free = None
+    _flag = False
+    for line in f:
+        if line.startswith('MemFree:'):
+            free = int(line.split()[1]) * 1024
+            break
+    f.close()
+    return free
+
+def cached_phymem():
+    """Return the amount of cached memory on the system, in bytes.
+    This reflects the "cached" column of free command line utility.
+    """
+    f = open('/proc/meminfo', 'r')
+    for line in f:
+        if line.startswith('Cached:'):
+            f.close()
+            return int(line.split()[1]) * 1024
+
+def total_free_mem():
+    "It returns total free memory. Taking into account cached memory"
+    return avail_phymem() + cached_phymem()
+
+def get_num_threads(threads, limit_by_memory=None):
+    """It returns num of threads to use in parallel.
+
+    You can pass to the funaction the  memory you want to use each thread.
+    It calculates the number of treads
+    In megabytes
+    """
+    phisical_threads = os.sysconf('SC_NPROCESSORS_ONLN')
     if not threads:
         return 1
     elif type(threads) == type(0):
         return threads
+    elif limit_by_memory is not None:
+        total_free_mem_ = total_free_mem()
+        threads = total_free_mem_ / (limit_by_memory * 1024 * 1024)
+        if threads > os.sysconf('SC_NPROCESSORS_ONLN'):
+            return phisical_threads
+        else:
+            return threads
     else:
-        return os.sysconf('SC_NPROCESSORS_ONLN')
+        return phisical_threads
 
 def float_lists_are_equal(list1, list2):
     'Given two lists it checks that all floats are equal'
