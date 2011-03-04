@@ -68,7 +68,7 @@ def get_num_threads(threads, limit_by_memory=None):
     elif limit_by_memory is not None:
         total_free_mem_ = total_free_mem()
         threads = total_free_mem_ / (limit_by_memory * 1024 * 1024)
-        if threads > os.sysconf('SC_NPROCESSORS_ONLN'):
+        if threads > os.sysconf('SC_NPROCESSORS_ONLN') or threads == 0:
             return phisical_threads
         else:
             return threads
