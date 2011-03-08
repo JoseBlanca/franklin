@@ -96,7 +96,7 @@ class RunnerFactorytest(unittest.TestCase):
         seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
         result = run_mdust__for_seq(seq1)['sequence']
-        assert result.read()[-10:-1] == 'aaaaaaaaa'
+        assert "57\t31\t57" in  result.read()
     @staticmethod
     def test_create_lucy_runner():
         'We can create a runner class for lucy'
