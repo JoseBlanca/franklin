@@ -169,5 +169,5 @@ class PipelineTests(unittest.TestCase):
         assert 'mdust' in result_seq
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    #import sys;sys.argv = ['', 'PipelineTests.test_seq_pipeline_parallel_run']
     unittest.main()

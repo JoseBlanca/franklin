@@ -448,7 +448,7 @@ class OrderedDict(dict, DictMixin):
         return not self == other
 
 class DisposableFile(file):
-    'A file that remove the file when closed'
+    'A file that removes the file when closed'
     def close(self):
         'This close removes the file when called'
         file.close(self)

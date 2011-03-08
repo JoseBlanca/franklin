@@ -42,7 +42,7 @@ def _add_trim_segments(segments, sequence, vector=True, trim=True):
     'It adds a segments or segments to the trimming recomendation in annotation'
     if not segments:
         return
-    if 'trimming-recommendation' not in sequence.annotations:
+    if TRIMMING_RECOMENDATIONS not in sequence.annotations:
         sequence.annotations[TRIMMING_RECOMENDATIONS] = {'vector':[],
                                                            'quality':[],
                                                            'mask':[]}
@@ -409,7 +409,12 @@ def _lucy_mapper(sequence, index):
     The index is the lucy result indexed
     '''
     name = sequence.name
-    lucy_seq = index[name]
+
+    try:
+        lucy_seq = index[name]
+    except KeyError:
+        #lucy has removed the sequence completely
+        return None
     lucy_description = lucy_seq.description
 
     if lucy_description is None:
@@ -454,6 +459,8 @@ def create_striper_by_quality_lucy(parameters=None):
         # process each sequence and
         for sequence in sequences:
             yield _lucy_mapper(sequence, result_index)
+
+        seq_out_fhand.close()
 
     return strip_seq_by_quality_lucy
 

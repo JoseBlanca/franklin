@@ -247,12 +247,13 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
         seqs = list(seqs_in_file(open(cleaned_454)))
-        seq = seqs[0].seq
         # It means thar the adaptor has been removed
+        seq = seqs[0].seq
         assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
+
         seq = seqs[2].seq
         # It means that the starting word has been removed
-        assert  seq.startswith('CAAGATTCTTCCCACAT')
+        assert  seq.startswith('TTCCAAGATTCTTCCCACAT')
 
         # solid
         cleaned_solid =  join(cleaned_dir, os.path.basename(fpath_solid))
@@ -375,5 +376,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
+    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis']
     unittest.main()
