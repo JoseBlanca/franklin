@@ -24,7 +24,8 @@ from StringIO import StringIO
 
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature, FeatureLocation
 from franklin.seq.seq_stats import (do_annotation_statistics,
-                                    _location_to_orf)
+                                    _location_to_orf,
+    nucleotide_freq_per_position)
 
 
 class SeqStatsTest(unittest.TestCase):
@@ -134,6 +135,23 @@ Sequences with microsatellites: 2
 
         feat = SeqFeature(FeatureLocation(25, 25), type='snv')
         assert _location_to_orf([orf], feat) == 'utr3'
+
+    @staticmethod
+    def test_nucl_per_position():
+        'It calculates the frec of each nucleotide per position'
+        seqs = []
+        seqs.append(SeqWithQuality(Seq('ACTG')))
+        seqs.append(SeqWithQuality(Seq('ACTG')))
+        seqs.append(SeqWithQuality(Seq('CATG')))
+        seqs.append(SeqWithQuality(Seq('CATGZ')))
+        seqs.append(SeqWithQuality(Seq('ACTT')))
+        seqs.append(SeqWithQuality(Seq('ACTTZT')))
+
+        stats = nucleotide_freq_per_position(seqs)
+        assert stats == [{'A': 4, 'C': 2}, {'A': 2, 'C': 4}, {'T': 6},
+                         {'T': 2, 'G': 4}, {'Z': 2}, {'T': 1}]
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

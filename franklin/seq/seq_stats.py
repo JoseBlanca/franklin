@@ -279,3 +279,19 @@ def _calculate_annot_stats(seqs):
 
         annot_stats['total_seqs'] += 1
     return annot_stats
+
+def nucleotide_freq_per_position(sequences):
+    'It calculates the probability of each nucleotide in each'
+    freq_stats = []
+    for sequence in sequences:
+        for index, nucl in enumerate(sequence.seq):
+            nucl = nucl.upper()
+            try:
+                freq_stats[index]
+            except IndexError:
+                freq_stats.append({})
+
+            if nucl not in freq_stats[index]:
+                freq_stats[index][nucl] = 0
+            freq_stats[index][nucl] += 1
+    return freq_stats
