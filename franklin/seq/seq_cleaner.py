@@ -21,15 +21,11 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os
-from tempfile import NamedTemporaryFile
+import logging, os, re
 from itertools import tee
-
+from Bio import SeqIO
 import franklin
 from franklin.utils.cmd_utils import create_runner
-from franklin.seq.writers import fasta_str
-from franklin.seq.readers import seqs_in_file
-from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
@@ -40,6 +36,79 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 #The adaptors shorter than this length can not be processed by blast or
 #exonerate, they should be processed by the word remover function
 MIN_LONG_ADAPTOR_LENGTH = 20
+TRIMMING_RECOMENDATIONS = 'trimming_recommendations'
+
+def _add_trim_segments(segments, sequence, vector=True, trim=True):
+    'It adds a segments or segments to the trimming recomendation in annotation'
+    if not segments:
+        return
+    if 'trimming-recommendation' not in sequence.annotations:
+        sequence.annotations[TRIMMING_RECOMENDATIONS] = {'vector':[],
+                                                           'quality':[],
+                                                           'mask':[]}
+
+    if isinstance(segments, tuple):
+        segments = [segments]
+    trim_rec = sequence.annotations[TRIMMING_RECOMENDATIONS]
+    if vector and trim:
+        trim_rec['vector'].extend(segments)
+    elif not vector and trim:
+        trim_rec['quality'].extend(segments)
+    elif not trim:
+        trim_rec['mask'].extend(segments)
+
+def _mask_sequence(sequence, segments):
+    'It mask the given segments of the sequence'
+    if not segments:
+        return sequence
+    segments = _get_all_segments(segments, len(sequence))
+    seq = str(sequence.seq)
+    new_seq = ''
+    for segment in segments:
+        start = segment[0][0]
+        end   = 0 if segment[0][1] == 0 else  segment[0][1] + 1
+        seq_  = seq[start:end]
+
+        if segment[1]:
+            seq_ = seq_.lower()
+        new_seq += seq_
+    return copy_seq_with_quality(sequence, seq=Seq(new_seq,
+                                                   sequence.seq.alphabet))
+
+def create_seq_trim_and_masker(mask=True, trim=True):
+    'It actually trims the sequence taking into account trimming recomendations'
+    def sequence_trimmer(sequence):
+        'It trims the sequences'
+        if not sequence:
+            return None
+        if not TRIMMING_RECOMENDATIONS in sequence.annotations:
+            return sequence
+        trim_rec = sequence.annotations[TRIMMING_RECOMENDATIONS]
+
+        if mask:
+            sequence = _mask_sequence(sequence, trim_rec.get('mask', []))
+            if 'mask' in trim_rec:
+                del(trim_rec['mask'])
+
+        trim_locs = trim_rec.get('vector', []) + trim_rec.get('quality', [])
+        if trim and trim_locs:
+            trim_limits = _get_longest_non_matched_seq_region_limits(sequence,
+                                                                     trim_locs)
+            sequence = sequence[trim_limits[0]:trim_limits[1] + 1]
+            if 'quality' in trim_rec:
+                del(trim_rec['quality'])
+            if 'vector' in trim_rec:
+                del(trim_rec['vector'])
+            if not mask and 'mask' in trim_rec:
+                new_mask_segments = []
+                for start, end in trim_rec['mask']:
+                    start = start - trim_limits[0] if start - trim_limits[0] > 0 else 0
+                    new_mask_segments.append((start, end - trim_limits[0]))
+                trim_rec['mask'] = new_mask_segments
+        sequence.annotations[TRIMMING_RECOMENDATIONS] = trim_rec
+        return sequence
+
+    return sequence_trimmer
 
 def create_upper_mapper():
     'It returns a function that uppers the sequence'
@@ -56,8 +125,14 @@ def create_edge_stripper(left_length=None, right_length=None):
             return None
         if left_length is None and right_length is None:
             return sequence
-        rigth_limit = len(sequence) - right_length
-        return sequence[left_length:rigth_limit]
+        segments = [(0, left_length - 1)] if left_length else []
+        if right_length:
+            seq_length = len(sequence)
+            segments.append((seq_length - right_length  , seq_length - 1))
+
+        _add_trim_segments(segments, sequence, vector=False)
+
+        return sequence
     return edge_stripper
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
@@ -110,11 +185,14 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
 
         start, end = _trim_bad_qual_extremes(boolean_quality_treshold,
                                              min_quality_bases_)
-        new_seq = sequence[start:end]
-        if len(new_seq.qual) < min_seq_length_:
+
+        segments = [(0, start -1), (end + 1, len(sequence) -1)]
+        _add_trim_segments(segments, sequence, vector=False)
+        #print 'seq', sequence.seq
+        if (end - start) < min_seq_length_:
             return None
         else:
-            return new_seq
+            return sequence
     return strip_seq_by_quality
 
 def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
@@ -145,7 +223,7 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
         return extreme_pos
 
     start = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'start')
-    end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end')
+    end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end') - 1
     return start, end
 
 def _calculate_sliding_window_qual(quality, quality_window_width):
@@ -224,10 +302,13 @@ def create_masker_for_low_complexity():
         if sequence is None:
             return None
         fhand = mask_low_complex_by_seq(sequence)['sequence']
-        #pylint:disable-msg=W0612
-        seq = get_content_from_fasta(fhand)[-1]
-        return copy_seq_with_quality(sequence, seq=Seq(seq,
-                                                       sequence.seq.alphabet))
+        segments = []
+        for line in fhand:
+            start, end = line.strip().split()[-2:]
+            segments.append((int(start) - 1, int(end) - 1))
+        _add_trim_segments(segments, sequence, trim=False)
+
+        return sequence
     return mask_low_complexity
 
 def create_masker_for_polia():
@@ -244,29 +325,42 @@ def create_masker_for_polia():
             return None
 
         fhand = mask_polya_by_seq(sequence)['sequence']
-        return _sequence_from_trimpoly(fhand, sequence, trim=False)
+        segments = _segments_from_trimpoly(fhand, sequence)
+        _add_trim_segments(segments, sequence, trim=False)
+        return sequence
     return mask_polya
 
 def create_word_masker(words, beginning=True):
     'It removes the given words if they are in the start of the seq'
+    if not beginning:
+        words = [re.compile(word) for word in words]
+
     def word_remover(sequence):
         'The remover'
         if sequence is None:
             return None
         str_seq = str(sequence.seq)
         for word in words:
+            segment = None
             if beginning and str_seq.startswith(word):
-                seq = str_seq[:len(word)].lower() + str_seq[len(word):]
-                seq = Seq(seq)
-                sequence = copy_seq_with_quality(sequence, seq=seq)
+                segment = (0, len(word) - 1)
             elif not beginning:
-                seq = str_seq.replace(word, word.lower())
-                seq = Seq(seq)
-                sequence = copy_seq_with_quality(sequence, seq=seq)
+                segment = _findallmatches(word, str_seq)
 
+            if segment:
+                _add_trim_segments(segment, sequence, trim=False)
         return sequence
 
     return word_remover
+
+def _findallmatches(regex, string):
+    '''Given a compiled regex it finds all matches in the string and return
+    their location'''
+    matches = regex.finditer(string)
+    if matches:
+        return [(match.start(), match.end() - 1) for match in matches]
+    else:
+        return []
 
 def create_striper_by_quality_trimpoly(ntrim_above_percent=2):
     '''It creates a function that removes bad quality regions.
@@ -291,93 +385,50 @@ def create_striper_by_quality_trimpoly(ntrim_above_percent=2):
         mask_polya_by_seq = create_runner(tool='trimpoly',
                                           parameters=parameters)
         fhand = mask_polya_by_seq(sequence)['sequence']
-        return _sequence_from_trimpoly(fhand, sequence, trim=True)
+        segments = _segments_from_trimpoly(fhand, sequence)
+        _add_trim_segments(segments, sequence, vector=False)
+        return sequence
     return strip_seq_by_quality_trimpoly
 
-def _sequence_from_trimpoly(fhand_trimpoly_out, sequence, trim):
+def _segments_from_trimpoly(fhand_trimpoly_out, sequence):
     '''It return new sequence giving that trimpoly output and the old sequence
      trim option is used to trim os mask the low quality sequence '''
 
     trimp_data = fhand_trimpoly_out.readline().split()
     end5 = int(trimp_data[2]) - 1
     end3 = int(trimp_data[3])
-    new_sequence = ''
-    str_seq = str(sequence.seq)
-    if not trim:
-        new_sequence  += str_seq[:end5].lower()
-    new_sequence += str_seq[end5:end3]
+    segments = [(0, end5 - 1)] if end5 else []
+    if end3 < len(sequence):
+        segments.append((end3, len(sequence)))
 
-    if trim:
-        return sequence[end5:end3]
-    else:
-        new_sequence += str_seq[end3:].lower()
-        return copy_seq_with_quality(sequence, seq=Seq(new_sequence,
-                                                       sequence.seq.alphabet))
+    return segments
 
-def create_striper_by_quality_lucy():
-    'It creates a function that removes bad quality regions using lucy'
-    #This function has been deprecated because when running using condor lucy
-    #tends to get stuck without apparent reason. We think that it might be due
-    #to the fact that lucy was created to analyze big fasta files with a lot
-    #of sequences in them. In this case we were using lucy to analyze individual
-    #sequences.
-    #To workaround this problem we have created a new function that analyze
-    #all the sequences at ones.
-    msg  = "DEPECRATED, Lucy might get stuck when using this function."
-    msg += "Use create_striper_by_quality_lucy2"
-    print msg
-    def strip_seq_by_quality_lucy(sequence):
-        '''It trims from the sequence  bad quality sections.
+def _lucy_mapper(sequence, index):
+    '''It processes the sequence taking the lucy result.
 
-        It uses lucy external program
-        '''
-        if sequence is None:
-            return None
+    The index is the lucy result indexed
+    '''
+    name = sequence.name
+    lucy_seq = index[name]
+    lucy_description = lucy_seq.description
 
-        if sequence.name is None:
-            raise ValueError('lucy requires that the sequence has a name')
-        elif len(sequence) < 130:
-            if sequence.name is None:
-                print_name = ''
-            else:
-                print_name = sequence.name
-            msg = 'lucy: %s is shorter than 130. lucy min seq length 130' % \
-                                                                    print_name
-            logging.warning(msg)
-            return None
-        #we run lucy
-        run_lucy_for_seq = create_runner(tool='lucy')
-        #pylint: disable-msg=W0612
-        seq_out_fhand = run_lucy_for_seq(sequence)[0]
+    if lucy_description is None:
+        return sequence
 
-        #from the output we know where to strip the seq
-        description = get_content_from_fasta(seq_out_fhand)[1]
+    start, end = lucy_description.split()[-2:]
 
-        #lucy can consider that the seq is low qual and return an empty file
-        if description is None:
-            return None
-        start, end = description.split()[-2:]
-        #we count from zero
-        start, end = int(start) - 1, int(end)
-        striped_seq = sequence[start:end]
-        return striped_seq
-    return strip_seq_by_quality_lucy
+    #Now we have the segment in 0 coord system and into a segment
+    matched_segment = (int(start) - 1, int(end) -1)
 
-def _extract_name_description(seq_iter):
-    '''using a sequence iterator, it creates a dictionary with name as key an
-    description as value.'''
-    name_description = {}
-    for seq in seq_iter:
-        try:
-            name        = seq.name
-            description = seq.description
-        except AttributeError:
-            pass
-        name_description[name] = description
+    # we need the non matched segment
+    segments = _get_non_matched_from_matched_locations([matched_segment],
+                                                       len(sequence))
 
-    return name_description
+    # add this to the sequence annotation
+    _add_trim_segments(segments, sequence)
+    return sequence
 
-def create_striper_by_quality_lucy2(parameters=None):
+def create_striper_by_quality_lucy(parameters=None):
     '''It creates a function that removes bad quality regions using lucy.
 
     The function will take a sequence iterator and it will return a new sequence
@@ -394,46 +445,16 @@ def create_striper_by_quality_lucy2(parameters=None):
         '''
         #pylint: disable-msg=W0612
         #now we run lucy
-        sequences, sequences_copy = tee(sequences, 2)
-        seq_out_fhand, qual_out_fhand = run_lucy_for_seqs(sequences)['sequence']
-        # we need to preserve the original description field.
-        descriptions = _extract_name_description(sequences_copy)
+        sequences, sequences_for_lucy = tee(sequences, 2)
+        seq_out_fhand = run_lucy_for_seqs(sequences_for_lucy)['sequence'][0]
 
-        #now we have to clean all sequences with the description found on the
-        #output seq file
-        seq_iter = seqs_in_file(seq_out_fhand, qual_out_fhand)
-        striped_seq_fhand = NamedTemporaryFile(suffix='.seq.fasta')
-        striped_qual_fhand = NamedTemporaryFile(suffix='.qual.fasta')
-        for seq in seq_iter:
-            description = seq.description
-            #lucy can consider that the seq is low qual and return an empty file
-            if description is None:
-                striped_seq = None
-            start, end = description.split()[-2:]
-            #we count from zero
-            start, end = int(start) - 1, int(end)
-            striped_seq = seq[start:end]
-            # recover original description
-            desc_orig = descriptions[seq.name]
-            seq_seq = striped_seq.seq
-            seq_qual = striped_seq.qual
-            if len(seq_seq) != len(seq_qual):
-                msg = 'Malformed lucy output, name: %s, seq: %s, qual:%s' % \
-                                 (striped_seq.name, str(seq_seq), str(seq_qual))
-                raise RuntimeError(msg)
-            seq_str = fasta_str(seq_seq, striped_seq.name, desc_orig)
-            striped_seq_fhand.write(seq_str)
-            stripped_qual = ' '.join([str(q_val) for q_val in seq_qual])
-            qual_str = fasta_str(stripped_qual, striped_seq.name, desc_orig)
-            striped_qual_fhand.write(qual_str)
-        seq_out_fhand.close()
-        qual_out_fhand.close()
-        #os.remove(seq_out_fhand.name)
-        #os.remove(qual_out_fhand.name)
-        striped_seq_fhand.flush()
-        striped_qual_fhand.flush()
-        seq_iter = seqs_in_file(striped_seq_fhand, striped_qual_fhand)
-        return seq_iter, [striped_seq_fhand, striped_qual_fhand]
+        # index the lucy result
+        result_index = SeqIO.index(seq_out_fhand.name, "fasta")
+
+        # process each sequence and
+        for sequence in sequences:
+            yield _lucy_mapper(sequence, result_index)
+
     return strip_seq_by_quality_lucy
 
 #pylint:disable-msg=C0103
@@ -490,7 +511,15 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
         alignment_matches = _get_non_matched_locations(alignments)
         alignment_fhand.close()
-        return _get_longest_non_matched_seq_region(sequence, alignment_matches)
+        segments  = _get_longest_non_matched_seq_region_limits(sequence,
+                                                              alignment_matches)
+        if segments is None:
+            return None
+
+        segments  = _get_non_matched_from_matched_locations([segments],
+                                                            len(sequence))
+        _add_trim_segments(segments, sequence)
+        return sequence
 
     return strip_vector_by_alignment
 
@@ -516,7 +545,14 @@ def create_word_striper_by_alignment(words):
         if not alignments:
             return sequence
         locations = _get_non_matched_locations(alignments)
-        return _get_longest_non_matched_seq_region(sequence, locations)
+        segments  = _get_longest_non_matched_seq_region_limits(sequence,
+                                                              locations)
+        if segments is None:
+            return None
+        segments  = _get_non_matched_from_matched_locations([segments],
+                                                           len(sequence))
+        _add_trim_segments(segments, sequence)
+        return sequence
 
     return strip_words_by_matching
 
@@ -634,37 +670,47 @@ def _get_unmasked_locations(seq):
 
     return locations
 
-def _get_non_matched_from_matched_locations(locations, seq_len):
-    'Given a set of regions in a seq it returns the complementary ones'
-    if not locations:
-        return [(0, seq_len - 1)]
+def _get_all_segments(segments, seq_len):
+    '''Given a set of some non overlaping regions it returns all regions.
 
-    comp_locations = []
-    #the first complementary region starts at 0 unless the first given location
-    #starts at 0
-    if locations[0][0] == 0:
-        start = locations[0][1] + 1
-        locations.pop(0)
+    input:  --- ----       ----
+    output: ---+----+++++++----
+
+    '''
+    if not segments:
+        return [((0, seq_len - 1), False)]
+
+    all_segments = []
+    #If the first segment doesn't start at zero we create a new one
+    if segments[0][0] == 0:
+        start = segments[0][1] + 1
+        all_segments.append((segments.pop(0), True))
     else:
         start = 0
-    for loc in locations:
-        comp_locations.append((start, loc[0] - 1))
+
+    for loc in segments:
+        all_segments.append(((start, loc[0] - 1), False))
+        all_segments.append((loc, True))
         start = loc[1] + 1
     else:
-        #if the last location do not end at the end of the seq we add the
-        #last complementary location
+        #if the last segment does not ends at the end of the sequence we add
+        #an extra one
         end = seq_len - 1
         if start <= end:
-            comp_locations.append((start, end))
-    return comp_locations
+            all_segments.append(((start, end), False))
+    return all_segments
 
-def _get_longest_non_matched_seq_region(seq, locations):
-    'Given a seq and the locations it returns the longest region'
+def _get_non_matched_from_matched_locations(segments, seq_len):
+    'Given a set of regions in a seq it returns the complementary ones'
+    non_matched = []
+    for segment in _get_all_segments(segments, seq_len):
+        if not segment[1]:
+            non_matched.append(segment[0])
+    return non_matched
 
-    # If no locations we return the complete sequence location
-    if not locations:
-        return seq
 
+def _get_longest_non_matched_seq_region_limits(seq, locations):
+    'Given a seq and the locations it returns the longest region limits'
     #they are one based, we do them 0 based
     #locations = [(loc[0] - 1, loc[1] - 1) for loc in locations]
 
@@ -688,11 +734,7 @@ def _get_longest_non_matched_seq_region(seq, locations):
             continue
         if longest_loc[1] - longest_loc[0] < loc[1] - loc[0]:
             longest_loc = loc
-
-    if longest_loc:
-        return seq[longest_loc[0]:longest_loc[1] + 1]
-    else:
-        return None
+    return longest_loc
 
 def _get_matched_locations(seq, locations, min_length):
     'It returns a seq iterator from a seq. To split the seq it uses the'
@@ -728,40 +770,4 @@ def split_seq_by_masked_regions(seq_iter, min_length):
         for new_seq in seqs:
             yield new_seq
 
-def create_masker_repeats_by_repeatmasker(species='eudicotyledons'):
-    '''It creates a function that mask repeats from a sequence'''
-
-    def mask_repeats_by_repeatmasker(sequence):
-        '''It returns a sequence with the repetitive and low complex elements
-         masked'''
-        if sequence is None:
-            return None
-
-        seq_fhand = run_repeatmasker_for_sequence(sequence, species)
-        #pylint: disable-msg=W0612
-        masked_seq = get_content_from_fasta(seq_fhand)[2]
-        return copy_seq_with_quality(sequence, seq=Seq(masked_seq,
-                                                       sequence.seq.alphabet))
-    return mask_repeats_by_repeatmasker
-
-def create_short_adaptor_striper(adaptors):
-    '''It creates a function which removes the adaptors from the given sequence.
-
-    The adaptors should be a list. It will look for them using regular
-    expressions.
-    '''
-    def strip_vector_by_alignment(sequence):
-        '''It strips the vector from a sequence.
-
-        It returns a striped sequence with the longest segment without vector.
-        '''
-        if sequence is None:
-            return None
-        if adaptors is None:
-            return sequence
-        alignments = parser(alignment_fhand)
-        alignment_matches = _get_non_matched_locations(alignments)
-        return _get_longest_non_matched_seq_region(sequence, alignment_matches)
-
-    return strip_vector_by_alignment
 

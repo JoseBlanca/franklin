@@ -124,7 +124,9 @@ RUNNER_DEFINITIONS = {
                     },
     'mdust':{'binary':'mdust',
              'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
-                          'cut_off'    :{'default':'25', 'option':'-v' }},
+                          'cut_off'    :{'default':'25', 'option':'-v' },
+                          'show_masked_segments':{'default':None,
+                                                  'option':'-c'}},
              'output':{'sequence':{'option':STDOUT}},
              'input':{'sequence':{'option':ARGUMENT, 'arg_before_params':True,
                                   'files_format':['fasta']}}
