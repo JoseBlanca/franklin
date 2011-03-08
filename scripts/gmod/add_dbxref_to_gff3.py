@@ -52,7 +52,7 @@ def main():
     ingff3_fpath, outgff3_fpath, rels_fhand, database = get_parameters()
 
     mappers = []
-    mappers.append(create_dbxref_feature_mapper(database,rels_fhand))
+    mappers.append(create_dbxref_feature_mapper(database, rels_fhand))
 
     modify_gff3(ingff3_fpath, outgff3_fpath, mappers)
 
