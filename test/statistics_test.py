@@ -133,7 +133,7 @@ class DrawFreqHistogram(unittest.TestCase):
     'It test the freq histogram'
 
     @staticmethod
-    def test_freq_histogram():
+    def test_stacked_columns():
         'It test the freq histogram'
         values = {
               'A': [0.66666666666666663, 0.33333333333333331, 0.0, 0.0, 0, 0.0],
@@ -145,6 +145,8 @@ class DrawFreqHistogram(unittest.TestCase):
         fhand = tempfile.NamedTemporaryFile(suffix='.svg')
         draw_stacked_columns(values, title='test', fhand=fhand, colors=colors)
         fhand.flush()
+#        from franklin.utils.cmd_utils import call
+#        call(('eog', fhand.name))
         svg = open(fhand.name, 'r').read()
         assert '<!-- Created with matplotlib (http://matplotlib' in svg
 

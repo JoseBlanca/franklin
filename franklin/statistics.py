@@ -510,7 +510,7 @@ def draw_stacked_columns(values, colors, title=None, xlabel= None,
         prev_values = values
 
     axes.set_xticks(xvalues)
-    plt.legend(bars, names )
+    plt.legend(bars, names, bbox_to_anchor=(0.95, 1), loc=2)
 
 
     _show_image(fhand, plot_format)

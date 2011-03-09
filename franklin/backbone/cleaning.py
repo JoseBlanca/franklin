@@ -297,11 +297,23 @@ class ReadsStatsAnalyzer(Analyzer):
                 fpath = pair[seq_type].last_version
                 basename = pair[seq_type].basename
 
+
+
+                # nucleotide freq per position
+                out_fpath = os.path.join(stats_dir, basename + '.freq_position')
+                if not os.path.exists(out_fpath):
+                    plot_fpath = out_fpath  + '.' + PLOT_FILE_FORMAT
+                    seqs = seqs_in_file(open(fpath))
+                    title = 'nucleotide frequency per position. - %s %s' % \
+                                                            (basename, seq_type)
+                    create_nucleotide_freq_histogram(seqs,
+                                                     fhand=open(plot_fpath, 'w'),
+                                                     title=title)
+
                 #the names for the output files
                 out_fpath = os.path.join(stats_dir, basename + '.length')
                 plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
-
                 if os.path.exists(plot_fpath):
                     continue
 
@@ -325,14 +337,7 @@ class ReadsStatsAnalyzer(Analyzer):
                                         plot_fhand=open(plot_fpath, 'w'),
                                         range_=(quals_.min, quals_.max))
 
-                # nucleotide freq per position
-                out_fpath = os.path.join(stats_dir, basename + '.freq_position')
-                plot_fpath = out_fpath  + '.' + PLOT_FILE_FORMAT
-                seqs = seqs_in_file(open(fpath))
-                title = 'nucleotide frequency per position. - %s %s' % \
-                                                            (basename, seq_type)
-                create_nucleotide_freq_histogram(seqs, fhand=open(plot_fpath, 'w'),
-                                                 title=title)
+
 
 
                 #the statistics for the statistics file

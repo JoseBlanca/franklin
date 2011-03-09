@@ -358,6 +358,7 @@ Sequence qualities variance: 8.19
         nucl_freq =open(freq_nucl_fpath).read()
         assert '<filter id="colorAdd">' in nucl_freq
 
+
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
     @staticmethod
