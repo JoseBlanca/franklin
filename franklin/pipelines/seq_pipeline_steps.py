@@ -30,7 +30,6 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
     create_seq_trim_and_masker)
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
-from franklin.utils.cmd_utils import BLAST_TOOL
 
 up_case = {'function':create_upper_mapper,
            'arguments':{},
@@ -40,7 +39,7 @@ up_case = {'function':create_upper_mapper,
 
 #pylint:disable-msg=C0103
 remove_vectors = {'function':create_vector_striper_by_alignment,
-                  'arguments':{'vectors':None, 'aligner':BLAST_TOOL},
+                  'arguments':{'vectors':None, 'aligner':'blastn'},
                   'type': 'mapper',
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}

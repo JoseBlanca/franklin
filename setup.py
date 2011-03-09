@@ -25,7 +25,7 @@ def check_modules(modules):
     all_optionals = True
     for module_name, module_info in  modules.items():
         try:
-            # we use this and not a simple import because matpliotlib writes 
+            # we use this and not a simple import because matpliotlib writes
             # a directory in the first import. with posible wrong permissions
             imp.find_module(module_name)
         except ImportError:
@@ -36,7 +36,7 @@ def check_modules(modules):
                 sys.exit(1)
             print "%s is not installed, %s" % (module_name, module_info['msg'])
             all_optionals = False
-            
+
     if not all_optionals:
         msg = 'Some optional requirements were not met, do you want to continue'
         msg += ' the installation (y/n)? '
@@ -44,8 +44,8 @@ def check_modules(modules):
         if answer.lower() not in ('y', 'yes'):
             print 'Installation aborted'
             sys.exit()
-            
-#            
+
+#
 #try:
 #    import Bio
 #except:
@@ -123,7 +123,7 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 wanted_scripts = ['backbone_analysis.py', 'seqio.py',
-                  'backbone_create_project.py', 'blast+']
+                  'backbone_create_project.py']
 scripts = []
 for dirpath, dirnames, filenames in os.walk(os.path.join(root_dir,
                                                          SCRIPTS_DIR)):
@@ -144,9 +144,9 @@ setup(
     package_dir={'':'.'},
     #py_modules = modules,
 
-    package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*', 
+    package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*',
                        'data/samtools_color/*']},
-    
+
     requires=['BioPython', 'sqlalchemy', 'matplotlib', 'configobj',
               'pysam', 'psubprocess'],
     scripts=scripts,

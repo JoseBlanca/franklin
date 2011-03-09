@@ -21,7 +21,7 @@ Created on 19/02/2010
 
 from Bio import SeqIO
 
-from franklin.utils.cmd_utils import create_runner, BLAST_TOOL
+from franklin.utils.cmd_utils import create_runner
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                               get_alignment_parser)
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
@@ -269,8 +269,8 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                                            genomic_seqs_fpath):
     '''It returns a filter that removes snv in a region that give more than one
     match or more than one match_parts'''
-    parameters = {'database': genomic_db, 'program':'blastn'}
-    blast_runner = create_runner(tool=BLAST_TOOL, parameters=parameters)
+    parameters = {'database': genomic_db}
+    blast_runner = create_runner(tool='blastn', parameters=parameters)
     blast_parser = get_alignment_parser('blast')
     filters = [{'kind'           : 'min_scores',
                 'score_key'      : 'similarity',
@@ -312,7 +312,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
                 start = 0
             #print start, end
             seq_fragment = sequence[start:end]
-            blast_fhand = blast_runner(seq_fragment)[BLAST_TOOL]
+            blast_fhand = blast_runner(seq_fragment)['blastn']
             #now we parse the blast
             blast_result = blast_parser(blast_fhand)
             alignments = FilteredAlignmentResults(match_filters=filters,

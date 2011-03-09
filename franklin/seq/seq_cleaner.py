@@ -474,20 +474,14 @@ def create_vector_striper_by_alignment(vectors, aligner):
     '''
     #depending on the aligner program we need different parameters and filters
     parameters = {'exonerate': {'target':vectors},
-                  'blast'    : {'database': vectors, 'program':'blastn'},
-                  'blast+'    : {'database': vectors, 'program':'blastn'}}
+                  'blastn'    : {'database': vectors}}
 
     filters = {'exonerate': [{'kind'          : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
                               'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
-               'blast':      [{'kind'         : 'min_scores',
-                             'score_key'      : 'similarity',
-                             'min_score_value': 96},
-                             {'kind'          : 'min_length',
-                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
-               'blast+':      [{'kind'         : 'min_scores',
+               'blastn':      [{'kind'         : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',

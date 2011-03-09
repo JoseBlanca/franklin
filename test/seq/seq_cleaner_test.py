@@ -44,7 +44,6 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 _get_non_matched_from_matched_locations)
 
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.utils.cmd_utils import BLAST_TOOL
 
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
@@ -409,8 +408,7 @@ class SeqCleanerTest(unittest.TestCase):
         seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
         seq_trimmer = create_seq_trim_and_masker()
         strip_vector_by_alignment = \
-                            create_vector_striper_by_alignment(vector,
-                                                               BLAST_TOOL)
+                            create_vector_striper_by_alignment(vector, 'blastn')
         striped_seq = strip_vector_by_alignment(seq)
         striped_seq = seq_trimmer(striped_seq)
         striped_seq = str(striped_seq.seq)

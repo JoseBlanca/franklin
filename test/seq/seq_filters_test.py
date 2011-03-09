@@ -26,7 +26,6 @@ from Bio.Seq import UnknownSeq
 
 import unittest, os
 from itertools import ifilter
-from franklin.utils.cmd_utils import BLAST_TOOL
 
 class BlastFilteringTest(unittest.TestCase):
     'It tests that we can filter out sequence using a blast result'
@@ -38,19 +37,15 @@ class BlastFilteringTest(unittest.TestCase):
         #an arabidopsis cdna sequence
         seq2 = Seq('ATGGTGGGTGGCAAGAAGAAAACCAAGATATGTGACAAAGTGTCACATGAGAAGATAG')
         #we keep the sequences with a good hit in the blast
-        
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
-        parameters = {'expect':1e-10, 'database':arabidopsis_genes,
-                      'program':'blastn'}
+
+        arabidopsis_genes = 'arabidopsis_genes+'
+        parameters = {'expect':1e-10, 'database':arabidopsis_genes}
         match_filters = [{'kind'           : 'min_scores',
                           'score_key'      : 'expect',
                           'max_score_value': 0.001}]
 
         blastpath = os.path.join(DATA_DIR, 'blast')
-        blast_filter = create_aligner_filter(aligner_cmd=BLAST_TOOL,
+        blast_filter = create_aligner_filter(aligner_cmd='blastn',
                                      cmd_parameters=parameters,
                                      match_filters=match_filters,
                                      environment={'BLASTDB':blastpath} )
@@ -110,10 +105,7 @@ class ContaminantFilterTest(unittest.TestCase):
         seq1 = 'TTGGCAATCGGTTCCTGGATTGGACTTAGACCCCTACGCATCCTCAAATACCAATACAATTGT'
         seq  = SeqWithQuality(seq=Seq(seq1))
         blastpath = os.path.join(DATA_DIR, 'blast')
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
         filter_by_contaminant = create_comtaminant_filter(arabidopsis_genes,
                                               environment={'BLASTDB':blastpath})
         assert not filter_by_contaminant(seq)
@@ -128,10 +120,7 @@ class SimilarSeqTest(unittest.TestCase):
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+' 
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
         db = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         filter_ = create_similar_seqs_filter(db=db, blast_program='blastn')
         assert filter_(seq1)
@@ -152,17 +141,17 @@ class SolidFilters(unittest.TestCase):
         quality = [30, 23, 43, 12, 25, 23, 30, 12, 0]
         seq = 'A' * len(quality)
         sequence =  SeqWithQuality(seq=Seq(seq), qual=quality)
-        
+
         filter_ = create_solid_quality_filter(length=5, threshold=25)
         assert filter_(sequence)
 
         filter_ = create_solid_quality_filter(length=5, threshold=35)
         assert not filter_(sequence)
-        
+
         quality = [30, 23, 43, 12, 25, 23, 30, 12, 0, 0]
         seq = 'A' * len(quality)
         sequence =  SeqWithQuality(seq=Seq(seq), qual=quality)
-        filter_ = create_solid_quality_filter(length=5, threshold=25, 
+        filter_ = create_solid_quality_filter(length=5, threshold=25,
                                               call_missing=True)
         assert not filter_(sequence)
 
