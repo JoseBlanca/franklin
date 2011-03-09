@@ -304,11 +304,8 @@ class ReadsStatsAnalyzer(Analyzer):
                 if not os.path.exists(out_fpath):
                     plot_fpath = out_fpath  + '.' + PLOT_FILE_FORMAT
                     seqs = seqs_in_file(open(fpath))
-                    title = 'nucleotide frequency per position. - %s %s' % \
-                                                            (basename, seq_type)
                     create_nucleotide_freq_histogram(seqs,
-                                                     fhand=open(plot_fpath, 'w'),
-                                                     title=title)
+                                                    fhand=open(plot_fpath, 'w'))
 
                 #the names for the output files
                 out_fpath = os.path.join(stats_dir, basename + '.length')
