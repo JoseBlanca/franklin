@@ -25,7 +25,9 @@ from StringIO import StringIO
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature, FeatureLocation
 from franklin.seq.seq_stats import (do_annotation_statistics,
                                     _location_to_orf,
-    nucleotide_freq_per_position)
+                                    _nucleotide_freq_per_position,
+    create_nucleotide_freq_histogram)
+from tempfile import NamedTemporaryFile
 
 
 class SeqStatsTest(unittest.TestCase):
@@ -147,9 +149,24 @@ Sequences with microsatellites: 2
         seqs.append(SeqWithQuality(Seq('ACTT')))
         seqs.append(SeqWithQuality(Seq('ACTTZT')))
 
-        stats = nucleotide_freq_per_position(seqs)
-        assert stats == [{'A': 4, 'C': 2}, {'A': 2, 'C': 4}, {'T': 6},
-                         {'T': 2, 'G': 4}, {'Z': 2}, {'T': 1}]
+        fhand = NamedTemporaryFile(suffix='.svg')
+        stats = create_nucleotide_freq_histogram(seqs, fhand, title='test')
+
+        assert stats == {
+              'A': [0.66666666666666663, 0.33333333333333331, 0.0, 0.0, 0, 0.0],
+              'C': [0.33333333333333331, 0.66666666666666663, 0.0, 0.0, 0, 0.0],
+              'T': [0.0, 0.0, 1.0, 0.33333333333333331, 0, 1.0],
+              'G': [0.0, 0.0, 0.0, 0.66666666666666663, 0, 0.0]}
+        fhand.flush()
+        svg = open(fhand.name, 'r').read()
+        assert '<!-- Created with matplotlib (http://matplotlib' in svg
+
+
+
+
+
+
+
 
 
 

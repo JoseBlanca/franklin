@@ -22,7 +22,8 @@ from StringIO import StringIO
 import os, random, tempfile
 
 from franklin.statistics import (CachedArray, histogram, create_distribution,
-                                 draw_boxplot, draw_histogram)
+                                 draw_boxplot, draw_histogram,
+                                 draw_stacked_columns)
 import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -120,12 +121,33 @@ class BoxPlotTest(unittest.TestCase):
         assert '09' in result
         assert 'median' in result
 
+
         #the not to draw all boxes
         draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
-                     title='boxplot', fhand=open(plot_fhand.name, 'w'),
+                     title='boxplot', fhand=None, #open(plot_fhand.name, 'w'),
                      stats_fhand=stats_fhand, max_plotted_boxes=5)
 
         plot_fhand.close()
+
+class DrawFreqHistogram(unittest.TestCase):
+    'It test the freq histogram'
+
+    @staticmethod
+    def test_freq_histogram():
+        'It test the freq histogram'
+        values = {
+              'A': [0.66666666666666663, 0.33333333333333331, 0.0, 0.0, 0, 0.0],
+              'C': [0.33333333333333331, 0.66666666666666663, 0.0, 0.0, 0, 0.0],
+              'T': [0.0, 0.0, 1.0, 0.33333333333333331, 0, 1.0],
+              'G': [0.0, 0.0, 0.0, 0.66666666666666663, 0, 0.0]}
+
+        colors = {'A':'g', 'C':'b', 'T':'r', 'G':'k'}
+        fhand = tempfile.NamedTemporaryFile(suffix='.svg')
+        draw_stacked_columns(values, title='test', fhand=fhand, colors=colors)
+        fhand.flush()
+        svg = open(fhand.name, 'r').read()
+        assert '<!-- Created with matplotlib (http://matplotlib' in svg
+
 
 class CachedArrayTest(unittest.TestCase):
     'It tests the store for iterables'
@@ -181,5 +203,5 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.get_sample_percentiles([5, 95]) == [0, 2]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
+    #import sys;sys.argv = ['', 'DrawFreqHistogram.test_freq_histogram']
     unittest.main()

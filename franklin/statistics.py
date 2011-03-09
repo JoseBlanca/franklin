@@ -242,7 +242,7 @@ def _import_matplotlib(output):
         import matplotlib
     else:
         matplotlib = modules['matplotlib']
-        matplotlib.use(backend, warn)
+    matplotlib.use(backend, warn)
     if 'matplotlib.pyplot' not in modules:
         from matplotlib import pyplot
     else:
@@ -460,6 +460,74 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                      marker=scat['shape'], s=60)
 
     _show_image(fhand, plot_format)
+
+
+
+def draw_stacked_columns(values, colors, title=None, xlabel= None,
+                        ylabel=None, fhand=None, xvalues=None):
+    '''It draws a stacked column.
+
+    Input: Values is a dictionary with list of values.
+        values = {'A':[1,2,1,2,3,4,3],
+                  'T':[2,2,1,2,3,4,3],
+                  ...}
+        Colors is a dictionary with how we want to draw the columns, same keys
+        as values:
+        colors = {'A':'c',
+                  'T':'g',
+                  ...}
+    '''
+    plot_format = _guess_output_for_matplotlib(fhand)
+
+    fig, plt = _get_figure(plot_format, fhand)
+
+    axes = fig.add_subplot(111)
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+
+
+    if not xvalues:
+        xvalues = range(len(values.values()[0]))
+
+    bottom_values = None
+    prev_values   = None
+    bars  = []
+    names = []
+    for name, values in values.items():
+        if prev_values:
+            bottom_values = _sum_lists(bottom_values, prev_values)
+
+        #print bottom_values
+        bar_ = axes.bar(xvalues, values, bottom=bottom_values, align='center',
+                        color=colors[name])
+        bars.append(bar_[0])
+        names.append(name)
+
+        prev_values = values
+
+    axes.set_xticks(xvalues)
+    plt.legend(bars, names )
+
+
+    _show_image(fhand, plot_format)
+
+def _sum_lists(list1, list2):
+    'It sums the values of two lists, it sums the values for each position'
+    if list1 is None:
+        return list2
+    if list2 is None:
+        return list1
+    if len(list1) != len(list2):
+        raise ValueError('Lists must be same length')
+    new_list = []
+    for values in zip(list1, list2):
+        new_list.append(sum(values))
+    return new_list
+
 
 def _float_to_str(num, precision=2):
     'It returns a float representation'
