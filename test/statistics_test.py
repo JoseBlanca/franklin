@@ -111,23 +111,25 @@ class BoxPlotTest(unittest.TestCase):
             values = [random.uniform(mu+sigma, mu-sigma)
                                                 for index_ in range(num_values)]
             lists.append(values)
-        plot_fhand = tempfile.NamedTemporaryFile()
+        plot_fhand = tempfile.NamedTemporaryFile(suffix='.svg')
         stats_fhand = StringIO()
         draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
-                     title='boxplot', fhand=open(plot_fhand.name, 'w'),
+                     title='boxplot', fhand=plot_fhand,
                      stats_fhand=stats_fhand)
-        assert 'PNG' in  open(plot_fhand.name).read(10)
+        assert 'xml' in  open(plot_fhand.name).read(10)
 
         result = stats_fhand.getvalue()
         assert '09' in result
         assert 'median' in result
+        plot_fhand.close()
 
 
         #the not to draw all boxes
+        plot_fhand = tempfile.NamedTemporaryFile(suffix='.svg')
         draw_boxplot(lists, xlabel='distributions', ylabel='distrib',
-                     title='boxplot', fhand=None, #open(plot_fhand.name, 'w'),
+                     title='boxplot', fhand=plot_fhand,
                      stats_fhand=stats_fhand, max_plotted_boxes=5)
-
+        assert 'xml' in  open(plot_fhand.name).read(10)
         plot_fhand.close()
 
 class DrawFreqHistogram(unittest.TestCase):
@@ -206,5 +208,5 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.get_sample_percentiles([5, 95]) == [0, 2]
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'HistogramTest.test_histogram']
+    #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
     unittest.main()

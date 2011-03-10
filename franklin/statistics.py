@@ -232,6 +232,7 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
 
 def _guess_output_for_matplotlib(fhand):
     'Given an fhand it guesses if we need png or svg'
+    output = None
     if fhand is not None:
         output = splitext(fhand.name)[-1].strip('.')
     if not output:
@@ -339,7 +340,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
 
     plot_format = _guess_output_for_matplotlib(fhand)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
     if xlabel:
@@ -406,9 +408,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
                      marker=scat['shape'], s=60)
 
-    _show_image(fhand, plot_format)
-
-
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 def draw_stacked_columns(values, colors, title=None, xlabel= None,
                         ylabel=None, fhand=None, xvalues=None):
@@ -426,7 +427,8 @@ def draw_stacked_columns(values, colors, title=None, xlabel= None,
     '''
     plot_format = _guess_output_for_matplotlib(fhand)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
     if xlabel:
@@ -457,10 +459,11 @@ def draw_stacked_columns(values, colors, title=None, xlabel= None,
         prev_values = values
 
     axes.set_xticks(xvalues)
-    plt.legend(bars, names, bbox_to_anchor=(0.95, 1), loc=2)
-    plt.ylim(0, 1)
+    axes.legend(bars, names, bbox_to_anchor=(0.95, 1), loc=2)
+    axes.set_ylim(0, 1)
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 def _sum_lists(list1, list2):
     'It sums the values of two lists, it sums the values for each position'
@@ -522,7 +525,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if stats_fhand:
         _calculate_boxplot_percentiles(numpy_vects, stats_fhand, xlabels)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
 
@@ -543,7 +547,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     axes.boxplot(numpy_vects, notch=1, sym='')
     axes.set_xticklabels([str(lab)for lab in xlabels], rotation='vertical')
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
@@ -567,7 +572,6 @@ def _calculate_percentiles(numbers, percents):
     if not numbers.any():
         raise ValueError('No data to calculate percentiles')
 
-    _import_mlab()
     mlab = sys.modules['matplotlib.mlab']
 
     percentiles = mlab.prctile(numbers, percents)
@@ -649,16 +653,6 @@ class CachedArray(object):
         'It returns the percentiles given a percent list'
         if not self._sample:
             raise ValueError('No data to calculate percentiles')
-
-        modules = sys.modules
-        if 'matplotlib' not in modules.keys():
-            import matplotlib
-            matplotlib.use('AGG')
-
-        if 'matplotlib.mlab' not in modules.keys():
-            import matplotlib.mlab as mlab
-        else:
-            mlab = modules['matplotlib.mlab']
 
         vect = numpy.ravel(self.sample)
         percentiles = mlab.prctile(vect, percents)
