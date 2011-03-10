@@ -489,8 +489,12 @@ def create_vector_striper_by_alignment(vectors, aligner):
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
     #depending on the aligner program we need different parameters and filters
+    # blast parameter value is taken from vecscreen parameters:
+    # http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html
     parameters = {'exonerate': {'target':vectors},
-                  'blastn'    : {'database': vectors}}
+                  'blastn'    : {'database': vectors, 'gapextend': '3',
+                                 'gapopen':'3', 'penalty':'-5', 'expect':'700',
+                                 'dust':'20 1 64'}}
 
     filters = {'exonerate': [{'kind'          : 'min_scores',
                              'score_key'      : 'similarity',

@@ -80,7 +80,9 @@ BLASTPLUS_DEF = {'binary':'',
                    'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
                    'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
                    'alig_format': {'default':5, 'option':'-outfmt'},
-                   'subject':{'option':'-subject'}
+                   'subject':{'option':'-subject'},
+                   'gapextend':{'option': '-gapextend'},
+                   'gapopen':{'option': '-gapopen'}
                             },
             'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
@@ -89,6 +91,8 @@ BLASTPLUS_DEF = {'binary':'',
 BLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTN_DEF['binary'] = 'blastn'
 BLASTN_DEF['output'] = {'blastn':{'option':STDOUT}}
+BLASTN_DEF['parameters']['penalty'] ={'option':'-penalty'}
+BLASTN_DEF['parameters']['dust'] = {'option':'-dust'}
 
 BLASTP_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTP_DEF['binary'] = 'blastp'
