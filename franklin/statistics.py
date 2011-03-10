@@ -21,6 +21,10 @@ import itertools, tempfile, sys, random, math, os
 from os.path import splitext
 from array import array
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import mlab
+
 try:
     import numpy
 except ImportError:
@@ -226,73 +230,13 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
 
     return (distrib, bin_edges)
 
-def _import_matplotlib(output):
-    'It imports the matplotlib library'
-    #in some circunstances matplot lib could generate this error
-    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
-    #writable directory for matplotlib configuration data
-    #in that case we don't know how to use matplotlib, it would require
-    #to set the MPLCONFIGDIR variable, but we can't do that in the
-    #current shell, so the matplotlib greatness wouldn't be available
-    #in those occasions
-    backend = 'agg'
-    warn = False
-    modules = sys.modules
-    if 'matplotlib' not in modules:
-        import matplotlib
-    else:
-        matplotlib = modules['matplotlib']
-        matplotlib.use(backend, warn)
-    if 'matplotlib.pyplot' not in modules:
-        from matplotlib import pyplot
-    else:
-        pyplot = modules['matplotlib.pyplot']
-
-    #if output in ['png' or 'show']:
-    #    backend = 'agg'
-    #elif output == 'svg':
-    #    backend = 'svg'
-    #else:
-    #    backend = 'agg'
-    pyplot.switch_backend(backend)
-
-def _import_mlab():
-    if 'matplotlib.mlab' not in sys.modules.keys():
-        import matplotlib.mlab
-
 def _guess_output_for_matplotlib(fhand):
     'Given an fhand it guesses if we need png or svg'
     if fhand is not None:
         output = splitext(fhand.name)[-1].strip('.')
-        if not output:
-            output = 'png'
-    else:
-        output = 'show'
+    if not output:
+        output = 'png'
     return output
-
-def _get_figure(plot_format, fhand):
-    'It returns a pyplot figure'
-    try:
-        _import_matplotlib(plot_format)
-        plt = sys.modules['matplotlib.pyplot']
-        fig = plt.figure()
-    except Exception:
-        _remove_fhand(fhand)
-        raise
-    return fig, plt
-
-def _show_image(fhand, plot_format):
-    'It shows or draws an image'
-    plt = sys.modules['matplotlib.pyplot']
-    try:
-        if fhand is None:
-            plt.show()
-        else:
-            plt.savefig(fhand, format=plot_format)
-    except Exception:
-        _remove_fhand(fhand)
-        raise
-    plt.close('all')
 
 def _remove_fhand(fhand):
     'It removes the given file'
@@ -307,7 +251,8 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
 
     plot_format = _guess_output_for_matplotlib(fhand)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
     if xlabel:
@@ -344,9 +289,11 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
     #we don't want to clutter the plot
     xticks_pos = xticks_pos[::2]
     xticks_labels = xticks_labels[::2]
-    plt.xticks(xticks_pos, xticks_labels)
+    axes.set_xticks(xticks_pos)
+    axes.set_xticklabels(xticks_labels)
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 def _color_by_index(index, kind='str'):
     'Given an int index it returns a color'

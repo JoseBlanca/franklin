@@ -81,6 +81,7 @@ class HistogramTest(unittest.TestCase):
         #assert 'PNG' in open(png_file.name).read(4)
         svg_file = tempfile.NamedTemporaryFile(suffix='.svg')
         draw_histogram(our_distrib[0], our_distrib[1], fhand=svg_file)
+        svg_file.flush()
         assert 'xml' in open(svg_file.name).read(5).lower()
 
     @staticmethod
@@ -181,5 +182,5 @@ class CachedArrayTest(unittest.TestCase):
         assert storage.get_sample_percentiles([5, 95]) == [0, 2]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
+    import sys;sys.argv = ['', 'HistogramTest.test_histogram']
     unittest.main()
