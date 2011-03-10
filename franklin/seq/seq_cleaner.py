@@ -421,6 +421,9 @@ def _lucy_mapper(sequence, index):
 
     The index is the lucy result indexed
     '''
+    if sequence is None:
+        return None
+
     name = sequence.name
 
     try:
