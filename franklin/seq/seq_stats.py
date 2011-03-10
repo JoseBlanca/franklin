@@ -18,9 +18,10 @@ Created on 14/06/2010
 
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
-
+from __future__ import division
 from franklin.seq.seqs import UNKNOWN_DESCRIPTION
 from franklin.snv.snv_annotation import calculate_snv_kind, SNV_TYPES
+from franklin.statistics import draw_stacked_columns
 
 def _location_to_orf(orfs, feat):
     'It returns the location of the feature respect the orf'
@@ -279,3 +280,56 @@ def _calculate_annot_stats(seqs):
 
         annot_stats['total_seqs'] += 1
     return annot_stats
+
+def _nucleotide_freq_per_position(sequences, positions_to_study=30):
+    'It calculates the probability of each nucleotide in each'
+    pos_count = []
+    for sequence in sequences:
+        positions = positions_to_study
+        if len(sequence) < positions_to_study:
+            positions = len(sequence)
+        for index in range(positions):
+            nucl = sequence.seq[index]
+            try:
+                pos_count[index]
+            except IndexError:
+                pos_count.append({'A':0, 'T':0, 'C':0, 'G':0})
+
+            nucl = nucl.upper()
+            if nucl not in ('A', 'T', 'C', 'G'):
+                continue
+            pos_count[index][nucl] += 1
+    freq_stats = {'A':[], 'T':[], 'C':[], 'G':[]}
+
+    for index, position in enumerate(pos_count):
+        total_nucl = sum(position.values())
+        for nucl, count in position.items():
+            if total_nucl == 0:
+                freq = 0
+            else:
+                freq = count/total_nucl
+
+            freq_stats[nucl].append(freq)
+    return freq_stats
+
+def create_nucleotide_freq_histogram(sequences, fhand=None, title=None,
+                                     positions_to_study=30):
+    '''It writes a especific stacked_columns graphic representing the freq of
+    each nucleotide per position'''
+    values = _nucleotide_freq_per_position(sequences,
+                                          positions_to_study=positions_to_study)
+
+    #values should show starting with 1
+    xvalues = range(len(values.values()[0]))
+    xvalues.pop(0)
+    xvalues.append(xvalues[-1] + 1)
+
+    if not title:
+        title = 'Nucleotide frequency per position'
+    colors = {'A':'g', 'C':'b', 'T':'r', 'G':'k'}
+    xlabel = 'Sequence positions'
+    ylabel = 'Nucleotide frequency'
+
+    draw_stacked_columns(values, colors, title=title, xlabel=xlabel,
+                        ylabel=ylabel, fhand=fhand, xvalues=xvalues)
+    return values

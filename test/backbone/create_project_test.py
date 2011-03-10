@@ -354,6 +354,10 @@ Sequence qualities variance: 8.19
                              'pl_illumina.lb_no_raw' + '.qual.boxplot.dat')
         exp = 'distrib\tmean\tstd_deviation\t1st_quartile\tmedian\t3rd_qualtile'
         assert exp in open(boxplot_fpath).read()
+        freq_nucl_fpath = join(clean_stats_dir, 'pl_454.lb_a.freq_position.svg')
+        nucl_freq =open(freq_nucl_fpath).read()
+        assert '<filter id="colorAdd">' in nucl_freq
+
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'

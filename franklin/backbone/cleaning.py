@@ -35,6 +35,7 @@ from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
 from franklin.statistics import (create_distribution, write_distribution,
                                  draw_histogram, CachedArray, draw_boxplot)
+from franklin.seq.seq_stats import create_nucleotide_freq_histogram
 
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
@@ -82,9 +83,9 @@ class CleanReadsAnalyzer(Analyzer):
             return None, short_adaptors     #we do not return the adaptor file
         else:
             return long_adap_fhand.name, short_adaptors
-        
+
     def _create_cleaning_configuration_solid(self, platform):
-        '''It returns the pipeline configuration for solid pipeline looking at 
+        '''It returns the pipeline configuration for solid pipeline looking at
         the project settings'''
         settings = self._project_settings['Cleaning']
         configuration = {}
@@ -95,7 +96,7 @@ class CleanReadsAnalyzer(Analyzer):
         return configuration
 
     def _create_cleaning_configuration_no_solid(self, platform, library=None):
-        '''It returns the pipeline configuration for no solid pipeline looking 
+        '''It returns the pipeline configuration for no solid pipeline looking
         at the project settings'''
         settings = self._project_settings['Cleaning']
         configuration = {}
@@ -174,9 +175,9 @@ class CleanReadsAnalyzer(Analyzer):
         if platform == 'solid':
             return self._create_cleaning_configuration_solid(platform)
         else:
-            return self._create_cleaning_configuration_no_solid(platform, 
+            return self._create_cleaning_configuration_no_solid(platform,
                                                                 library=library)
-        
+
     def run(self):
         '''It runs the analysis. It checks if the analysis is already done per
         input file'''
@@ -296,11 +297,20 @@ class ReadsStatsAnalyzer(Analyzer):
                 fpath = pair[seq_type].last_version
                 basename = pair[seq_type].basename
 
+
+
+                # nucleotide freq per position
+                out_fpath = os.path.join(stats_dir, basename + '.freq_position')
+                if not os.path.exists(out_fpath):
+                    plot_fpath = out_fpath  + '.' + PLOT_FILE_FORMAT
+                    seqs = seqs_in_file(open(fpath))
+                    create_nucleotide_freq_histogram(seqs,
+                                                    fhand=open(plot_fpath, 'w'))
+
                 #the names for the output files
                 out_fpath = os.path.join(stats_dir, basename + '.length')
                 plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
-
                 if os.path.exists(plot_fpath):
                     continue
 
@@ -323,6 +333,9 @@ class ReadsStatsAnalyzer(Analyzer):
                                         distrib_fhand=open(distrib_fpath, 'w'),
                                         plot_fhand=open(plot_fpath, 'w'),
                                         range_=(quals_.min, quals_.max))
+
+
+
 
                 #the statistics for the statistics file
                 self._write_statistics(stats_fhand, fpath, lengths_, quals_)

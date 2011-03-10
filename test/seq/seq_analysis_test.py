@@ -29,7 +29,6 @@ from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      est2genome_parser,
                                      match_words)
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.utils.cmd_utils import BLAST_TOOL
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
@@ -49,11 +48,8 @@ class IntronTest(unittest.TestCase):
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq1 = SeqWithQuality(seq = Seq(seq))
-        if BLAST_TOOL == 'blast':
-            tomato_genome = 'tomato_genome2'
-        else:
-            tomato_genome = 'tomato_genome2+'
-        
+        tomato_genome = 'tomato_genome2+'
+
         genomic_db = os.path.join(DATA_DIR, 'blast', tomato_genome)
         genomic_seqs_index = SeqIO.index(genomic_db, 'fasta')
         introns = infer_introns_for_cdna(seq1, genomic_db,
@@ -98,10 +94,7 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        if BLAST_TOOL == 'blast':
-            database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
-        else:
-            database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        database = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         similar_seqs = look_for_similar_sequences(seq1, database=database,
                                                   blast_program='blastn')
 

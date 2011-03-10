@@ -23,7 +23,6 @@ import unittest, os
 from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import DATA_DIR
-from franklin.utils.cmd_utils import BLAST_TOOL
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
 from franklin.snv.snv_annotation import (INVARIANT, SNP, INDEL, DELETION,
                                          INSERTION)
@@ -72,10 +71,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         the genome'''
 
         filter_id = 'uniq_contiguous'
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+'
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
 
         genomic_db = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         distance = 60

@@ -24,7 +24,10 @@ from StringIO import StringIO
 
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature, FeatureLocation
 from franklin.seq.seq_stats import (do_annotation_statistics,
-                                    _location_to_orf)
+                                    _location_to_orf,
+                                    _nucleotide_freq_per_position,
+    create_nucleotide_freq_histogram)
+from tempfile import NamedTemporaryFile
 
 
 class SeqStatsTest(unittest.TestCase):
@@ -134,6 +137,38 @@ Sequences with microsatellites: 2
 
         feat = SeqFeature(FeatureLocation(25, 25), type='snv')
         assert _location_to_orf([orf], feat) == 'utr3'
+
+    @staticmethod
+    def test_nucl_per_position():
+        'It calculates the frec of each nucleotide per position'
+        seqs = []
+        seqs.append(SeqWithQuality(Seq('ACTG')))
+        seqs.append(SeqWithQuality(Seq('ACTG')))
+        seqs.append(SeqWithQuality(Seq('CATG')))
+        seqs.append(SeqWithQuality(Seq('CATGZ')))
+        seqs.append(SeqWithQuality(Seq('ACTT')))
+        seqs.append(SeqWithQuality(Seq('ACTTZT')))
+
+        fhand = NamedTemporaryFile(suffix='.svg')
+        stats = create_nucleotide_freq_histogram(seqs, fhand, title='test')
+
+        assert stats == {
+              'A': [0.66666666666666663, 0.33333333333333331, 0.0, 0.0, 0, 0.0],
+              'C': [0.33333333333333331, 0.66666666666666663, 0.0, 0.0, 0, 0.0],
+              'T': [0.0, 0.0, 1.0, 0.33333333333333331, 0, 1.0],
+              'G': [0.0, 0.0, 0.0, 0.66666666666666663, 0, 0.0]}
+        fhand.flush()
+        svg = open(fhand.name, 'r').read()
+        assert '<!-- Created with matplotlib (http://matplotlib' in svg
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

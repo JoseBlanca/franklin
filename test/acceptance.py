@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'snvs'
+    #choice = 'cleaning'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -144,7 +144,6 @@ Sequences with ORF: 4
 Number of ORFs: 4
 Sequences with intron: 2
 Number of introns: 3'''
-        print result
         assert expected in result
 
     if not analysis_dir:

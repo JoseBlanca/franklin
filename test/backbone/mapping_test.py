@@ -26,7 +26,6 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
-from franklin.utils.cmd_utils import BLAST_TOOL
 THREADS = 2
 
 class TestBackboneMapping(unittest.TestCase):
@@ -37,10 +36,7 @@ class TestBackboneMapping(unittest.TestCase):
         'We can map the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        if BLAST_TOOL == 'blast':
-            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
-        else:
-            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
                                   'genomic_seqs_fpath':blastdb_seq},
@@ -230,10 +226,7 @@ class TestBackboneMapping(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
 
-        if BLAST_TOOL == 'blast':
-            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes')
-        else:
-            blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
 
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
