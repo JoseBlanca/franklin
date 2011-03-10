@@ -26,7 +26,6 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DisposableFile
 import subprocess, signal, tempfile, os, itertools
 import StringIO, logging, copy, shutil
 
-BLAST_TOOL = 'blast+'
 
 def _locate_file(fpath):
     cmd = ['locate', fpath]
@@ -74,6 +73,39 @@ def guess_jar_dir(jar_name, java_conf=None):
 STDOUT = 'stdout'
 ARGUMENT = 'argument'
 STDIN = 'stdin'
+
+BLASTPLUS_DEF = {'binary':'',
+            'parameters': {'database' :{'option': '-db'},
+                   'expect'   :{'default': 0.0001,'option': '-evalue'},
+                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
+                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
+                   'alig_format': {'default':5, 'option':'-outfmt'},
+                   'subject':{'option':'-subject'}
+                            },
+            'output':{'blast+':{'option':STDOUT}},
+            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
+            'ignore_stderrs': ['Karlin-Altschul']}
+
+BLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
+BLASTN_DEF['binary'] = 'blastn'
+BLASTN_DEF['output'] = {'blastn':{'option':STDOUT}}
+
+BLASTP_DEF = copy.deepcopy(BLASTPLUS_DEF)
+BLASTP_DEF['binary'] = 'blastp'
+BLASTP_DEF['output'] = {'blastp':{'option':STDOUT}}
+
+BLASTX_DEF = copy.deepcopy(BLASTPLUS_DEF)
+BLASTX_DEF['binary'] = 'blastx'
+BLASTX_DEF['output'] = {'blastx':{'option':STDOUT}}
+
+TBLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
+TBLASTN_DEF['binary'] = 'tblastn'
+TBLASTN_DEF['output'] = {'tblastn':{'option':STDOUT}}
+
+TBLASTX_DEF = copy.deepcopy(BLASTPLUS_DEF)
+TBLASTX_DEF['binary'] = 'tblastx'
+TBLASTX_DEF['output'] = {'tblastx':{'option':STDOUT}}
+
 RUNNER_DEFINITIONS = {
     'blast': {'binary':'blast2',
               'parameters': {'database' :{'required':True, 'option': '-d'},
@@ -88,19 +120,11 @@ RUNNER_DEFINITIONS = {
               'input':{'sequence':{'option':'-i', 'files_format':['fasta']}},
               'ignore_stderrs': ['Karlin-Altschul']
               },
-    'blast+': {'binary':'blast+',
-            'parameters': {'database' :{'option': '-db'},
-                   'program'  :{'required':True,  'option':'-p'},
-                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-                  'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
-                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
-                   'alig_format': {'default':5, 'option':'-outfmt'},
-                   'subject':{'option':'-subject'}
-                            },
-            'output':{'blast+':{'option':STDOUT}},
-            'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
-            'ignore_stderrs': ['Karlin-Altschul']
-              },
+    'blastn':BLASTN_DEF,
+    'blastp':BLASTP_DEF,
+    'blastx':BLASTX_DEF,
+    'tblastn':TBLASTN_DEF,
+    'tblastx':TBLASTX_DEF,
     'water': {'binary':'water',
             'parameters': {'subject' :{'required':True, 'option': '-bsequence'},
                            'gapopen'   :{'default': 10.0,'option': '-gapopen'},
@@ -124,7 +148,9 @@ RUNNER_DEFINITIONS = {
                     },
     'mdust':{'binary':'mdust',
              'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
-                          'cut_off'    :{'default':'25', 'option':'-v' }},
+                          'cut_off'    :{'default':'25', 'option':'-v' },
+                          'show_masked_segments':{'default':None,
+                                                  'option':'-c'}},
              'output':{'sequence':{'option':STDOUT}},
              'input':{'sequence':{'option':ARGUMENT, 'arg_before_params':True,
                                   'files_format':['fasta']}}

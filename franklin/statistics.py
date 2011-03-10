@@ -21,6 +21,10 @@ import itertools, tempfile, sys, random, math, os
 from os.path import splitext
 from array import array
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import mlab
+
 try:
     import numpy
 except ImportError:
@@ -226,73 +230,14 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
 
     return (distrib, bin_edges)
 
-def _import_matplotlib(output):
-    'It imports the matplotlib library'
-    #in some circunstances matplot lib could generate this error
-    #Failed to create %s/.matplotlib; consider setting MPLCONFIGDIR to a
-    #writable directory for matplotlib configuration data
-    #in that case we don't know how to use matplotlib, it would require
-    #to set the MPLCONFIGDIR variable, but we can't do that in the
-    #current shell, so the matplotlib greatness wouldn't be available
-    #in those occasions
-    backend = 'agg'
-    warn = False
-    modules = sys.modules
-    if 'matplotlib' not in modules:
-        import matplotlib
-    else:
-        matplotlib = modules['matplotlib']
-        matplotlib.use(backend, warn)
-    if 'matplotlib.pyplot' not in modules:
-        from matplotlib import pyplot
-    else:
-        pyplot = modules['matplotlib.pyplot']
-
-    #if output in ['png' or 'show']:
-    #    backend = 'agg'
-    #elif output == 'svg':
-    #    backend = 'svg'
-    #else:
-    #    backend = 'agg'
-    pyplot.switch_backend(backend)
-
-def _import_mlab():
-    if 'matplotlib.mlab' not in sys.modules.keys():
-        import matplotlib.mlab
-
 def _guess_output_for_matplotlib(fhand):
     'Given an fhand it guesses if we need png or svg'
+    output = None
     if fhand is not None:
         output = splitext(fhand.name)[-1].strip('.')
-        if not output:
-            output = 'png'
-    else:
-        output = 'show'
+    if not output:
+        output = 'png'
     return output
-
-def _get_figure(plot_format, fhand):
-    'It returns a pyplot figure'
-    try:
-        _import_matplotlib(plot_format)
-        plt = sys.modules['matplotlib.pyplot']
-        fig = plt.figure()
-    except Exception:
-        _remove_fhand(fhand)
-        raise
-    return fig, plt
-
-def _show_image(fhand, plot_format):
-    'It shows or draws an image'
-    plt = sys.modules['matplotlib.pyplot']
-    try:
-        if fhand is None:
-            plt.show()
-        else:
-            plt.savefig(fhand, format=plot_format)
-    except Exception:
-        _remove_fhand(fhand)
-        raise
-    plt.close('all')
 
 def _remove_fhand(fhand):
     'It removes the given file'
@@ -307,7 +252,8 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
 
     plot_format = _guess_output_for_matplotlib(fhand)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
     if xlabel:
@@ -344,9 +290,11 @@ def draw_histogram(values, bin_edges, title=None, xlabel= None, ylabel=None,
     #we don't want to clutter the plot
     xticks_pos = xticks_pos[::2]
     xticks_labels = xticks_labels[::2]
-    plt.xticks(xticks_pos, xticks_labels)
+    axes.set_xticks(xticks_pos)
+    axes.set_xticklabels(xticks_labels)
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 def _color_by_index(index, kind='str'):
     'Given an int index it returns a color'
@@ -392,7 +340,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
 
     plot_format = _guess_output_for_matplotlib(fhand)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
     if xlabel:
@@ -459,7 +408,76 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
                      marker=scat['shape'], s=60)
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
+
+def draw_stacked_columns(values, colors, title=None, xlabel= None,
+                        ylabel=None, fhand=None, xvalues=None):
+    '''It draws a stacked column.
+
+    Input: Values is a dictionary with list of values.
+        values = {'A':[1,2,1,2,3,4,3],
+                  'T':[2,2,1,2,3,4,3],
+                  ...}
+        Colors is a dictionary with how we want to draw the columns, same keys
+        as values:
+        colors = {'A':'c',
+                  'T':'g',
+                  ...}
+    '''
+    plot_format = _guess_output_for_matplotlib(fhand)
+
+    fig = Figure()
+    canvas = FigureCanvas(fig)
+
+    axes = fig.add_subplot(111)
+    if xlabel:
+        axes.set_xlabel(xlabel)
+    if ylabel:
+        axes.set_ylabel(ylabel)
+    if title:
+        axes.set_title(title)
+
+
+    if not xvalues:
+        xvalues = range(len(values.values()[0]))
+
+    bottom_values = None
+    prev_values   = None
+    bars  = []
+    names = []
+    for name, values in values.items():
+        if prev_values:
+            bottom_values = _sum_lists(bottom_values, prev_values)
+
+        #print bottom_values
+        bar_ = axes.bar(xvalues, values, bottom=bottom_values, align='center',
+                        color=colors[name])
+        bars.append(bar_[0])
+        names.append(name)
+
+        prev_values = values
+
+    axes.set_xticks(xvalues)
+    axes.legend(bars, names, bbox_to_anchor=(0.95, 1), loc=2)
+    axes.set_ylim(0, 1)
+
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
+
+def _sum_lists(list1, list2):
+    'It sums the values of two lists, it sums the values for each position'
+    if list1 is None:
+        return list2
+    if list2 is None:
+        return list1
+    if len(list1) != len(list2):
+        raise ValueError('Lists must be same length')
+    new_list = []
+    for values in zip(list1, list2):
+        new_list.append(sum(values))
+    return new_list
+
 
 def _float_to_str(num, precision=2):
     'It returns a float representation'
@@ -507,7 +525,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     if stats_fhand:
         _calculate_boxplot_percentiles(numpy_vects, stats_fhand, xlabels)
 
-    fig, plt = _get_figure(plot_format, fhand)
+    fig = Figure()
+    canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
 
@@ -528,7 +547,8 @@ def draw_boxplot(vectors_list, fhand=None, title=None, xlabel= None,
     axes.boxplot(numpy_vects, notch=1, sym='')
     axes.set_xticklabels([str(lab)for lab in xlabels], rotation='vertical')
 
-    _show_image(fhand, plot_format)
+    canvas.print_figure(fhand, format=plot_format)
+    fhand.flush()
 
 MIN_FREE_MEMORY_PERCENT = 10
 MEMORY_CHECK_CYCLES = 10000
@@ -552,7 +572,6 @@ def _calculate_percentiles(numbers, percents):
     if not numbers.any():
         raise ValueError('No data to calculate percentiles')
 
-    _import_mlab()
     mlab = sys.modules['matplotlib.mlab']
 
     percentiles = mlab.prctile(numbers, percents)
@@ -634,16 +653,6 @@ class CachedArray(object):
         'It returns the percentiles given a percent list'
         if not self._sample:
             raise ValueError('No data to calculate percentiles')
-
-        modules = sys.modules
-        if 'matplotlib' not in modules.keys():
-            import matplotlib
-            matplotlib.use('AGG')
-
-        if 'matplotlib.mlab' not in modules.keys():
-            import matplotlib.mlab as mlab
-        else:
-            mlab = modules['matplotlib.mlab']
 
         vect = numpy.ravel(self.sample)
         percentiles = mlab.prctile(vect, percents)

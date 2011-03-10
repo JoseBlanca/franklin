@@ -21,7 +21,7 @@ can also return None if no sequence is left after the filtering process.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.utils.cmd_utils import create_runner, BLAST_TOOL
+from franklin.utils.cmd_utils import create_runner
 from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
@@ -144,14 +144,14 @@ def create_comtaminant_filter(contaminant_db, environment=None):
      with the database
     '''
     # This filter are bases in seqclean defaults
-    parameters     =  {'database':contaminant_db, 'program':'blastn' }
+    parameters     =  {'database':contaminant_db}
     match_filters  = [{'kind'          : 'min_scores',
                       'score_key'      : 'similarity',
                       'min_score_value': 96},
                       {'kind'          : 'min_length',
                        'min_length_query_%' :60 }]
     result_filters = [{'kind': 'max_num_matches', 'value':0}]
-    match_filter = create_aligner_filter(aligner_cmd=BLAST_TOOL,
+    match_filter = create_aligner_filter(aligner_cmd='blastn',
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
                                     result_filters=result_filters,
@@ -163,27 +163,27 @@ def create_comtaminant_filter(contaminant_db, environment=None):
     return filter_
 
 def create_solid_quality_filter(length=10, threshold=15, call_missing=True):
-    '''It creates a filter that removes the sequences looking in the quality of 
-    the sequence. 
+    '''It creates a filter that removes the sequences looking in the quality of
+    the sequence.
     We perform two kind of filters.
-        1.- We look into the first 10 nucleotides and if the mean is less than 
+        1.- We look into the first 10 nucleotides and if the mean is less than
         the threshold, we filetr it.
-        2.- It the option is given we remove the sequences with one colorcall 
+        2.- It the option is given we remove the sequences with one colorcall
         missing
     '''
-    
+
     def solid_quality_filter(sequence):
         'The filter'
         if sequence is None:
             return False
         quality = sequence.qual
-        
+
         if call_missing:
             if len(filter(lambda x: x==0, quality)) >=2:
                 return None
-        
+
         mean_qual = sum(quality[:length+1]) / float(length)
-        
+
         if mean_qual >= threshold:
             return True
         else:

@@ -556,9 +556,11 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
 
 def get_alignment_parser(kind):
     '''It returns a parser depending of the aligner kind '''
-    parsers = {'blast':BlastParser, 'exonerate':ExonerateParser,
-               'blast+':BlastParser}
-    parser = parsers[kind]
+    if 'blast' in kind:
+        parser = BlastParser
+    else:
+        parsers = {'exonerate':ExonerateParser}
+        parser = parsers[kind]
     return parser
 
 class FilteredAlignmentResults(object):

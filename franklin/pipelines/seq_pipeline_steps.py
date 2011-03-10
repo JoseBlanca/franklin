@@ -22,15 +22,14 @@ Created on 03/12/2009
 from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                     create_striper_by_quality,
                                     create_striper_by_quality_lucy,
-                                    create_striper_by_quality_lucy2,
                                     create_striper_by_quality_trimpoly,
                                     create_masker_for_polia,
                                     create_masker_for_low_complexity,
                                     create_word_striper_by_alignment,
-                                    create_edge_stripper, create_upper_mapper)
+                                    create_edge_stripper, create_upper_mapper,
+    create_seq_trim_and_masker)
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
-from franklin.utils.cmd_utils import BLAST_TOOL
 
 up_case = {'function':create_upper_mapper,
            'arguments':{},
@@ -40,7 +39,7 @@ up_case = {'function':create_upper_mapper,
 
 #pylint:disable-msg=C0103
 remove_vectors = {'function':create_vector_striper_by_alignment,
-                  'arguments':{'vectors':None, 'aligner':BLAST_TOOL},
+                  'arguments':{'vectors':None, 'aligner':'blastn'},
                   'type': 'mapper',
                   'name': 'remove_vectors',
                   'comment': 'Remove vector using vector db'}
@@ -61,12 +60,6 @@ strip_quality = {'function': create_striper_by_quality,
                       'comment':'Strip low quality with our algorithm'}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
-                      'arguments':{'vector':None,'splice_site':None },
-                      'type':'mapper',
-                      'name':'strip_lucy',
-                      'comment':'Strip low quality with lucy'}
-
-strip_quality_lucy2 = {'function': create_striper_by_quality_lucy2,
                       'arguments':{},
                       'type':'bulk_processor',
                       'name':'strip_lucy',
@@ -96,6 +89,11 @@ filter_short_seqs = {'function': create_length_filter,
                      'type':'filter' ,
                      'name':'remove_short',
                      'comment': 'Remove seq shorter than X nt'}
+sequence_trimmer = {'function': create_seq_trim_and_masker,
+                     'arguments':{},
+                     'type':'mapper' ,
+                     'name':'trim_and_mask_seq',
+                     'comment': 'Trim and mask sequences'}
 
 
 edge_remover = {'function':create_edge_stripper,
@@ -124,28 +122,30 @@ solid_quality = {'function': create_solid_quality_filter,
 ################################################################################
 
 SEQPIPELINES = {
-    'sanger_with_qual'   : [up_case, remove_adaptors, strip_quality_lucy2,
+    'sanger_with_qual'   : [up_case, remove_adaptors, strip_quality_lucy,
                             remove_vectors, mask_low_complexity,
                             remove_short_adaptors, edge_remover,
-                            filter_short_seqs],
+                            sequence_trimmer, filter_short_seqs],
 
     'sanger_without_qual': [up_case, remove_vectors, strip_quality_by_n,
                             mask_low_complexity, remove_short_adaptors,
-                            edge_remover, filter_short_seqs],
+                            edge_remover, sequence_trimmer, filter_short_seqs],
 
     'solexa'             : [up_case, remove_adaptors, strip_quality,
+                            sequence_trimmer, filter_short_seqs],
+
+    'adaptors'           : [remove_adaptors, sequence_trimmer,
                             filter_short_seqs],
 
-    'adaptors'           : [remove_adaptors, filter_short_seqs],
+    'mask_dust'          : [mask_polia, mask_low_complexity, sequence_trimmer],
 
-    'mask_dust'          : [mask_polia, mask_low_complexity],
+    'word_masker'        : [remove_short_adaptors, sequence_trimmer,
+                            filter_short_seqs],
 
-    'word_masker'        : [remove_short_adaptors, filter_short_seqs],
-
-    'solid'              : [solid_quality, filter_short_seqs]}
+    'solid'              : [solid_quality, sequence_trimmer, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
-             strip_quality_lucy2, strip_quality_by_n, strip_quality_by_n,
-             mask_polia, mask_low_complexity,
+             strip_quality_by_n, strip_quality_by_n,
+             mask_polia, mask_low_complexity, sequence_trimmer,
              filter_short_seqs, edge_remover, remove_short_adaptors, up_case,
              solid_quality]

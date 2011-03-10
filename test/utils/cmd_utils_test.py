@@ -22,8 +22,7 @@ This module provides utilities to run external commands into franklin
 import unittest
 
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
-                                      _which_binary, b2gpipe_runner, call,
-                                      BLAST_TOOL)
+                                      _which_binary, b2gpipe_runner, call)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import DATA_DIR
 import os, tempfile
@@ -79,14 +78,13 @@ class RunnerFactorytest(unittest.TestCase):
     def test_create_blast_runner():
         'We can create a runner class for blast'
         blastpath = os.path.join(DATA_DIR, 'blast')
-        run_blast_for_seq = create_runner(tool=BLAST_TOOL,
-                                    parameters={'database':'arabidopsis_genes+',
-                                                'program':'blastn'},
-                                          environment={'BLASTDB':blastpath})
+        run_blast_for_seq = create_runner(tool='blastn',
+                                parameters={'database':'arabidopsis_genes+'},
+                                environment={'BLASTDB':blastpath})
         seq = 'AACTACGTAGCTATGCTGATGCTAGTCTAGCTAGTCGTAGTCTGATCGTAGTCAGTT'
         seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
-        result = run_blast_for_seq(seq1)[BLAST_TOOL]
+        result = run_blast_for_seq(seq1)['blastn']
         assert result.read()[0] == '<'
     @staticmethod
     def test_create_mdust_runner():
@@ -96,7 +94,7 @@ class RunnerFactorytest(unittest.TestCase):
         seq = Seq(seq)
         seq1 = SeqWithQuality(seq)
         result = run_mdust__for_seq(seq1)['sequence']
-        assert result.read()[-10:-1] == 'aaaaaaaaa'
+        assert "57\t31\t57" in  result.read()
     @staticmethod
     def test_create_lucy_runner():
         'We can create a runner class for lucy'

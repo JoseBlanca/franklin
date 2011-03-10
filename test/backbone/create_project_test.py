@@ -247,12 +247,13 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
         cleaned_454 = join(cleaned_dir, os.path.basename(fpath_454))
         assert exists(cleaned_454)
         seqs = list(seqs_in_file(open(cleaned_454)))
-        seq = seqs[0].seq
         # It means thar the adaptor has been removed
+        seq = seqs[0].seq
         assert 'GGTTCAAGGTTTGAGAAAGGATGGGAAG' not in seq
+
         seq = seqs[2].seq
         # It means that the starting word has been removed
-        assert  seq.startswith('CAAGATTCTTCCCACAT')
+        assert  seq.startswith('TTCCAAGATTCTTCCCACAT')
 
         # solid
         cleaned_solid =  join(cleaned_dir, os.path.basename(fpath_solid))
@@ -353,6 +354,10 @@ Sequence qualities variance: 8.19
                              'pl_illumina.lb_no_raw' + '.qual.boxplot.dat')
         exp = 'distrib\tmean\tstd_deviation\t1st_quartile\tmedian\t3rd_qualtile'
         assert exp in open(boxplot_fpath).read()
+        freq_nucl_fpath = join(clean_stats_dir, 'pl_454.lb_a.freq_position.svg')
+        nucl_freq =open(freq_nucl_fpath).read()
+        assert '<filter id="colorAdd">' in nucl_freq
+
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
@@ -375,5 +380,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
+    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis']
     unittest.main()

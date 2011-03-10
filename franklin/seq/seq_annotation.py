@@ -26,7 +26,7 @@ Created on 15/01/2010
 from xml.parsers.expat import ExpatError
 from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation
-from Bio.Alphabet import generic_dna, generic_protein, IUPAC
+from Bio.Alphabet import generic_dna, generic_protein
 
 from franklin.alignment_search_result import (BlastParser,
                                               FilteredAlignmentResults)
@@ -52,7 +52,8 @@ def create_ortholog_annotator(blast, reverse_blast, species):
 
     #we index the orthologs by the first one
     orthologs = {}
-    for ortholog in get_orthologs(blast_fhand, reverse_blast_fhand, blast_subj_def_as_acc,
+    for ortholog in get_orthologs(blast_fhand, reverse_blast_fhand,
+                                  blast_subj_def_as_acc,
                                   reverse_blast_subj_def_as_acc):
         if ortholog[0] not in orthologs:
             orthologs[ortholog[0]] = [ortholog[1]]

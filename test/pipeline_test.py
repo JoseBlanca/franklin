@@ -26,7 +26,6 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
                                          seq_pipeline_runner,
                                          _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
-from franklin.utils.cmd_utils import BLAST_TOOL
 from franklin.seq.writers import SequenceWriter
 
 from franklin.utils.misc_utils import DATA_DIR
@@ -56,10 +55,8 @@ class PipelineTests(unittest.TestCase):
     def test_configure_pipeline(self):
         'It tests configure pipeline'
         pipeline = 'sanger_with_qual'
-        if BLAST_TOOL == 'blast+':
-            Univec = 'Univec+'
-        else:
-            Univec = 'Univec'
+        Univec = 'Univec+'
+
         configuration = {'remove_vectors': {'vectors':Univec},
                          'remove_adaptors':{'vectors':'hola'}}
         pipeline = configure_pipeline(pipeline, configuration)
@@ -85,10 +82,7 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
 
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+'
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
 
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
@@ -113,10 +107,7 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+'
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
@@ -145,10 +136,7 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors = NamedTemporaryFile()
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
-        if BLAST_TOOL == 'blast+':
-            arabidopsis_genes = 'arabidopsis_genes+'
-        else:
-            arabidopsis_genes = 'arabidopsis_genes'
+        arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'vectors':fhand_adaptors.name}}
@@ -169,5 +157,5 @@ class PipelineTests(unittest.TestCase):
         assert 'mdust' in result_seq
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    #import sys;sys.argv = ['', 'PipelineTests.test_seq_pipeline_parallel_run']
     unittest.main()

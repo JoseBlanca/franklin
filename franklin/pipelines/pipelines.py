@@ -152,11 +152,6 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     #are we multiprocessing?
     functs = _get_func_tools(processes)
 
-    # List of temporary files created by the bulk processors.
-    # we need to keep them until the analysis is done because some seq_iters
-    # may depend on them
-    temp_bulk_files = []
-
     #now use use the cleaner functions using the mapper functions
     for analysis_step in pipeline_steps:
         step_name = _get_name_in_config(analysis_step)
@@ -167,14 +162,12 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
         elif type_ == 'filter':
             filtered_items = functs['filter'](cleaner_function, items)
         elif type_ == 'bulk_processor':
-            filtered_items, fhand_outs = cleaner_function(items)
-            temp_bulk_files.append(fhand_outs)
+            filtered_items = cleaner_function(items)
         items = filtered_items
 
         msg = "Analysis step prepared: %s" % analysis_step['comment']
         logging.info(msg)
 
-    temp_bulk_files = None
     logging.info('Done!')
 
     return items

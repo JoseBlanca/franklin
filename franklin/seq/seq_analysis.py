@@ -21,13 +21,12 @@ Created on 26/11/2009
 
 import re
 
-from franklin.utils.cmd_utils import create_runner, call, BLAST_TOOL
+from franklin.utils.cmd_utils import create_runner, call
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
 from franklin.alignment_search_result import (FilteredAlignmentResults,
                                             get_alignment_parser)
 from franklin.alignment_search_result import BlastParser
-from tempfile import NamedTemporaryFile
 
 def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
                   sub2_def_as_acc=None):
@@ -138,16 +137,16 @@ def est2genome_parser(output):
 
 def look_for_similar_sequences(sequence, database, blast_program, filters=None):
     'It return a list with the similar sequences in the database'
-    parameters = {'database': database, 'program':blast_program}
+    parameters = {'database': database}
 
-    blast_runner = create_runner(tool=BLAST_TOOL, parameters=parameters)
-    blast_fhand  = blast_runner(sequence)[BLAST_TOOL]
+    blast_runner = create_runner(tool=blast_program, parameters=parameters)
+    blast_fhand  = blast_runner(sequence)[blast_program]
     return similar_sequences_for_blast(blast_fhand, filters=filters)
 
 def similar_sequences_for_blast(blast_fhand, filters=None):
     'It look fro similar sequences ina blast result'
     #now we parse the blast
-    blast_parser = get_alignment_parser(BLAST_TOOL)
+    blast_parser = get_alignment_parser('blast+')
     blast_result = blast_parser(blast_fhand)
 
     # We filter the results with appropiate  filters
