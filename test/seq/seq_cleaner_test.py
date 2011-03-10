@@ -39,7 +39,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
                                 create_word_striper_by_alignment,
                                 create_upper_mapper,
                                 create_seq_trim_and_masker,
-                                _mask_sequence, TRIMMING_RECOMENDATIONS,
+                                _mask_sequence, TRIMMING_RECOMMENDATIONS,
                                 _get_all_segments,
                                 _get_non_matched_from_matched_locations)
 
@@ -528,9 +528,9 @@ class SeqSplitterTests(unittest.TestCase):
         'It can cut using trimming recomendations'
         seq1 = 'gggtctcatcatcaggg'.upper()
         seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
-                             annotations={TRIMMING_RECOMENDATIONS:{}})
+                             annotations={TRIMMING_RECOMMENDATIONS:{}})
 
-        trim_rec = seq.annotations[TRIMMING_RECOMENDATIONS]
+        trim_rec = seq.annotations[TRIMMING_RECOMMENDATIONS]
         seq_trimmer = create_seq_trim_and_masker()
 
         trim_rec['vector']  = [(0,3), (8, 12)]
@@ -549,7 +549,8 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq2.seq == 'ggtCtcA'
         assert 'vector' not in trim_rec
         assert 'quality' not in trim_rec
-        assert 'mask' not in trim_rec
+        assert trim_rec['mask'] == [(0, 2), (4, 5)]
+
 
         seq_trimmer = create_seq_trim_and_masker(mask=False)
         trim_rec['vector']  = [(0, 0), (8, 12)]
@@ -568,11 +569,23 @@ class SeqSplitterTests(unittest.TestCase):
     def test_sequence_masker():
         'It test the sequence masker'
         seq1 = 'ATGTGATGATGATA'
-        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
-                             annotations={'trimming-recomendations':{}})
         segments = [(0, 5) , (9, len(seq1))]
-        seq = _mask_sequence(seq, segments)
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
+                             annotations={TRIMMING_RECOMMENDATIONS:
+                                                            {'mask':segments}})
+
+        seq = _mask_sequence(seq)
         assert str(seq.seq) == 'atgtgaTGAtgata'
+
+
+        seq1 = 'ATGTGATGATGATA'
+        segments = [(1, 3)]
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
+                             annotations={TRIMMING_RECOMMENDATIONS:
+                                                            {'mask':segments}})
+        seq = _mask_sequence(seq)
+        assert seq.seq == 'AtgtGATGATGATA'
+
 
 class SegmentsTests(unittest.TestCase):
     'Here we test seq segments functions'

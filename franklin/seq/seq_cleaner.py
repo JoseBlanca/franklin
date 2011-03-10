@@ -21,7 +21,7 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os, re
+import os, re, copy
 from itertools import tee
 from Bio import SeqIO
 import franklin
@@ -36,20 +36,20 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 #The adaptors shorter than this length can not be processed by blast or
 #exonerate, they should be processed by the word remover function
 MIN_LONG_ADAPTOR_LENGTH = 20
-TRIMMING_RECOMENDATIONS = 'trimming_recommendations'
+TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'
 
 def _add_trim_segments(segments, sequence, vector=True, trim=True):
     'It adds a segments or segments to the trimming recomendation in annotation'
     if not segments:
         return
-    if TRIMMING_RECOMENDATIONS not in sequence.annotations:
-        sequence.annotations[TRIMMING_RECOMENDATIONS] = {'vector':[],
+    if TRIMMING_RECOMMENDATIONS not in sequence.annotations:
+        sequence.annotations[TRIMMING_RECOMMENDATIONS] = {'vector':[],
                                                            'quality':[],
                                                            'mask':[]}
 
     if isinstance(segments, tuple):
         segments = [segments]
-    trim_rec = sequence.annotations[TRIMMING_RECOMENDATIONS]
+    trim_rec = sequence.annotations[TRIMMING_RECOMMENDATIONS]
     if vector and trim:
         trim_rec['vector'].extend(segments)
     elif not vector and trim:
@@ -57,23 +57,38 @@ def _add_trim_segments(segments, sequence, vector=True, trim=True):
     elif not trim:
         trim_rec['mask'].extend(segments)
 
-def _mask_sequence(sequence, segments):
+def _mask_sequence(sequence):
     'It mask the given segments of the sequence'
+    try:
+        segments = sequence.annotations[TRIMMING_RECOMMENDATIONS].get('mask',
+                                                                      [])
+    except KeyError:
+        return sequence
+
     if not segments:
         return sequence
+
     segments = _get_all_segments(segments, len(sequence))
     seq = str(sequence.seq)
     new_seq = ''
     for segment in segments:
         start = segment[0][0]
-        end   = 0 if segment[0][1] == 0 else  segment[0][1] + 1
+        end   = segment[0][1] + 1
         seq_  = seq[start:end]
 
         if segment[1]:
             seq_ = seq_.lower()
         new_seq += seq_
+#    try:
+#        seq = copy_seq_with_quality(sequence, seq=Seq(new_seq,
+#                                                       sequence.seq.alphabet))
+#    except TypeError:
+#        print sequence.name
+#        raw_input()
+#        raise
+#    return seq
     return copy_seq_with_quality(sequence, seq=Seq(new_seq,
-                                                   sequence.seq.alphabet))
+                                                       sequence.seq.alphabet))
 
 def create_seq_trim_and_masker(mask=True, trim=True):
     'It actually trims the sequence taking into account trimming recomendations'
@@ -81,14 +96,12 @@ def create_seq_trim_and_masker(mask=True, trim=True):
         'It trims the sequences'
         if not sequence:
             return None
-        if not TRIMMING_RECOMENDATIONS in sequence.annotations:
+        if not TRIMMING_RECOMMENDATIONS in sequence.annotations:
             return sequence
-        trim_rec = sequence.annotations[TRIMMING_RECOMENDATIONS]
+        trim_rec = sequence.annotations[TRIMMING_RECOMMENDATIONS]
 
         if mask:
-            sequence = _mask_sequence(sequence, trim_rec.get('mask', []))
-            if 'mask' in trim_rec:
-                del(trim_rec['mask'])
+            sequence = _mask_sequence(sequence)
 
         trim_locs = trim_rec.get('vector', []) + trim_rec.get('quality', [])
         if trim and trim_locs:
@@ -99,13 +112,13 @@ def create_seq_trim_and_masker(mask=True, trim=True):
                 del(trim_rec['quality'])
             if 'vector' in trim_rec:
                 del(trim_rec['vector'])
-            if not mask and 'mask' in trim_rec:
+            if 'mask' in trim_rec:
                 new_mask_segments = []
                 for start, end in trim_rec['mask']:
                     start = start - trim_limits[0] if start - trim_limits[0] > 0 else 0
                     new_mask_segments.append((start, end - trim_limits[0]))
                 trim_rec['mask'] = new_mask_segments
-        sequence.annotations[TRIMMING_RECOMENDATIONS] = trim_rec
+        sequence.annotations[TRIMMING_RECOMMENDATIONS] = trim_rec
         return sequence
 
     return sequence_trimmer
@@ -678,18 +691,19 @@ def _get_all_segments(segments, seq_len):
     output: ---+----+++++++----
 
     '''
-    if not segments:
+    segments_ = copy.deepcopy(segments)
+    if not segments_:
         return [((0, seq_len - 1), False)]
 
     all_segments = []
     #If the first segment doesn't start at zero we create a new one
-    if segments[0][0] == 0:
-        start = segments[0][1] + 1
-        all_segments.append((segments.pop(0), True))
+    if segments_[0][0] == 0:
+        start = segments_[0][1] + 1
+        all_segments.append((segments_.pop(0), True))
     else:
         start = 0
 
-    for loc in segments:
+    for loc in segments_:
         all_segments.append(((start, loc[0] - 1), False))
         all_segments.append((loc, True))
         start = loc[1] + 1
