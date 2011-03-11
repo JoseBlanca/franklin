@@ -26,7 +26,8 @@ from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
-THREADS = 2
+from franklin.sam import create_bam_index
+THREADS = None
 
 class TestBackboneMapping(unittest.TestCase):
     'It tests the backbone'
@@ -297,6 +298,41 @@ class TestBackboneMapping(unittest.TestCase):
 
         test_dir.close()
 
+    @staticmethod
+    def test_snv_annot_without_rg():
+        'It tests that we can do snv calling with a bam without rg info'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        configuration = {'Snvs':{'unknown_rg_platform':'sanger'},
+                         'General_settings':{'threads':THREADS}}
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+
+
+        project_dir = join(test_dir.name, project_name)
+        #the reference
+        reference_dir = join(project_dir, 'mapping/reference')
+        os.makedirs(reference_dir)
+        reference_fpath = join(reference_dir, 'reference.fasta')
+        out = open(reference_fpath, 'w')
+        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+            out.write(line)
+
+        bams_dir = join(project_dir, 'mapping', 'bams')
+        os.makedirs(bams_dir)
+        bam_fpath = join(bams_dir, 'merged.0.bam')
+
+        shutil.copy(join(DATA_DIR, 'merged.0.bam'), bam_fpath)
+        create_bam_index(bam_fpath)
+
+        annot_input_dir = join(project_dir, 'annotations', 'input')
+        os.makedirs(annot_input_dir)
+        os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
+        do_analysis(project_settings=settings_path, kind='annotate_snvs', silent=True)
+        # here we only check that it doesn't fail.  The bam has not readgroup
+        #and the annotator takes the platform info from the configuration
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_color']
+    #import sys;sys.argv = ['', 'TestBackboneMapping.test_snv_annot_without_rg']
     unittest.main()
