@@ -303,7 +303,7 @@ class TestBackboneMapping(unittest.TestCase):
         'It tests that we can do snv calling with a bam without rg info'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        configuration = {'Snvs':{'unknown_rg_platform':'sanger'},
+        configuration = {'Snvs':{'default_bam_platform':'sanger'},
                          'General_settings':{'threads':THREADS}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,

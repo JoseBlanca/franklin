@@ -107,7 +107,7 @@ def _normalize_read_edge_conf(read_edge_conf):
 
 def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                  min_mapq, min_num_alleles, max_maf, read_edge_conf=None,
-                 unknown_rg_platform=None):
+                 default_bam_platform=None):
     'It yields the snv information for every snv in the given reference'
 
     min_num_alleles = int(min_num_alleles)
@@ -115,11 +115,11 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     try:
         read_groups_info = get_read_group_info(bam)
     except KeyError:
-        if unknown_rg_platform is None:
+        if default_bam_platform is None:
             msg = 'Platform is not present either in header or in '
             msg += 'configuration'
             raise ValueError(msg)
-        read_groups_info = {UNKNOWN_RG:{'PL':unknown_rg_platform}}
+        read_groups_info = {UNKNOWN_RG:{'PL':default_bam_platform}}
 
     current_deletions = {}
     reference_id = get_seq_name(reference)
@@ -372,7 +372,7 @@ def _summarize_snv(snv):
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                          min_mapq=15, min_num_alleles=1, max_maf=0.9,
-                         read_edge_conf=None, unknown_rg_platform=None):
+                         read_edge_conf=None, default_bam_platform=None):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -391,7 +391,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 min_num_alleles=min_num_alleles,
                                 max_maf=max_maf,
                                 read_edge_conf=read_edge_conf,
-                                unknown_rg_platform=unknown_rg_platform):
+                                default_bam_platform=default_bam_platform):
             snv = _summarize_snv(snv)
             location = snv['ref_position']
             type_ = 'snv'

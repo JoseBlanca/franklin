@@ -292,7 +292,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                 ('min_mapq', (INTEGER, 15)),
                 ('min_num_alleles', (INTEGER, 1)),
                 ('max_maf', (FLOAT, 0.9)),
-                ('unknown_rg_platform', (STRING, None)),
+                ('default_bam_platform', (STRING, None)),
                 ('edge_removal',
                          OrderedDict([
                             ('454_left', (INTEGER, None)),

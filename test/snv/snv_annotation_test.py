@@ -84,11 +84,11 @@ class TestSnvAnnotation(unittest.TestCase):
             except ValueError:
                 pass
         # now with the RG option
-        unknown_rg_platform = 'sanger'
+        default_bam_platform = 'sanger'
         annotator = create_snv_annotator(bam_fhand=bam_fhand,
                                          min_quality=30,
                                          min_num_alleles=2,
-                                        unknown_rg_platform=unknown_rg_platform)
+                                        default_bam_platform=default_bam_platform)
 
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):

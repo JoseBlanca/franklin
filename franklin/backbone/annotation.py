@@ -286,9 +286,9 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
                     param_value = None
                 configuration['snv_bam_annotator'][config_param] = param_value
 
-            if 'unknown_rg_platform' in snv_settings:
-                configuration['snv_bam_annotator']['unknown_rg_platform'] =  \
-                                             snv_settings['unknown_rg_platform']
+            if 'default_bam_platform' in snv_settings:
+                configuration['snv_bam_annotator']['default_bam_platform'] =  \
+                                             snv_settings['default_bam_platform']
 
         return self._run_annotation(pipeline=pipeline,
                                     configuration=configuration,

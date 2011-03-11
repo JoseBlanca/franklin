@@ -33,6 +33,9 @@ min_mapq
 min_num_alleles
   Usually it will be 1 or 2. If 1 the positions with only one allele different from the reference will be considered if 2 only the positions with at least 2 alleles will be considered.
 
+default_bam_platform
+  Default is None. Backbone takes platform information from the bam file. If your bam doesn't have readgroup information. You can provide the platform information using this option. Backbone needs platform information to perform the snv calling.
+
 Also a subsection edge_removal inside Snvs could be defined. The parameters in this section are used to when we want to ignore the nucleotides close to the edged of the reads. This parameters are dependent on the platform and are: 454_left, 454_right, sanger_left, sanger_right, illumina_left and illumina_right.
 
 
