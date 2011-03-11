@@ -41,7 +41,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          create_snv_annotator,
                                          UNKNOWN,
                                          variable_in_groupping,
-                                         invariant_in_groupping)
+                                         invariant_in_groupping, UNKNOWN_RG)
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -63,8 +63,40 @@ class TestSnvAnnotation(unittest.TestCase):
             seq = annotator(seq)
             assert expected == len(seq.features)
 
+    @staticmethod
+    def test_snv_annotation_without_rg():
+        'It tests the annotation of SeqRecords with snvs'
+        bam_fhand = open(os.path.join(DATA_DIR, 'samtools',
+                                      'seqs_without_rg.bam'))
+        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+
+        # this test should fail because we did not provide the read group
+        # parameters
+        annotator = create_snv_annotator(bam_fhand=bam_fhand,
+                                             min_quality=30,
+                                             min_num_alleles=2)
+
+        expected_snvs = [1, 3]
+        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
+            try:
+                seq = annotator(seq)
+                raise ValueError('test_snv_annotation_without_rg Test failed')
+            except ValueError:
+                pass
+        # now with the RG option
+        unknown_rg_platform = 'sanger'
+        annotator = create_snv_annotator(bam_fhand=bam_fhand,
+                                         min_quality=30,
+                                         min_num_alleles=2,
+                                        unknown_rg_platform=unknown_rg_platform)
+
+        expected_snvs = [1, 3]
+        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
+            seq = annotator(seq)
+            assert expected == len(seq.features)
+
     def test_snv_remove_edges(self):
-        'It test that ww do not annotate snv in the edges'
+        'It test that we do not annotate snv in the edges'
         edge_remove_settings = {'454':(30, None),
                                 'sanger':(None, None)}
 
