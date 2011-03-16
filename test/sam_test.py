@@ -30,7 +30,8 @@ from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
                           bam_distribs, sample_bam, bam_general_stats,
-                          remove_unmapped_reads)
+                          remove_unmapped_reads, get_read_group_info)
+import pysam
 
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
@@ -214,6 +215,28 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         assert 'SGN-U572743' in sam_out
         assert 'SGN-E221403' in sam_out
 
+    @staticmethod
+    def test_get_read_group_info():
+        'Tests get_read_group_info'
+        sam_sample = '''@SQ\tSN:SGN-U576692\tLN:1714
+@SQ\tSN:SGN-U572743\tLN:833
+@RG\tID:g1\tLB:g1\tSM:g1\tPL:sanger
+@RG\tID:g3\tLB:g3\tSM:g3\tPL:sanger
+SGN-E200000\t0\tSGN-U572743\t317\t226\t14M\t*\t0\t0\tGGATGATKTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
+SGN-E40000\t0\tSGN-U576692\t1416\t207\t10M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
+SGN-E40000\t20\tSGN-U576692\t1416\t207\t10M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
+'''
+        sam_fhand = NamedTemporaryFile(suffix='.sam')
+        sam_fhand.write(sam_sample)
+        sam_fhand.flush()
+        bam_fhand = NamedTemporaryFile(suffix='.bam')
+        sam2bam(sam_fhand.name, bam_fhand.name)
+        bam_fhand.flush()
+        bam = pysam.Samfile(bam_fhand.name, 'rb')
+        read_gro_i = get_read_group_info(bam)
+        assert read_gro_i == {'g3': {'LB': 'g3', 'SM': 'g3', 'PL': 'sanger'},
+                              'g1': {'LB': 'g1', 'SM': 'g1', 'PL': 'sanger'}}
+
 
 SAM = '''@SQ\tSN:SGN-U576692\tLN:1714
 @SQ\tSN:SGN-U572743\tLN:833
@@ -291,5 +314,5 @@ class SamStatsTest(unittest.TestCase):
         assert 'Secondary alignments: 1' in result
 
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamStatsTest.test_bam_distribs']
+    #import sys;sys.argv = ['', 'SamTest.test_get_read_group_info']
     unittest.main()
