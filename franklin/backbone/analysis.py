@@ -33,11 +33,17 @@ from franklin.utils.misc_utils import (VersionedPath, get_num_threads,
 
 def scrape_info_from_fname(path):
     'It guess pipeline taking into account the platform and the file format'
+    if isinstance(path, basestring):
+        fpath = path
+    else:
+        fpath = path.last_version
+
+    fhand = open(fpath)
+    fname = os.path.basename(fpath)
+
     file_info = {}
-    fhand = open(path.last_version)
     file_info['format'] = guess_seq_file_format(fhand)
     fhand.close()
-    fname = path.basename
     for item in fname.split('.'):
         key, value = item.split('_', 1)
         file_info[key] = value
