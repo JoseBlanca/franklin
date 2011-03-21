@@ -83,8 +83,6 @@ def guess_blast_program(seq_type, db_type, prefer_tblastx=False):
         blast_program = 'tblastn'
     elif seq_type == 'prot' and db_type == 'prot':
         blast_program = 'blastp'
-    else:
-        blast_program = 'tblastx'
 
     return blast_program
 
