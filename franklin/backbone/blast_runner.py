@@ -27,6 +27,7 @@ from franklin.utils.misc_utils import get_num_threads, rel_symlink
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.seqio_utils import seqio
 from tempfile import NamedTemporaryFile
+from franklin.backbone.analysis import scrape_info_from_fname
 
 LOGGER_NAME = 'franklin'
 
@@ -61,7 +62,6 @@ def _create_temp_fasta_file(fpath):
 
 def guess_blastdb_kind(blastdb):
     'it infers the kind of the blastdb'
-
     blastdir, basename_ = split(blastdb)
     for file_ in listdir(blastdir):
         if file_.startswith(basename_ + '.') and file_ != basename_ :
@@ -69,6 +69,24 @@ def guess_blastdb_kind(blastdb):
                 return 'nucl'
             elif splitext(file_)[1][1] == 'p':
                 return 'prot'
+
+def guess_blast_program(seq_type, db_type, prefer_tblastx=False):
+    'It guess the blast program to use for the given seq and db type'
+    if seq_type == 'nucl' and db_type == 'nucl':
+        if prefer_tblastx:
+            blast_program = 'tblastx'
+        else:
+            blast_program = 'blastn'
+    elif seq_type == 'nucl' and db_type == 'prot':
+        blast_program = 'blastx'
+    elif seq_type == 'prot' and db_type == 'nucl':
+        blast_program = 'tblastn'
+    elif seq_type == 'prot' and db_type == 'prot':
+        blast_program = 'blastp'
+    else:
+        blast_program = 'tblastx'
+
+    return blast_program
 
 def backbone_blast_runner(query_fpath, project_dir, blast_program,
                           blast_db=None, blast_db_seq=None, dbtype='nucl',

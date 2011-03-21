@@ -26,12 +26,13 @@ try:
     import pysam
 except ImportError:
     pass
-from franklin.backbone.analysis import Analyzer
+from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from tempfile import NamedTemporaryFile
 from franklin.pipelines.pipelines import seq_pipeline_runner
 from franklin.backbone.blast_runner import (backbone_blast_runner,
                                             make_backbone_blast_db,
-                                            guess_blastdb_kind)
+                                            guess_blastdb_kind,
+    guess_blast_program)
 from franklin.pipelines.annotation_steps import (annotate_cdna_introns,
                                                  annotate_orthologs,
                                                  annotate_with_descriptions,
@@ -158,10 +159,10 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
                 else:
                     db_kind = guess_blastdb_kind(blast_settings[database]['path'])
 
-                if db_kind == 'nucl':
-                    blast_program = 'tblastx'
-                else:
-                    blast_program = 'blastx'
+                seq_type = scrape_info_from_fname(input_.last_version)['st']
+                blast_program = guess_blast_program(seq_type, db_kind,
+                                                    prefer_tblastx=True)
+
                 blastdb = blast_settings[database]['path']
                 if 'subj_def_as_acc' in blast_settings[database]:
                     subj_def_as_acc = blast_settings[database]['subj_def_as_acc']
@@ -180,10 +181,8 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
 
                 blast = {'fpath':blast,
                          'subj_def_as_acc': subj_def_as_acc}
-                if db_kind == 'nucl':
-                    blast_program = 'tblastx'
-                else:
-                    blast_program = 'tblastn'
+                blast_program  = guess_blast_program(db_kind, seq_type,
+                                                    prefer_tblastx=True)
                 reverse_blast = backbone_blast_runner(
                                               query_fpath=blastdb_seq_fpath,
                                               project_dir=project_dir,
@@ -555,10 +554,9 @@ class AnnotateDescriptionAnalyzer(AnnotationAnalyzer):
                 else:
                     db_kind = guess_blastdb_kind(blast_settings[database]['path'])
 
-                if db_kind == 'nucl':
-                    blast_program = 'tblastx'
-                else:
-                    blast_program = 'blastx'
+                seq_type = scrape_info_from_fname(input_.last_version)['st']
+                blast_program = guess_blast_program(seq_type, db_kind,
+                                                    prefer_tblastx=True)
 
                 blastdb = blast_settings[database]['path']
                 blast = backbone_blast_runner(query_fpath=input_fpath,
@@ -696,11 +694,9 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         else:
             db_kind = guess_blastdb_kind(goblast_settings['path'])
 
-        if db_kind == 'nucl':
-            blast_program = 'tblastx'
-        else:
-            blast_program = 'blastx'
-
+        seq_type = scrape_info_from_fname(input_fpath)['st']
+        blast_program = guess_blast_program(seq_type, db_kind,
+                                            prefer_tblastx=True)
         blastdb     = goblast_settings['path']
 
         project_dir = self._project_settings['General_settings']['project_path']

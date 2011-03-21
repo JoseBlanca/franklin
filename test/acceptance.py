@@ -41,7 +41,7 @@ def test_backbone(analysis=None, analysis_dir=None):
     repository_dir = join(DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
-    #choice = 'cleaning'
+    choice = 'annotation'
     if choice in ('cleaning', None):
         original_reads = join(project_dir, 'reads/raw')
         if exists(original_reads):
@@ -136,7 +136,7 @@ SNV locations:
         run_analysis(analyses, settings_path)
 
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
-                            'tair7_cdna.txt')
+                            'tair7_cdna.st_nucl.txt')
         result = open(stats_fpath).read()
         expected = '''Number of sequences: 4
 Sequences with description: 4
