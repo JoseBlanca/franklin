@@ -39,12 +39,14 @@ def scrape_info_from_fname(path):
         fpath = path.last_version
 
     fhand = open(fpath)
-    fname = os.path.basename(fpath)
+    basename = os.path.splitext(os.path.basename(fpath))[0]
 
     file_info = {}
     file_info['format'] = guess_seq_file_format(fhand)
     fhand.close()
-    for item in fname.split('.'):
+    for item in basename.split('.'):
+        if item[2] != '_':
+            continue
         key, value = item.split('_', 1)
         file_info[key] = value
     file_info['fpath'] = path
