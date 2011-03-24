@@ -608,12 +608,14 @@ def bam_general_stats(bam_fhand, out_fhand):
     bam = pysam.Samfile(bam_fpath, 'rb')
 
     rg_stats = {}
+    total_reads = 0
     not_mapped_reads = 0
     mapped_reads = 0
     reads_with_1_x0_best_alignment = 0
     reads_with_several_x0_best_alignment = 0
     stats_array = [0]*16
     for aligned_read in bam.fetch(until_eof=True):
+        total_reads += 1
         flag    = aligned_read.flag
         binflag = get_binary_flag(flag)
         for bit in range(len(binflag)):
@@ -661,20 +663,27 @@ def bam_general_stats(bam_fhand, out_fhand):
         out_fhand.write('\t'.join(row) + '\n')
     else:
         out_fhand.write('\n')
-    out_fhand.write('Reads aligned: %d\n' % mapped_reads)
-    out_fhand.write('Reads not aligned: %d\n' % not_mapped_reads)
-    out_fhand.write('Reads properly aligned according to the aligner: %d\n'
-                    % stats_array[-2])
-    out_fhand.write('Reads reverse complemented: %d\n' % stats_array[-5])
-    out_fhand.write('Secondary alignments: %d\n' % stats_array[-9])
-    out_fhand.write('Reads rejected by quality controls: %d\n'
-                    % stats_array[-10])
-    out_fhand.write('PCR or optical duplicates: %d\n' % stats_array[-11])
+    def write_stat_msg(msg, number):
+        'It returns the msg with %'
+        if not number:
+            return
+        msg += ': %d (%.1f%%)\n'
+        msg %= number, number/float(total_reads) * 100.0
+        out_fhand.write(msg)
+    out_fhand.write('Total number of reads: %d\n' % total_reads)
+    write_stat_msg('Reads aligned', mapped_reads)
+    write_stat_msg('Reads not aligned', not_mapped_reads)
+    write_stat_msg('Reads mapped in proper pair', stats_array[-2])
+    write_stat_msg('Reads reverse complemented', stats_array[-5])
+    write_stat_msg('Secondary alignments', stats_array[-9])
+    write_stat_msg('Reads rejected by quality controls',
+                    stats_array[-10])
+    write_stat_msg('PCR or optical duplicates', stats_array[-11])
     if reads_with_1_x0_best_alignment:
-        msg = 'Reads with one X0 best alignment: %d\n' % reads_with_1_x0_best_alignment
-        out_fhand.write(msg)
-        msg = 'Reads with several X0 best alignments: %d\n' % reads_with_several_x0_best_alignment
-        out_fhand.write(msg)
+        write_stat_msg('Reads with one X0 best alignment',
+                       reads_with_1_x0_best_alignment)
+        write_stat_msg('Reads with several X0 best alignments',
+                       reads_with_several_x0_best_alignment)
     out_fhand.write('\n')
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
