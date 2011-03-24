@@ -619,24 +619,27 @@ def bam_general_stats(bam_fhand, out_fhand):
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1
 
-    out_fhand.write('General mapping statistics\n')
-    out_fhand.write('--------------------------\n')
-    out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
-                               'Num mapped reads']))
+    header = 'Statistics for ' + os.path.basename(bam_fhand.name)
+    out_fhand.write(header + '\n')
+    out_fhand.write('-' * len(header))
     out_fhand.write('\n')
+
     rg_info = get_read_group_info(bam)
     read_groups = sorted(rg_info.keys())
+    if read_groups:
+        out_fhand.write('General mapping statistics\n')
+        out_fhand.write('--------------------------\n')
+        out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
+                                   'Num mapped reads']))
+        out_fhand.write('\n')
     for read_group in read_groups:
         row = [read_group]
-        if read_group:
-            row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
-        else:
-            row.extend([None, None, None])
-            row = [str(row) for item in row]
+        row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
         count = rg_stats[read_group] if read_group in rg_stats else 0
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
-    out_fhand.write('\n')
+    else:
+        out_fhand.write('\n')
     out_fhand.write('Reads aligned: %d\n' % mapped_reads)
     out_fhand.write('Reads not aligned: %d\n' % not_mapped_reads)
     out_fhand.write('Reads properly aligned according to the aligner: %d\n'
@@ -646,6 +649,7 @@ def bam_general_stats(bam_fhand, out_fhand):
     out_fhand.write('Reads rejected by quality controls: %d\n'
                     % stats_array[-10])
     out_fhand.write('PCR or optical duplicates: %d\n' % stats_array[-11])
+    out_fhand.write('\n')
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
     '''Create a file with the reads that are unmapped and remove them from
