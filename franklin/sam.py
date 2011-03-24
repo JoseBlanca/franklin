@@ -410,7 +410,10 @@ def _get_bam_coverage(bam, rgs, grouping):
             aligned_read = pileup_read.alignment
             if not guess_mapped(aligned_read.flag):
                 continue
-            read_group = aligned_read.opt('RG')
+            try:
+                read_group = aligned_read.opt('RG')
+            except KeyError:
+                read_group = None
             if read_group not in reads_per_colum:
                 reads_per_colum[read_group] = 0
             reads_per_colum[read_group] += 1
@@ -419,7 +422,10 @@ def _get_bam_coverage(bam, rgs, grouping):
         new_reads_per_colum = {}
         groups_in_column = set()
         for read_group, value in reads_per_colum.items():
-            group = rgs[read_group][grouping]
+            try:
+                group = rgs[read_group][grouping]
+            except KeyError:
+                group = None
             if group not in new_reads_per_colum:
                 new_reads_per_colum[group] = 0
             new_reads_per_colum[group] += value
@@ -454,8 +460,11 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
     mquals = {}
     for aligned_read in bam.fetch(until_eof=True):
         read_mapping_qual = aligned_read.mapq
-        read_group = aligned_read.opt('RG')
-        group = rgs[read_group][grouping]
+        try:
+            read_group = aligned_read.opt('RG')
+            group = rgs[read_group][grouping]
+        except KeyError:
+            group = None
         if group not in mquals:
             mquals[group] = CachedArray('H')
         mquals[group].append(read_mapping_qual)
@@ -472,8 +481,11 @@ def _get_bam_edit_distance(bam, rgs, grouping):
         edit_distance = dict(read_edit_distances).get('NM', None)
         if edit_distance == None:
             continue
-        read_group = aligned_read.opt('RG')
-        group = rgs[read_group][grouping]
+        try:
+            read_group = aligned_read.opt('RG')
+            group = rgs[read_group][grouping]
+        except KeyError:
+            group = None
         if group not in edit_dists:
             edit_dists[group] = CachedArray('H')
         edit_dists[group].append(edit_distance)
@@ -598,7 +610,8 @@ def bam_general_stats(bam_fhand, out_fhand):
     rg_stats = {}
     not_mapped_reads = 0
     mapped_reads = 0
-
+    reads_with_1_x0_best_alignment = 0
+    reads_with_several_x0_best_alignment = 0
     stats_array = [0]*16
     for aligned_read in bam.fetch(until_eof=True):
         flag    = aligned_read.flag
@@ -611,6 +624,13 @@ def bam_general_stats(bam_fhand, out_fhand):
             read_group = aligned_read.opt('RG')
         except KeyError:
             read_group = None
+        try:
+            number_x0_best_alignments = aligned_read.opt('X0')
+            if number_x0_best_alignments > 1:
+                reads_with_several_x0_best_alignment += 1
+                reads_with_1_x0_best_alignment += 1
+        except KeyError:
+            pass
         if not guess_mapped(flag):
             not_mapped_reads += 1
         else:
@@ -629,8 +649,8 @@ def bam_general_stats(bam_fhand, out_fhand):
     if read_groups:
         out_fhand.write('General mapping statistics\n')
         out_fhand.write('--------------------------\n')
-        out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
-                                   'Num mapped reads']))
+        out_fhand.write('\t'.join(['Read group', 'Sample', 'Library',
+                                   'Platform', 'Num mapped reads']))
         out_fhand.write('\n')
     for read_group in read_groups:
         row = [read_group]
@@ -649,6 +669,11 @@ def bam_general_stats(bam_fhand, out_fhand):
     out_fhand.write('Reads rejected by quality controls: %d\n'
                     % stats_array[-10])
     out_fhand.write('PCR or optical duplicates: %d\n' % stats_array[-11])
+    if reads_with_1_x0_best_alignment:
+        msg = 'Reads with one X0 best alignment: %d\n' % reads_with_1_x0_best_alignment
+        out_fhand.write(msg)
+        msg = 'Reads with several X0 best alignments: %d\n' % reads_with_several_x0_best_alignment
+        out_fhand.write(msg)
     out_fhand.write('\n')
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
