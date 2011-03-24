@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 
 from franklin.gff import (_add_dbxref_to_feature, GffFile, write_gff,
                           METADATA, FEATURE, create_dbxref_feature_mapper,
-                          SeqGffWriter)
+                          SeqGffWriter, create_go_annot_mapper)
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.seqs import Seq, SeqWithQuality
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
@@ -105,7 +105,8 @@ class GffTest(unittest.TestCase):
 class GffMappersTest(unittest.TestCase):
     'It test the mappers in GffFile'
 
-    def test_dbxref_feature_mapper(self):
+    @staticmethod
+    def test_dbxref_feature_mapper():
         'It tests the dbxref feature mapper'
 
         database = 'database'
@@ -126,6 +127,42 @@ class GffMappersTest(unittest.TestCase):
         mapper = create_dbxref_feature_mapper('database2', rels_fhand)
         mapper(feature)
         assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
+
+    @staticmethod
+    def test_go_annot_mapper():
+        'it test s the go_annot_mapepr'
+        go_annot ='''MELO3A000001P1\tGO:0016023\tprotein gi
+MELO3A000001P1\tGO:0006950\tprotein gi'''
+        annot_fhand = StringIO(go_annot)
+        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
+                   'strand': '.'}
+        mapper = create_go_annot_mapper(annot_fhand)
+        mapper(feature)
+        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+
+        #wit already go terms
+        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1',
+                                  'Ontology_term':'GO:0016023'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
+                   'strand': '.'}
+        mapper(feature)
+        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+
+        #feature without gos
+        feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P2',
+                                  'Name': 'MELO3A000001P2'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
+                   'strand': '.'}
+        mapper(feature)
+        assert 'Ontology_term' not in feature['attributes']
+
 
 class GffOutTest(unittest.TestCase):
     'It tests the gff writer'

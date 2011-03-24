@@ -316,6 +316,44 @@ def write_gff(out_fpath, items):
         writer.write(kind, item)
     writer.flush()
 
+
+def create_go_annot_mapper(annot_fhand):
+    '''It creates a mapper that adds the geneontology term provided in an b2go
+    annot file to the provided features'''
+    go_terms = {}
+    for line in annot_fhand:
+        line = line.strip()
+        if not line:
+            continue
+        items = line.split()
+        if items[0] not in go_terms:
+            go_terms[items[0]] = []
+        go_terms[items[0]].append(items[1])
+
+    def go_annot_mapper(feature):
+        'It adds the GO terms to the feature'
+        if feature['name'] in go_terms:
+            _add_go_term_to_feature(feature, go_terms[feature['name']])
+        return feature
+    return go_annot_mapper
+
+
+def _add_go_term_to_feature(feature, go_terms):
+    'it adds the go_terms to a feature'
+    if not go_terms:
+        return
+    if 'Ontology_term' not in feature['attributes']:
+        feature['attributes']['Ontology_term'] = ''
+        already_gos = []
+    else:
+        already_gos = feature['attributes']['Ontology_term'].split(',')
+
+    for go_term in go_terms:
+        if go_term not in already_gos:
+            already_gos.append(go_term)
+
+    feature['attributes']['Ontology_term'] = ','.join(already_gos)
+
 def create_dbxref_feature_mapper(dbxref_db, rels_fhand):
     '''It creates a mapper that adds a dbxref to the feature.
 
