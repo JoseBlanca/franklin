@@ -39,7 +39,11 @@ from franklin.statistics import create_distribution, CachedArray
 def get_read_group_info(bam):
     'It returns a dictionary with the read group info: platform, lb, etc'
     rg_info = {}
-    for read_group in bam.header['RG']:
+    try:
+        read_groups = bam.header['RG']
+    except KeyError:
+        return {}
+    for read_group in read_groups:
         name = read_group['ID']
         del read_group['ID']
         rg_info[name] = read_group
@@ -55,8 +59,6 @@ def get_read_group_sets(bam):
         groups['libraries'].add(read_group['LB'])
         groups['platforms'].add(read_group['PL'])
     return groups
-
-
 
 def bam2sam(bam_path, sam_path, header=False):
     '''It converts between bam and sam.'''
@@ -408,7 +410,10 @@ def _get_bam_coverage(bam, rgs, grouping):
             aligned_read = pileup_read.alignment
             if not guess_mapped(aligned_read.flag):
                 continue
-            read_group = aligned_read.opt('RG')
+            try:
+                read_group = aligned_read.opt('RG')
+            except KeyError:
+                read_group = None
             if read_group not in reads_per_colum:
                 reads_per_colum[read_group] = 0
             reads_per_colum[read_group] += 1
@@ -417,7 +422,10 @@ def _get_bam_coverage(bam, rgs, grouping):
         new_reads_per_colum = {}
         groups_in_column = set()
         for read_group, value in reads_per_colum.items():
-            group = rgs[read_group][grouping]
+            try:
+                group = rgs[read_group][grouping]
+            except KeyError:
+                group = None
             if group not in new_reads_per_colum:
                 new_reads_per_colum[group] = 0
             new_reads_per_colum[group] += value
@@ -452,8 +460,11 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
     mquals = {}
     for aligned_read in bam.fetch(until_eof=True):
         read_mapping_qual = aligned_read.mapq
-        read_group = aligned_read.opt('RG')
-        group = rgs[read_group][grouping]
+        try:
+            read_group = aligned_read.opt('RG')
+            group = rgs[read_group][grouping]
+        except KeyError:
+            group = None
         if group not in mquals:
             mquals[group] = CachedArray('H')
         mquals[group].append(read_mapping_qual)
@@ -470,8 +481,11 @@ def _get_bam_edit_distance(bam, rgs, grouping):
         edit_distance = dict(read_edit_distances).get('NM', None)
         if edit_distance == None:
             continue
-        read_group = aligned_read.opt('RG')
-        group = rgs[read_group][grouping]
+        try:
+            read_group = aligned_read.opt('RG')
+            group = rgs[read_group][grouping]
+        except KeyError:
+            group = None
         if group not in edit_dists:
             edit_dists[group] = CachedArray('H')
         edit_dists[group].append(edit_distance)
@@ -594,18 +608,32 @@ def bam_general_stats(bam_fhand, out_fhand):
     bam = pysam.Samfile(bam_fpath, 'rb')
 
     rg_stats = {}
+    total_reads = 0
     not_mapped_reads = 0
     mapped_reads = 0
-
+    reads_with_1_x0_best_alignment = 0
+    reads_with_several_x0_best_alignment = 0
     stats_array = [0]*16
     for aligned_read in bam.fetch(until_eof=True):
+        total_reads += 1
         flag    = aligned_read.flag
         binflag = get_binary_flag(flag)
         for bit in range(len(binflag)):
             if binflag[bit] == '1':
                 stats_array[bit] += 1
 
-        read_group = aligned_read.opt('RG')
+        try:
+            read_group = aligned_read.opt('RG')
+        except KeyError:
+            read_group = None
+        try:
+            number_x0_best_alignments = aligned_read.opt('X0')
+            if number_x0_best_alignments > 1:
+                reads_with_several_x0_best_alignment += 1
+            else:
+                reads_with_1_x0_best_alignment += 1
+        except KeyError:
+            pass
         if not guess_mapped(flag):
             not_mapped_reads += 1
         else:
@@ -614,29 +642,49 @@ def bam_general_stats(bam_fhand, out_fhand):
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1
 
-    out_fhand.write('General mapping statistics\n')
-    out_fhand.write('--------------------------\n')
-    out_fhand.write('\t'.join(['Read group', 'Sample', 'Library', 'Platform',
-                               'Num mapped reads']))
+    header = 'Statistics for ' + os.path.basename(bam_fhand.name)
+    out_fhand.write(header + '\n')
+    out_fhand.write('-' * len(header))
     out_fhand.write('\n')
+
     rg_info = get_read_group_info(bam)
     read_groups = sorted(rg_info.keys())
+    if read_groups:
+        out_fhand.write('General mapping statistics\n')
+        out_fhand.write('--------------------------\n')
+        out_fhand.write('\t'.join(['Read group', 'Sample', 'Library',
+                                   'Platform', 'Num mapped reads']))
+        out_fhand.write('\n')
     for read_group in read_groups:
         row = [read_group]
         row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
         count = rg_stats[read_group] if read_group in rg_stats else 0
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
+    else:
+        out_fhand.write('\n')
+    def write_stat_msg(msg, number):
+        'It returns the msg with %'
+        if not number:
+            return
+        msg += ': %d (%.1f%%)\n'
+        msg %= number, number/float(total_reads) * 100.0
+        out_fhand.write(msg)
+    out_fhand.write('Total number of reads: %d\n' % total_reads)
+    write_stat_msg('Reads aligned', mapped_reads)
+    write_stat_msg('Reads not aligned', not_mapped_reads)
+    write_stat_msg('Reads mapped in proper pair', stats_array[-2])
+    write_stat_msg('Reads reverse complemented', stats_array[-5])
+    write_stat_msg('Secondary alignments', stats_array[-9])
+    write_stat_msg('Reads rejected by quality controls',
+                    stats_array[-10])
+    write_stat_msg('PCR or optical duplicates', stats_array[-11])
+    if reads_with_1_x0_best_alignment:
+        write_stat_msg('Reads with one X0 best alignment',
+                       reads_with_1_x0_best_alignment)
+        write_stat_msg('Reads with several X0 best alignments',
+                       reads_with_several_x0_best_alignment)
     out_fhand.write('\n')
-    out_fhand.write('Reads aligned: %d\n' % mapped_reads)
-    out_fhand.write('Reads not aligned: %d\n' % not_mapped_reads)
-    out_fhand.write('Reads properly aligned according to the aligner: %d\n'
-                    % stats_array[-2])
-    out_fhand.write('Reads reverse complemented: %d\n' % stats_array[-5])
-    out_fhand.write('Secondary alignments: %d\n' % stats_array[-9])
-    out_fhand.write('Reads rejected by quality controls: %d\n'
-                    % stats_array[-10])
-    out_fhand.write('PCR or optical duplicates: %d\n' % stats_array[-11])
 
 def remove_unmapped_reads(in_bam_fhand, out_bam_fhand, out_removed_reads_fhand):
     '''Create a file with the reads that are unmapped and remove them from

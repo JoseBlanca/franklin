@@ -112,9 +112,9 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
 
     min_num_alleles = int(min_num_alleles)
 
-    try:
-        read_groups_info = get_read_group_info(bam)
-    except KeyError:
+
+    read_groups_info = get_read_group_info(bam)
+    if not read_groups_info:
         if default_bam_platform is None:
             msg = 'Platform is not present either in header or in '
             msg += 'configuration'
