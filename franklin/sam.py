@@ -628,6 +628,7 @@ def bam_general_stats(bam_fhand, out_fhand):
             number_x0_best_alignments = aligned_read.opt('X0')
             if number_x0_best_alignments > 1:
                 reads_with_several_x0_best_alignment += 1
+            else:
                 reads_with_1_x0_best_alignment += 1
         except KeyError:
             pass
