@@ -56,8 +56,6 @@ def get_read_group_sets(bam):
         groups['platforms'].add(read_group['PL'])
     return groups
 
-
-
 def bam2sam(bam_path, sam_path, header=False):
     '''It converts between bam and sam.'''
     cmd = ['samtools', 'view']
@@ -605,7 +603,10 @@ def bam_general_stats(bam_fhand, out_fhand):
             if binflag[bit] == '1':
                 stats_array[bit] += 1
 
-        read_group = aligned_read.opt('RG')
+        try:
+            read_group = aligned_read.opt('RG')
+        except KeyError:
+            read_group = None
         if not guess_mapped(flag):
             not_mapped_reads += 1
         else:
@@ -623,7 +624,11 @@ def bam_general_stats(bam_fhand, out_fhand):
     read_groups = sorted(rg_info.keys())
     for read_group in read_groups:
         row = [read_group]
-        row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
+        if read_group:
+            row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
+        else:
+            row.extend([None, None, None])
+            row = [str(row) for item in row]
         count = rg_stats[read_group] if read_group in rg_stats else 0
         row.append(str(count))
         out_fhand.write('\t'.join(row) + '\n')
