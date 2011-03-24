@@ -39,7 +39,11 @@ from franklin.statistics import create_distribution, CachedArray
 def get_read_group_info(bam):
     'It returns a dictionary with the read group info: platform, lb, etc'
     rg_info = {}
-    for read_group in bam.header['RG']:
+    try:
+        read_groups = bam.header['RG']
+    except KeyError:
+        return {}
+    for read_group in read_groups:
         name = read_group['ID']
         del read_group['ID']
         rg_info[name] = read_group
