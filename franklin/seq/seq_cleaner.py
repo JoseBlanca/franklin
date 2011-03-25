@@ -149,7 +149,8 @@ def create_edge_stripper(left_length=None, right_length=None):
     return edge_stripper
 
 def create_striper_by_quality(quality_treshold, min_quality_bases=None,
-                              min_seq_length=None, quality_window_width=None):
+                              min_seq_length=None, quality_window_width=None,
+                              only_3_end=False):
     '''It returns a function that given a sequence it returns a trimmed sequence
     without the bad quality region located at the extremes.
 
@@ -197,9 +198,14 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
                                                        qual_average_array)
 
         start, end = _trim_bad_qual_extremes(boolean_quality_treshold,
-                                             min_quality_bases_)
+                                             min_quality_bases_,
+                                             only_3_end=only_3_end)
 
-        segments = [(0, start -1), (end + 1, len(sequence) -1)]
+        if only_3_end:
+            segments = [(end + 1, len(sequence) -1)]
+        else:
+            segments = [(0, start -1), (end + 1, len(sequence) -1)]
+
         _add_trim_segments(segments, sequence, vector=False)
         #print 'seq', sequence.seq
         if (end - start) < min_seq_length_:
@@ -208,7 +214,7 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
             return sequence
     return strip_seq_by_quality
 
-def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
+def _trim_bad_qual_extremes(bool_seq, min_quality_bases, only_3_end):
     '''It returns start and and of the new sequence. Givig the 0/1 string.'''
 
     def _get_good_qual_extreme_loc(bool_seq, min_quality_bases, extreme=None):
@@ -235,7 +241,10 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases):
 
         return extreme_pos
 
-    start = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'start')
+    if not only_3_end:
+        start = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'start')
+    else:
+        start = 0
     end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end') - 1
     return start, end
 
