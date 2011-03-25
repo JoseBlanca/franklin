@@ -83,7 +83,12 @@ class GffFile(object):
         return self._version
     def _set_version(self, version):
         'It allows to change the version if no line has been written'
-        if self._fhand.tell() != 0:
+        # we should be able to set version when we are reading.
+        # this is for gff version 3 without specific header ##gff-version 3
+        # like in version 2011-03-11
+        if self._fhand is None:
+            pass
+        elif self._fhand.tell() != 0:
             msg = 'It is not possible to set the version after writing a line'
             raise RuntimeError(msg)
         self._version = version
