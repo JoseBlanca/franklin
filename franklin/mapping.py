@@ -130,6 +130,7 @@ def create_gmap_reference(reference_fpath):
         if os.path.exists(fpath):
             os.remove(fpath)
 
+
 def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
     'It maps the reads with gmap'
@@ -138,130 +139,17 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 
-    # gmap needs the reads to be fasta and not fastq
-    reads_fhand = open(reads_fpath)
-    reads_format = guess_seq_file_format(reads_fhand)
-    if reads_format != 'fasta':
-        out_fhand = NamedTemporaryFile(suffix='.fasta')
-        seqio(reads_fhand, out_fhand, 'fasta')
-        reads_to_cmap = out_fhand.name
-    else:
-        reads_to_cmap = reads_fpath
-
-    # create command
-    cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', '4']
+    cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'sampe']
     if threads:
         cmd.extend(['-t', str(threads)])
-    cmd.append(reads_to_cmap)
-
-
-    gff3_fhand = NamedTemporaryFile(suffix='.gff3')
-    call(cmd, stdout=gff3_fhand, raise_on_error=True)
+    cmd.append(reads_fpath)
 
     out_sam_fhand = NamedTemporaryFile(suffix='.sam')
-    _gmap_gff_to_sam(open(gff3_fhand.name), open(reference_fpath),
-                     open(reads_fpath), out_sam_fhand)
-    #print open(out_sam_fhand.name).read()
+    call(cmd, stdout=out_sam_fhand, raise_on_error=True)
 
-    if not sam_is_only_header(out_sam_fhand):
-        sam2bam(out_sam_fhand.name, out_bam_fpath)
-
+    sam2bam(out_sam_fhand.name, out_bam_fpath)
     out_sam_fhand.close()
-    gff3_fhand.close()
 
-def _gmap_gff_to_sam(in_gmap_gff3, reference_fhand, reads_fhand, output_fhand,
-                    keep_unmapped=False):
-    'It converts the gmap gff3 to sam format'
-    samwriter = SamWriter(reference_fhand, reads_fhand, output_fhand,
-                          keep_unmapped=keep_unmapped)
-    for feature, mapped in _features_in_gmap_gff(in_gmap_gff3):
-        alignment = _gff_feature_to_alignment(feature, mapped)
-        samwriter.write(alignment)
-
-def _features_in_gmap_gff(in_gmap_gff3):
-    '''It returns features in a gmap gff3 and analices if a feature is
-    already mapped. The gff must be ordered'''
-    old_name     = None
-    new_features = []
-    gff = GffFile(in_gmap_gff3.name)
-    for feature in gff.features:
-        feat_name = feature['attributes']['Name']
-        if old_name is not None and old_name != feat_name:
-            if len(new_features) > 1:
-                mapped = False
-            else:
-                mapped = True
-            for new_feature in new_features:
-                yield new_feature, mapped
-            new_features = []
-        new_features.append(feature)
-        old_name = feat_name
-    else:
-        if len(new_features) > 1:
-            mapped = False
-        else:
-            mapped = True
-        for new_feature in new_features:
-            yield new_feature, mapped
-
-
-def _gff_feature_to_alignment(feature, mapped):
-    'converts a gff feature into an alignment struct'
-    items       = feature['attributes']['Target'].split()
-    query_start = int(items[1])
-    strand      = items[3]
-    cigar       = _get_cigar_from_feature(feature, query_start)
-    alignment = {'reference_name':feature['seqid'],
-                 'query_name': feature['attributes']['Name'],
-                 'mapped':mapped,
-                 'position':feature['start'],
-                 'cigar':cigar,
-                 'strand':strand}
-    return alignment
-
-def _get_cigar_from_feature(feature, query_start):
-    'It converts an unclipeed cigar into a clipped cigar alignment'
-    cigar = []
-    for cigar_item in feature['attributes']['Gap'].split():
-        type_ = cigar_item[0]
-        num   = cigar_item[1:]
-        cigar.append(num + type_)
-
-    if query_start != 1:
-        cigar.insert(0, '%dS' % (query_start - 1))
-
-    cigar = _correct_cigar(cigar)
-
-    return ''.join(cigar)
-
-def _correct_cigar(cigar):
-    'It correct the bug of gmap with indels: one insertion along a deletion'
-    new_cigar     = []
-    indel         = ('I', 'D')
-    previous_type = None
-    prev_num      = None
-    for cigar_element in cigar:
-        type_ = cigar_element[-1]
-        num   = int(cigar_element[:-1])
-        if (type_ in indel and previous_type in indel and num == prev_num == 1):
-            new_cigar[-1] = '%sM' % num
-        else:
-            new_cigar.append(cigar_element)
-        previous_type = type_
-        prev_num      = num
-
-    previous_type = None
-    cigar = []
-    for cigar_element in new_cigar:
-        type_ = cigar_element[-1]
-        num   = cigar_element[:-1]
-        if type_ == 'M' and previous_type == 'M':
-            prev_num = cigar[-1][:-1]
-            cigar[-1] = '%dM' % (int(prev_num) + int(num))
-        else:
-            cigar.append(cigar_element)
-        previous_type = type_
-    return cigar
 
 MAPPER_FUNCS = {'bwa': map_reads_with_bwa,
                 'gmap':map_reads_with_gmap}
