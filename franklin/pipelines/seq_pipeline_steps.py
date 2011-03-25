@@ -53,11 +53,20 @@ remove_adaptors = {'function':create_vector_striper_by_alignment,
 
 strip_quality = {'function': create_striper_by_quality,
                       'arguments':{'quality_treshold':20,
-                                   'quality_window_width':1},
+                                   'quality_window_width':1,
+                                   'only_3_end':False},
 #min_quality_bases=None, min_seq_length=None, quality_window_width=None },
                       'type':'mapper',
                       'name':'strip_quality',
                       'comment':'Strip low quality with our algorithm'}
+strip_quality_3 = {'function': create_striper_by_quality,
+                      'arguments':{'quality_treshold':20,
+                                   'quality_window_width':1,
+                                   'only_3_end':True},
+#min_quality_bases=None, min_seq_length=None, quality_window_width=None },
+                      'type':'mapper',
+                      'name':'strip_quality',
+                    'comment':"Strip low quality from 3 end with our algorithm"}
 
 strip_quality_lucy = {'function': create_striper_by_quality_lucy,
                       'arguments':{},
@@ -142,10 +151,11 @@ SEQPIPELINES = {
     'word_masker'        : [remove_short_adaptors, sequence_trimmer,
                             filter_short_seqs],
 
-    'solid'              : [solid_quality, sequence_trimmer, filter_short_seqs]}
+    'solid'              : [solid_quality, strip_quality_3, sequence_trimmer,
+                            filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
              strip_quality_by_n, strip_quality_by_n,
              mask_polia, mask_low_complexity, sequence_trimmer,
              filter_short_seqs, edge_remover, remove_short_adaptors, up_case,
-             solid_quality]
+             solid_quality, strip_quality_3]

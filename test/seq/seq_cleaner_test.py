@@ -19,7 +19,7 @@ Created on 2009 uzt 6
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os
+import unittest, os, tempfile
 
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
@@ -108,6 +108,34 @@ class SeqCleanerTest(unittest.TestCase):
         new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         new_seq = seq_trimmer(new_seq)
         assert new_seq.qual == [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40]
+
+        #remove only from 3'
+        qual = [1, 1, 1, 1, 1, 1, 1, 4, 27, 38, 40, 4, 11, 40, 40, 40, 40, 40,
+                40, 40, 10, 10, 21, 3, 40, 9, 9, 12, 10, 9]
+        seq  = 'atatatatatatatataaaaaatatatata'
+        strip_seq_by_quality = create_striper_by_quality(quality_treshold=20,
+                                                         min_seq_length=2,
+                                                         min_quality_bases=3,
+                                                         quality_window_width=1,
+                                                         only_3_end=True)
+        new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
+        new_seq = seq_trimmer(new_seq)
+        qual = new_seq.qual
+        assert qual[0] == 1
+        assert len(qual) == 20
+
+        #some solid reads
+        reads = '''@8_19_812_F3
+NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
++
+!>=:BB<:>:A<A+5@?=6BA%<>AB9?<@B=1@BB7='A5@A@;98-2
+'''
+        reads_fhand = tempfile.NamedTemporaryFile()
+        reads_fhand.write(reads)
+        seq = list(seqs_in_file(reads_fhand, format='fastq'))[0]
+        new_seq = strip_seq_by_quality(seq)
+        new_seq = seq_trimmer(new_seq)
+        assert len(new_seq) == 46
 
     @staticmethod
     def test_mask_low_complexity():
@@ -607,7 +635,6 @@ class SegmentsTests(unittest.TestCase):
         segments = _get_non_matched_from_matched_locations([(0, 10), (15, 20)], 30)
         assert segments == [(11, 14), (21, 29)]
 
-
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_vector_exonerate']
+    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_seq_by_quality']
     unittest.main()
