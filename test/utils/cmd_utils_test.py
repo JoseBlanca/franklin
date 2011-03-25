@@ -98,7 +98,7 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_lucy_runner():
         'We can create a runner class for lucy'
-        fastafile = os.path.join(DATA_DIR, 'seq.fasta')
+        fastafile = os.path.join(DATA_DIR, 'seq2.fasta')
         run_lucy_for_seq = create_runner(tool='lucy',
                                     parameters={'vector':(fastafile,fastafile)})
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
@@ -172,5 +172,5 @@ class TestCall(unittest.TestCase):
         assert 'root' in stdout.read()
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestCall.test_call']
+    #import sys;sys.argv = ['', 'RunnerFactorytest.test_create_lucy_runner']
     unittest.main()
