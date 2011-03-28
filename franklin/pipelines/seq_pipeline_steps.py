@@ -94,7 +94,7 @@ mask_low_complexity = {'function': create_masker_for_low_complexity,
                        'comment':'Mask low complexity regions'}
 
 filter_short_seqs = {'function': create_length_filter,
-                     'arguments':{'length':None, 'count_masked': False},
+                     'arguments':{'length':30, 'count_masked': False},
                      'type':'filter' ,
                      'name':'remove_short',
                      'comment': 'Remove seq shorter than X nt'}
