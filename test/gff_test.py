@@ -25,7 +25,8 @@ from tempfile import NamedTemporaryFile
 
 from franklin.gff import (_add_dbxref_to_feature, GffFile, write_gff,
                           METADATA, FEATURE, create_dbxref_feature_mapper,
-                          SeqGffWriter, create_go_annot_mapper)
+                          SeqGffWriter, create_go_annot_mapper,
+                          create_feature_type_filter)
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.seqs import Seq, SeqWithQuality
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
@@ -102,6 +103,24 @@ class GffTest(unittest.TestCase):
         items = list(gff.items)
         assert items[1][1]['attributes']['Dbxref'] == 'database:acc1'
 
+    def test_gff_filters(self):
+        'It test that we can use filters for features in gff'
+        types = ['gene']
+        fhand = self._create_gff_file()
+        type_filter = create_feature_type_filter(types)
+        gff   = GffFile(fpath=fhand.name, feature_filters=[type_filter])
+        items = list(gff.items)
+        assert items[1][1]['id'] == 'gene00001'
+
+
+
+        types = ['contig']
+        fhand = self._create_gff_file()
+        type_filter = create_feature_type_filter(types)
+        gff   = GffFile(fpath=fhand.name, feature_filters=[type_filter])
+        items = list(gff.items)
+        assert len(items) == 2
+
 class GffMappersTest(unittest.TestCase):
     'It test the mappers in GffFile'
 
@@ -163,6 +182,23 @@ MELO3A000001P1\tGO:0006950\tprotein gi'''
         mapper(feature)
         assert 'Ontology_term' not in feature['attributes']
 
+class GffFilterTest(unittest.TestCase):
+    'It test the mappers in GffFile'
+
+    @staticmethod
+    def test_feature_type_filter():
+        'It tests the dbxref feature mapper'
+
+        feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
+                   'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
+
+        type_filter = create_feature_type_filter(['contig'])
+        assert filter(type_filter, [feature])
+
+        type_filter = create_feature_type_filter(['gene'])
+        assert not filter(type_filter, [feature])
 
 class GffOutTest(unittest.TestCase):
     'It tests the gff writer'
@@ -366,5 +402,5 @@ class SequenceWriter(unittest.TestCase):
         assert 'description' not in gff
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    import sys;sys.argv = ['', 'GffTest.test_gff_filters']
     unittest.main()

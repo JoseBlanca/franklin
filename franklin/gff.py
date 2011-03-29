@@ -44,7 +44,8 @@ def _deescape(string):
 
 class GffFile(object):
     'A GFF object for reading and writing'
-    def __init__(self, fpath, mode='r', feature_mappers=None):
+    def __init__(self, fpath, mode='r', feature_mappers=None,
+                 feature_filters=None):
         '''It inits the class,
 
         Accepted modes are r and w.
@@ -54,6 +55,10 @@ class GffFile(object):
         if not feature_mappers:
             feature_mappers = []
         self.feature_mappers = feature_mappers
+
+        if not feature_filters:
+            feature_filters = []
+        self.feature_filters = feature_filters
 
         if mode not in ('r', 'w'):
             msg = 'Mode should be r or w. Mode not supported: %s' % mode
@@ -154,13 +159,23 @@ class GffFile(object):
         feature['attributes'] = attributes
 
         self._apply_feature_mappers(feature)
-
-        return feature
+        feature = self._apply_feature_filters(feature)
+        if feature:
+            return feature
 
     def _apply_feature_mappers(self, feature):
         'It applies all mappers to the given feature'
         for mapper in self.feature_mappers:
             feature = mapper(feature)
+
+    def _apply_feature_filters(self, feature):
+        'It applies all mappers to the given feature'
+        for filters in self.feature_filters:
+            feature = filter(filters, [feature])
+        if feature:
+            if isinstance(feature, list):
+                feature = feature[0]
+            return feature
 
     def _get_items(self):
         'It yields the items in the GFF file'
@@ -186,7 +201,8 @@ class GffFile(object):
             else:
                 item = self._create_feature(line)
                 kind = FEATURE
-            yield kind, item
+            if item is not None:
+                yield kind, item
 
     items = property(_get_items)
 
@@ -209,7 +225,9 @@ class GffFile(object):
             self._fhand.write('#' + item + '\n')
         elif kind == FEATURE:
             self._apply_feature_mappers(item)
-            self._fhand.write(self._feature_to_str(item) + '\n')
+            item = self._apply_feature_filters(item)
+            if item:
+                self._fhand.write(self._feature_to_str(item) + '\n')
         elif kind == FASTA:
             self._fhand.write('##FASTA\n')
             write_seqs_in_file(item, self._fhand, format='fasta')
@@ -321,6 +339,17 @@ def write_gff(out_fpath, items):
         writer.write(kind, item)
     writer.flush()
 
+def create_feature_type_filter(types):
+    'it creates a filter that filters by type of the feature'
+
+    def feature_type_filter(feature):
+        'The real filter'
+        kind = feature['type']
+        if kind in types:
+            return True
+        else:
+            return False
+    return feature_type_filter
 
 def create_go_annot_mapper(annot_fhand):
     '''It creates a mapper that adds the geneontology term provided in an b2go
@@ -408,9 +437,10 @@ def _get_relations(rels_fhand):
         acc_relations[acc1] = acc2
     return acc_relations
 
-def modify_gff3(ingff3_fpath, outgff3_fpath, mappers):
+def modify_gff3(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     'It modifies the gff with the goven mappers'
-    in_gff  = GffFile(fpath=ingff3_fpath, feature_mappers=mappers)
+    in_gff  = GffFile(fpath=ingff3_fpath, feature_mappers=mappers,
+                      feature_filters=filters)
     out_gff = GffFile(fpath=outgff3_fpath, mode='w')
 
     for kind, item in in_gff.items:
