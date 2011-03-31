@@ -353,6 +353,17 @@ def create_feature_type_filter(types):
             return False
     return feature_type_filter
 
+def create_id_to_name_mapper():
+    'It adds the id as name if name not in gff'
+    def id_to_name_mapper(feature):
+        'It adds the name using id if not name'
+        if 'name' not in feature:
+            feature['name'] = feature['id']
+        return feature
+    return id_to_name_mapper
+
+
+
 def create_go_annot_mapper(annot_fhand):
     '''It creates a mapper that adds the geneontology term provided in an b2go
     annot file to the provided features'''
