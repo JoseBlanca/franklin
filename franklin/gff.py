@@ -546,27 +546,3 @@ class SeqGffWriter(object):
     def _get_subfeature_attributes(id, name, kind, num):
         '''It gets the attribute section of a sequence's  subfeature'''
         return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
-
-
-def genes_in_gff(fpath):
-    '''It yields the features containing genes. It suposes to have a sorted gff
-    file: All exons, cdss and popypeptides are after the gene feature'''
-
-    gff = GffFile(fpath=fpath)
-    gene_feats = []
-    for feature in gff.features:
-        kind = feature['type']
-        if kind == 'gene':
-            if gene_feats:
-                yield gene_feats
-            gene_feats = []
-        gene_feats.append(feature)
-    else:
-        if gene_feats:
-            yield gene_feats
-
-
-
-
-
-
