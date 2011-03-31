@@ -26,7 +26,7 @@ from tempfile import NamedTemporaryFile
 from franklin.gff import (_add_dbxref_to_feature, GffFile, write_gff,
                           METADATA, FEATURE, create_dbxref_feature_mapper,
                           SeqGffWriter, create_go_annot_mapper,
-                          create_feature_type_filter)
+                          create_feature_type_filter, genes_in_gff)
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.seqs import Seq, SeqWithQuality
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
@@ -401,6 +401,41 @@ class SequenceWriter(unittest.TestCase):
         gff = open(fhand.name).read()
         assert 'description' not in gff
 
+
+class GffUtilsTest(unittest.TestCase):
+    'it tests some utils functions that uses gff infrasestructure'
+
+    @staticmethod
+    def test_genes_in_gff():
+        'Test that we yield genes and its features'
+        feature = {'seqid': 'ctg123', 'type':  'gene', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'gene01', 'Name':'gen1'}}
+        feature2 = {'seqid': 'ctg123', 'type':  'exon', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'exon01', 'Name':'exon1'}}
+        feature3 = {'seqid': 'ctg123', 'type':  'cds', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'cds1', 'Name':'cds1'}}
+
+        feature4 = {'seqid': 'ctg113', 'type':  'gene', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'gene2', 'Name':'gen2'}}
+        feature5 = {'seqid': 'ctg123', 'type':  'exon', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'exon02', 'Name':'exon2'}}
+        feature6 = {'seqid': 'ctg123', 'type':  'cds', 'start': 100,
+                   'end':   900, 'attributes':{'ID':'cds2', 'Name':'cds2'}}
+
+        features = [feature, feature2, feature3, feature4, feature5, feature6]
+        gff_out_fhand = NamedTemporaryFile()
+        gff_out = GffFile(fpath = gff_out_fhand.name, mode='w')
+
+        for feature in features:
+            gff_out.write(FEATURE, feature)
+        gff_out_fhand.flush()
+
+        genes = list(genes_in_gff( gff_out_fhand.name))
+
+        assert len(genes) == 2
+        assert len(genes[0]) == 3
+        assert len(genes[1]) == 3
+
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'GffTest.test_gff_filters']
+    #import sys;sys.argv = ['', 'GffTest.test_gff_filters']
     unittest.main()

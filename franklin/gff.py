@@ -227,10 +227,12 @@ class GffFile(object):
             self._apply_feature_mappers(item)
             item = self._apply_feature_filters(item)
             if item:
-                self._fhand.write(self._feature_to_str(item) + '\n')
+                feature_line = self._feature_to_str(item) + '\n'
+                self._fhand.write(feature_line)
         elif kind == FASTA:
             self._fhand.write('##FASTA\n')
             write_seqs_in_file(item, self._fhand, format='fasta')
+        self._fhand.flush()
 
     @staticmethod
     def _escape(string, escape_coma=True):
@@ -544,3 +546,27 @@ class SeqGffWriter(object):
     def _get_subfeature_attributes(id, name, kind, num):
         '''It gets the attribute section of a sequence's  subfeature'''
         return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
+
+
+def genes_in_gff(fpath):
+    '''It yields the features containing genes. It suposes to have a sorted gff
+    file: All exons, cdss and popypeptides are after the gene feature'''
+
+    gff = GffFile(fpath=fpath)
+    gene_feats = []
+    for feature in gff.features:
+        kind = feature['type']
+        if kind == 'gene':
+            if gene_feats:
+                yield gene_feats
+            gene_feats = []
+        gene_feats.append(feature)
+    else:
+        if gene_feats:
+            yield gene_feats
+
+
+
+
+
+
