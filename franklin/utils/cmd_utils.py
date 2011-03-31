@@ -76,13 +76,14 @@ STDIN = 'stdin'
 
 BLASTPLUS_DEF = {'binary':'',
             'parameters': {'database' :{'option': '-db'},
-                   'expect'   :{'default': 0.0001,'option': '-evalue'},
-                   'nhitsv'   :{'default': 20,    'option':'-num_descriptions'},
-                   'nhitsb'   :{'default': 20,    'option':'-num_alignments'},
+                   'expect'   :   {'default': 0.0001,'option': '-evalue'},
+                   'nhitsv'   :   {'default': 20, 'option':'-num_descriptions'},
+                   'nhitsb'   :   {'default': 20, 'option':'-num_alignments'},
                    'alig_format': {'default':5, 'option':'-outfmt'},
-                   'subject':{'option':'-subject'},
-                   'gapextend':{'option': '-gapextend'},
-                   'gapopen':{'option': '-gapopen'}
+                   'gapextend':   {'option': '-gapextend'},
+                   'gapopen':     {'option': '-gapopen'},
+                   'task':        {'option':'-task'},
+                   'subject':     {'option':'-subject'},
                             },
             'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
@@ -91,7 +92,7 @@ BLASTPLUS_DEF = {'binary':'',
 BLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTN_DEF['binary'] = 'blastn'
 BLASTN_DEF['output'] = {'blastn':{'option':STDOUT}}
-BLASTN_DEF['parameters']['penalty'] ={'option':'-penalty'}
+BLASTN_DEF['parameters']['penalty'] = {'option':'-penalty'}
 BLASTN_DEF['parameters']['dust'] = {'option':'-dust'}
 
 BLASTP_DEF = copy.deepcopy(BLASTPLUS_DEF)
@@ -109,6 +110,9 @@ TBLASTN_DEF['output'] = {'tblastn':{'option':STDOUT}}
 TBLASTX_DEF = copy.deepcopy(BLASTPLUS_DEF)
 TBLASTX_DEF['binary'] = 'tblastx'
 TBLASTX_DEF['output'] = {'tblastx':{'option':STDOUT}}
+
+#TODO megablast?
+
 
 RUNNER_DEFINITIONS = {
     'blast': {'binary':'blast2',

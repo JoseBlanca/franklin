@@ -33,8 +33,8 @@ from franklin.seq.seq_analysis import match_words
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
-#The adaptors shorter than this length can not be processed by blast or
-#exonerate, they should be processed by the word remover function
+#The adaptors shorter than this length can not be processed by exonerate
+#they should be processed by the word remover function
 MIN_LONG_ADAPTOR_LENGTH = 20
 TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'
 
@@ -497,48 +497,63 @@ def create_vector_striper_by_alignment(vectors, aligner):
     do these alignments two programs can be used, exonerate and blast. Exonerate
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
-    #depending on the aligner program we need different parameters and filters
+    #exonerate fails with sequences below 20 bp
+    #blast_short tends to give a lot of false positives or negatives, depending
+    #on the parameters (evalue)
+
+    # depending on the aligner program we need different parameters and filters
     # blast parameter value is taken from vecscreen parameters:
     # http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html
     parameters = {'exonerate': {'target':vectors},
                   'blastn'    : {'database': vectors, 'gapextend': '3',
                                  'gapopen':'3', 'penalty':'-5', 'expect':'700',
-                                 'dust':'20 1 64'}}
+                                 'dust':'20 1 64'},
+                  'blastn_short': {'task': 'blastn-short', 'expect': '0.0001',
+                                   'subject': vectors, 'alig_format':6},
+                 }
 
+    #They filter matches not match parts
     filters = {'exonerate': [{'kind'          : 'min_scores',
                              'score_key'      : 'similarity',
                              'min_score_value': 96},
                              {'kind'          : 'min_length',
                               'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
                'blastn':      [{'kind'         : 'min_scores',
-                             'score_key'      : 'similarity',
-                             'min_score_value': 96},
-                             {'kind'          : 'min_length',
-                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}]}
-
-    aligner_ = create_runner(tool=aligner, parameters=parameters[aligner])
-    parser   = get_alignment_parser(aligner)
+                                'score_key'      : 'similarity',
+                                'min_score_value': 96},
+                               {'kind'          : 'min_length',
+                                'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
+               'blastn_short': []
+              }
+    runner = aligner
+    parser = aligner
+    fhand_key = aligner
+    if aligner == 'blastn_short':
+        runner = 'blastn'
+        parser = 'blast_tab'
+        fhand_key = 'blastn'
+    aligner_ = create_runner(tool=runner, parameters=parameters[aligner])
+    parser   = get_alignment_parser(parser)
 
     def strip_vector_by_alignment(sequence):
         '''It strips the vector from a sequence.
 
         It returns a striped sequence with the longest segment without vector.
         '''
-
         if sequence is None:
             return None
         if vectors is None:
             return sequence
 
         # first we are going to align he sequence with the vectors
-        alignment_fhand = aligner_(sequence)[aligner]
+        alignment_fhand = aligner_(sequence)[fhand_key]
+
         # We need to parse the result
         alignment_result = parser(alignment_fhand)
 
-        # We filter the results with appropriate  filters
+        # We filter the results with appropriate filters
         alignments = FilteredAlignmentResults(match_filters=filters[aligner],
                                               results=alignment_result)
-
         alignment_matches = _get_non_matched_locations(alignments)
         alignment_fhand.close()
         segments  = _get_longest_non_matched_seq_region_limits(sequence,

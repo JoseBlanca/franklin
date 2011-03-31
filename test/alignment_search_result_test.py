@@ -17,11 +17,12 @@ ssaha2, etc. that align one sequence against a database.'''
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.alignment_search_result import (BlastParser,
-                                            FilteredAlignmentResults,
-                                            alignment_results_scores,
-                                            _compatible_incompatible_length,
-                                             ExonerateParser,
-                                             build_relations_from_aligment)
+                                              TabularBlastParser,
+                                              FilteredAlignmentResults,
+                                              alignment_results_scores,
+                                              _compatible_incompatible_length,
+                                              ExonerateParser,
+                                              build_relations_from_aligment)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner
@@ -47,10 +48,12 @@ def _check_match_part(match_part, expected):
     'It matches a match_part against an expected result'
     assert match_part['query_start']    == expected['query_start']
     assert match_part['query_end']      == expected['query_end']
-    assert match_part['query_strand']   == expected['query_strand']
+    if 'query_strand' in expected:
+        assert match_part['query_strand']   == expected['query_strand']
     assert match_part['subject_start']  == expected['subject_start']
     assert match_part['subject_end']    == expected['subject_end']
-    assert match_part['subject_strand'] == expected['subject_strand']
+    if 'subject_strand' in expected:
+        assert match_part['subject_strand'] == expected['subject_strand']
     for key in expected['scores']:
         assert floats_are_equal(match_part['scores'][key],
                                  expected['scores'][key])
@@ -77,8 +80,8 @@ def _check_blast(blast, expected):
 
 class BlastParserTest(unittest.TestCase):
     'It test the blast parser'
-    @staticmethod
-    def test_blast_parser():
+
+    def test_blast_parser(self):
         'It test the blast parser'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
         parser = BlastParser(fhand=blast_file)
@@ -130,6 +133,52 @@ class BlastParserTest(unittest.TestCase):
         blast_file = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
         parser = BlastParser(fhand=blast_file)
         assert parser.next()['matches'][0]['subject'].name == 'tair1'
+
+    def test_blast_tab_parser(self):
+        'It test the blast tabular parser'
+        blast_file = open(os.path.join(DATA_DIR, 'blast.tab'))
+        parser = TabularBlastParser(fhand=blast_file)
+
+        expected_results = [
+            {'query':{'name':'primer'},
+             'matches':[
+                 {'subject':{'name':'seq_with_primer2'},
+                  'scores':{'expect': 6e-10},
+                  'match_parts':[{'query_start':6, 'query_end':27,
+                                  'subject_start':15,
+                                  'subject_end':36,
+                                  'scores':{'expect':    6e-10,
+                                            'identity':  100.0}
+                                 }],
+                 },
+                {'subject':{'name':'seq_with_primer'},
+                  'scores':{'expect': 6e-10},
+                  'match_parts':[{'query_start':6, 'query_end':27,
+                                  'subject_start':15,
+                                  'subject_end':36,
+                                  'scores':{'expect':    6e-10,
+                                            'identity':  100.0}
+                                 },
+                                 {'query_start':8, 'query_end':27,
+                                  'subject_start':182,
+                                  'subject_end':201,
+                                  'scores':{'expect':    1e-8,
+                                            'identity':  100.0}
+                                 }
+                  ],
+                 }
+            ],
+            },
+            {'query':{'name':'primer2'},
+            },
+            {}, {}
+        ]
+        n_blasts = 0
+        from pprint import pprint
+        for index, blast in enumerate(parser):
+            _check_blast(blast, expected_results[index])
+            n_blasts += 1
+        assert n_blasts == 2
 
     def test_blast_no_result(self):
         'It test that the xml output can be and empty string'

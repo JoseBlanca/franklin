@@ -382,6 +382,24 @@ class SeqWithQuality(SeqRecord):
         elif kind == 'description':
             self.description = UNKNOWN_DESCRIPTION
 
+class SeqOnlyName(object):
+    'A SeqWithQuality like without sequence or sequence length'
+    def __init__(self, id=UNKNOWN_ID, name=UNKNOWN_NAME):
+        'It inits the instance'
+        if id == UNKNOWN_ID and name != UNKNOWN_NAME:
+            id = name
+        self.name = name
+        self.id   = id
+    def __length__(self):
+        'None length, because is unknown'
+        return None
+    def __str__(self):
+        'It returns a string representation'
+        return self.name
+    def __repr__(self):
+        'It returns a string representation'
+        return self.name
+
 class SeqFeature(BioSeqFeature):
     '''A wrapper around Biopython's SeqRecord that adds a couple of convenience
     methods'''

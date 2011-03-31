@@ -54,22 +54,118 @@ for every match. Every evidence is similar to a match.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from Bio.Blast import NCBIXML
-from franklin.seq.seqs import SeqWithQuality
+from franklin.seq.seqs import SeqWithQuality, SeqOnlyName
 from Bio.Seq import UnknownSeq
 from math import log10
+
+def _lines_for_every_tab_blast(fhand):
+    'It returns the lines for every query in the tabular blast'
+    ongoing_query = None
+    match_parts = []
+    for line in fhand:
+        (query, subject, identity, alignment_length, mismatches, gap_opens,
+         query_start, query_end, subject_start, subject_end, expect, score) = \
+                                                           line.strip().split()
+        query_start   = int(query_start) - 1
+        query_end     = int(query_end) - 1
+        subject_start = int(subject_start) - 1
+        subject_end   = int(subject_end) - 1
+        expect        = float(expect)
+        score         = float(score)
+        identity      = float(identity)
+        match_part = {'subject_start': subject_start,
+                      'subject_end'  : subject_end,
+                      'query_start'  : query_start,
+                      'query_end'    : query_end,
+                      'scores'       : {'expect'    : expect,
+                                        'identity'  : identity}}
+        if ongoing_query is None:
+            ongoing_query = query
+            match_parts.append({'subject':subject, 'match_part':match_part})
+        elif query == ongoing_query:
+            match_parts.append({'subject':subject, 'match_part':match_part})
+        else:
+            yield ongoing_query, match_parts
+            match_parts = [{'subject':subject, 'match_part':match_part}]
+            ongoing_query = query
+    if ongoing_query:
+        yield ongoing_query, match_parts
+
+def _group_match_parts_by_subject(match_parts):
+    'It yields lists of match parts that share the subject'
+    parts = []
+    ongoing_subject = None
+    for match_part in match_parts:
+        subject = match_part['subject']
+        if ongoing_subject is None:
+            parts.append(match_part['match_part'])
+            ongoing_subject = subject
+        elif ongoing_subject == subject:
+            parts.append(match_part['match_part'])
+        else:
+            yield ongoing_subject, parts
+            parts = [match_part['match_part']]
+            ongoing_subject = subject
+    else:
+        yield ongoing_subject, parts
+
+def _tabular_blast_parser(fhand):
+    'It parses the tabular output of a blast result and yields Alignment result'
+    fhand.seek(0, 0)
+
+    for query, match_parts in _lines_for_every_tab_blast(fhand):
+        matches = []
+        for subject, match_parts in _group_match_parts_by_subject(match_parts):
+            #match start and end
+            match_start, match_end = None, None
+            match_subject_start, match_subject_end = None, None
+            for match_part in match_parts:
+                if (match_start is None or
+                    match_part['query_start'] < match_start):
+                    match_start = match_part['query_start']
+                if match_end is None or match_part['query_end'] > match_end:
+                    match_end = match_part['query_end']
+                if (match_subject_start is None or
+                    match_part['subject_start'] < match_subject_start):
+                    match_subject_start = match_part['subject_start']
+                if (match_subject_end is None or
+                   match_part['subject_end'] > match_subject_end):
+                    match_subject_end = match_part['subject_end']
+            match = {'subject': SeqOnlyName(name=subject),
+                     'start'  : match_start,
+                     'end'    : match_end,
+                     'subject_start': match_subject_start,
+                     'subject_end'  : match_subject_end,
+                     'scores' : {'expect':match_parts[0]['scores']['expect']},
+                     'match_parts' : match_parts}
+            matches.append(match)
+        if matches:
+            yield {'query'  : SeqOnlyName(name=query),
+                   'matches': matches}
 
 class TabularBlastParser(object):
     'It parses the tabular output of a blast result'
     def __init__(self, fhand):
-        'The init requires a file to be parser'
-        fhand.seek(0, 0)
-        self._blast_file = fhand
+        'The init requires a file to be parsed'
+        self._gen = _tabular_blast_parser(fhand)
+
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self
+
+    def next(self):
+        'It returns the next blast result'
+        return self._gen.next()
 
 class BlastParser(object):
     '''An iterator  blast parser that yields the blast results in a
     multiblast file'''
     def __init__(self, fhand, subj_def_as_accesion=None):
         'The init requires a file to be parser'
+        fhand.seek(0, 0)
+        sample = fhand.read(10)
+        if sample and 'xml' not in sample:
+            raise 'Not a xml file'
         fhand.seek(0, 0)
         self._blast_file = fhand
         blast_version, plus = self._get_blast_version()
@@ -97,7 +193,6 @@ class BlastParser(object):
     def __iter__(self):
         'Part of the iterator protocol'
         return self
-
 
     def _create_result_structure(self, bio_result):
         'Given a BioPython blast result it returns our result structure'
@@ -222,7 +317,6 @@ class BlastParser(object):
             plus = True
             version = version[:-1]
         return version, plus
-
 
     def next(self):
         'It returns the next blast result'
@@ -367,8 +461,6 @@ def incompatibility_score(match, query, subject):
     incomp_bak = incomp
     incomp = float(incomp) / float(min_len) * 100.0
     if incomp < 0 or incomp > 100:
-        print 'incomp', incomp, 'match', match
-        print 'min_len, incomp, %', min_len, incomp_bak, incomp
         msg = 'Bad calculation for incompatible region'
         raise RuntimeError(msg)
     return incomp
@@ -454,7 +546,6 @@ def _merge_overlaping_match_parts(match_parts, min_similarity=None):
         if slope >= slope_min and slope <= slope_max:
             filtered_hsps.append(hsp)
     hsps = filtered_hsps
-    #print 'hsps', len(hsps)
 
     #we collect all start and ends
     hsp_limits = [] #all hsp starts and ends
@@ -532,7 +623,6 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
                            len(match['subject']) - \
                                              first_matchp['subject_end'] + 1)
 
-    #print '1_match', first_matchp
     last_matchp = match_parts[-1]
     query_overlap = len(query) - last_matchp['query_end'] - 1
     if first_matchp['query_strand'] == 1:
@@ -550,13 +640,14 @@ def _compatible_incompatible_length(match, query, min_similarity=None):
     #which is the incompatible regions between consecutive match parts?
     match_incomp = last_matchp['query_end'] - first_matchp['query_start'] + \
                                                                1 - comp_length
-    #print '1, last, match', first_incomp, last_incomp, match_incomp
     incomp = first_incomp + last_incomp + match_incomp
     return comp_length, incomp
 
 def get_alignment_parser(kind):
     '''It returns a parser depending of the aligner kind '''
-    if 'blast' in kind:
+    if 'blast_tab' == kind:
+        parser = TabularBlastParser
+    elif 'blast' in kind:
         parser = BlastParser
     else:
         parsers = {'exonerate':ExonerateParser}

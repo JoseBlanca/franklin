@@ -374,6 +374,65 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert str(seq2.seq) == str(seq3.seq)
 
     @staticmethod
+    def test_strip_adaptor_blast():
+        'It tests strip_vector_by_alignment with blastn-short'
+
+        vec1 = SeqWithQuality(name='vec1', seq=Seq('atcgatcgatagcatacgat'))
+        vec2 = SeqWithQuality(name='vec2', seq=Seq('atgcatcagatcgataaaga'))
+        fhand_vectors = temp_fasta_file([vec1, vec2])
+        seq_trimmer = create_seq_trim_and_masker()
+        strip_vector_by_alignment = \
+               create_vector_striper_by_alignment(fhand_vectors, 'blastn_short')
+
+        seq = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq = Seq(seq)
+        seq2 = SeqWithQuality(name='seq', seq=seq)
+        seq1 = SeqWithQuality(name=seq2.name,
+                              seq=vec1.seq + seq2.seq + vec2.seq,
+                              description='hola')
+
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+        assert seq3.description == 'hola'
+
+        fhand_vectors.seek(0)
+        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq)
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+
+        # overlaping vectors
+        fhand_vectors.seek(0)
+        new_seq = vec1.seq[:-2]+vec2.seq+seq2.seq+vec2.seq
+        seq1  = SeqWithQuality(name=seq2.name, seq=new_seq)
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+
+        # Now only vectors
+        fhand_vectors.seek(0)
+        new_seq = vec1.seq+vec2.seq+vec2.seq
+        seq1 = SeqWithQuality(name=seq2.name, seq=new_seq)
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert seq3 is None
+
+        # Now without vectors
+        fhand_vectors.seek(0)
+        seq1 = seq2
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+
+        fhand_vectors.seek(0)
+        seq1  = SeqWithQuality(name=seq2.name,
+                               seq=vec1.seq[::-1]+vec2.seq+seq2.seq)
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+
+    @staticmethod
     def test_strip_short_adaptors():
         'It tests the short adaptor removal with J. Forment sequences'
 
@@ -636,5 +695,5 @@ class SegmentsTests(unittest.TestCase):
         assert segments == [(11, 14), (21, 29)]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_seq_by_quality']
+    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_adaptor_blast']
     unittest.main()
