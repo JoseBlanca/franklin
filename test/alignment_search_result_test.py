@@ -22,7 +22,8 @@ from franklin.alignment_search_result import (BlastParser,
                                               alignment_results_scores,
                                               _compatible_incompatible_length,
                                               ExonerateParser,
-                                              build_relations_from_aligment)
+                                              build_relations_from_aligment,
+                                              filter_alignments)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner
@@ -64,19 +65,28 @@ def _check_blast(blast, expected):
         _check_sequence(blast['query'], expected['query'])
     if 'matches' in expected:
         for match_index, expt_match in enumerate(expected['matches']):
-            bl_match = blast['matches'][match_index]
+            real_match = blast['matches'][match_index]
             if 'subject' in expt_match:
-                _check_sequence(bl_match['subject'],
+                _check_sequence(real_match['subject'],
                                 expt_match['subject'])
             if 'match_parts' in expt_match:
                 for match_part_index, expt_match_part in \
                                         enumerate(expt_match['match_parts']):
-                    bl_match_part = bl_match['match_parts'][match_part_index]
+                    bl_match_part = real_match['match_parts'][match_part_index]
                     _check_match_part(bl_match_part, expt_match_part)
             if 'scores' in expt_match:
                 for key in expt_match['scores']:
-                    assert floats_are_equal(bl_match['scores'][key],
+                    assert floats_are_equal(real_match['scores'][key],
                                              expt_match['scores'][key])
+            if 'start' in expt_match:
+                assert real_match['start'] == expt_match['start']
+            if 'end' in expt_match:
+                assert real_match['end'] == expt_match['end']
+            if 'subject_start' in expt_match:
+                assert real_match['subject_start'] == expt_match['subject_start']
+            if 'subject_end' in expt_match:
+                assert real_match['subject_end'] == expt_match['subject_end']
+
 
 class BlastParserTest(unittest.TestCase):
     'It test the blast parser'
@@ -241,7 +251,7 @@ class ExonerateParserTest(unittest.TestCase):
                  {'subject':{'name':'adaptor2','length':35},
                   'scores':{'score':136},
                   'start':0,
-                  'end':29,
+                  'end':53,
                   'match_parts':[{'query_start':0, 'query_end':28,
                                   'query_strand':1,
                                   'subject_start':5,
@@ -263,6 +273,80 @@ class ExonerateParserTest(unittest.TestCase):
             _check_blast(exonerate, expected_results[index])
             n_exonerates += 1
         assert n_exonerates == 2
+
+class AlignmentFilters(unittest.TestCase):
+    'It tests the filtering and mapping of alignment structures'
+    def test_best_score_mapper(self):
+        'We keep the matches with the best scores'
+        filter1 = {'kind'           : 'best_scores',
+                   'score_key'      : 'expect',
+                   'max_score'      : 1e-3,
+                   'score_tolerance': 10
+                   }
+
+        align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':100,
+                               'subject_start':0,
+                               'subject_end':100,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                              {'scores':{'expect':1e-3},
+                                               'query_start':50, 'query_end':60,
+                                               'subject_start':50,
+                                               'subject_end':60,
+                                              },
+                                              {'scores':{'expect':1e-2},
+                                              'query_start':80, 'query_end':100,
+                                               'subject_start':80,
+                                               'subject_end':100,
+                                              }
+                                             ],
+                               },
+                               {'scores':{'expect':1e-3},
+                               'match_parts':[{'scores':{'expect':1e-3}}],
+                               },
+                               {'scores':{'expect':1e-2},
+                                'match_parts':[{'scores':{'expect':1e-2}}],
+                               }
+                             ]
+                 }
+        align2 = {'matches': [{'scores':{'expect':1e-2},
+                               'match_parts':[{'scores':{'expect':1e-2}}],
+                              }]}
+        alignments = [align1, align2]
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter1]))
+        expected_align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':40,
+                               'subject_start':0,
+                               'subject_end':40,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                             ],
+                               },
+                             ]
+                 }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
 
 class AlignmentSearchResultFilterTest(unittest.TestCase):
     'It test that we can filter out matches from the blast or ssaha2 results'

@@ -53,10 +53,13 @@ for every match. Every evidence is similar to a match.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from Bio.Blast import NCBIXML
-from franklin.seq.seqs import SeqWithQuality, SeqOnlyName
-from Bio.Seq import UnknownSeq
+import itertools, copy
 from math import log10
+
+from Bio.Blast import NCBIXML
+from Bio.Seq import UnknownSeq
+from franklin.seq.seqs import SeqWithQuality, SeqOnlyName
+
 
 def _lines_for_every_tab_blast(fhand):
     'It returns the lines for every query in the tabular blast'
@@ -1086,3 +1089,171 @@ def build_relations_from_aligment(fhand, query_name, subject_name):
                 relations[seq_name] = []
             relations[seq_name].append(limits)
     return relations
+
+def _get_match_score(match, score_key, query=None, subject=None):
+    '''Given a match it returns its score.
+
+    It tries to get the score from the match, if it's not there it goes for
+    the first match_part.
+    '''
+    #the score can be in the match itself or in the first
+    #match_part
+    if score_key in match['scores']:
+        score = match['scores'][score_key]
+    else:
+        #the score is taken from the best hsp (the first one)
+        score = match['match_parts'][0]['scores'][score_key]
+    return score
+
+def _is_best_score(score, min_score, max_score, log_tolerance, log_best_score):
+    'It checks if the given score is a good one'
+    if max_score is not None and score == 0.0:
+        match_ok = True
+    elif min_score is not None and score <= min_score:
+        match_ok = False
+    elif max_score is not None and score >= max_score:
+        match_ok = False
+    elif abs(log10(score) - log_best_score) < log_tolerance:
+        match_ok = True
+    else:
+        match_ok = False
+    return match_ok
+
+def create_best_scores_mapper(score_key, score_tolerance,
+                              max_score=None, min_score=None):
+    'It creates a mapper that keeps only the best matches'
+
+    log_tolerance = log10(score_tolerance)
+    if min_score is not None and max_score is not None:
+        raise ValueError('min and max_score cannot be given at the same time')
+    def map_(alignment):
+        '''It returns an alignment with the best matches'''
+        if alignment is None:
+            return None
+        #score of the best match
+        best_score = _get_match_score(alignment['matches'][0], score_key)
+        if best_score == 0.0:
+            log_best_score = 0.0
+        else:
+            log_best_score = log10(best_score)
+
+        filtered_matches = []
+        for match in alignment['matches']:
+            filtered_match_parts = []
+            for match_part in match['match_parts']:
+                score = match_part['scores'][score_key]
+                if _is_best_score(score, min_score, max_score,
+                                  log_tolerance, log_best_score):
+                    filtered_match_parts.append(match_part)
+            match['match_parts']= filtered_match_parts
+            if not len(match['match_parts']):
+                continue
+            #is this match ok?
+            match_score = get_match_score(match, score_key)
+            if _is_best_score(match_score, min_score, max_score, log_tolerance,
+                              log_best_score):
+                filtered_matches.append(match)
+        alignment['matches'] = filtered_matches
+        return alignment
+    return map_
+
+def create_deepcopy_mapper():
+    'It creates a mapper that does a deepcopy of the alignment'
+    def map_(alignment):
+        'It does the deepcopy'
+        return copy.deepcopy(alignment)
+    return map_
+
+def create_empty_filter():
+    'It creates a filter that removes the false items'
+    def filter_(alignment):
+        'It filters the empty alignments'
+        if alignment:
+            return True
+        else:
+            return False
+    return filter_
+
+def _fix_match_start_end(match):
+    'Given a match it fixes the start and end based on the match_parts'
+    match_start, match_end = None, None
+    match_subject_start, match_subject_end = None, None
+    for match_part in match['match_parts']:
+        if ('query_start' in match_part and
+            (match_start is None or
+             match_part['query_start'] < match_start)):
+            match_start = match_part['query_start']
+        if ('query_end' in match_part and
+            (match_end is None or match_part['query_end'] > match_end)):
+            match_end = match_part['query_end']
+        if ('subject_start' in match_part and
+            (match_subject_start is None or
+             match_part['subject_start'] < match_subject_start)):
+            match_subject_start = match_part['subject_start']
+        if ('subject_end' in match_part and
+            (match_subject_end is None or
+             match_part['subject_end'] > match_subject_end)):
+            match_subject_end = match_part['subject_end']
+    if match_start is not None:
+        match['start'] = match_start
+    if match_end is not None:
+        match['end'] = match_end
+    if match_subject_start is not None:
+        match['subject_start'] = match_subject_start
+    if match_subject_end is not None:
+        match['subject_end'] = match_subject_end
+
+def create_fix_matches_mapper():
+    ''''It creates a function that removes alignments with no matches.
+
+    It also removes matches with no match_parts
+    '''
+    def mapper_(alignment):
+        'It removes the empty match_parts and the alignments with no matches'
+        if alignment is None:
+            return None
+        new_matches = []
+        for match in alignment['matches']:
+            if len(match['match_parts']):
+                _fix_match_start_end(match)
+                new_matches.append(match)
+        if not new_matches:
+            return None
+        else:
+            alignment['matches'] = new_matches
+        return alignment
+    return mapper_
+
+MAPPER = 1
+FILTER = 2
+FILTER_COLLECTION = {'best_scores':{'funct_factory': create_best_scores_mapper,
+                                    'kind': MAPPER},
+                     'deepcopy':{'funct_factory': create_deepcopy_mapper,
+                                 'kind': MAPPER},
+                     'fix_matches':{'funct_factory': create_fix_matches_mapper,
+                                    'kind': MAPPER},
+                     'filter_empty':{'funct_factory': create_empty_filter,
+                                     'kind': FILTER},
+                    }
+
+def filter_alignments(alignments, config):
+    '''It filters and maps the given alignments.
+
+    The filters and maps to use will be decided based on the configuration.
+    '''
+
+    config.insert(0, {'kind': 'deepcopy'})
+    config.append({'kind': 'fix_matches'})
+    config.append({'kind': 'filter_empty'})
+
+    #create the pipeline
+    for conf in config:
+        funct_fact = FILTER_COLLECTION[conf['kind']]['funct_factory']
+        kind     = FILTER_COLLECTION[conf['kind']]['kind']
+        del conf['kind']
+        function = funct_fact(**conf)
+        if kind == MAPPER:
+            alignments = itertools.imap(function, alignments)
+        else:
+            alignments = itertools.ifilter(function, alignments)
+    return alignments
