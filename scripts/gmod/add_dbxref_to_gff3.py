@@ -4,9 +4,7 @@ between the gff3 IDs and the database accessions for each feature the script
 adds the dbxref to the GFF3 file
 '''
 
-import sys
 from optparse import OptionParser
-import unittest
 from franklin.gff import modify_gff3, create_dbxref_feature_mapper
 
 def parse_options():
@@ -54,7 +52,7 @@ def main():
     mappers = []
     mappers.append(create_dbxref_feature_mapper(database, rels_fhand))
 
-    modify_gff3(ingff3_fpath, outgff3_fpath, mappers)
+    modify_gff3(ingff3_fpath, outgff3_fpath, mappers=mappers)
 
 if __name__ == '__main__':
     #if len(sys.argv) == 2 and sys.argv[1].lower() == 'test':

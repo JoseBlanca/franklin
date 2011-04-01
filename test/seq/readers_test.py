@@ -305,7 +305,7 @@ class TestNumSeqsInFile(unittest.TestCase):
     def test_num_seqs_in_file():
         'tests num_seqs_in_file'
         fasta_fhand = open(join(DATA_DIR, 'seq.fasta'))
-        assert num_seqs_in_file(fasta_fhand) == 6
+        assert num_seqs_in_file(fasta_fhand) == 7
 
         fastq_fhand = open(join(DATA_DIR, 'solexa.fastq'))
         assert num_seqs_in_file(fastq_fhand, format='sfastq') == 3
