@@ -498,8 +498,9 @@ def create_vector_striper_by_alignment(vectors, aligner):
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
     #exonerate fails with sequences below 20 bp
-    #blast_short tends to give a lot of false positives or negatives, depending
-    #on the parameters (evalue)
+    #blast_short fails bellow 17 bases with 2% errors (although not as badly as
+    #exonerate with 19
+    sequencing_error = 2
 
     # depending on the aligner program we need different parameters and filters
     # blast parameter value is taken from vecscreen parameters:
@@ -517,7 +518,7 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              'score_key': 'similarity',
                              'min_score': 96},
                              {'kind'            : 'min_length',
-                              'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
+                              'min_num_residues': 15,
                               'length_in_query' : False}],
                'blastn':      [{'kind'     : 'score_threshold',
                                 'score_key': 'similarity',
@@ -525,7 +526,12 @@ def create_vector_striper_by_alignment(vectors, aligner):
                                {'kind'            : 'min_length',
                                 'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
                                 'length_in_query' : False}],
-               'blastn_short': []
+               'blastn_short': [{'kind'    : 'score_threshold',
+                                'score_key': 'identity',
+                                'min_score': 89},
+                                {'kind'            : 'min_length',
+                                 'min_num_residues': 13,
+                                 'length_in_query' : False}]
               }
     runner = aligner
     parser = aligner
