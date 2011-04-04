@@ -55,6 +55,7 @@ for every match. Every evidence is similar to a match.
 
 import itertools, copy
 from math import log10
+from operator import itemgetter
 
 from Bio.Blast import NCBIXML
 from Bio.Seq import UnknownSeq
@@ -488,7 +489,7 @@ def get_match_score(match, score_key, query=None, subject=None):
         score = match['match_parts'][0]['scores'][score_key]
     return score
 
-def _merge_overlaping_match_parts(match_parts, min_similarity=None):
+def _merge_overlaping_match_parts_old(match_parts, min_similarity=None):
     '''Given a list of match_parts it merges the ones that overlaps
 
        hsp 1  -------        ----->    -----------
@@ -1105,66 +1106,92 @@ def _get_match_score(match, score_key, query=None, subject=None):
         score = match['match_parts'][0]['scores'][score_key]
     return score
 
-def _is_best_score(score, min_score, max_score, log_tolerance, log_best_score):
+def _score_above_threshold(score, min_score, max_score, log_tolerance,
+                           log_best_score):
     'It checks if the given score is a good one'
-    if max_score is not None and score == 0.0:
-        match_ok = True
-    elif min_score is not None and score <= min_score:
-        match_ok = False
-    elif max_score is not None and score >= max_score:
-        match_ok = False
-    elif abs(log10(score) - log_best_score) < log_tolerance:
-        match_ok = True
+    if log_tolerance is None:
+        if min_score is not None and score >= min_score:
+            match_ok = True
+        elif max_score is not None and score <= max_score:
+            match_ok = True
+        else:
+            match_ok = False
     else:
-        match_ok = False
+        if max_score is not None and score == 0.0:
+            match_ok = True
+        elif min_score is not None and score <= min_score:
+            match_ok = False
+        elif max_score is not None and score >= max_score:
+            match_ok = False
+        elif abs(log10(score) - log_best_score) < log_tolerance:
+            match_ok = True
+        else:
+            match_ok = False
     return match_ok
 
-def create_best_scores_mapper(score_key, score_tolerance,
-                              max_score=None, min_score=None):
+def _create_scores_mapper_(score_key, score_tolerance=None,
+                           max_score=None, min_score=None):
     'It creates a mapper that keeps only the best matches'
 
-    log_tolerance = log10(score_tolerance)
-    if min_score is not None and max_score is not None:
-        raise ValueError('min and max_score cannot be given at the same time')
+    if score_tolerance is not None:
+        log_tolerance = log10(score_tolerance)
+    else:
+        log_tolerance = None
     def map_(alignment):
         '''It returns an alignment with the best matches'''
         if alignment is None:
             return None
-        #score of the best match
-        best_score = _get_match_score(alignment['matches'][0], score_key)
-        if best_score == 0.0:
-            log_best_score = 0.0
+        if log_tolerance is None:
+            log_best_score = None
         else:
-            log_best_score = log10(best_score)
+            #score of the best match
+            best_score = _get_match_score(alignment['matches'][0], score_key)
+            if best_score == 0.0:
+                log_best_score = 0.0
+            else:
+                log_best_score = log10(best_score)
 
         filtered_matches = []
         for match in alignment['matches']:
             filtered_match_parts = []
             for match_part in match['match_parts']:
                 score = match_part['scores'][score_key]
-                if _is_best_score(score, min_score, max_score,
-                                  log_tolerance, log_best_score):
+                if _score_above_threshold(score, min_score, max_score,
+                                          log_tolerance, log_best_score):
                     filtered_match_parts.append(match_part)
             match['match_parts']= filtered_match_parts
             if not len(match['match_parts']):
                 continue
             #is this match ok?
             match_score = get_match_score(match, score_key)
-            if _is_best_score(match_score, min_score, max_score, log_tolerance,
-                              log_best_score):
+            if _score_above_threshold(match_score, min_score, max_score,
+                                      log_tolerance, log_best_score):
                 filtered_matches.append(match)
         alignment['matches'] = filtered_matches
         return alignment
     return map_
 
-def create_deepcopy_mapper():
+def _create_best_scores_mapper(score_key, score_tolerance=None,
+                              max_score=None, min_score=None):
+    'It creates a mapper that keeps only the best matches'
+    return _create_scores_mapper_(score_key, score_tolerance=score_tolerance,
+                                 max_score=max_score, min_score=min_score)
+
+def _create_scores_mapper(score_key, max_score=None, min_score=None):
+    'It creates a mapper that keeps only the best matches'
+    if max_score is None and min_score is None:
+        raise ValueError('Either max_score or min_score should be given')
+    return _create_scores_mapper_(score_key, max_score=max_score,
+                                 min_score=min_score)
+
+def _create_deepcopy_mapper():
     'It creates a mapper that does a deepcopy of the alignment'
     def map_(alignment):
         'It does the deepcopy'
         return copy.deepcopy(alignment)
     return map_
 
-def create_empty_filter():
+def _create_empty_filter():
     'It creates a filter that removes the false items'
     def filter_(alignment):
         'It filters the empty alignments'
@@ -1203,7 +1230,7 @@ def _fix_match_start_end(match):
     if match_subject_end is not None:
         match['subject_end'] = match_subject_end
 
-def create_fix_matches_mapper():
+def _create_fix_matches_mapper():
     ''''It creates a function that removes alignments with no matches.
 
     It also removes matches with no match_parts
@@ -1224,15 +1251,145 @@ def create_fix_matches_mapper():
         return alignment
     return mapper_
 
+def _covered_segments(match_parts, in_query=True):
+    '''Given a list of match_parts it returns the coverd segments.
+
+       match_part 1  -------        ----->    -----------
+       match_part 2       ------
+       It returns the list of segments coverd by the match parts either in the
+       query or in the subject.
+    '''
+    molecule = 'query' if in_query else 'subj'
+
+    #we collect all start and ends
+    START = 0
+    END   = 1
+    limits = [] #all hsp starts and ends
+    for match_part in match_parts:
+        if in_query:
+            start = match_part['query_start']
+            end   = match_part['query_end']
+        else:
+            start = match_part['subject_start']
+            end   = match_part['subject_end']
+        limit_1 = (START, start)
+        limit_2 = (END, end)
+        limits.append(limit_1)
+        limits.append(limit_2)
+
+    #now we sort the hsp limits according their location
+    def cmp_query_location(hsp_limit1, hsp_limit2):
+        'It compares the locations'
+        return hsp_limit1[molecule] - hsp_limit2[molecule]
+    #sort by secondary key: start before end
+    limits.sort(key=itemgetter(0))
+    #sort by location (primary key)
+    limits.sort(key=itemgetter(1))
+
+    #merge the ends and start that differ in only one base
+    filtered_limits = []
+    previous_limit = None
+    for limit in limits:
+        if previous_limit is None:
+            previous_limit = limit
+            continue
+        if (previous_limit[0] == END and limit[0] == START and
+            previous_limit[1] == limit[1] - 1):
+            #These limits cancelled each other
+            previous_limit = None
+            continue
+        filtered_limits.append(previous_limit)
+        previous_limit = limit
+    else:
+        filtered_limits.append(limit)
+    limits = filtered_limits
+
+    #now we create the merged hsps
+    starts = 0
+    segments = []
+    for limit in limits:
+        if limit[0] == START:
+            starts += 1
+            if starts == 1:
+                segment_start = limit[1]
+        elif limit[0] == END:
+            starts -= 1
+            if starts == 0:
+                segment = (segment_start, limit[1])
+                segments.append(segment)
+    return segments
+
+def _match_length(match, length_from_query):
+    '''It returns the match length.
+
+    It does take into account only the length covered by match_parts.
+    '''
+    segments = _covered_segments(match['match_parts'], length_from_query)
+    length = 0
+    for segment in segments:
+        match_part_len = segment[1] - segment[0] + 1
+        length += match_part_len
+    return length
+
+def _create_min_length_mapper(length_in_query, min_num_residues=None,
+                              min_percentage=None):
+    '''It creates a mapper that removes short matches.
+
+    The length can be given in percentage or in number of residues.
+    The length can be from the query or the subject
+    '''
+    if not isinstance(length_in_query, bool):
+        raise ValueError('length_in_query should be a boolean')
+    if min_num_residues is None and min_percentage is None:
+        raise ValueError('min_num_residues or min_percentage should be given')
+    elif min_num_residues is not None and min_percentage is not None:
+        msg =  'Both min_num_residues or min_percentage can not be given at the'
+        msg += ' same time'
+        raise ValueError(msg)
+    def map_(alignment):
+        '''It returns an alignment with the matches that span long enough'''
+        if alignment is None:
+            return None
+
+        filtered_matches = []
+        query = alignment.get('query', None)
+        for match in alignment['matches']:
+            match_length = _match_length(match, length_in_query)
+            if min_num_residues is not None:
+                if match_length >= min_num_residues:
+                    match_ok = True
+                else:
+                    match_ok = False
+            else:
+                if length_in_query:
+                    percentage = (match_length / float(len(query))) * 100.0
+                else:
+                    subject = match['subject']
+                    percentage = (match_length / float(len(subject))) * 100.0
+                if percentage >= min_percentage:
+                    match_ok = True
+                else:
+                    match_ok = False
+            if match_ok:
+                filtered_matches.append(match)
+        alignment['matches'] = filtered_matches
+        return alignment
+    return map_
+
 MAPPER = 1
 FILTER = 2
-FILTER_COLLECTION = {'best_scores':{'funct_factory': create_best_scores_mapper,
+
+FILTER_COLLECTION = {'best_scores':{'funct_factory': _create_best_scores_mapper,
                                     'kind': MAPPER},
-                     'deepcopy':{'funct_factory': create_deepcopy_mapper,
+                     'score_threshold':{'funct_factory': _create_scores_mapper,
+                                    'kind': MAPPER},
+                     'min_length':{'funct_factory': _create_min_length_mapper,
+                                    'kind': MAPPER},
+                     'deepcopy':{'funct_factory': _create_deepcopy_mapper,
                                  'kind': MAPPER},
-                     'fix_matches':{'funct_factory': create_fix_matches_mapper,
+                     'fix_matches':{'funct_factory': _create_fix_matches_mapper,
                                     'kind': MAPPER},
-                     'filter_empty':{'funct_factory': create_empty_filter,
+                     'filter_empty':{'funct_factory': _create_empty_filter,
                                      'kind': FILTER},
                     }
 
