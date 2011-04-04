@@ -18,11 +18,11 @@ ssaha2, etc. that align one sequence against a database.'''
 
 from franklin.alignment_search_result import (BlastParser,
                                               TabularBlastParser,
-                                              FilteredAlignmentResults,
                                               alignment_results_scores,
-                                              _compatible_incompatible_length,
                                               ExonerateParser,
-                                              build_relations_from_aligment)
+                                              build_relations_from_aligment,
+                                              filter_alignments,
+                                              _covered_segments)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner
@@ -46,12 +46,16 @@ def _check_sequence(sequence, expected):
 
 def _check_match_part(match_part, expected):
     'It matches a match_part against an expected result'
-    assert match_part['query_start']    == expected['query_start']
-    assert match_part['query_end']      == expected['query_end']
+    if 'query_start' in expected:
+        assert match_part['query_start']    == expected['query_start']
+    if 'query_end' in expected:
+        assert match_part['query_end']      == expected['query_end']
     if 'query_strand' in expected:
         assert match_part['query_strand']   == expected['query_strand']
-    assert match_part['subject_start']  == expected['subject_start']
-    assert match_part['subject_end']    == expected['subject_end']
+    if 'subject_start' in expected:
+        assert match_part['subject_start']  == expected['subject_start']
+    if 'subject_end' in expected:
+        assert match_part['subject_end']    == expected['subject_end']
     if 'subject_strand' in expected:
         assert match_part['subject_strand'] == expected['subject_strand']
     for key in expected['scores']:
@@ -64,19 +68,28 @@ def _check_blast(blast, expected):
         _check_sequence(blast['query'], expected['query'])
     if 'matches' in expected:
         for match_index, expt_match in enumerate(expected['matches']):
-            bl_match = blast['matches'][match_index]
+            real_match = blast['matches'][match_index]
             if 'subject' in expt_match:
-                _check_sequence(bl_match['subject'],
+                _check_sequence(real_match['subject'],
                                 expt_match['subject'])
             if 'match_parts' in expt_match:
                 for match_part_index, expt_match_part in \
                                         enumerate(expt_match['match_parts']):
-                    bl_match_part = bl_match['match_parts'][match_part_index]
+                    bl_match_part = real_match['match_parts'][match_part_index]
                     _check_match_part(bl_match_part, expt_match_part)
             if 'scores' in expt_match:
                 for key in expt_match['scores']:
-                    assert floats_are_equal(bl_match['scores'][key],
+                    assert floats_are_equal(real_match['scores'][key],
                                              expt_match['scores'][key])
+            if 'start' in expt_match:
+                assert real_match['start'] == expt_match['start']
+            if 'end' in expt_match:
+                assert real_match['end'] == expt_match['end']
+            if 'subject_start' in expt_match:
+                assert real_match['subject_start'] == expt_match['subject_start']
+            if 'subject_end' in expt_match:
+                assert real_match['subject_end'] == expt_match['subject_end']
+
 
 class BlastParserTest(unittest.TestCase):
     'It test the blast parser'
@@ -174,7 +187,6 @@ class BlastParserTest(unittest.TestCase):
             {}, {}
         ]
         n_blasts = 0
-        from pprint import pprint
         for index, blast in enumerate(parser):
             _check_blast(blast, expected_results[index])
             n_blasts += 1
@@ -187,10 +199,10 @@ class BlastParserTest(unittest.TestCase):
 
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-4,
+                    'max_score': 1e-4,
                     'score_tolerance': 10
                    }]
-        filt_b = FilteredAlignmentResults(match_filters=filters, results=blasts)
+        filt_b = filter_alignments(blasts, config=filters,)
         try:
             filt_b.next()
             self.fail()
@@ -241,7 +253,7 @@ class ExonerateParserTest(unittest.TestCase):
                  {'subject':{'name':'adaptor2','length':35},
                   'scores':{'score':136},
                   'start':0,
-                  'end':29,
+                  'end':53,
                   'match_parts':[{'query_start':0, 'query_end':28,
                                   'query_strand':1,
                                   'subject_start':5,
@@ -264,11 +276,317 @@ class ExonerateParserTest(unittest.TestCase):
             n_exonerates += 1
         assert n_exonerates == 2
 
-class AlignmentSearchResultFilterTest(unittest.TestCase):
-    'It test that we can filter out matches from the blast or ssaha2 results'
+class AlignmentFilters(unittest.TestCase):
+    'It tests the filtering and mapping of alignment structures'
+    def test_best_score_mapper(self):
+        'We keep the matches with the best scores'
+        filter1 = {'kind'           : 'best_scores',
+                   'score_key'      : 'expect',
+                   'max_score'      : 1e-3,
+                   'score_tolerance': 10
+                   }
 
-    @staticmethod
-    def test_no_filter():
+        align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':100,
+                               'subject_start':0,
+                               'subject_end':100,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                              {'scores':{'expect':1e-3},
+                                               'query_start':50, 'query_end':60,
+                                               'subject_start':50,
+                                               'subject_end':60,
+                                              },
+                                              {'scores':{'expect':1e-2},
+                                              'query_start':80, 'query_end':100,
+                                               'subject_start':80,
+                                               'subject_end':100,
+                                              }
+                                             ],
+                               },
+                               {'scores':{'expect':1e-3},
+                               'match_parts':[{'scores':{'expect':1e-3}}],
+                               },
+                               {'scores':{'expect':1e-2},
+                                'match_parts':[{'scores':{'expect':1e-2}}],
+                               }
+                             ]
+                 }
+        align2 = {'matches': [{'scores':{'expect':1e-2},
+                               'match_parts':[{'scores':{'expect':1e-2}}],
+                              }]}
+        alignments = [align1, align2]
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter1]))
+        expected_align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':40,
+                               'subject_start':0,
+                               'subject_end':40,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                             ],
+                               },
+                             ]
+                 }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+    def test_min_score_mapper(self):
+        'We keep the matches with the scores above the threshold'
+        filter1 = {'kind'     : 'score_threshold',
+                   'score_key': 'score',
+                   'min_score': 100,
+                   }
+
+        align1 = {'matches': [{'scores':{'score':400},
+                               'start':0,
+                               'end':100,
+                               'subject_start':0,
+                               'subject_end':100,
+                               'match_parts':[{'scores':{'score':400},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'score':300},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                              {'scores':{'score':50},
+                                               'query_start':50, 'query_end':60,
+                                               'subject_start':50,
+                                               'subject_end':60,
+                                              },
+                                              {'scores':{'score':40},
+                                              'query_start':80, 'query_end':100,
+                                               'subject_start':80,
+                                               'subject_end':100,
+                                              }
+                                             ],
+                               },
+                               {'scores':{'score':20},
+                               'match_parts':[{'scores':{'score':20}}],
+                               },
+                               {'scores':{'score':90},
+                                'match_parts':[{'scores':{'score':90}}],
+                               }
+                             ]
+                 }
+        align2 = {'matches': [{'scores':{'score':20},
+                               'match_parts':[{'scores':{'score':20}}],
+                              }]}
+        alignments = [align1, align2]
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter1]))
+        expected_align1 = {'matches': [{'scores':{'score':400},
+                               'start':0,
+                               'end':40,
+                               'subject_start':0,
+                               'subject_end':40,
+                               'match_parts':[{'scores':{'score':400},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'score':300},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                             ],
+                               },
+                             ]
+                 }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+    def test_max_score_mapper(self):
+        filter1 = {'kind'           : 'best_scores',
+                   'score_key'      : 'expect',
+                   'max_score'      : 1e-3
+                   }
+
+        align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':100,
+                               'subject_start':0,
+                               'subject_end':100,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                              {'scores':{'expect':1e-3},
+                                               'query_start':50, 'query_end':60,
+                                               'subject_start':50,
+                                               'subject_end':60,
+                                              },
+                                              {'scores':{'expect':1e-2},
+                                              'query_start':80, 'query_end':100,
+                                               'subject_start':80,
+                                               'subject_end':100,
+                                              }
+                                             ],
+                               },
+                               {'scores':{'expect':1e-3},
+                               'match_parts':[{'scores':{'expect':1e-3}}],
+                               },
+                               {'scores':{'expect':1e-2},
+                                'match_parts':[{'scores':{'expect':1e-2}}],
+                               }
+                             ]
+                 }
+        align2 = {'matches': [{'scores':{'expect':1e-2},
+                               'match_parts':[{'scores':{'expect':1e-2}}],
+                              }]}
+        alignments = [align1, align2]
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter1]))
+        expected_align1 = {'matches': [{'scores':{'expect':1e-4},
+                               'start':0,
+                               'end':60,
+                               'subject_start':0,
+                               'subject_end':60,
+                               'match_parts':[{'scores':{'expect':1e-4},
+                                               'query_start':0, 'query_end':10,
+                                               'subject_start':0,
+                                               'subject_end':10,
+                                              },
+                                              {'scores':{'expect':5e-4},
+                                               'query_start':30, 'query_end':40,
+                                               'subject_start':30,
+                                               'subject_end':40,
+                                              },
+                                              {'scores':{'expect':1e-3},
+                                               'query_start':50, 'query_end':60,
+                                               'subject_start':50,
+                                               'subject_end':60,
+                                              },
+                                             ],
+                               },
+                               {'scores':{'expect':1e-3},
+                               'match_parts':[{'scores':{'expect':1e-3}}],
+                               },
+                             ]
+                 }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+    def test_min_length_mapper(self):
+        'We can filter the matches according to their length'
+        filter1 = {'kind'            : 'min_length',
+                   'min_num_residues': 100,
+                   'length_in_query' : True,
+                   }
+
+        align1 = {'matches': [{'match_parts':[{'query_start':0, 'query_end':100,
+                                               'subject_start':0,
+                                               'subject_end':100,}]},
+                              {'match_parts':[{'query_start':0, 'query_end':50,
+                                               'subject_start':0,
+                                               'subject_end':100,}]},
+                             ]
+                 }
+        alignments = [align1]
+
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter1]))
+        expected_align1 = {'matches': [{'start':0, 'end':100,
+                                        'subject_start':0,  'subject_end':100,},
+                                      ]
+                          }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+        filter = {'kind'            : 'min_length',
+                   'min_num_residues': 100,
+                   'length_in_query' : False,
+                   }
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter]))
+        expected_align1 = {'matches': [{'start':0, 'end':100,
+                                        'subject_start':0,  'subject_end':100,},
+                                        {'start':0, 'end':50,
+                                        'subject_start':0,  'subject_end':100,},
+                                      ]
+                          }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+        filter = {'kind'            : 'min_length',
+                   'min_percentage': 90,
+                   'length_in_query' : True,
+                   }
+        align1 = {'query':UnknownSeq(100),
+                  'matches': [{'match_parts':[{'query_start':0, 'query_end':90,
+                                               'subject_start':0,
+                                               'subject_end':100,}]},
+                              {'match_parts':[{'query_start':0, 'query_end':50,
+                                               'subject_start':0,
+                                               'subject_end':100,}]},
+                             ]
+                 }
+        alignments = [align1]
+
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter]))
+        expected_align1 = {'matches': [{'start':0, 'end':90,
+                                        'subject_start':0,  'subject_end':100,},
+                                      ]
+                          }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+        filter = {'kind'           : 'min_length',
+                  'min_percentage' : 90,
+                  'length_in_query': False,
+                 }
+        align1 = {'matches': [{'subject': UnknownSeq(100),
+                               'match_parts':[{'query_start':0, 'query_end':100,
+                                               'subject_start':0,
+                                               'subject_end':90,}]},
+                              {'subject': UnknownSeq(100),
+                               'match_parts':[{'query_start':0, 'query_end':100,
+                                               'subject_start':0,
+                                               'subject_end':89,}]},
+                             ]
+                 }
+        alignments = [align1]
+
+        filtered_alignments = list(filter_alignments(alignments,
+                                                     config=[filter]))
+        expected_align1 = {'matches': [{'start':0, 'end':100,
+                                        'subject_start':0,  'subject_end':90,},
+                                      ]
+                          }
+        _check_blast(filtered_alignments[0], expected_align1)
+        assert len(filtered_alignments) == 1
+
+    def test_no_filter(self):
         'It test the blast parser'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
         parser = BlastParser(fhand=blast_file)
@@ -281,397 +599,88 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                      'cCL1Contig4':5, 'cCL1Contig5':8}
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_best_scores_filter():
+    def test_best_scores_filter(self):
         'We can keep the hits with the bests expects'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-4,
+                    'max_score'      : 1e-4,
                     'score_tolerance': 10
                    }]
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':1,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_min_scores_filter():
+    def test_min_scores_filter(self):
         'We can keep the hits scores above the given one'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
 
         #with evalue
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'expect',
-                    'max_score_value': 1e-34,
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'expect',
+                    'max_score': 1e-34,
                    }]
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with similartiry
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'similarity',
-                    'min_score_value': 90,
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'similarity',
+                    'min_score': 92,
                    }]
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_min_length_filter():
+    def test_min_length_filter(self):
         'We can keep the hits length above the given one'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
 
         #with the min length given in base pairs
-        filters = [{'kind'          : 'min_length',
-                    'min_length_bp' : 500,
+        filters = [{'kind'            : 'min_length',
+                    'min_num_residues': 500,
+                    'length_in_query':True
                    }]
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
-                     'cCL1Contig4':1, 'cCL1Contig5':2}
+                     'cCL1Contig4':1, 'cCL1Contig5':1}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with the min length given in query %
-        filters = [{'kind'               : 'min_length',
-                    'min_length_query_%' : 70,
+        filters = [{'kind'          : 'min_length',
+                    'min_percentage': 70,
+                    'length_in_query':True
                    }]
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with the min length given in subject %
-        filters = [{'kind'                 : 'min_length',
-                    'min_length_subject_%' : 0.002,
+        filters = [{'kind'           : 'min_length',
+                    'min_percentage' : 0.002,
+                    'length_in_query': False
                    }]
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
-
-    @staticmethod
-    def test_compatib_threshold_filter():
-        'We can keep the hits compatible enough'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
-        #with the min length given in subject %
-        filters = [{'kind'                : 'compatibility',
-                    'min_compatibility'   : 400,
-                    'max_incompatibility' : 50,
-                    'min_similarity'      : 60
-                   }]
-        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
-                     'cCL1Contig4':1, 'cCL1Contig5':0}
-        blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
-        match_summary = _summarize_matches(filtered_blasts)
-        _check_match_summary(match_summary, expected)
-
-class ResultFilterTests(unittest.TestCase):
-    'It tests results filters . It tests that we can filter some results'
-    @staticmethod
-    def test_min_matches_number_filter():
-        'It tests that we can filter some results with too many matches'
-        result1 = {'query':'query',
-                   'matches': [{},{}]}
-        result2 = {'query':None,
-                   'matches': [{},{},{}]}
-        results = iter([result1, result2])
-        filter_ = {'kind': 'max_num_matches',
-                   'value': 2}
-        filtered_results = FilteredAlignmentResults(result_filters=[filter_],
-                                                    results=results)
-        assert list(filtered_results)[0] is result1
-
-    @staticmethod
-    def test_at_least_one_match():
-        'A result with no matches left should be removed'
-        match = {'subject':None,
-                 'start':10, 'end':20,
-                 'scores':{'expect':0.01},
-                 'match_parts':[]}
-        result1 = {'query':'query',
-                   'matches': [match]}
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'expect',
-                    'max_score_value': 1e-34,
-                   }]
-        blasts = iter([result1])
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
-        assert len(list(filtered_blasts)) == 0
-
-class IncompatibleLengthTest(unittest.TestCase):
-    'It checks that we calculate the incompatible length ok'
-    @staticmethod
-    def test_incompatible_length():
-        'It checks that we calculate the incompatible length ok'
-        #        012345678901234567890
-        #query   ---------------------
-        #query             <--> <---->
-        #simil                 90%
-        #subject           <--> <---->
-        #subject           ----------------------------------
-        query   = SeqWithQuality(seq=UnknownSeq(length=21))
-        subject = SeqWithQuality(seq=UnknownSeq(length=32))
-        match_part1 = {'scores':{'similarity':90.0},
-                       'query_start'   : 10,
-                       'query_end'     : 13,
-                       'query_strand'  : 1,
-                       'subject_start' : 0,
-                       'subject_end'   : 3,
-                       'subject_strand': 1
-                      }
-        match_part2 = {'scores':{'similarity':90.0},
-                       'query_start'   : 15,
-                       'query_end'     : 20,
-                       'query_strand'  : 1,
-                       'subject_start' : 5,
-                       'subject_end'   : 10,
-                       'subject_strand': 1
-                      }
-        match = {'subject':subject,
-                 'start':10, 'end':20,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part1, match_part2]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (10, 1)
-
-        match = {'subject':subject,
-                 'start':15, 'end':20,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part2]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (6, 5)
-
-        match = {'subject':subject,
-                 'start':10, 'end':13,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part1]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (4, 7)
-        #                 0123456789012345678901
-        #        0123456789012345678901
-        #query            ---------------------
-        #query             <-->  <--->
-        #simil                 90%
-        #subject           <-->  <--->
-        #subject ----------------------
-        query   = SeqWithQuality(seq=UnknownSeq(length=21))
-        subject = SeqWithQuality(seq=UnknownSeq(length=22))
-        match_part1 = {'scores':{'similarity':90.0},
-                       'query_start'   : 1,
-                       'query_end'     : 4,
-                       'query_strand'  : 1,
-                       'subject_start' : 10,
-                       'subject_end'   : 13,
-                       'subject_strand': 1
-                      }
-        match_part2 = {'scores':{'similarity':90.0},
-                       'query_start'   : 7,
-                       'query_end'     : 11,
-                       'query_strand'  : 1,
-                       'subject_start' : 16,
-                       'subject_end'   : 20,
-                       'subject_strand': 1
-                      }
-        match = {'subject':subject,
-                 'start':1, 'end':11,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part1, match_part2]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (9, 4)
-
-        match = {'subject':subject,
-                 'start':1, 'end':4,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part1]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (4, 9)
-
-        match = {'subject':subject,
-                 'start':7, 'end':11,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part2]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (5, 8)
-
-        #                 0123456789012345678901
-        #        0123456789012345678901
-        #query            ---------------------
-        #query             <--<-->--->
-        #simil                 90%
-        #subject           <--<-->--->
-        #subject ---------------------
-        query   = SeqWithQuality(seq=UnknownSeq(length=21))
-        subject = SeqWithQuality(seq=UnknownSeq(length=21))
-        match_part1 = {'scores':{'similarity':90.0},
-                       'query_start'   : 1,
-                       'query_end'     : 7,
-                       'query_strand'  : 1,
-                       'subject_start' : 10,
-                       'subject_end'   : 16,
-                       'subject_strand': 1
-                      }
-        match_part2 = {'scores':{'similarity':90.0},
-                       'query_start'   : 4,
-                       'query_end'     : 11,
-                       'query_strand'  : 1,
-                       'subject_start' : 13,
-                       'subject_end'   : 20,
-                       'subject_strand': 1
-                      }
-        match = {'subject':subject,
-                 'start':1, 'end':11,
-                 'scores':{'expect':0.01},
-                 'match_parts':[match_part1, match_part2]}
-
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (11, 1)
-
-        #query
-        #      1----34  31----94
-        #s   1              x
-        #u   |             x
-        #b   |            x
-        #j  66           x
-        #e
-        #c 191    x
-        #t   |   x
-        #    |  x
-        #  224 x
-        query   = SeqWithQuality(seq=UnknownSeq(length=110))
-        subject = SeqWithQuality(seq=UnknownSeq(length=250))
-        match = {'match_parts': [{'query_strand': -1, 'subject_end': 66,
-                                'subject_start': 1, 'query_start': 31,
-                                'query_end': 94,
-                                'scores': {'expect': 2.47e-21,
-                                           'identity': 96.96,
-                                           'similarity': 96.96},
-                                'subject_strand': 1},
-                               {'query_strand': -1, 'subject_end': 224,
-                                'subject_start': 191, 'query_start': 1,
-                                'query_end': 34,
-                                'scores': {'expect': 8.7e-12,
-                                           'identity': 100.0,
-                                           'similarity': 100.0},
-                                           'subject_strand': 1}],
-               'start': 1, 'scores': {'expect': 2.4e-21},
-               'end': 94,
-               'subject': subject}
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (64, 32)
-
-        query   = SeqWithQuality(seq=UnknownSeq(length=180))
-        subject = SeqWithQuality(seq=UnknownSeq(length=500))
-        match = {'match_parts': [{'query_strand': -1, 'subject_end': 289,
-                                 'subject_start': 158, 'query_start': 34,
-                                 'query_end': 166,
-                                 'scores': {'expect': 4.24e-65,
-                                            'identity': 98.49,
-                                            'similarity': 98.4},
-                                 'subject_strand': 1},
-                                 {'query_strand': -1, 'subject_end': 477,
-                                  'subject_start': 447, 'query_start': 1,
-                                  'query_end': 31,
-                                  'scores': {'expect': 5.6e-10,
-                                             'identity': 100.0,
-                                             'similarity': 100.0},
-                                             'subject_strand': 1}],
-                 'start': 1, 'scores': {'expect': 4.24e-65},
-                 'end': 166, 'subject': subject}
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (133, 47)
-
-        query   = SeqWithQuality(seq=UnknownSeq(length=260))
-        subject = SeqWithQuality(seq=UnknownSeq(length=110))
-        match = {'match_parts': [{'query_strand': -1, 'subject_end': 37,
-                                  'subject_start': 1, 'query_start': 215,
-                                  'query_end': 251,
-                                  'scores': {'expect': 1.31e-13,
-                                             'identity': 100.0,
-                                             'similarity': 100.0},
-                                  'subject_strand': 1},
-                                 {'query_strand': -1, 'subject_end': 100,
-                                  'subject_start': 72, 'query_start': 223,
-                                  'query_end': 251,
-                                  'scores': {'expect': 8.0e-09,
-                                             'identity': 100.0,
-                                             'similarity': 100.0},
-                                  'subject_strand': 1}],
-                 'start': 215, 'scores': {'expect': 1.34e-13},
-                 'end': 251, 'subject': subject}
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (37, 75)
-
-        query   = SeqWithQuality(seq=UnknownSeq(length=200))
-        subject = SeqWithQuality(seq=UnknownSeq(length=200))
-        match = {'match_parts': [{'query_strand': -1, 'subject_end': 187,
-                                  'subject_start': 127, 'query_start': 1,
-                                  'query_end': 65,
-                                  'scores': {'expect': 3e-20,
-                                             'identity': 93.8,
-                                             'similarity': 93.8},
-                                  'subject_strand': 1},
-                                 {'query_strand': -1, 'subject_end': 65,
-                                  'subject_start': 5, 'query_start': 127,
-                                  'query_end': 185,
-                                  'scores': {'expect': 1.8e-18,
-                                             'identity': 96.7,
-                                             'similarity': 96.7},
-                                             'subject_strand': 1}],
-                 'start': 1, 'scores': {'expect': 3e-20},
-                 'end': 185, 'subject': subject}
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (124, 67)
-
-        query   = SeqWithQuality(seq=UnknownSeq(length=220))
-        subject = SeqWithQuality(seq=UnknownSeq(length=220))
-        match = {'match_parts': [{'query_strand': -1, 'subject_end': 187,
-                                  'subject_start': 100, 'query_start': 69,
-                                  'query_end': 156,
-                                  'scores': {'expect': 8.3e-44,
-                                             'identity': 100.0,
-                                             'similarity': 100.0},
-                                  'subject_strand': 1},
-                                 {'query_strand': -1, 'subject_end': 77,
-                                  'subject_start': 47, 'query_start': 179,
-                                  'query_end': 209,
-                                  'scores': {'expect': 8.5e-10,
-                                             'identity': 100.0,
-                                             'similarity': 100.0},
-                                             'subject_strand': 1}],
-                 'start': 69, 'scores': {'expect': 8.3e-44},
-                 'end': 209, 'subject': subject}
-        compat, incompat = _compatible_incompatible_length(match, query)
-        assert (compat, incompat) == (119, 66)
 
 class AlignmentSearchSimilDistribTest(unittest.TestCase):
     'It test that we can calculate the distribution of similarity'
@@ -724,12 +733,6 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
                                                 filter_same_query_subject=False)
         assert scores == [[90.0, 80.0], [90.0, 80.0]]
 
-        #we can also ask for a derived score
-        scores = alignment_results_scores(results, ['similarity',
-                                                    'd_incompatibility'],
-                                                filter_same_query_subject=False)
-        assert scores == [[90.0, 80.0], [16.0, 16.0]]
-
 class WaterTests(unittest.TestCase):
     'Water related tests'
     @staticmethod
@@ -765,7 +768,64 @@ class WaterTests(unittest.TestCase):
         assert relations == {'query': [(0, 50), (51, 112), (113, 409)],
                              'subject': [(0, 50), (52, 113), (129, 425)]}
 
+class MergeMatchesTests(unittest.TestCase):
+    'Tests overlaping match_parts merging'
+    def test_match_parts_merging(self):
+        '''Merging match parts'''
+        # ---   ---
+        #  ---
+        match_part1 = {'query_start':80,   'query_end':100,
+                       'subject_start':180, 'subject_end':200}
+        match_part2 = {'query_start':90,   'query_end':110,
+                       'subject_start':190, 'subject_end':210}
+        match_part3 = {'query_start':190,   'query_end':200,
+                       'subject_start':290, 'subject_end':300}
+        mparts = [match_part1, match_part2, match_part3]
+        covered_segments = _covered_segments(mparts)
+        assert covered_segments == [(80,   110), (190, 200)]
+
+        match_part2 = {'query_start':90,   'query_end':110,
+                       'subject_start':190, 'subject_end':210}
+        match_part3 = {'query_start':190,   'query_end':200,
+                       'subject_start':290, 'subject_end':300}
+        covered_segments = _covered_segments([match_part2, match_part3])
+        assert covered_segments == [(90, 110), (190, 200)]
+
+        # q 0---10
+        # s 0---10
+        #   q 5---15
+        #   s 15--25
+
+        match_part1 = {'query_start':0,   'query_end':10,
+                       'subject_start':0, 'subject_end':10}
+        match_part2 = {'query_start':5,   'query_end':15,
+                       'subject_start':15, 'subject_end':25}
+        mparts = [match_part1, match_part2]
+        covered_segments = _covered_segments(mparts)
+        assert covered_segments == [(0, 15)]
+
+        covered_segments = _covered_segments(mparts, in_query=False)
+        assert covered_segments == [(0, 10), (15, 25)]
+
+        match_part1 = {'query_start':1,   'query_end':10,
+                       'subject_start':1, 'subject_end':10}
+        match_part2 = {'query_start':11,   'query_end':20,
+                       'subject_start':11, 'subject_end':20}
+        match_part3 = {'query_start':30,   'query_end':40,
+                       'subject_start':30, 'subject_end':40}
+        mparts = [match_part1, match_part2, match_part3]
+        covered_segments = _covered_segments(mparts)
+        assert covered_segments == [(1, 20), (30, 40)]
+
+
+        match_part1 = {'query_start':1,   'query_end':10,
+                       'subject_start':1, 'subject_end':10}
+        match_part2 = {'query_start':10,   'query_end':20,
+                       'subject_start':10, 'subject_end':20}
+        mparts = [match_part1, match_part2]
+        covered_segments = _covered_segments(mparts)
+        assert covered_segments == [(1, 20)]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testiprscan_parse']
+    #import sys;sys.argv = ['', 'AlignmentSearchResultFilterTest.test_min_length_filter']
     unittest.main()

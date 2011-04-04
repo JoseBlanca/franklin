@@ -16,7 +16,6 @@
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from franklin.seq.seq_filters import (create_aligner_filter, create_length_filter,
-                                create_adaptor_matches_filter,
                                 create_comtaminant_filter,
                                 create_similar_seqs_filter,
                                 create_solid_quality_filter)
@@ -40,9 +39,9 @@ class BlastFilteringTest(unittest.TestCase):
 
         arabidopsis_genes = 'arabidopsis_genes+'
         parameters = {'expect':1e-10, 'database':arabidopsis_genes}
-        match_filters = [{'kind'           : 'min_scores',
-                          'score_key'      : 'expect',
-                          'max_score_value': 0.001}]
+        match_filters = [{'kind'     : 'score_threshold',
+                          'score_key': 'expect',
+                          'max_score': 0.001}]
 
         blastpath = os.path.join(DATA_DIR, 'blast')
         blast_filter = create_aligner_filter(aligner_cmd='blastn',
@@ -51,32 +50,6 @@ class BlastFilteringTest(unittest.TestCase):
                                      environment={'BLASTDB':blastpath} )
         assert  blast_filter(seq1) == False
         assert  blast_filter(seq2) == False
-
-ADAPTORS = '''>adaptor1
-AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA
->adaptor2
-AAAAATACTCTGATCGATCGGATCTAGCATGCAAA
-'''
-
-class TooManyAdaptorsTest(unittest.TestCase):
-    'It tests that we can filter out sequences that have too many adaptors'
-    @staticmethod
-    def test_too_many_adaptors_filtering():
-        'It test that we can filter the chimeric sequences using exonerate'
-        adapt1 = 'AAAAACTAGCTAGTCTACTGATCGTATGTCAAAA'
-        adapt2 = 'AAAAATACTCTGATCGATCGGATCTAGCATGCAA'
-        adaptors = [adapt1, adapt2]
-        seq2 = 'ATCGACTACGACATCGACTACGATACGATCAGATCAGATCGATCGACTACTA'
-
-        seq = adapt1 + seq2 + adapt2
-        seq1    = SeqWithQuality(seq=Seq(seq))
-        filter_ = create_adaptor_matches_filter(adaptors)
-        assert filter_(seq1)
-
-        seq = adapt1 + seq2 + adapt2 +  seq2 + adapt1
-        seq1    = SeqWithQuality(seq=Seq(seq))
-        filter_ = create_adaptor_matches_filter(adaptors)
-        assert not filter_(seq1)
 
 class LengthFilterTest(unittest.TestCase):
     'It checks the length filtering'

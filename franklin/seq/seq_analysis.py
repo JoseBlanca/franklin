@@ -24,8 +24,8 @@ import re
 from franklin.utils.cmd_utils import create_runner, call
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
-from franklin.alignment_search_result import (FilteredAlignmentResults,
-                                            get_alignment_parser)
+from franklin.alignment_search_result import (filter_alignments,
+                                              get_alignment_parser)
 from franklin.alignment_search_result import BlastParser
 
 def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
@@ -52,10 +52,10 @@ def get_hit_pairs_fom_blast(blast_fhand, sub_def_as_acc=None, filters=None):
     if filters is None:
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-20,
+                    'max_score'      : 1e-20,
                     'score_tolerance': 10}]
-    filtered_results = FilteredAlignmentResults(match_filters=filters,
-                                                results=blasts)
+    filtered_results = filter_alignments(blasts, config=filters)
+
     get_id = lambda x : x.split()[0]
 
     for match in filtered_results:
@@ -151,16 +151,16 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
 
     # We filter the results with appropiate  filters
     if filters is None:
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'similarity',
-                    'min_score_value': 90,
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'similarity',
+                    'min_score': 90,
                    },
-                   {'kind'           : 'min_length',
-                    'min_length_bp'  : 100,
+                   {'kind'            : 'min_length',
+                    'min_num_residues': 100,
+                    'length_in_query' : True
                    }
                   ]
-    alignments = FilteredAlignmentResults(match_filters=filters,
-                                          results=blast_result)
+    alignments = filter_alignments(blast_result, config=filters)
     try:
         alignment = alignments.next()
     except StopIteration:
