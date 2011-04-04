@@ -186,7 +186,7 @@ def genes_in_gff(fpath):
             gene_feats = []
         gene_feats.append(feature)
     else:
-        if gene_feats:
+        if gene_feats[0]['type'] == 'gene':
             yield gene_feats
 
 def test():
