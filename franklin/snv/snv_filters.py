@@ -22,7 +22,7 @@ Created on 19/02/2010
 from Bio import SeqIO
 
 from franklin.utils.cmd_utils import create_runner
-from franklin.alignment_search_result import (FilteredAlignmentResults,
+from franklin.alignment_search_result import (filter_alignments,
                                               get_alignment_parser)
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                        similar_sequences_for_blast)
@@ -272,14 +272,15 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
     parameters = {'database': genomic_db}
     blast_runner = create_runner(tool='blastn', parameters=parameters)
     blast_parser = get_alignment_parser('blast')
-    filters = [{'kind'           : 'min_scores',
-                'score_key'      : 'similarity',
-                'min_score_value': 90,
-               },
-               {'kind'           : 'min_length',
-                'min_length_bp'  : 20,
-               }
-              ]
+    match_filters = [{'kind'     : 'score_threshold',
+                      'score_key': 'similarity',
+                      'min_score': 90,
+                     },
+                     {'kind'            : 'min_length',
+                      'min_num_residues': 20,
+                      'length_in_query' : True
+                     }
+                    ]
     if not genomic_seqs_fpath:
         msg = 'No genomic sequence file defined for unique SNV filter'
         raise ValueError(msg)
@@ -315,8 +316,7 @@ def create_unique_contiguous_region_filter(distance, genomic_db,
             blast_fhand = blast_runner(seq_fragment)['blastn']
             #now we parse the blast
             blast_result = blast_parser(blast_fhand)
-            alignments = FilteredAlignmentResults(match_filters=filters,
-                                              results=blast_result)
+            alignments = filter_alignments(blast_result, config=match_filters)
             #are there any similar sequences?
             try:
                 alignment = alignments.next()

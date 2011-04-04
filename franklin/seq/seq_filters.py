@@ -23,8 +23,8 @@ can also return None if no sequence is left after the filtering process.
 
 from franklin.utils.cmd_utils import create_runner
 from franklin.seq.writers import temp_fasta_file
-from franklin.alignment_search_result import (FilteredAlignmentResults,
-                                            get_alignment_parser)
+from franklin.alignment_search_result import (filter_alignments,
+                                              get_alignment_parser)
 from franklin.seq.seq_analysis import look_for_similar_sequences
 
 def create_similar_seqs_filter(db, blast_program, inverse=False,
@@ -43,7 +43,7 @@ def create_similar_seqs_filter(db, blast_program, inverse=False,
     return filter_by_similar_seqs
 
 def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
-                            result_filters=None, environment=None):
+                          environment=None):
     '''A function factory factory that creates aligner filters.
 
     It returns a function that will accept a sequence and it will return
@@ -55,23 +55,16 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
 
     parser = get_alignment_parser(aligner_cmd)
     binary  = {'blast':'blast2'}
-    if aligner_cmd in binary:
-        bin_cmd = binary[aligner_cmd]
-    else:
-        bin_cmd = None # create_runer will know how to do
 
     run_align_for_seq = create_runner(tool=aligner_cmd, environment=environment,
                                       parameters=cmd_parameters)
-
     def _filter(sequence):
         'Giving a sequence it returns true or False depending on the exonerate'
         if sequence is None:
             return False
         source_result    = run_align_for_seq(sequence)[aligner_cmd]
         results          = parser(source_result)
-        filtered_results = FilteredAlignmentResults(match_filters=match_filters,
-                                                  result_filters=result_filters,
-                                                   results=results)
+        filtered_results = filter_alignments(results, config=match_filters)
         try:
             #only one sequence -> only one result
             filtered_results.next()
@@ -107,54 +100,21 @@ def _count_non_masked(sequence):
             sequence_length += 1
     return sequence_length
 
-def create_adaptor_matches_filter(adaptors, number=3):
-    '''It creates a filter that return Fase if the sequence have more than
-    number or equal tiems.
-
-    Adaptors can be a fasta file or a list of sequences
-    '''
-    # The adaptators is a file or is just a list of sequences?
-    properties = dir(adaptors)
-    if 'name' in properties and 'close' in properties:
-        fhand = adaptors
-    else:
-        fhand = temp_fasta_file(adaptors)
-
-    parameters     =  {'target': fhand}
-    match_filters  = [{'kind'          : 'min_scores',
-                      'score_key'      : 'similarity',
-                      'min_score_value': 96},
-                      {'kind'          : 'min_length',
-                       'min_length_subject_%' :90 }]
-    #the adaptors should be found 3 or more times
-    result_filters = [{'kind': 'max_num_match_parts', 'value': 2}]
-
-    match_filter = create_aligner_filter(aligner_cmd='exonerate',
-                                    cmd_parameters=parameters,
-                                    match_filters=match_filters,
-                                    result_filters=result_filters )
-
-    def filter_by_adaptor_matches(sequence):
-        'It return False if the sequence have more than number or equal tiems'
-        return match_filter(sequence)
-    return filter_by_adaptor_matches
-
 def create_comtaminant_filter(contaminant_db, environment=None):
     '''It creates a filter that return False if the sequence has a strong match
      with the database
     '''
     # This filter are bases in seqclean defaults
     parameters     =  {'database':contaminant_db}
-    match_filters  = [{'kind'          : 'min_scores',
-                      'score_key'      : 'similarity',
-                      'min_score_value': 96},
+    match_filters  = [{'kind'    : 'score_threshold',
+                      'score_key': 'similarity',
+                      'min_score': 96},
                       {'kind'          : 'min_length',
-                       'min_length_query_%' :60 }]
-    result_filters = [{'kind': 'max_num_matches', 'value':0}]
+                       'min_percentage' :60,
+                       'length_in_query':False }]
     match_filter = create_aligner_filter(aligner_cmd='blastn',
                                     cmd_parameters=parameters,
                                     match_filters=match_filters,
-                                    result_filters=result_filters,
                                     environment=environment )
 
     def filter_(sequence):

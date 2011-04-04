@@ -29,7 +29,7 @@ from Bio.SeqFeature import  FeatureLocation
 from Bio.Alphabet import generic_dna, generic_protein
 
 from franklin.alignment_search_result import (BlastParser,
-                                              FilteredAlignmentResults)
+                                              filter_alignments)
 from franklin.snv.snv_annotation import (INVARIANT, SNP, DELETION, INSERTION,
                                          SNV_TYPES)
 from franklin.utils.cmd_utils import  create_runner
@@ -97,7 +97,7 @@ def _get_descriptions_from_blasts(blasts):
     seq_annot = {}
     filters = [{'kind'           : 'best_scores',
                 'score_key'      : 'expect',
-                'max_score_value': 1e-20,
+                'max_score'      : 1e-20,
                 'score_tolerance': 10}]
     for blast in blasts:
         blast_fhand = blast['blast']
@@ -107,9 +107,8 @@ def _get_descriptions_from_blasts(blasts):
             modifier = None
         blast_fhand = get_fhand(blast_fhand)
         blast = BlastParser(fhand=blast_fhand)
-        filtered_results = FilteredAlignmentResults(match_filters=filters,
-                                                    results=blast)
-        #filtered_results = [filtered_results]
+        filtered_results = filter_alignments(blast, config=filters)
+
         try:
             for match in filtered_results:
                 try:

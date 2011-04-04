@@ -18,7 +18,6 @@ ssaha2, etc. that align one sequence against a database.'''
 
 from franklin.alignment_search_result import (BlastParser,
                                               TabularBlastParser,
-                                              FilteredAlignmentResults,
                                               alignment_results_scores,
                                               ExonerateParser,
                                               build_relations_from_aligment,
@@ -200,10 +199,10 @@ class BlastParserTest(unittest.TestCase):
 
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-4,
+                    'max_score': 1e-4,
                     'score_tolerance': 10
                    }]
-        filt_b = FilteredAlignmentResults(match_filters=filters, results=blasts)
+        filt_b = filter_alignments(blasts, config=filters,)
         try:
             filt_b.next()
             self.fail()
@@ -352,9 +351,9 @@ class AlignmentFilters(unittest.TestCase):
 
     def test_min_score_mapper(self):
         'We keep the matches with the scores above the threshold'
-        filter1 = {'kind'           : 'score_threshold',
-                   'score_key'      : 'score',
-                   'min_score'      : 100,
+        filter1 = {'kind'     : 'score_threshold',
+                   'score_key': 'score',
+                   'min_score': 100,
                    }
 
         align1 = {'matches': [{'scores':{'score':400},
@@ -587,11 +586,7 @@ class AlignmentFilters(unittest.TestCase):
         _check_blast(filtered_alignments[0], expected_align1)
         assert len(filtered_alignments) == 1
 
-class AlignmentSearchResultFilterTest(unittest.TestCase):
-    'It test that we can filter out matches from the blast or ssaha2 results'
-
-    @staticmethod
-    def test_no_filter():
+    def test_no_filter(self):
         'It test the blast parser'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
         parser = BlastParser(fhand=blast_file)
@@ -604,128 +599,88 @@ class AlignmentSearchResultFilterTest(unittest.TestCase):
                      'cCL1Contig4':5, 'cCL1Contig5':8}
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_best_scores_filter():
+    def test_best_scores_filter(self):
         'We can keep the hits with the bests expects'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
-                    'max_score_value': 1e-4,
+                    'max_score'      : 1e-4,
                     'score_tolerance': 10
                    }]
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':1,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_min_scores_filter():
+    def test_min_scores_filter(self):
         'We can keep the hits scores above the given one'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
 
         #with evalue
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'expect',
-                    'max_score_value': 1e-34,
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'expect',
+                    'max_score': 1e-34,
                    }]
         expected  = {'cCL1Contig2':2, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with similartiry
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'similarity',
-                    'min_score_value': 90,
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'similarity',
+                    'min_score': 92,
                    }]
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
-    @staticmethod
-    def test_min_length_filter():
+    def test_min_length_filter(self):
         'We can keep the hits length above the given one'
         blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
 
         #with the min length given in base pairs
-        filters = [{'kind'          : 'min_length',
-                    'min_length_bp' : 500,
+        filters = [{'kind'            : 'min_length',
+                    'min_num_residues': 500,
+                    'length_in_query':True
                    }]
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
-                     'cCL1Contig4':1, 'cCL1Contig5':2}
+                     'cCL1Contig4':1, 'cCL1Contig5':1}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with the min length given in query %
-        filters = [{'kind'               : 'min_length',
-                    'min_length_query_%' : 70,
+        filters = [{'kind'          : 'min_length',
+                    'min_percentage': 70,
+                    'length_in_query':True
                    }]
         expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
 
         #with the min length given in subject %
-        filters = [{'kind'                 : 'min_length',
-                    'min_length_subject_%' : 0.002,
+        filters = [{'kind'           : 'min_length',
+                    'min_percentage' : 0.002,
+                    'length_in_query': False
                    }]
         expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
+        filtered_blasts = filter_alignments(blasts, config=filters)
         match_summary = _summarize_matches(filtered_blasts)
         _check_match_summary(match_summary, expected)
-
-class ResultFilterTests(unittest.TestCase):
-    'It tests results filters . It tests that we can filter some results'
-    @staticmethod
-    def test_min_matches_number_filter():
-        'It tests that we can filter some results with too many matches'
-        result1 = {'query':'query',
-                   'matches': [{},{}]}
-        result2 = {'query':None,
-                   'matches': [{},{},{}]}
-        results = iter([result1, result2])
-        filter_ = {'kind': 'max_num_matches',
-                   'value': 2}
-        filtered_results = FilteredAlignmentResults(result_filters=[filter_],
-                                                    results=results)
-        assert list(filtered_results)[0] is result1
-
-    @staticmethod
-    def test_at_least_one_match():
-        'A result with no matches left should be removed'
-        match = {'subject':None,
-                 'start':10, 'end':20,
-                 'scores':{'expect':0.01},
-                 'match_parts':[]}
-        result1 = {'query':'query',
-                   'matches': [match]}
-        filters = [{'kind'           : 'min_scores',
-                    'score_key'      : 'expect',
-                    'max_score_value': 1e-34,
-                   }]
-        blasts = iter([result1])
-        filtered_blasts = FilteredAlignmentResults(match_filters=filters,
-                                                   results=blasts)
-        assert len(list(filtered_blasts)) == 0
 
 class AlignmentSearchSimilDistribTest(unittest.TestCase):
     'It test that we can calculate the distribution of similarity'
@@ -871,7 +826,6 @@ class MergeMatchesTests(unittest.TestCase):
         covered_segments = _covered_segments(mparts)
         assert covered_segments == [(1, 20)]
 
-
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'AlignmentFilters.test_min_length_mapper']
+    #import sys;sys.argv = ['', 'AlignmentSearchResultFilterTest.test_min_length_filter']
     unittest.main()

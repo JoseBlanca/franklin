@@ -445,208 +445,6 @@ def _match_num_if_exists_in_struc(subject_name, struct_dict):
             return i
     return None
 
-def incompatibility_score(match, query, subject):
-    '''It calculates and returns the incompatibility score
-
-    The incompatible region is the region that should be aligned, but it is
-    not.
-
-       query     -----------------
-                   |||||
-       subject   ----------------
-                 ++     +++++ <-incompabible regions
-    The score is given as a percentage relative to the shortest sequence
-    beteween the query and the subject.
-    '''
-    incomp = _compatible_incompatible_length(match, query)[1]
-    #we calculate a percentage dividing by the shortest seq
-    #between query an subj
-    min_len = min(len(query), len(subject))
-    incomp_bak = incomp
-    incomp = float(incomp) / float(min_len) * 100.0
-    if incomp < 0 or incomp > 100:
-        msg = 'Bad calculation for incompatible region'
-        raise RuntimeError(msg)
-    return incomp
-
-def get_match_score(match, score_key, query=None, subject=None):
-    '''Given a match it returns its score.
-
-    It tries to get the score from the match, if it's not there it goes for
-    the first match_part.
-    It can also be a derived score like the incompatibility. All derived scores
-    begin with d_
-    '''
-    derived_scores = {'d_incompatibility': incompatibility_score}
-    #the score can be in the match itself or in the first
-    #match_part
-    if score_key in match['scores']:
-        score = match['scores'][score_key]
-    elif score_key in derived_scores:
-        score = derived_scores[score_key](match, query, subject)
-    else:
-        #the score is taken from the best hsp (the first one)
-        score = match['match_parts'][0]['scores'][score_key]
-    return score
-
-def _merge_overlaping_match_parts_old(match_parts, min_similarity=None):
-    '''Given a list of match_parts it merges the ones that overlaps
-
-       hsp 1  -------        ----->    -----------
-       hsp 2       ------
-       The similarity information will be lost
-       The modified hsps will be in hsp_mod not in hsp
-       It returns the list of new match_parts
-    '''
-    #DO NOT USE THIS FUNCTION, LOTS OF PATOLOGICAL CASES!!!!!!
-    #we don't use the merging of all match_parts because is very difficult
-    #to calculate the correct one
-    #what happens in a case like:
-    #    subj 1-----------78           478-------------534
-    #   query 1-----------78           31--------------78
-    hsps = match_parts
-    #hsp
-    hsp0 = hsps[0]
-    subject_strand = hsp0['subject_strand']
-    query_strand = hsp0['query_strand']
-    hsp0_qe = hsp0['query_end']
-    hsp0_se = hsp0['subject_end']
-
-    #new hsps
-    filtered_hsps = [hsp0]
-    for hsp in hsps[1:]:
-        if min_similarity and hsp['scores']['similarity'] < min_similarity:
-            continue
-        if (hsp['subject_strand'] != subject_strand or
-            hsp['query_strand'] != query_strand):
-            #we'll have into account only the matches with the same
-            #orientation as the first hsp
-            continue
-        #what happens in a case like:
-        #    subj 1-----------78           478-------------534
-        #   query 1-----------78           31--------------78
-        #so we only use the hsps that are in the same diagonal as the first
-        if query_strand == 1:
-            hsp_qs = hsp['query_start']
-            hsp_ss = hsp['subject_start']
-            if hsp_ss - hsp0_se != 0:
-                slope = float(hsp_qs - hsp0_qe) / float(hsp_ss - hsp0_se)
-            else:
-                slope = float(hsp['query_end'] - hsp0_qe) / \
-                        float(hsp['subject_end'] - hsp0_se)
-        else:
-            hsp_ss = hsp['subject_start']
-            if hsp0_se - hsp_ss != 0:
-                slope = float(hsp0['query_start'] - hsp['query_end']) / \
-                        float(hsp0_se - hsp_ss)
-            else:
-                slope = float(hsp0['query_start'] - hsp['query_start']) / \
-                        float(hsp['subject_end'] - hsp0_se)
-        #slope limits
-        slope_min = 0.95
-        slope_max = 1.05
-        if query_strand != subject_strand:
-            slope_min, slope_max = -slope_max, -slope_min
-        if slope >= slope_min and slope <= slope_max:
-            filtered_hsps.append(hsp)
-    hsps = filtered_hsps
-
-    #we collect all start and ends
-    hsp_limits = [] #all hsp starts and ends
-    for hsp in hsps:
-        hsp_limit_1 = {
-            'type' : 'start',
-            'subj' : hsp['subject_start'],
-            'query' : hsp['query_start']
-        }
-        hsp_limit_2 = {
-            'type' : 'end',
-            'subj' : hsp['subject_end'],
-            'query' : hsp['query_end']
-        }
-        hsp_limits.append(hsp_limit_1)
-        hsp_limits.append(hsp_limit_2)
-
-    #now we sort the hsp limits according their query location
-    def cmp_query_location(hsp_limit1, hsp_limit2):
-        'It compares the query locations'
-        return hsp_limit1['query'] - hsp_limit2['query']
-    hsp_limits.sort(cmp_query_location)
-
-    #now we creaet the merged hsps
-    starts = 0
-    merged_hsps = []
-    for hsp_limit in hsp_limits:
-        if hsp_limit['type'] == 'start':
-            starts += 1
-            if starts == 1:
-                subj_start = hsp_limit['subj']
-                query_start = hsp_limit['query']
-        elif hsp_limit['type'] == 'end':
-            starts -= 1
-            if starts == 0:
-                subj_end = hsp_limit['subj']
-                query_end = hsp_limit['query']
-                query_strand = None
-                merged_hsps.append({
-                    'expect' : None,
-                    'subject_start' : subj_start,
-                    'subject_end' : subj_end,
-                    'subject_strand':hsp0['subject_strand'],
-                    'query_start' : query_start,
-                    'query_end' : query_end,
-                    'query_strand':hsp0['query_strand'],
-                    'similarity' : None
-                    }
-                )
-    return merged_hsps
-
-def _compatible_incompatible_length(match, query, min_similarity=None):
-    '''It returns the compabible and incompatible length in a match
-
-        xxxxxxx      xxxxxxxxxx      xxx incompatible
-    ------------------------------------
-               ||||||          ||||||
-        ------------------------------------------
-               ******          ******    compatible
-    '''
-    match_parts = _merge_overlaping_match_parts(match['match_parts'],
-                                                min_similarity)
-    #     first_incomp
-    #     xxxxxxx      xxxxxxxxxx      xxx incompatible
-    #------------------------------------
-    #           ||||||          ||||||
-    #    ------------------------------------------
-    #           ******          ******    compatible
-    first_matchp = match_parts[0]
-    if first_matchp['query_strand'] == 1:
-        first_incomp = min(first_matchp['query_start'],
-                           first_matchp['subject_start'])
-    else:
-        first_incomp = min(first_matchp['query_start'],
-                           len(match['subject']) - \
-                                             first_matchp['subject_end'] + 1)
-
-    last_matchp = match_parts[-1]
-    query_overlap = len(query) - last_matchp['query_end'] - 1
-    if first_matchp['query_strand'] == 1:
-        subject_overlap = len(match['subject']) - last_matchp['subject_end'] \
-                                                                           - 1
-    else:
-        subject_overlap = last_matchp['subject_start']
-    last_incomp = min(query_overlap, subject_overlap)
-
-    #the compatible length for all match_parts
-    comp_length = 0
-    for matchp in match_parts:
-        comp_length += matchp['query_end'] - matchp['query_start'] + 1
-
-    #which is the incompatible regions between consecutive match parts?
-    match_incomp = last_matchp['query_end'] - first_matchp['query_start'] + \
-                                                               1 - comp_length
-    incomp = first_incomp + last_incomp + match_incomp
-    return comp_length, incomp
-
 def get_alignment_parser(kind):
     '''It returns a parser depending of the aligner kind '''
     if 'blast_tab' == kind:
@@ -658,274 +456,22 @@ def get_alignment_parser(kind):
         parser = parsers[kind]
     return parser
 
-class FilteredAlignmentResults(object):
-    '''An iterator that yield the search results with its matches filtered
+def get_match_score(match, score_key, query=None, subject=None):
+    '''Given a match it returns its score.
 
-    It accepts a list of filters that will be applied to the alignment
-    search results.
+    It tries to get the score from the match, if it's not there it goes for
+    the first match_part.
+    It can also be a derived score like the incompatibility. All derived scores
+    begin with d_
     '''
-    def __init__(self, results, match_filters=None, result_filters=None):
-        '''It requires an alignment search result and a list of filters.
-
-        The alignment search result is a dict with the query, matches,
-        etc.
-        The match_filters list can have several filters defined by dicts.
-        Each filter definition dict should have the key 'kind' as well
-        as other keys that depend on the kind of filter.
-        Allowed match_filters are:
-            - best scores filters.
-                It filters keeps the best match and the other matches
-                equally good. Which is considered equally good is
-                defined by the score_tolerance. All matches that
-                obey:
-                 (log10 best_match score - log10 match score) < tolerance
-                are kept.
-                    {'kind'           : 'best_scores',
-                     'score_key'      : 'expect',
-                     'min_score_value': 1e-4,
-                     'score_tolerance': 10}
-
-        The results filters list is a list of filters that can filter the
-        results not the matches.
-            Example:It can filter results by number of matches
-        '''
-        self._results = results
-        if match_filters is None:
-            match_filters = []
-        self._match_filters = match_filters
-        if result_filters is None:
-            result_filters = []
-        #for the results we create a default filter, we don't want results with
-        #no matches
-        result_filters.append({'kind': 'min_num_matches', 'value': 1})
-        self._result_filters = result_filters
-
-    def __iter__(self):
-        'Part of the iteration protocol'
-        return self
-
-    def next(self):
-        'It returns the next result filtered.'
-        while True:
-            result = self._results.next()
-            #apply the match filters to the results
-            for filter_ in self._match_filters:
-                self._filter_matches(result, filter_)
-
-            #is the result worth? we apply the result filters to find out.
-            result_filters = {
-                'max_num_matches':     self._max_num_matches_result_filter,
-                'min_num_matches':     self._min_num_matches_result_filter,
-                'max_num_match_parts': self._max_num_match_parts_result_filter}
-
-            for result_filter in self._result_filters:
-                filter_funct = result_filters[result_filter['kind']]
-                if not filter_funct(result, result_filter):
-                    result = None
-                    break
-
-            #is there a result to return or it has been filtered out?
-            if result is not None:
-                return result
-
-    @staticmethod
-    def _max_num_matches_result_filter(result, parameters):
-        'It returns true if the given result less or equal matches'
-        if len(result['matches']) <= parameters['value']:
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def _max_num_match_parts_result_filter(result, parameters):
-        'It returns true if the given result less or equal matches'
-        num_match_parts = 0
-        for match in result['matches']:
-            num_match_parts += len(match['match_parts'])
-        if num_match_parts <= parameters['value']:
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def _min_num_matches_result_filter(result, parameters):
-        'It returns true if the given result less or equal matches'
-        if len(result['matches']) >= parameters['value']:
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def _create_filter_best_score(parameters):
-        'It returns a function that will filter matches'
-
-        log_best_score = parameters['log_best_score']
-        log_tolerance = parameters['log_tolerance']
-        score_key = parameters['score_key']
-        if 'min_score_value' in parameters:
-            min_score = parameters['min_score_value']
-            max_score = None
-        else:
-            min_score = None
-            max_score = parameters['max_score_value']
-        def filter_(match):
-            '''It returns True or False depending on the match meeting
-            the criteria'''
-            score = get_match_score(match, score_key)
-            if max_score is not None and score == 0.0:
-                result = True
-            elif min_score is not None and score <= min_score:
-                result = False
-            elif max_score is not None and score >= max_score:
-                result = False
-            elif abs(log10(score) - log_best_score) < log_tolerance:
-                result = True
-            else:
-                result = False
-            return result
-        return filter_
-
-    @staticmethod
-    def _create_filter_min_score(parameters):
-        'It returns a function that will filter matches'
-        score_key = parameters['score_key']
-        if 'min_score_value' in parameters:
-            min_score = parameters['min_score_value']
-            max_score = None
-        else:
-            min_score = None
-            max_score = parameters['max_score_value']
-        def filter_(match):
-            '''It returns True or False depending on the match meeting
-            the criteria'''
-            score = get_match_score(match, score_key)
-            if min_score is not None and score >= min_score:
-                result = True
-            elif max_score is not None and score <= max_score:
-                result = True
-            else:
-                result = False
-            return result
-        return filter_
-
-    @staticmethod
-    def _create_filter_min_length(parameters):
-        'It returns a function that will filter matches'
-        #the min length can be given in base pairs or as a percentage
-        #of the query or the subject
-        kind, query, min_length = None, None, None
-        if 'min_length_bp' in parameters:
-            min_length = parameters['min_length_bp']
-            kind = 'bp'
-        elif 'min_length_query_%' in parameters:
-            min_length = parameters['min_length_query_%']
-            kind = 'query'
-            query = parameters['query']
-        elif 'min_length_subject_%' in parameters:
-            min_length = parameters['min_length_subject_%']
-            kind = 'subject'
-        else:
-            raise ValueError('Filter poorly defined, missing parameters')
-
-        def filter_(match):
-            '''It returns True or False depending on the match meeting
-            the criteria'''
-            #how to calculate the match length depends on the
-            #kind of filtering we're doing: base pairs, percentage
-            #on the query or on the subject
-            match_length = match['end'] - match['start'] + 1
-            if kind == 'bp':
-                match_length = match_length
-            elif kind == 'query':
-                match_length = (match_length / float(len(query))) * 100.0
-            elif kind == 'subject':
-                subject = match['subject']
-                match_length = \
-                             (match_length / float(len(subject))) * 100.0
-            if match_length >= min_length:
-                result = True
-            else:
-                result = False
-            return result
-        return filter_
-
-    @staticmethod
-    def _create_filter_compatibility(parameters):
-        '''It returns a function that will filter matches
-        It select only the ones that are compatible in more than
-        min_compatibility. Compatible is the fragment that is aligned in
-        a match_part. Also it shouldn't be more than max_incompatibility.
-        Incompatibility means that they should be alignmed in that region,
-        but they aren't. For instance:
-            -----------------------------------
-                                |||||||||||||||
-                -------------------------------
-                incompatible    compatible
-                  region          region
-        Both compatibility and incompatibility will be applied to both
-        query and subject and are number of residues.
-        '''
-        #the min length can be given in base pairs or as a percentage
-        #of the query or the subject
-        min_compat = parameters['min_compatibility']
-        max_incompat = parameters['max_incompatibility']
-        min_simil = parameters['min_similarity']
-        query = parameters['query']
-
-        def filter_(match):
-            '''It returns True or False depending on the match meeting
-            the criteria'''
-            #filter match_parts under similarity
-            match_parts = []
-            for match_part in match['match_parts']:
-                if match_part['scores']['similarity'] >= min_simil:
-                    match_parts.append(match_part)
-            if not match_parts:
-                return False
-            #which spans are aligned and which not?
-            compat, incompat = _compatible_incompatible_length(match, query,
-                                                               min_simil)
-            if compat < min_compat:
-                return False
-            if incompat > max_incompat:
-                return False
-            return True
-        return filter_
-
-    def _filter_matches(self, result, filter_):
-        'Given a filter dict and a result it filters the matches'
-        filter_functions_factories = {
-            'best_scores'  : self._create_filter_best_score,
-            'min_scores'   : self._create_filter_min_score,
-            'min_length'   : self._create_filter_min_length,
-            'compatibility': self._create_filter_compatibility,
-        }
-
-        kind = filter_['kind']
-
-        #some filters need extra data
-        if kind == 'best_scores':
-            score_key = filter_['score_key']
-            #if the are no matches, there's nothig to filter
-            if not result['matches']:
-                return
-            #the log10 for the best score
-            #the best score should be in the first hit
-            best_score = result['matches'][0]['scores'][score_key]
-            if best_score == 0.0:
-                log_best_score = 0.0
-            else:
-                log_best_score = log10(best_score)
-            filter_['log_best_score'] = log_best_score
-            filter_['log_tolerance'] = log10(filter_['score_tolerance'])
-        elif kind == 'min_length' and 'min_length_query_%' in filter_:
-            filter_['query'] = result['query']
-        elif kind == 'compatibility':
-            filter_['query'] = result['query']
-
-        filter_ = filter_functions_factories[kind](filter_)
-        #pylint: disable-msg=W0141
-        result['matches'] = list(filter(filter_, result['matches']))
+    #the score can be in the match itself or in the first
+    #match_part
+    if score_key in match['scores']:
+        score = match['scores'][score_key]
+    else:
+        #the score is taken from the best hsp (the first one)
+        score = match['match_parts'][0]['scores'][score_key]
+    return score
 
 def get_match_scores(match, score_keys, query, subject):
     '''It returns the scores for one match.
@@ -1145,11 +691,15 @@ def _create_scores_mapper_(score_key, score_tolerance=None,
             log_best_score = None
         else:
             #score of the best match
-            best_score = _get_match_score(alignment['matches'][0], score_key)
-            if best_score == 0.0:
-                log_best_score = 0.0
-            else:
-                log_best_score = log10(best_score)
+            try:
+                best_match = alignment['matches'][0]
+                best_score = _get_match_score(best_match, score_key)
+                if best_score == 0.0:
+                    log_best_score = 0.0
+                else:
+                    log_best_score = log10(best_score)
+            except IndexError:
+                log_best_score = None
 
         filtered_matches = []
         for match in alignment['matches']:
@@ -1398,7 +948,7 @@ def filter_alignments(alignments, config):
 
     The filters and maps to use will be decided based on the configuration.
     '''
-
+    config = copy.deepcopy(config)
     config.insert(0, {'kind': 'deepcopy'})
     config.append({'kind': 'fix_matches'})
     config.append({'kind': 'filter_empty'})

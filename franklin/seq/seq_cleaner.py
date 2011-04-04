@@ -27,8 +27,8 @@ from Bio import SeqIO
 import franklin
 from franklin.utils.cmd_utils import create_runner
 from franklin.seq.seqs import copy_seq_with_quality, Seq
-from franklin.alignment_search_result import (FilteredAlignmentResults,
-                                            get_alignment_parser)
+from franklin.alignment_search_result import (filter_alignments,
+                                              get_alignment_parser)
 from franklin.seq.seq_analysis import match_words
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
@@ -513,16 +513,18 @@ def create_vector_striper_by_alignment(vectors, aligner):
                  }
 
     #They filter matches not match parts
-    filters = {'exonerate': [{'kind'          : 'min_scores',
-                             'score_key'      : 'similarity',
-                             'min_score_value': 96},
-                             {'kind'          : 'min_length',
-                              'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
-               'blastn':      [{'kind'         : 'min_scores',
-                                'score_key'      : 'similarity',
-                                'min_score_value': 96},
-                               {'kind'          : 'min_length',
-                                'min_length_bp' : MIN_LONG_ADAPTOR_LENGTH}],
+    filters = {'exonerate': [{'kind'    : 'score_threshold',
+                             'score_key': 'similarity',
+                             'min_score': 96},
+                             {'kind'            : 'min_length',
+                              'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
+                              'length_in_query' : False}],
+               'blastn':      [{'kind'     : 'score_threshold',
+                                'score_key': 'similarity',
+                                'min_score': 96},
+                               {'kind'            : 'min_length',
+                                'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
+                                'length_in_query' : False}],
                'blastn_short': []
               }
     runner = aligner
@@ -552,8 +554,8 @@ def create_vector_striper_by_alignment(vectors, aligner):
         alignment_result = parser(alignment_fhand)
 
         # We filter the results with appropriate filters
-        alignments = FilteredAlignmentResults(match_filters=filters[aligner],
-                                              results=alignment_result)
+        alignments = filter_alignments(alignment_result,
+                                       config=filters[aligner])
         alignment_matches = _get_non_matched_locations(alignments)
         alignment_fhand.close()
         segments  = _get_longest_non_matched_seq_region_limits(sequence,
