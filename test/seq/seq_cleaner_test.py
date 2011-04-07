@@ -382,11 +382,12 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         fhand_vectors = temp_fasta_file([vec1, vec2])
         seq_trimmer = create_seq_trim_and_masker()
         strip_vector_by_alignment = \
-               create_vector_striper_by_alignment(fhand_vectors, 'blastn_short')
+               create_vector_striper_by_alignment(fhand_vectors, 'blast_short',
+                                                  seqs_are_short=True)
 
         seq = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq = Seq(seq)
-        seq2 = SeqWithQuality(name='seq', seq=seq)
+        seq2 = SeqWithQuality(name='seq1', seq=seq)
         seq1 = SeqWithQuality(name=seq2.name,
                               seq=vec1.seq + seq2.seq + vec2.seq,
                               description='hola')

@@ -24,9 +24,8 @@ import re
 from franklin.utils.cmd_utils import create_runner, call
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
-from franklin.alignment_search_result import (filter_alignments,
-                                              get_alignment_parser)
-from franklin.alignment_search_result import BlastParser
+from franklin.seq.alignment_result import (filter_alignments,
+                                           get_alignment_parser, BlastParser)
 
 def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
                   sub2_def_as_acc=None):

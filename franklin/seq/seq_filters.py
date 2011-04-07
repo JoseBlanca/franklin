@@ -23,8 +23,8 @@ can also return None if no sequence is left after the filtering process.
 
 from franklin.utils.cmd_utils import create_runner
 from franklin.seq.writers import temp_fasta_file
-from franklin.alignment_search_result import (filter_alignments,
-                                              get_alignment_parser)
+from franklin.seq.alignment_result import (filter_alignments,
+                                           get_alignment_parser)
 from franklin.seq.seq_analysis import look_for_similar_sequences
 
 def create_similar_seqs_filter(db, blast_program, inverse=False,

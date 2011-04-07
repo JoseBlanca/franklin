@@ -115,11 +115,12 @@ def _text_blast_parser(fhand):
             if line.startswith('Length='):
                 length = int(line.split('=')[-1].strip())
                 if in_query_def and query_name != previous_query:
+
                     if result is not None and result['matches']:
-                        for match in result['matches']:
-                            _fix_match_start_end(match)
-                            _fix_match_scores(match, ['expect', 'score'])
-                        yield result
+                        result = _fix_matches(result, score_keys=['expect',
+                                                                  'score'])
+                        if result:
+                            yield result
                     query_length = length
                     in_query_def = False
                     if query_desc:
@@ -186,10 +187,9 @@ def _text_blast_parser(fhand):
                 subject_end = int(items[-1]) - 1
     else:
         if result is not None and result['matches']:
-            for match in result['matches']:
-                _fix_match_start_end(match)
-                _fix_match_scores(match, ['expect', 'score'])
-            yield result
+            result = _fix_matches(result, score_keys=['expect', 'score'])
+            if result:
+                yield result
 
 class TextBlastParser(object):
     'It parses the tabular output of a blast result'
@@ -859,6 +859,8 @@ def _create_empty_filter():
 def _fix_match_scores(match, score_keys):
     'Given a match it copies the given scores from the first match_part'
     scores = {}
+    if not match['match_parts']:
+        return
     match_part = match['match_parts'][0]
     for key in score_keys:
         scores[key] =  match_part['scores'][key]
@@ -893,26 +895,29 @@ def _fix_match_start_end(match):
     if match_subject_end is not None:
         match['subject_end'] = match_subject_end
 
+def _fix_matches(alignment, score_keys=None):
+    'It removes the empty match_parts and the alignments with no matches'
+    if alignment is None:
+        return None
+    new_matches = []
+    for match in alignment['matches']:
+        if len(match['match_parts']):
+            if score_keys:
+                _fix_match_scores(match, score_keys)
+            _fix_match_start_end(match)
+            new_matches.append(match)
+    if not new_matches:
+        return None
+    else:
+        alignment['matches'] = new_matches
+    return alignment
+
 def _create_fix_matches_mapper():
     ''''It creates a function that removes alignments with no matches.
 
     It also removes matches with no match_parts
     '''
-    def mapper_(alignment):
-        'It removes the empty match_parts and the alignments with no matches'
-        if alignment is None:
-            return None
-        new_matches = []
-        for match in alignment['matches']:
-            if len(match['match_parts']):
-                _fix_match_start_end(match)
-                new_matches.append(match)
-        if not new_matches:
-            return None
-        else:
-            alignment['matches'] = new_matches
-        return alignment
-    return mapper_
+    return _fix_matches
 
 def _covered_segments(match_parts, in_query=True):
     '''Given a list of match_parts it returns the coverd segments.

@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.seq.seq_filters import (create_aligner_filter, create_length_filter,
-                                create_comtaminant_filter,
-                                create_similar_seqs_filter,
-                                create_solid_quality_filter)
+from franklin.seq.seq_filters import (create_aligner_filter,
+                                      create_length_filter,
+                                      create_comtaminant_filter,
+                                      create_similar_seqs_filter,
+                                      create_solid_quality_filter)
 from franklin.seq.seqs import Seq, SeqWithQuality
 from franklin.utils.misc_utils import DATA_DIR
 from Bio.Seq import UnknownSeq

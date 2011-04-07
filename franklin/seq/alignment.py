@@ -4,8 +4,8 @@ Created on 06/04/2011
 @author: jose
 '''
 
-from franklin.alignment_search_result import (get_alignment_parser,
-                                              filter_alignments)
+from franklin.seq.alignment_result import (get_alignment_parser,
+                                           filter_alignments)
 from franklin.utils.cmd_utils import create_runner
 from franklin.seq.writers import temp_fasta_file
 
@@ -55,7 +55,7 @@ class BlastAligner(object):
         '''
         if subject is None and database is None:
             raise ValueError('Either subject or database should be given')
-        if subject and database:
+        if subject is not None and database is not None:
             msg = 'subject and database can not be given at the same time'
             raise ValueError(msg)
 

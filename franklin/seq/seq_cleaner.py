@@ -28,6 +28,7 @@ from Bio import SeqIO
 
 import franklin
 from franklin.utils.cmd_utils import create_runner
+from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.seq.seq_analysis import match_words
 from franklin.seq.alignment import BlastAligner, ExonerateAligner
@@ -508,11 +509,12 @@ def create_vector_striper_by_alignment(vectors, aligner,
     # depending on the aligner program we need different parameters and filters
     # blast parameter value is taken from vecscreen parameters:
     # http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html
-    parameters = {'blast_long'    : {'database': vectors, 'gapextend': '3',
-                                 'gapopen':'3', 'penalty':'-5', 'expect':'700',
-                                 'dust':'20 1 64'},
+    vectors = get_fhand(vectors)
+    parameters = {'blast_long'    : {'gapextend': '3', 'gapopen':'3',
+                                     'penalty':'-5', 'expect':'700',
+                                     'dust':'20 1 64'},
                   'blast_short': {'task': 'blastn-short', 'expect': '0.0001',
-                                   'subject': vectors, 'alig_format':6},
+                                  'subject': vectors, 'alig_format':6},
                  }
 
     #They filter matches not match parts
@@ -523,25 +525,27 @@ def create_vector_striper_by_alignment(vectors, aligner,
                               'min_num_residues': 15,
                               'length_in_query' : False}],
                'blast_long':      [{'kind'     : 'score_threshold',
-                                'score_key': 'similarity',
-                                'min_score': 96},
-                               {'kind'            : 'min_length',
-                                'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
-                                'length_in_query' : False}],
+                                    'score_key': 'identity',
+                                    'min_score': 96},
+                                   {'kind'            : 'min_length',
+                                    'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
+                                    'length_in_query' : False}],
                'blast_short': [{'kind'    : 'score_threshold',
                                 'score_key': 'identity',
                                 'min_score': 89},
-                                {'kind'            : 'min_length',
-                                 'min_num_residues': 13,
-                                 'length_in_query' : False}]
+                               {'kind'            : 'min_length',
+                                'min_num_residues': 13,
+                                'length_in_query' : False}]
               }
-    if aligner == 'exonerate':
+    if vectors is None:
+        aligner = None
+    elif aligner == 'exonerate':
         if vectors_are_blastdb:
             raise ValueError('For exonerate vectors should be a file')
         if seqs_are_short:
             raise ValueError('For exonerate vectors should be long')
-        aligner = ExonerateAligner(vectors, filters[aligner])
-    elif aligner == 'blastn_short' or aligner == 'blastn':
+        aligner = ExonerateAligner(vectors, filters=filters[aligner])
+    elif aligner == 'blast_short' or aligner == 'blastn':
         seq_type = 'blast_short' if seqs_are_short else 'blast_long'
         if vectors_are_blastdb:
             aligner = BlastAligner(database=vectors,

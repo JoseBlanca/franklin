@@ -380,5 +380,5 @@ class ConfigurationTest(unittest.TestCase):
         assert config['Snvs']['min_quality'] == 45
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis']
+    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis_lucy']
     unittest.main()

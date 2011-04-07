@@ -24,14 +24,14 @@ from tempfile import NamedTemporaryFile
 
 from Bio.Seq import UnknownSeq
 
-from franklin.alignment_search_result import (BlastParser,
-                                              TabularBlastParser,
-                                              alignment_results_scores,
-                                              ExonerateParser,
-                                              build_relations_from_aligment,
-                                              filter_alignments,
-                                              _covered_segments,
-                                              TextBlastParser)
+from franklin.seq.alignment_result import (BlastParser,
+                                           TabularBlastParser,
+                                           alignment_results_scores,
+                                           ExonerateParser,
+                                           build_relations_from_aligment,
+                                           filter_alignments,
+                                           _covered_segments,
+                                            TextBlastParser)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner

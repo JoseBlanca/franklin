@@ -75,7 +75,7 @@ ARGUMENT = 'argument'
 STDIN = 'stdin'
 
 BLASTPLUS_DEF = {'binary':'',
-            'parameters': {'database' :{'option': '-db'},
+                 'parameters': {'database' :{'option': '-db'},
                    'expect'   :   {'default': 0.0001,'option': '-evalue'},
                    'nhitsv'   :   {'default': 20, 'option':'-num_descriptions'},
                    'nhitsb'   :   {'default': 20, 'option':'-num_alignments'},
@@ -86,9 +86,9 @@ BLASTPLUS_DEF = {'binary':'',
                    'subject':     {'option': '-subject'},
                    'no_greedy':   {'option': '-no_greedy'}
                             },
-            'output':{'blast+':{'option':STDOUT}},
+                 'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
-            'ignore_stderrs': ['Karlin-Altschul']}
+                 'ignore_stderrs': ['Karlin-Altschul']}
 
 BLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTN_DEF['binary'] = 'blastn'
@@ -432,7 +432,7 @@ def create_runner(tool, parameters=None, environment=None):
                 logging.warning(print_name + ':' + stderr)
             else:
                 raise RuntimeError('Problem running ' + tool + ': ' + stdout +
-                               stderr)
+                                   stderr)
 
         # Now we are going to make this list with the files we are going to
         # return
