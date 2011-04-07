@@ -63,14 +63,9 @@ class BlastAligner(object):
             parameters = {}
         self._filters = filters
 
-        if tab_blast_fmt:
-
-
-        else:
-
         if subject is not None:
-            parameters['alig_format'] = 1
-            self._parser  = get_alignment_parser('blast_query_anchored')
+            parameters['alig_format'] = 0
+            self._parser  = get_alignment_parser('blast_text')
             self._subject_fhand = _seq_to_fasta_fhand(subject)
             parameters['subject'] = self._subject_fhand.name
         if database is not None:

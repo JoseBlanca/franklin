@@ -177,13 +177,13 @@ def _text_blast_parser(fhand):
             if query_strand and line.startswith('Query'):
                 items = line.split()
                 if query_start is None:
-                    query_start = int(items[1])
-                query_end = int(items[-1])
+                    query_start = int(items[1]) - 1
+                query_end = int(items[-1]) - 1
             if query_strand and line.startswith('Sbjct'):
                 items = line.split()
                 if subject_start is None:
-                    subject_start = int(items[1])
-                subject_end = int(items[-1])
+                    subject_start = int(items[1]) - 1
+                subject_end = int(items[-1]) - 1
     else:
         if result is not None and result['matches']:
             for match in result['matches']:
@@ -322,7 +322,7 @@ class BlastParser(object):
         fhand.seek(0, 0)
         sample = fhand.read(10)
         if sample and 'xml' not in sample:
-            raise 'Not a xml file'
+            raise ValueError('Not a xml file')
         fhand.seek(0, 0)
         self._blast_file = fhand
         blast_version, plus = self._get_blast_version()
@@ -602,6 +602,8 @@ def get_alignment_parser(kind):
     '''It returns a parser depending of the aligner kind '''
     if 'blast_tab' == kind:
         parser = TabularBlastParser
+    elif 'blast_text' == kind:
+        parser = TextBlastParser
     elif 'blast' in kind:
         parser = BlastParser
     else:
