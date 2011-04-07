@@ -495,7 +495,8 @@ def create_striper_by_quality_lucy(parameters=None):
 #pylint:disable-msg=C0103
 def create_vector_striper_by_alignment(vectors, aligner,
                                        vectors_are_blastdb=False,
-                                       seqs_are_short=False):
+                                       seqs_are_short=False,
+                                      elongate_match_to_complete_adaptor=False):
     '''It creates a function which will remove vectors from the given sequence.
 
     It looks for the vectors comparing the sequence with a vector database. To
@@ -566,10 +567,16 @@ def create_vector_striper_by_alignment(vectors, aligner,
         if vectors is None:
             return sequence
 
-        alignments = aligner.do_alignment(sequence)
+        alignments = list(aligner.do_alignment(sequence))
+
+        if elongate_match_to_complete_adaptor:
+            _elongate_matches_to_complete_subject(alignments)
+
         alignment_matches = _get_non_matched_locations(alignments)
+
         segments  = _get_longest_non_matched_seq_region_limits(sequence,
                                                               alignment_matches)
+
         if segments is None:
             return None
 
@@ -579,6 +586,36 @@ def create_vector_striper_by_alignment(vectors, aligner,
         return sequence
 
     return strip_vector_by_alignment
+
+def _elongate_matches_to_complete_subject(alignments, max_elongation=5):
+    'Given an alignment it makes sure that the matches cover the subject'
+    for alignment in alignments:
+        lquery = len(alignment['query'])
+        for match in alignment['matches']:
+            lsubject = len(match['subject'])
+            qstart = match['start']
+            qend   = match['end']
+            sstart = match['subject_start']
+            send   = match['subject_end']
+            lmatch = qend - qstart + 1
+            if (lsubject == lmatch or
+                lsubject - lmatch > max_elongation):
+                continue
+            elongation5 = min(qstart, sstart)
+            new_sstart = sstart - elongation5
+            new_qstart = qstart - elongation5
+            elongation3 = min(lquery - qend - 1, lsubject - send - 1)
+            new_send   = send + elongation3
+            new_qend   = qend + elongation3
+            del match['match_parts']
+            match['match_parts'] = [{'query_start':new_qstart,
+                                     'query_end':new_qend,
+                                     'subject_start':new_sstart,
+                                     'subject_end':new_send}]
+            match['start']         = new_qstart
+            match['end']           = new_qend,
+            match['subject_start'] = new_sstart
+            match['subject_end']   = new_send,
 
 def create_word_striper_by_alignment(words):
     '''It creates a function which will remove words from the given sequence.

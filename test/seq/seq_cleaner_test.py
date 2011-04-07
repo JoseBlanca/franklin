@@ -433,6 +433,21 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq3 = seq_trimmer(seq3)
         assert str(seq2.seq) == str(seq3.seq)
 
+        strip_vector_by_alignment = \
+               create_vector_striper_by_alignment(fhand_vectors, 'blast_short',
+                                                  seqs_are_short=True,
+                                        elongate_match_to_complete_adaptor=True)
+        seq = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq = Seq(seq)
+        seq2 = SeqWithQuality(name='seq1', seq=seq)
+        #     'atcgatcgatagcatacgat                atgcatcagatcgataaaga
+        seq = 'atcgatcgatagcataGgat' + seq2.seq + 'atgGatcagatcgataaaga'
+        seq1 = SeqWithQuality(name=seq2.name, seq=seq, description='hola')
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+
+        assert str(seq2.seq) == str(seq3.seq)
+
     @staticmethod
     def test_strip_short_adaptors():
         'It tests the short adaptor removal with J. Forment sequences'
