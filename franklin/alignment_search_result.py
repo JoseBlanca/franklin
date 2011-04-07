@@ -61,15 +61,165 @@ from Bio.Blast import NCBIXML
 from Bio.Seq import UnknownSeq
 from franklin.seq.seqs import SeqWithQuality, SeqOnlyName
 
+def _text_blasts_in_file(fhand):
+    'It returns from Query= to Query'
+    cache = ''
+    first_time = True
+    for line in fhand:
+        if line.startswith('Query='):
+            if first_time:
+                cache = ''
+                first_time = False
+            else:
+                yield cache
+            cache = ''
+        cache += line
+    else:
+        if not first_time:
+            yield cache
+
+def _split_description(string):
+    'It splits the description'
+    items = string.split(' ', 1)
+    name = items[0]
+    desc = items[1] if len(items) == 2 else None
+    return name, desc
+
+def _text_blast_parser(fhand):
+    'It parses the blast results'
+    result = None
+    previous_query = None
+    for blast in _text_blasts_in_file(fhand):
+        in_query_def = False
+        in_subject_def = False
+        for line in blast.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('Query='):
+                query_name = line.split('=')[-1].strip()
+                query_name, query_desc = _split_description(query_name)
+                in_query_def = True
+                subject_name = None
+            if line.startswith('Subject=') or line.startswith('>'):
+                if line.startswith('>'):
+                    subject_name = line[1:].strip()
+                else:
+                    subject_name = line.split('=')[-1].strip()
+                subject_name, subject_desc = _split_description(subject_name)
+                in_subject_def = True
+                query_start, query_end = None, None
+                subject_start, subject_end = None, None
+                query_strand, subject_strand = None, None
+                score, expect, identity = None, None, None
+            if line.startswith('Length='):
+                length = int(line.split('=')[-1].strip())
+                if in_query_def and query_name != previous_query:
+                    if result is not None and result['matches']:
+                        for match in result['matches']:
+                            _fix_match_start_end(match)
+                            _fix_match_scores(match, ['expect', 'score'])
+                        yield result
+                    query_length = length
+                    in_query_def = False
+                    if query_desc:
+                        query = SeqWithQuality(name=query_name,
+                                               description=query_desc,
+                                            seq=UnknownSeq(length=query_length))
+                    else:
+                        query = SeqWithQuality(name=query_name,
+                                            seq=UnknownSeq(length=query_length))
+                    matches = []
+                    result = {'query': query,
+                              'matches': matches}
+                    previous_query = query_name
+                elif in_subject_def:
+                    subject_length = length
+                    if subject_desc:
+                        subject = SeqWithQuality(name=subject_name,
+                                                description=subject_desc,
+                                          seq=UnknownSeq(length=subject_length))
+                    else:
+                        subject = SeqWithQuality(name=subject_name,
+                                          seq=UnknownSeq(length=subject_length))
+                    in_subject_def = False
+                    matches.append({'subject': subject, 'match_parts':[]})
+            if subject_name is None:
+                continue
+            if line.startswith('Score') or line.startswith('Effective'):
+                if score is not None:
+                    match_part = {'subject_start': subject_start,
+                                  'subject_end'  : subject_end,
+                                  'subject_strand': subject_strand,
+                                  'query_start'  : query_start,
+                                  'query_end'    : query_end,
+                                  'query_strand' : query_strand,
+                                  'scores'       : {'expect'  : expect,
+                                                    'identity': identity,
+                                                    'score'   : score}}
+                    matches[-1]['match_parts'].append(match_part)
+                    score, expect, identity = None, None, None
+                    query_strand, subject_strand = None, None
+                    query_start, query_end = None, None
+                    subject_start, subject_end = None, None
+                if line.startswith('Score'):
+                    items = line.split()
+                    score = float(items[2])
+                    expect = float(items[-1])
+            elif line.startswith('Identities'):
+                items = line.split()
+                identity = float(items[3].strip('(')[:-3])
+            elif line.startswith('Strand'):
+                strands = line.split('=')[-1]
+                strands = strands.split('/')
+                query_strand = 1 if strands[0] == 'Plus' else -1
+                subject_strand = 1 if strands[1] == 'Plus' else -1
+            if query_strand and line.startswith('Query'):
+                items = line.split()
+                if query_start is None:
+                    query_start = int(items[1])
+                query_end = int(items[-1])
+            if query_strand and line.startswith('Sbjct'):
+                items = line.split()
+                if subject_start is None:
+                    subject_start = int(items[1])
+                subject_end = int(items[-1])
+    else:
+        if result is not None and result['matches']:
+            for match in result['matches']:
+                _fix_match_start_end(match)
+                _fix_match_scores(match, ['expect', 'score'])
+            yield result
+
+class TextBlastParser(object):
+    'It parses the tabular output of a blast result'
+    def __init__(self, fhand):
+        'The init requires a file to be parsed'
+        self._gen = _text_blast_parser(fhand)
+
+    def __iter__(self):
+        'Part of the iterator protocol'
+        return self
+
+    def next(self):
+        'It returns the next blast result'
+        return self._gen.next()
+
+TABBLAST_OUTFMT = "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qframe sframe"
 
 def _lines_for_every_tab_blast(fhand):
     'It returns the lines for every query in the tabular blast'
     ongoing_query = None
     match_parts = []
     for line in fhand:
-        (query, subject, identity, alignment_length, mismatches, gap_opens,
-         query_start, query_end, subject_start, subject_end, expect, score) = \
-                                                           line.strip().split()
+        items = line.strip().split()
+        if len(items) == 14:
+            (query, subject, identity, ali_len, mis, gap_opens,
+             query_start, query_end, subject_start, subject_end, expect, score,
+             qstrand, sstrand) = items
+        else:
+            (query, subject, identity, ali_len, mis, gap_opens, query_start,
+             query_end, subject_start, subject_end, expect, score) = items
         query_start   = int(query_start) - 1
         query_end     = int(query_end) - 1
         subject_start = int(subject_start) - 1
@@ -83,6 +233,9 @@ def _lines_for_every_tab_blast(fhand):
                       'query_end'    : query_end,
                       'scores'       : {'expect'    : expect,
                                         'identity'  : identity}}
+        if len(items) == 14:
+            match_part['subject_strand'] = sstrand
+            match_part['query_strand'] = qstrand
         if ongoing_query is None:
             ongoing_query = query
             match_parts.append({'subject':subject, 'match_part':match_part})
@@ -115,7 +268,7 @@ def _group_match_parts_by_subject(match_parts):
 
 def _tabular_blast_parser(fhand):
     'It parses the tabular output of a blast result and yields Alignment result'
-    fhand.seek(0, 0)
+    fhand.seek(0)
 
     for query, match_parts in _lines_for_every_tab_blast(fhand):
         matches = []
@@ -513,56 +666,6 @@ def alignment_results_scores(results, scores, filter_same_query_subject=True):
     else:
         return score_res
 
-'''
-A graphical overview of a blast result can be done counting the hits
-with a certain level of similarity. We can represent a distribution
-with similarity in the x axe and the number of hits for each
-similarity in the y axe. It would be something like.
-
- n |
- u |
- m |
-   |       x
- h |      x x
- i |     x   x     x
- t |    x      x  x x
- s | xxx        xx   x
-    ----------------------
-         % similarity
-
-Looking at this distribution we get an idea about the amount of
-similarity found between the sequences used in the blast.
-
-Another posible measure between a query and a subject is the
-region that should be aligned, but it is not, the incompatible
-region.
-
-   query         -----------------
-                   |||||
-   subject   ----------------
-                 ++     +++++ <-incompabible regions
-
-For every query-subject pair we can calculate the similarity and the
-incompatible region. We can also draw a distribution with both
-measures. (a 3-d graph viewed from the top with different colors
-for the different amounts of hits).
-
- % |
- s |
- i |       ..
- m |
- i |             ..
- l |           ..
- a |     x
- r |      xx         ..
- i |
- t | xx       xx
- y | xx       xx
-   -----------------------
-    % incompatibility
-
-'''
-
 def build_relations_from_aligment(fhand, query_name, subject_name):
     '''It returns a relations dict given an alignment in markx10 format
 
@@ -750,6 +853,14 @@ def _create_empty_filter():
         else:
             return False
     return filter_
+
+def _fix_match_scores(match, score_keys):
+    'Given a match it copies the given scores from the first match_part'
+    scores = {}
+    match_part = match['match_parts'][0]
+    for key in score_keys:
+        scores[key] =  match_part['scores'][key]
+    match['scores'] = scores
 
 def _fix_match_start_end(match):
     'Given a match it fixes the start and end based on the match_parts'

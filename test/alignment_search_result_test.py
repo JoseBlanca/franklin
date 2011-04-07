@@ -16,22 +16,25 @@ ssaha2, etc. that align one sequence against a database.'''
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+
+import unittest
+import os
+from StringIO import StringIO
+from tempfile import NamedTemporaryFile
+
+from Bio.Seq import UnknownSeq
+
 from franklin.alignment_search_result import (BlastParser,
                                               TabularBlastParser,
                                               alignment_results_scores,
                                               ExonerateParser,
                                               build_relations_from_aligment,
                                               filter_alignments,
-                                              _covered_segments)
+                                              _covered_segments,
+                                              TextBlastParser)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner
-
-import unittest
-import os
-from StringIO import StringIO
-from tempfile import NamedTemporaryFile
-from Bio.Seq import UnknownSeq
 from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.writers import temp_fasta_file
 
@@ -89,7 +92,6 @@ def _check_blast(blast, expected):
                 assert real_match['subject_start'] == expt_match['subject_start']
             if 'subject_end' in expt_match:
                 assert real_match['subject_end'] == expt_match['subject_end']
-
 
 class BlastParserTest(unittest.TestCase):
     'It test the blast parser'
@@ -208,6 +210,109 @@ class BlastParserTest(unittest.TestCase):
             self.fail()
         except StopIteration:
             pass
+
+    def test_blast_text_parser(self):
+        'It test the blast text parser'
+        blast_file = open(os.path.join(DATA_DIR, 'blast.blast'))
+        parser = TextBlastParser(fhand=blast_file)
+        alignments = list(parser)
+        expected_results = [
+            {'query':{'name':'seq_with_primer', 'length': 301},
+             'matches':[
+                 {'subject':{'name':'seq_with_primer', 'length':301},
+                  'scores':{'expect': 1e-159},
+                  'match_parts':[{'query_start':1, 'query_end':301,
+                                  'subject_start':1,
+                                  'subject_end':301,
+                                  'scores':{'expect':   1e-159,
+                                            'identity': 100.0}
+                                 }],
+                 },
+                 {'subject':{'name':'seq_with_primer2', 'length':262},
+                  'scores':{'expect': 5e-126},
+                  'match_parts':[{'query_start':1, 'query_end':282,
+                                  'subject_start':1,
+                                  'subject_end':262,
+                                  'scores':{'expect':   5e-126,
+                                            'identity': 92.0,
+                                            'score':    432}
+                                 },
+                                 {'query_start':283, 'query_end':301,
+                                  'subject_start':19,
+                                  'subject_end':37,
+                                  'scores':{'expect':   6e-05,
+                                            'identity': 94.0,
+                                            'score':    30.1}
+                                 }],
+                 },
+             ]
+            },
+            {'query':{'name':'seq_with_primer2', 'length': 262},
+             'matches':[
+                 {'subject':{'name':'seq_with_primer', 'length':301},
+                  'scores':{'expect': 5e-126},
+                  'match_parts':[{'query_start':1, 'query_end':262,
+                                  'subject_start':1,
+                                  'subject_end':282,
+                                  'scores':{'expect':   5e-126,
+                                            'identity': 92.0}
+                                 },
+                                 {'query_start':19, 'query_end':37,
+                                  'subject_start':283,
+                                  'subject_end':301,
+                                  'scores':{'expect':   6e-5,
+                                            'identity': 94.0}
+                                 },
+                                ],
+                 },
+                 {'subject':{'name':'seq_with_primer2', 'length':262},
+                  'scores':{'expect': 2e-138},
+                  'match_parts':[{'query_start':1, 'query_end':262,
+                                  'subject_start':1,
+                                  'subject_end':262,
+                                  'scores':{'expect':   2e-138,
+                                            'identity': 100.0}
+                                 },
+                                ],
+                 }
+             ],
+            }
+        ]
+
+        n_blasts = 0
+        for index, blast in enumerate(alignments):
+            _check_blast(blast, expected_results[index])
+            n_blasts += 1
+        assert n_blasts == 2
+
+        blast_file = open(os.path.join(DATA_DIR, 'blast2.blast'))
+        parser = TextBlastParser(fhand=blast_file)
+        alignments = list(parser)
+
+        expected_results = [
+            {'query':{'name':'arabi', 'length': 456},
+             'matches':[
+                 {'subject':{'name':'AT1G55265.1',
+                             'description': 'a gene',
+                             'length':693},
+                  'scores':{'expect': 0.0},
+                  'match_parts':[{'query_start':1, 'query_end':456,
+                                  'subject_start':238,
+                                  'subject_end':693,
+                                  'scores':{'expect':   0.0,
+                                            'identity': 100.0}
+                                 }],
+                 },
+              ]
+             }
+        ]
+
+
+        n_blasts = 0
+        for index, blast in enumerate(alignments):
+            _check_blast(blast, expected_results[index])
+            n_blasts += 1
+        assert n_blasts == 1
 
 def _summarize_matches(parser):
     '''Given a alignment result parser it returns a dict with the matches for
@@ -827,5 +932,5 @@ class MergeMatchesTests(unittest.TestCase):
         assert covered_segments == [(1, 20)]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AlignmentSearchResultFilterTest.test_min_length_filter']
+    #import sys;sys.argv = ['', 'BlastParserTest.test_blast_text_parser']
     unittest.main()

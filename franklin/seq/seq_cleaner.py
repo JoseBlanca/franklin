@@ -23,13 +23,15 @@ factory that will create the function that will do the actual job.
 
 import os, re, copy
 from itertools import tee
+
 from Bio import SeqIO
+
 import franklin
 from franklin.utils.cmd_utils import create_runner
 from franklin.seq.seqs import copy_seq_with_quality, Seq
-from franklin.alignment_search_result import (filter_alignments,
-                                              get_alignment_parser)
 from franklin.seq.seq_analysis import match_words
+from franklin.seq.alignment import BlastAligner, ExonerateAligner
+
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
@@ -490,7 +492,9 @@ def create_striper_by_quality_lucy(parameters=None):
     return strip_seq_by_quality_lucy
 
 #pylint:disable-msg=C0103
-def create_vector_striper_by_alignment(vectors, aligner):
+def create_vector_striper_by_alignment(vectors, aligner,
+                                       vectors_are_blastdb=False,
+                                       seqs_are_short=False):
     '''It creates a function which will remove vectors from the given sequence.
 
     It looks for the vectors comparing the sequence with a vector database. To
@@ -500,16 +504,14 @@ def create_vector_striper_by_alignment(vectors, aligner):
     #exonerate fails with sequences below 20 bp
     #blast_short fails bellow 17 bases with 2% errors (although not as badly as
     #exonerate with 19
-    sequencing_error = 2
 
     # depending on the aligner program we need different parameters and filters
     # blast parameter value is taken from vecscreen parameters:
     # http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html
-    parameters = {'exonerate': {'target':vectors},
-                  'blastn'    : {'database': vectors, 'gapextend': '3',
+    parameters = {'blast_long'    : {'database': vectors, 'gapextend': '3',
                                  'gapopen':'3', 'penalty':'-5', 'expect':'700',
                                  'dust':'20 1 64'},
-                  'blastn_short': {'task': 'blastn-short', 'expect': '0.0001',
+                  'blast_short': {'task': 'blastn-short', 'expect': '0.0001',
                                    'subject': vectors, 'alig_format':6},
                  }
 
@@ -520,28 +522,35 @@ def create_vector_striper_by_alignment(vectors, aligner):
                              {'kind'            : 'min_length',
                               'min_num_residues': 15,
                               'length_in_query' : False}],
-               'blastn':      [{'kind'     : 'score_threshold',
+               'blast_long':      [{'kind'     : 'score_threshold',
                                 'score_key': 'similarity',
                                 'min_score': 96},
                                {'kind'            : 'min_length',
                                 'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
                                 'length_in_query' : False}],
-               'blastn_short': [{'kind'    : 'score_threshold',
+               'blast_short': [{'kind'    : 'score_threshold',
                                 'score_key': 'identity',
                                 'min_score': 89},
                                 {'kind'            : 'min_length',
                                  'min_num_residues': 13,
                                  'length_in_query' : False}]
               }
-    runner = aligner
-    parser = aligner
-    fhand_key = aligner
-    if aligner == 'blastn_short':
-        runner = 'blastn'
-        parser = 'blast_tab'
-        fhand_key = 'blastn'
-    aligner_ = create_runner(tool=runner, parameters=parameters[aligner])
-    parser   = get_alignment_parser(parser)
+    if aligner == 'exonerate':
+        if vectors_are_blastdb:
+            raise ValueError('For exonerate vectors should be a file')
+        if seqs_are_short:
+            raise ValueError('For exonerate vectors should be long')
+        aligner = ExonerateAligner(vectors, filters[aligner])
+    elif aligner == 'blastn_short' or aligner == 'blastn':
+        seq_type = 'blast_short' if seqs_are_short else 'blast_long'
+        if vectors_are_blastdb:
+            aligner = BlastAligner(database=vectors,
+                                   parameters=parameters[seq_type],
+                                   filters=filters[seq_type])
+        else:
+            aligner = BlastAligner(subject=vectors,
+                                   parameters=parameters[seq_type],
+                                   filters=filters[seq_type])
 
     def strip_vector_by_alignment(sequence):
         '''It strips the vector from a sequence.
@@ -553,17 +562,8 @@ def create_vector_striper_by_alignment(vectors, aligner):
         if vectors is None:
             return sequence
 
-        # first we are going to align he sequence with the vectors
-        alignment_fhand = aligner_(sequence)[fhand_key]
-
-        # We need to parse the result
-        alignment_result = parser(alignment_fhand)
-
-        # We filter the results with appropriate filters
-        alignments = filter_alignments(alignment_result,
-                                       config=filters[aligner])
+        alignments = aligner.do_alignment(sequence)
         alignment_matches = _get_non_matched_locations(alignments)
-        alignment_fhand.close()
         segments  = _get_longest_non_matched_seq_region_limits(sequence,
                                                               alignment_matches)
         if segments is None:

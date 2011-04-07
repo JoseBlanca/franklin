@@ -95,6 +95,8 @@ BLASTN_DEF['binary'] = 'blastn'
 BLASTN_DEF['output'] = {'blastn':{'option':STDOUT}}
 BLASTN_DEF['parameters']['penalty'] = {'option':'-penalty'}
 BLASTN_DEF['parameters']['dust'] = {'option':'-dust'}
+BLASTN_DEF['parameters']['reward'] = {'option':'-reward'}
+BLASTN_DEF['parameters']['penalty'] = {'option':'-penalty'}
 
 BLASTP_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTP_DEF['binary'] = 'blastp'
