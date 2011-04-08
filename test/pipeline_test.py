@@ -57,11 +57,11 @@ class PipelineTests(unittest.TestCase):
         pipeline = 'sanger_with_qual'
         Univec = 'Univec+'
 
-        configuration = {'remove_vectors': {'vectors':Univec},
-                         'remove_adaptors':{'vectors':'hola'}}
+        configuration = {'remove_vectors_blastdb': {'vectors':Univec},
+                         'remove_adaptors':{'adaptors':'hola'}}
         pipeline = configure_pipeline(pipeline, configuration)
 
-        assert pipeline[1]['arguments']['vectors'] == 'hola'
+        assert pipeline[1]['arguments']['adaptors'] == 'hola'
         assert pipeline[3]['arguments']['vectors'] == Univec
 
         # Now it should fail because one of the arguments is Not set
@@ -85,8 +85,8 @@ class PipelineTests(unittest.TestCase):
         arabidopsis_genes = 'arabidopsis_genes+'
 
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors': {'vectors':univec},
-                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+        configuration = {'remove_vectors_blastdb': {'vectors':univec},
+                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         seq_fhand = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
         qual_fhand = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
@@ -96,7 +96,7 @@ class PipelineTests(unittest.TestCase):
         filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration)
 
         seq_list = list(filtered_seq_iter)
-        assert 'ATCGCGAtcgggggg' in str(seq_list[0].seq)
+        assert 'CGAtcgggggg' in str(seq_list[0].seq)
         assert len(seq_list) == 6
 
     @staticmethod
@@ -109,8 +109,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors': {'vectors':univec},
-                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+        configuration = {'remove_vectors_blastdb': {'vectors':univec},
+                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         in_fhands = {}
         in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
@@ -139,7 +139,7 @@ class PipelineTests(unittest.TestCase):
         arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
-                         'remove_adaptors':{'vectors':fhand_adaptors.name}}
+                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         in_fhands = {}
         in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')

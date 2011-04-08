@@ -206,7 +206,7 @@ class TestBackbone(unittest.TestCase):
         project_dir = join(test_dir.name, project_name)
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
-        words = ['^ATGAAC']
+        words = ['^ATGAAC', 'TTGATTTGGT']
         univec = os.path.join(DATA_DIR, 'blast', 'univec+')
         configuration = {'Cleaning':{'vector_database':univec,
                                      'adaptors_file_454':adaptors_path_454,
@@ -228,7 +228,7 @@ class TestBackbone(unittest.TestCase):
         os.makedirs(adaptors_dir)
         adap_fhand = open(adaptors_path_454, 'w')
         adap_fhand.write('''>smart_5_cds_primer_1
-GGTTCAAGGTTTGAGAAAGGATGGGAAG\n>a_short_adaptor\nTTGATTTGGT\n''')
+GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
         adap_fhand.close()
 
         #print original_reads_dir
