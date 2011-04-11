@@ -31,7 +31,7 @@ from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
 from franklin.seq.readers import seqs_in_file
-from franklin.seq.seq_analysis import match_words
+from franklin.seq.alignment import match_words
 from franklin.seq.alignment import BlastAligner, ExonerateAligner
 from franklin.seq.alignment_result import _fix_match_start_end
 

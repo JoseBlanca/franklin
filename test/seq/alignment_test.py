@@ -5,7 +5,7 @@ Created on 06/04/2011
 '''
 import unittest
 
-from franklin.seq.alignment import BlastAligner, sw_align
+from franklin.seq.alignment import BlastAligner, sw_align, match_words
 from franklin.seq.seqs import SeqWithQuality, Seq
 
 class PairwiseAlignmentTest(unittest.TestCase):
@@ -56,6 +56,44 @@ class PairwiseAlignmentTest(unittest.TestCase):
         query   = SeqWithQuality(Seq('ATGTGGCTTT'))
         subject = SeqWithQuality(Seq('TCCTGAGT'))
         sw_align(query, subject)
+
+class WordMatchTest(unittest.TestCase):
+    'It test that we can match words against sequences'
+
+    @staticmethod
+    def test_forward_words():
+        'It test that we can match words against in the same orientation'
+
+        seq = 'gCACAggTGTGggTATAgg'
+        seq = SeqWithQuality(seq=Seq(seq))
+
+        result = match_words(seq, ['CACA', 'TATA', 'KK'])[0]
+        assert result['query'] == seq
+
+        #The match por CACA
+        match = result['matches'][0]
+        assert match['subject'] == 'CACA'
+        assert match['start'] == 1
+        assert match['end'] == 10
+        assert len(match['match_parts']) == 2
+        #the reverse match part
+        assert match['match_parts'][1] == {'query_start':7,
+                                           'query_end':10,
+                                           'query_strand':1,
+                                           'subject_start':0,
+                                           'subject_end':3,
+                                           'subject_strand':-1}
+
+        #The match por TATA
+        match = result['matches'][1]
+        assert match['subject'] == 'TATA'
+        assert match['start'] == 13
+        assert match['end'] == 16
+        assert len(match['match_parts']) == 2
+
+        #No matches for KK
+        assert len(result['matches']) == 2
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_blast_alignment']
