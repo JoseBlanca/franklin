@@ -211,6 +211,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                     ('short_adaptors_454', (STRING_LIST, [])),
                     ('short_adaptors_illumina', (STRING_LIST, [])),
                     ('vector_database', (STRING, 'UniVec')),
+                    ('vector_file', (STRING, None)),
                     ('strip_n_percent', (NUMBER, 2.0)),
                     ('min_seq_length',{
                                       '454' : (INTEGER, 100),

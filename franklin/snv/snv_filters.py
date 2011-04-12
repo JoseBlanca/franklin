@@ -22,8 +22,8 @@ Created on 19/02/2010
 from Bio import SeqIO
 
 from franklin.utils.cmd_utils import create_runner
-from franklin.alignment_search_result import (filter_alignments,
-                                              get_alignment_parser)
+from franklin.seq.alignment_result import (filter_alignments,
+                                           get_alignment_parser)
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                        similar_sequences_for_blast)
 from franklin.seq.readers import guess_seq_file_format

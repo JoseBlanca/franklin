@@ -75,25 +75,28 @@ ARGUMENT = 'argument'
 STDIN = 'stdin'
 
 BLASTPLUS_DEF = {'binary':'',
-            'parameters': {'database' :{'option': '-db'},
+                 'parameters': {'database' :{'option': '-db'},
                    'expect'   :   {'default': 0.0001,'option': '-evalue'},
                    'nhitsv'   :   {'default': 20, 'option':'-num_descriptions'},
                    'nhitsb'   :   {'default': 20, 'option':'-num_alignments'},
                    'alig_format': {'default':5, 'option':'-outfmt'},
                    'gapextend':   {'option': '-gapextend'},
                    'gapopen':     {'option': '-gapopen'},
-                   'task':        {'option':'-task'},
-                   'subject':     {'option':'-subject'},
+                   'task':        {'option': '-task'},
+                   'subject':     {'option': '-subject'},
+                   'no_greedy':   {'option': '-no_greedy'}
                             },
-            'output':{'blast+':{'option':STDOUT}},
+                 'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
-            'ignore_stderrs': ['Karlin-Altschul']}
+                 'ignore_stderrs': ['Karlin-Altschul']}
 
 BLASTN_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTN_DEF['binary'] = 'blastn'
 BLASTN_DEF['output'] = {'blastn':{'option':STDOUT}}
 BLASTN_DEF['parameters']['penalty'] = {'option':'-penalty'}
 BLASTN_DEF['parameters']['dust'] = {'option':'-dust'}
+BLASTN_DEF['parameters']['reward'] = {'option':'-reward'}
+BLASTN_DEF['parameters']['penalty'] = {'option':'-penalty'}
 
 BLASTP_DEF = copy.deepcopy(BLASTPLUS_DEF)
 BLASTP_DEF['binary'] = 'blastp'
@@ -156,8 +159,8 @@ RUNNER_DEFINITIONS = {
                     },
     'mdust':{'binary':'mdust',
              'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
-                          'cut_off'    :{'default':'25', 'option':'-v' },
-                          'show_masked_segments':{'default':None,
+                           'cut_off'    :{'default':'25', 'option':'-v' },
+                           'show_masked_segments':{'default':None,
                                                   'option':'-c'}},
              'output':{'sequence':{'option':STDOUT}},
              'input':{'sequence':{'option':ARGUMENT, 'arg_before_params':True,
@@ -429,7 +432,7 @@ def create_runner(tool, parameters=None, environment=None):
                 logging.warning(print_name + ':' + stderr)
             else:
                 raise RuntimeError('Problem running ' + tool + ': ' + stdout +
-                               stderr)
+                                   stderr)
 
         # Now we are going to make this list with the files we are going to
         # return

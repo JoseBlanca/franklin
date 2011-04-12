@@ -19,14 +19,15 @@ Created on 03/12/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
-                                    create_striper_by_quality,
-                                    create_striper_by_quality_lucy,
-                                    create_striper_by_quality_trimpoly,
-                                    create_masker_for_polia,
-                                    create_masker_for_low_complexity,
-                                    create_word_striper_by_alignment,
-                                    create_edge_stripper, create_upper_mapper,
+from franklin.seq.seq_cleaner import (create_vector_striper,
+                                      create_adaptor_striper,
+                                      create_striper_by_quality,
+                                      create_striper_by_quality_lucy,
+                                      create_striper_by_quality_trimpoly,
+                                      create_masker_for_polia,
+                                      create_masker_for_low_complexity,
+                                      create_re_word_striper,
+                                      create_edge_stripper, create_upper_mapper,
     create_seq_trim_and_masker)
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
@@ -38,18 +39,24 @@ up_case = {'function':create_upper_mapper,
            'comment': 'It convers the sequence to upper case'}
 
 #pylint:disable-msg=C0103
-remove_vectors = {'function':create_vector_striper_by_alignment,
-                  'arguments':{'vectors':None, 'aligner':'blastn'},
-                  'type': 'mapper',
-                  'name': 'remove_vectors',
-                  'comment': 'Remove vector using vector db'}
+remove_vectors_blastdb = {'function':create_vector_striper,
+                          'arguments':{'vectors':None,
+                                       'vectors_are_blastdb':True},
+                          'type': 'mapper',
+                          'name': 'remove_vectors_blastdb',
+                          'comment': 'Remove vector using vector db'}
+remove_vectors_file = {'function':create_vector_striper,
+                       'arguments':{'vectors':None,
+                                    'vectors_are_blastdb':False},
+                       'type': 'mapper',
+                       'name': 'remove_vectors_file',
+                       'comment': 'Remove vector using vector db'}
 
-remove_adaptors = {'function':create_vector_striper_by_alignment,
-       'arguments':{'vectors':None, 'aligner':'exonerate'},
-                    #os.path.join(DATA_DIR, 'standar_solexa_adaptors.fasta'),
-       'type': 'mapper',
-       'name': 'remove_adaptors',
-       'comment': 'Remove adaptors'}
+remove_adaptors = {'function':create_adaptor_striper,
+                   'arguments':{'adaptors':None},
+                   'type': 'mapper',
+                   'name': 'remove_adaptors',
+                   'comment': 'Remove adaptors'}
 
 strip_quality = {'function': create_striper_by_quality,
                       'arguments':{'quality_treshold':20,
@@ -111,7 +118,7 @@ edge_remover = {'function':create_edge_stripper,
                   'name': 'edge_removal',
                   'comment': 'Strip given edge lengths. Both sides'}
 # words
-remove_short_adaptors = {'function': create_word_striper_by_alignment,
+remove_short_adaptors = {'function': create_re_word_striper,
                          'arguments' : {'words':None},
                          'type'      : 'mapper',
                          'name'      : 'remove_short_adaptors',
@@ -132,11 +139,14 @@ solid_quality = {'function': create_solid_quality_filter,
 
 SEQPIPELINES = {
     'sanger_with_qual'   : [up_case, remove_adaptors, strip_quality_lucy,
-                            remove_vectors, mask_low_complexity,
+                            remove_vectors_blastdb, remove_vectors_file,
+                            remove_adaptors, mask_low_complexity,
                             remove_short_adaptors, edge_remover,
                             sequence_trimmer, filter_short_seqs],
 
-    'sanger_without_qual': [up_case, remove_vectors, strip_quality_by_n,
+    'sanger_without_qual': [up_case, remove_vectors_blastdb,
+                            remove_vectors_file, remove_adaptors,
+                            strip_quality_by_n,
                             mask_low_complexity, remove_short_adaptors,
                             edge_remover, sequence_trimmer, filter_short_seqs],
 
@@ -154,8 +164,8 @@ SEQPIPELINES = {
     'solid'              : [solid_quality, strip_quality_3, sequence_trimmer,
                             filter_short_seqs]}
 
-SEQ_STEPS = [remove_vectors, remove_adaptors, strip_quality, strip_quality_lucy,
-             strip_quality_by_n, strip_quality_by_n,
-             mask_polia, mask_low_complexity, sequence_trimmer,
-             filter_short_seqs, edge_remover, remove_short_adaptors, up_case,
-             solid_quality, strip_quality_3]
+SEQ_STEPS = [remove_vectors_blastdb, remove_vectors_file, remove_adaptors,
+             strip_quality, strip_quality_lucy, strip_quality_by_n,
+             strip_quality_by_n, mask_polia, mask_low_complexity,
+             sequence_trimmer, filter_short_seqs, edge_remover,
+             remove_short_adaptors, up_case, solid_quality, strip_quality_3]

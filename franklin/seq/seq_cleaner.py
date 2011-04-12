@@ -23,19 +23,21 @@ factory that will create the function that will do the actual job.
 
 import os, re, copy
 from itertools import tee
+
 from Bio import SeqIO
+
 import franklin
 from franklin.utils.cmd_utils import create_runner
+from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
-from franklin.alignment_search_result import (filter_alignments,
-                                              get_alignment_parser)
-from franklin.seq.seq_analysis import match_words
+from franklin.seq.readers import seqs_in_file
+from franklin.seq.alignment import match_words
+from franklin.seq.alignment import BlastAligner, ExonerateAligner
+from franklin.seq.alignment_result import _fix_match_start_end
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
-#The adaptors shorter than this length can not be processed by exonerate
 #they should be processed by the word remover function
-MIN_LONG_ADAPTOR_LENGTH = 20
 TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'
 
 def _add_trim_segments(segments, sequence, vector=True, trim=True):
@@ -489,8 +491,56 @@ def create_striper_by_quality_lucy(parameters=None):
 
     return strip_seq_by_quality_lucy
 
-#pylint:disable-msg=C0103
-def create_vector_striper_by_alignment(vectors, aligner):
+
+MIN_ADAPTOR_LENGTH = 15
+MAX_ADAPTOR_LENGTH = 40
+
+def _check_sequences_length(fhand, min_length=None, max_length=None):
+    'It checks that all sequences in the file have the given lengths'
+    if fhand is None:
+        return
+    for seq in seqs_in_file(open(fhand.name)):
+        len_seq = len(seq)
+        if min_length is not None and len_seq < min_length:
+            msg = 'Sequence %s is shorter than %i residues' % (seq.name,
+                                                               min_length)
+            raise ValueError(msg)
+        elif max_length is not None and len_seq > max_length:
+            msg = 'Sequence %s is longer than %i residues' % (seq.name,
+                                                               max_length)
+            raise ValueError(msg)
+
+def create_adaptor_striper(adaptors, elongate_match_to_complete_adaptor=True):
+    '''It creates a function capable of detecting adaptor sequences.
+
+    The adaptors should be a fhand to a fasta file with the adaptors in it.
+    The adaptors will be detected by using blastn-short.
+    '''
+    fhand = get_fhand(adaptors)
+    _check_sequences_length(fhand, MIN_ADAPTOR_LENGTH, MAX_ADAPTOR_LENGTH)
+    return _create_vector_striper(vectors=adaptors,
+                                  aligner='blast_short',
+                                  vectors_are_blastdb=False,
+                                  seqs_are_short=True,
+          elongate_match_to_complete_adaptor=elongate_match_to_complete_adaptor)
+
+def create_vector_striper(vectors, vectors_are_blastdb=False):
+    '''It returns a function capable of detecting vector sequences.
+
+    The vectors could be an fhand to a fasta file or a blast database.
+    The vectors will be detected by using blastn
+    '''
+    #if file check vector length
+    if not vectors_are_blastdb:
+        _check_sequences_length(get_fhand(vectors), MAX_ADAPTOR_LENGTH)
+    return _create_vector_striper(vectors, aligner='blastn',
+                                  vectors_are_blastdb=vectors_are_blastdb,
+                                  seqs_are_short=False,
+                                  elongate_match_to_complete_adaptor=False)
+
+def _create_vector_striper(vectors, aligner, vectors_are_blastdb=False,
+                           seqs_are_short=False,
+                           elongate_match_to_complete_adaptor=False):
     '''It creates a function which will remove vectors from the given sequence.
 
     It looks for the vectors comparing the sequence with a vector database. To
@@ -498,44 +548,46 @@ def create_vector_striper_by_alignment(vectors, aligner):
     requires a fasta file with the vectors and blast and indexed blast database.
     '''
     #exonerate fails with sequences below 20 bp
-    #blast_short tends to give a lot of false positives or negatives, depending
-    #on the parameters (evalue)
+    #blast_short starts to fail bellow 15 bases with 2% errors (although not as
+    #badly as exonerate with 19
 
     # depending on the aligner program we need different parameters and filters
     # blast parameter value is taken from vecscreen parameters:
     # http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html
-    parameters = {'exonerate': {'target':vectors},
-                  'blastn'    : {'database': vectors, 'gapextend': '3',
-                                 'gapopen':'3', 'penalty':'-5', 'expect':'700',
-                                 'dust':'20 1 64'},
-                  'blastn_short': {'task': 'blastn-short', 'expect': '0.0001',
-                                   'subject': vectors, 'alig_format':6},
+    vectors = get_fhand(vectors)
+    parameters = {'blast_long'    : {'gapextend': '3', 'gapopen':'3',
+                                     'penalty':'-5', 'expect':'700',
+                                     'dust':'20 1 64'},
+                  'blast_short': {'task': 'blastn-short', 'expect': '0.0001',
+                                  'subject': vectors, 'alig_format':6},
                  }
 
     #They filter matches not match parts
-    filters = {'exonerate': [{'kind'    : 'score_threshold',
-                             'score_key': 'similarity',
-                             'min_score': 96},
-                             {'kind'            : 'min_length',
-                              'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
-                              'length_in_query' : False}],
-               'blastn':      [{'kind'     : 'score_threshold',
-                                'score_key': 'similarity',
-                                'min_score': 96},
+    filters = {'blast_long':      [{'kind'     : 'score_threshold',
+                                    'score_key': 'identity',
+                                    'min_score': 96},
+                                   {'kind'            : 'min_length',
+                                    'min_num_residues': MIN_ADAPTOR_LENGTH,
+                                    'length_in_query' : False}],
+               'blast_short': [{'kind'    : 'score_threshold',
+                                'score_key': 'identity',
+                                'min_score': 89},
                                {'kind'            : 'min_length',
-                                'min_num_residues': MIN_LONG_ADAPTOR_LENGTH,
-                                'length_in_query' : False}],
-               'blastn_short': []
+                                'min_num_residues': 13,
+                                'length_in_query' : False}]
               }
-    runner = aligner
-    parser = aligner
-    fhand_key = aligner
-    if aligner == 'blastn_short':
-        runner = 'blastn'
-        parser = 'blast_tab'
-        fhand_key = 'blastn'
-    aligner_ = create_runner(tool=runner, parameters=parameters[aligner])
-    parser   = get_alignment_parser(parser)
+    if vectors is None:
+        aligner = None
+    elif aligner == 'blast_short' or aligner == 'blastn':
+        seq_type = 'blast_short' if seqs_are_short else 'blast_long'
+        if vectors_are_blastdb:
+            aligner = BlastAligner(database=vectors,
+                                   parameters=parameters[seq_type],
+                                   filters=filters[seq_type])
+        else:
+            aligner = BlastAligner(subject=vectors,
+                                   parameters=parameters[seq_type],
+                                   filters=filters[seq_type])
 
     def strip_vector_by_alignment(sequence):
         '''It strips the vector from a sequence.
@@ -547,19 +599,16 @@ def create_vector_striper_by_alignment(vectors, aligner):
         if vectors is None:
             return sequence
 
-        # first we are going to align he sequence with the vectors
-        alignment_fhand = aligner_(sequence)[fhand_key]
+        alignments = list(aligner.do_alignment(sequence))
 
-        # We need to parse the result
-        alignment_result = parser(alignment_fhand)
+        if elongate_match_to_complete_adaptor:
+            _elongate_matches_to_complete_subject(alignments)
 
-        # We filter the results with appropriate filters
-        alignments = filter_alignments(alignment_result,
-                                       config=filters[aligner])
         alignment_matches = _get_non_matched_locations(alignments)
-        alignment_fhand.close()
+
         segments  = _get_longest_non_matched_seq_region_limits(sequence,
                                                               alignment_matches)
+
         if segments is None:
             return None
 
@@ -570,7 +619,37 @@ def create_vector_striper_by_alignment(vectors, aligner):
 
     return strip_vector_by_alignment
 
-def create_word_striper_by_alignment(words):
+def _elongate_matches_to_complete_subject(alignments, max_elongation=5):
+    'Given an alignment it makes sure that the matches cover the subject'
+    for alignment in alignments:
+        lquery = len(alignment['query'])
+        for match in alignment['matches']:
+            lsubject = len(match['subject'])
+            match_parts = []
+            for match_part in match['match_parts']:
+                qstart = match_part['query_start']
+                qend   = match_part['query_end']
+                sstart = match_part['subject_start']
+                send   = match_part['subject_end']
+                lmatch = qend - qstart + 1
+                if (lsubject != lmatch and
+                    abs(lsubject - lmatch) < max_elongation):
+                    elongation5 = min(qstart, sstart)
+                    new_sstart = sstart - elongation5
+                    new_qstart = qstart - elongation5
+                    elongation3 = min(lquery - qend - 1, lsubject - send - 1)
+                    new_send   = send + elongation3
+                    new_qend   = qend + elongation3
+                    match_part = {'query_start':new_qstart,
+                                  'query_end':new_qend,
+                                  'subject_start':new_sstart,
+                                  'subject_end':new_send}
+                match_parts.append(match_part)
+            match['match_parts'] = match_parts
+            del match['scores']
+            _fix_match_start_end(match)
+
+def create_re_word_striper(words):
     '''It creates a function which will remove words from the given sequence.
 
     It matches the words against the sequence and leaves the longest non-matched

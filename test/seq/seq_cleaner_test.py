@@ -24,24 +24,26 @@ import unittest, os, tempfile
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
 from franklin.seq.readers import seqs_in_file
-from franklin.seq.seq_cleaner import (create_vector_striper_by_alignment,
-                                create_masker_for_polia,
-                                create_masker_for_low_complexity,
-                                create_striper_by_quality_trimpoly,
-                                create_striper_by_quality,
-                                create_striper_by_quality_lucy,
-                                _get_non_matched_locations,
-                                _get_unmasked_locations,
-                                _get_matched_locations,
-                                split_seq_by_masked_regions,
-                                create_word_masker,
-                                create_edge_stripper,
-                                create_word_striper_by_alignment,
-                                create_upper_mapper,
-                                create_seq_trim_and_masker,
-                                _mask_sequence, TRIMMING_RECOMMENDATIONS,
-                                _get_all_segments,
-                                _get_non_matched_from_matched_locations)
+from franklin.seq.seq_cleaner import (_create_vector_striper,
+                                      create_adaptor_striper,
+                                      create_vector_striper,
+                                      create_masker_for_polia,
+                                      create_masker_for_low_complexity,
+                                      create_striper_by_quality_trimpoly,
+                                      create_striper_by_quality,
+                                      create_striper_by_quality_lucy,
+                                      _get_non_matched_locations,
+                                      _get_unmasked_locations,
+                                      _get_matched_locations,
+                                      split_seq_by_masked_regions,
+                                      create_word_masker,
+                                      create_edge_stripper,
+                                      create_re_word_striper,
+                                      create_upper_mapper,
+                                      create_seq_trim_and_masker,
+                                      _mask_sequence, TRIMMING_RECOMMENDATIONS,
+                                      _get_all_segments,
+                                      _get_non_matched_from_matched_locations)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -305,88 +307,18 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         for seq in seq_iter:
             new_seqs.append(seq_trimmer(seq))
 
-    @staticmethod
-    def test_strip_vector_exonerate():
-        'It tests strip_vector_by_alignment'
-
-        vec1 = SeqWithQuality(name='vec1', seq=Seq('atcgatcgatagcatacgat'))
-        vec2 = SeqWithQuality(name='vec2', seq=Seq('atgcatcagatcgataaaga'))
-        fhand_vectors = temp_fasta_file([vec1, vec2])
-        seq_trimmer = create_seq_trim_and_masker()
-        strip_vector_by_alignment = \
-                create_vector_striper_by_alignment(fhand_vectors, 'exonerate')
-
-        seq  = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
-        seq = Seq(seq)
-        seq2 = SeqWithQuality(name='seq', seq=seq)
-        seq1 = SeqWithQuality(name=seq2.name,
-                              seq=vec1.seq + seq2.seq + vec2.seq,
-                              description='hola')
-
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-
-        assert str(seq2.seq) == str(seq3.seq)
-        assert seq3.description == 'hola'
-
-        fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq)
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert str(seq2.seq) == str(seq3.seq)
-
-        # overlaping vectors
-        fhand_vectors.seek(0)
-        new_seq = vec1.seq[:-2]+vec2.seq+seq2.seq+vec2.seq
-        seq1  = SeqWithQuality(name=seq2.name, seq=new_seq)
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert str(seq2.seq) == str(seq3.seq)
-
-        # Now only vectors
-        fhand_vectors.seek(0)
-        new_seq = vec1.seq+vec2.seq+vec2.seq
-        seq1 = SeqWithQuality(name=seq2.name, seq=new_seq)
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert seq3 is None
-
-        # with some extra seq at the begining and end
-        fhand_vectors.seek(0)
-        seq1 = SeqWithQuality(name=seq2.name,
-                    seq=seq2.seq[:20]+vec1.seq+seq2.seq+vec2.seq+seq2.seq[:20])
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert str(seq2.seq) == str(seq3.seq)
-
-        # Now without vectors
-        fhand_vectors.seek(0)
-        seq1 = seq2
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert str(seq2.seq) == str(seq3.seq)
-
-        fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name,
-                               seq=vec1.seq[::-1]+vec2.seq+seq2.seq)
-        seq3 = strip_vector_by_alignment(seq1)
-        seq3 = seq_trimmer(seq3)
-        assert str(seq2.seq) == str(seq3.seq)
-
-    @staticmethod
-    def test_strip_adaptor_blast():
+    def test_strip_adaptor_blast(self):
         'It tests strip_vector_by_alignment with blastn-short'
 
         vec1 = SeqWithQuality(name='vec1', seq=Seq('atcgatcgatagcatacgat'))
         vec2 = SeqWithQuality(name='vec2', seq=Seq('atgcatcagatcgataaaga'))
         fhand_vectors = temp_fasta_file([vec1, vec2])
         seq_trimmer = create_seq_trim_and_masker()
-        strip_vector_by_alignment = \
-               create_vector_striper_by_alignment(fhand_vectors, 'blastn_short')
+        strip_vector_by_alignment = create_adaptor_striper(fhand_vectors)
 
         seq = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq = Seq(seq)
-        seq2 = SeqWithQuality(name='seq', seq=seq)
+        seq2 = SeqWithQuality(name='seq1', seq=seq)
         seq1 = SeqWithQuality(name=seq2.name,
                               seq=vec1.seq + seq2.seq + vec2.seq,
                               description='hola')
@@ -431,6 +363,25 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq3 = strip_vector_by_alignment(seq1)
         seq3 = seq_trimmer(seq3)
         assert str(seq2.seq) == str(seq3.seq)
+
+        seq = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
+        seq = Seq(seq)
+        seq2 = SeqWithQuality(name='seq1', seq=seq)
+        #     'atcgatcgatagcatacgat                atgcatcagatcgataaaga
+        seq = 'atcgatcgatagcataGgat' + seq2.seq + 'atgGatcagatcgataaaga'
+        seq1 = SeqWithQuality(name=seq2.name, seq=seq, description='hola')
+        seq3 = strip_vector_by_alignment(seq1)
+        seq3 = seq_trimmer(seq3)
+        assert str(seq2.seq) == str(seq3.seq)
+
+        long_adap = 'atcgatcgatagcatacgatatcgatcgatagcatacgatatcgatcgatagcatacc'
+        vec1 = SeqWithQuality(name='vec1', seq=Seq(long_adap))
+        fhand_vectors = temp_fasta_file([vec1])
+        try:
+            create_adaptor_striper(fhand_vectors)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
 
     @staticmethod
     def test_strip_short_adaptors():
@@ -441,8 +392,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq  = Seq(seq)
         seq  = SeqWithQuality(name='seq', seq=seq)
         seq_trimmer = create_seq_trim_and_masker()
-        strip_adap = create_word_striper_by_alignment(words=['CGTGTCTCTA',
-                                                             'TATATATA'])
+        strip_adap = create_re_word_striper(words=['CGTGTCTCTA', 'TATATATA'])
 
         clean_seq = strip_adap(seq)
         clean_seq = seq_trimmer(clean_seq)
@@ -479,7 +429,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq1 = Seq(seq1)
         seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
-        remover = create_word_striper_by_alignment([word])
+        remover = create_re_word_striper([word])
         seq = remover(seq)
         seq = seq_trimmer(seq)
         assert seq.seq == seq2
@@ -494,8 +444,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
         seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
         seq_trimmer = create_seq_trim_and_masker()
-        strip_vector_by_alignment = \
-                            create_vector_striper_by_alignment(vector, 'blastn')
+        strip_vector_by_alignment = create_vector_striper(vector, 'blastn')
         striped_seq = strip_vector_by_alignment(seq)
         striped_seq = seq_trimmer(striped_seq)
         striped_seq = str(striped_seq.seq)

@@ -28,8 +28,8 @@ from Bio import SeqIO
 from Bio.SeqFeature import  FeatureLocation
 from Bio.Alphabet import generic_dna, generic_protein
 
-from franklin.alignment_search_result import (BlastParser,
-                                              filter_alignments)
+from franklin.seq.alignment_result import (BlastParser, filter_alignments,
+                                           build_relations_from_aligment)
 from franklin.snv.snv_annotation import (INVARIANT, SNP, DELETION, INSERTION,
                                          SNV_TYPES)
 from franklin.utils.cmd_utils import  create_runner
@@ -38,7 +38,6 @@ from franklin.utils.seqio_utils import get_content_from_fasta
 from franklin.seq.seq_analysis import infer_introns_for_cdna, get_orthologs
 from franklin.seq.readers import guess_seq_file_format
 from franklin.utils.misc_utils import get_fhand
-from franklin.alignment_search_result import build_relations_from_aligment
 from franklin.coordsystem import CoordSystem
 from tempfile import NamedTemporaryFile
 

@@ -31,7 +31,6 @@ from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES,
                                               PLOT_FILE_FORMAT)
 from franklin.utils.seqio_utils import seqs_in_file
-from franklin.seq.seq_cleaner import MIN_LONG_ADAPTOR_LENGTH
 from franklin.seq.writers import SequenceWriter
 from franklin.statistics import (create_distribution, write_distribution,
                                  draw_histogram, CachedArray, draw_boxplot)
@@ -61,29 +60,6 @@ class CleanReadsAnalyzer(Analyzer):
             raise ValueError('Unable to guess the cleaning pipeline: %s' %
                              str(file_info))
 
-    @staticmethod
-    def _purge_short_adaptors(adaptors_fpath):
-        '''It returns a file without short adaptors and the list of adaptors
-        removed'''
-        long_adap_fhand = NamedTemporaryFile(delete=False, mode='a')
-        seq_writer = SequenceWriter(long_adap_fhand, file_format='fasta')
-        short_adaptors = []
-        for seq in seqs_in_file(open(adaptors_fpath)):
-            if len(seq) < MIN_LONG_ADAPTOR_LENGTH:
-                short_adaptors.append(str(seq.seq))
-            else:
-                seq_writer.write(seq)
-        if not short_adaptors:
-            #not worth the new file, we remove it
-            long_adap_fhand.close()
-            os.remove(long_adap_fhand.name)
-            return adaptors_fpath, short_adaptors
-        elif not seq_writer.num_features:   #no long adaptors remaining
-            os.remove(long_adap_fhand.name)
-            return None, short_adaptors     #we do not return the adaptor file
-        else:
-            return long_adap_fhand.name, short_adaptors
-
     def _create_cleaning_configuration_solid(self, platform):
         '''It returns the pipeline configuration for solid pipeline looking at
         the project settings'''
@@ -101,26 +77,22 @@ class CleanReadsAnalyzer(Analyzer):
         settings = self._project_settings['Cleaning']
         configuration = {}
 
-        configuration['remove_vectors'] = {}
-        configuration['remove_vectors']['vectors'] = settings['vector_database']
+        configuration['remove_vectors_blastdb'] = {}
+        configuration['remove_vectors_blastdb']['vectors'] = settings['vector_database']
+
+        configuration['remove_vectors_file'] = {}
+        configuration['remove_vectors_file']['vectors'] = settings['vector_file']
+
 
         # adaptors settings
         adap_param = 'adaptors_file_%s' % platform
         adaptors_fpath = settings[adap_param]
-
-        #we have to remove the short adaptors from the file and treat them
-        #as short adaptors
-        if adaptors_fpath:
-            adaptors_fpath, words = self._purge_short_adaptors(adaptors_fpath)
-        else:
-            words = []
         configuration['remove_adaptors'] = {}
-        configuration['remove_adaptors']['vectors'] = adaptors_fpath
+        configuration['remove_adaptors']['adaptors'] = adaptors_fpath
 
         # Words settings
         word_param = 'short_adaptors_%s' % platform
-        if settings[word_param] is not None:
-            words.extend(settings[word_param])
+        words = settings[word_param]
         configuration['remove_short_adaptors'] = {}
         configuration['remove_short_adaptors']['words'] = words
 
