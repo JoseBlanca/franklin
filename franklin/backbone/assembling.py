@@ -27,10 +27,7 @@ from tempfile import NamedTemporaryFile
 from franklin.utils.misc_utils import rel_symlink
 import os, logging
 from franklin.backbone.analysis import (Analyzer, _LastAnalysisAnalyzer)
-from franklin.utils.cmd_utils import call
 from franklin.seq.readers import guess_seq_file_format
-from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
-                                              BACKBONE_BASENAMES)
 from franklin.utils.seqio_utils import (seqio, cat)
 
 class PrepareMiraAssemblyAnalyzer(Analyzer):

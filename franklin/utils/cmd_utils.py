@@ -118,19 +118,6 @@ TBLASTX_DEF['output'] = {'tblastx':{'option':STDOUT}}
 
 
 RUNNER_DEFINITIONS = {
-    'blast': {'binary':'blast2',
-              'parameters': {'database' :{'required':True, 'option': '-d'},
-                             'program'  :{'required':True, 'option':'-p'},
-                             'expect'   :{'default': 0.0001, 'option': '-e'},
-                             'nhitsv'   :{'default': 20, 'option':'-v'},
-                             'nhitsb'   :{'default': 20, 'option':'-b'},
-                             #'megablast':{'default':'T',  'option':'-n'},
-                             'alig_format': {'default':7, 'option':'-m'}
-                            },
-              'output':{'blast':{'option':STDOUT}},
-              'input':{'sequence':{'option':'-i', 'files_format':['fasta']}},
-              'ignore_stderrs': ['Karlin-Altschul']
-              },
     'blastn':BLASTN_DEF,
     'blastp':BLASTP_DEF,
     'blastx':BLASTX_DEF,
@@ -145,18 +132,6 @@ RUNNER_DEFINITIONS = {
             'output':{'water':{'option':'-outfile'}},
             'input':{'sequence':{'option':'-asequence', 'files_format':['fasta']}}
               },
-    'seqclean_vect':{'binary':'seqclean_vect',
-                     'parameters':{'vector_db':{'required':True, 'option':'-v'},
-                                 'no_trim_end':{'default':None, 'option':'-N'},
-                                'no_trash_low':{'default':None, 'option':'-M'},
-                                   'no_trim_A':{'default':None, 'option':'-A'},
-                                     'no_dust':{'default':None, 'option':'-L'},
-                                 'min_seq_len':{'required':True}},
-                     'output':{'sequence':{'option':'-o', 'files':['seq']}},
-                     'input':{'sequence':{'option':ARGUMENT,
-                                          'arg_before_params':True,
-                                          'files_format':['fasta']}}
-                    },
     'mdust':{'binary':'mdust',
              'parameters':{'mask_letter':{'default':'L', 'option' : '-m'},
                            'cut_off'    :{'default':'25', 'option':'-v' },
@@ -177,15 +152,6 @@ RUNNER_DEFINITIONS = {
              'output':{'sequence':{'option':STDOUT}},
              'input':{'sequence': {'option':STDIN, 'files_format':['fasta']}}
                 },
-    'exonerate':{'binary':'exonerate',
-                 'parameters':{'target':{'required':True, 'option':'--target'},
-       'show_vulgar':{'default':'False', 'option':'--showvulgar'},
-       'show_alignment':{'default':'False', 'option':'--showalignment'},
-     'how_options':{'default':"cigar_like:%S %ql %tl %ps\n", 'option':'--ryo'}},
-                 'output':{'exonerate':{'option':STDOUT}},
-                 'input' : {'sequence':{'option':'--query',
-                                        'files_format':['fasta']}}
-                 },
     'lucy':{'binary':'lucy',
             'parameters':{
                       'cdna'   :{'option':'-c', 'default':None},
@@ -221,16 +187,6 @@ RUNNER_DEFINITIONS = {
                'output':{'dna':{'option':STDOUT, 'files_format':['fasta']},
                          'protein':{'option': '-t', 'files_format':['fasta']}}
                },
-    'remap':{'binary':'remap',
-             'parameters':{'enzymes':{'default':'all', 'option' : '-enzymes'},
-                          'sitelen' :{'default':'4', 'option':'-sitelen' },
-                          'stdout'  :{'default':'', 'option':'-stdout' },
-                          'auto'    :{'default':'', 'option':'-auto' }, },
-             'output':{'remap':{'option':'-outfile', 'files':['map']}},
-             'input':{'sequence':{'option': '-sequence',
-                                  'files_format':['fasta']}}
-            },
-
     }
 
 def _process_parameters(parameters, parameters_def):
