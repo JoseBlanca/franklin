@@ -24,4 +24,4 @@
 .. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
 .. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
 .. _VCF: http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf4.0
-
+.. _setuptools: http://pypi.python.org/pypi/setuptools

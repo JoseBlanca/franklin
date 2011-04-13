@@ -7,11 +7,22 @@ This is a summary on how to install ngs_backbone, below you have a :ref:`detaile
 If you just want to check out how ngs_backbone works you could also download a complete `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine_v2.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
 Although this machine will not be powerful enough to run most real sized analyses it can be an easy way to get a felling of the analysis process without spending any time at all setting up the environment.
 
-To install ngs_backbone python 2.6 or better is required. Also you need the python libraries Biopython_, and ConfigObj_. Other optional, but highly recommended, dependencies are: psubprocess_, pysam_ and matplotlib_. python is installed by default in the usual Linux distributions but you should check the version. Installing a python library is as easy as installing ngs_backbone. Once you have the tarball downloaded just run the following command::
+To install ngs_backbond python 2.6 or better is required. Also you need the python libraries Biopython_, and ConfigObj_. You can install these libraries with the following commands:
+
+  $ easy_instal biopython
+  $ easy_install configobj
+
+If you don't have easy_install installed in your computer, You can grab it from here: setuptools_. Other optional, but highly recommended, dependencies are: psubprocess_, pysam_ and matplotlib_. All of these libraries are installed in the same way:
+
+  $ tar zxvf package.tar.gz
+  $ cd package
+  $ python setup.py install
+ 
+python is installed by default in the usual Linux distributions but you should check the version. Installing a python library is as easy as installing ngs_backbone. Once you have the tarball downloaded just run the following command::
 
   $ python2.6 setup.py install
 
-ngs_backbone requires also several external tools to run the analyses. You don't need all of them for every analysis, depending on the analysis that you want to do you will require some subset of these tools. If you happen to run a x64 linux box installing the majority of these tools is a breeze, just download the :download:`x64 3erd party tools bundle <downloads/backbone_3er_party.tar.gz>` and copy them to somewhere in your path. If you want to compile them get the :download:`source <downloads/backbone_3er_party_src.tar.gz>`.
+ngs_backbone requires also several external tools to run the analyses. Most of the applications are distributed in ngs_backbone so you don't need to install them. Due to license reasons we can not distribute b2g4pipe(blastogo_).
 
 =============================  ================================================================
 analysis                       external tools required
@@ -95,54 +106,22 @@ Once we have it all we can install ngs_backbone.
   $ cd ngs_backbone.0.2.0
   $ python2.6 setup.py install
 
-C tools
-_______
-
-Most of the tools required has been precompiled for the x64 linux systems, :download:`download <downloads/backbone_3er_party.tar.gz>` them and copy them to somewhere in your path.
-
-::
-
-  $ tar -xvzf backbone_3er_party.tar.gz
-  $ cp -r backbone_3er_party_bin/* /usr/local/bin
-
-Two other requirements are blast and emboss, chances are that you can install them using your distribution package manager. In Debian we would do::
-
-  $ apt-get install emboss
-  $ apt-get install blast2
- 
-blast without databases is of no use, as an example we are going to install the Univec_ database. After downloading the fasta file we uncompress it in a directory and we format it.
-
-::
-
-  $ mkdir /srv/blast/
-  $ mv UniVec /srv/blast
-  $ formatdb -i UniVec -V -p F -o
-
-If you want to do an assembly you will also need mira_.
-
-::
-
-  $ tar -xvjf mira_3.0.5_prod_linux-gnu_x86_64_static.tar.bz2
-  $ cp mira_3.0.5_prod_linux-gnu_x86_64_static/bin/mira /usr/local/bin
-
 
 Java tools
 __________
 
-Two java tools are used to manage the sam files: picard_ and GATK_. They are java tools, so you have to install java in your linux box.
+Three java tools are used to manage the sam files: picard_ ,GATK_ and blast2go_ . The two first are provided in the ngs_backbone tarball.
 
 ::
 
   $ apt-get install sun-java6-jre
 
-blast2go_, picard and GATK are easy to install, just download them and unpack them.
+blast2go_, just download it and unpack it.
 
 ::
 
-  $ unzip picard-tools-1.22.zip
-  $ mv picard-tools-1.22 /usr/local
-  $ tar -xvjf GenomeAnalysisTK-latest.tar.bz2
-  $ mv GenomeAnalysisTK-1.0.3471 /usr/local
+  $ tar zxvf b2g4pipe235.tar.gz
+  $ mv b2g4pipe235 /usr/local
   $ updatedb
 
 It is advisable to run updatedb after setting everything to ease the ngs_backbone configuration.
