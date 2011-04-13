@@ -134,11 +134,11 @@ class TestCall(unittest.TestCase):
 
         ## When fails
         #without stdout file. Raise False
-        stderr = call(cmd)[1]
+        stderr = call(cmd, add_ext_dir=False)[1]
         assert '/@#@#@#@' in stderr
 
         try:
-            call(cmd, raise_on_error=True)
+            call(cmd, raise_on_error=True, add_ext_dir=False)
             self.fail()
         except RuntimeError as error:
             assert '/@#@#@#@' in str(error)
@@ -146,13 +146,13 @@ class TestCall(unittest.TestCase):
         #with stdout file
         stdout = tempfile.NamedTemporaryFile()
         stderr = tempfile.NamedTemporaryFile()
-        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr)[:2]
+        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr, add_ext_dir=False)[:2]
         assert not stdout_str
         assert not stderr_str
 
         assert '/@#@#@#@' in open(stderr.name).read()
         try:
-            call(cmd, stdout=stdout, stderr=stderr, raise_on_error=True)
+            call(cmd, stdout=stdout, stderr=stderr, raise_on_error=True, add_ext_dir=False)
             self.fail()
         except RuntimeError as error:
             assert '/@#@#@#@' in stderr.read()
@@ -160,13 +160,13 @@ class TestCall(unittest.TestCase):
         ## when it do right
         cmd = ['ls', '/']
         #without stdout file.
-        stdout, stderr = call(cmd)[:2]
+        stdout, stderr = call(cmd, add_ext_dir=False)[:2]
         assert 'root'in stdout
 
         #without stdout file.
         stdout = tempfile.NamedTemporaryFile()
         stderr = tempfile.NamedTemporaryFile()
-        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr)[:2]
+        stdout_str, stderr_str = call(cmd, stdout=stdout, stderr=stderr, add_ext_dir=False)[:2]
         assert  stdout_str is None
 
         assert 'root' in stdout.read()

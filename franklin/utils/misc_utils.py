@@ -536,8 +536,21 @@ def get_db_connection(db_data):
                                 user = db_data['user'],
                                 password = db_data['pass'],
                                 host = db_data['host'])
-
-
     return conn
 
-
+_FRANKLIN_EXT_DIR = None
+def get_franklin_ext_dir():
+    'It returns the franklin external program dir'
+    global _FRANKLIN_EXT_DIR
+    if _FRANKLIN_EXT_DIR:
+        return _FRANKLIN_EXT_DIR
+    franklin_path = franklin.__path__[0]
+    ext_path = os.path.normpath(os.path.join(franklin_path, '..', 'ext'))
+    if os.path.exists(ext_path):
+        _FRANKLIN_EXT_DIR = ext_path
+        return ext_path
+    ext_path = os.path.normpath(os.path.join(franklin_path, 'ext'))
+    if not os.path.exists(ext_path):
+        raise RuntimeError('Ext directory not found')
+    _FRANKLIN_EXT_DIR = ext_path
+    return ext_path

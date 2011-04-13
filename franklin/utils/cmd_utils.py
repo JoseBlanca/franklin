@@ -19,17 +19,16 @@ This module provides utilities to run external commands into franklin
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess, signal, tempfile, os, itertools
+import StringIO, logging, copy, shutil, platform
 
 from franklin.seq.writers import temp_fasta_file, temp_qual_file
-from franklin.utils.misc_utils import NamedTemporaryDir, DisposableFile
-
-import subprocess, signal, tempfile, os, itertools
-import StringIO, logging, copy, shutil
-
+from franklin.utils.misc_utils import (NamedTemporaryDir, DisposableFile,
+                                       get_franklin_ext_dir)
 
 def _locate_file(fpath):
     cmd = ['locate', fpath]
-    stdout, stderr, retcode = call(cmd, raise_on_error=False)
+    stdout, stderr, retcode = call(cmd, raise_on_error=False, add_ext_dir=False)
     if retcode == 1:
         raise RuntimeError('File not found: %s' % fpath)
     elif not retcode:
@@ -417,8 +416,9 @@ def _which_binary(binary):
     else:
         return None
 
+_EXTERNAL_BIN_DIR = None
 def call(cmd, environment=None, stdin=None, raise_on_error=False,
-         stdout=None, stderr=None, log=False):
+         stdout=None, stderr=None, log=False, add_ext_dir=True):
     'It calls a command and it returns stdout, stderr and retcode'
     def subprocess_setup():
         ''' Python installs a SIGPIPE handler by default. This is usually not
@@ -426,6 +426,16 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/07/02#
         2009-07-02-python-sigpipe'''
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    if add_ext_dir:
+        global _EXTERNAL_BIN_DIR
+        if not _EXTERNAL_BIN_DIR:
+            ext_dir = get_franklin_ext_dir()
+            arch    = platform.architecture()[0]
+            system  = platform.system().lower()
+            _EXTERNAL_BIN_DIR = os.path.join(ext_dir, 'bin', system, arch)
+        binary = os.path.join(_EXTERNAL_BIN_DIR, cmd[0])
+        cmd[0] = binary
 
     if stdin is None:
         pstdin = None
@@ -513,7 +523,7 @@ def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
     logger = logging.getLogger('franklin')
     logger.info('Running blast2go: %s' % ' '.join(cmd))
 
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
     shutil.move(out_basename + '.annot', annot_fpath)
     if dat_fpath:
         shutil.move(out_basename + '.dat', dat_fpath)

@@ -97,7 +97,7 @@ def bamsam_converter(input_fhand, output_fhand, java_conf=None):
     cmd = java_cmd(java_conf)
     cmd.extend(['-jar', picard_jar, 'INPUT=' + input_fhand,
                 'OUTPUT=' + output_fhand])
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
 def add_header_and_tags_to_sam(sam_fhand, new_sam_fhand):
     '''It adds tags to each of the reads of the alignments on the bam.
@@ -218,7 +218,7 @@ def sort_bam_sam(in_fpath, out_fpath, sort_method='coordinate',
     if tmp_dir:
         java_cmd_.append('TMP_DIR=%s' % tmp_dir)
 
-    stdout, stderr, retcode = call(java_cmd_, raise_on_error=False)
+    stdout, stderr, retcode = call(java_cmd_, raise_on_error=False, add_ext_dir=False)
     err_msg = 'No space left on device'
     if retcode and (err_msg in stdout or err_msg in stderr):
         raise RuntimeError('Picard sort consumed all space in device.' + stderr)
@@ -344,7 +344,7 @@ def create_picard_dict(reference_fpath, java_conf=None):
     cmd = ['java', '-jar', picard_jar,
            'R=%s' % reference_fpath,
            'O=%s' % dict_path]
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
 def create_sam_reference_index(reference_fpath):
     'It creates a sam index for a reference sequence file'
@@ -381,7 +381,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
     parallel = False
     if parallel and threads and threads > 1:
         cmd.extend(['-nt', str(get_num_threads(threads))])
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
     #the realignment itself
     unsorted_bam = NamedTemporaryFile(suffix='.bam')
@@ -390,7 +390,7 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '-o', unsorted_bam.name])
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
     # now we have to realign the bam
     sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf,
                  tmp_dir=tmp_dir)

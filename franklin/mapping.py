@@ -114,13 +114,13 @@ def create_gmap_reference(reference_fpath):
     makefile = 'Makefile.%s' % name
 
     cmd = ['make', '-f', makefile , 'coords']
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
     cmd = ['make', '-f', makefile, 'gmapdb']
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
     cmd = ['make', '-f', makefile, 'install']
-    call(cmd, raise_on_error=True)
+    call(cmd, raise_on_error=True, add_ext_dir=False)
 
     #we remove the makefile and an extra file with some instructions
     os.remove(makefile)
