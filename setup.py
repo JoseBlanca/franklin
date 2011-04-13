@@ -162,9 +162,7 @@ dist = setup(
     packages=packages,
     package_dir={'':'.'},
 
-    package_data={'': ['data/samtools/*', 'data/blast/*', 'data/*.*',
-                       'data/samtools_color/*',
-                       ]},
+    package_data={'': ['data/*.*']},
     data_files = data_files,
     cmdclass = { 'install_data':    wx_smart_install_data },
     requires=['BioPython', 'matplotlib', 'configobj',
