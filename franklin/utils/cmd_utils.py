@@ -308,7 +308,7 @@ def _build_cmd(cmd_params, runner_def):
     cmd.extend(cmd_args_end)
     return cmd, stdin
 
-def create_runner(tool, parameters=None, environment=None, add_ext_dir=True):
+def create_runner(tool, parameters=None, environment=None):
     ''''It creates a runner class.
 
     The runner will be able to run a binary program for different sequences.
@@ -353,8 +353,7 @@ def create_runner(tool, parameters=None, environment=None, add_ext_dir=True):
         #raw_input()
         try:
             stdout, stderr, retcode = call(cmd, stdin=stdin,
-                                           environment=environment,
-                                           add_ext_dir=add_ext_dir)
+                                           environment=environment)
         except OSError as error:
             if 'water' in str(error):
                 error = 'Water aligner is not installed or not configured properly'
