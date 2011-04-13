@@ -57,15 +57,24 @@ def guess_jar_dir(jar_name, java_conf=None):
     conf_variables = {'SortSam.jar': 'picard_path',
                       'GenomeAnalysisTK.jar': 'gatk_path',
                       'blast2go.jar': 'blast2go_path'}
+    java_dir_names = {'SortSam.jar': 'picard',
+                      'GenomeAnalysisTK.jar': 'gatk',
+                      'blast2go.jar': 'blast2go'}
     jar_path = None
     if jar_name in conf_variables:
         conf_var = conf_variables[jar_name]
         if java_conf and conf_var in java_conf and java_conf[conf_var]:
             jar_path = java_conf[conf_var]
     if not jar_path:
-        return _guess_java_install_dir(jar_name)
-    else:
-        return jar_path
+        if jar_name == 'blast2go.jar':
+            jar_path = _guess_java_install_dir(jar_name)
+        else:
+            franklin_path = get_franklin_ext_dir()
+            jar_path = os.path.join(franklin_path, 'java',
+                                    java_dir_names[jar_name])
+
+    return jar_path
+
 
 # Runner definitions, Define here the parameters of the programs you want to
 # use with this class
