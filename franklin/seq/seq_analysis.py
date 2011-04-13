@@ -100,7 +100,7 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
     #we run est2genome
     cmd = ['est2genome', cdna_file.name, similar_seq_file.name,
            '-sbegin2', str(start), '-send2', str(end), '-stdout', '-auto']
-    stdout, stderr, retcode = call(cmd)
+    stdout, stderr, retcode = call(cmd, add_ext_dir=False)
 
     if retcode:
         msg = 'There was an error running est2genome: ' + stderr

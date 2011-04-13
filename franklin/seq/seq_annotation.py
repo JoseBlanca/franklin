@@ -233,7 +233,8 @@ def _locate_codons_in_orf(sequence, orf, snv):
     subject_fhand.write('>%s\n%s\n' % (subject_name, orf_seq))
     subject_fhand.flush()
     parameters   = {'subject':subject_fhand.name}
-    aligner      = create_runner(tool='water', parameters=parameters)
+    aligner      = create_runner(tool='water', parameters=parameters,
+                                 add_ext_dir=False)
     result_fhand = aligner(sequence)['water']
     relations = build_relations_from_aligment(result_fhand,
                                               query_name=sequence.name,

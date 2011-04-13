@@ -865,7 +865,8 @@ class WaterTests(unittest.TestCase):
 
         subject_fhand = temp_fasta_file(subject_seq)
         parameters = {'subject':subject_fhand.name}
-        aligner = create_runner(tool='water', parameters=parameters)
+        aligner = create_runner(tool='water', parameters=parameters,
+                                add_ext_dir=False)
         result_fhand = aligner(query_seq)['water']
         relations = build_relations_from_aligment(result_fhand,
                                                   query_name=query_seq.name,
