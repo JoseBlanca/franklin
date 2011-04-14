@@ -7,23 +7,27 @@
 ngs_backbone
 ============
 
-ngs_backbone is a bioinformatic application created to work on sequence analysis by using NGS (Next Generation Sequencing)  and sanger sequences. It is capable of cleaning reads, do de novo assembly or mapping against a reference and annotate SNPs, SSRs, ORFs, GO terms and sequence descriptions.
-Our laboratory is focused on transcriptomic analysis, so the tool has been used and tested on transcriptomes. Some analyses will be useful for genome analysis, but since our work deals mainly with transcriptomes design tradeoffs in ngs_backbone reflect this.
+ngs_backbone is a bioinformatic pipeline created to work on Next Generation Sequence (NGS) analysis as well as with sanger sequences.
+It is capable of cleaning reads, prepare a novo assembly, map reads against a reference, look for SNPs and SSRs, and do some function annotation like :ORFs, GO terms and sequence descriptions.
 
-ngs_backbone can run in parallel using single node multicore systems and computer clusters.
+ngs_backbone:
 
-For the analyses, in most cases, ngs_backbone uses external software like: mira_, bwa_, samtools_, picard_, etc.
+  * is mainly a wrapper around external tools like: bwa_, samtools_, blast, etc.
+  * uses standard files like fastq_, SAM_, VCF_ and GFF_ to ease the interoperability with other tools.
+  * is a command line application.
+  * is free software released under the AGPL license with the hope that could be useful to other laboratories.
+  * runs in Linux so experience with that operating system is advised when using it.
+  * is written in Python.
+  * can run in parallel using single node multicore systems and computer clusters.
 
-The application works on Linux so experience with that operating system is required when using it.
-
-ngs_backbone is free software so contributions and shared development will be welcomed.
-
-If you find any problem when running ngs_backbone please inform us.
+If you find any problem when running ngs_backbone we'd love to hear from you, so please inform us.
 
 
-**Help**
+Help
+----
 
-To get help there is a mailing list to help with ngs_backbone. If you have any question send an email to the list: ngs_backbone@upv.es
+To get help there is a mailing list for ngs_backbone.
+If you have any question send an email to the list: ngs_backbone@upv.es
 
 To subscribe, unsubscribe or see the archive `list <https://listas.upv.es/mailman/listinfo/ngs_backbone>`_.
 
@@ -44,8 +48,10 @@ To subscribe, unsubscribe or see the archive `list <https://listas.upv.es/mailma
    architecture
    download
 
-
-.. _mira: http://sourceforge.net/apps/mediawiki/mira-assembler
+.. _fastq: http://en.wikipedia.org/wiki/FASTQ_format
 .. _bwa: http://bio-bwa.sourceforge.net/
 .. _samtools: http://samtools.sourceforge.net/
-.. _picard: http://picard.sourceforge.net/index.shtml
+.. _SAM: http://samtools.sourceforge.net/SAM-1.3.pdf
+.. _VCF: http://www.1000genomes.org/wiki/Analysis/vcf4.0
+.. _GFF: http://www.sequenceontology.org/resources/gff3.html
+
