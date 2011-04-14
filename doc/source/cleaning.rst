@@ -5,7 +5,9 @@
 Cleaning sequence reads
 -----------------------
 
-ngs_backbone can clean sanger, 454 and illumina sequences. This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering. There are three cleaning pipelines defined in ngs_backbone that are used depending on the platform and on the quality availability:
+ngs_backbone can clean sanger, 454, illumina and solid sequences.
+This process usually involves vector and adaptor removal, bad quality regions trimming and short sequence filtering.
+There are four cleaning pipelines defined in ngs_backbone that are used depending on the platform and on the quality availability:
 
 long reads with quality
   for sanger and 454 sequences with quality information
@@ -16,28 +18,35 @@ long reads without quality
 solexa
   for short illumina reads
 
-A collection of cleaning steps are available that compose each one of these pipelines. These steps are:
+solid
+  for solid reads
+
+A collection of cleaning steps are available that compose each one of these pipelines.
+These steps are:
 
 adaptor removal
-  Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is exonerate. If a match is found this section of the read is removed. Short adaptors will be treated as such.
+  Each sequence is align against the adaptors found in a fasta file. The external tool used to do the matching is blast with its short sequence algorithm. If a match is found this section of the read is removed.
 
 short adaptor removal
-  ngs_backbone will look for adaptors shorter than 20 bp with exact matches.
+  ngs_backbone will look for adaptors shorter than 15 bp with exact matches.
 
 precise vector removal
   If the vector and cloning site is known lucy can be used to remove the vector in a precise way.
 
-bad quality trimming
-  There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise ngs_backbone does the job (illumina).
-
-bad quality trimming by Ns
-  When there are no qualities available we can infer the quality from the percent of Ns found in the sequence. This step removes regions with a high number of Ns.
+vector removal
+  If only the vector is known we can use blast to remove it.
 
 general vector removal
   The reads are compared against the Univec database using blast to look for remaining vectors.
 
+bad quality trimming
+  There are two algorithms used to remove the bad quality sequence extremes. If the sequence is long lucy (454 and sanger) is used for this task otherwise ngs_backbone does the job (illumina and solid).
+
+bad quality trimming by Ns
+  When there are no qualities available we can infer the quality from the percent of Ns found in the sequence. This step removes regions with a high number of Ns.
+
 low complexity masking
-  The regions with a low complexity are masked by using mdust
+  The regions with a low complexity can be masked by using mdust
 
 edge removal
   After all the other modules are run we can delete a fixed amount of bases from the sequence extremes
@@ -56,10 +65,17 @@ long reads without quality
 solexa
   adaptor removal, bad quality trimming,  and short sequence filtering
 
+solid
+  bad quality trimming and short sequence filtering
+
 Input and output files
 ______________________
 
-The reads to be cleaned should be in the project directory under /reads/raw/. The :doc:`naming conventions <introduction>` should be followed by these files, especially the bit regarding to the extension. The output files will have the same names, but they will be located at /reads/cleaned/. The analysis will proceed for all sequence files found in /reads/raw, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated. If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
+The reads to be cleaned should be in the project directory under /reads/raw/.
+The :doc:`naming conventions <introduction>` should be followed by these files, especially the bit regarding to the extension and the platform.
+The output files will have the same names, but they will be located at /reads/cleaned/.
+The analysis will proceed for all sequence files found in /reads/raw, if a matching file is not found in /reads/cleaned/ a new cleaned file will be generated.
+If a matching file is found in /reads/cleaned/ these file will not be overwritten, so the analysis for this file will not be repeated until the file from /reads/cleaned is removed.
 
 .. _clean-config:
 
@@ -136,8 +152,7 @@ The lucy settings file should have the following format:
   {'library1':{'vector_file':'lib1_vector.fasta', 'splice_file':'lib1_splice.fasta'},
    'library2':{'vector_file':'lib2_vector.fasta', 'splice_file':'lib2_splice.fasta'},}
 
-In this file the paths to the vector and splice files for lucy should be stated for every library to be cleaned by lucy. The library name will be scraped from the read sequence file (that should follow the :doc:`naming conventions <introduction>`. The vector file is just a fasta file, the information to be set in the splice file should is explained in the lucy man page.
-
-
-
+In this file the paths to the vector and splice files for lucy should be stated for every library to be cleaned by lucy.
+The library name will be scraped from the read sequence file (that should follow the :doc:`naming conventions <introduction>`.
+The vector file is just a fasta file, the information to be set in the splice file should is explained in the lucy man page.
 
