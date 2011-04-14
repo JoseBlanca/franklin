@@ -436,6 +436,8 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
         2009-07-02-python-sigpipe'''
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
+    binary_name = cmd[0]
+
     if add_ext_dir:
         global _EXTERNAL_BIN_DIR
         if not _EXTERNAL_BIN_DIR:
@@ -443,8 +445,17 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
             arch    = platform.architecture()[0]
             system  = platform.system().lower()
             _EXTERNAL_BIN_DIR = os.path.join(ext_dir, 'bin', system, arch)
-        binary = os.path.join(_EXTERNAL_BIN_DIR, cmd[0])
+        binary = os.path.join(_EXTERNAL_BIN_DIR, binary_name)
         cmd[0] = binary
+
+    # emboss binaries need acd files and its environment variable to find them
+    if binary_name in ('water', 'est2genome'):
+        acd_dir = os.path.join(_EXTERNAL_BIN_DIR, 'emboss_data')
+        if environment is None:
+            environment = {}
+        environment['EMBOSS_ACDROOT'] =  acd_dir
+        environment['EMBOSS_DATA']    =  acd_dir
+
 
     if stdin is None:
         pstdin = None
@@ -473,9 +484,9 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
                                    preexec_fn=subprocess_setup)
     except OSError:
         #if it fails let's be sure that the binary is not on the system
-        binary = _which_binary(cmd[0])
+        binary = _which_binary(binary_name)
         if binary is None:
-            if 'makeblastdb' in cmd[0]:
+            if 'makeblastdb' in binary_name:
                 raise OSError('This program is not installed or not configured properly: ' + cmd[0] + ', part of Blast')
             else:
                 raise OSError('This program is not installed or not configured properly: ' + cmd[0])

@@ -69,7 +69,7 @@ class ProcessParametersTest(unittest.TestCase):
         params = {}
         cmd_params = _process_parameters(params, param_def)
         assert cmd_params == ['-c', '1.0', '2.0']
-        assert 'est2genome' in _which_binary('est2genome')
+        assert 'ls' in _which_binary('ls')
 
 
 class RunnerFactorytest(unittest.TestCase):

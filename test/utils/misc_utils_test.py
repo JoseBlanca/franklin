@@ -26,7 +26,6 @@ from franklin.utils.misc_utils import (xml_itemize, _get_xml_tail,
                                        VersionedPath, get_num_threads,
                                        rel_symlink)
 
-
 class Minor_utilities_test(unittest.TestCase):
     'Test form minor utilities'
     @staticmethod
