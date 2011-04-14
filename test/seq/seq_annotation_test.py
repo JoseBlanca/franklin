@@ -65,31 +65,14 @@ class AnnotationTests(unittest.TestCase):
         descrip_annotator = create_description_annotator([blast])
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021854')
         sequence = descrip_annotator(sequence)
-        assert sequence.description == 'Similar to ankyrin repeat family protein'
+        desc  = 'Similar to ankyrin repeat family protein '
+        desc += '(tair9_pep_20090619:AT1G34050.1)'
+        assert sequence.description == desc
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021853')
         sequence = descrip_annotator(sequence)
-        assert sequence.description == 'Similar to DNA-binding protein-related'
-
-    @staticmethod
-    def xtest_polia_annotator():
-        'It test the polia annotator'
-        polia_annot = create_polia_annotator()
-
-        seq = 'TCGCATCGATCATCGCAGATCGACTGATCGATCGATCAAAAAAAAAAAAAAAAAAAAAAA'
-        seq1 = SeqWithQuality(seq=Seq(seq))
-        polia_annot(seq1)
-        print seq1.features
-
-        seq = 'TTTTTTTTTTTTTTTTTTTTCGCATCGATCATCGCAGATCGACTGATCGAGTAGTGATGT'
-        seq1 = SeqWithQuality(seq=Seq(seq))
-        polia_annot(seq1)
-        print seq1.features
-
-
-        seq = 'CGCATCGATCATCAAAAAAAAAAAAAAAAAAAAAAAAAAAGCAGATCGACTGATCGAGTA'
-        seq1 = SeqWithQuality(seq=Seq(seq))
-        polia_annot(seq1)
-        print seq1.features
+        desc  = 'Similar to DNA-binding protein-related '
+        desc += '(tair9_pep_20090619:AT1G23750.1)'
+        assert sequence.description == desc
 
     @staticmethod
     def test_snv_prot_change_annotator():

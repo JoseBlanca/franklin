@@ -53,7 +53,7 @@ for every match. Every evidence is similar to a match.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import itertools, copy
+import itertools, copy, os
 from math import log10
 from operator import itemgetter
 
@@ -325,7 +325,11 @@ class BlastParser(object):
             raise ValueError('Not a xml file')
         fhand.seek(0, 0)
         self._blast_file = fhand
-        blast_version, plus = self._get_blast_version()
+        metadata = self._get_blast_metadata()
+        blast_version = metadata['version']
+        plus          = metadata['plus']
+        self.db_name  = metadata['db_name']
+
         self._blast_file.seek(0, 0)
 
         if ((blast_version and plus) or
@@ -474,6 +478,28 @@ class BlastParser(object):
             plus = True
             version = version[:-1]
         return version, plus
+
+    def _get_blast_metadata(self):
+        'It gets blast parser version'
+        version = None
+        db_name = None
+        plus    = False
+        for line in self._blast_file:
+            line = line.strip()
+            if line.startswith('<BlastOutput_version>'):
+                version = line.split('>')[1].split('<')[0].split()[1]
+            if line.startswith('<BlastOutput_db>'):
+                db_name = line.split('>')[1].split('<')[0]
+                db_name = os.path.basename(db_name)
+
+            if version is not None and db_name is not None:
+                break
+
+        if version and '+' in version:
+            plus = True
+            version = version[:-1]
+
+        return {'version':version, 'plus':plus, 'db_name':db_name}
 
     def next(self):
         'It returns the next blast result'

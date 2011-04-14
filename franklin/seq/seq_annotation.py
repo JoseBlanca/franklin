@@ -81,7 +81,10 @@ def create_description_annotator(blasts):
             return
         name = get_seq_name(sequence)
         if name in descriptions:
-            sequence.description = 'Similar to %s' % descriptions[name]
+            sequence.description = 'Similar to %s (%s:%s)' % \
+                                            (descriptions[name]['description'],
+                                             descriptions[name]['db_name'],
+                                             descriptions[name]['subj_name'])
         return sequence
     return descrition_annotator
 
@@ -107,7 +110,7 @@ def _get_descriptions_from_blasts(blasts):
         blast_fhand = get_fhand(blast_fhand)
         blast = BlastParser(fhand=blast_fhand)
         filtered_results = filter_alignments(blast, config=filters)
-
+        db_name = blast.db_name
         try:
             for match in filtered_results:
                 try:
@@ -117,37 +120,17 @@ def _get_descriptions_from_blasts(blasts):
                 if query not in seq_annot:
                     match_hit = match['matches'][0]
                     description = match_hit['subject'].description
+                    subject_name = match_hit['subject'].name
                     if modifier is not None:
                         description = modifier(description)
                     if description != "<unknown description>":
-                        seq_annot[query] = description.strip()
+                        seq_annot[query] = {'description':description.strip(),
+                                            'db_name':db_name,
+                                            'subj_name': subject_name}
         except ExpatError as error:
             msg = str(error) + ':%s' % blast_fhand.name
             raise ExpatError(msg)
     return seq_annot
-
-#def create_polia_annotator():
-#    'It creates a function that annotates polia'
-#    parameters = {'min_score':'10', 'end':'x', 'incremental_dist':'20',
-#                  'fixed_dist':None}
-#    runner = create_runner(tool='trimpoly', parameters=parameters)
-#
-#    def annotate_polia(sequence):
-#        'It annotates the polia'
-#        if sequence is None:
-#            return
-#        trimpoly_out_fhand = runner(sequence)['sequence']
-#        trimp_data = trimpoly_out_fhand.readline().split()
-#        end5 = int(trimp_data[2]) - 1
-#        end3 = int(trimp_data[3])
-#
-#        if end3 != 0 or end5 != len(sequence):
-#            polia = SeqFeature(location=FeatureLocation(end5, end3),
-#                             type='polia', qualifiers={})
-#            sequence.features.append(polia)
-#        return sequence
-#
-#    return annotate_polia
 
 def create_prot_change_annotator():
     '''It creates a function that caracterizes if the annotated snv produces a
