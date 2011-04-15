@@ -10,6 +10,21 @@ Virtual Machine
 To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ :download:`virtual machine <downloads/ngs_machine_v2.tar.gz>` already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
 Be aware that this machine won't be able to run any real sized experiment and it will only be useful for testing and evaluation purposes.
 
+ngs_backbone 1.3.0
+------------------
+
+:download:`ngs_backbone 1.3.0 <downloads/ngs_backbone-1.3.0.tar.gz>`. Relased on 04-11-2010.
+
+Changes:
+
+  * The vector cleaning algorithms have been reworked, now we use blast short sequence algorithm.
+  * Added quality trimming for Solid reads.
+  * MAF threshold added to SNP calling.
+  * Improved SAM statistics.
+  * Third party tools are now included in ngs_backbone to ease installation.
+  * Several internal refactorings and bug fixes.
+
+
 ngs_backbone 1.2.0
 ------------------
 
