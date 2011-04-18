@@ -464,23 +464,10 @@ class BlastParser(object):
         result = {'query'  : query,
                   'matches': matches}
         return result
-    def _get_blast_version(self):
-        'It gets blast parser version'
-        version = None
-        plus    = False
-        for line in self._blast_file:
-            line = line.strip()
-            if line.startswith('<BlastOutput_version>'):
-                version = line.split('>')[1].split('<')[0].split()[1]
-                break
-
-        if version and '+' in version:
-            plus = True
-            version = version[:-1]
-        return version, plus
 
     def _get_blast_metadata(self):
         'It gets blast parser version'
+        tell_ = self._blast_file.tell()
         version = None
         db_name = None
         plus    = False
@@ -498,7 +485,7 @@ class BlastParser(object):
         if version and '+' in version:
             plus = True
             version = version[:-1]
-
+        self._blast_file.seek(tell_)
         return {'version':version, 'plus':plus, 'db_name':db_name}
 
     def next(self):
