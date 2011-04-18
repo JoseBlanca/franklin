@@ -24,3 +24,22 @@ And to do the reverse::
 
   $ seqio.py -s seq.fasta -q seq.qual -f fasta -o seq.sfastq -t sfastq
 
+
+Seqio supported formats
+=======================
+Our main supported formats
+
+======================== ========= =========
+        format             read     write
+======================== ========= =========
+  fasta                      x         x
+  qual                       x         x
+  sfastq(fastq-sanger)       x         x
+  ifastq(fastq-illumina)     x         x
+  csfasta                    x
+======================== ========= =========
+
+
+We also support the other `biopython formats <http://www.biopython.org/wiki/SeqIO>`_.
+
+
