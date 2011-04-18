@@ -555,7 +555,4 @@ def get_franklin_ext_dir():
     _FRANKLIN_EXT_DIR = ext_path
     return ext_path
 
-def get_emboss_acd_dir():
-    'It gets the emboss acd dir'
-    franklin_dir = get_franklin_ext_dir()
-    
+
