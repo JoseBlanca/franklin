@@ -30,7 +30,8 @@ from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           add_header_and_tags_to_sam, sort_bam_sam,
                           standardize_sam, realign_bam,
                           bam_distribs, sample_bam, bam_general_stats,
-                          remove_unmapped_reads, get_read_group_info)
+                          remove_unmapped_reads, get_read_group_info,
+    sam_creator)
 import pysam
 
 class SamTest(unittest.TestCase):
@@ -314,6 +315,58 @@ class SamStatsTest(unittest.TestCase):
         assert 'Secondary alignments: 1' in result
         assert 'Reads with one X0 best alignment: 1' in result
 
+class SamCreatorTest(unittest.TestCase):
+    'It tests all function related to sam creation'
+
+    @staticmethod
+    def test_sam_creator():
+        'It test sam creator'
+        alignement = '''ref\taggttttataaaacAAAAaattaagtctacagag-caacta
+sample\taggttttataaaacAAA-aattaagtctacagagtcaacta
+read\taggttttataaaacAA-Aaattaagtctacagagtcaacta
+read\taggttttataaaacA-AAaattaagtctacagagtcaacta
+read\taggttttataaaac-AAAaattaagtctacagagtcaacta'''
+
+        fhand = StringIO(alignement)
+        out_bam_fhand = NamedTemporaryFile(suffix = '.bam')
+        out_ref_fhand  = NamedTemporaryFile(suffix = '.fasta')
+
+
+        sam_creator(fhand, out_bam_fhand.name, out_ref_fhand.name)
+
+        ref = open(out_ref_fhand.name).read()
+
+        assert  '>ref\naggttttataaaacAAAAaattaagtctacagagcaacta' in  ref
+        out_sam_fhand = NamedTemporaryFile(suffix = '.sam')
+        bam2sam(out_bam_fhand.name, out_sam_fhand.name)
+        bam = open(out_sam_fhand.name).read()
+
+        assert  '16M1D17M1I6M' in bam
+        assert  '15M1D18M1I6M' in bam
+        assert  '14M1D19M1I6M' in bam
+
+        alignement = '''ref aggttttataaaac----aattaagtctacagagcaacta
+sample\taggttttataaaacAAATaattaagtctacagagcaacta
+read\taggttttataaaac****aaAtaa
+read\t ggttttataaaac****aaAtaaTt
+read\t     ttataaaacAAATaattaagtctaca
+read\t        CaaaT****aattaagtctacagagcaac
+read\t          aaT****aattaagtctacagagcaact
+read\t            T****aattaagtctacagagcaacta'''
+
+        fhand = StringIO(alignement)
+        out_bam_fhand = NamedTemporaryFile(suffix = '.bam')
+        out_ref_fhand  = NamedTemporaryFile(suffix = '.fasta')
+
+
+        sam_creator(fhand, out_bam_fhand.name, out_ref_fhand.name)
+        out_sam_fhand = NamedTemporaryFile(suffix = '.sam')
+        bam2sam(out_bam_fhand.name, out_sam_fhand.name)
+        bam = open(out_sam_fhand.name).read()
+        assert 'AGGTTTTATAAAACAAATA' in bam
+        assert '20M' in bam
+
+
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamStatsTest.test_general_mapping_stats']
+    #import sys;sys.argv = ['', 'SamCreatorTest.test_sam_creator']
     unittest.main()
