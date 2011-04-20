@@ -15,5 +15,5 @@ Changes:
 
 Feedback, positive or negative will be much appreciated.
 
-_github: http://github.com/JoseBlanca/franklin
+.. _github: http://github.com/JoseBlanca/franklin
 

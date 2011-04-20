@@ -17,7 +17,7 @@ It can trim:
 It also filters out the reads that do not meet a minimum quality criteria based on the sequence length and the mean quality.
 
 It uses several algorithms and third party tools to carry out the cleaning.
-The third party tools used are: lucy_, blast_, mdust_ and trimoply_.
+The third party tools used are: lucy_, blast_, mdust_ and trimpoly_.
 
 The functionality offered by clean_reads is similar to the cleaning capabilities of the ngs_backbone_ pipeline.
 In fact both tools use the same code base and are just different interfaces on top of a Python library called franklin_.
@@ -29,6 +29,7 @@ If you have any question send an email to the list: ngs_backbone@upv.es
 
 To subscribe, unsubscribe or see the archive `list <https://listas.upv.es/mailman/listinfo/ngs_backbone>`_.
 
+.. include:: ../ngs_backbone/links.txt
 
 .. toctree::
    :maxdepth: 2
@@ -38,9 +39,4 @@ To subscribe, unsubscribe or see the archive `list <https://listas.upv.es/mailma
    manual
    download
 
-.. _lucy: http://lucy.sourceforge.net/
-.. _mdust: http://compbio.dfci.harvard.edu/tgi/software/
-.. _trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
-.. _ngs_backbone: http://bioinf.comav.upv.es/ngs_backbone/
-.. _franklin: https://github.com/JoseBlanca/franklin
 
