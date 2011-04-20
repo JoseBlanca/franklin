@@ -2,7 +2,7 @@
 .project
 *.pyc
 /franklin.egg-info
-doc/build
+_build
 /dist
 test/backbone/formatdb.log
 .settings
