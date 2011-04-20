@@ -6,7 +6,7 @@ doc/build
 /dist
 test/backbone/formatdb.log
 .settings
-doc/source/downloads
+doc/ngs_backbone/downloads
 test/backbone/error.log
 build/
 scripts/notofranklin/
