@@ -28,9 +28,16 @@ from franklin.seq.seq_cleaner import (create_vector_striper,
                                       create_masker_for_low_complexity,
                                       create_re_word_striper,
                                       create_edge_stripper, create_upper_mapper,
-    create_seq_trim_and_masker)
+                                      create_seq_trim_and_masker,
+                                      create_double_coding_mapper)
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
+
+double_coding = {'function':create_double_coding_mapper,
+           'arguments':{},
+           'type': 'mapper',
+           'name': 'double_coding',
+           'comment': 'It makes double coding to colorspace sequences'}
 
 up_case = {'function':create_upper_mapper,
            'arguments':{},
@@ -161,8 +168,8 @@ SEQPIPELINES = {
     'word_masker'        : [remove_short_adaptors, sequence_trimmer,
                             filter_short_seqs],
 
-    'solid'              : [solid_quality, strip_quality_3, sequence_trimmer,
-                            filter_short_seqs]}
+    'solid'              : [double_coding, solid_quality, strip_quality_3,
+                            sequence_trimmer, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors_blastdb, remove_vectors_file, remove_adaptors,
              strip_quality, strip_quality_lucy, strip_quality_by_n,

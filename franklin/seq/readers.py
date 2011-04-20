@@ -176,21 +176,11 @@ def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
         new_qual = new_qual[1:]
         sequence = sequence[2:]
 
-        sequence = _codified_in_atgc(sequence)
-
         sequence = Seq(sequence)
         desc     = '' if desc is None else desc
         seqrec = SeqWithQuality(seq=sequence, qual=new_qual, name=name,
                                 description=desc)
         yield seqrec
-
-def _codified_in_atgc(string):
-    'It codifies the sequence in atgc instead of 0123. Keeps color space'
-    code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
-    new_string = []
-    for letter in string:
-        new_string.append(code[letter])
-    return ''.join(new_string)
 
 def fasta_contents_in_file(fhand, kind='seq'):
     'it iterates over a fasta fhand and yields the conten of each fasta item'

@@ -40,6 +40,25 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 #they should be processed by the word remover function
 TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'
 
+def create_double_coding_mapper():
+    '''It creates a mapper that recodifies the colorspace number code sequence
+    into a colorspace sequence code sequence'''
+    def mapper(sequence):
+        'the mapper'
+        if not sequence:
+            return None
+        recoded_seq = _codified_in_atgc(str(sequence.seq))
+        return copy_seq_with_quality(sequence, Seq(recoded_seq))
+    return mapper
+
+def _codified_in_atgc(string):
+    'It codifies the sequence in atgc instead of 0123. Keeps color space'
+    code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
+    new_string = []
+    for letter in string:
+        new_string.append(code[letter])
+    return ''.join(new_string)
+
 def _add_trim_segments(segments, sequence, vector=True, trim=True):
     'It adds a segments or segments to the trimming recomendation in annotation'
     if not segments:
