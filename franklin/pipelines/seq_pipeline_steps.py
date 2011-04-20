@@ -28,7 +28,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper,
                                       create_masker_for_low_complexity,
                                       create_re_word_striper,
                                       create_edge_stripper, create_upper_mapper,
-    create_seq_trim_and_masker)
+                                      create_seq_trim_and_masker)
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
 
