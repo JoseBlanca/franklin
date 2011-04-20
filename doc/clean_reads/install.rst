@@ -18,5 +18,5 @@ Biopython can be installed downloading it from the `Biopython install <http://bi
 psubprocess_ is an optional requirement that will be used if you want to process your sequences in several parallel processes.
 To install it just download it from its web page and do the `python setup install`.
 
-_Biopython: http://www.biopython.org/
-_psubprocess: http://bioinf.comav.upv.es/psubprocess/
+.. _Biopython: http://www.biopython.org/
+.. _psubprocess: http://bioinf.comav.upv.es/psubprocess/

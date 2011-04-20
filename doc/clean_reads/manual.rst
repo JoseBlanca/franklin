@@ -156,16 +156,14 @@ OPTIONS
 **--solid_disable_missing_call**
         Disable filtering out solid reads with missing calls.
 
-*-m*, **-min_len** *integer*
+**-m**, **-min_len** *integer*
         Minimum number of nucleotides after the trimming.
         All sequences shorted than the given length will be filtered out.
 
-*-t*, **-threads**
+**-t**, **-threads**
         Number of threads to use.
         The reads can be processed in parallel using several processes.
         
+.. include:: ../ngs_backbone/links.txt
 
-_lucy: http://lucy.sourceforge.net/
-_trimpoly: http://compbio.dfci.harvard.edu/tgi/software/
-_BLAST: http://blast.ncbi.nlm.nih.gov/Blast.cgi
 

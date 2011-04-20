@@ -11,3 +11,4 @@ test/backbone/error.log
 build/
 scripts/notofranklin/
 ext/bin/linux/64bit/.libs/
+manual.man
