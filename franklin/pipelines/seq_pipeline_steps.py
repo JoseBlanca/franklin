@@ -30,6 +30,7 @@ from franklin.seq.seq_cleaner import (create_vector_striper,
                                       create_edge_stripper, create_upper_mapper,
                                       create_seq_trim_and_masker,
                                       create_double_coding_mapper)
+
 from franklin.seq.seq_filters import (create_length_filter,
                                       create_solid_quality_filter)
 

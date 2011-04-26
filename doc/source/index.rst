@@ -8,7 +8,7 @@ ngs_backbone
 ============
 
 ngs_backbone is a bioinformatic pipeline created to work on Next Generation Sequence (NGS) analysis as well as with sanger sequences.
-It is capable of cleaning reads, prepare a novo assembly, map reads against a reference, look for SNPs and SSRs, and do some function annotation like :ORFs, GO terms and sequence descriptions.
+It is capable of cleaning reads, prepare a novo assembly, map reads against a reference, look for SNPs and SSRs, and do some function annotation like: ORFs, GO terms and sequence descriptions.
 
 ngs_backbone:
 
@@ -23,8 +23,7 @@ ngs_backbone:
 If you find any problem when running ngs_backbone we'd love to hear from you, so please inform us.
 
 
-Help
-----
+*Help*
 
 To get help there is a mailing list for ngs_backbone.
 If you have any question send an email to the list: ngs_backbone@upv.es

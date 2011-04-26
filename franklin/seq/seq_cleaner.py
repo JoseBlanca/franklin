@@ -514,7 +514,7 @@ def create_striper_by_quality_lucy(parameters=None):
 MIN_ADAPTOR_LENGTH = 15
 MAX_ADAPTOR_LENGTH = 40
 
-def _check_sequences_length(fhand, min_length=None, max_length=None):
+def check_sequences_length(fhand, min_length=None, max_length=None):
     'It checks that all sequences in the file have the given lengths'
     if fhand is None:
         return
@@ -536,7 +536,7 @@ def create_adaptor_striper(adaptors, elongate_match_to_complete_adaptor=True):
     The adaptors will be detected by using blastn-short.
     '''
     fhand = get_fhand(adaptors)
-    _check_sequences_length(fhand, MIN_ADAPTOR_LENGTH, MAX_ADAPTOR_LENGTH)
+    check_sequences_length(fhand, MIN_ADAPTOR_LENGTH, MAX_ADAPTOR_LENGTH)
     return _create_vector_striper(vectors=adaptors,
                                   aligner='blast_short',
                                   vectors_are_blastdb=False,
@@ -551,7 +551,7 @@ def create_vector_striper(vectors, vectors_are_blastdb=False):
     '''
     #if file check vector length
     if not vectors_are_blastdb:
-        _check_sequences_length(get_fhand(vectors), MAX_ADAPTOR_LENGTH)
+        check_sequences_length(get_fhand(vectors), MAX_ADAPTOR_LENGTH)
     return _create_vector_striper(vectors, aligner='blastn',
                                   vectors_are_blastdb=vectors_are_blastdb,
                                   seqs_are_short=False,

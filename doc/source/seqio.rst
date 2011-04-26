@@ -33,7 +33,6 @@ Our main supported formats
         format             read     write
 ======================== ========= =========
   fasta                      x         x
-  qual                       x         x
   sfastq(fastq-sanger)       x         x
   ifastq(fastq-illumina)     x         x
   csfasta                    x
