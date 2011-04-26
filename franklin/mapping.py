@@ -139,7 +139,7 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 
-    cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'sampe']
+    cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'samse']
     if threads:
         cmd.extend(['-t', str(threads)])
     cmd.append(reads_fpath)
