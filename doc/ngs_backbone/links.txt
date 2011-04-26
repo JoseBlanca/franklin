@@ -25,3 +25,6 @@
 .. _Univec: http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
 .. _VCF: http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf4.0
 .. _setuptools: http://pypi.python.org/pypi/setuptools
+.. _ngs_backbone: http://bioinf.comav.upv.es/ngs_backbone/
+.. _franklin: http://github.com/JoseBlanca/franklin
+
