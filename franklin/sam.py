@@ -403,6 +403,8 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '-o', unsorted_bam.name])
+    if parallel and threads and threads > 1:
+        cmd.extend(['-nt', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True, add_ext_dir=False)
     # now we have to realign the bam
     sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf,

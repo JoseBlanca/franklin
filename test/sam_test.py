@@ -33,6 +33,9 @@ from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           remove_unmapped_reads, get_read_group_info)
 import pysam
 
+THREADS=4
+
+
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
 
@@ -190,7 +193,7 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         bam_path = os.path.join(sam_test_dir, 'seqs.bam')
         reference_path = os.path.join(sam_test_dir, 'reference.fasta')
         out_bam = NamedTemporaryFile(suffix='.bam')
-        realign_bam(bam_path, reference_path, out_bam.name)
+        realign_bam(bam_path, reference_path, out_bam.name, threads=THREADS)
         out_bam.close()
 
     @staticmethod
