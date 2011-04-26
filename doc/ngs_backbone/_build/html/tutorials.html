@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorials &mdash; ngs_backbone v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="ngs_backbone v0.1 documentation" href="index.html" />
+    <link rel="next" title="seq_io" href="seqio.html" />
+    <link rel="prev" title="Snv filters" href="snv_filters.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <h1><a href="index.html">ngs_backbone v0.1 documentation</a></h1>
+        <div class="rel">
+          <a href="snv_filters.html" title="Snv filters"
+             accesskey="P">previous</a> |
+          <a href="seqio.html" title="seq_io"
+             accesskey="N">next</a> |
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
+<p>In the tutorials we will do several analyses step by step. To understand how those analyses are done it would be advisable to read the documents <a class="reference internal" href="cleaning.html"><em>Cleaning sequence reads</em></a> and <a class="reference internal" href="mapping.html"><em>Mapping</em></a> before or after going through the tutorials. This tutorial is a brief introduction, for a more lengthly document you can take a look at the NGS workshop.</p>
+<div class="section" id="cleaning-sequences">
+<h2>Cleaning sequences<a class="headerlink" href="#cleaning-sequences" title="Permalink to this headline">¶</a></h2>
+<p>We have some sanger, 454 and illumina reads and we want to clean them and to do some quality control after the process is finished.</p>
+<p>The first step is to create a ngs_backbone project.</p>
+<div class="highlight-python"><pre>$ backbone_create_project.py -p tutorial
+$ cd tutorial/
+$ head -n 5 backbone.conf
+[General_settings]
+tmpdir = '/home/jose/tmp/tutorial/tmp'
+project_name = 'tutorial'
+project_path = '/home/jose/tmp/tutorial'</pre>
+</div>
+<p>The create_project scripts makes a directory for the project and creates a configuration file template in it. This file will hold all the information about the parameters required to run the analysis.</p>
+<p>For the tutorial I will clean the demo reads distributed with ngs_backbone, you can find them in franklin/franklin/data/acceptance/. They have to be located at reads/raw/ and they should respect the <a class="reference internal" href="introduction.html#naming"><em>naming conventions</em></a>. Also take into account that ngs_backbone only will accept fasta and fastq files.</p>
+<div class="highlight-python"><pre>$ mkdir reads
+$ mkdir reads/raw
+$ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/cleaning/* reads/raw/
+$ ls reads/raw/
+lb_microtom_gb.pl_sanger.sm_microtom.fasta
+lb_mu16.pl_454.sm_mu16.sfastq
+lb_microtom_sgn.pl_sanger.sm_microtom.sfastq
+lb_ximo.pl_illumina.sm_rp_75_59_uc82.sfastq</pre>
+</div>
+<p>Before running the analysis take into account that you will need some external software do it, so be sure that it is installed. The software required for the cleaning is <a class="reference external" href="http://lucy.sourceforge.net/">lucy</a>, <a class="reference external" href="http://www.ebi.ac.uk/~guy/exonerate/">exonerate</a>, <a class="reference external" href="http://web.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a>, <a class="reference external" href="http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html">Univec</a> (database), <a class="reference external" href="http://compbio.dfci.harvard.edu/tgi/software/">mdust</a>, and <a class="reference external" href="http://compbio.dfci.harvard.edu/tgi/software/">trimpoly</a>.</p>
+<p>The analysis could be run with the default parameters, but for some cases it would be convenient to tweak the configuration file. For instance it could be of some help to specify which adapters or cloning vectors have been used to build the libraries. To add them take a look at the configuration parameters related to the cleaning <a class="reference internal" href="cleaning.html#clean-config"><em>cleaning</em></a>. One you have the configuration set up you can run the analysis doing just:</p>
+<div class="highlight-python"><pre>$ backbone_analysis.py -a clean_reads
+2010-04-28 08:25:03,508 INFO CleanReadsAnalyzer
+2010-04-28 08:25:03,509 INFO Franklin VERSION: 0.01
+2010-04-28 08:25:03,509 INFO Analysis started
+2010-04-28 08:26:14,092 INFO Analysis finished
+INFO:franklin:Analysis finished
+2010-04-28 08:26:14,093 INFO Time elapsed 0:01:10.697465
+INFO:franklin:Time elapsed 0:01:10.697465
+$ ls
+franklin.conf  franklin.log  reads  tmp</pre>
+</div>
+<p>Several files and directories have been generated. ngs_backbone.log is just a log file in which every analysis done will be stored. tmp is a temporal directory that can be safely removed (by the way the location of this temporal directory can be changed in the configuration file. The cleaned sequence files will be located at reads/cleaned/:</p>
+<div class="highlight-python"><pre>$ ls reads/cleaned/
+lb_microtom_gb.pl_sanger.sm_microtom.fasta
+lb_microtom_sgn.pl_sanger.sm_microtom.sfastq
+lb_mu16.pl_454.sm_mu16.sfastq
+lb_ximo.pl_illumina.sm_rp_75_59_uc82.sfastq</pre>
+</div>
+<p>To finish up the analysis we can create some statistics about both the raw and the cleaned files doing a new analysis:</p>
+<div class="highlight-python"><pre>$ backbone_analysis.py -a read_stats
+2010-04-28 08:31:48,404 INFO ReadsStatsAnalyzer
+2010-04-28 08:31:48,404 INFO Franklin VERSION: 0.01
+2010-04-28 08:31:48,404 INFO Analysis started
+2010-04-28 08:32:52,051 INFO Analysis finished
+2010-04-28 08:32:52,078 INFO Time elapsed 0:01:03.706581</pre>
+</div>
+<p>In this case the results will be found in two subdirectories named stats found in reads/raw and reads/clean.</p>
+</div>
+<div class="section" id="looking-for-snps">
+<h2>Looking for SNPs<a class="headerlink" href="#looking-for-snps" title="Permalink to this headline">¶</a></h2>
+<p>A common ngs_backbone application is to map some reads against a reference genome and to look for SNPs in them.</p>
+<p>Again the first step is to create a ngs_backbone project.</p>
+<div class="highlight-python"><pre>$ backbone_create_project.py -p tutorial
+$ cd tutorial/
+$ head -n 5 backbone.conf
+[General_settings]
+tmpdir = '/home/jose/tmp/tutorial/tmp'
+project_name = 'tutorial'
+project_path = '/home/jose/tmp/tutorial'</pre>
+</div>
+<p>The inputs required are the cleaned reads and a reference genome. The reads should be located at reads/cleaned and the reference genome at mapping/reference/reference.fasta. For the tutorial we will use the example files distributed with ngs_backbone.</p>
+<div class="highlight-python"><pre>$ mkdir reads
+$ mkdir reads/cleaned
+$ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/assembling/lb* reads/cleaned/
+$ ls reads/cleaned/
+lb_microtom_gb.pl_sanger.sm_microtom.fasta
+lb_mu16.pl_454.sm_mu16.sfastq
+lb_microtom_sgn.pl_sanger.sm_microtom.sfastq
+$ mkdir mapping
+$ mkdir mapping/reference
+$ cp ~/ngs_backbone-1.0.0/franklin/data/acceptance/mapping/reference.fasta mapping/reference/
+$ ls mapping/reference/
+reference.fasta</pre>
+</div>
+<p>Be aware that the reads file naming is important, the library and the sequencing technology will be needed during the analysis and this information will be taken from those names. Go to the <a class="reference internal" href="introduction.html#naming"><em>naming conventions</em></a> section to read more about it.</p>
+<p>Now that we have the inputs set up we can do the mapping using <a class="reference external" href="http://bio-bwa.sourceforge.net/">bwa</a>.</p>
+<div class="highlight-python"><pre>$ backbone_analysis.py -a mapping
+2010-04-28 09:46:16,015 INFO MappingAnalyzer
+2010-04-28 09:46:16,016 INFO Franklin VERSION: 0.01
+2010-04-28 09:46:16,016 INFO Analysis started
+2010-04-28 09:46:22,823 INFO Analysis finished
+2010-04-28 09:46:22,824 INFO Time elapsed 0:00:06.844860
+$ ls mapping/
+20100428_0746/ reference/
+$ ls mapping/20100428_0746/
+result
+$ ls mapping/20100428_0746/bams/by_readgroup/
+lb_microtom_gb.pl_sanger.sm_microtom.bam
+lb_mu16.pl_454.sm_mu16.bam
+lb_microtom_sgn.pl_sanger.sm_microtom.bam</pre>
+</div>
+<p>The result of the analysis is a timestamped directory with the bam files in mapping/bams/by_readgroup. The directory is timestamped to allow for different mappings done with different parameters or mapping tools.</p>
+<p>For every input read file a bam file has been generated in the directory mapping/bams/by_readgroup. To continue the analysis we are going to merge all bam files into one merged bam file.</p>
+<div class="highlight-python"><pre>$ backbone_analysis.py -a merge_bams
+2010-04-28 12:37:52,817 INFO MergeBamAnalyzer
+2010-04-28 12:37:52,817 INFO Franklin VERSION: 0.01
+2010-04-28 12:37:52,817 INFO Analysis started
+2010-04-28 12:37:55,497 INFO Analysis finished
+2010-04-28 12:37:55,498 INFO Time elapsed 0:00:02.713902
+$ ls mapping/bams
+by_readgroup  merged.0.bam</pre>
+</div>
+<p>The resulting merged bam have all the information from the individual bam. Every bam is now a readgroup inside the merged bam. Every readgroup holds the information about its sample, platform and library. In this step the resulting bam file has also been sorted and made picard compatible.</p>
+<p>The next step is to realign the bam file using GATK. This step is optional and can be skipped. You have more information about this analysis in the <a class="reference external" href="http://www.broadinstitute.org/gsa/wiki/index.php/The_Genome_Analysis_Toolkit">GATK</a>  site.</p>
+<div class="highlight-python"><pre>$ backbone_analysis.py -a realign_bam
+2010-04-28 13:00:38,147 INFO RealignBamAnalyzer
+2010-04-28 13:00:38,148 INFO Franklin VERSION: 0.1.0
+2010-04-28 13:00:38,148 INFO Analysis started
+2010-04-28 13:01:42,884 INFO Analysis finished
+2010-04-28 13:01:42,884 INFO Time elapsed 0:01:04.775819
+$ ls mapping/bams/
+by_readgroup/
+merged.0.bam
+merged.0.bam.bai
+merged.1.bam</pre>
+</div>
+<p>The result is the file merged.1.bam. The file merged.bam is versioned in the ngs_backbone system. Several versions of the same file can be located on the same directory and only the last one will be used for the following analysis. The old files can be safely deleted.</p>
+<p>Now we want to annotate some sequences with the SNPs found when comparing the mapped reads from the bam file. To do that we have to put the sequences to annotate in  annotations/input. Let&#8217;s annotate the reference sequence with the SNPs.</p>
+<div class="highlight-python"><pre>$ mkdir annotations
+$ mkdir annotations/input
+$ cd annotations/input
+$ ln -s ../../mapping/reference/reference.fasta .
+$ backbone_analysis.py -a annotate_snvs
+2010-04-28 14:36:18,593 INFO SnvCallerAnalyzer
+2010-04-28 14:36:18,593 INFO Franklin VERSION: 0.1.0
+2010-04-28 14:36:18,594 INFO Analysis started
+2010-04-28 14:37:17,509 INFO Analysis finished
+INFO:franklin:Analysis finished
+2010-04-28 14:37:17,509 INFO Time elapsed 0:00:58.963646
+INFO:franklin:Time elapsed 0:00:58.963646
+$ ls annotations/db/
+reference.0.pickle</pre>
+</div>
+<p>The result is the file found in the annotations/db/ directory. This is again a versioned file that holds all the information about the annotated sequences. This file is of no direct interest because its format is quite cumbersome. Every time that we do an annotation analysis a new version of this file will be generated. To get the real result files after doing all the annotations required we do a final analysis.</p>
+<div class="highlight-python"><pre>~/personal/devel/franklin/scripts/backbone/backbone_analysis.py -a write_annotation
+2010-04-28 14:42:42,361 INFO Time elapsed 0:00:00.289912
+$ ls annotations/features/
+reference.gff  reference.vcf</pre>
+</div>
+<p>Now we the results files are found in annotations/features/. In this case a <a class="reference external" href="http://www.sequenceontology.org/resources/gff3.html">GFF</a>  and a <a class="reference external" href="http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf4.0">vcf</a> files have been generated.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#third-party-software">Third party software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#usage">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#naming-conventions">Naming conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#available-analyses">Available analyses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html#parallel-operation">Parallel operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cleaning.html">Cleaning sequence reads</a></li>
+<li class="toctree-l1"><a class="reference internal" href="assembly.html">Mira assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mapping.html">Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mapping.html#bam-realignment">Bam realignment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="annotation.html">Annotation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="snv_filters.html">Snv filters</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cleaning-sequences">Cleaning sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#looking-for-snps">Looking for SNPs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="seqio.html">seq_io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seqio.html#seqio-supported-formats">Seqio supported formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="snv_filters.html" title="Snv filters"
+             >previous</a> |
+          <a href="seqio.html" title="seq_io"
+             >next</a> |
+          <a href="genindex.html" title="General Index"
+             >index</a>
+            <br/>
+            <a href="_sources/tutorials.txt"
+               rel="nofollow">Show Source</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2010, Jose Blanca.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

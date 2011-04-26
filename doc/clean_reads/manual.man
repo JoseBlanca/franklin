@@ -1,0 +1,232 @@
+.\" Man page generated from reStructeredText.
+.
+.TH CLEAN_READS 1 "2011-4-20" "0.1" ""
+.SH NAME
+clean_reads \- Clean Sanger and NGS reads
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+\fBclean_reads\fP \fB\-i\fP \fIinput_seqs.fastq\fP \fB\-o\fP \fIouput_seqs.fastq\fP \fB\-p\fP \fBsanger|454|illumina|solid\fP
+[\fB\-f\fP \fIinput_file_format\fP] [\fB\-g\fP \fIoutput_file_format\fP] [\fB\-q\fP \fIinput_quals.fasta\fP]
+[\fB\-u\fP \fIoutput_quals.fasta\fP] [\fB\-\-double_encoding\fP \fIdouble_encode_solid\fP]
+[\fB\-t\fP \fInumber_of_threads\fP] [\fB\-r\fP \fIregular_expression_list\fP] [\fB\-a\fP \fIadaptors_file.fasta\fP]
+[\fB\-v\fP \fIvector_file.fasta\fP] [\fB\-d\fP \fIblast_vector_database\fP] [\fB\-m\fP \fIminimum_seq_length\fP]
+[\fB\-e\fP \fIbases_to_trim_at_edges\fP] [\fB\-n\fP \fIallowable_percentage_ of_n\fP]
+[\fB\-l\fP \fIlucy_splice_file\fP] [\fB\-\-lucy_bracket\fP \fIlucy_bracket\fP] [\fB\-lucy_window\fP \fIlucy_window\fP]
+[\fB\-\-lucy_error\fP \fIlucy_error\fP] [\fB\-\-qual_threshold\fP \fIqual_threshold\fP] [\fB\-\-qual_min_length\fP \fIqual_min_length\fP]
+[\fB\-\-qual_window\fP \fIqual_window\fP] [\fB\-\-only_3_end\fP \fITrue\fP]
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+clean_reads cleans Sanger, 454, Illumina and Solid reads taking into account the read quality and the vector and adaptor contaminations.
+.sp
+clean_reads uses internally several algorithms and third party tools to do the quality, adaptor and vector cleaning.
+The exact algorithm and tools used for each set of reads will depend on the sequencing platform and on the knowledge of the cloning process that we have.
+The sequencing platforms supported are:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+.
+Sanger (with or without quality)
+.IP \(bu 2
+.
+454
+.IP \(bu 2
+.
+Illumina
+.IP \(bu 2
+.
+solid
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+For quality trimming clean_reads is capable of using three different algorithms.
+For 454 and Sanger reads with quality it uses \fI\%lucy\fP to remove the bad quality regions of the sequences.
+For Illumina and solid reads uses a quality thresholded sliding window algorithm.
+When no qualties none of these approaches can be used, but we still are able to infer the quality of the sequence by noticing how many \fBNs\fP are in the reads.
+clean_reads uses the \fI\%trimpoly\fP algorithm to get rid of the stretches with too many undetermined nucleotides.
+.sp
+The vector is removed by using \fI\%BLAST\fP and \fI\%lucy\fP (for Sanger and 454) while the adaptors will be trimmed by the blast\-short algorithm.
+.sp
+clean_reads also supports the removal of regular expressions patterns by using an exact match algorithm.
+.sp
+The solid read cleaning is more limited than for the other platforms due to the color encoding.
+Only the quality trimming and quality filtering will be allowed.
+For the solid reads there is an extra quality filtering step that will remove reads that fail to meet minimum quality criteria for the first colors and for the presence of missing calls.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-i\fP, \fB\-\-seq_in\fP \fIinput_sequence_file\fP
+.sp
+The path to the sequence file to be cleaned.
+.TP
+.B \fB\-o\fP, \fB\-\-seq_out\fP \fIoutput_sequence_file\fP
+.sp
+The path to the resulting output file.
+.TP
+.B \fB\-p\fP, \fB\-\-platform\fP \fIsanger|454|illumina|solid\fP
+.sp
+Sequencing platform used to generate the sequences.
+This is an important parameter because some of the algorithms to be used will depend on the sequencing platform.
+.TP
+.B \fB\-f\fP, \fB\-\-format\fP \fIinput_file_format\fP
+.sp
+The input file format.
+The supported formats are: fasta, sanger fastq (sfastq), illumina fastq (ifastq) and csfasta.
+Also any other \fI\%sequence format supported by Biopython\fP could be also used.
+This parameter is optional because in some instances clean_reads will be able to guess the input file format.
+.TP
+.B \fB\-g\fP, \fB\-\-output_format\fP \fIoutput_file format\fP
+.sp
+The output file format.
+By default the input and output file will have the same format, but this parameter allows to change that behaviour.
+The supported output formats are fasta and sanger fastq, but any of the Biopython supported formats can be used.
+csfasta is not supported as an format of the output file, so when the input is in csfasta the default output will be sanger fastq.
+.TP
+.B \fB\-\-double_encoding\fP
+.sp
+Use double encoding for solid.
+Use the letters (NACGT) to encode the solid colors (.0123).
+.TP
+.B \fB\-q\fP, \fB\-\-qual_in\fP
+.sp
+The path to the qualities input file.
+.TP
+.B \fB\-u\fP, \fB\-\-qual_out\fP
+.sp
+The path to the qualities output file.
+.TP
+.B \fB\-a\fP, \fB\-adaptors\fP \fIadaptors_fasta_file\fP
+.sp
+The path to the adaptors file.
+The adaptors to be trimmed should be given as a fasta file.
+.TP
+.B \fB\-v\fP, \fB\-vector\fP \fIvector_fasta_file\fP
+.sp
+The path to the vector file.
+A fasta file with the vector sequence.
+.TP
+.B \fB\-d\fP, \fB\-vector_db\fP \fIvector_blast_db\fP
+.sp
+Vector BLAST database.
+A BLAST formated database like Univec can be provided to detect and remove unknown vectors.
+.TP
+.B \fB\-r\fP, \fB\-\-re_words\fP \fIregular_expression_list\fP
+.sp
+A list of regular expressions to be trimmed.
+The regular expressions should be surrounded by double quotes and separated by commas. Valid examples could be: "^ACGT" and "^ACGT","AAAAA$".
+.TP
+.B \fB\-e\fP, \fB\-edge_trim\fP \fIedge trimming values\fP
+.sp
+The number of nucleotides to be removed from the sequence beginning and end.
+This would be an unconditional trimming.
+The number of nucleotides should be given as two integers separated by a comma (e.g. 0,10).
+.TP
+.B \fB\-n\fP, \fB\-n_percent\fP
+.sp
+Allowed percent of Ns.
+Trim the regions with a percent of unknown bases above the given threshold.
+.TP
+.B \fB\-l\fP, \fB\-lucy_splice\fP
+.sp
+The lucy splice site file.
+The splice site definition used for the exact trimming of the vector and adaptor.
+Refer to the lucy man page for the format of this file.
+.TP
+.B \fB\-\-lucy_error\fP
+.sp
+lucy error.
+Refer to the lucy man page for an explanation of this parameter.
+.TP
+.B \fB\-\-lucy_window\fP
+.sp
+lucy window sizes.
+Refer to the lucy man page for an explanation of this parameter.
+.TP
+.B \fB\-\-lucy_bracket\fP
+.sp
+lucy bracket.
+Refer to the lucy man page for an explanation of this parameter.
+.TP
+.B \fB\-qual_window\fP \fIinteger\fP
+.sp
+Length of the window used for quality trimming.
+This parameters affects the quality cleaning of Illumina and Solid sequences.
+.TP
+.B \fB\-\-qual_threshold\fP \fIinteger\fP
+.sp
+Quality threshold.
+The phred scaled quality threshold used to discriminate good from bad nucleotides.
+.TP
+.B \fB\-\-qual_window\fP \fIinteger\fP
+.sp
+Number of residues that the window to evaluate the quality will have.
+.TP
+.B \fB\-\-qual_min_length\fP \fIinteger\fP
+.sp
+Number of consecutive good quality positions to consider a region good enough.
+.TP
+.B \fB\-\-only_3_end\fP \fIboolean\fP
+.sp
+Quality trim only from the 3\(aq end of the read.
+This parameter will be set to True for solid and False for the rest of the platforms.
+.TP
+.B \fB\-\-solid_qual_length\fP \fIinteger\fP
+.sp
+Number of 5\(aq colors to consider to quality filtering.
+.TP
+.B \fB\-\-solid_qual_threshold\fP \fIinteger\fP
+.sp
+Minimum mean quality allowable for solid reads.
+The mean quality of a number of 5\(aq colors will discriminate if the read is to be completely removed and not only trimmed.
+.TP
+.B \fB\-\-solid_disable_missing_call\fP
+.sp
+Disable filtering out solid reads with missing calls.
+.TP
+.B \fI\-m\fP, \fB\-min_len\fP \fIinteger\fP
+.sp
+Minimum number of nucleotides after the trimming.
+All sequences shorted than the given length will be filtered out.
+.TP
+.B \fI\-t\fP, \fB\-threads\fP
+.sp
+Number of threads to use.
+The reads can be processed in parallel using several processes.
+.UNINDENT
+.SH AUTHOR
+jblanca@upv.es
+.\" Generated by docutils manpage writer.
+.\" 
+.
