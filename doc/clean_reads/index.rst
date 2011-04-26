@@ -20,7 +20,7 @@ It uses several algorithms and third party tools to carry out the cleaning.
 The third party tools used are: lucy_, blast_, mdust_ and trimpoly_.
 
 The functionality offered by clean_reads is similar to the cleaning capabilities of the ngs_backbone_ pipeline.
-In fact both tools use the same code base and are just different interfaces on top of a Python library called franklin_.
+In fact, both tools use the same code base and are just different interfaces on top of a Python library called franklin_.
 
 *Help*
 
