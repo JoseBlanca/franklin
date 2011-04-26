@@ -40,16 +40,15 @@ from franklin.pipelines.seq_pipeline_steps import (double_coding,
 
 class UnknownFormatError(Exception):
     'Special error for guess_seq_file error'
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
+    pass
 
 class PsubprocessNotFounError(Exception):
     'Error to use when psubprocess is not found'
+    pass
 
 class PlatformError(Exception):
     "Error to use when platform and options don't fit"
+    pass
 
 class AdaptorError(Exception):
     "Error to use when adaptors length is less than min"
@@ -378,7 +377,8 @@ def main():
     try:
         threads = _get_num_threads(threads)
     except PsubprocessNotFounError:
-        sys.stderr.write('In order to use multiprocessin you need to install psubprocess')
+        msg = 'To use multiprocessing you need to install psubprocess'
+        sys.stderr.write(msg)
         sys.exit()
 
     #do we have seqs with quality
