@@ -19,7 +19,7 @@ SYNOPSIS
   [**-u** *output_quals.fasta*] [**--double_encoding** *double_encode_solid*]
   [**-t** *number_of_threads*] [**-r** *regular_expression_list*] [**-a** *adaptors_file.fasta*]
   [**-v** *vector_file.fasta*] [**-d** *blast_vector_database*] [**-m** *minimum_seq_length*]
-  [**-e** *bases_to_trim_at_edges*] [**-n** *allowable_percentage_ of_n*] 
+  [**-e** *bases_to_trim_at_edges*] [**-n** *allowable_percentage_ of_n*]
   [**-l** *lucy_splice_file*] [**--lucy_bracket** *lucy_bracket*] [**-lucy_window** *lucy_window*]
   [**--lucy_error** *lucy_error*] [**--qual_threshold** *qual_threshold*] [**--qual_min_length** *qual_min_length*]
   [**--qual_window** *qual_window*] [**--only_3_end** *True*]
@@ -38,7 +38,7 @@ The sequencing platforms supported are:
   * 454
   * Illumina
   * solid
- 
+
 For quality trimming clean_reads is capable of using three different algorithms.
 For 454 and Sanger reads with quality it uses lucy_ to remove the bad quality regions of the sequences.
 For Illumina and solid reads uses a quality thresholded sliding window algorithm.
@@ -97,7 +97,7 @@ OPTIONS
 **-d**, **-vector_db** *vector_blast_db*
         Vector BLAST database.
         A BLAST formated database like Univec can be provided to detect and remove unknown vectors.
- 
+
 **-r**, **--re_words** *regular_expression_list*
         A list of regular expressions to be trimmed.
         The regular expressions should be surrounded by double quotes and separated by commas. Valid examples could be: "^ACGT" and "^ACGT","AAAAA$".
@@ -117,7 +117,7 @@ OPTIONS
         Refer to the lucy man page for the format of this file.
 
 **--lucy_error**
-        lucy error.
+        lucy error parameter.
         Refer to the lucy man page for an explanation of this parameter.
 
 **--lucy_window**
@@ -125,7 +125,7 @@ OPTIONS
         Refer to the lucy man page for an explanation of this parameter.
 
 **--lucy_bracket**
-        lucy bracket.
+        lucy bracket parameter.
         Refer to the lucy man page for an explanation of this parameter.
 
 **-qual_window** *integer*
@@ -135,12 +135,6 @@ OPTIONS
 **--qual_threshold** *integer*
         Quality threshold.
         The phred scaled quality threshold used to discriminate good from bad nucleotides.
-
-**--qual_window** *integer*
-        Number of residues that the window to evaluate the quality will have.
-
-**--qual_min_length** *integer*
-        Number of consecutive good quality positions to consider a region good enough.
 
 **--only_3_end** *boolean*
         Quality trim only from the 3' end of the read.
@@ -163,7 +157,7 @@ OPTIONS
 **-t**, **-threads**
         Number of threads to use.
         The reads can be processed in parallel using several processes.
-        
+
 .. include:: ../ngs_backbone/links.txt
 
 

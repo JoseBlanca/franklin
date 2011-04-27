@@ -347,3 +347,14 @@ def create_temp_fasta_files(seq1, seq2):
     fileh1 = temp_fasta_file(seq1)
     fileh2 = temp_fasta_file(seq2)
     return fileh1, fileh2
+
+def create_temp_seq_file(seqs, format):
+    'It returns a temporary file with the sequence in it'
+    seq_fhand = tempfile.NamedTemporaryFile(suffix='.seq')
+    if format == 'qual':
+        qual_fhand = tempfile.NamedTemporaryFile(suffix='.qual')
+        format = 'fasta'
+    else:
+        qual_fhand = None
+    write_seqs_in_file(seqs, seq_fhand, qual_fhand=qual_fhand, format=format)
+    return seq_fhand, qual_fhand

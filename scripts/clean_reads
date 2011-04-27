@@ -16,10 +16,13 @@ from franklin.seq.seq_cleaner import check_sequences_length
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-'It cleans reads using the given configration'
-
-import sys
+import sys, os.path
 from optparse import OptionParser
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from franklin.utils.misc_utils import OrderedDict
 
 from franklin.utils.misc_utils import get_num_threads
 from franklin.seq.readers import guess_seq_file_format
@@ -46,7 +49,7 @@ class PsubprocessNotFounError(Exception):
     'Error to use when psubprocess is not found'
     pass
 
-class PlatformError(Exception):
+class PlatformParamError(Exception):
     "Error to use when platform and options don't fit"
     pass
 
@@ -54,203 +57,193 @@ class AdaptorError(Exception):
     "Error to use when adaptors length is less than min"
     pass
 
+class ValidationError(Exception):
+    'Error for parameters that fail to be validated'
+    pass
 
-DEFAULT_VALUES = {'lucy_bracket':[10, 0.02],
-                  'lucy_window':[50, 0.08, 10, 0.3],
-                  'lucy_error':[0.015, 0.015],
-                  'qual_threshold':20,
-                  'qual_window':1,
-                  'solid_qual_length':10,
-                  "solid_qual_threshold":15,
-                  'solid_disable_missing_call':True}
+SOLID = 'solid'
+SANGER = 'sanger'
+ILLUMINA = 'illumina'
+_454 = '454'
+LONG_WITH_QUALITY = 'long_with_quality'
+LONG_WITHOUT_QUALITY = 'long_without_quality'
+AVAILABLE_PLATFORMS = [SOLID, _454, SANGER, ILLUMINA]
 
-def parse_options():
-    'It parses the command line arguments'
-    usage = "usage: %prog -i seq_file -o out_seq_file -p platform [options]"
-    parser = OptionParser(usage=usage)
-    parser.add_option('-i', '--seq_in', dest='seq_in',
-                    help='Input reads sequence file. [Required]')
-    parser.add_option('-q', '--qual_in', dest='qual_in', default=None,
-                      help='Input reads quality file. [Optional]')
-    parser.add_option('-f', '--format', dest="format", default=None,
-                      help='Input read file format. [Optional]')
-    parser.add_option('-o', '--seq_out', dest='seq_out',
-                    help='Output sequence file, [Required]')
-    parser.add_option('-u', '--qual_out', dest='qual_out', default=None,
-                      help='Output quality file. [Optional]')
-    parser.add_option('-g', '--output_format', dest="out_format", default=None,
-                      help='Output read file format. [Optional]')
-    parser.add_option('-t', '--threads', dest="threads", default=1, type='int',
-                      help='Num threads. Choosing 0 it will use all cores.')
-    pl_msg = 'Sequencing platform. (sanger, 454, illumina, solid) [Required]'
-    parser.add_option('-p', '--platform', dest="platform", help=pl_msg)
-    re_msg = 'Words separated by commas to remove from sequences'
-    parser.add_option('-r', '--re_word', dest="re_words", default=None,
-                      help=re_msg)
-    adapt_msg = 'File with adaptors to remove from reads'
-    parser.add_option('-a', '--adaptors_file', dest="adaptors_file",
-                      default=None, help=adapt_msg)
-    parser.add_option('-v', '--vector_file', dest="vector_file", default=None,
-                      help='File with vectors to remove from reads')
-    parser.add_option('-d', '--vector_db', dest="vector_db", default=None,
-                      help='Blast database to use to remove vectors')
-    parser.add_option('-m', '--min_len', dest="min_len",
-                      help='Minimun length of reads to filter out')
-    parser.add_option('-e', '--edge_trim', dest="edge_trim", default=None,
-                      help='Nucleotides to trim in the edges')
-    parser.add_option('-n', '--n_percent', dest="n_percent", default=None,
-                      help='Number of nucleotides to trim in the edges')
-    parser.add_option('-l', '--lucy_splice_file', dest="lucy_splice",
-                      default=None, help='Lucy splice file')
-    parser.add_option('--lucy_bracket', dest="lucy_bracket",
-                      default=DEFAULT_VALUES['lucy_bracket'],
-                      help='Lucy bracket paramters')
-    parser.add_option('--lucy_window', dest="lucy_window",
-                      default=DEFAULT_VALUES['lucy_windows'],
-                      help='Lucy bracket parameters')
-    parser.add_option('--lucy_error', dest="lucy_error",
-                      default=DEFAULT_VALUES['lucy_error'], help='Lucy error parameters')
-    parser.add_option('--qual_threshold', dest="qual_threshold",
-                      default=DEFAULT_VALUES['qual_treshold'], help='Quality threshold parameters')
-    parser.add_option('--qual_window', dest="qual_window",
-                      default=DEFAULT_VALUES['qual_window'], help='Quality window parameter')
-    parser.add_option('--only_3_end', dest="only_3_end", action="store_true",
-                      default=None, help='Quality remove only 3 end')
-    parser.add_option('--double_encoding', dest="double_encoding",
-                      action='store_true', default=False,
-                      help='Double encoding for solid')
-    parser.add_option('--solid_qual_length', dest="solid_qual_length",
-                      default=DEFAULT_VALUES['solid_qual_length'],
-                      help="Number of 5' colors to consider to quality filtering")
-    parser.add_option('--solid_qual_threshold', dest="solid_qual_threshold",
-                      default=DEFAULT_VALUES['solid_qual_threshold'],
-                      help="Minimum mean quality allowable for solid reads.")
-    parser.add_option('--solid_disable_missing_call',
-                      dest="solid_disable_missing_call", action='store_true',
-                      default=DEFAULT_VALUES['solid_disable_missing_call'],
-                      help="Minimum mean quality allowable for solid reads.")
-    return parser
+long_param = 'long_param'
+short_param = 'short_param'
+required = 'required'
+help = 'help'
+choices = 'choices'
+action = 'action'
+default = 'default'
+type_ = 'type'
+path_exists = 'path_exists'
+path = 'path'
+int_list = 'int_list'
+str_list = 'str_list'
+float_list = 'float_list'
 
-def set_parameters():
-    'Set parameters'
-    # Set parameters
-    parser  = parse_options()
-    options = parser.parse_args()[0]
+PARAMETERS = OrderedDict([
+    ('seq_in', {long_param: '--seq_in',
+                short_param: '-i',
+                required:True,
+                help:'Input sequence file (Required).',
+                type_:path_exists}),
+    ('seq_out', {long_param: '--seq_out',
+                short_param: '-o',
+                required:True,
+                help:'Output sequence file (Required).',
+                type_:path}),
+    ('platform', {long_param: '--platform',
+                short_param: '-p',
+                required:True,
+                help:'Sequencing platform. (Required).',
+                type_:str}),
+    ('format', {long_param: '--format',
+                short_param: '-f',
+                help:'Input sequence file format.',
+                type_:str}),
+    ('out_format', {long_param: '--output_format',
+                short_param: '-g',
+                help:'Output sequence file format.',
+                type_:str}),
+    ('double_encoding', {long_param: '--double_encoding',
+                    help:"Use double encoding for solid (default Not use).",
+                         action:'store_true',
+                         default:{'SOLID': 'False'},
+                         type_:bool}),
+    ('qual_in', {long_param: '--qual_in',
+                short_param: '-q',
+                help:'Input quality file.',
+                type_:path_exists}),
+    ('qual_out', {long_param: '--qual_out',
+                short_param: '-u',
+                help:'Output quality file.',
+                type_:path}),
+    ('adaptors_file', {long_param: '--adaptors_file',
+                       short_param: '-a',
+                       help:'File with adaptors to remove from reads.',
+                       type_:path_exists}),
+    ('vector_file', {long_param: '--vector_file',
+                     short_param: '-v',
+                     help:'File with vector to remove from reads.',
+                     type_:path_exists}),
+    ('vector_db', {long_param: '--vector_db',
+                   short_param: '-d',
+                   help:'Vector BLAST database.',
+                   type_:str}),
+    ('re_words', {long_param: '--re_words',
+                  short_param: '-r',
+                  help:'A list of regular expressions to be trimmed.',
+                  type_:str_list}),
+    ('edge_trim', {long_param: '--edge_trim',
+                   short_param: '-e',
+             help:'Number of nucleotides to be removed from beginning and end.',
+                   type_:int_list}),
+    ('n_percent', {long_param: '--n_percent',
+                   short_param: '-n',
+     help:'Allowed percent of Ns at the read begining and end (default %i).',
+                   default:{LONG_WITHOUT_QUALITY:2},
+                   type_:float}),
+    ('lucy_splice', {long_param: '--lucy_splice_file',
+                     help:'Lucy splice site file.',
+                     type_:path_exists}),
+    ('lucy_bracket', {long_param: '--lucy_bracket',
+                      help:'Lucy bracket paramters.',
+                      default:{LONG_WITH_QUALITY:'10, 0.02'},
+                      type_:float_list}),
+    ('lucy_window', {long_param: '--lucy_window',
+                     help:'Lucy window sizes.',
+                     default:{LONG_WITH_QUALITY:'50, 0.08, 10, 0.3'},
+                     type_:float_list}),
+    ('lucy_error', {long_param: '--lucy_error',
+                    help:'Lucy error parameter.',
+                    default:{LONG_WITH_QUALITY:'0.015, 0.015'},
+                    type_:float_list}),
+    ('qual_threshold', {long_param: '--qual_threshold',
+                        help:'Quality threshold.',
+                        default:{ILLUMINA:20},
+                        type_:int}),
+    ('qual_window', {long_param: '--qual_window',
+                     help:'Quality window.',
+                     default:{ILLUMINA:1},
+                     type_:int}),
+    ('only_3_end', {long_param: '--only_3_end',
+                    help:"Quality trim only from the 3' end (deafult: False for Illumina, True for Solid).",
+                    action:'store_true',
+                    default:{SOLID:True, ILLUMINA:False},
+                    type_:bool}),
+    ('solid_qual_length', {long_param: '--solid_qual_length',
+                   help:"Number of 5' colors to consider to quality filtering.",
+                           default:{SOLID:'10'},
+                           type_:int}),
+    ('solid_qual_threshold', {long_param: '--solid_qual_threshold',
+          help:"Minimum mean quality allowable for solid reads (default %i).",
+                              default:{SOLID:15},
+                              type_:int}),
+    ('solid_disable_missing_call', {long_param: '--solid_disable_missing_call',
+   help:"Disable filtering out solid reads with missing calls (default False).",
+                    action:'store_true',
+                    default:{SOLID:True},
+                    type_:bool}),
+    ('min_len', {long_param: '--min_len',
+                 short_param: '-m',
+                 help:'Minimum number of nucleotides after the trimming.',
+                 type_:int}),
+    ('threads', {long_param: '--threads',
+                short_param: '-t',
+                help:'Number of threads to use. 0 for all cores. (default %i).',
+                default:1,
+                type_:int}),
+])
 
-    if options.seq_in is None:
-        parser.error("Input seqfile is required")
-    else:
-        seq_in_fhand = open(options.seq_in)
+INCOMPATIBLE_PARAMS_NO_SOLID = ['solid_qual_length', "solid_qual_threshold",
+                                'solid_disable_missing_call']
+INCOMPATIBLE_PARAMS = {SOLID: ['lucy_bracket', 'lucy_window', 'lucy_error',
+                               'lucy_splice', 'n_percent', 'qual_threshold',
+                               'qual_window', 're_words', 'adaptors_file',
+                               'vector_file', 'vector_db', 'edge_trim',
+                               'only_3_end_illumina'],
+                       LONG_WITH_QUALITY: ['qual_threshold', 'qual_window',
+                                           'only_3_end_illumina',
+                                           'only_3_end_solid',
+                                           'double_encoding'],
+                       LONG_WITHOUT_QUALITY: ['qual_threshold', 'qual_window',
+                                              'only_3_end_illumina',
+                                              'only_3_end_solid',
+                                              'double_encoding',
+                                              'lucy_bracket', 'lucy_window',
+                                              'lucy_error', 'lucy_splice',
+                                              'double_encoding'],
+                       ILLUMINA: ['lucy_bracket', 'lucy_window', 'lucy_error',
+                                  'lucy_splice', 'double_encoding',
+                                  'only_3_end_solid',]}
+INCOMPATIBLE_PARAMS[LONG_WITH_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
+INCOMPATIBLE_PARAMS[LONG_WITHOUT_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
+INCOMPATIBLE_PARAMS[ILLUMINA].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 
-    if options.qual_in is None:
-        qual_in_fhand = None
-    else:
-        qual_in_fhand = open(options.qual_in)
-    format_in = options.format
-
-    if options.seq_out is None:
-        parser.error("Output seqfile is required")
-    else:
-        seq_out_fhand = open(options.seq_out, 'w')
-
-    if options.qual_out is None:
-        qual_out_fhand = None
-    else:
-        qual_out_fhand = open(options.qual_out, 'w')
-    format_out = options.out_format
-    io = {'seq_in_fhand':seq_in_fhand, 'qual_in_fhand':qual_in_fhand,
-          'format_in':format_in, 'format_out':format_out,
-          'seq_out_fhand':seq_out_fhand, 'qual_out_fhand':qual_out_fhand}
-    io['double_encoding']  = options.double_encoding
-
-    threads = options.threads
-    platform = options.platform
-    parameters = {}
-    parameters['platform']         = platform
-    parameters['re_word']          = options.re_word
-    parameters['adaptors_file']    = options.adaptors_file
-    parameters['vector_file']      = options.vector_file
-    parameters['vector_db']        = options.vector_db
-    parameters['min_len']          = options.min_len
-    parameters['edge_trim']        = options.edge_trim
-    parameters['n_percent']        = options.n_percent
-    parameters['lucy_splice_file'] = options.lucy_splice_file
-    parameters['lucy_bracket']     = options.lucy_bracket
-    parameters['lucy_window']      = options.lucy_window
-    parameters['lucy_error']       = options.lucy_error
-    parameters['qual_threshold']   = options.qual_threshold
-    parameters['qual_min_length']  = options.qual_min_length
-    parameters['qual_window']      = options.qual_window
-    parameters['only_3_end']       = options.only_3_end
-
-    return io, parameters, threads
-
-def _prepare_inputs(io):
-    'It prepares input files'
-    in_seq_fhand  = io['seq_in_fhand']
-    in_qual_fhand = io['qual_in_fhand']
-
-    if io['format_in'] is None:
-        try:
-            io['format_in'] = guess_seq_file_format(in_seq_fhand)
-        except ValueError:
-            raise UnknownFormatError
-    format_in = io['format_in']
-
-    if format_in == 'fasta' and io['qual_in_fhand'] is None:
-        seq_with_qual = False
-    else:
-        seq_with_qual = True
-
-    return ({'in_seq':in_seq_fhand, 'in_qual':in_qual_fhand}, format_in,
-            seq_with_qual)
-
-def _prepare_outputs(io):
-    '''It prepares the outputs. It returns a writer instance to use with
-    pipeline runner. take into account the format'''
-    if io['format_out'] is None:
-        if io['format_in'] == 'csfasta':
-            io['format_out'] = 'sfastq'
-        else:
-            io['format_out'] = io['format_in']
-
-    writer = SequenceWriter(io['seq_out_fhand'], io['format_out'],
-                            qual_fhand=io['qual_out_fhand'])
-    return writer
-
-def _get_num_threads(threads):
-    'it calculates the threads'
-    if threads == 0:
-        try:
-            import psubprocess
-        except ImportError:
-            raise PsubprocessNotFounError
-
-        threads = True
-    return get_num_threads(threads)
-
-def _prepare_pipeline(parameters, qual):
+def _prepare_pipeline(pipeline_type, parameters):
     'It prepares_the pipeline'
-    if parameters['adaptor_file']:
+    adaptors_file = parameters.get('adaptors_file', None)
+    if adaptors_file:
         try:
-            check_sequences_length(open(parameters['adaptor_file']), 15)
+            check_sequences_length(open(parameters['adaptors_file']), 15)
         except ValueError as msg:
             raise AdaptorError('Adaptor length error:\n%s' % msg)
 
-    platform = parameters['platform']
-    if platform == 'solid':
+    if pipeline_type == SOLID:
         pipeline, configuration = _prepare_pipeline_for_solid(parameters)
-    elif platform == 'illumina':
+    elif pipeline_type == ILLUMINA:
         pipeline, configuration = _prepare_pipeline_for_illumina(parameters)
-    elif platform in ('454', 'sanger') :
-        pipeline, configuration = _prepare_pipeline_for_sanger(parameters,
-                                                               qual)
+    elif pipeline_type in (LONG_WITH_QUALITY, LONG_WITHOUT_QUALITY) :
+        pipeline, configuration = _prepare_pipeline_for_long(parameters,
+                                                             pipeline_type)
 
     # triming and seq_lengh steps
     pipeline.append(sequence_trimmer)
-    if parameters['min_len']:
-        pipeline.append(sequence_trimmer)
-        configuration['length'] = parameters['min_length']
+    min_len = parameters.get('min_length', None)
+    if min_len:
+        configuration['length'] = min_len
     return pipeline, configuration
 
 def _prepare_pipeline_for_solid(parameters):
@@ -264,15 +257,17 @@ def _prepare_pipeline_for_solid(parameters):
 
     #solid quality
     pipeline.append(solid_quality)
-    configuration['solid_quality'] = {'length':parameters['solid_qual_length'],
-                                      'threshold':parameters['solid_qual_threshold'],
-                                      'call_missing':parameters['solid_disable_missing_call']}
+    configuration['solid_quality'] = {
+                        'length':parameters['solid_qual_length'],
+                        'threshold':parameters['solid_qual_threshold'],
+                        'call_missing':parameters['solid_disable_missing_call']}
 
     #strip_quality
     pipeline.append(strip_quality)
-    configuration['strip_quality'] = {'quality_treshold':parameters['qual_threshold'],
-                                      'quality_window_width':parameters['qual_window'],
-                                      'only_3_end':True}
+    configuration['strip_quality'] = {
+                              'quality_treshold': parameters['qual_threshold'],
+                              'quality_window_width': parameters['qual_window'],
+                              'only_3_end':parameters['only_3_end_solid']}
 
     return pipeline, configuration
 
@@ -286,19 +281,22 @@ def _prepare_pipeline_for_illumina(parameters):
     configuration['up_case'] = {}
 
     #remove_adaptors
-    if parameters['adaptors_file']:
+    adaptors_file = parameters.get('adaptors_file', None)
+    if adaptors_file:
         pipeline.append(remove_adaptors)
-        configuration['remove_adaptor'] = {'adaptors':parameters['adaptors_file']}
+        configuration['remove_adaptor'] = {'adaptors': adaptors_file}
+
     # strip_quality
     pipeline.append(strip_quality)
-    configuration['strip_quality'] = {'quality_treshold':parameters['qual_threshold'],
-                                      'quality_window_width':parameters['qual_window'],
-                                      'only_3_end':parameters['only_3_end']}
+    configuration['strip_quality'] = {
+                                'quality_treshold':parameters['qual_threshold'],
+                               'quality_window_width':parameters['qual_window'],
+                                 'only_3_end':parameters['only_3_end_illumina']}
 
     return pipeline, configuration
 
-def _prepare_pipeline_for_sanger(parameters, qual):
-    'it prepares the illumina pipeline'
+def _prepare_pipeline_for_long(parameters, pipeline_type):
+    'it prepares the sanger pipeline'
     pipeline      = []
     configuration = {}
 
@@ -307,95 +305,357 @@ def _prepare_pipeline_for_sanger(parameters, qual):
     configuration['up_case'] = {}
 
     #remove_adaptors
-    if parameters['adaptors_file']:
+    adaptors_file = parameters.get('adaptors_file', None)
+    if adaptors_file:
         pipeline.append(remove_adaptors)
-        configuration['remove_adaptor'] = {'adaptors':parameters['adaptors_file']}
+        configuration['remove_adaptor'] = {'adaptors': adaptors_file}
 
     #vector_db
-    if parameters['vector_db']:
+    vectordb = parameters.get('vector_db', None)
+    if vectordb:
         pipeline.append(remove_vectors_blastdb)
-        configuration['remove_vectors_blastdb'] = {'vectors':parameters['vector_db']}
+        configuration['remove_vectors_blastdb'] = {'vectors': vectordb}
 
     #vector_file
-    if parameters['vector_file']:
+    vector_file = parameters.get('vector_file', None)
+    if vector_file:
         pipeline.append(remove_vectors_file)
-        configuration['remove_vectors_file'] = {'vectors':parameters['vector_file']}
+        configuration['remove_vectors_file'] = {'vectors': vector_file}
 
     #lucy
-    if qual:
+    if pipeline_type == LONG_WITH_QUALITY:
         pipeline.append(strip_quality_lucy)
-        configuration['strip_lucy'] = {'bracket':parameters['lucy_bracket'],
-                                       'window':parameters['lucy_window'],
-                                       'error':parameters['lucy_error']}
-        if parameters['vector_file'] and parameters['lucy_splice_file']:
-            configuration['strip_lucy']['vector'] = [parameters['vector_file'],
-                                                     parameters['lucy_splice_file']]
+        lucy_params = {'bracket':parameters['lucy_bracket'],
+                       'window':parameters['lucy_window'],
+                       'error':parameters['lucy_error']}
+        lucy_splice_file = parameters.get('lucy_splice_file', None)
+        if vector_file and lucy_splice_file:
+            lucy_params['vector'] = [vector_file, lucy_splice_file]
+
+        configuration['strip_lucy'] = {'parameters':lucy_params}
 
     # n_percent
-    if not qual:
-        pipeline.append(strip_quality_by_n)
-        configuration['strip_trimpoly'] = {'n_trim_above_percent':parameters['n_percent']}
-
+    if pipeline_type == LONG_WITHOUT_QUALITY:
+        n_percent = parameters.get('n_percent', None)
+        if n_percent is not None:
+            pipeline.append(strip_quality_by_n)
+            configuration['strip_trimpoly'] = {'ntrim_above_percent':
+                                                        parameters['n_percent']}
     #mask_low_complexity
     pipeline.append(mask_low_complexity)
     configuration['mask_low_complex'] = {}
 
     #remove_short_adaptors
-    if parameters['re_words']:
+    re_words = parameters.get('re_words', None)
+    if re_words:
         pipeline.append(remove_short_adaptors)
-        configuration['remove_short_adaptors'] = {'words':parameters['re_words']}
+        configuration['remove_short_adaptors'] = {'words': re_words}
 
     #edge_remover
-    if parameters['edge_trimp']:
-        left  = None if parameters['edge_trimp'][0] == 0 else parameters['edge_trimp'][1]
-        rigth = None if parameters['edge_trimp'][0] == 0 else parameters['edge_trimp'][1]
+    edge_trim = parameters.get('edge_trim', None)
+    if edge_trim:
+        left  = None if edge_trim[0] == 0 else edge_trim[1]
+        rigth = None if edge_trim[0] == 0 else edge_trim[1]
         pipeline.append(edge_remover)
-        configuration['ege_removal'] = {'left_length':left, 'right_length':rigth}
+        configuration['ege_removal'] = {'left_length':left,
+                                        'right_length':rigth}
 
     return pipeline, configuration
 
+def set_cli_interface():
+    'It sets the command line options'
+    usage = "usage: %prog -i seq_file -o out_seq_file -p platform [options]"
+    parser = OptionParser(usage=usage)
+
+    for name, definition in PARAMETERS.items():
+        args = []
+        if short_param in definition:
+            args.append(definition[short_param])
+        if long_param in definition:
+            args.append(definition[long_param])
+        kwargs = {'dest':name}
+
+        help_str = definition[help]
+        if '%s' in help_str or '%i' in help_str:
+            default_value = definition[default]
+            if isinstance(default_value, dict):
+                default_value = default_value.values()[0]
+            help_str %= default_value
+        kwargs['help'] = help_str
+        if choices in definition:
+            kwargs['choices'] = definition[choices]
+        if action in definition:
+            kwargs['action'] = definition[action]
+        parser.add_option(*args, **kwargs)
+    return parser
+
+def get_input_output_options(parameters):
+    'It gets the fhand for the input and output and removes those parameters'
+
+    in_fhands = {}
+
+    seq_in = parameters.get('seq_in', None)
+    if seq_in is None:
+        ValidationError("Input seqfile is required")
+    else:
+        in_fhands['in_seq'] = open(seq_in)
+
+    qual_in = parameters.get('qual_in', None)
+    if qual_in is not None:
+        in_fhands['in_qual'] = open(qual_in)
+
+    format_in = parameters.get('format', None)
+    if format_in is None:
+        try:
+            format_in = guess_seq_file_format(in_fhands['in_seq'])
+        except ValueError:
+            msg = 'It was not possible to guess the format for file %s, please set it manualy'
+            raise UnknownFormatError(msg)
+
+    seq_out = parameters.get('seq_out', None)
+    if seq_out is None:
+        ValidationError("Output seqfile is required")
+    else:
+        seq_out_fhand = open(seq_out, 'w')
+
+    qual_out = parameters.get('qual_out', None)
+    if qual_out is None:
+        qual_out_fhand = None
+    else:
+        qual_out_fhand = open(qual_out, 'w')
+
+    format_out = parameters.get('out_format', None)
+    if format_out is None:
+        if format_in == 'csfasta':
+            format_out = 'sfastq'
+        else:
+            format_out = format_in
+        format_out = format_in
+
+    writer = SequenceWriter(seq_out_fhand, format_out,
+                            qual_fhand=qual_out_fhand)
+
+    return in_fhands, format_in, writer
+
+def _cast_int(value):
+    'It casts to an int'
+    try:
+        value = int(value)
+    except ValueError:
+        msg = 'The given parameter is not an integer: %s' % value
+        ValidationError(msg)
+    return value
+def _cast_float(value):
+    'It casts to an float'
+    try:
+        value = float(value)
+    except ValueError:
+        msg = 'The given parameter is not a float: %s' % value
+        ValidationError(msg)
+    return value
+
+def _cast_str(value):
+    'It casts to an str'
+    if (value.startswith('"') and value.endswith('"') or
+        value.startswith("'") and value.endswith("'")):
+        value = value[1:-1]
+    return value
+def _cast_bool(value):
+    'It casts to a boolean'
+    if type(value) == type(True):
+        pass
+    elif value.lower() in ('true', 't'):
+        value = True
+    elif value.lower() in ('false', 'f'):
+        value = False
+    else:
+        ValidationError('Value %s is not boolean (True or False)' % value)
+    return value
+
+def _cast(type_, value):
+    'It casts the given value to the given type'
+    if value is None:
+        return None
+    if type_ == path_exists:
+        value = str(value)
+        if not os.path.exists(value):
+            msg = 'The given file does not exists: %s' % value
+            ValidationError(msg)
+    elif type_ == int:
+        value = _cast_int(value)
+    elif type_ == float:
+        value = _cast_float(value)
+    elif type == str:
+        value = _cast_str(value)
+    elif type == bool:
+        value = _cast_bool(value)
+    if type_ in (int_list, float_list, str_list):
+        value = value.split(',')
+    if type_ == int_list:
+        value = [_cast_int(val) for val in value]
+    elif type_ == float_list:
+        value = [_cast_float(val) for val in value]
+    elif type_ == str_list:
+        value = [_cast_str(val) for val in value]
+    return value
+
+def _get_cmd_parameters(parser):
+    'It returns the parameters given in the command line'
+
+    options = parser.parse_args()[0]
+
+    parameters = OrderedDict()
+    parameters['platform'] = options.platform
+    if parameters['platform'] is None:
+        raise ValidationError("The sequencing platform is required")
+    else:
+        parameters['platform'] = parameters['platform'].lower()
+
+    if parameters['platform'] not in AVAILABLE_PLATFORMS:
+        msg = 'Platform %s not recognized, available choices are: %s'
+        msg %= str(parameters['platform']), ','.join(AVAILABLE_PLATFORMS)
+        raise ValidationError(msg)
+
+    for param_name in PARAMETERS:
+        value = getattr(options, param_name)
+        if value is not None:
+            parameters[param_name] = getattr(options, param_name)
+    return parameters
+
+def _add_default_values_to_parameters(parameters, pipeline_type):
+    'It returns the parameters with its default values added'
+
+    for param_name, param_def in PARAMETERS.items():
+        value = parameters.get(param_name, None)
+        default_value = param_def.get(default, None)
+        if isinstance(default_value, dict):
+            if pipeline_type in default_value:
+                default_value = default_value[pipeline_type]
+            else:
+                default_value = None
+        if value is None and default_value is not None:
+            value = default_value
+        if value is not None:
+            parameters[param_name] = _cast(param_def[type_], value)
+
+    return parameters
+
+def validate_parameters(parameters, pipeline_type):
+    'It does some sanity checks on the parameters'
+
+    if pipeline_type == SOLID and not parameters['only_3_end']:
+        raise ValidationError('The solid platforms requires only_3_end set')
+
+
+    for name, value in parameters.items():
+        if value is not None and name in INCOMPATIBLE_PARAMS[pipeline_type]:
+            msg = 'Parameter %s is incompatible with platform %s'
+            msg %= (name, pipeline_type)
+            raise PlatformParamError(msg)
+
+def _to_str(value):
+    'It returns a string representation of the value'
+    if isinstance(value, list) or isinstance(value, tuple):
+        value = ','.join(['"' + str(item) + '"' for item in value])
+    else:
+        value = str(value)
+    return value
+
+def log_parameters(fhand, parameters, pipeline_type):
+    'It writes the current parameters for provenance.'
+
+    msg = 'Running pipeline %s with the following parameters:\n'
+    msg %= pipeline_type
+    fhand.write(msg)
+
+    for name, value in parameters.items():
+        if value is None:
+            continue
+        value = _to_str(value)
+        msg = '%s: %s\n' % (PARAMETERS[name][long_param], value)
+        fhand.write(msg)
+
+def _get_num_threads(threads):
+    'it calculates the threads'
+    if threads == 0:
+        try:
+            import psubprocess
+        except ImportError:
+            msg = 'psubprocess is not installed, so threads can not be used'
+            raise PsubprocessNotFounError(msg)
+        threads = True
+    return get_num_threads(threads)
+
+def _guess_pipeline_type(parameters, format_in):
+    'It sets the correct platform not the sequencing one'
+    print parameters
+    print format_in
+    platform = parameters['platform']
+    if platform in (SOLID, ILLUMINA):
+        return platform
+    #do we have quality?
+    if 'qual_in' in parameters:
+        platform = LONG_WITH_QUALITY
+    elif format_in == 'fasta':
+        platform =  LONG_WITHOUT_QUALITY
+    elif 'fastq' in format_in:
+        platform = LONG_WITH_QUALITY
+    elif platform == _454:
+        platform = LONG_WITH_QUALITY
+    else:
+        msg = 'Not possible to determine if the reads have quality, '
+        msg += 'please inform about this error to the developers and use fasta'
+        msg += 'or fastq as input'
+        raise RuntimeError(msg)
+    print platform
+    return platform
+
 def main():
     'The main part'
-    try:
-        io, parameters, threads = set_parameters()
-    except PlatformError as msg:
-        sys.stderr.write(msg)
-        sys.exit()
+    error_stream = sys.stderr
+    stdout_stream = sys.stdout
 
-    # input
     try:
-        in_fhands, informat, seq_with_qual = _prepare_inputs(io)
-    except UnknownFormatError:
-        msg = "Can not guess infut file format. Please use -f option"
-        sys.stderr.write(msg)
-        sys.exit()
-
-    # output
-    writer = _prepare_outputs(io)
+        parser = set_cli_interface()
+        params = _get_cmd_parameters(parser)
+        in_fhands, in_format, writer = get_input_output_options(params)
+        pipeline_type = _guess_pipeline_type(params, in_format)
+        _add_default_values_to_parameters(params, pipeline_type)
+        validate_parameters(params, pipeline_type)
+        log_parameters(stdout_stream, params, pipeline_type)
+    except PlatformParamError as error:
+        error_stream.write(str(error))
+        sys.exit(10)
+    except ValidationError as error:
+        error_stream.write(str(error))
+        sys.exit(11)
+    except UnknownFormatError as error:
+        error_stream.write(str(error))
+        sys.exit(12)
 
     # threads
     try:
+        threads = params['threads']
+        del params['threads']
         threads = _get_num_threads(threads)
     except PsubprocessNotFounError:
         msg = 'To use multiprocessing you need to install psubprocess'
-        sys.stderr.write(msg)
-        sys.exit()
-
-    #do we have seqs with quality
-
+        error_stream.write(msg)
+        sys.exit(13)
 
     # parameters
     try:
-        pipeline, configuration = _prepare_pipeline(parameters, seq_with_qual)
-    except AdaptorError as msg:
-        sys.stderr.write(msg)
-        sys.exit()
-
+        pipeline, configuration = _prepare_pipeline(pipeline_type, params)
+    except AdaptorError as error:
+        error_stream.write(str(error))
+        sys.exit(14)
 
     # the runner
     seq_pipeline_runner(pipeline, configuration, in_fhands,
-                        file_format=informat, writers=[writer],
+                        file_format=in_format, writers={'seq': writer},
                         processes=threads)
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        sys.argv = sys.argv + ['-h']
     main()
