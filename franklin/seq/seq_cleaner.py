@@ -112,7 +112,7 @@ def _mask_sequence(sequence):
                                                        sequence.seq.alphabet))
 
 def create_seq_trim_and_masker(mask=True, trim=True):
-    'It actually trims the sequence taking into account trimming recomendations'
+    'It actually trims the sequence taking into account trimming recommendations'
     def sequence_trimmer(sequence):
         'It trims the sequences'
         if not sequence:
@@ -128,7 +128,10 @@ def create_seq_trim_and_masker(mask=True, trim=True):
         if trim and trim_locs:
             trim_limits = _get_longest_non_matched_seq_region_limits(sequence,
                                                                      trim_locs)
-            sequence = sequence[trim_limits[0]:trim_limits[1] + 1]
+            if trim_limits is None:
+                return None
+            else:
+                sequence = sequence[trim_limits[0]:trim_limits[1] + 1]
             if 'quality' in trim_rec:
                 del(trim_rec['quality'])
             if 'vector' in trim_rec:
@@ -141,7 +144,6 @@ def create_seq_trim_and_masker(mask=True, trim=True):
                 trim_rec['mask'] = new_mask_segments
         sequence.annotations[TRIMMING_RECOMMENDATIONS] = trim_rec
         return sequence
-
     return sequence_trimmer
 
 def create_upper_mapper():
@@ -866,11 +868,6 @@ def _get_longest_non_matched_seq_region_limits(seq, locations):
 
     #we want the non-matched locations
     locations = _get_non_matched_from_matched_locations(locations, len(seq))
-
-    #if there is one that starts at zero we remove it, because it should be
-    #vector
-    #if locations[0][0] == 0:
-    #    locations.pop(0)
 
     #now we return the longest one
     longest_loc = None

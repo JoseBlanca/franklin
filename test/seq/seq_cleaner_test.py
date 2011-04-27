@@ -44,7 +44,8 @@ from franklin.seq.seq_cleaner import (_create_vector_striper,
                                       _mask_sequence, TRIMMING_RECOMMENDATIONS,
                                       _get_all_segments,
                                       _get_non_matched_from_matched_locations,
-    create_double_coding_mapper)
+                                      create_double_coding_mapper,
+                                     _get_longest_non_matched_seq_region_limits)
 
 from franklin.utils.misc_utils import DATA_DIR
 
@@ -570,7 +571,7 @@ class SeqSplitterTests(unittest.TestCase):
 
     @staticmethod
     def test_sequence_stripper():
-        'It can cut using trimming recomendations'
+        'It can cut using trimming recommendations'
         seq1 = 'gggtctcatcatcaggg'.upper()
         seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
                              annotations={TRIMMING_RECOMMENDATIONS:{}})
@@ -596,6 +597,10 @@ class SeqSplitterTests(unittest.TestCase):
         assert 'quality' not in trim_rec
         assert trim_rec['mask'] == [(0, 2), (4, 5)]
 
+        trim_rec['vector']  = [(0, 1), (8, 12)]
+        trim_rec['quality'] = [(1, 8), (13, 17)]
+        seq2 = seq_trimmer(seq)
+        assert seq2 is None
 
         seq_trimmer = create_seq_trim_and_masker(mask=False)
         trim_rec['vector']  = [(0, 0), (8, 12)]
@@ -605,7 +610,6 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq2.seq == 'GGTCTCA'
         assert seq2.annotations == {'trimming_recommendations':
                                                     {'mask': [(0, 2), (4, 5)]}}
-
         seq_trimmer = create_seq_trim_and_masker()
         seq3 = seq_trimmer(seq2)
         assert seq3.seq == 'ggtCtcA'
@@ -631,7 +635,6 @@ class SeqSplitterTests(unittest.TestCase):
         seq = _mask_sequence(seq)
         assert seq.seq == 'AtgtGATGATGATA'
 
-
 class SegmentsTests(unittest.TestCase):
     'Here we test seq segments functions'
     @staticmethod
@@ -651,6 +654,15 @@ class SegmentsTests(unittest.TestCase):
         'Given a list of segments we get the complementary matches'
         segments = _get_non_matched_from_matched_locations([(0, 10), (15, 20)], 30)
         assert segments == [(11, 14), (21, 29)]
+
+
+    @staticmethod
+    def test_get_longest_non_mached():
+        'get longest non matched region'
+        seq = 'A' * 200
+        locations = [(0, 200)]
+        result = _get_longest_non_matched_seq_region_limits(seq, locations)
+        assert result is None
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_adaptor_blast']
