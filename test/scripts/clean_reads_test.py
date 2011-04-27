@@ -74,6 +74,15 @@ class CleanReadsTest(unittest.TestCase):
         stdout = _call_python([CLEAN_READS , '-h'])[0]
         assert 'SEQ_IN' in stdout
 
+    def test_error(self):
+        'It tests that we can capture an unexpected error'
+        error_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, 'testerror', '--error_log', error_fhand.name]
+        stdout, stderr = _call_python(cmd)[:-1]
+        error_log = open(error_fhand.name).read()
+        assert 'An unexpected error happened' in stderr
+        assert 'function calls leading' in  error_log
+
     def test_sanger(self):
         'It tests the basic sanger cleaning'
         seq1 = create_random_seqwithquality(500, qual_range=55)
@@ -115,6 +124,8 @@ class CleanReadsTest(unittest.TestCase):
         assert retcode == 0
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name)))
         assert not str(out_seqs[0].seq).lower().endswith('nnnnn')
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'RunnerFactorytest.test_create_lucy_runner']

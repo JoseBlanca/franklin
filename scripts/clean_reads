@@ -24,6 +24,8 @@ try:
 except ImportError:
     from franklin.utils.misc_utils import OrderedDict
 
+import franklin.utils.cgitb as cgitb
+
 from franklin.utils.misc_utils import get_num_threads
 from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import SequenceWriter
@@ -195,6 +197,10 @@ PARAMETERS = OrderedDict([
                 help:'Number of threads to use. 0 for all cores. (default %i).',
                 default:1,
                 type_:int}),
+    ('error_log', {long_param: '--error_log',
+                help:'Path to the error log file to use (default %s).',
+                default:'clean_reads.error',
+                type_:path}),
 ])
 
 INCOMPATIBLE_PARAMS_NO_SOLID = ['solid_qual_length', "solid_qual_threshold",
@@ -610,11 +616,10 @@ def _guess_pipeline_type(parameters, format_in):
     print platform
     return platform
 
-def main():
+def main(stdout, stderr):
     'The main part'
-    error_stream = sys.stderr
-    stdout_stream = sys.stdout
-
+    if 'testerror' in sys.argv:
+        raise RuntimeError('This is the test error.')
     try:
         parser = set_cli_interface()
         params = _get_cmd_parameters(parser)
@@ -622,15 +627,15 @@ def main():
         pipeline_type = _guess_pipeline_type(params, in_format)
         _add_default_values_to_parameters(params, pipeline_type)
         validate_parameters(params, pipeline_type)
-        log_parameters(stdout_stream, params, pipeline_type)
+        log_parameters(stdout, params, pipeline_type)
     except PlatformParamError as error:
-        error_stream.write(str(error))
+        stderr.write(str(error))
         sys.exit(10)
     except ValidationError as error:
-        error_stream.write(str(error))
+        stderr.write(str(error))
         sys.exit(11)
     except UnknownFormatError as error:
-        error_stream.write(str(error))
+        stderr.write(str(error))
         sys.exit(12)
 
     # threads
@@ -640,14 +645,14 @@ def main():
         threads = _get_num_threads(threads)
     except PsubprocessNotFounError:
         msg = 'To use multiprocessing you need to install psubprocess'
-        error_stream.write(msg)
+        stderr.write(msg)
         sys.exit(13)
 
     # parameters
     try:
         pipeline, configuration = _prepare_pipeline(pipeline_type, params)
     except AdaptorError as error:
-        error_stream.write(str(error))
+        stderr.write(str(error))
         sys.exit(14)
 
     # the runner
@@ -655,7 +660,30 @@ def main():
                         file_format=in_format, writers={'seq': writer},
                         processes=threads)
 
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         sys.argv = sys.argv + ['-h']
-    main()
+
+    stderr = sys.stderr
+    stdout = sys.stdout
+
+    argv = sys.argv
+    if '--error_log' in argv:
+        error_fpath_index = argv.index('--error_log') + 1
+        error_fpath = argv[error_fpath_index]
+    else:
+        error_fpath = 'clean_reads.error'
+
+    try:
+        main(stdout, stderr)
+    except Exception as error:
+
+        msg = 'An unexpected error happened.\n'
+        msg += 'The clean_reads developers would appreciate your feedback\n'
+        msg += 'Please send them the error log and take a look at it: ' + error_fpath + '\n\n'
+        msg += str(error)
+        stderr.write(msg)
+        hook = cgitb.Hook(display=0, format='text', logfpath=error_fpath)
+        hook.handle()
+        raise
