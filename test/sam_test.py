@@ -33,6 +33,9 @@ from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
                           remove_unmapped_reads, get_read_group_info)
 import pysam
 
+THREADS=4
+
+
 class SamTest(unittest.TestCase):
     'It test sam tools related functions'
 
@@ -173,7 +176,7 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
 @SQ\tSN:SGN-U572743\tLN:833
 @RG\tID:g1\tLB:g1\tSM:g1\tPL:sanger
 @RG\tID:g3\tLB:g3\tSM:g3\tPL:sanger
-SGN-E200000\t0\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATKTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
+SGN-E200000\t64\tSGN-U572743\t317\t226\t254M24S\t*\t0\t0\tGGATGATKTTAGAG\t*\tAS:i:250\tXS:i:0\tXF:i:0\tXE:i:7\tXN:i:0\tRG:Z:g1
 SGN-E40000\t0\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
 SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tAS:i:160\tXS:i:0\tXF:i:3\tXE:i:4\tXN:i:0\tRG:Z:g3
 ''')
@@ -182,7 +185,7 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         lines = out_fhand.getvalue().splitlines()
         assert 'GGATGATNTTAGAG\t55555555555555\t' in lines[4]
         assert lines[6].startswith('SGN-E40000\t20\t*\t0\t0\t*\t*\t0\t0\t')
-
+        assert lines[4].startswith('SGN-E200000\t0')
     @staticmethod
     def test_realignbam():
         'It test the GATK realigner'
@@ -190,7 +193,7 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
         bam_path = os.path.join(sam_test_dir, 'seqs.bam')
         reference_path = os.path.join(sam_test_dir, 'reference.fasta')
         out_bam = NamedTemporaryFile(suffix='.bam')
-        realign_bam(bam_path, reference_path, out_bam.name)
+        realign_bam(bam_path, reference_path, out_bam.name, threads=THREADS)
         out_bam.close()
 
     @staticmethod

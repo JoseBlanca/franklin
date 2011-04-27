@@ -323,8 +323,20 @@ def standardize_sam(in_fhand, out_fhand, default_sanger_quality=None,
                 #we remove MAPQ from the non-mapped reads
                 if fix_non_mapped:
                     _fix_non_mapped_reads(items)
+                # check that the flag is fine(gmap bugfix)
+                items[1] = _fix_flag(items[1])
+
+
                 line = sep.join(items)
         out_fhand.write(line)
+
+def _fix_flag(flag):
+    'it fix the flag'
+    bin_flag = list(bin(int(flag)|0b1000000000000000)[2:])[-14:]
+    if bin_flag[-1] == '0':
+        bin_flag[-7] = '0'
+        bin_flag[-8] = '0'
+    return str(int(''.join(bin_flag), 2))
 
 def create_bam_index(bam_fpath):
     'It creates an index of the bam if it does not exist'
@@ -391,6 +403,8 @@ def realign_bam(bam_fpath, reference_fpath, out_bam_fpath, java_conf=None,
            '-jar', gatk_jar, '-I', bam_fpath, '-R', reference_fpath,
            '-T', 'IndelRealigner', '-targetIntervals', intervals_fhand.name,
            '-o', unsorted_bam.name])
+    if parallel and threads and threads > 1:
+        cmd.extend(['-nt', str(get_num_threads(threads))])
     call(cmd, raise_on_error=True, add_ext_dir=False)
     # now we have to realign the bam
     sort_bam_sam(unsorted_bam.name, out_bam_fpath, java_conf=java_conf,
