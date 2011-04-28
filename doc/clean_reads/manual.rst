@@ -107,11 +107,15 @@ OPTIONS
         This would be an unconditional trimming.
         The number of nucleotides should be given as two integers separated by a comma (e.g. 0,10).
 
+**-x**, **--disable_quality_trimming**
+		The quality trimming algorithms will not be used.
+		This parameter will not affect the quality filtering, for instance the solid quality filtering will continue to work.
+
 **-n**, **-n_percent**
         Allowed percent of Ns.
         Trim the regions with a percent of unknown bases above the given threshold.
 
-**-l**, **-lucy_splice**
+**-lucy_splice**
         The lucy splice site file.
         The splice site definition used for the exact trimming of the vector and adaptor.
         Refer to the lucy man page for the format of this file.

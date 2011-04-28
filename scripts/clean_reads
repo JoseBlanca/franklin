@@ -142,6 +142,12 @@ PARAMETERS = OrderedDict([
                    short_param: '-e',
              help:'Number of nucleotides to be removed from beginning and end.',
                    type_:int_list}),
+    ('disable_quality', {long_param: '--disable_quality_trimming',
+                         short_param: '-x',
+                         action:'store_true',
+                         default:False,
+                         type_:bool,
+                         help:'Quality trimming algorithms will not be used'}),
     ('n_percent', {long_param: '--n_percent',
                    short_param: '-n',
      help:'Allowed percent of Ns at the read begining and end (default %i).',
@@ -269,8 +275,9 @@ def _prepare_pipeline_for_solid(parameters):
                       'call_missing':not parameters['solid_allow_missing_call']}
 
     #strip_quality
-    pipeline.append(strip_quality)
-    configuration['strip_quality'] = {
+    if not parameters['disable_quality']:
+        pipeline.append(strip_quality)
+        configuration['strip_quality'] = {
                               'quality_treshold': parameters['qual_threshold'],
                               'quality_window_width': parameters['qual_window'],
                               'only_3_end':parameters['only_3_end']}
@@ -331,8 +338,9 @@ def _prepare_pipeline_for_illumina(parameters):
     _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
 
     # strip_quality
-    pipeline.append(strip_quality)
-    configuration['strip_quality'] = {
+    if not parameters['disable_quality']:
+        pipeline.append(strip_quality)
+        configuration['strip_quality'] = {
                                'quality_treshold':parameters['qual_threshold'],
                                'quality_window_width':parameters['qual_window'],
                                'only_3_end':parameters['only_3_end']}
@@ -351,7 +359,7 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
     _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
 
     #lucy
-    if pipeline_type == LONG_WITH_QUALITY:
+    if pipeline_type == LONG_WITH_QUALITY and not parameters['disable_quality']:
         pipeline.append(strip_quality_lucy)
         lucy_params = {'bracket':parameters['lucy_bracket'],
                        'window':parameters['lucy_window'],
@@ -558,6 +566,11 @@ def validate_parameters(parameters, pipeline_type):
     if pipeline_type == SOLID and not parameters['only_3_end']:
         raise ValidationError('The solid platforms requires only_3_end set')
 
+    if (parameters['disable_quality'] and
+        parameters.get('lucy_splice', None)):
+        msg = 'The parameters disable_quality_trimming and lucy_splice are '
+        msg += 'incompatible.'
+        raise ValidationError(msg)
 
     for name, value in parameters.items():
         if value is not None and name in INCOMPATIBLE_PARAMS[pipeline_type]:

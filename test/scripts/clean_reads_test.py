@@ -107,6 +107,12 @@ class CleanReadsTest(unittest.TestCase):
         stderr = _call_python(cmd)[1]
         assert 'choice' in stderr
 
+        #disable quality trimming and lucy_splice are incompatible
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', 'sanger', '-x', '--lucy_splice', 'splice.fasta']
+        stderr = _call_python(cmd)[1]
+        assert 'incompatible' in stderr
+
         #we can clean a sanger sequence with quality
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-q', inqual_fhand.name,
                '-o', outseq_fhand.name, '-u', outqual_fhand.name,
@@ -116,6 +122,16 @@ class CleanReadsTest(unittest.TestCase):
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
                                      qual_fhand=open(outqual_fhand.name)))
         assert out_seqs[0].qual[-1] == 55
+
+        #disable quality trimming
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-q', inqual_fhand.name,
+               '-o', outseq_fhand.name, '-u', outqual_fhand.name,
+               '-p', 'sanger', '-x']
+        retcode = _call_python(cmd)[2]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     qual_fhand=open(outqual_fhand.name)))
+        assert seqs[0].seq == out_seqs[0].seq
 
         #we can clean a sanger sequence without quality
         seq1 = create_random_seqwithquality(500, qual_range=55)
@@ -143,6 +159,16 @@ class CleanReadsTest(unittest.TestCase):
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
                                      format='fastq'))
         assert out_seqs[0].qual[-2] == 35
+
+        #disable quality trimming
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', 'illumina', '-f', 'fastq', '-x']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert seqs[0].seq == out_seqs[0].seq
+
 
         #illumina format
         inseq_fhand = create_temp_seq_file(seqs, format='fastq-illumina')[0]
@@ -208,6 +234,17 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert out_seqs[0].seq.startswith('..1103120210110')
         assert out_seqs[0].qual[2] == 29
+
+        #no quality trimming
+        cmd = [CLEAN_READS, '-i', cs_seq_fhand.name, '-q', cs_qual_fhand.name,
+               '-o', out_fhand.name, '-p', 'solid', '-f', 'csfasta',
+               '-g', 'fastq', '--solid_allow_missing_call', '-x']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(out_fhand.name),
+                                     format='fastq'))
+        assert len(out_seqs) == 4
+        assert len(out_seqs[0]) == 49
 
         #double encoding
         #we allow more than one missing calls
@@ -303,5 +340,5 @@ T0..11031202101103031103110303212300122113032213202
         assert len(seq2.seq) - len(out_seqs[0].seq) == 20
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_help']
+    import sys;sys.argv = ['', 'CleanReadsTest.test_sanger']
     unittest.main()
