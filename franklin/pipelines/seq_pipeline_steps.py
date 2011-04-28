@@ -32,7 +32,14 @@ from franklin.seq.seq_cleaner import (create_vector_striper,
                                       create_double_coding_mapper)
 
 from franklin.seq.seq_filters import (create_length_filter,
-                                      create_solid_quality_filter)
+                                      create_solid_quality_filter,
+                                      create_similar_seqs_filter)
+
+filter_similar_seqs = {'function':create_similar_seqs_filter,
+           'arguments':{'db': None, 'blast_program':None},
+           'type': 'filter',
+           'name': 'filter_similar_seqs',
+           'comment': 'It filters similar seqs from a reads database'}
 
 double_coding = {'function':create_double_coding_mapper,
            'arguments':{},
@@ -176,4 +183,5 @@ SEQ_STEPS = [remove_vectors_blastdb, remove_vectors_file, remove_adaptors,
              strip_quality, strip_quality_lucy, strip_quality_by_n,
              strip_quality_by_n, mask_polia, mask_low_complexity,
              sequence_trimmer, filter_short_seqs, edge_remover,
-             remove_short_adaptors, up_case, solid_quality, strip_quality_3]
+             remove_short_adaptors, up_case, solid_quality, strip_quality_3,
+             filter_similar_seqs]

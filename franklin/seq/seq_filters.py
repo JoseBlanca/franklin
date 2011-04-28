@@ -27,18 +27,18 @@ from franklin.seq.alignment_result import (filter_alignments,
                                            get_alignment_parser)
 from franklin.seq.seq_analysis import look_for_similar_sequences
 
-def create_similar_seqs_filter(db, blast_program, inverse=False,
-                               min_sim_seqs=1):
+def create_similar_seqs_filter(db, blast_program, inverse=False, filters=None):
     '''It creates a filter that looks for similar seqs in a database. It return
     True if it finds them. '''
     def filter_by_similar_seqs(sequence):
         if sequence is None:
             return False
-        similar_seqs = look_for_similar_sequences(sequence, db, blast_program)
+        similar_seqs = look_for_similar_sequences(sequence, db, blast_program,
+                                                  filters=filters)
         if inverse:
-            return not len(similar_seqs)>=min_sim_seqs
+            return not len(similar_seqs) >= 1
         else:
-            return len(similar_seqs)>=min_sim_seqs
+            return len(similar_seqs) >= 1
 
     return filter_by_similar_seqs
 

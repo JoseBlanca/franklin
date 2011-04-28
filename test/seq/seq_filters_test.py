@@ -94,17 +94,12 @@ class SimilarSeqTest(unittest.TestCase):
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        arabidopsis_genes = 'arabidopsis_genes+'
-        db = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
+        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
         filter_ = create_similar_seqs_filter(db=db, blast_program='blastn')
         assert filter_(seq1)
 
         filter_ = create_similar_seqs_filter(db=db, blast_program='blastn',
                                              inverse=True)
-        assert not filter_(seq1)
-
-        filter_ = create_similar_seqs_filter(db=db, blast_program='blastn',
-                                             min_sim_seqs=2)
         assert not filter_(seq1)
 
 class SolidFilters(unittest.TestCase):
