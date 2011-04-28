@@ -5,6 +5,11 @@ from optparse import OptionParser
 import tempfile, shutil, os, subprocess, tarfile
 from os.path import join, abspath, split
 
+
+MANUALS = {'clean_reads':[{'name':'clean_reads',
+                          'path':os.path.join('doc', 'clean_reads',
+                                              'manual.rst')}]}
+
 def remove_download_link(index_fpath):
     'It removes the download link from the index page'
     mod_fhand = open(join(index_fpath + '.mod'), 'w')
@@ -105,6 +110,16 @@ def prepare_release(indir, program):
     build_dir = join(program_doc_dir, '_build', 'html')
 
     shutil.move(build_dir, temp_doc_dir)
+
+    #create man dir and build manuals
+    if program in MANUALS:
+        temp_man_dir = os.path.join(temp_doc_dir, 'man')
+        os.makedirs(temp_man_dir)
+        for man in MANUALS[program]:
+            source = os.path.join(release_dir, man['path'])
+            dest   = os.path.join(temp_man_dir, man['name']+'.1')
+            subprocess.check_call(['rst2man.py', source, dest])
+
     shutil.rmtree(doc_dir)
     shutil.move(temp_doc_dir, doc_dir)
 
@@ -116,7 +131,6 @@ def prepare_release(indir, program):
     # modify the setup to inform about the tools
     setup_fpath = join(release_dir, 'setup.py')
     modify_setup(setup_fpath, program)
-
     #now we can create the tar.gz
     tar_fpath = release_name + '.tar.gz'
     tar = tarfile.open(tar_fpath, 'w:gz')

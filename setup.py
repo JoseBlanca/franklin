@@ -7,9 +7,11 @@ Created on 25/03/2009
 
 import imp
 import os, sys, glob, fnmatch
-from distutils.core import setup
+from distutils.core import setup, Command
+from distutils.command.build import build
 
 import franklin
+import shutil
 
 TOOL = None
 
@@ -130,6 +132,32 @@ class wx_smart_install_data(distutils.command.install_data.install_data):
         self.install_dir = getattr(install_cmd, 'install_lib')
         return distutils.command.install_data.install_data.run(self)
 
+# a class to build the manpage
+class install_manpages(Command):
+    'it builds the man page '
+    description = 'Install man page.'
+
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        'Build and install the manpage'
+        prefix = sys.prefix
+        man_dir = os.path.join(prefix, 'share',  'man', 'man1')
+        if not os.path.exists(man_dir):
+            os.makedirs(man_dir)
+
+        root_dir = os.path.dirname(__file__)
+        doc_man_dir = os.path.join(root_dir, 'doc', 'man')
+        for man in os.listdir(doc_man_dir):
+            origin = os.path.join(doc_man_dir, man)
+            dest = os.path.join(man_dir, man)
+            shutil.copy(origin, dest)
+
+build.sub_commands.append(('install_manpage', None))
+
 def _guess_installing_program():
     'Looking at the directory it guess the program that we are installing'
     if TOOL:
@@ -182,7 +210,8 @@ dist = setup(
 
     package_data={'': ['data/*.*']},
     data_files = data_files,
-    cmdclass = { 'install_data':    wx_smart_install_data },
+    cmdclass = { 'install_data':    wx_smart_install_data,
+                'install_manpage':install_manpages },
     requires=['BioPython', 'matplotlib', 'configobj',
               'pysam', 'psubprocess'],
     scripts=scripts,
