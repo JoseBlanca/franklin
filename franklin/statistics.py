@@ -20,10 +20,12 @@ from __future__  import division
 import itertools, tempfile, sys, random, math, os
 from os.path import splitext
 from array import array
-
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib import mlab
+try:
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    from matplotlib.figure import Figure
+    from matplotlib import mlab
+except ImportError:
+    pass
 
 try:
     import numpy
