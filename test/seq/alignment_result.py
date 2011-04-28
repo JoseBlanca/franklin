@@ -643,9 +643,9 @@ class AlignmentFilters(unittest.TestCase):
         assert len(filtered_alignments) == 1
 
         filter = {'kind'            : 'min_length',
-                   'min_percentage': 90,
-                   'length_in_query' : True,
-                   }
+                  'min_percentage': 90,
+                  'length_in_query' : True,
+                 }
         align1 = {'query':UnknownSeq(100),
                   'matches': [{'match_parts':[{'query_start':0, 'query_end':90,
                                                'subject_start':0,

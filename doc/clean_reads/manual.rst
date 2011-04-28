@@ -158,6 +158,22 @@ OPTIONS
         Minimum number of nucleotides after the trimming.
         All sequences shorted than the given length will be filtered out.
 
+**--filter_evalue** *float*
+		Sequences with a better evalue against any of the given databases will be filtered out
+
+**--filter_idendity** *float*
+		Minimun identity to consider a BLAST hsp (default 95%)
+
+**--filter_num_residues** *int*
+		Sequences with BLAST matches longer than this length will be filtered out
+
+**--filter_length_percentage** *float*
+		Sequences with BLAST matches longer than this length will be filtered out (default 75)
+		The percentage is calculated as the matched region divided by the total read length.
+
+**--filter_dbs* *database list*
+		List of BLAST databases used for similarity filtering
+
 **-t**, **-threads**
         Number of threads to use.
         The reads can be processed in parallel using several processes.
@@ -166,5 +182,3 @@ OPTIONS
 		Path to the error log file to use (default clean_reads.error)
 
 .. include:: ../ngs_backbone/links.txt
-
-

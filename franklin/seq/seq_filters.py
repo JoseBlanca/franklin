@@ -27,7 +27,7 @@ from franklin.seq.alignment_result import (filter_alignments,
                                            get_alignment_parser)
 from franklin.seq.seq_analysis import look_for_similar_sequences
 
-def create_similar_seqs_filter(db, blast_program, inverse=False, filters=None):
+def create_similar_seqs_filter(db, blast_program, reverse=False, filters=None):
     '''It creates a filter that looks for similar seqs in a database. It return
     True if it finds them. '''
     def filter_by_similar_seqs(sequence):
@@ -35,7 +35,7 @@ def create_similar_seqs_filter(db, blast_program, inverse=False, filters=None):
             return False
         similar_seqs = look_for_similar_sequences(sequence, db, blast_program,
                                                   filters=filters)
-        if inverse:
+        if reverse:
             return not len(similar_seqs) >= 1
         else:
             return len(similar_seqs) >= 1
@@ -54,7 +54,6 @@ def create_aligner_filter(aligner_cmd, cmd_parameters, match_filters=None,
     #runners = {'blast':BlastRunner, 'exonerate':ExonerateRunner}
 
     parser = get_alignment_parser(aligner_cmd)
-    binary  = {'blast':'blast2'}
 
     run_align_for_seq = create_runner(tool=aligner_cmd, environment=environment,
                                       parameters=cmd_parameters)
@@ -143,6 +142,3 @@ def create_solid_quality_filter(length=10, threshold=15, call_missing=True):
         else:
             return False
     return solid_quality_filter
-
-
-

@@ -339,6 +339,44 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert len(seq2.seq) - len(out_seqs[0].seq) == 20
 
+    def test_min_length(self):
+        'Filtering by length'
+        seq1 = create_random_seqwithquality(250, qual_range=35)
+        seq2 = create_random_seqwithquality(50, qual_range=35)
+        seq3 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq1, seq2, seq3]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-m', '51']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert len(out_seqs) == 2
+        assert len(out_seqs[0]) == 250
+        assert len(out_seqs[1]) == 250
+
+    def test_filter(self):
+        'Filtering by blast similarity'
+        seq1 = create_random_seqwithquality(150, qual_range=35)
+        seq2 = 'CACTATCTCCGACGACGGCGATTTCACCGTTGACCTGATTTCCAGTTGCTACGTCAAGTTCTC'
+        seq2 += 'TACGGCAAGAATATCGCCGGAAAACTCAGTTACGGATCTGTTAAAGACGTCCGTGGAATCCA'
+        seq2 += 'AGCTAAAGAAGCTTTCCTTTGGCTACCAATCACCGCCATGGAATCGGATCCAAGCTCTGCCA'
+        seq2 = SeqWithQuality(Seq(seq2), name='ara', qual=[30]*len(seq2))
+        seq3 = create_random_seqwithquality(150, qual_range=35)
+        seqs = [seq1, seq2, seq3]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        ara_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '--filter_dbs', ara_db]
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert len(out_seqs) == 2
+
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'CleanReadsTest.test_sanger']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_solid']
     unittest.main()

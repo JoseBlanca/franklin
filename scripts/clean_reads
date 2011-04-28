@@ -16,7 +16,7 @@ from franklin.seq.seq_cleaner import check_sequences_length
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os.path
+import sys, os.path, copy
 from optparse import OptionParser
 
 try:
@@ -40,7 +40,8 @@ from franklin.pipelines.seq_pipeline_steps import (double_encoding,
                                                    remove_vectors_file,
                                                    strip_quality_lucy,
                                                    strip_quality_by_n,
-                                                   remove_short_adaptors)
+                                                   remove_short_adaptors,
+                                                   filter_similar_seqs)
 import franklin
 
 class UnknownFormatError(Exception):
@@ -198,6 +199,25 @@ PARAMETERS = OrderedDict([
                  short_param: '-m',
                  help:'Minimum number of nucleotides after the trimming.',
                  type_:int}),
+    ('filter_evalue', {long_param: '--filter_evalue',
+                help:'evalue threshold used for blast filtering.',
+                type_:float}),
+    ('filter_identity', {long_param: '--filter_identity',
+                help:'Minimum identity to consider a BLAST hsp (default 95%).',
+                default:{ILLUMINA:95.0, LONG_WITH_QUALITY:95.0,
+                         LONG_WITHOUT_QUALITY:95.0},
+                type_:float}),
+    ('filter_num_residues', {long_param: '--filter_num_residues',
+                help:'Sequences with BLAST matches longer than this length will be filtered out.',
+                type_:int}),
+    ('filter_length_percentage', {long_param: '--filter_length_percentage',
+                help:'Sequences with BLAST matches longer than this length will be filtered out (default 75).',
+                default:{ILLUMINA:75.0, LONG_WITH_QUALITY:75.0,
+                         LONG_WITHOUT_QUALITY:75.0},
+                type_:float}),
+    ('filter_dbs', {long_param: '--filter_dbs',
+                help:'List of BLAST databases used for similarity filtering.',
+                type_:str_list}),
     ('threads', {long_param: '--threads',
                 short_param: '-t',
                 help:'Number of threads to use. 0 for all cores. (default %i).',
@@ -214,21 +234,21 @@ INCOMPATIBLE_PARAMS_NO_SOLID = ['solid_qual_length', "solid_qual_threshold",
 INCOMPATIBLE_PARAMS = {SOLID: ['lucy_bracket', 'lucy_window', 'lucy_error',
                                'lucy_splice', 'n_percent', 're_words',
                                'adaptors_file', 'vector_file', 'vector_db',
-                               'edge_trim', 'only_3_end_illumina'],
+                               'edge_trim', 'filter_evalue', 'filter_identity',
+                               'filter_num_residues',
+                               'filter_length_percentage',
+                               'filter_dbs'],
                        LONG_WITH_QUALITY: ['qual_threshold', 'qual_window',
-                                           'only_3_end_illumina',
-                                           'only_3_end_solid',
+                                           'only_3_end',
                                            'double_encoding'],
                        LONG_WITHOUT_QUALITY: ['qual_threshold', 'qual_window',
-                                              'only_3_end_illumina',
-                                              'only_3_end_solid',
+                                              'only_3_end',
                                               'double_encoding',
                                               'lucy_bracket', 'lucy_window',
                                               'lucy_error', 'lucy_splice',
                                               'double_encoding'],
                        ILLUMINA: ['lucy_bracket', 'lucy_window', 'lucy_error',
-                                  'lucy_splice', 'double_encoding',
-                                  'only_3_end_solid',]}
+                                  'lucy_splice', 'double_encoding']}
 INCOMPATIBLE_PARAMS[LONG_WITH_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 INCOMPATIBLE_PARAMS[LONG_WITHOUT_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 INCOMPATIBLE_PARAMS[ILLUMINA].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
@@ -289,7 +309,6 @@ def _add_adaptor_and_vectors_step(parameters, pipeline, configuration):
 
     adaptors_file = parameters.get('adaptors_file', None)
     if adaptors_file:
-        print 'adding adaptor'
         pipeline.append(remove_adaptors)
         configuration['remove_adaptors'] = {'adaptors': adaptors_file}
 
@@ -326,6 +345,51 @@ def _add_adaptor_and_vectors_step(parameters, pipeline, configuration):
         configuration['edge_removal'] = {'left_length':left,
                                         'right_length':rigth}
 
+def _add_blast_filtering_step(parameters, pipeline, configuration):
+    'It adds the blast filtering'
+    filter_dbs = parameters.get('filter_dbs', None)
+    if not filter_dbs:
+        return
+
+    #blast filters
+    filters = []
+    expect = parameters.get('filter_evalue', None)
+    if expect is not None:
+        filter = {'kind'           : 'best_scores',
+                  'score_key'      : 'expect',
+                  'max_score'      : expect}
+        filters.append(filter)
+    identity = parameters.get('filter_identity', None)
+    num_residues = parameters.get('filter_num_residues', None)
+    if num_residues:
+        if not identity:
+            msg = 'filter_num_residues given but filter_identity not defined'
+            raise ValidationError(msg)
+        filter = {'kind': 'min_length',
+                  'min_num_residues': num_residues,
+                  'length_in_query' : True}
+        filters.append(filter)
+
+    length_percentage = parameters.get('filter_length_percentage', None)
+    if length_percentage:
+        if not identity:
+            msg = 'filter_length_percentage given but filter_identity not defined'
+            raise ValidationError(msg)
+        filter = {'kind': 'min_length',
+                  'min_percentage': length_percentage,
+                  'length_in_query' : True}
+        filters.append(filter)
+
+    for index, blast_db in enumerate(filter_dbs):
+        step_uniq_name = 'filter_similar_seqs' + str(index)
+        step = copy.deepcopy(filter_similar_seqs)
+        step['name_in_config'] = step_uniq_name
+        configuration[step_uniq_name] = {'db':blast_db,
+                                         'blast_program':'blastn',
+                                         'filters':filters,
+                                         'reverse':True}
+        pipeline.append(step)
+
 def _prepare_pipeline_for_illumina(parameters):
     'it prepares the illumina pipeline'
     pipeline      = []
@@ -336,6 +400,8 @@ def _prepare_pipeline_for_illumina(parameters):
     configuration['up_case'] = {}
 
     _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
+
+    _add_blast_filtering_step(parameters, pipeline, configuration)
 
     # strip_quality
     if not parameters['disable_quality']:
@@ -357,6 +423,8 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
     configuration['up_case'] = {}
 
     _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
+
+    _add_blast_filtering_step(parameters, pipeline, configuration)
 
     #lucy
     if pipeline_type == LONG_WITH_QUALITY and not parameters['disable_quality']:
@@ -572,6 +640,12 @@ def validate_parameters(parameters, pipeline_type):
         msg += 'incompatible.'
         raise ValidationError(msg)
 
+    if (parameters.get('filter_num_residues', None) and
+        parameters.get('filter_length_percentage', None)):
+        msg = 'The parameters filter_num_residues and filter_length_percentage'
+        msg += ' are incompatible.'
+        raise ValidationError(msg)
+
     for name, value in parameters.items():
         if value is not None and name in INCOMPATIBLE_PARAMS[pipeline_type]:
             msg = 'Parameter %s is incompatible with platform %s'
@@ -682,7 +756,6 @@ def main(stdout, stderr, args=None):
     seq_pipeline_runner(pipeline, configuration, in_fhands,
                         file_format=in_format, writers={'seq': writer},
                         processes=threads)
-
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
