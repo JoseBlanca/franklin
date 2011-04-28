@@ -9,7 +9,7 @@ import os.path, subprocess, sys, random
 from tempfile import NamedTemporaryFile
 
 import franklin
-from franklin.utils.misc_utils import NamedTemporaryDir
+from franklin.utils.misc_utils import DATA_DIR
 from franklin.seq.writers import create_temp_seq_file
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, Seq
@@ -233,6 +233,73 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert seq2.seq == out_seqs[0].seq
 
+    def test_vector(self):
+        'It removes the vector'
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        vector = create_random_seqwithquality(3000, qual_range=35)
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq1 + vector[30:60] + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        vector_fhand = create_temp_seq_file([vector], format='fasta')[0]
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-v', vector_fhand.name]
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert (len(seq2.seq) - len(out_seqs[0].seq)) < 5
+
+    def test_vectordb(self):
+        'It removes the vector from a vector database'
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        vector = 'CACTATCTCCGACGACGGCGATTTCACCGTTGACCTGATTTCCAGTTGCTACGTCAAGTTC'
+        vector = SeqWithQuality(Seq(vector), name='vect', qual=[30]*len(vector))
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq1 + vector + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        vector_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-d', vector_db]
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert (len(seq2.seq) - len(out_seqs[0].seq)) < 5
+
+    def test_words(self):
+        'It trims re words'
+        vector = 'ACTG'
+        vector = SeqWithQuality(Seq(vector), name='vect', qual=[30]*len(vector))
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [vector + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-r', '"^ACTG","TTTTTTTTTTTTTT"']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert seq2.seq == out_seqs[0].seq
+
+    def test_edge_trim(self):
+        'It trims the sequence edges'
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-e', '10,10']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert len(seq2.seq) - len(out_seqs[0].seq) == 20
+
+
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_adaptors']
+    import sys;sys.argv = ['', 'CleanReadsTest.test_edge_trim']
     unittest.main()

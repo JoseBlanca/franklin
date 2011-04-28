@@ -12,3 +12,5 @@ build/
 scripts/notofranklin/
 ext/bin/linux/64bit/.libs/
 manual.man
+_build/html
+test/scripts/clean_reads.error

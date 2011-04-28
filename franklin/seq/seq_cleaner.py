@@ -554,6 +554,7 @@ def create_vector_striper(vectors, vectors_are_blastdb=False):
     The vectors will be detected by using blastn
     '''
     #if file check vector length
+    print 'cleaning_vetors', vectors
     if not vectors_are_blastdb:
         check_sequences_length(get_fhand(vectors), MAX_ADAPTOR_LENGTH)
     return _create_vector_striper(vectors, aligner='blastn',
@@ -678,7 +679,6 @@ def create_re_word_striper(words):
     It matches the words against the sequence and leaves the longest non-matched
     part (unless is the first part of the sequence).
     '''
-
     def strip_words_by_matching(sequence):
         '''It strips the given words from a sequence.
 

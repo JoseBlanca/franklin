@@ -277,13 +277,47 @@ def _prepare_pipeline_for_solid(parameters):
 
     return pipeline, configuration
 
-def _add_adaptor_step(parameters, pipeline, configuration):
-    'It adds the adaptor step'
+def _add_adaptor_and_vectors_step(parameters, pipeline, configuration):
+    'It adds the adaptor and vectors steps'
+
     adaptors_file = parameters.get('adaptors_file', None)
     if adaptors_file:
         print 'adding adaptor'
         pipeline.append(remove_adaptors)
         configuration['remove_adaptors'] = {'adaptors': adaptors_file}
+
+    #vector_db
+    vectordb = parameters.get('vector_db', None)
+    if vectordb:
+        pipeline.append(remove_vectors_blastdb)
+        configuration['remove_vectors_blastdb'] = {'vectors': vectordb,
+                                                   'vectors_are_blastdb':True}
+
+    #vector_file
+    vector_file = parameters.get('vector_file', None)
+    if vector_file:
+        pipeline.append(remove_vectors_file)
+        configuration['remove_vectors_file'] = {'vectors': vector_file,
+                                                'vectors_are_blastdb':False}
+
+    #remove words
+    re_words = parameters.get('re_words', None)
+    if re_words:
+        pipeline.append(remove_short_adaptors)
+        configuration['remove_short_adaptors'] = {'words': re_words}
+
+    #edge_remover
+    edge_trim = parameters.get('edge_trim', None)
+    if edge_trim:
+        if len(edge_trim) != 2:
+            msg = 'The edge trim parameter should be a list of 2 integers'
+            msg += ', but it was: ' + str(edge_trim)
+            raise ValidationError(msg)
+        left  = None if edge_trim[0] == 0 else edge_trim[1]
+        rigth = None if edge_trim[0] == 0 else edge_trim[1]
+        pipeline.append(edge_remover)
+        configuration['edge_removal'] = {'left_length':left,
+                                        'right_length':rigth}
 
 def _prepare_pipeline_for_illumina(parameters):
     'it prepares the illumina pipeline'
@@ -294,7 +328,7 @@ def _prepare_pipeline_for_illumina(parameters):
     pipeline.append(up_case)
     configuration['up_case'] = {}
 
-    _add_adaptor_step(parameters, pipeline, configuration)
+    _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
 
     # strip_quality
     pipeline.append(strip_quality)
@@ -314,19 +348,7 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
     pipeline.append(up_case)
     configuration['up_case'] = {}
 
-    _add_adaptor_step(parameters, pipeline, configuration)
-
-    #vector_db
-    vectordb = parameters.get('vector_db', None)
-    if vectordb:
-        pipeline.append(remove_vectors_blastdb)
-        configuration['remove_vectors_blastdb'] = {'vectors': vectordb}
-
-    #vector_file
-    vector_file = parameters.get('vector_file', None)
-    if vector_file:
-        pipeline.append(remove_vectors_file)
-        configuration['remove_vectors_file'] = {'vectors': vector_file}
+    _add_adaptor_and_vectors_step(parameters, pipeline, configuration)
 
     #lucy
     if pipeline_type == LONG_WITH_QUALITY:
@@ -335,6 +357,7 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
                        'window':parameters['lucy_window'],
                        'error':parameters['lucy_error']}
         lucy_splice_file = parameters.get('lucy_splice_file', None)
+        vector_file = parameters.get('vector_file', None)
         if vector_file and lucy_splice_file:
             lucy_params['vector'] = [vector_file, lucy_splice_file]
 
@@ -347,24 +370,6 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
             pipeline.append(strip_quality_by_n)
             configuration['strip_trimpoly'] = {'ntrim_above_percent':
                                                         parameters['n_percent']}
-    #mask_low_complexity
-    pipeline.append(mask_low_complexity)
-    configuration['mask_low_complex'] = {}
-
-    #remove_short_adaptors
-    re_words = parameters.get('re_words', None)
-    if re_words:
-        pipeline.append(remove_short_adaptors)
-        configuration['remove_short_adaptors'] = {'words': re_words}
-
-    #edge_remover
-    edge_trim = parameters.get('edge_trim', None)
-    if edge_trim:
-        left  = None if edge_trim[0] == 0 else edge_trim[1]
-        rigth = None if edge_trim[0] == 0 else edge_trim[1]
-        pipeline.append(edge_remover)
-        configuration['ege_removal'] = {'left_length':left,
-                                        'right_length':rigth}
 
     return pipeline, configuration
 
@@ -562,7 +567,7 @@ def validate_parameters(parameters, pipeline_type):
 def _to_str(value):
     'It returns a string representation of the value'
     if isinstance(value, list) or isinstance(value, tuple):
-        value = ','.join(['"' + str(item) + '"' for item in value])
+        value = '"' + ','.join([str(item) for item in value]) + '"'
     else:
         value = str(value)
     return value
@@ -570,6 +575,9 @@ def _to_str(value):
 def log_parameters(fhand, parameters, pipeline_type):
     'It writes the current parameters for provenance.'
 
+    msg = 'The command was:\n'
+    msg += ' '.join(sys.argv) + '\n'
+    fhand.write(msg)
     msg = 'Running pipeline %s with the following parameters:\n'
     msg %= pipeline_type
     fhand.write(msg)
