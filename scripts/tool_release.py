@@ -17,6 +17,42 @@ def remove_download_link(index_fpath):
         mod_fhand.write(line)
     shutil.move(mod_fhand.name, index_fpath)
 
+def modify_setup(setup_fpath, program):
+    'it modifies the setup file if we use program'
+    if not program:
+        return
+    mod_fhand = open(join(setup_fpath + '.mod'), 'w')
+
+    for line in open(setup_fpath):
+        if line.startswith('TOOL =') or line.startswith('TOOL='):
+            line = "TOOL = '%s'\n" % program
+
+        mod_fhand.write(line)
+
+    mod_fhand.flush()
+    mod_fhand.close()
+    shutil.move(mod_fhand.name, setup_fpath)
+
+def _guess_version(indir, tool_name, program):
+    'It guess the version for the program'
+    #the version
+    version = None
+    program_version = None
+    init_fname = join(indir, '%s/__init__.py' % tool_name)
+    for line in open(init_fname):
+        if '__version__' in line:
+            version = line.split('=')[1].strip().strip("'")
+        if program and '__%s_version__' % program in line:
+            program_version = line.split('=')[1].strip().strip("'")
+
+    if program_version:
+        version = program_version
+
+    if not version:
+        raise RuntimeError('version not found in ' + init_fname)
+
+    return version
+
 def prepare_release(indir, program):
     'It creates the tar.gz for the release'
 
@@ -26,19 +62,15 @@ def prepare_release(indir, program):
     #we need a tempdir
     work_dir = tempfile.mkdtemp()
 
-    #the version
-    version = None
-    init_fname = join(indir, '%s/__init__.py' % tool_name)
-    for line in open(init_fname):
-        if '__version__' in line:
-            version = line.split('=')[1].strip().strip("'")
-    if not version:
-        raise RuntimeError('version not found in ' + init_fname)
+    #version
+    version = _guess_version(indir, tool_name, program)
 
     #the output name
     if program:
         tool_name = program
-        #tool_name = 'ngs_backbone'
+
+
+
     release_name = '%s-%s' % (tool_name, version)
     tar_dir = join(work_dir, tool_name)
     release_dir = join(tar_dir, release_name)
@@ -80,6 +112,10 @@ def prepare_release(indir, program):
     build_dir = join(release_dir, 'build')
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
+
+    # modify the setup to inform about the tools
+    setup_fpath = join(release_dir, 'setup.py')
+    modify_setup(setup_fpath, program)
 
     #now we can create the tar.gz
     tar_fpath = release_name + '.tar.gz'

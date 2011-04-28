@@ -11,6 +11,7 @@ from distutils.core import setup
 
 import franklin
 
+TOOL = None
 
 def opj(*args):
     path = os.path.join(*args)
@@ -129,24 +130,41 @@ class wx_smart_install_data(distutils.command.install_data.install_data):
         self.install_dir = getattr(install_cmd, 'install_lib')
         return distutils.command.install_data.install_data.run(self)
 
+def _guess_installing_program():
+    'Looking at the directory it guess the program that we are installing'
+    if TOOL:
+        return TOOL
+    dirname = os.path.dirname(os.path.abspath(__file__))
+    working_dir_name = dirname.split(os.path.sep)[-1]
+    # remove version
+    return working_dir_name.split('-', 1)[0]
+
+
 PACKAGE_DIR = 'franklin'
 SCRIPTS_DIR = 'scripts'
 
 #dependencies
-MODULES = {'Bio':        {'required': True},
-           'configobj':  {'required': True},
-           'psubprocess':{'msg':'no parallel processing will be possible'},
-           'pysam':      {'msg':'SNP calling will fail'},
-           'matplotlib': {'msg':'some statistics will fail'}
+MODULES= {'ngs_backbone': {'Bio':        {'required': True},
+                           'configobj':  {'required': True},
+                           'pysam':      {'msg':'SNP calling will fail'},
+                           'matplotlib': {'msg':'some statistics will fail'},
+               'psubprocess':{'msg':'no parallel processing will be possible'}},
+          'clean_reads': {'Bio': {'required': True}}
            }
 
+#which program are we installing:
+program = _guess_installing_program()
+
+if program not in MODULES.keys():
+    program = 'ngs_backbone'
+
 # check module dependencies
-check_modules(MODULES)
+check_modules(MODULES[program])
 
 root_dir = os.path.dirname(__file__)
 packages = _guess_packages(root_dir)
 wanted_scripts = ['backbone_analysis.py', 'seqio.py',
-                  'backbone_create_project.py']
+                  'backbone_create_project.py', 'clean_reads']
 scripts = _guess_scripts(root_dir, wanted_scripts)
 data_files = find_data_files('ext', '*')
 
