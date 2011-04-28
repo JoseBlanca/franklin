@@ -7,7 +7,7 @@ The recommended method to get ngs_backbone is to download one of the releases, b
 clean_reads 0.1
 ---------------
 
-:download:`clean_reads 0.1.0 <downloads/clean_reads-0.1.0.tar.gz>`. Relased on 20-04-2011.
+:download:`clean_reads 0.1.0 <downloads/clean_reads-0.1.0.tar.gz>`. Relased on 28-04-2011.
 
 Changes:
 
