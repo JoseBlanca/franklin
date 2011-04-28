@@ -44,7 +44,7 @@ from franklin.seq.seq_cleaner import (_create_vector_striper,
                                       _mask_sequence, TRIMMING_RECOMMENDATIONS,
                                       _get_all_segments,
                                       _get_non_matched_from_matched_locations,
-                                      create_double_coding_mapper,
+                                      create_double_encoding_mapper,
                                      _get_longest_non_matched_seq_region_limits)
 
 from franklin.utils.misc_utils import DATA_DIR
@@ -56,7 +56,7 @@ class SeqCleanerTest(unittest.TestCase):
     def test_double_encoding():
         'It tests the double encoding mapper'
         seq = SeqWithQuality(seq=Seq('0123'))
-        mapper = create_double_coding_mapper()
+        mapper = create_double_encoding_mapper()
         seq = mapper(seq)
         assert  str(seq.seq) == 'ACGT'
 

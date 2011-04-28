@@ -66,7 +66,7 @@ OPTIONS
 
 **-f**, **--format** *input_file_format*
         The input file format.
-        The supported formats are: fasta, sanger fastq (sfastq), illumina fastq (ifastq) and csfasta.
+        The supported formats are: fasta, sanger fastq (fastq), illumina fastq (ifastq) and csfasta.
         Also any other `sequence format supported by Biopython <http://www.biopython.org/wiki/SeqIO>`_ could be also used.
         This parameter is optional because in some instances clean_reads will be able to guess the input file format.
 
@@ -147,8 +147,8 @@ OPTIONS
         Minimum mean quality allowable for solid reads.
         The mean quality of a number of 5' colors will discriminate if the read is to be completely removed and not only trimmed.
 
-**--solid_disable_missing_call**
-        Disable filtering out solid reads with missing calls.
+**--solid_allow_missing_call**
+        Disable filtering out solid reads with more than 1 missing calls.
 
 **-m**, **-min_len** *integer*
         Minimum number of nucleotides after the trimming.

@@ -40,7 +40,7 @@ DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 #they should be processed by the word remover function
 TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'
 
-def create_double_coding_mapper():
+def create_double_encoding_mapper():
     '''It creates a mapper that recodifies the colorspace number code sequence
     into a colorspace sequence code sequence'''
     def mapper(sequence):
@@ -537,8 +537,10 @@ def create_adaptor_striper(adaptors, elongate_match_to_complete_adaptor=True):
     The adaptors should be a fhand to a fasta file with the adaptors in it.
     The adaptors will be detected by using blastn-short.
     '''
+    print 'adaptors', adaptors
     fhand = get_fhand(adaptors)
     check_sequences_length(fhand, MIN_ADAPTOR_LENGTH, MAX_ADAPTOR_LENGTH)
+    print open(fhand.name).read()
     return _create_vector_striper(vectors=adaptors,
                                   aligner='blast_short',
                                   vectors_are_blastdb=False,
