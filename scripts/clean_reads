@@ -30,7 +30,7 @@ from franklin.utils.misc_utils import get_num_threads
 from franklin.seq.readers import guess_seq_file_format
 from franklin.seq.writers import SequenceWriter
 from franklin.pipelines.pipelines import seq_pipeline_runner
-from franklin.pipelines.seq_pipeline_steps import (double_coding,
+from franklin.pipelines.seq_pipeline_steps import (double_encoding,
                                                    sequence_trimmer,
                                                    edge_remover,
                                                    solid_quality,
@@ -164,11 +164,11 @@ PARAMETERS = OrderedDict([
                     type_:float_list}),
     ('qual_threshold', {long_param: '--qual_threshold',
                         help:'Quality threshold.',
-                        default:{ILLUMINA:20},
+                        default:{ILLUMINA:20, SOLID:20},
                         type_:int}),
     ('qual_window', {long_param: '--qual_window',
                      help:'Quality window.',
-                     default:{ILLUMINA:1},
+                     default:{ILLUMINA:1, SOLID:1},
                      type_:int}),
     ('only_3_end', {long_param: '--only_3_end',
                     help:"Quality trim only from the 3' end (deafult: False for Illumina, True for Solid).",
@@ -183,10 +183,10 @@ PARAMETERS = OrderedDict([
           help:"Minimum mean quality allowable for solid reads (default %i).",
                               default:{SOLID:15},
                               type_:int}),
-    ('solid_disable_missing_call', {long_param: '--solid_disable_missing_call',
+    ('solid_allow_missing_call', {long_param: '--solid_allow_missing_call',
    help:"Disable filtering out solid reads with missing calls (default False).",
                     action:'store_true',
-                    default:{SOLID:True},
+                    default:{SOLID:False},
                     type_:bool}),
     ('min_len', {long_param: '--min_len',
                  short_param: '-m',
@@ -206,10 +206,9 @@ PARAMETERS = OrderedDict([
 INCOMPATIBLE_PARAMS_NO_SOLID = ['solid_qual_length', "solid_qual_threshold",
                                 'solid_disable_missing_call']
 INCOMPATIBLE_PARAMS = {SOLID: ['lucy_bracket', 'lucy_window', 'lucy_error',
-                               'lucy_splice', 'n_percent', 'qual_threshold',
-                               'qual_window', 're_words', 'adaptors_file',
-                               'vector_file', 'vector_db', 'edge_trim',
-                               'only_3_end_illumina'],
+                               'lucy_splice', 'n_percent', 're_words',
+                               'adaptors_file', 'vector_file', 'vector_db',
+                               'edge_trim', 'only_3_end_illumina'],
                        LONG_WITH_QUALITY: ['qual_threshold', 'qual_window',
                                            'only_3_end_illumina',
                                            'only_3_end_solid',
@@ -257,25 +256,34 @@ def _prepare_pipeline_for_solid(parameters):
     pipeline      = []
     configuration = {}
 
-    if parameters['double_coding']:
-        pipeline.append('double_coding')
-        configuration[double_coding] = {}
+    use_double_encoding = parameters.get('double_encoding', None)
+    if use_double_encoding:
+        pipeline.append(double_encoding)
+        configuration['double_encoding'] = {}
 
     #solid quality
     pipeline.append(solid_quality)
     configuration['solid_quality'] = {
                         'length':parameters['solid_qual_length'],
                         'threshold':parameters['solid_qual_threshold'],
-                        'call_missing':parameters['solid_disable_missing_call']}
+                      'call_missing':not parameters['solid_allow_missing_call']}
 
     #strip_quality
     pipeline.append(strip_quality)
     configuration['strip_quality'] = {
                               'quality_treshold': parameters['qual_threshold'],
                               'quality_window_width': parameters['qual_window'],
-                              'only_3_end':parameters['only_3_end_solid']}
+                              'only_3_end':parameters['only_3_end']}
 
     return pipeline, configuration
+
+def _add_adaptor_step(parameters, pipeline, configuration):
+    'It adds the adaptor step'
+    adaptors_file = parameters.get('adaptors_file', None)
+    if adaptors_file:
+        print 'adding adaptor'
+        pipeline.append(remove_adaptors)
+        configuration['remove_adaptors'] = {'adaptors': adaptors_file}
 
 def _prepare_pipeline_for_illumina(parameters):
     'it prepares the illumina pipeline'
@@ -286,18 +294,14 @@ def _prepare_pipeline_for_illumina(parameters):
     pipeline.append(up_case)
     configuration['up_case'] = {}
 
-    #remove_adaptors
-    adaptors_file = parameters.get('adaptors_file', None)
-    if adaptors_file:
-        pipeline.append(remove_adaptors)
-        configuration['remove_adaptor'] = {'adaptors': adaptors_file}
+    _add_adaptor_step(parameters, pipeline, configuration)
 
     # strip_quality
     pipeline.append(strip_quality)
     configuration['strip_quality'] = {
-                                'quality_treshold':parameters['qual_threshold'],
+                               'quality_treshold':parameters['qual_threshold'],
                                'quality_window_width':parameters['qual_window'],
-                                 'only_3_end':parameters['only_3_end_illumina']}
+                               'only_3_end':parameters['only_3_end']}
 
     return pipeline, configuration
 
@@ -310,11 +314,7 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
     pipeline.append(up_case)
     configuration['up_case'] = {}
 
-    #remove_adaptors
-    adaptors_file = parameters.get('adaptors_file', None)
-    if adaptors_file:
-        pipeline.append(remove_adaptors)
-        configuration['remove_adaptor'] = {'adaptors': adaptors_file}
+    _add_adaptor_step(parameters, pipeline, configuration)
 
     #vector_db
     vectordb = parameters.get('vector_db', None)
@@ -505,10 +505,10 @@ def _cast(type_, value):
         value = [_cast_str(val) for val in value]
     return value
 
-def _get_cmd_parameters(parser):
+def _get_cmd_parameters(parser, args):
     'It returns the parameters given in the command line'
 
-    options = parser.parse_args()[0]
+    options = parser.parse_args(args=args)[0]
 
     parameters = OrderedDict()
     parameters['platform'] = options.platform
@@ -594,8 +594,6 @@ def _get_num_threads(threads):
 
 def _guess_pipeline_type(parameters, format_in):
     'It sets the correct platform not the sequencing one'
-    print parameters
-    print format_in
     platform = parameters['platform']
     if platform in (SOLID, ILLUMINA):
         return platform
@@ -613,16 +611,17 @@ def _guess_pipeline_type(parameters, format_in):
         msg += 'please inform about this error to the developers and use fasta'
         msg += 'or fastq as input'
         raise RuntimeError(msg)
-    print platform
     return platform
 
-def main(stdout, stderr):
+def main(stdout, stderr, args=None):
     'The main part'
-    if 'testerror' in sys.argv:
+    if args is None:
+        args = sys.argv[1:]
+    if 'testerror' in args:
         raise RuntimeError('This is the test error.')
     try:
         parser = set_cli_interface()
-        params = _get_cmd_parameters(parser)
+        params = _get_cmd_parameters(parser, args)
         in_fhands, in_format, writer = get_input_output_options(params)
         pipeline_type = _guess_pipeline_type(params, in_format)
         _add_default_values_to_parameters(params, pipeline_type)
@@ -681,7 +680,8 @@ if __name__ == '__main__':
 
         msg = 'An unexpected error happened.\n'
         msg += 'The clean_reads developers would appreciate your feedback\n'
-        msg += 'Please send them the error log and take a look at it: ' + error_fpath + '\n\n'
+        msg += 'Please send them the error log and take a look at it: '
+        msg += error_fpath + '\n\n'
         msg += str(error)
         stderr.write(msg)
         hook = cgitb.Hook(display=0, format='text', logfpath=error_fpath)
