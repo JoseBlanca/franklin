@@ -6,7 +6,7 @@
 Clean Sanger and NGS reads
 --------------------------
 
-:Author: jblanca@upv.es
+:Author: jblanca@upv.es, pziarsolo@upv.es
 :Date: 2011-4-20
 :Version: 0.1
 :Manual section: 1
@@ -15,14 +15,18 @@ SYNOPSIS
 ========
 
   **clean_reads** **-i** *input_seqs.fastq* **-o** *ouput_seqs.fastq* **-p** **sanger|454|illumina|solid**
-  [**-f** *input_file_format*] [**-g** *output_file_format*] [**-q** *input_quals.fasta*]
-  [**-u** *output_quals.fasta*] [**--double_encoding** *double_encode_solid*]
-  [**-t** *number_of_threads*] [**-r** *regular_expression_list*] [**-a** *adaptors_file.fasta*]
-  [**-v** *vector_file.fasta*] [**-d** *blast_vector_database*] [**-m** *minimum_seq_length*]
-  [**-e** *bases_to_trim_at_edges*] [**-n** *allowable_percentage_ of_n*]
-  [**-l** *lucy_splice_file*] [**--lucy_bracket** *lucy_bracket*] [**-lucy_window** *lucy_window*]
-  [**--lucy_error** *lucy_error*] [**--qual_threshold** *qual_threshold*] [**--qual_min_length** *qual_min_length*]
-  [**--qual_window** *qual_window*] [**--only_3_end** *True*]
+  [**-f** *input_file_format*] [**-g** *output_file_format*] [**--double_encoding** *double_encode_solid*]
+  [**-q** *input_quals.fasta*] [**-u** *output_quals.fasta*] [**-a** *adaptors_file.fasta*]
+  [**-v** *vector_file.fasta*] [**-d** *blast_vector_database*] [**-r** *regular_expression_list*]
+  [**-e** *bases_to_trim_at_edges*] [**-x**] [**-n** *allowable_percentage_ of_n*]
+  [**--lucy_splice** *lucy_splice_file*] [**--lucy_error** *lucy_error*] [**-lucy_window** *lucy_window*]
+  [**--lucy_bracket** *lucy_bracket*] [**--qual_window** *qual_window*]
+  [**--qual_threshold** *qual_threshold*] [**--only_3_end** *True*]
+  [**--solid_qual_length** *window length*] [**--solid_qual_threshold** *quality_threshold*]
+  [**--solid_allow_missing_call**] [**-m** *minimum_seq_length*] [**--filter_evalue** *evalue*]
+  [**--filter_idendity** *identity*] [**--filter_num_residues** *num_residues*]
+  [**--filter_length_percentage** *percentage_of_length*] [**--filter_dbs* *list_of_blast_dbs*]
+  [**-t** *number_of_threads*] [**--error_log** *error_log_file*]
 
 
 DESCRIPTION
@@ -42,7 +46,7 @@ The sequencing platforms supported are:
 For quality trimming clean_reads is capable of using three different algorithms.
 For 454 and Sanger reads with quality it uses lucy_ to remove the bad quality regions of the sequences.
 For Illumina and solid reads uses a quality thresholded sliding window algorithm.
-When no qualties none of these approaches can be used, but we still are able to infer the quality of the sequence by noticing how many **Ns** are in the reads.
+When no qualities none of these approaches can be used, but we still are able to infer the quality of the sequence by noticing how many **Ns** are in the reads.
 clean_reads uses the trimpoly_ algorithm to get rid of the stretches with too many undetermined nucleotides.
 
 The vector is removed by using BLAST_ and lucy_ (for Sanger and 454) while the adaptors will be trimmed by the blast-short algorithm.
@@ -52,6 +56,8 @@ clean_reads also supports the removal of regular expressions patterns by using a
 The solid read cleaning is more limited than for the other platforms due to the color encoding.
 Only the quality trimming and quality filtering will be allowed.
 For the solid reads there is an extra quality filtering step that will remove reads that fail to meet minimum quality criteria for the first colors and for the presence of missing calls.
+
+Also filtering out the reads by blasting them against a database is supported.
 
 OPTIONS
 =======
@@ -115,7 +121,7 @@ OPTIONS
         Allowed percent of Ns.
         Trim the regions with a percent of unknown bases above the given threshold.
 
-**-lucy_splice**
+**--lucy_splice**
         The lucy splice site file.
         The splice site definition used for the exact trimming of the vector and adaptor.
         Refer to the lucy man page for the format of this file.
@@ -171,7 +177,7 @@ OPTIONS
 		Sequences with BLAST matches longer than this length will be filtered out (default 75)
 		The percentage is calculated as the matched region divided by the total read length.
 
-**--filter_dbs* *database list*
+**--filter_dbs** *database list*
 		List of BLAST databases used for similarity filtering
 
 **-t**, **-threads**
