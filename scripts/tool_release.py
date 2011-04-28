@@ -17,7 +17,7 @@ def remove_download_link(index_fpath):
         mod_fhand.write(line)
     shutil.move(mod_fhand.name, index_fpath)
 
-def prepare_release(indir):
+def prepare_release(indir, program):
     'It creates the tar.gz for the release'
 
     #the relased tool
@@ -36,8 +36,9 @@ def prepare_release(indir):
         raise RuntimeError('version not found in ' + init_fname)
 
     #the output name
-    if tool_name == 'franklin':
-        tool_name = 'ngs_backbone'
+    if program:
+        tool_name = program
+        #tool_name = 'ngs_backbone'
     release_name = '%s-%s' % (tool_name, version)
     tar_dir = join(work_dir, tool_name)
     release_dir = join(tar_dir, release_name)
@@ -50,35 +51,27 @@ def prepare_release(indir):
     #build the documentation
     doc_dir = join(release_dir, 'doc')
     #which kind of doc is this? do we have a source directory in the doc?
-    if 'source' in os.listdir(doc_dir):
-        doc_source_dir = True
+    if program in os.listdir(doc_dir):
+        program_doc_dir = join(doc_dir, program)
     else:
-        doc_source_dir = False
+        program_doc_dir = doc_dir
+
     #remove the download page from the doc
-    if doc_source_dir:
-        download_page = join(doc_dir, 'source', 'download.rst')
-    else:
-        download_page = join(doc_dir, 'download.rst')
+    download_page = join(program_doc_dir, 'download.rst')
     os.remove(download_page)
 
-    if doc_source_dir:
-        index_page = join(doc_dir, 'source', 'index.rst')
-    else:
-        index_page = join(doc_dir, 'index.rst')
-
+    index_page = join(program_doc_dir, 'index.rst')
     remove_download_link(index_page)
 
     cwd = os.getcwd()
-    os.chdir(doc_dir)
+    os.chdir(program_doc_dir)
     subprocess.check_call(["make", "clean"])
     subprocess.check_call(["make", "html"])
     os.chdir(cwd)
     temp_doc_dir = join(work_dir, 'html_doc')
 
-    if doc_source_dir:
-        build_dir = join(doc_dir, 'build', 'html')
-    else:
-        build_dir = join(doc_dir, '_build', 'html')
+    build_dir = join(program_doc_dir, '_build', 'html')
+
     shutil.move(build_dir, temp_doc_dir)
     shutil.rmtree(doc_dir)
     shutil.move(temp_doc_dir, doc_dir)
@@ -101,8 +94,10 @@ def parse_options():
     parser = OptionParser()
     parser.add_option('-d', '--directory', dest='directory',
                       help='tool git directory')
+    parser.add_option('-p', '--program', dest='program', default=None,
+                      help='program to choose in the given repository')
     opts = parser.parse_args()[0]
-    opts = {'indir': abspath(opts.directory)}
+    opts = {'indir': abspath(opts.directory), 'program':opts.program}
     if not opts['indir']:
         raise ValueError('a tool git directory is required')
     return opts
