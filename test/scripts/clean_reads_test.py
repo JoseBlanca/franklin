@@ -67,12 +67,16 @@ class CleanReadsTest(unittest.TestCase):
 
     def test_help(self):
         'The help text is generated'
-        #print _call(['ls'])
+
         stdout = _call_python([CLEAN_READS])[0]
         assert 'SEQ_IN' in stdout
 
         stdout = _call_python([CLEAN_READS , '-h'])[0]
         assert 'SEQ_IN' in stdout
+
+        stdout = _call_python([CLEAN_READS , '--version'])[0]
+        assert 'clean_reads' in stdout
+
 
     def test_error(self):
         'It tests that we can capture an unexpected error'
@@ -298,8 +302,6 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert len(seq2.seq) - len(out_seqs[0].seq) == 20
 
-
-
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'CleanReadsTest.test_edge_trim']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_help']
     unittest.main()

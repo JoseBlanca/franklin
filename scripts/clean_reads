@@ -40,8 +40,8 @@ from franklin.pipelines.seq_pipeline_steps import (double_encoding,
                                                    remove_vectors_file,
                                                    strip_quality_lucy,
                                                    strip_quality_by_n,
-                                                   mask_low_complexity,
                                                    remove_short_adaptors)
+import franklin
 
 class UnknownFormatError(Exception):
     'Special error for guess_seq_file error'
@@ -375,8 +375,9 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
 
 def set_cli_interface():
     'It sets the command line options'
+    version = "%%prog %s" % str(franklin.__clean_reads_version__)
     usage = "usage: %prog -i seq_file -o out_seq_file -p platform [options]"
-    parser = OptionParser(usage=usage)
+    parser = OptionParser(usage=usage, version=version)
 
     for name, definition in PARAMETERS.items():
         args = []
@@ -578,6 +579,8 @@ def log_parameters(fhand, parameters, pipeline_type):
     msg = 'The command was:\n'
     msg += ' '.join(sys.argv) + '\n'
     fhand.write(msg)
+    version = "%s version: %s" % (sys.argv[0],
+                                  str(franklin.__clean_reads_version__))
     msg = 'Running pipeline %s with the following parameters:\n'
     msg %= pipeline_type
     fhand.write(msg)
