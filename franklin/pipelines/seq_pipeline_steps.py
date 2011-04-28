@@ -176,7 +176,7 @@ SEQPIPELINES = {
     'word_masker'        : [remove_short_adaptors, sequence_trimmer,
                             filter_short_seqs],
 
-    'solid'              : [double_encoding, solid_quality, strip_quality_3,
+    'solid'              : [solid_quality, strip_quality_3,
                             sequence_trimmer, filter_short_seqs]}
 
 SEQ_STEPS = [remove_vectors_blastdb, remove_vectors_file, remove_adaptors,

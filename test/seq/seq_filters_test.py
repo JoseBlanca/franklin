@@ -99,7 +99,7 @@ class SimilarSeqTest(unittest.TestCase):
         assert filter_(seq1)
 
         filter_ = create_similar_seqs_filter(db=db, blast_program='blastn',
-                                             inverse=True)
+                                             reverse=True)
         assert not filter_(seq1)
 
 class SolidFilters(unittest.TestCase):

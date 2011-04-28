@@ -100,14 +100,6 @@ def _mask_sequence(sequence):
         if segment[1]:
             seq_ = seq_.lower()
         new_seq += seq_
-#    try:
-#        seq = copy_seq_with_quality(sequence, seq=Seq(new_seq,
-#                                                       sequence.seq.alphabet))
-#    except TypeError:
-#        print sequence.name
-#        raw_input()
-#        raise
-#    return seq
     return copy_seq_with_quality(sequence, seq=Seq(new_seq,
                                                        sequence.seq.alphabet))
 
@@ -230,7 +222,6 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
             segments = [(0, start -1), (end + 1, len(sequence) -1)]
 
         _add_trim_segments(segments, sequence, vector=False)
-        #print 'seq', sequence.seq
         if (end - start) < min_seq_length_:
             return None
         else:
@@ -537,10 +528,8 @@ def create_adaptor_striper(adaptors, elongate_match_to_complete_adaptor=True):
     The adaptors should be a fhand to a fasta file with the adaptors in it.
     The adaptors will be detected by using blastn-short.
     '''
-    print 'adaptors', adaptors
     fhand = get_fhand(adaptors)
     check_sequences_length(fhand, MIN_ADAPTOR_LENGTH, MAX_ADAPTOR_LENGTH)
-    print open(fhand.name).read()
     return _create_vector_striper(vectors=adaptors,
                                   aligner='blast_short',
                                   vectors_are_blastdb=False,
@@ -553,8 +542,6 @@ def create_vector_striper(vectors, vectors_are_blastdb=False):
     The vectors could be an fhand to a fasta file or a blast database.
     The vectors will be detected by using blastn
     '''
-    #if file check vector length
-    print 'cleaning_vetors', vectors
     if not vectors_are_blastdb:
         check_sequences_length(get_fhand(vectors), MAX_ADAPTOR_LENGTH)
     return _create_vector_striper(vectors, aligner='blastn',

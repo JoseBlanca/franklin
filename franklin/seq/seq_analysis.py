@@ -19,8 +19,6 @@ Created on 26/11/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import re
-
 from franklin.utils.cmd_utils import create_runner, call
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
