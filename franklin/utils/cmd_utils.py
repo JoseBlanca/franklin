@@ -167,7 +167,8 @@ RUNNER_DEFINITIONS = {
                       'bracket':{'option':'-b', 'default':[10, 0.02]},
                       'window' :{'option':'-w', 'default':[50, 0.08, 10, 0.3]},
                       'error'  :{'option':'-e', 'default':[0.015, 0.015]},
-                      'vector' :{'option':'-vector'}
+                      'vector' :{'option':'-vector'},
+                      'min_len':{'option':'-minimum', 'default':10},
                       },
             'input':{'sequence':{'option': ARGUMENT,
                                  'arg_before_params':True,

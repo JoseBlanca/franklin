@@ -378,5 +378,5 @@ T0..11031202101103031103110303212300122113032213202
         assert len(out_seqs) == 2
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_solid']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_min_length']
     unittest.main()
