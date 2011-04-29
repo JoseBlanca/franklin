@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 from os.path import join
 
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 from franklin.backbone.blast_runner import backbone_blast_runner, \
@@ -56,7 +56,7 @@ class BlastTest(unittest.TestCase):
 
         #the blast db
         blast_db_fname = 'univec+'
-        blast_db = join(DATA_DIR, 'blast', blast_db_fname)
+        blast_db = join(TEST_DATA_DIR, 'blast', blast_db_fname)
 
         blast_program = 'blastn'
         backbone_blast_runner(query_fpath=query_fhand.name,
@@ -92,7 +92,7 @@ class BlastTest(unittest.TestCase):
 
         #the blast db
         blast_db_fname = 'uni'
-        blast_db = join(DATA_DIR, 'blast', blast_db_fname)
+        blast_db = join(TEST_DATA_DIR, 'blast', blast_db_fname)
 
         blast_program = 'blastn'
         try:
@@ -148,9 +148,9 @@ class BlastTest(unittest.TestCase):
     @staticmethod
     def test_blastdb_seq_kind():
         'It test the blastdb kind'
-        blastdb = join(DATA_DIR, 'blast', 'tomato_genome2')
+        blastdb = join(TEST_DATA_DIR, 'blast', 'tomato_genome2')
         assert  guess_blastdb_kind(blastdb) == 'nucl'
-        blastdb = join(DATA_DIR, 'blast', 'tair7_pep')
+        blastdb = join(TEST_DATA_DIR, 'blast', 'tair7_pep')
 
         assert  guess_blastdb_kind(blastdb) == 'prot'
 

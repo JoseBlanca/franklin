@@ -3,7 +3,7 @@ Created on 11/05/2010
 
 @author: peio
 '''
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 import unittest, StringIO, tempfile, os
 
 from Bio.Alphabet import SingleLetterAlphabet, DNAAlphabet
@@ -289,8 +289,8 @@ class SeqsInFileTests(unittest.TestCase):
     @staticmethod
     def test_csfasta_reader():
         'It test a csfasta reader'
-        seq_fhand = open(os.path.join(DATA_DIR, 'seq.csfasta'))
-        qual_fhand = open(os.path.join(DATA_DIR, 'solid_qual.qual'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'seq.csfasta'))
+        qual_fhand = open(os.path.join(TEST_DATA_DIR, 'solid_qual.qual'))
 
         seqs = list(seqs_in_file(seq_fhand, qual_fhand, format='csfasta'))
         assert '121101332.0133.2221.23.2.21' in str(seqs[0].seq)
@@ -304,7 +304,7 @@ class SeqsInFileTests(unittest.TestCase):
     @staticmethod
     def test_fasta_content_iterator():
         'it test fasta_content_iterator'
-        fhand = open(os.path.join(DATA_DIR, 'seq.fasta'))
+        fhand = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'))
         fastas = list(fasta_contents_in_file(fhand))
         assert fastas[0][0] == 'seq1'
         assert fastas[1][1] == 'polya'
@@ -315,10 +315,10 @@ class TestNumSeqsInFile(unittest.TestCase):
     @staticmethod
     def test_num_seqs_in_file():
         'tests num_seqs_in_file'
-        fasta_fhand = open(join(DATA_DIR, 'seq.fasta'))
+        fasta_fhand = open(join(TEST_DATA_DIR, 'seq.fasta'))
         assert num_seqs_in_file(fasta_fhand) == 7
 
-        fastq_fhand = open(join(DATA_DIR, 'solexa.fastq'))
+        fastq_fhand = open(join(TEST_DATA_DIR, 'solexa.fastq'))
         assert num_seqs_in_file(fastq_fhand, format='sfastq') == 3
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ Created on 26/01/2010
 import unittest, os.path
 from os.path import join, exists
 
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import (create_project,
                                               create_configuration)
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
@@ -47,7 +47,7 @@ ACCGTCTCGACGAGATCGTGATCTTCGATCCTCTGTCCCACGAGCAGCTGAGGAAGGTCG
 CTCGCCTTCAGATGAAGGATGTGGCCGTCCGTCTTGCCGAANNNNNCATCGCTCTGGCTG
 TGACCGANNNNNCATTGGACATCATCTTGTCTCTCTCTNNNNNNTCNNNNT
 '''
-READS_SOLID='''@10_1824_570_F3
+READS_SOLID = '''@10_1824_570_F3
 NAGATACGTTACGGTCATCCGGGCCAGCTCATCGCNGAAANGNAAGTCA
 +
 !@A=BB+@:)@9@.<B=67/B=>;@B><@<B)75?!:@=2!7!::>/?;
@@ -155,7 +155,7 @@ class TestBackbone(unittest.TestCase):
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        univec = os.path.join(DATA_DIR, 'blast', 'univec')
+        univec = os.path.join(TEST_DATA_DIR, 'blast', 'univec')
         configuration = {'Cleaning':{'vector_database':None}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -195,7 +195,7 @@ class TestBackbone(unittest.TestCase):
         assert exists(cleaned_454)
 
         cleaned_noqual = join(cleaned_dir, os.path.basename(fpath_noqual))
-        clean_seqs =  open(cleaned_noqual).read()
+        clean_seqs = open(cleaned_noqual).read()
         assert clean_seqs.startswith('>FM195262.1\nGCATTCTCG')
 
     @staticmethod
@@ -207,7 +207,7 @@ class TestBackbone(unittest.TestCase):
         adaptors_dir = join(project_dir, 'config_data', 'adaptors')
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
         words = ['^ATGAAC', 'TTGATTTGGT']
-        univec = os.path.join(DATA_DIR, 'blast', 'univec+')
+        univec = os.path.join(TEST_DATA_DIR, 'blast', 'univec+')
         configuration = {'Cleaning':{'vector_database':univec,
                                      'adaptors_file_454':adaptors_path_454,
                                      'short_adaptors_454':words,
@@ -256,8 +256,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
         assert  seq.startswith('TTCCAAGATTCTTCCCACAT')
 
         # solid
-        cleaned_solid =  join(cleaned_dir, os.path.basename(fpath_solid))
-        clean_seqs =  open(cleaned_solid).read()
+        cleaned_solid = join(cleaned_dir, os.path.basename(fpath_solid))
+        clean_seqs = open(cleaned_solid).read()
         assert '10_1824_570_F3' not in clean_seqs
 
 
@@ -355,7 +355,7 @@ Sequence qualities variance: 8.19
         exp = 'distrib\tmean\tstd_deviation\t1st_quartile\tmedian\t3rd_qualtile'
         assert exp in open(boxplot_fpath).read()
         freq_nucl_fpath = join(clean_stats_dir, 'pl_454.lb_a.freq_position.svg')
-        nucl_freq =open(freq_nucl_fpath).read()
+        nucl_freq = open(freq_nucl_fpath).read()
         assert '<filter id="colorAdd">' in nucl_freq
 
 

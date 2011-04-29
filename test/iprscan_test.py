@@ -21,7 +21,7 @@ Created on 2009 mai 21
 
 import unittest, os
 from franklin.iprscan import xml_iprscan_parser_iter
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class IprsacnTest(unittest.TestCase):
     '''It test all functions in iprscan parser '''
@@ -29,7 +29,7 @@ class IprsacnTest(unittest.TestCase):
     @staticmethod
     def test_iprscan_parse():
         '''Tests iprscan parser '''
-        fname = os.path.join(DATA_DIR, 'iprscan.xml')
+        fname = os.path.join(TEST_DATA_DIR, 'iprscan.xml')
         fhand = open(fname, 'r')
         protein_ids = ["PRRB_MYCTU", "Q9RHD9_PSEAE", "RS16_ECOLI"]
         cont = 0

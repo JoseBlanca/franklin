@@ -21,7 +21,7 @@ Created on 23/09/2009
 
 import unittest, os
 from franklin.gmod.fpc import FPCMap
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class TestFPC(unittest.TestCase):
     'It tests the fpc functionality'
@@ -29,7 +29,7 @@ class TestFPC(unittest.TestCase):
     @staticmethod
     def test_fpc():
         'It tests the fpc parsing'
-        fpc_fname = os.path.join(DATA_DIR, 'fpc_test.fpc')
+        fpc_fname = os.path.join(TEST_DATA_DIR, 'fpc_test.fpc')
         fpc = FPCMap(open(fpc_fname))
         assert fpc.name == 'demo'
         assert fpc.version == '8.5.1'

@@ -24,7 +24,7 @@ import unittest
 import StringIO, tempfile, os
 
 from franklin.utils.seqio_utils import cat, seqio
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class TestSeqio(unittest.TestCase):
     'It test the converter'
@@ -71,7 +71,7 @@ class TestSeqio(unittest.TestCase):
         result = '@seq1\nCCCT\n+\nZZRZ\n@SRR001666.1\nGTTGC\n+\nZZZZZ\n'
         assert out_seq_fhand.getvalue() == result
 
-   
+
 
 class TestCat(unittest.TestCase):
     'It tests the sequence converter'

@@ -9,7 +9,7 @@ import os.path, subprocess, sys, random
 from tempfile import NamedTemporaryFile
 
 import franklin
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.writers import create_temp_seq_file
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, Seq
@@ -300,7 +300,7 @@ T0..11031202101103031103110303212300122113032213202
         seqs = [seq1 + vector + seq2]
         inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
         outseq_fhand = NamedTemporaryFile()
-        vector_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        vector_db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
                '-p', '454', '-f', 'fastq', '-d', vector_db]
         retcode = _call_python(cmd)[-1]
@@ -368,7 +368,7 @@ T0..11031202101103031103110303212300122113032213202
         seqs = [seq1, seq2, seq3]
         inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
         outseq_fhand = NamedTemporaryFile()
-        ara_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        ara_db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
                '-p', '454', '-f', 'fastq', '--filter_dbs', ara_db]
         retcode = _call_python(cmd)[-1]

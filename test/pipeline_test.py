@@ -28,7 +28,7 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.writers import SequenceWriter
 
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 
 ADAPTORS = '''>adaptor1
 atcgatcgatagcatacgat
@@ -84,12 +84,12 @@ class PipelineTests(unittest.TestCase):
 
         arabidopsis_genes = 'arabidopsis_genes+'
 
-        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
+        univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors_blastdb': {'vectors':univec},
                          'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
-        seq_fhand = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        qual_fhand = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
+        qual_fhand = open(os.path.join(TEST_DATA_DIR, 'qual.fasta'), 'r')
 
         seq_iter = seqs_in_file(seq_fhand, qual_fhand)
 
@@ -108,13 +108,13 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
-        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
+        univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors_blastdb': {'vectors':univec},
                          'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         in_fhands = {}
-        in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
-        in_fhands['in_qual'] = open(os.path.join(DATA_DIR, 'qual.fasta'), 'r')
+        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
+        in_fhands['in_qual'] = open(os.path.join(TEST_DATA_DIR, 'qual.fasta'), 'r')
 
 
         out_seq_fhand = NamedTemporaryFile()
@@ -137,12 +137,12 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.write(ADAPTORS)
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
-        univec = os.path.join(DATA_DIR, 'blast', arabidopsis_genes)
+        univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
         configuration = {'remove_vectors': {'vectors':univec},
                          'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         in_fhands = {}
-        in_fhands['in_seq'] = open(os.path.join(DATA_DIR, 'seq.fasta'), 'r')
+        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
         out_fhand = NamedTemporaryFile()
         writer = SequenceWriter(out_fhand, file_format='fasta')
         writers = {'seq': writer}

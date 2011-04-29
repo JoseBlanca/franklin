@@ -24,7 +24,7 @@ import unittest
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
                                       _which_binary, b2gpipe_runner, call)
 from franklin.seq.seqs import SeqWithQuality, Seq
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 import os, tempfile
 
 class ProcessParametersTest(unittest.TestCase):
@@ -77,7 +77,7 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_blast_runner():
         'We can create a runner class for blast'
-        blastpath = os.path.join(DATA_DIR, 'blast')
+        blastpath = os.path.join(TEST_DATA_DIR, 'blast')
         run_blast_for_seq = create_runner(tool='blastn',
                                 parameters={'database':'arabidopsis_genes+'},
                                 environment={'BLASTDB':blastpath})
@@ -98,7 +98,7 @@ class RunnerFactorytest(unittest.TestCase):
     @staticmethod
     def test_create_lucy_runner():
         'We can create a runner class for lucy'
-        fastafile = os.path.join(DATA_DIR, 'seq2.fasta')
+        fastafile = os.path.join(TEST_DATA_DIR, 'seq2.fasta')
         run_lucy_for_seq = create_runner(tool='lucy',
                                     parameters={'vector':(fastafile,fastafile)})
         seq  = 'AACTACGTAGCTATGCTGATGCTAGTCTAGAAAAAAAAAAAAAAAAAAAAAAAAAAA'
@@ -113,7 +113,7 @@ class RunnerFactorytest(unittest.TestCase):
     def test_run_b2g4pipe():
         'It test the runner of b2g4pipe'
 
-        blast = open(os.path.join(DATA_DIR, 'blast2.xml'))
+        blast = open(os.path.join(TEST_DATA_DIR, 'blast2.xml'))
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
         fhand, dat_fpath = tempfile.mkstemp()

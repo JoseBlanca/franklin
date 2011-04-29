@@ -26,6 +26,8 @@ import franklin
 
 DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'franklin',
                          'data')
+TEST_DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'test',
+                         'data')
 
 def avail_phymem():
     """Return the amount of physical memory available, in bytes."""

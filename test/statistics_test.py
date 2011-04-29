@@ -26,7 +26,7 @@ from franklin.statistics import (CachedArray, histogram, create_distribution,
                                  draw_stacked_columns)
 import franklin
 
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
+TEST_DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 class DistributionTest(unittest.TestCase):
     'It tests the create distribution function'

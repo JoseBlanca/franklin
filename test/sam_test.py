@@ -23,7 +23,7 @@ Created on 05/01/2010
 from tempfile import NamedTemporaryFile
 import unittest, os
 
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from StringIO import StringIO
 
 from franklin.sam import (bam2sam, sam2bam, merge_sam, bamsam_converter,
@@ -42,7 +42,7 @@ class SamTest(unittest.TestCase):
     @staticmethod
     def testbam2sam():
         'It test bam2sam function'
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
+        bampath = os.path.join(TEST_DATA_DIR, 'seq.bam')
         sampath = NamedTemporaryFile(suffix='.sam').name
         bam2sam(bampath, sampath, header=True)
         assert 'SN:SGN-U572743' in open(sampath).readline()
@@ -50,7 +50,7 @@ class SamTest(unittest.TestCase):
     @staticmethod
     def testsam2bam():
         'It test sam2bam function'
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
+        bampath = os.path.join(TEST_DATA_DIR, 'seq.bam')
         sampath = NamedTemporaryFile(suffix='.sam').name
         bam2sam(bampath, sampath, header=True)
         assert 'SN:SGN-U572743' in open(sampath).readline()
@@ -68,7 +68,7 @@ class SamTest(unittest.TestCase):
     def test_format_converter():
         'It test BAM SAM converter'
         #bam to sam
-        bampath = os.path.join(DATA_DIR, 'seq.bam')
+        bampath = os.path.join(TEST_DATA_DIR, 'seq.bam')
         sam = NamedTemporaryFile(suffix='.sam')
         bamsam_converter(bampath, sam.name)
         sam.flush()
@@ -150,22 +150,22 @@ SGN-E221664	0	SGN-U572743	317	226	254M24S	*	0	0	GGATGATCTTAGAGCTGCCATTCAAAAGATGT
     def test_sort_bam():
         'It test that we can sort bams using picard'
         #sort sam
-        sam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.sam')
+        sam_fpath = os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.sam')
         sorted_samfhand = NamedTemporaryFile(suffix='.sam')
         sort_bam_sam(sam_fpath, sorted_samfhand.name)
 
         #sort bam
-        bam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.bam')
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam')
         sorted_bamfhand = NamedTemporaryFile(suffix='.bam')
         sort_bam_sam(bam_fpath, sorted_bamfhand.name)
 
         #sort bam to sam
-        bam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.bam')
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam')
         sorted_samfhand = NamedTemporaryFile(suffix='.sam')
         sort_bam_sam(bam_fpath, sorted_samfhand.name)
 
         #sort sam
-        sam_fpath = os.path.join(DATA_DIR, 'samtools', 'seqs.sam')
+        sam_fpath = os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.sam')
         sorted_bamfhand = NamedTemporaryFile(suffix='.bam')
         sort_bam_sam(sam_fpath, sorted_bamfhand.name)
 
@@ -189,7 +189,7 @@ SGN-E40000\t20\tSGN-U576692\t1416\t207\t168M\t*\t0\t0\tAGCCTGATAA\t,,09377777\tA
     @staticmethod
     def test_realignbam():
         'It test the GATK realigner'
-        sam_test_dir = os.path.join(DATA_DIR, 'samtools')
+        sam_test_dir = os.path.join(TEST_DATA_DIR, 'samtools')
         bam_path = os.path.join(sam_test_dir, 'seqs.bam')
         reference_path = os.path.join(sam_test_dir, 'reference.fasta')
         out_bam = NamedTemporaryFile(suffix='.bam')

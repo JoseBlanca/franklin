@@ -27,7 +27,7 @@ from franklin.gff import (_add_dbxref_to_feature, GffFile, write_gff,
                           METADATA, FEATURE, create_dbxref_feature_mapper,
                           SeqGffWriter, create_go_annot_mapper,
                           create_feature_type_filter)
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.seqs import Seq, SeqWithQuality
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
@@ -82,7 +82,7 @@ class GffTest(unittest.TestCase):
     @staticmethod
     def test_items_in_gff():
         'It gets the items in a gff file'
-        gff = GffFile(os.path.join(DATA_DIR, 'map_fis.gff3'))
+        gff = GffFile(os.path.join(TEST_DATA_DIR, 'map_fis.gff3'))
         features = [item[1] for item in gff.items if item[0] == FEATURE]
         assert len(features) == 99
         assert features[1]['name'] == 'ctg,0'

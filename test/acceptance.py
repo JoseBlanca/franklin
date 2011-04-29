@@ -21,7 +21,7 @@ import shutil, logging, os
 from os.path import join, exists
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 
 def test_backbone(analysis=None, analysis_dir=None):
     '''It tests the backbone infrastructure.
@@ -38,7 +38,7 @@ def test_backbone(analysis=None, analysis_dir=None):
         analysis_fpath = analysis_fhand.name
 
     project_dir = analysis_fpath
-    repository_dir = join(DATA_DIR, 'acceptance')
+    repository_dir = join(TEST_DATA_DIR, 'acceptance')
     settings_path = prepare_conf(project_dir, repository_dir)
     choice = analysis
     #choice = 'mapping'
@@ -166,7 +166,7 @@ def run_analysis(analyses, settings_path):
 def prepare_conf(project_dir, repository_dir):
     'It prepares the backbone configuration file'
 
-    univec_database = join(DATA_DIR, 'blast', 'univec+')
+    univec_database = join(TEST_DATA_DIR, 'blast', 'univec+')
     estscan_matrix = join(repository_dir, 'config_data', 'At.smat')
     tair7_seq = join(repository_dir, 'annotation', 'tair7_genomic.fasta')
 
