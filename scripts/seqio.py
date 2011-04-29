@@ -35,6 +35,9 @@ def parse_options():
                       help='output quality file')
     parser.add_option('-t', '--outformat', dest="outformat",
                       help='output file format')
+    parser.add_option('-d', '--double_encoding', dest="double",
+                      action='store_true', default=False,
+                      help='Double encoding for csfasta files')
     return parser
 
 def set_parameters():
@@ -58,19 +61,21 @@ def set_parameters():
         outfhand_qual = None
     format_out = options.outformat
 
+    double_encoding = options.double
+
     return (infhand_seq, infhand_qual, format_in, outfhand_seq, outfhand_qual,
-            format_out)
+            format_out, double_encoding)
 
 
 def main():
     'The main function'
     (in_seq_fhand, in_qual_fhand, in_format, out_seq_fhand, out_qual_fhand,
-     out_format) = set_parameters()
+     out_format, double_encoding) = set_parameters()
 
     seqio(in_seq_fhand=in_seq_fhand, in_qual_fhand=in_qual_fhand,
           in_format=in_format,
           out_seq_fhand=out_seq_fhand, out_qual_fhand=out_qual_fhand,
-          out_format=out_format)
+          out_format=out_format, double_encoding=double_encoding)
 
 if __name__ == '__main__':
     main()

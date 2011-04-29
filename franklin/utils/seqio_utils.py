@@ -75,7 +75,7 @@ def get_content_from_fasta(fhand, kind='seq'):
         seq = qual
     return name, description, seq
 
-def seqio(in_seq_fhand, out_seq_fhand, out_format,
+def seqio(in_seq_fhand, out_seq_fhand, out_format, double_encoding,
           in_qual_fhand=None, out_qual_fhand=None, in_format=None):
     'It converts format of the files'
     if not in_format:
@@ -86,7 +86,7 @@ def seqio(in_seq_fhand, out_seq_fhand, out_format,
         out_format in ('repr', 'json', 'pickle')) :
         seqs = seqs_in_file(seq_fhand=in_seq_fhand,
                             qual_fhand=in_qual_fhand,
-                            format=in_format)
+                            format=in_format, double_encoding=double_encoding)
         write_seqs_in_file(seqs, seq_fhand=out_seq_fhand,
                            qual_fhand=out_qual_fhand,
                            format=out_format)
@@ -118,11 +118,11 @@ def seq_space_to_color_space(seq, out_code='color'):
             color_space  =  COLORSPACE_CODE[two_nucl]
         except KeyError:
             color_space = '.'
-            
+
         if out_code != 'color':
             color_space = COLOR_IN_NUCLCODE[color_space]
-            
+
         new_seq.append(color_space)
     return ''.join(new_seq)
-      
-    
+
+
