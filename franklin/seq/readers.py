@@ -131,12 +131,14 @@ def _num_seqs_in_fastq(fhand):
     fhand.seek(pos_at_start)
     return counter
 
-def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
+def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None,
+                 double_encoding=False):
     'It yields a seqrecord for each of the sequences found in the seq file.'
 
     if format is None:
         format = guess_seq_file_format(seq_fhand)
-    seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, file_format=format)
+    seqs =_seqs_in_file(seq_fhand, qual_fhand=qual_fhand, file_format=format,
+                        double_encoding=double_encoding)
 
     if sample_size is None:
         return seqs
@@ -147,7 +149,7 @@ def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None):
 
     return take_sample(seqs, sample_size, num_seqs)
 
-def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
+def _seqs_in_file(seq_fhand, qual_fhand, file_format, double_encoding):
     'It yields a seqrecord for each of the sequences found in the seq file'
     # look if seq_fhand is a list or not
     seq_fhand.seek(0)
@@ -164,13 +166,14 @@ def _seqs_in_file(seq_fhand, qual_fhand=None, file_format=None):
                                          serializer='pickle')
     elif file_format == 'csfasta':
         return _seqs_in_file_csfasta(seq_fhand=seq_fhand,
-                                     qual_fhand=qual_fhand)
+                                     qual_fhand=qual_fhand,
+                                     double_encoding=double_encoding)
     else:
         return _seqs_in_file_with_bio(seq_fhand=seq_fhand,
                                       file_format=file_format,
                                       qual_fhand=qual_fhand)
 
-def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
+def _seqs_in_file_csfasta(seq_fhand, qual_fhand, double_encoding):
     '''It reads a csfile and a qual file and it returns a seqrecord, it codifies
      the sequence in color space but using ATGC instead of 1234.
      correspondences:   . - N
@@ -195,11 +198,22 @@ def _seqs_in_file_csfasta(seq_fhand, qual_fhand):
         new_qual = new_qual[1:]
         sequence = sequence[2:]
 
+        if double_encoding:
+            sequence = codified_in_atgc(sequence)
+
         sequence = Seq(sequence)
         desc     = '' if desc is None else desc
         seqrec = SeqWithQuality(seq=sequence, qual=new_qual, name=name,
                                 description=desc)
         yield seqrec
+
+def codified_in_atgc(string):
+    'It codifies the sequence in atgc instead of 0123. Keeps color space'
+    code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
+    new_string = []
+    for letter in string:
+        new_string.append(code[letter])
+    return ''.join(new_string)
 
 def fasta_contents_in_file(fhand, kind='seq'):
     'it iterates over a fasta fhand and yields the conten of each fasta item'

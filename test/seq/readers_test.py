@@ -293,8 +293,13 @@ class SeqsInFileTests(unittest.TestCase):
         qual_fhand = open(os.path.join(DATA_DIR, 'solid_qual.qual'))
 
         seqs = list(seqs_in_file(seq_fhand, qual_fhand, format='csfasta'))
-
+        assert '121101332.0133.2221.23.2.21' in str(seqs[0].seq)
         assert len(seqs) == 3
+
+        seqs = list(seqs_in_file(seq_fhand, qual_fhand, format='csfasta',
+                                 double_encoding=True))
+        assert 'TTGNACTTNGGGCNGTNGNGCA' in str(seqs[0].seq)
+
 
     @staticmethod
     def test_fasta_content_iterator():

@@ -30,7 +30,7 @@ import franklin
 from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
-from franklin.seq.readers import seqs_in_file
+from franklin.seq.readers import seqs_in_file, codified_in_atgc
 from franklin.seq.alignment import match_words
 from franklin.seq.alignment import BlastAligner
 from franklin.seq.alignment_result import _fix_match_start_end
@@ -47,17 +47,9 @@ def create_double_encoding_mapper():
         'the mapper'
         if not sequence:
             return None
-        recoded_seq = _codified_in_atgc(str(sequence.seq))
+        recoded_seq = codified_in_atgc(str(sequence.seq))
         return copy_seq_with_quality(sequence, Seq(recoded_seq))
     return mapper
-
-def _codified_in_atgc(string):
-    'It codifies the sequence in atgc instead of 0123. Keeps color space'
-    code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
-    new_string = []
-    for letter in string:
-        new_string.append(code[letter])
-    return ''.join(new_string)
 
 def _add_trim_segments(segments, sequence, vector=True, trim=True):
     'It adds a segments or segments to the trimming recomendation in annotation'
