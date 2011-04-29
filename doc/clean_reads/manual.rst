@@ -103,6 +103,7 @@ OPTIONS
 **-d**, **-vector_db** *vector_blast_db*
         Vector BLAST database.
         A BLAST formated database like Univec can be provided to detect and remove unknown vectors.
+        This option can be used without giving a vector BLAST database, in that case an internal Univec_Core database will be used.
 
 **-r**, **--re_words** *regular_expression_list*
         A list of regular expressions to be trimmed.
@@ -114,8 +115,8 @@ OPTIONS
         The number of nucleotides should be given as two integers separated by a comma (e.g. 0,10).
 
 **-x**, **--disable_quality_trimming**
-		The quality trimming algorithms will not be used.
-		This parameter will not affect the quality filtering, for instance the solid quality filtering will continue to work.
+    The quality trimming algorithms will not be used.
+    This parameter will not affect the quality filtering, for instance the solid quality filtering will continue to work.
 
 **-n**, **-n_percent**
         Allowed percent of Ns.
@@ -165,26 +166,26 @@ OPTIONS
         All sequences shorted than the given length will be filtered out.
 
 **--filter_evalue** *float*
-		Sequences with a better evalue against any of the given databases will be filtered out
+    Sequences with a better evalue against any of the given databases will be filtered out
 
 **--filter_idendity** *float*
-		Minimun identity to consider a BLAST hsp (default 95%)
+    Minimun identity to consider a BLAST hsp (default 95%)
 
 **--filter_num_residues** *int*
-		Sequences with BLAST matches longer than this length will be filtered out
+    Sequences with BLAST matches longer than this length will be filtered out
 
 **--filter_length_percentage** *float*
-		Sequences with BLAST matches longer than this length will be filtered out (default 75)
-		The percentage is calculated as the matched region divided by the total read length.
+    Sequences with BLAST matches longer than this length will be filtered out (default 75)
+    The percentage is calculated as the matched region divided by the total read length.
 
 **--filter_dbs** *database list*
-		List of BLAST databases used for similarity filtering
+    List of BLAST databases used for similarity filtering
 
 **-t**, **-threads**
         Number of threads to use.
         The reads can be processed in parallel using several processes.
 
 **--error_log** *error_log_file*
-		Path to the error log file to use (default clean_reads.error)
+    Path to the error log file to use (default clean_reads.error)
 
 .. include:: ../ngs_backbone/links.txt

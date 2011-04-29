@@ -309,6 +309,21 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert (len(seq2.seq) - len(out_seqs[0].seq)) < 5
 
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        vector = 'GGTGCCTCCGGCGGGCCACTCAATGCTTGAGTATACTCACTAGACTTTGCTTCGCAAAG'
+        vector = SeqWithQuality(Seq(vector), name='vect', qual=[30]*len(vector))
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq1 + vector + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-d']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert (len(seq2.seq) - len(out_seqs[0].seq)) < 5
+
     def test_words(self):
         'It trims re words'
         vector = 'ACTG'
@@ -378,5 +393,5 @@ T0..11031202101103031103110303212300122113032213202
         assert len(out_seqs) == 2
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_min_length']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_vectordb']
     unittest.main()
