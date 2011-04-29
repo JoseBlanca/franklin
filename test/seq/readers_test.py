@@ -31,11 +31,17 @@ class GuessFormatSeqFileTest(unittest.TestCase):
         fhand.name = 'hola.sfastq'
         assert guess_seq_file_format(fhand) == 'fastq'
 
+        fhand = StringIO.StringIO('@fastq\nACTAG\n+\nAt+AA')
+        fhand.name = 'hola.fastq'
+        assert guess_seq_file_format(fhand) == 'fastq'
+
     @staticmethod
     def test_staticmethod():
         'If an empty file is given it should not fail'
         fhand = StringIO.StringIO()
         assert guess_seq_file_format(fhand) is None
+
+
 
 class GuessSeqFileTypeTest(unittest.TestCase):
     'It tests that we can guess the type of a sequence file(short|long)'

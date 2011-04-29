@@ -48,6 +48,24 @@ BIOPYTHON_FORMATS = {'fasta': 'fasta',
                      'embl': 'embl',
                      'qual': 'qual', }
 
+def _is_sfastq(fhand, max_iterations=1000):
+    '''It guess if the file is sanger fastq or not. If it can't now it for
+    sure, it will return is not sfastq'''
+
+    tell_ = fhand.tell()
+    fhand.seek(0)
+
+    for index, fastq in enumerate(FastqGeneralIterator(fhand)):
+        if index > max_iterations:
+            fhand.seek(tell_)
+            return False
+        qual = fastq[2]
+        for qletter in qual:
+            if ord(qletter) < 59:
+                fhand.seek(tell_)
+                return True
+    return False
+
 def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
     fhand.seek(0)
@@ -66,7 +84,8 @@ def guess_seq_file_format(fhand):
             format_ = 'qual'
         else:
             format_ = 'fasta'
-    elif line[0] == '@' and fhand.name.endswith('.sfastq'):
+    elif ((line[0] == '@' and fhand.name.endswith('.sfastq')) or
+          (line[0] == '@' and _is_sfastq(fhand))):
         format_ = 'fastq'
     elif line.split()[0] == 'LOCUS':
         format_ = 'genbank'
