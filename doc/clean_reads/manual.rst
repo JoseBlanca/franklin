@@ -7,7 +7,7 @@ Clean Sanger and NGS reads
 --------------------------
 
 :Author: jblanca@upv.es, pziarsolo@upv.es
-:Date: 2011-4-20
+:Date: 28-4-2011
 :Version: 0.1
 :Manual section: 1
 
