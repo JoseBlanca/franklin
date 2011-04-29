@@ -199,7 +199,7 @@ def _seqs_in_file_csfasta(seq_fhand, qual_fhand, double_encoding):
         sequence = sequence[2:]
 
         if double_encoding:
-            sequence = codified_in_atgc(sequence)
+            sequence = double_encode_color_space(sequence)
 
         sequence = Seq(sequence)
         desc     = '' if desc is None else desc
@@ -207,7 +207,7 @@ def _seqs_in_file_csfasta(seq_fhand, qual_fhand, double_encoding):
                                 description=desc)
         yield seqrec
 
-def codified_in_atgc(string):
+def double_encode_color_space(string):
     'It codifies the sequence in atgc instead of 0123. Keeps color space'
     code = {'.':'N', '0':'A', '1':'C', '2':'G', '3':'T'}
     new_string = []

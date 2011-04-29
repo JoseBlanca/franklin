@@ -30,7 +30,7 @@ import franklin
 from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
-from franklin.seq.readers import seqs_in_file, codified_in_atgc
+from franklin.seq.readers import seqs_in_file, double_encode_color_space
 from franklin.seq.alignment import match_words
 from franklin.seq.alignment import BlastAligner
 from franklin.seq.alignment_result import _fix_match_start_end
@@ -47,7 +47,7 @@ def create_double_encoding_mapper():
         'the mapper'
         if not sequence:
             return None
-        recoded_seq = codified_in_atgc(str(sequence.seq))
+        recoded_seq = double_encode_color_space(str(sequence.seq))
         return copy_seq_with_quality(sequence, Seq(recoded_seq))
     return mapper
 

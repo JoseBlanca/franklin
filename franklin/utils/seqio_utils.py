@@ -75,7 +75,7 @@ def get_content_from_fasta(fhand, kind='seq'):
         seq = qual
     return name, description, seq
 
-def seqio(in_seq_fhand, out_seq_fhand, out_format, double_encoding,
+def seqio(in_seq_fhand, out_seq_fhand, out_format, double_encoding=False,
           in_qual_fhand=None, out_qual_fhand=None, in_format=None):
     'It converts format of the files'
     if not in_format:
