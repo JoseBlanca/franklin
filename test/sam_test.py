@@ -313,10 +313,10 @@ class SamStatsTest(unittest.TestCase):
 
         bam_general_stats(bam_fhand, out_fhand)
         result = out_fhand.getvalue()
-        assert 'illumina\t3\n' in result
+        assert 'illumina\t3\t100.0' in result
         assert 'Secondary alignments: 1' in result
         assert 'Reads with one X0 best alignment: 1' in result
 
 if	__name__	==	"__main__":
-    #import sys;sys.argv = ['', 'SamCreatorTest.test_sam_creator']
+    #import sys;sys.argv = ['', 'SamStatsTest.test_general_mapping_stats']
     unittest.main()
