@@ -274,6 +274,19 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert seq2.seq == out_seqs[0].seq
 
+
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        adaptor = create_random_seqwithquality(15, qual_range=35)
+        seq2 = create_random_seqwithquality(50, qual_range=35)
+        seqs = [seq1 + adaptor + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-a']
+        stdout, stderr, retcode = _call_python(cmd)
+        assert retcode == 0
+        assert  "--adaptors_file: {'454': '" in stdout
+
     def test_vector(self):
         'It removes the vector'
         seq1 = create_random_seqwithquality(5, qual_range=35)
@@ -393,5 +406,5 @@ T0..11031202101103031103110303212300122113032213202
         assert len(out_seqs) == 2
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_vectordb']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_adaptors']
     unittest.main()

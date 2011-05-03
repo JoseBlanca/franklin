@@ -86,7 +86,7 @@ path = 'path'
 int_list = 'int_list'
 str_list = 'str_list'
 float_list = 'float_list'
-
+path_exists_dict = 'path_exists_dict'
 
 PARAMETERS = OrderedDict([
     ('seq_in', {long_param: '--seq_in',
@@ -128,7 +128,10 @@ PARAMETERS = OrderedDict([
     ('adaptors_file', {long_param: '--adaptors_file',
                        short_param: '-a',
                        help:'File with adaptors to remove from reads.',
-                       type_:path_exists}),
+                       type_:path_exists_dict,
+                       callback:{default:{_454:os.path.join(DATA_DIR,
+                                                      'adaptors',
+                                                      '454_adaptors.fasta')}}}),
     ('vector_file', {long_param: '--vector_file',
                      short_param: '-v',
                      help:'File with vector to remove from reads.',
@@ -257,10 +260,23 @@ INCOMPATIBLE_PARAMS[LONG_WITH_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 INCOMPATIBLE_PARAMS[LONG_WITHOUT_QUALITY].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 INCOMPATIBLE_PARAMS[ILLUMINA].extend(INCOMPATIBLE_PARAMS_NO_SOLID)
 
+def _prepare_adaptors_file(parameters):
+    'It gets the adaptors file from parameters dict'
+    platform = parameters['platform']
+    adaptors_file = parameters.get('adaptors_file', None)
+
+    if adaptors_file:
+        if isinstance(adaptors_file, dict):
+            try:
+                adaptors_file = adaptors_file[platform]
+            except KeyError:
+                adaptors_file = None
+    parameters['adaptors_file'] = adaptors_file
+
 def _prepare_pipeline(pipeline_type, parameters):
     'It prepares_the pipeline'
-    adaptors_file = parameters.get('adaptors_file', None)
-    if adaptors_file:
+    _prepare_adaptors_file(parameters)
+    if parameters['adaptors_file']:
         try:
             check_sequences_length(open(parameters['adaptors_file']), 15)
         except ValueError as msg:
@@ -312,7 +328,7 @@ def _prepare_pipeline_for_solid(parameters):
 def _add_adaptor_and_vectors_step(parameters, pipeline, configuration):
     'It adds the adaptor and vectors steps'
 
-    adaptors_file = parameters.get('adaptors_file', None)
+    adaptors_file = parameters['adaptors_file']
     if adaptors_file:
         pipeline.append(remove_adaptors)
         configuration['remove_adaptors'] = {'adaptors': adaptors_file}
@@ -500,7 +516,8 @@ def set_cli_interface():
         if action in definition:
             kwargs['action'] = definition[action]
         if callback in definition:
-            callback_ = _create_opt_with_optional_value(definition[callback][default])
+            default_callback_value = definition[callback][default]
+            callback_ = _create_opt_with_optional_value(default_callback_value)
             kwargs['callback'] = callback_
             kwargs['action'] = 'callback'
         parser.add_option(*args, **kwargs)
@@ -598,6 +615,16 @@ def _cast(type_, value):
         if not os.path.exists(value):
             msg = 'The given file does not exists: %s' % value
             ValidationError(msg)
+    if type_ == path_exists_dict:
+        if isinstance(value, dict):
+            for val in value.values():
+                if not os.path.exists(val):
+                    msg = 'The given file does not exists: %s' % val
+                    ValidationError(msg)
+        else:
+            if not os.path.exists(value):
+                msg = 'The given file does not exists: %s' % val
+                ValidationError(msg)
     elif type_ == int:
         value = _cast_int(value)
     elif type_ == float:
