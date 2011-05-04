@@ -282,7 +282,6 @@ class BamStatsAnalyzer(Analyzer):
         self._log({'analysis_started':True})
         settings = self._project_settings
         self._create_output_dirs()['result']
-        project_path = settings['General_settings']['project_path']
         project_name = settings['General_settings']['project_name']
         sample_size = settings['Sam_stats']['sampling_size']
 

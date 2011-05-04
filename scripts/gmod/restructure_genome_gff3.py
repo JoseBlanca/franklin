@@ -191,9 +191,9 @@ def genes_in_gff(fpath):
 
 def test():
     from tempfile import NamedTemporaryFile
-    from franklin.utils.misc_utils import DATA_DIR
+    from franklin.utils.misc_utils import TEST_DATA_DIR
     import os
-    gff_fpath = os.path.join(DATA_DIR, 'previous.gff3')
+    gff_fpath = os.path.join(TEST_DATA_DIR, 'previous.gff3')
     gff_in = GffFile(fpath=gff_fpath)
 
     gff_out_fhand = NamedTemporaryFile()

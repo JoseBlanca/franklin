@@ -19,7 +19,7 @@ like ace, caf or fasta'''
 import unittest, os.path, sqlalchemy
 from StringIO import StringIO
 from tempfile import NamedTemporaryFile
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.db.naming import (change_names_in_files,
                               create_naming_database, DbNamingSchema,
                               FileNamingSchema,
@@ -346,7 +346,7 @@ class ChangeNameTest(unittest.TestCase):
     @staticmethod
     def test_fastq():
         'It test that we can change the name in the fasta files.'
-        fhand_in  = open(os.path.join(DATA_DIR, 'solexa.fastq'))
+        fhand_in  = open(os.path.join(TEST_DATA_DIR, 'solexa.fastq'))
         fhand_out = NamedTemporaryFile(suffix='.fasta')
         engine    = sqlalchemy.create_engine('sqlite:///:memory:')
 

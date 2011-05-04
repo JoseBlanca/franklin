@@ -47,7 +47,7 @@ from franklin.seq.seq_cleaner import (_create_vector_striper,
                                       create_double_encoding_mapper,
                                      _get_longest_non_matched_seq_region_limits)
 
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class SeqCleanerTest(unittest.TestCase):
     'It tests cleaner function from seq_cleaner'
@@ -305,12 +305,12 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert new_seqs[1].description == 'desc2'
 
         # now we test the sequence with adaptors
-        vector_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_vector.fasta')
-        splice_fpath = os.path.join(DATA_DIR, 'lucy', 'icugi_splice.fasta')
+        vector_fpath = os.path.join(TEST_DATA_DIR, 'lucy', 'icugi_vector.fasta')
+        splice_fpath = os.path.join(TEST_DATA_DIR, 'lucy', 'icugi_splice.fasta')
         parameters = {'vector':[vector_fpath, splice_fpath],
                       'bracket':[10, 0.02]}
         lucy_striper = create_striper_by_quality_lucy(parameters)
-        seq_fhand = open(os.path.join(DATA_DIR, 'lucy',
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'lucy',
                                       'seq_with_adaptor1.fastq'))
         seq_iter = lucy_striper(seqs_in_file(seq_fhand, format='fastq'))
         new_seqs = []
@@ -447,7 +447,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
     @staticmethod
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
-        vector = os.path.join(DATA_DIR, 'blast', 'univec+')
+        vector = os.path.join(TEST_DATA_DIR, 'blast', 'univec+')
         vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'

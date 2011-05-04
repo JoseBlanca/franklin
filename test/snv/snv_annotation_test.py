@@ -24,7 +24,7 @@ import unittest, os
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
 
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
 from franklin.seq.writers import SequenceWriter
@@ -52,8 +52,8 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_snv_annotation():
         'It tests the annotation of SeqRecords with snvs'
-        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
                                          min_num_alleles=2)
@@ -66,9 +66,9 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_snv_annotation_without_rg():
         'It tests the annotation of SeqRecords with snvs'
-        bam_fhand = open(os.path.join(DATA_DIR, 'samtools',
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
                                       'seqs_without_rg.bam'))
-        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
 
         # this test should fail because we did not provide the read group
         # parameters
@@ -100,8 +100,8 @@ class TestSnvAnnotation(unittest.TestCase):
         edge_remove_settings = {'454':(30, None),
                                 'sanger':(None, None)}
 
-        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
                                          read_edge_conf=edge_remove_settings)
@@ -302,8 +302,8 @@ class TestSnvPipeline(unittest.TestCase):
         'It tests the annotation of SeqRecords with snvs'
         pipeline = 'snv_bam_annotator'
 
-        bam_fhand = open(os.path.join(DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(DATA_DIR, 'samtools', 'reference.fasta'))
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
 
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
                                                'min_quality':30,

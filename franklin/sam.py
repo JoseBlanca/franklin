@@ -625,7 +625,7 @@ def bam_general_stats(bam_fhand, out_fhand):
     rg_stats = {}
     total_reads = 0
     not_mapped_reads = 0
-    mapped_reads = 0
+    mapped_reads = {'total':0}
     reads_with_1_x0_best_alignment = 0
     reads_with_several_x0_best_alignment = 0
     stats_array = [0]*16
@@ -652,7 +652,11 @@ def bam_general_stats(bam_fhand, out_fhand):
         if not guess_mapped(flag):
             not_mapped_reads += 1
         else:
-            mapped_reads += 1
+            if read_group not in mapped_reads:
+                mapped_reads[read_group] = 0
+            mapped_reads[read_group] += 1
+            mapped_reads['total'] += 1
+
         if read_group not in rg_stats:
             rg_stats[read_group] = 0
         rg_stats[read_group] += 1
@@ -668,13 +672,19 @@ def bam_general_stats(bam_fhand, out_fhand):
         out_fhand.write('General mapping statistics\n')
         out_fhand.write('--------------------------\n')
         out_fhand.write('\t'.join(['Read group', 'Sample', 'Library',
-                                   'Platform', 'Num mapped reads']))
+                                   'Platform', 'Num mapped reads', '% mapped']))
         out_fhand.write('\n')
     for read_group in read_groups:
         row = [read_group]
         row.extend([rg_info[read_group][key] for key in ('SM', 'LB', 'PL')])
         count = rg_stats[read_group] if read_group in rg_stats else 0
         row.append(str(count))
+        mapped = mapped_reads[read_group] if read_group in mapped_reads else 0
+        if count != 0 and mapped != 0:
+            percent_mapped = mapped * 100 / float(count)
+        else:
+            percent_mapped = 0
+        row.append(str(percent_mapped))
         out_fhand.write('\t'.join(row) + '\n')
     else:
         out_fhand.write('\n')
@@ -686,7 +696,7 @@ def bam_general_stats(bam_fhand, out_fhand):
         msg %= number, number/float(total_reads) * 100.0
         out_fhand.write(msg)
     out_fhand.write('Total number of reads: %d\n' % total_reads)
-    write_stat_msg('Reads aligned', mapped_reads)
+    write_stat_msg('Reads aligned', mapped_reads['total'])
     write_stat_msg('Reads not aligned', not_mapped_reads)
     write_stat_msg('Reads mapped in proper pair', stats_array[-2])
     write_stat_msg('Reads reverse complemented', stats_array[-5])

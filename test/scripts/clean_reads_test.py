@@ -9,7 +9,7 @@ import os.path, subprocess, sys, random
 from tempfile import NamedTemporaryFile
 
 import franklin
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.writers import create_temp_seq_file
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, Seq
@@ -274,6 +274,19 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert seq2.seq == out_seqs[0].seq
 
+
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        adaptor = create_random_seqwithquality(15, qual_range=35)
+        seq2 = create_random_seqwithquality(50, qual_range=35)
+        seqs = [seq1 + adaptor + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-a']
+        stdout, stderr, retcode = _call_python(cmd)
+        assert retcode == 0
+        assert  "--adaptors_file: {'454': '" in stdout
+
     def test_vector(self):
         'It removes the vector'
         seq1 = create_random_seqwithquality(5, qual_range=35)
@@ -300,9 +313,24 @@ T0..11031202101103031103110303212300122113032213202
         seqs = [seq1 + vector + seq2]
         inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
         outseq_fhand = NamedTemporaryFile()
-        vector_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        vector_db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
                '-p', '454', '-f', 'fastq', '-d', vector_db]
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert (len(seq2.seq) - len(out_seqs[0].seq)) < 5
+
+        seq1 = create_random_seqwithquality(5, qual_range=35)
+        vector = 'GGTGCCTCCGGCGGGCCACTCAATGCTTGAGTATACTCACTAGACTTTGCTTCGCAAAG'
+        vector = SeqWithQuality(Seq(vector), name='vect', qual=[30]*len(vector))
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq1 + vector + seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-d']
         retcode = _call_python(cmd)[-1]
         assert retcode == 0
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
@@ -368,7 +396,7 @@ T0..11031202101103031103110303212300122113032213202
         seqs = [seq1, seq2, seq3]
         inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
         outseq_fhand = NamedTemporaryFile()
-        ara_db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        ara_db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
                '-p', '454', '-f', 'fastq', '--filter_dbs', ara_db]
         retcode = _call_python(cmd)[-1]
@@ -378,5 +406,5 @@ T0..11031202101103031103110303212300122113032213202
         assert len(out_seqs) == 2
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_min_length']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_adaptors']
     unittest.main()

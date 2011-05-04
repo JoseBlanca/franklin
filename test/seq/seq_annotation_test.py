@@ -31,7 +31,7 @@ from franklin.seq.seq_annotation import (create_microsatellite_annotator,
 #                                         create_polia_annotator)
 
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.utils.cmd_utils import b2gpipe_runner
 
 class AnnotationTests(unittest.TestCase):
@@ -39,8 +39,8 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_orthologs_annotator():
         'It test the ortholog annotator'
-        blast_fhand = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
-        reverse_blast_fhand = open(os.path.join(DATA_DIR, 'tair_melon.xml'))
+        blast_fhand = open(os.path.join(TEST_DATA_DIR, 'melon_tair.xml'))
+        reverse_blast_fhand = open(os.path.join(TEST_DATA_DIR, 'tair_melon.xml'))
         blast = {'blast':blast_fhand,
                  'subj_def_as_acc':True}
         reverse_blast = {'blast':reverse_blast_fhand,
@@ -59,7 +59,7 @@ class AnnotationTests(unittest.TestCase):
     def test_get_description_with_funct():
         'It tests if we can get description for seqs in blasts. with mod funct'
         # test with a modifier function
-        blast_fhand = open(os.path.join(DATA_DIR, 'blast2.xml'))
+        blast_fhand = open(os.path.join(TEST_DATA_DIR, 'blast2.xml'))
         blast = {'blast':blast_fhand,
                  'modifier':lambda(x):x.split('|')[2]}
         descrip_annotator = create_description_annotator([blast])
@@ -150,7 +150,7 @@ class AnnotationTests(unittest.TestCase):
         seq += 'GGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTACTGGACCATG'
         seq += 'TGGAAGCTGCCCATGTTTGGCTGCACCGAT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        matrix_fpath = os.path.join(DATA_DIR, 'At.smat')
+        matrix_fpath = os.path.join(TEST_DATA_DIR, 'At.smat')
         annotator = create_orf_annotator(parameters={'matrix':matrix_fpath})
         annotator(seq1)
         assert len(seq1.features) == 1
@@ -170,7 +170,7 @@ class AnnotationTests(unittest.TestCase):
         seq += 'GGTCGCTGCAATCAACAGAACTTTCTGTAGATTTGTCTTGTGGAAATATGAATAAAGCCCAAG'
         seq += 'TAGATATTGCGCTGAGTCAAGAAAGATGTATTAATGCGGCAT'
         seq = SeqWithQuality(name='seq', seq=Seq(seq))
-        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        blast_db_path = os.path.join(TEST_DATA_DIR, 'blast')
         tomato_genome = 'tomato_genome2+'
         genomic_db = os.path.join(blast_db_path, tomato_genome)
         intron_annotator = create_cdna_intron_annotator(genomic_db=genomic_db,
@@ -194,8 +194,8 @@ class AnnotationTests(unittest.TestCase):
     @staticmethod
     def test_go_annotator():
         'It test the go annotator'
-        blast = open(os.path.join(DATA_DIR, 'blastResult.xml'))
-        prop_fpath = os.path.join(DATA_DIR, 'b2gPipe.properties')
+        blast = open(os.path.join(TEST_DATA_DIR, 'blastResult.xml'))
+        prop_fpath = os.path.join(TEST_DATA_DIR, 'b2gPipe.properties')
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
         b2gpipe_runner(blast, annot_fpath, prop_fpath=prop_fpath)

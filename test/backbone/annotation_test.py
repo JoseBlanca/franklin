@@ -23,7 +23,7 @@ import unittest, os, shutil
 
 from os.path import join, exists
 
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import write_seqs_in_file
 from franklin.backbone.create_project import create_project
@@ -73,13 +73,13 @@ class AnnotationTest(unittest.TestCase):
         os.makedirs(tair_melon_blastdir)
         os.makedirs(tair2_melon_blastdir)
         blast_fname = BACKBONE_BASENAMES['blast_basename'] + '.tblastx.xml'
-        shutil.copy(join(DATA_DIR, 'melon_tair.xml'),
+        shutil.copy(join(TEST_DATA_DIR, 'melon_tair.xml'),
                    join(melon_tair_blastdir, blast_fname))
-        shutil.copy(join(DATA_DIR, 'melon_tair.xml'),
+        shutil.copy(join(TEST_DATA_DIR, 'melon_tair.xml'),
                    join(melon_tair2_blastdir, blast_fname))
-        shutil.copy(join(DATA_DIR, 'tair_melon.xml'),
+        shutil.copy(join(TEST_DATA_DIR, 'tair_melon.xml'),
                    join(tair_melon_blastdir, blast_fname))
-        shutil.copy(join(DATA_DIR, 'tair_melon.xml'),
+        shutil.copy(join(TEST_DATA_DIR, 'tair_melon.xml'),
                    join(tair2_melon_blastdir, blast_fname))
 
         #some melon file to annotate
@@ -130,7 +130,7 @@ Number of arabidopsis2 orthologs: 2'''
         'We can annotate with description'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        arab_blastdb = join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        arab_blastdb = join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         config = {'blast':{'arabidopsis': {'path': arab_blastdb,
                                            'species':'arabidopsis'}},
                   'Annotation':{'description_annotation':{
@@ -185,7 +185,7 @@ Sequences with description: 1'''
         'We can annotate introns'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        blast_db_path = os.path.join(DATA_DIR, 'blast')
+        blast_db_path = os.path.join(TEST_DATA_DIR, 'blast')
         genomic_db = os.path.join(blast_db_path, 'tomato_genome2+')
         config = {'Annotation':
                         {'Cdna_intron_annotation':{'genomic_db': genomic_db,
@@ -288,7 +288,7 @@ Number of introns: 3'''
         'We can annotate orfs'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        matrix = os.path.join(DATA_DIR, 'At.smat')
+        matrix = os.path.join(TEST_DATA_DIR, 'At.smat')
         config = {'Annotation':{'orf_annotation': {'estscan_matrix':matrix}},
                   'General_settings':{'threads':THREADS}}
 
@@ -346,8 +346,8 @@ Number of ORFs: 1'''
         'We can annotate gos'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        nr_path = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
-        b2g = os.path.join(DATA_DIR, 'b2gPipe.properties')
+        nr_path = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
+        b2g = os.path.join(TEST_DATA_DIR, 'b2gPipe.properties')
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
@@ -379,7 +379,7 @@ Number of ORFs: 1'''
         bdir = join(project_dir, 'annotations', 'blast', 'seqs.st_nucl',
                     'arabidopsis_genes+')
         os.makedirs(bdir)
-        shutil.copy(join(DATA_DIR, 'blastResult.xml'),
+        shutil.copy(join(TEST_DATA_DIR, 'blastResult.xml'),
                     join(bdir, 'blast.tblastx.xml'))
 
         do_analysis(project_settings=settings_path, kind='annotate_gos',
@@ -409,7 +409,7 @@ Number of GOs: 12'''
         'We can annotate protein changes'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        matrix = os.path.join(DATA_DIR, 'At.smat')
+        matrix = os.path.join(TEST_DATA_DIR, 'At.smat')
         configuration = {'Snvs':{'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},
                          'Annotation':{'orf_annotation':
@@ -491,7 +491,7 @@ Number of GOs: 12'''
         os.makedirs(reference_dir)
         reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+        for line in open(join(TEST_DATA_DIR, 'blast/arabidopsis_genes')):
             out.write(line)
 
         do_analysis(project_settings=settings_path, kind='mapping', silent=True)

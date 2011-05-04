@@ -21,7 +21,7 @@ from franklin.seq.seq_filters import (create_aligner_filter,
                                       create_similar_seqs_filter,
                                       create_solid_quality_filter)
 from franklin.seq.seqs import Seq, SeqWithQuality
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from Bio.Seq import UnknownSeq
 
 import unittest, os
@@ -44,7 +44,7 @@ class BlastFilteringTest(unittest.TestCase):
                           'score_key': 'expect',
                           'max_score': 0.001}]
 
-        blastpath = os.path.join(DATA_DIR, 'blast')
+        blastpath = os.path.join(TEST_DATA_DIR, 'blast')
         blast_filter = create_aligner_filter(aligner_cmd='blastn',
                                      cmd_parameters=parameters,
                                      match_filters=match_filters,
@@ -78,7 +78,7 @@ class ContaminantFilterTest(unittest.TestCase):
         'It tests if the sequence has a contaminant'
         seq1 = 'TTGGCAATCGGTTCCTGGATTGGACTTAGACCCCTACGCATCCTCAAATACCAATACAATTGT'
         seq  = SeqWithQuality(seq=Seq(seq1))
-        blastpath = os.path.join(DATA_DIR, 'blast')
+        blastpath = os.path.join(TEST_DATA_DIR, 'blast')
         arabidopsis_genes = 'arabidopsis_genes+'
         filter_by_contaminant = create_comtaminant_filter(arabidopsis_genes,
                                               environment={'BLASTDB':blastpath})
@@ -94,7 +94,7 @@ class SimilarSeqTest(unittest.TestCase):
         seq += 'CTTGATATTGACCAGTTTAAGACTATACATTCTTGTCACGATAATGGTGTCTCTGGCTCTTG'
         seq += 'TGGAGATTCATGGAAGAGTTTTCTCGAGGTAAAGATTAGATCTT'
         seq1 = SeqWithQuality(seq=Seq(seq))
-        db = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         filter_ = create_similar_seqs_filter(db=db, blast_program='blastn')
         assert filter_(seq1)
 

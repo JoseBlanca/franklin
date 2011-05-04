@@ -10,7 +10,7 @@ import unittest, os, StringIO
 from os.path import join, exists
 from tempfile import NamedTemporaryFile
 
-from franklin.utils.misc_utils import DATA_DIR, NamedTemporaryDir
+from franklin.utils.misc_utils import TEST_DATA_DIR, NamedTemporaryDir
 from franklin.mapping import map_reads_with_gmap
 from franklin.sam import bam2sam
 
@@ -20,8 +20,8 @@ class GmapTest(unittest.TestCase):
     @staticmethod
     def test_gmap_mapper():
         'It test the cmap mapper'
-        mappers_dir = join(DATA_DIR, 'mappers')
-        gmap_dir = join(DATA_DIR, 'mappers', 'gmap')
+        mappers_dir = join(TEST_DATA_DIR, 'mappers')
+        gmap_dir = join(TEST_DATA_DIR, 'mappers', 'gmap')
         work_dir = NamedTemporaryDir()
         temp_genome = join(work_dir.name, 'genome.fa')
         os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)
@@ -71,8 +71,8 @@ class GmapTest(unittest.TestCase):
     def test_gmap_without_mapping_output():
         '''It test that the gmap doesn't map anything'''
 
-        mappers_dir = join(DATA_DIR, 'mappers')
-        cmap_dir = join(DATA_DIR, 'mappers', 'gmap')
+        mappers_dir = join(TEST_DATA_DIR, 'mappers')
+        cmap_dir = join(TEST_DATA_DIR, 'mappers', 'gmap')
         work_dir = NamedTemporaryDir()
         temp_genome = join(work_dir.name, 'genome.fa')
         os.symlink(join(mappers_dir, 'genome.fa'), temp_genome)

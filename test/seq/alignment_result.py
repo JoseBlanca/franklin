@@ -35,7 +35,7 @@ from franklin.seq.alignment_result import (BlastParser,
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
 from franklin.utils.cmd_utils import create_runner
-from franklin.utils.misc_utils import DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.writers import temp_fasta_file
 
 def _check_sequence(sequence, expected):
@@ -98,7 +98,7 @@ class BlastParserTest(unittest.TestCase):
 
     def test_blast_parser(self):
         'It test the blast parser'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.xml'))
         parser = BlastParser(fhand=blast_file)
 
         expected_results = [
@@ -145,13 +145,13 @@ class BlastParserTest(unittest.TestCase):
 
         # Check using def as acceion in all the blasts
         #It changes depending on the blast output format. depends on version
-        blast_file = open(os.path.join(DATA_DIR, 'melon_tair.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'melon_tair.xml'))
         parser = BlastParser(fhand=blast_file)
         assert parser.next()['matches'][0]['subject'].name == 'tair1'
 
     def test_blast_tab_parser(self):
         'It test the blast tabular parser'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.tab'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.tab'))
         parser = TabularBlastParser(fhand=blast_file)
 
         expected_results = [
@@ -213,7 +213,7 @@ class BlastParserTest(unittest.TestCase):
 
     def test_blast_text_parser(self):
         'It test the blast text parser'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.blast'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.blast'))
         parser = TextBlastParser(fhand=blast_file)
         alignments = list(parser)
         expected_results = [
@@ -285,7 +285,7 @@ class BlastParserTest(unittest.TestCase):
             n_blasts += 1
         assert n_blasts == 2
 
-        blast_file = open(os.path.join(DATA_DIR, 'blast2.blast'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast2.blast'))
         parser = TextBlastParser(fhand=blast_file)
         alignments = list(parser)
 
@@ -693,7 +693,7 @@ class AlignmentFilters(unittest.TestCase):
 
     def test_no_filter(self):
         'It test the blast parser'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.xml'))
         parser = BlastParser(fhand=blast_file)
         match_summary = _summarize_matches(parser)
         #lcl|2_0 cCL1Contig2
@@ -706,7 +706,7 @@ class AlignmentFilters(unittest.TestCase):
 
     def test_best_scores_filter(self):
         'We can keep the hits with the bests expects'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.xml'))
         filters = [{'kind'           : 'best_scores',
                     'score_key'      : 'expect',
                     'max_score'      : 1e-4,
@@ -721,7 +721,7 @@ class AlignmentFilters(unittest.TestCase):
 
     def test_min_scores_filter(self):
         'We can keep the hits scores above the given one'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.xml'))
 
         #with evalue
         filters = [{'kind'     : 'score_threshold',
@@ -749,7 +749,7 @@ class AlignmentFilters(unittest.TestCase):
 
     def test_min_length_filter(self):
         'We can keep the hits length above the given one'
-        blast_file = open(os.path.join(DATA_DIR, 'blast.xml'))
+        blast_file = open(os.path.join(TEST_DATA_DIR, 'blast.xml'))
 
         #with the min length given in base pairs
         filters = [{'kind'            : 'min_length',

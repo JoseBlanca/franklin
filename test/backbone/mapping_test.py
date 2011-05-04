@@ -22,7 +22,7 @@ Created on 29/03/2010
 import unittest, os, shutil
 from os.path import join, exists
 
-from franklin.utils.misc_utils import NamedTemporaryDir, DATA_DIR
+from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
@@ -37,7 +37,7 @@ class TestBackboneMapping(unittest.TestCase):
         'We can map the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        blastdb_seq = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
                                   'genomic_seqs_fpath':blastdb_seq},
@@ -45,7 +45,7 @@ class TestBackboneMapping(unittest.TestCase):
                        'filter7':{'name':'by_kind', 'use':True,
                                   'kind':'SNP'},
                        'filter12':{'name':'ref_not_in_list', 'use':True,
-                                'list_path':os.path.join(DATA_DIR, 'cos_list')},
+                                'list_path':os.path.join(TEST_DATA_DIR, 'cos_list')},
                        'filter10':{'unique_name': 'variable_in_sm',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
@@ -139,7 +139,7 @@ class TestBackboneMapping(unittest.TestCase):
         os.makedirs(reference_dir)
         reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+        for line in open(join(TEST_DATA_DIR, 'blast/arabidopsis_genes')):
             out.write(line)
 
         do_analysis(project_settings=settings_path, kind='mapping', silent=True)
@@ -227,7 +227,7 @@ class TestBackboneMapping(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
 
-        blastdb_seq = os.path.join(DATA_DIR, 'blast', 'arabidopsis_genes+')
+        blastdb_seq = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
 
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
@@ -236,7 +236,7 @@ class TestBackboneMapping(unittest.TestCase):
                        'filter7':{'name':'by_kind', 'use':True,
                                   'kind':'SNP'},
                        'filter12':{'name':'ref_not_in_list', 'use':True,
-                                'list_path':os.path.join(DATA_DIR, 'cos_list')},
+                                'list_path':os.path.join(TEST_DATA_DIR, 'cos_list')},
                        'filter10':{'unique_name': 'variable_in_sm',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
@@ -264,7 +264,7 @@ class TestBackboneMapping(unittest.TestCase):
         clean_reads_dir = join(reads_dir, 'cleaned')
         os.mkdir(reads_dir)
         os.mkdir(clean_reads_dir)
-        shutil.copy(os.path.join(DATA_DIR, 'solid.fastq'),
+        shutil.copy(os.path.join(TEST_DATA_DIR, 'solid.fastq'),
                os.path.join(clean_reads_dir, 'pl_solid.lb_hola.sm_hola.sfastq'))
 
         #the reference
@@ -272,7 +272,7 @@ class TestBackboneMapping(unittest.TestCase):
         os.makedirs(reference_dir)
         reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(join(DATA_DIR, 'samtools_color/reference')):
+        for line in open(join(TEST_DATA_DIR, 'samtools_color/reference')):
             out.write(line)
 
         do_analysis(project_settings=settings_path, kind='mapping', silent=True)
@@ -316,14 +316,14 @@ class TestBackboneMapping(unittest.TestCase):
         os.makedirs(reference_dir)
         reference_fpath = join(reference_dir, 'reference.fasta')
         out = open(reference_fpath, 'w')
-        for line in open(join(DATA_DIR, 'blast/arabidopsis_genes')):
+        for line in open(join(TEST_DATA_DIR, 'blast/arabidopsis_genes')):
             out.write(line)
 
         bams_dir = join(project_dir, 'mapping', 'bams')
         os.makedirs(bams_dir)
         bam_fpath = join(bams_dir, 'merged.0.bam')
 
-        shutil.copy(join(DATA_DIR, 'merged.0.bam'), bam_fpath)
+        shutil.copy(join(TEST_DATA_DIR, 'merged.0.bam'), bam_fpath)
         create_bam_index(bam_fpath)
 
         annot_input_dir = join(project_dir, 'annotations', 'input')

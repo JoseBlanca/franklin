@@ -21,12 +21,11 @@ factory that will create the function that will do the actual job.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, re, copy
+import re, copy
 from itertools import tee
 
 from Bio import SeqIO
 
-import franklin
 from franklin.utils.cmd_utils import create_runner
 from franklin.utils.misc_utils import get_fhand
 from franklin.seq.seqs import copy_seq_with_quality, Seq
@@ -35,7 +34,6 @@ from franklin.seq.alignment import match_words
 from franklin.seq.alignment import BlastAligner
 from franklin.seq.alignment_result import _fix_match_start_end
 
-DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
 #they should be processed by the word remover function
 TRIMMING_RECOMMENDATIONS = 'trimming_recommendations'

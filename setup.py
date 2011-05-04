@@ -151,6 +151,8 @@ class install_manpages(Command):
 
         root_dir = os.path.dirname(__file__)
         doc_man_dir = os.path.join(root_dir, 'doc', 'man')
+        if not os.path.exists(doc_man_dir):
+            return
         for man in os.listdir(doc_man_dir):
             origin = os.path.join(doc_man_dir, man)
             dest = os.path.join(man_dir, man)
@@ -182,7 +184,6 @@ MODULES= {'ngs_backbone': {'Bio':        {'required': True},
 
 #which program are we installing:
 program = _guess_installing_program()
-
 if program not in MODULES.keys():
     program = 'ngs_backbone'
 
