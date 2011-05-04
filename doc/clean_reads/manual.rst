@@ -95,6 +95,7 @@ OPTIONS
 **-a**, **-adaptors** *adaptors_fasta_file*
         The path to the adaptors file.
         The adaptors to be trimmed should be given as a fasta file.
+        These adaptors will be look for by using the blast-short algorithm.
 
 **-v**, **-vector** *vector_fasta_file*
         The path to the vector file.
@@ -165,20 +166,22 @@ OPTIONS
         All sequences shorted than the given length will be filtered out.
 
 **--filter_evalue** *float*
-		Sequences with a better evalue against any of the given databases will be filtered out
+        Sequences with a better evalue against any of the given databases will be filtered out.
+        This filter is not used by default.
 
 **--filter_idendity** *float*
-		Minimun identity to consider a BLAST hsp (default 95%)
+        Minimun identity to consider a BLAST hsp (default 95%)
 
 **--filter_num_residues** *int*
-		Sequences with BLAST matches longer than this length will be filtered out
+        Sequences with BLAST matches longer than this length will be filtered out.
+        The default behaviour is based on the percentage, so this filter is not used.
 
 **--filter_length_percentage** *float*
-		Sequences with BLAST matches longer than this length will be filtered out (default 75)
-		The percentage is calculated as the matched region divided by the total read length.
+        Sequences with BLAST matches longer than this length will be filtered out (default 75)
+        The percentage is calculated as the matched region divided by the total read length.
 
 **--filter_dbs** *database list*
-		List of BLAST databases used for similarity filtering
+        List of BLAST databases used for similarity filtering.
 
 **-t**, **-threads**
         Number of threads to use.
