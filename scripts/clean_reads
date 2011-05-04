@@ -270,12 +270,19 @@ def _prepare_adaptors_file(parameters):
             try:
                 adaptors_file = adaptors_file[platform]
             except KeyError:
+                raise KeyError
                 adaptors_file = None
     parameters['adaptors_file'] = adaptors_file
 
 def _prepare_pipeline(pipeline_type, parameters):
     'It prepares_the pipeline'
-    _prepare_adaptors_file(parameters)
+    try:
+        _prepare_adaptors_file(parameters)
+    except KeyError:
+        msg  = 'clean_reads does not have default adaptors file for the given'
+        msg += "platform and your haven't provided a file with adaptors"
+        raise AdaptorError(msg)
+
     if parameters['adaptors_file']:
         try:
             check_sequences_length(open(parameters['adaptors_file']), 15)

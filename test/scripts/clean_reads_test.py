@@ -287,6 +287,13 @@ T0..11031202101103031103110303212300122113032213202
         assert retcode == 0
         assert  "--adaptors_file: {'454': '" in stdout
 
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', 'illumina', '-f', 'fastq', '-a']
+        stdout, stderr, retcode = _call_python(cmd)
+        assert 'clean_reads does not have default adaptors file' in stderr
+        assert  retcode == 14
+
+
     def test_vector(self):
         'It removes the vector'
         seq1 = create_random_seqwithquality(5, qual_range=35)
