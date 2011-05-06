@@ -390,7 +390,7 @@ class ParallelTest(unittest.TestCase):
     'It tests the clean_reads script parallel operation'
 
     def test_fasta_qual(self):
-        'Filtering by blast similarity'
+        'Cleaning fasta and qual seqs in parallel'
         seq1 = create_random_seqwithquality(500, qual_range=55)
         seq2 = create_random_seqwithquality(50, qual_range=15)
         seq3 = create_random_seqwithquality(500, qual_range=55)
@@ -409,6 +409,26 @@ class ParallelTest(unittest.TestCase):
         assert retcode == 0
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
                                      qual_fhand=open(outqual_fhand.name)))
+        assert out_seqs[0].qual[-1] == 55
+
+    def test_fastq(self):
+        'Cleaning fastq seqs in parallel'
+        seq1 = create_random_seqwithquality(500, qual_range=55)
+        seq2 = create_random_seqwithquality(50, qual_range=15)
+        seq3 = create_random_seqwithquality(500, qual_range=55)
+        seq4 = create_random_seqwithquality(50, qual_range=15)
+        seq5 = create_random_seqwithquality(500, qual_range=55)
+        seq6 = create_random_seqwithquality(50, qual_range=15)
+        seqs = [seq1 + seq2, seq3 + seq4, seq5 + seq6]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        #we can clean a sanger sequence with quality
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', 'sanger', '-t', '4', '-f', 'fastq']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
         assert out_seqs[0].qual[-1] == 55
 
 if __name__ == "__main__":
