@@ -96,8 +96,7 @@ OPTIONS
         The path to the adaptors file.
         The adaptors to be trimmed should be given as a fasta file.
         These adaptors will be look for by using the blast-short algorithm.
-        This option can be used without giving an adaptors file. In that case a
-        provided adaptor file will e used in platform that there are standar adaptors: 454
+        For the 454 platform clean_reads holds an internal file with some standard adaptors, so in this case this option can be used without providing any file name and those standard adaptors will be used.
 
 **-v**, **-vector** *vector_fasta_file*
         The path to the vector file.
