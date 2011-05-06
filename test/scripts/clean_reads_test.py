@@ -5,7 +5,7 @@ Created on 26/04/2011
 '''
 
 import unittest
-import os.path, subprocess, sys, random
+import os.path, subprocess, sys
 from tempfile import NamedTemporaryFile
 
 import franklin
@@ -13,6 +13,7 @@ from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.writers import create_temp_seq_file
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, Seq
+from franklin.utils.test_utils import create_random_seqwithquality
 
 CLEAN_READS = os.path.join(os.path.split(franklin.__path__[0])[0],
                                          'scripts', 'clean_reads')
@@ -29,33 +30,6 @@ def _call_python(cmd):
     'It runs a python executable'
     cmd.insert(0, sys.executable)
     return _call(cmd)
-
-def create_random_seq(length, gc=50, qual_range=40):
-    'It returns a random sequence'
-    nucl_choice = {'at': {0:'A', 1:'T'}, 'gc': {0:'G', 1:'C'}}
-    gc = gc / 100.0
-    if isinstance(qual_range, int):
-        qual_range = [qual_range, qual_range]
-    nucls = []
-    quals = []
-    for index in range(length):
-        gc_choice = random.uniform(0, 1)
-        gc_choice = 'gc' if gc_choice <= gc else 'at'
-        at_choice = round(random.uniform(0, 1))
-        nucl = nucl_choice[gc_choice][at_choice]
-        qual = random.randint(qual_range[0], qual_range[1])
-        nucls.append(nucl)
-        quals.append(qual)
-    assert len(nucls) == length
-    return ''.join(nucls), quals
-
-def create_random_seqwithquality(length, gc=50, qual_range=40):
-    'It returns a random seqwithquality'
-    seq, qual = create_random_seq(length, gc, qual_range)
-    name = list('holacaracola')
-    random.shuffle(name)
-    name = ''.join(name)
-    return SeqWithQuality(Seq(seq), qual=qual, name=name)
 
 class CleanReadsTest(unittest.TestCase):
     'It tests the clean_reads script'
@@ -412,6 +386,31 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert len(out_seqs) == 2
 
+class ParallelTest(unittest.TestCase):
+    'It tests the clean_reads script parallel operation'
+
+    def test_fasta_qual(self):
+        'Filtering by blast similarity'
+        seq1 = create_random_seqwithquality(500, qual_range=55)
+        seq2 = create_random_seqwithquality(50, qual_range=15)
+        seq3 = create_random_seqwithquality(500, qual_range=55)
+        seq4 = create_random_seqwithquality(50, qual_range=15)
+        seq5 = create_random_seqwithquality(500, qual_range=55)
+        seq6 = create_random_seqwithquality(50, qual_range=15)
+        seqs = [seq1 + seq2, seq3 + seq4, seq5 + seq6]
+        inseq_fhand, inqual_fhand = create_temp_seq_file(seqs, format='qual')
+        outseq_fhand = NamedTemporaryFile()
+        outqual_fhand = NamedTemporaryFile()
+        #we can clean a sanger sequence with quality
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-q', inqual_fhand.name,
+               '-o', outseq_fhand.name, '-u', outqual_fhand.name,
+               '-p', 'sanger', '-t', '2']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     qual_fhand=open(outqual_fhand.name)))
+        assert out_seqs[0].qual[-1] == 55
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'CleanReadsTest.test_adaptors']
+    #import sys;sys.argv = ['', 'ParallelTest.test_fasta_qual']
     unittest.main()

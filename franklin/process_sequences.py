@@ -13,12 +13,24 @@ from franklin.pipelines.pipelines import process_sequences_for_script
 def main():
 
     #stdout = open('/tmp/script.test', 'w')
-    (in_fpath_seq, file_format,
-                pipeline, configuration, out_fpath, temp_dir) = sys.argv[1:]
+    args = sys.argv[1:]
+    if len(args) == 6:
+        (in_fpath_seq, file_format,
+                           pipeline, configuration, out_fpath, temp_dir) = args
+        in_fpath_qual = None
+    else:
+        (in_fpath_seq, in_fpath_qual, file_format,
+                           pipeline, configuration, out_fpath, temp_dir) = args
     tempfile.tempdir = temp_dir
 
-    process_sequences_for_script(in_fpath_seq, file_format,
-                                 pipeline, configuration, out_fpath)
+    if in_fpath_qual:
+        process_sequences_for_script(in_fpath_seq, file_format,
+                                     pipeline, configuration, out_fpath,
+                                     in_fpath_qual=in_fpath_qual)
+    else:
+        process_sequences_for_script(in_fpath_seq, file_format,
+                                     pipeline, configuration, out_fpath)
+
     #stdout.close()
 
 if __name__ == '__main__':

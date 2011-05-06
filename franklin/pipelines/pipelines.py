@@ -172,8 +172,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
 
     return items
 
-def process_sequences_for_script(in_fpath_seq, file_format,
-                                 pipeline, configuration, out_fpath):
+def process_sequences_for_script(in_fpath_seq, file_format, pipeline,
+                                 configuration, out_fpath, in_fpath_qual=None):
     '''It returns a repr file with the processed sequences
 
     The pipeline and configuration should be pickled object.
@@ -189,7 +189,12 @@ def process_sequences_for_script(in_fpath_seq, file_format,
         step_name = step['name']
         step['function'] = steps[step_name]['function']
 
-    processed_seqs = _process_sequences(open(in_fpath_seq), in_fhand_qual=None,
+    if in_fpath_qual:
+        in_fhand_qual = open(in_fpath_qual)
+    else:
+        in_fhand_qual = None
+    processed_seqs = _process_sequences(open(in_fpath_seq),
+                                        in_fhand_qual=in_fhand_qual,
                                         file_format=file_format,
                                         pipeline=pipeline,
                                         configuration=configuration)
@@ -209,9 +214,6 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
     processing. For this calling uses psubprocess doing in fact the
     parallelization
     '''
-    if in_fhand_qual:
-        #a splitter for both seq and qual should be used
-        raise NotImplementedError
     #we have to transform the pipeline list into a list of strs, otherwise
     #it wouldn't be possible to send them to an external script.
     str_pipeline = []
@@ -228,20 +230,21 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
     fhand, out_fpath = tempfile.mkstemp()
     os.close(fhand)
 
-    #debug = 'function'
+    debug = 'function'
     #debug = 'subprocess'
-    debug = False
+    #debug = False
     if debug == 'function':
-        process_sequences_for_script(in_fhand_seqs.name, file_format,
-                                     pipeline, configuration, out_fpath)
+        if in_fhand_qual:
+            process_sequences_for_script(in_fhand_seqs.name, file_format,
+                                         pipeline, configuration, out_fpath,
+                                         in_fpath_qual=in_fhand_qual.name)
+        else:
+            process_sequences_for_script(in_fhand_seqs.name, file_format,
+                                         pipeline, configuration, out_fpath)
     else:
-        cmd = [sys.executable]
-        cmd2 = os.path.join(franklin.__path__[0], 'process_sequences.py')
-        cmd.append(os.path.abspath(cmd2))
-        cmd.extend([in_fhand_seqs.name,
-                    file_format, pipeline, configuration, out_fpath,
-                    gettempdir()])
-        if file_format == 'fasta':
+        if in_fhand_qual and file_format == 'fasta':
+            splitter = '>'
+        elif file_format == 'fasta':
             splitter = '>'
         elif file_format in ('fastq', 'sfastq', 'ifastq'):
             splitter = 'fastq'
@@ -255,8 +258,21 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             else:
                 msg = 'A file with an unknown format cannot be split'
             raise NotImplementedError(msg)
+
+        cmd = [sys.executable]
+        cmd2 = os.path.join(franklin.__path__[0], 'process_sequences.py')
+        cmd.append(os.path.abspath(cmd2))
+        cmd.append(in_fhand_seqs.name)
+        if in_fhand_qual:
+            cmd.append(in_fhand_qual.name)
+        cmd.extend([file_format, pipeline, configuration, out_fpath,
+                    gettempdir()])
+
         cmd_def = [{'options': 2, 'io': 'in', 'splitter':splitter},
                    {'options':-2, 'io': 'out'}]
+        if in_fhand_qual:
+            cmd_def.append({'options': 3, 'io': 'in', 'splitter':splitter})
+
         stdout = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
         if debug == 'subprocess':

@@ -169,6 +169,7 @@ RUNNER_DEFINITIONS = {
                       'error'  :{'option':'-e', 'default':[0.015, 0.015]},
                       'vector' :{'option':'-vector'},
                       'min_len':{'option':'-minimum', 'default':10},
+                      'threads':{'option':'-xtra', 'default':1},
                       },
             'input':{'sequence':{'option': ARGUMENT,
                                  'arg_before_params':True,
@@ -350,8 +351,8 @@ def create_runner(tool, parameters=None, environment=None):
         _prepare_output_files(runner_data['output'])
         cmd, stdin = _build_cmd(cmd_param, runner_data)
 
-        #print ' '.join(cmd)
-        #raw_input()
+        #print 'cmd:' + ' '.join(cmd)
+        #raw_input('resume?')
         try:
             stdout, stderr, retcode = call(cmd, stdin=stdin,
                                            environment=environment)

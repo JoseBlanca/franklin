@@ -26,9 +26,10 @@ from franklin.pipelines.pipelines import  (configure_pipeline,
                                          seq_pipeline_runner,
                                          _pipeline_builder)
 from franklin.utils.seqio_utils import seqs_in_file
-from franklin.seq.writers import SequenceWriter
-
+from franklin.seq.writers import SequenceWriter, create_temp_seq_file
 from franklin.utils.misc_utils import TEST_DATA_DIR
+from franklin.utils.test_utils import create_random_seqwithquality
+
 
 ADAPTORS = '''>adaptor1
 atcgatcgatagcatacgat
@@ -142,7 +143,8 @@ class PipelineTests(unittest.TestCase):
                          'remove_adaptors':{'adaptors':fhand_adaptors.name}}
 
         in_fhands = {}
-        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
+        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'),
+                                   'r')
         out_fhand = NamedTemporaryFile()
         writer = SequenceWriter(out_fhand, file_format='fasta')
         writers = {'seq': writer}
@@ -155,6 +157,41 @@ class PipelineTests(unittest.TestCase):
         assert result_seq.count('>') == 6
         #are we keeping the description?
         assert 'mdust' in result_seq
+
+    def test_seq_pipeline_parallel_run_with_fasta_qual(self):
+        'The pipeline runs in parallel with fasta and qual'
+        pipeline = 'sanger_with_qual'
+
+        fhand_adaptors = NamedTemporaryFile()
+        fhand_adaptors.write(ADAPTORS)
+        fhand_adaptors.flush()
+        arabidopsis_genes = 'arabidopsis_genes+'
+        univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
+        configuration = {'remove_vectors': {'vectors':univec},
+                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
+
+        seq1 = create_random_seqwithquality(500, qual_range=50)
+        seq2 = create_random_seqwithquality(500, qual_range=51)
+        seq3 = create_random_seqwithquality(500, qual_range=52)
+        seqs = [seq1, seq2, seq3]
+        inseq_fhand, inqual_fhand = create_temp_seq_file(seqs, format='qual')
+
+        in_fhands = {}
+        in_fhands['in_seq'] = open(inseq_fhand.name)
+        in_fhands['in_qual'] = open(inqual_fhand.name)
+
+        outseq_fhand = NamedTemporaryFile()
+        outqual_fhand = NamedTemporaryFile()
+        writer = SequenceWriter(outseq_fhand, qual_fhand=outqual_fhand,
+                                file_format='fasta')
+        writers = {'seq': writer}
+
+        seq_pipeline_runner(pipeline, configuration, in_fhands,
+                            processes=4, writers=writers)
+        out_fhand = open(outseq_fhand.name, 'r')
+
+        result_seq = out_fhand.read()
+        assert result_seq.count('>') == 3
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'PipelineTests.test_seq_pipeline_parallel_run']
