@@ -25,7 +25,8 @@ from os.path import join, exists
 from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import (create_project,
                                               create_configuration)
-from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
+from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES,\
+    scrape_info_from_fname
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
 from tempfile import NamedTemporaryFile
@@ -379,6 +380,18 @@ class ConfigurationTest(unittest.TestCase):
         config = create_configuration(config_fpath)
         assert config['Snvs']['min_quality'] == 45
 
+class UtilTest(unittest.TestCase):
+    'test utils from backbone'
+
+    @staticmethod
+    def test_scrape_info_from_fname():
+        'scrape info from fpath'
+        fhand = NamedTemporaryFile(prefix='st_prot.A.', suffix='.fasta')
+        fhand.write('>seq\nTGATGC')
+        fhand.flush()
+        info = scrape_info_from_fname(fhand.name)
+        assert info['st'] == 'prot'
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_cleaning_analysis_lucy']
+    #import sys;sys.argv = ['', 'UtilTest.test_scrape_info_from_fname']
     unittest.main()

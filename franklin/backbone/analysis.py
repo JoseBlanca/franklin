@@ -45,7 +45,7 @@ def scrape_info_from_fname(path):
     file_info['format'] = guess_seq_file_format(fhand)
     fhand.close()
     for item in basename.split('.'):
-        if item[2] != '_':
+        if len(item) < 3 or item[2] != '_':
             continue
         key, value = item.split('_', 1)
         file_info[key] = value
