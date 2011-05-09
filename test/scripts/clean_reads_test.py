@@ -348,6 +348,24 @@ T0..11031202101103031103110303212300122113032213202
                                      format='fastq'))
         assert len(seq2.seq) - len(out_seqs[0].seq) == 20
 
+    def test_trim_as_mask(self):
+        'It masks the regions to trim'
+        seq2 = create_random_seqwithquality(250, qual_range=35)
+        seqs = [seq2]
+        inseq_fhand = create_temp_seq_file(seqs, format='fastq')[0]
+        outseq_fhand = NamedTemporaryFile()
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', '454', '-f', 'fastq', '-e', '10,10', '--mask_no_trim']
+        retcode = _call_python(cmd)[-1]
+        assert retcode == 0
+        out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
+                                     format='fastq'))
+        assert len(seq2.seq) == len(out_seqs[0].seq)
+        seq = str(out_seqs[0].seq)
+        assert seq[0:9].islower()
+        assert seq[10:len(seq) - 10].isupper()
+        assert seq[-10:].islower()
+
     def test_min_length(self):
         'Filtering by length'
         seq1 = create_random_seqwithquality(250, qual_range=35)
@@ -433,5 +451,5 @@ class ParallelTest(unittest.TestCase):
         assert out_seqs[0].qual[-1] == 55
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'ParallelTest.test_fasta_qual']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_trim_as_mask']
     unittest.main()

@@ -117,6 +117,10 @@ PARAMETERS = OrderedDict([
                 short_param: '-g',
                 help:'Output sequence file format.',
                 type_:str}),
+    ('mask_no_trim', {long_param: '--mask_no_trim',
+                      help:"Do not trim the reads, just mask them.",
+                      action:'store_true',
+                      type_:bool}),
     ('double_encoding', {long_param: '--double_encoding',
                     help:"Use double encoding for solid (default Not use).",
                          action:'store_true',
@@ -303,6 +307,9 @@ def _prepare_pipeline(pipeline_type, parameters):
                                                              pipeline_type)
 
     # triming and seq_lengh steps
+    if 'mask_no_trim' in parameters:
+        configuration['trim_and_mask_seq'] = {'trim_as_mask':
+                                                     parameters['mask_no_trim']}
     pipeline.append(sequence_trimmer)
     min_len = parameters.get('min_len', None)
     if min_len:
@@ -740,8 +747,9 @@ def log_parameters(fhand, parameters, pipeline_type):
     msg = 'The command was:\n'
     msg += ' '.join(sys.argv) + '\n'
     fhand.write(msg)
-    version = "%s version: %s" % (sys.argv[0],
-                                  str(franklin.__clean_reads_version__))
+    version = "%s version: %s\n" % (sys.argv[0],
+                                    str(franklin.__clean_reads_version__))
+    fhand.write(version)
     msg = 'Running pipeline %s with the following parameters:\n'
     msg %= pipeline_type
     fhand.write(msg)

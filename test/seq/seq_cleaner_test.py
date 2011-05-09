@@ -24,8 +24,7 @@ import unittest, os, tempfile
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.writers import temp_fasta_file
 from franklin.seq.readers import seqs_in_file
-from franklin.seq.seq_cleaner import (_create_vector_striper,
-                                      create_adaptor_striper,
+from franklin.seq.seq_cleaner import (create_adaptor_striper,
                                       create_vector_striper,
                                       create_masker_for_polia,
                                       create_masker_for_low_complexity,
@@ -614,6 +613,16 @@ class SeqSplitterTests(unittest.TestCase):
         seq3 = seq_trimmer(seq2)
         assert seq3.seq == 'ggtCtcA'
 
+        #masking the regions to trim
+        seq_trimmer = create_seq_trim_and_masker(mask=True, trim_as_mask=True)
+        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['quality'] = []
+        trim_rec['mask']    = [(0, 1), (5, 6)]
+        seq2 = seq_trimmer(seq)
+        assert seq2.seq == 'gggTCtcAtcatcaggg'
+        assert seq2.annotations == {'trimming_recommendations':
+                                                    {'mask': [(0, 1), (5, 6)]}}
+
     @staticmethod
     def test_sequence_masker():
         'It test the sequence masker'
@@ -623,7 +632,7 @@ class SeqSplitterTests(unittest.TestCase):
                              annotations={TRIMMING_RECOMMENDATIONS:
                                                             {'mask':segments}})
 
-        seq = _mask_sequence(seq)
+        seq = _mask_sequence(seq, segments)
         assert str(seq.seq) == 'atgtgaTGAtgata'
 
 
@@ -632,7 +641,7 @@ class SeqSplitterTests(unittest.TestCase):
         seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1),
                              annotations={TRIMMING_RECOMMENDATIONS:
                                                             {'mask':segments}})
-        seq = _mask_sequence(seq)
+        seq = _mask_sequence(seq, segments)
         assert seq.seq == 'AtgtGATGATGATA'
 
 class SegmentsTests(unittest.TestCase):

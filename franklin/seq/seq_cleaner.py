@@ -68,13 +68,8 @@ def _add_trim_segments(segments, sequence, vector=True, trim=True):
     elif not trim:
         trim_rec['mask'].extend(segments)
 
-def _mask_sequence(sequence):
+def _mask_sequence(sequence, segments):
     'It mask the given segments of the sequence'
-    try:
-        segments = sequence.annotations[TRIMMING_RECOMMENDATIONS].get('mask',
-                                                                      [])
-    except KeyError:
-        return sequence
 
     if not segments:
         return sequence
@@ -91,9 +86,9 @@ def _mask_sequence(sequence):
             seq_ = seq_.lower()
         new_seq += seq_
     return copy_seq_with_quality(sequence, seq=Seq(new_seq,
-                                                       sequence.seq.alphabet))
+                                                   sequence.seq.alphabet))
 
-def create_seq_trim_and_masker(mask=True, trim=True):
+def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False):
     'It actually trims the sequence taking into account trimming recommendations'
     def sequence_trimmer(sequence):
         'It trims the sequences'
@@ -103,28 +98,51 @@ def create_seq_trim_and_masker(mask=True, trim=True):
             return sequence
         trim_rec = sequence.annotations[TRIMMING_RECOMMENDATIONS]
 
+        #masking
         if mask:
-            sequence = _mask_sequence(sequence)
+            limits = trim_rec.get('mask', [])
+            sequence = _mask_sequence(sequence, limits)
 
+        #trimming
         trim_locs = trim_rec.get('vector', []) + trim_rec.get('quality', [])
         if trim and trim_locs:
             trim_limits = _get_longest_non_matched_seq_region_limits(sequence,
                                                                      trim_locs)
             if trim_limits is None:
-                return None
+                if trim_as_mask:
+                    trim_limits = [(0, len(sequence))]
+                else:
+                    return None
+        else:
+            trim_limits = []
+
+        if trim and trim_limits:
+            if trim_as_mask:
+                masks = []
+                mask_01 = trim_limits[0] - 1
+                if mask_01 >= 0:
+                    masks.append((0, mask_01))
+                if trim_limits[1] + 1 <= len(sequence):
+                    masks.append((trim_limits[1] + 1, len(sequence)))
+                sequence = _mask_sequence(sequence, masks)
             else:
                 sequence = sequence[trim_limits[0]:trim_limits[1] + 1]
+
+            #fixing the trimming recommendations
             if 'quality' in trim_rec:
                 del(trim_rec['quality'])
             if 'vector' in trim_rec:
                 del(trim_rec['vector'])
-            if 'mask' in trim_rec:
+            if 'mask' in trim_rec and not trim_as_mask:
                 new_mask_segments = []
                 for start, end in trim_rec['mask']:
-                    start = start - trim_limits[0] if start - trim_limits[0] > 0 else 0
+                    if start - trim_limits[0] > 0:
+                        start = start - trim_limits[0]
+                    else:
+                        start = 0
                     new_mask_segments.append((start, end - trim_limits[0]))
                 trim_rec['mask'] = new_mask_segments
-        sequence.annotations[TRIMMING_RECOMMENDATIONS] = trim_rec
+            sequence.annotations[TRIMMING_RECOMMENDATIONS] = trim_rec
         return sequence
     return sequence_trimmer
 
