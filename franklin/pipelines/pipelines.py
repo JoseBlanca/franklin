@@ -230,9 +230,9 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
     fhand, out_fpath = tempfile.mkstemp()
     os.close(fhand)
 
-    debug = 'function'
+    #debug = 'function'
     #debug = 'subprocess'
-    #debug = False
+    debug = False
     if debug == 'function':
         if in_fhand_qual:
             process_sequences_for_script(in_fhand_seqs.name, file_format,
