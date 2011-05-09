@@ -4,6 +4,18 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at github_.
 
+clean_reads 0.2
+---------------
+
+:download:`clean_reads 0.2.0 <downloads/clean_reads-0.2.0.tar.gz>`. Relased on 9-05-2011.
+
+Changes:
+
+ * Univec_Core included as default BLAST vector database.
+ * Default adaptors added to the 454 pipeline.
+ * Option added to mask instead of clipping.
+ * Several bugs fixed.
+
 clean_reads 0.1
 ---------------
 
