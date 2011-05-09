@@ -71,6 +71,11 @@ _454 = '454'
 LONG_WITH_QUALITY = 'long_with_quality'
 LONG_WITHOUT_QUALITY = 'long_without_quality'
 AVAILABLE_PLATFORMS = [SOLID, _454, SANGER, ILLUMINA]
+SUPPORTED_INPUT_FORMATS = ['fasta', 'csfasta', 'gb', 'genbank', 'embl', 'tab',
+                           'fastq', 'fastq-sanger', 'fastq-solexa',
+                           'fastq-illumina', 'sff']
+SUPPORTED_OUTPUT_FORMATS = ['fasta', 'gb', 'genbank', 'embl', 'tab', 'fastq',
+                            'fastq-sanger', 'fastq-illumina']
 
 long_param = 'long_param'
 short_param = 'short_param'
@@ -552,6 +557,9 @@ def get_input_output_options(parameters):
         except ValueError:
             msg = 'It was not possible to guess the format for file %s, please set it manualy'
             raise UnknownFormatError(msg)
+    if format_in not in SUPPORTED_INPUT_FORMATS:
+        msg = 'Format not supported for input sequences: ' + format
+        raise UnknownFormatError(msg)
 
     seq_out = parameters.get('seq_out', None)
     if seq_out is None:
@@ -572,6 +580,9 @@ def get_input_output_options(parameters):
         else:
             format_out = format_in
         format_out = format_in
+    if format_out not in SUPPORTED_OUTPUT_FORMATS:
+        msg = 'Format not supported for output sequences: ' + format
+        raise UnknownFormatError(msg)
 
     writer = SequenceWriter(seq_out_fhand, format_out,
                             qual_fhand=qual_out_fhand)

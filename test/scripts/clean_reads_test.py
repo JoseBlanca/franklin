@@ -379,7 +379,8 @@ T0..11031202101103031103110303212300122113032213202
         outseq_fhand = NamedTemporaryFile()
         ara_db = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
-               '-p', '454', '-f', 'fastq', '--filter_dbs', ara_db]
+               '-p', '454', '-f', 'fastq',
+               '--filter_dbs', ','.join((ara_db, ara_db))]
         retcode = _call_python(cmd)[-1]
         assert retcode == 0
         out_seqs = list(seqs_in_file(seq_fhand=open(outseq_fhand.name),
