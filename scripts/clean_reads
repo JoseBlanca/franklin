@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os.path, copy
+import sys, os.path, copy, tempfile
 from optparse import OptionParser
 
 try:
@@ -242,6 +242,10 @@ PARAMETERS = OrderedDict([
     ('error_log', {long_param: '--error_log',
                 help:'Path to the error log file to use (default %s).',
                 default:'clean_reads.error',
+                type_:path}),
+    ('temp_dir', {long_param: '--tmpdir',
+                help:'Directory to use as temporary dir',
+                default:tempfile.tempdir,
                 type_:path}),
 ])
 
@@ -640,7 +644,7 @@ def _cast(type_, value):
         if not os.path.exists(value):
             msg = 'The given file does not exists: %s' % value
             ValidationError(msg)
-    if type_ == path_exists_dict:
+    elif type_ == path_exists_dict:
         if isinstance(value, dict):
             for val in value.values():
                 if not os.path.exists(val):
@@ -650,6 +654,7 @@ def _cast(type_, value):
             if not os.path.exists(value):
                 msg = 'The given file does not exists: %s' % val
                 ValidationError(msg)
+
     elif type_ == int:
         value = _cast_int(value)
     elif type_ == float:
@@ -826,6 +831,17 @@ def main(stdout, stderr, args=None):
         msg = 'To use multiprocessing you need to install psubprocess'
         stderr.write(msg)
         sys.exit(13)
+
+    # tempdir
+    if 'temp_dir' in params:
+        try:
+            temp_dir = os.path.abspath(params['temp_dir'])
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            tempfile.tempdir = temp_dir
+        except Exception as Error:
+            msg = 'Error with tempdir: '
+            stderr.write('%s %s' % (msg, str(Error)))
 
     # parameters
     try:
