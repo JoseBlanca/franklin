@@ -427,6 +427,13 @@ def _which_binary(binary):
     else:
         return None
 
+def get_external_bin_dir():
+    'it get the external bin dir for the running platform and arch'
+    ext_dir = get_franklin_ext_dir()
+    arch    = platform.architecture()[0]
+    system  = platform.system().lower()
+    return os.path.join(ext_dir, 'bin', system, arch)
+
 _EXTERNAL_BIN_DIR = None
 def call(cmd, environment=None, stdin=None, raise_on_error=False,
          stdout=None, stderr=None, log=False, add_ext_dir=True):
@@ -443,10 +450,7 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     if add_ext_dir:
         global _EXTERNAL_BIN_DIR
         if not _EXTERNAL_BIN_DIR:
-            ext_dir = get_franklin_ext_dir()
-            arch    = platform.architecture()[0]
-            system  = platform.system().lower()
-            _EXTERNAL_BIN_DIR = os.path.join(ext_dir, 'bin', system, arch)
+            _EXTERNAL_BIN_DIR = get_external_bin_dir()
         binary = os.path.join(_EXTERNAL_BIN_DIR, binary_name)
         cmd[0] = binary
 

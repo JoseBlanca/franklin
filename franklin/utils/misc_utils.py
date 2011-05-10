@@ -555,6 +555,6 @@ def get_franklin_ext_dir():
     if not os.path.exists(ext_path):
         raise RuntimeError('Ext directory not found')
     _FRANKLIN_EXT_DIR = ext_path
-    return ext_path
+    return os.path.abspath(ext_path)
 
 

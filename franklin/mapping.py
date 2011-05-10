@@ -19,17 +19,12 @@ Created on 05/02/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-from franklin.utils.cmd_utils import call
+from franklin.utils.cmd_utils import call, get_external_bin_dir
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
-from franklin.utils.seqio_utils import seqio
-from franklin.sam import (sam2bam, sort_bam_sam, bam2sam, merge_sam,
-                          remove_unmapped_reads, sam_is_only_header)
+from franklin.sam import (sam2bam, sort_bam_sam)
 import os, shutil
 
 from tempfile import NamedTemporaryFile
-from franklin.seq.writers import SamWriter
-from franklin.seq.readers import guess_seq_file_format
-from franklin.gff import GffFile
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -102,6 +97,25 @@ def create_bowtie_reference(reference_fpath, color=False):
     cmd.extend([reference_fpath, bowtie_index])
     call(cmd, raise_on_error=True)
 
+def _modify_gmap_makefile(makefile):
+    'It modifies the gmap makefile to use proper binaries'
+    fhand = NamedTemporaryFile()
+    bin_dir = get_external_bin_dir()
+    for line in open(makefile):
+        if line.startswith('FA_COORDS'):
+            line = 'FA_COORDS = %s/fa_coords\n' % bin_dir
+        if line.startswith('MD_COORDS'):
+            line = 'MD_COORDS = %s/md_coords\n' % bin_dir
+        if line.startswith('GMAP_PROCESS'):
+            line = 'GMAP_PROCESS = %s/gmap_process\n' % bin_dir
+        if line.startswith('GMAPINDEX'):
+            line = 'GMAPINDEX = %s/gmapindex\n' % bin_dir
+        if line.startswith('PMAPINDEX'):
+            line = 'PMAPINDEX = %s/pmapindex\n' % bin_dir
+        fhand.write(line)
+    fhand.flush()
+    shutil.copy(fhand.name, makefile)
+
 def create_gmap_reference(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
@@ -112,6 +126,7 @@ def create_gmap_reference(reference_fpath):
         raise OSError('Gmap mapper is not installed or not in the path')
 
     makefile = 'Makefile.%s' % name
+    _modify_gmap_makefile(makefile)
 
     cmd = ['make', '-f', makefile , 'coords']
     call(cmd, raise_on_error=True, add_ext_dir=False)
