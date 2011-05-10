@@ -240,7 +240,7 @@ PARAMETERS = OrderedDict([
                 default:1,
                 type_:int}),
     ('temp_dir', {long_param: '--tmpdir',
-                  help:'Directory to use as temporary dir',
+                  help:'Directory to be used as temporary dir.',
                   type_:path}),
     ('error_log', {long_param: '--error_log',
                 help:'Path to the error log file to use (default %s).',

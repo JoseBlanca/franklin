@@ -19,12 +19,12 @@ Created on 05/02/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
+import os, shutil
+from tempfile import NamedTemporaryFile
+
 from franklin.utils.cmd_utils import call, get_external_bin_dir
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
 from franklin.sam import (sam2bam, sort_bam_sam)
-import os, shutil
-
-from tempfile import NamedTemporaryFile
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
