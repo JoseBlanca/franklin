@@ -61,8 +61,7 @@ class CleanReadsTest(unittest.TestCase):
         assert 'An unexpected error happened' in stderr
         assert 'function calls leading' in  error_log
 
-    @staticmethod
-    def test_tempdir():
+    def test_tempdir(self):
         'it test that the tmpdir work fine'
         seq1 = create_random_seqwithquality(500, qual_range=55)
         seq2 = create_random_seqwithquality(50, qual_range=15)
@@ -81,6 +80,13 @@ class CleanReadsTest(unittest.TestCase):
                '-p', 'sanger', '--tmpdir', dir_without_perm]
         stderr, retcode = _call_python(cmd)[1:]
         assert retcode == 1
+        assert "Permission denied: '%s" % dir_without_perm  in stderr
+
+        dir_without_perm = '/usr/remove_this_dir'
+        cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
+               '-p', 'sanger', '--tmpdir', dir_without_perm]
+        stderr, retcode = _call_python(cmd)[1:]
+        assert retcode == 14
         assert "Permission denied: '%s" % dir_without_perm  in stderr
 
     def test_sanger(self):
@@ -473,5 +479,5 @@ class ParallelTest(unittest.TestCase):
         assert out_seqs[0].qual[-1] == 55
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'CleanReadsTest.test_tempdir']
+    #import sys;sys.argv = ['', 'CleanReadsTest.test_tempdir']
     unittest.main()

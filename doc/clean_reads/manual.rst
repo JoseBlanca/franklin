@@ -194,6 +194,9 @@ OPTIONS
         Number of threads to use.
         The reads can be processed in parallel using several processes.
 
+**--tmpdir** *temporary/directory*
+		Directory to be used for the temporary files.
+
 **--error_log** *error_log_file*
         Path to the error log file to use (default clean_reads.error)
 

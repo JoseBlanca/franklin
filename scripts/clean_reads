@@ -239,13 +239,12 @@ PARAMETERS = OrderedDict([
                 help:'Number of threads to use. 0 for all cores. (default %i).',
                 default:1,
                 type_:int}),
+    ('temp_dir', {long_param: '--tmpdir',
+                  help:'Directory to use as temporary dir',
+                  type_:path}),
     ('error_log', {long_param: '--error_log',
                 help:'Path to the error log file to use (default %s).',
                 default:'clean_reads.error',
-                type_:path}),
-    ('temp_dir', {long_param: '--tmpdir',
-                help:'Directory to use as temporary dir',
-                default:tempfile.tempdir,
                 type_:path}),
 ])
 
@@ -834,15 +833,15 @@ def main(stdout, stderr, args=None):
 
     # tempdir
     if 'temp_dir' in params:
+        temp_dir = os.path.abspath(params['temp_dir'])
         try:
-            temp_dir = os.path.abspath(params['temp_dir'])
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
-            tempfile.tempdir = temp_dir
-        except Exception as Error:
-            msg = 'Error with tempdir: '
-            stderr.write('%s %s' % (msg, str(Error)))
-
+        except OSError as error:
+            msg = 'A problem ocurred with tempdir: '
+            stderr.write('%s %s' % (msg, str(error)))
+            sys.exit(14)
+        tempfile.tempdir = temp_dir
     # parameters
     try:
         pipeline, configuration = _prepare_pipeline(pipeline_type, params)
