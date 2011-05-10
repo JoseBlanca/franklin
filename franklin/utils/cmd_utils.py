@@ -427,14 +427,19 @@ def _which_binary(binary):
     else:
         return None
 
+_EXTERNAL_BIN_DIR = None
 def get_external_bin_dir():
     'it get the external bin dir for the running platform and arch'
+    global _EXTERNAL_BIN_DIR
+    if _EXTERNAL_BIN_DIR is not None:
+        return _EXTERNAL_BIN_DIR
     ext_dir = get_franklin_ext_dir()
     arch    = platform.architecture()[0]
     system  = platform.system().lower()
-    return os.path.join(ext_dir, 'bin', system, arch)
+    bin_dir = os.path.join(ext_dir, 'bin', system, arch)
+    _EXTERNAL_BIN_DIR = bin_dir
+    return _EXTERNAL_BIN_DIR
 
-_EXTERNAL_BIN_DIR = None
 def call(cmd, environment=None, stdin=None, raise_on_error=False,
          stdout=None, stderr=None, log=False, add_ext_dir=True):
     'It calls a command and it returns stdout, stderr and retcode'
@@ -448,15 +453,12 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
     binary_name = cmd[0]
 
     if add_ext_dir:
-        global _EXTERNAL_BIN_DIR
-        if not _EXTERNAL_BIN_DIR:
-            _EXTERNAL_BIN_DIR = get_external_bin_dir()
-        binary = os.path.join(_EXTERNAL_BIN_DIR, binary_name)
+        binary = os.path.join(get_external_bin_dir(), binary_name)
         cmd[0] = binary
 
     # emboss binaries need acd files and its environment variable to find them
     if binary_name in ('water', 'est2genome'):
-        acd_dir = os.path.join(_EXTERNAL_BIN_DIR, 'emboss_data')
+        acd_dir = os.path.join(get_external_bin_dir(), 'emboss_data')
         if environment is None:
             environment = {}
         environment['EMBOSS_ACDROOT'] =  acd_dir
