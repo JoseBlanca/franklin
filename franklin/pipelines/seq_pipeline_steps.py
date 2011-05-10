@@ -44,7 +44,7 @@ filter_similar_seqs = {'function':create_similar_seqs_filter,
 double_encoding = {'function':create_double_encoding_mapper,
            'arguments':{},
            'type': 'mapper',
-           'name': 'double_coding',
+           'name': 'double_encoding',
            'comment': 'It makes double coding to colorspace sequences'}
 
 up_case = {'function':create_upper_mapper,
@@ -184,4 +184,4 @@ SEQ_STEPS = [remove_vectors_blastdb, remove_vectors_file, remove_adaptors,
              strip_quality_by_n, mask_polia, mask_low_complexity,
              sequence_trimmer, filter_short_seqs, edge_remover,
              remove_short_adaptors, up_case, solid_quality, strip_quality_3,
-             filter_similar_seqs]
+             filter_similar_seqs, double_encoding]
