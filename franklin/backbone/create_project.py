@@ -27,11 +27,15 @@ import os
 from configobj import ConfigObj
 
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
-from franklin.utils.misc_utils import OrderedDict
+from franklin.utils.misc_utils import OrderedDict, DATA_DIR
 from franklin.utils.config_utils import (pretyfy_config, add_default_values,
                                          validate_config, STRING, INTEGER,
                                          NUMBER, BOOLEAN, INTEGER_OR_BOOL,
                                          STRING_LIST, NUMBER_LIST, FLOAT)
+
+UNIVEC = os.path.join(DATA_DIR, 'blastdbs', 'UniVec_Core')
+ADAPTORS = {'454': os.path.join(DATA_DIR, 'adaptors', '454_adaptors.fasta')}
+
 
 def create_project(name, directory=None, configuration=None):
     'It creates the files that define a project'
@@ -204,13 +208,13 @@ DEFAULT_CONFIGURATION = OrderedDict([
             ),
            ('Cleaning',
                 OrderedDict([
-                    ('adaptors_file_454', (STRING, None)),
+                    ('adaptors_file_454', (STRING, ADAPTORS['454'])),
                     ('adaptors_file_sanger', (STRING, None)),
                     ('adaptors_file_illumina', (STRING, None)),
                     ('short_adaptors_sanger', (STRING_LIST, [])),
                     ('short_adaptors_454', (STRING_LIST, [])),
                     ('short_adaptors_illumina', (STRING_LIST, [])),
-                    ('vector_database', (STRING, 'UniVec')),
+                    ('vector_database', (STRING, UNIVEC)),
                     ('vector_file', (STRING, None)),
                     ('strip_n_percent', (NUMBER, 2.0)),
                     ('min_seq_length',{
