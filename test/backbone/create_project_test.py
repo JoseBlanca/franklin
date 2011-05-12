@@ -359,6 +359,43 @@ Sequence qualities variance: 8.19
         nucl_freq = open(freq_nucl_fpath).read()
         assert '<filter id="colorAdd">' in nucl_freq
 
+    @staticmethod
+    def test_remove_output_on_error():
+        'We remove files when we have an error on cleaning'
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        project_dir = join(test_dir.name, project_name)
+
+        configuration = {'Cleaning':{},
+                         'General_settings':{'threads':THREADS}}
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name,
+                                       configuration=configuration)
+
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        original_reads_dir = join(reads_dir, 'raw')
+        os.mkdir(reads_dir)
+        os.mkdir(original_reads_dir)
+
+        #fake solid reads
+        fpath_solid = join(original_reads_dir, 'pl_454.lb_b.sfastq')
+        fhand_solid = open(fpath_solid, 'w')
+        fhand_solid.write(READS_ILL)
+        fhand_solid.flush()
+
+
+        try:
+            do_analysis(project_settings=settings_path, kind='clean_reads',
+                        silent=True)
+        except IOError:
+            pass
+        output__fpath = join(reads_dir, 'cleaned', 'pl_454.lb_b.sfastq')
+        assert not exists(output__fpath)
+
+
+
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
@@ -393,5 +430,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'UtilTest.test_scrape_info_from_fname']
+    import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
     unittest.main()

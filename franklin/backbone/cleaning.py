@@ -22,8 +22,7 @@ Created on 15/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging, array
-from tempfile import NamedTemporaryFile
+import os, logging, array, shutil
 
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -176,11 +175,17 @@ class CleanReadsAnalyzer(Analyzer):
             configuration = self.create_cleaning_configuration(
                                                        platform=file_info['pl'],
                                                        library=file_info['lb'])
-            seq_pipeline_runner(pipeline, configuration, infhands,
-                                file_info['format'], processes=self.threads,
-                                writers={'seq':writer})
-            input_fhand.close()
+            try:
+                seq_pipeline_runner(pipeline, configuration, infhands,
+                                    file_info['format'], processes=self.threads,
+                                    writers={'seq':writer})
+            except Exception as error:
+                output_fhand.close()
+                os.remove(output_fpath)
+                raise(error)
             output_fhand.close()
+            input_fhand.close()
+
         self._log({'analysis_finished':True})
         return
 
