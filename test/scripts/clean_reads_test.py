@@ -88,6 +88,9 @@ class CleanReadsTest(unittest.TestCase):
         stderr, retcode = _call_python(cmd)[1:]
         assert retcode == 14
         assert "Permission denied: '%s" % dir_without_perm  in stderr
+        errolog_path = 'clean_reads.error'
+        if os.path.exists(errolog_path):
+            os.remove(errolog_path)
 
     def test_sanger(self):
         'It tests the basic sanger cleaning'
