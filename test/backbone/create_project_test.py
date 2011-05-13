@@ -380,22 +380,15 @@ Sequence qualities variance: 8.19
         os.mkdir(original_reads_dir)
 
         #fake solid reads
-        fpath_solid = join(original_reads_dir, 'pl_454.lb_b.sfastq')
-        fhand_solid = open(fpath_solid, 'w')
-        fhand_solid.write(READS_ILL)
-        fhand_solid.flush()
-
+        fpath_solid = join(original_reads_dir, 'pl_454.lbx_b.sfastq')
 
         try:
             do_analysis(project_settings=settings_path, kind='clean_reads',
                         silent=True)
-        except IOError:
+        except KeyError:
             pass
         output__fpath = join(reads_dir, 'cleaned', 'pl_454.lb_b.sfastq')
         assert not exists(output__fpath)
-
-
-
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
@@ -430,5 +423,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
+    #import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
     unittest.main()

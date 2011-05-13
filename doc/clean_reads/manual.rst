@@ -25,7 +25,7 @@ SYNOPSIS
   [**--solid_qual_length** *window length*] [**--solid_qual_threshold** *quality_threshold*]
   [**--solid_allow_missing_call**] [**-m** *minimum_seq_length*] [**--filter_evalue** *evalue*]
   [**--filter_idendity** *identity*] [**--filter_num_residues** *num_residues*]
-  [**--filter_length_percentage** *percentage_of_length*] [**--filter_dbs* *list_of_blast_dbs*]
+  [**--filter_length_percentage** *percentage_of_length*] [**--filter_dbs** *list_of_blast_dbs*]
   [**-t** *number_of_threads*] [**--error_log** *error_log_file*]
 
 
