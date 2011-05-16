@@ -366,8 +366,9 @@ Sequence qualities variance: 8.19
         project_name = 'backbone'
         project_dir = join(test_dir.name, project_name)
 
-        configuration = {'Cleaning':{},
+        configuration = {'Cleaning':{'adaptors_file_454':'AKHSGDASD'},
                          'General_settings':{'threads':THREADS}}
+
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
