@@ -148,6 +148,15 @@ class GffMappersTest(unittest.TestCase):
         mapper(feature)
         assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
 
+
+        feature = {'end': 140722177, 'name': 'test', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'test', 'Name': 'test'},
+                   'score': '.', 'type': 'contig', 'id':'test', 'strand': '.'}
+        mapper = create_dbxref_feature_mapper('database2', rels_fhand)
+        mapper(feature)
+        assert 'Dbxref' not in feature['attributes']
+
     @staticmethod
     def test_go_annot_mapper():
         'it test s the go_annot_mapepr'
@@ -205,6 +214,8 @@ MELO3A000001P1\tGO:0006950\tprotein gi'''
                    'strand': '.'}
         changed_feature = mapper(feature)
         assert 'Note' not in changed_feature['attributes']
+
+
 
 class GffFilterTest(unittest.TestCase):
     'It test the mappers in GffFile'

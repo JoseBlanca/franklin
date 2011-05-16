@@ -429,8 +429,9 @@ def create_dbxref_feature_mapper(dbxref_db, rels_fhand):
 
     def dbxref_feature_mapper(feature):
         'it adds a dbxref to a feature'
-        dbxref_id = relations[feature['id']]
-        _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
+        if feature['id'] in relations:
+            dbxref_id = relations[feature['id']]
+            _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
         return feature
     return dbxref_feature_mapper
 
