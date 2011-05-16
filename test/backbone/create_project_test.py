@@ -431,5 +431,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
+    #import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
     unittest.main()
