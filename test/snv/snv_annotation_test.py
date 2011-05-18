@@ -41,7 +41,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          create_snv_annotator,
                                          UNKNOWN,
                                          variable_in_groupping,
-                                         invariant_in_groupping, UNKNOWN_RG)
+                                         invariant_in_groupping, UNKNOWN_RG,
+    _remove_alleles_by_read_number)
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -194,6 +195,20 @@ class TestSnvAnnotation(unittest.TestCase):
         assert len(alleles) == 0
 
     @staticmethod
+    def test_remove_alleles_by_read_number():
+        'it removes the alleles by read number'
+        alleles = {('A', SNP): {'qualities':[29, 22],
+                                'read_groups':[True, True]}}
+        _remove_alleles_by_read_number(alleles, 2)
+        assert len(alleles) == 1
+
+        _remove_alleles_by_read_number(alleles, 1)
+        assert len(alleles) == 1
+
+        _remove_alleles_by_read_number(alleles, 3)
+        assert len(alleles) == 0
+
+    @staticmethod
     def test_sort_alleles():
         'It tests that we can get the alleles'
         alleles = {('A', INVARIANT): {'read_names':['r1']},
@@ -230,7 +245,6 @@ class TestSnvAnnotation(unittest.TestCase):
         maf = calculate_maf_frequency(feat, groups=['l4'],
                                       group_kind='libraries')
         assert maf is None
-
 
     @staticmethod
     def test_snv_variability():

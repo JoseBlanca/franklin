@@ -353,6 +353,25 @@ def create_feature_type_filter(types):
             return False
     return feature_type_filter
 
+def create_add_description_mapper(description_fhand):
+    '''it adds the descrition from a file. It adds it on the Note field
+    of attributes'''
+    descriptions = {}
+    for line in description_fhand:
+        line = line.strip()
+        name, description = line.split('\t')
+        descriptions[name] = description
+
+    def _add_description_mapper(feature):
+        'the real mapper'
+        if 'Note' not in feature['attributes'] or not feature['attributes']['Note']:
+            name = feature['name']
+            if name in descriptions:
+                feature['attributes']['Note'] = descriptions[name]
+
+        return feature
+    return _add_description_mapper
+
 def create_id_to_name_mapper():
     'It adds the id as name if name not in gff'
     def id_to_name_mapper(feature):
@@ -410,8 +429,9 @@ def create_dbxref_feature_mapper(dbxref_db, rels_fhand):
 
     def dbxref_feature_mapper(feature):
         'it adds a dbxref to a feature'
-        dbxref_id = relations[feature['id']]
-        _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
+        if feature['id'] in relations:
+            dbxref_id = relations[feature['id']]
+            _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
         return feature
     return dbxref_feature_mapper
 

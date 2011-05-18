@@ -106,8 +106,8 @@ def _normalize_read_edge_conf(read_edge_conf):
     return read_edge_conf
 
 def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
-                 min_mapq, min_num_alleles, max_maf, read_edge_conf=None,
-                 default_bam_platform=None):
+                 min_mapq, min_num_alleles, max_maf, min_num_reads_for_allele,
+                 read_edge_conf=None, default_bam_platform=None):
     'It yields the snv information for every snv in the given reference'
 
     min_num_alleles = int(min_num_alleles)
@@ -233,6 +233,9 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
         if not check_maf_ok(alleles, max_maf):
             continue
 
+        # min_num_reads_for_allele
+        _remove_alleles_by_read_number(alleles, min_num_reads_for_allele)
+
         #if there are a min_num number of alleles requested and there are more
         #alleles than that
         #OR
@@ -248,6 +251,19 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                    'reference_allele':ref_allele,
                    'alleles':alleles,
                    'read_groups':read_groups_info}
+
+def _remove_alleles_by_read_number(alleles, min_num_reads_for_allele):
+    'It remove alleles with less reads than the given value'
+    alleles_to_remove = []
+    for allele_name, allele_info in  alleles.items():
+        if len(allele_info['read_groups']) < min_num_reads_for_allele:
+            alleles_to_remove.append(allele_name)
+
+    if alleles_to_remove:
+        for allele_to_remove in alleles_to_remove:
+            del(alleles[allele_to_remove])
+
+
 
 def _add_default_sanger_quality(alleles, default_sanger_quality,
                                 read_groups_info):
@@ -372,7 +388,8 @@ def _summarize_snv(snv):
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                          min_mapq=15, min_num_alleles=1, max_maf=0.9,
-                         read_edge_conf=None, default_bam_platform=None):
+                         read_edge_conf=None, default_bam_platform=None,
+                         min_num_reads_for_allele=2):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -391,7 +408,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 min_num_alleles=min_num_alleles,
                                 max_maf=max_maf,
                                 read_edge_conf=read_edge_conf,
-                                default_bam_platform=default_bam_platform):
+                                default_bam_platform=default_bam_platform,
+                             min_num_reads_for_allele=min_num_reads_for_allele):
             snv = _summarize_snv(snv)
             location = snv['ref_position']
             type_ = 'snv'
