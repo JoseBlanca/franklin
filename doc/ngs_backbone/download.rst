@@ -10,6 +10,16 @@ Virtual Machine
 To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ `virtual machine <http://bioinf.comav.upv.es/_downloads/ngs_machine_v2.tar.gz>`_ already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
 Be aware that this machine won't be able to run any real sized experiment and it will only be useful for testing and evaluation purposes.
 
+ngs_backbone 1.3.2
+------------------
+
+:download:`ngs_backbone 1.3.2 <downloads/ngs_backbone-1.3.2.tar.gz>`. Relased on 28-04-2011.
+
+Changes:
+  * UniVec_Core is now included and used by default.
+  * Standard 454 adaptors included and used by default.
+  * Several bugs fixed.
+
 ngs_backbone 1.3.1
 ------------------
 
