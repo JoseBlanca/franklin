@@ -41,8 +41,9 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          create_snv_annotator,
                                          UNKNOWN,
                                          variable_in_groupping,
-                                         invariant_in_groupping, UNKNOWN_RG,
-    _remove_alleles_by_read_number)
+                                         invariant_in_groupping,
+                                         _remove_alleles_by_read_number)
+
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
