@@ -1,2 +1,2 @@
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 __clean_reads_version__ = '0.2.1'

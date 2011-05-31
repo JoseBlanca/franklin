@@ -202,12 +202,10 @@ class TestBackboneMapping(unittest.TestCase):
         vcf_fpath = join(project_dir, 'annotations', 'features',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
-        #print vcf
-        assert 'VKS' in vcf
         assert 'VLB1' in vcf
         assert 'VLB2' in vcf
         assert 'VLB3' in vcf
-        assert 'AT5G19860.1' in vcf
+        assert 'AT1G14930.1' in vcf
 
         do_analysis(project_settings=settings_path, kind='mapping_stats',
                     silent=True)

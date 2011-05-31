@@ -278,7 +278,7 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
             read_edge_conf = self._configure_read_edge_conf(snv_settings)
             configuration['snv_bam_annotator']['read_edge_conf'] = read_edge_conf
             for config_param in ('min_quality', 'min_mapq', 'min_num_alleles',
-                                 'max_maf'):
+                                 'max_maf', 'min_num_reads_for_allele'):
                 if snv_settings[config_param] is not None:
                     param_value = float(snv_settings[config_param])
                 else:

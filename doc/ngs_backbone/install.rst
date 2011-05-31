@@ -4,7 +4,7 @@ Installation
 
 This is a summary on how to install ngs_backbone, below you have a :ref:`detailed explanation <step_by_step>`.
 
-If you just want to check out how ngs_backbone works you could also download a complete `VirtualBox <http://www.virtualbox.org/>`_ `virtual machine <http://bioinf.comav.upv.es/_downloads/ngs_machine_v2.tar.gz>`_ already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
+If you just want to check out how ngs_backbone works you could also download a complete `VirtualBox <http://www.virtualbox.org/>`_ `virtual machine <http://bioinf.comav.upv.es/_downloads/ngs_machine_v3.tar.gz>`_ already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/sequence_analysis/index.html>`_.
 Although this machine will not be powerful enough to run most real sized analyses it can be an easy way to get a felling of the analysis process without spending any time at all setting up the environment.
 
 To install ngs_backbond python 2.6 or better is required.
