@@ -184,6 +184,8 @@ class GffFile(object):
 
         for line in fhand:
             line = line.strip()
+            if not line:
+                continue
             if line.startswith('##gff-version'):
                 continue #this has been taken into account
             elif line.startswith('##FASTA'):
