@@ -23,11 +23,11 @@ import unittest, os
 from StringIO import StringIO
 from tempfile import NamedTemporaryFile
 
-from franklin.gff import (_add_dbxref_to_feature, GffFile, write_gff,
-                          METADATA, FEATURE, create_dbxref_feature_mapper,
-                          SeqGffWriter, create_go_annot_mapper,
+from franklin.gff import (_add_dbxrefs_to_dbxref, GffFile, write_gff,
+                          METADATA, FEATURE, create_dbxref_adder,
+                          SeqGffWriter, create_go_annot_adder,
                           create_feature_type_filter,
-    create_add_description_mapper)
+                          create_description_adder)
 from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.seqs import Seq, SeqWithQuality
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
@@ -41,8 +41,7 @@ class GffTest(unittest.TestCase):
     'It tests the GFF class'
 
     def _create_gff_file(self):
-        'It creates a temporary gff for testing, it returns the fhand'
-
+        'It creates a test gff file'
         gff_fhand = NamedTemporaryFile()
         gff_fhand.write(GFF_CONTENT)
         gff_fhand.flush()
@@ -91,134 +90,6 @@ class GffTest(unittest.TestCase):
         assert features[1]['attributes']['Name'] == 'ctg,0'
         assert features[1]['id'] == 'ctg 0'
         assert features[98]['name'] == 'Cm13_B04'
-
-    def test_gff_filters(self):
-        'It test that we can use filters for features in gff'
-        types = ['gene']
-        fhand = self._create_gff_file()
-        type_filter = create_feature_type_filter(types)
-        gff   = GffFile(fpath=fhand.name,)
-        items = filter(type_filter, gff.items)
-        assert items[1][1]['id'] == 'gene00001'
-
-        types = ['contig']
-        fhand = self._create_gff_file()
-        type_filter = create_feature_type_filter(types)
-        gff   = GffFile(fpath=fhand.name)
-        items = filter(type_filter, gff.items)
-        assert len(items) == 2
-
-class GffMappersTest(unittest.TestCase):
-    'It test the mappers in GffFile'
-
-    @staticmethod
-    def test_dbxref_feature_mapper():
-        'It tests the dbxref feature mapper'
-
-        database = 'database'
-        relations = {'ctg0': 'acc1'}
-        feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
-                   'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
-        mapper = create_dbxref_feature_mapper(database, relations)
-        mapper(feature)
-
-        # add an already given database
-        mapper(feature)
-        assert feature['attributes']['Dbxref'] == 'database:acc1'
-
-        # add a second dbxref
-        mapper = create_dbxref_feature_mapper('database2', relations)
-        mapper(feature)
-        assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
-
-
-        feature = {'end': 140722177, 'name': 'test', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'test', 'Name': 'test'},
-                   'score': '.', 'type': 'contig', 'id':'test', 'strand': '.'}
-        mapper = create_dbxref_feature_mapper('database2', relations)
-        mapper(feature)
-        assert 'Dbxref' not in feature['attributes']
-
-    @staticmethod
-    def test_go_annot_mapper():
-        'it test s the go_annot_mapepr'
-        go_annot ='''MELO3A000001P1\tGO:0016023\tprotein gi
-MELO3A000001P1\tGO:0006950\tprotein gi'''
-        annot_fhand = StringIO(go_annot)
-        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1'},
-                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
-                   'strand': '.'}
-        mapper = create_go_annot_mapper(annot_fhand)
-        mapper(feature)
-        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
-
-        #wit already go terms
-        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1',
-                                  'Ontology_term':'GO:0016023'},
-                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
-                   'strand': '.'}
-        mapper(feature)
-        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
-
-        #feature without gos
-        feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'MELO3A000001P2',
-                                  'Name': 'MELO3A000001P2'},
-                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
-                   'strand': '.'}
-        mapper(feature)
-        assert 'Ontology_term' not in feature['attributes']
-
-    @staticmethod
-    def test_add_desc_mapper():
-        'we can add descriptions to gff3 features'
-        descriptions = 'MELO3A000001P2\tcaracola\n'
-        description_fhand = StringIO(descriptions)
-        mapper = create_add_description_mapper(description_fhand)
-        feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'MELO3A000001P2',
-                                  'Name': 'MELO3A000001P2'},
-                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
-                   'strand': '.'}
-        changed_feature = mapper(feature)
-        assert  changed_feature['attributes']['Note'] == 'caracola'
-        feature = {'end': 140722177, 'name': 'test', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'test',
-                                  'Name': 'test'},
-                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
-                   'strand': '.'}
-        changed_feature = mapper(feature)
-        assert 'Note' not in changed_feature['attributes']
-
-
-
-class GffFilterTest(unittest.TestCase):
-    'It test the mappers in GffFile'
-
-    @staticmethod
-    def test_feature_type_filter():
-        'It tests the dbxref feature mapper'
-
-        feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
-                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
-                   'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
-                   'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
-
-        type_filter = create_feature_type_filter(['contig'])
-        assert filter(type_filter, [(FEATURE, feature)])
-
-        type_filter = create_feature_type_filter(['gene'])
-        assert not filter(type_filter, [(FEATURE, feature)])
 
 class GffOutTest(unittest.TestCase):
     'It tests the gff writer'
@@ -297,28 +168,12 @@ Chrctg0\tFPC\tBAC\t57982978\t58302466\t.\t.\t.\tBAC "Cm22_F20"; Name "Cm22_F20";
     @staticmethod
     def test_add_dbxref():
         'It adds dbxrefs to the features'
-        feature = {'seqid': 'ctg123',
-                   'type':  'gene',
-                   'start': 1000,
-                   'end':   9000,
-                   'attributes':{'ID':'gene00001', 'Name':'EDEN'}
-                   }
+        dbxref = _add_dbxrefs_to_dbxref('', ["test:id100"])
+        assert dbxref == "test:id100"
 
-        dbxref_db = 'test'
-        dbxref_id = 'id100'
-        _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
-        assert feature['attributes']['Dbxref'] == 'test:id100'
-
-        feature = {'seqid': 'ctg123',
-                   'type':  'gene',
-                   'start': 1000,
-                   'end':   9000,
-                   'attributes':{'ID':'gene00001', 'Name':'EDEN',
-                                 'Dbxref':'test2:id101'}
-                   }
-        _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
-        assert 'test:id100' in feature['attributes']['Dbxref']
-        assert 'test2:id101' in feature['attributes']['Dbxref']
+        dbxref = _add_dbxrefs_to_dbxref('test2:id101', ["test:id100"])
+        assert 'test:id100' in dbxref
+        assert 'test2:id101' in dbxref
 
 class SequenceWriter(unittest.TestCase):
     'It tests that we can write a stream of SeqWithQuality into a file'
@@ -420,6 +275,132 @@ class SequenceWriter(unittest.TestCase):
         gff_writer.write(seq2)
         gff = open(fhand.name).read()
         assert 'description' not in gff
+
+class GffMappersTest(unittest.TestCase):
+    'It test the mappers in GffFile'
+
+    @staticmethod
+    def test_dbxref_feature_mapper():
+        'It tests the dbxref feature mapper'
+
+        database = 'database'
+        relations = {'ctg0': 'acc1'}
+        feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
+                   'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
+        mapper = create_dbxref_adder(database, relations)
+        mapper(feature)
+
+        # add an already given database
+        mapper(feature)
+        assert feature['attributes']['Dbxref'] == 'database:acc1'
+
+        # add a second dbxref
+        mapper = create_dbxref_adder('database2', relations)
+        mapper(feature)
+        assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
+
+
+        feature = {'end': 140722177, 'name': 'test', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'test', 'Name': 'test'},
+                   'score': '.', 'type': 'contig', 'id':'test', 'strand': '.'}
+        mapper = create_dbxref_adder('database2', relations)
+        mapper(feature)
+        assert 'Dbxref' not in feature['attributes']
+
+    @staticmethod
+    def test_go_annot_mapper():
+        'it test s the go_annot_mapepr'
+        go_annot = {'MELO3A000001P1': ['GO:0016023', 'GO:0006950']}
+
+        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
+                   'strand': '.'}
+        mapper = create_go_annot_adder(go_annot)
+        mapper(feature)
+        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+
+        #wit already go terms
+        feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1',
+                                  'Ontology_term':'GO:0016023'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
+                   'strand': '.'}
+        mapper(feature)
+        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+
+        #feature without gos
+        feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P2',
+                                  'Name': 'MELO3A000001P2'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
+                   'strand': '.'}
+        mapper(feature)
+        assert 'Ontology_term' not in feature['attributes']
+
+    @staticmethod
+    def test_add_desc_mapper():
+        'we can add descriptions to gff3 features'
+        descriptions = {'MELO3A000001P2': 'caracola'}
+        mapper = create_description_adder(descriptions)
+        feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'MELO3A000001P2',
+                                  'Name': 'MELO3A000001P2'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
+                   'strand': '.'}
+        changed_feature = mapper(feature)
+        assert  changed_feature['attributes']['Note'] == 'caracola'
+        feature = {'end': 140722177, 'name': 'test', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'test',
+                                  'Name': 'test'},
+                   'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
+                   'strand': '.'}
+        changed_feature = mapper(feature)
+        assert 'Note' not in changed_feature['attributes']
+
+class GffFilterTest(unittest.TestCase):
+    'It test the mappers in GffFile'
+
+    def test_gff_filters(self):
+        'It test that we can use filters for features in gff'
+        types = ['gene']
+        gff_fhand = NamedTemporaryFile()
+        gff_fhand.write(GFF_CONTENT)
+        gff_fhand.flush()
+        type_filter = create_feature_type_filter(types)
+        gff   = GffFile(fpath=gff_fhand.name)
+        items = filter(type_filter, gff.items)
+        assert items[1][1]['id'] == 'gene00001'
+
+        types = ['contig']
+
+        type_filter = create_feature_type_filter(types)
+        gff   = GffFile(fpath=gff_fhand.name)
+        items = filter(type_filter, gff.items)
+        assert len(items) == 2
+
+    @staticmethod
+    def test_feature_type_filter():
+        'It tests the dbxref feature mapper'
+
+        feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
+                   'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
+                   'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
+                   'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
+
+        type_filter = create_feature_type_filter(['contig'])
+        assert filter(type_filter, [(FEATURE, feature)])
+
+        type_filter = create_feature_type_filter(['gene'])
+        assert not filter(type_filter, [(FEATURE, feature)])
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'GffTest.test_gff_filters']

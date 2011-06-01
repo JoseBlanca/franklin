@@ -5,7 +5,7 @@ adds the dbxref to the GFF3 file
 '''
 
 from optparse import OptionParser
-from franklin.gff import modify_gff3, create_dbxref_feature_mapper
+from franklin.gff import modify_gff3, create_dbxref_adder
 
 def parse_options():
     'It parses the command line arguments'
@@ -70,7 +70,7 @@ def main():
 
     relations = _get_relations(rels_fhand)
     mappers = []
-    mappers.append(create_dbxref_feature_mapper(database, relations))
+    mappers.append(create_dbxref_adder(database, relations))
 
     modify_gff3(ingff3_fpath, outgff3_fpath, mappers=mappers)
 

@@ -336,26 +336,7 @@ def create_feature_type_filter(types):
             return False
     return feature_type_filter
 
-def create_add_description_mapper(description_fhand):
-    '''it adds the descrition from a file. It adds it on the Note field
-    of attributes'''
-    descriptions = {}
-    for line in description_fhand:
-        line = line.strip()
-        name, description = line.split('\t')
-        descriptions[name] = description
-
-    def _add_description_mapper(feature):
-        'the real mapper'
-        if 'Note' not in feature['attributes'] or not feature['attributes']['Note']:
-            name = feature['name']
-            if name in descriptions:
-                feature['attributes']['Note'] = descriptions[name]
-
-        return feature
-    return _add_description_mapper
-
-def create_id_to_name_mapper():
+def create_mapper_add_id_as_name():
     'It adds the id as name if name not in gff'
     def id_to_name_mapper(feature):
         'It adds the name using id if not name'
@@ -364,71 +345,79 @@ def create_id_to_name_mapper():
         return feature
     return id_to_name_mapper
 
-def create_go_annot_mapper(annot_fhand):
-    '''It creates a mapper that adds the geneontology term provided in an b2go
-    annot file to the provided features'''
-    go_terms = {}
-    for line in annot_fhand:
-        line = line.strip()
-        if not line:
-            continue
-        items = line.split()
-        if items[0] not in go_terms:
-            go_terms[items[0]] = []
-        go_terms[items[0]].append(items[1])
+def create_description_adder(descriptions):
+    '''it adds the description from a dict.
 
+    It adds it on the Note field of attributes'''
+    def add_annot_mapper(feature):
+        'It adds descriptions to the feature'
+        attr_key = 'Note'
+        name = feature.get('name', None)
+        if not name:
+            return feature
+        description = descriptions.get(name, None)
+        if description:
+            attr =_add_dbxrefs_to_dbxref(feature['attributes'].get(attr_key, ''),
+                                         [description])
+            feature['attributes'][attr_key] = attr
+        return feature
+    return add_annot_mapper
+
+def create_go_annot_adder(go_terms):
+    '''It creates a mapper that adds gene ontology terms.
+
+    The GO terms should be provided by a dict with the feature names as keys
+    and a list of GO terms as values
+    '''
     def go_annot_mapper(feature):
         'It adds the GO terms to the feature'
-        if feature['name'] in go_terms:
-            _add_go_term_to_feature(feature, go_terms[feature['name']])
+        attr_key = 'Ontology_term'
+        name = feature.get('name', None)
+        if not name:
+            return feature
+        gos = go_terms.get(name, None)
+        if gos:
+            attr =_add_dbxrefs_to_dbxref(feature['attributes'].get(attr_key, ''),
+                                         gos)
+            feature['attributes'][attr_key] = attr
         return feature
     return go_annot_mapper
 
-
-def _add_go_term_to_feature(feature, go_terms):
-    'it adds the go_terms to a feature'
-    if not go_terms:
-        return
-    if 'Ontology_term' not in feature['attributes']:
-        feature['attributes']['Ontology_term'] = ''
-        already_gos = []
-    else:
-        already_gos = feature['attributes']['Ontology_term'].split(',')
-
-    for go_term in go_terms:
-        if go_term not in already_gos:
-            already_gos.append(go_term)
-
-    feature['attributes']['Ontology_term'] = ','.join(already_gos)
-
-def create_dbxref_feature_mapper(dbxref_db, relations):
+def create_dbxref_adder(dbxref_db, relations):
     '''It creates a mapper that adds a dbxref to the feature.
 
     It looks in the provided relations dict to add the dbxref.
+    The relations has the feature Name as key and the dbxref as value
     '''
     def add_dbxref_to_feature(feature):
         'it adds a dbxref to a feature'
         if feature['id'] in relations:
-            dbxref_id = relations[feature['id']]
-            _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
+            dbxref = relations[feature['name']]
+            dbxref = dbxref_db + ':' + dbxref
+            dbxref = _add_dbxrefs_to_dbxref(feature['attributes'].get('Dbxref',
+                                                                      ''),
+                                            [dbxref])
+            feature['attributes']['Dbxref'] = dbxref
         return feature
     return add_dbxref_to_feature
 
-def _add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
-    '''It adds the dbxref to the feature. If the dbxref tag is not in feature
-    attributes it creates it'''
+def _add_dbxrefs_to_dbxref(dbxref_str, new_dbxrefs):
+    '''It adds the dbxrefs to the feature.
+
+    If the dbxref tag is not in feature attributes it creates it'''
     #if the dbxref_db is already in the feature we have to update
-    if 'Dbxref' in feature['attributes']:
-        dbxrefs = feature['attributes']['Dbxref'].split(',')
-        dbxrefs = dict(dbxref.split(':') for dbxref in dbxrefs)
+    if dbxref_str:
+        #'GO:001,GO:002,SO:001'
+        dbxrefs = set(dbxref_str.split(','))
     else:
-        dbxrefs = {}
+        dbxrefs = set()
 
-    dbxrefs[dbxref_db] = dbxref_id
+    #to the current list of dbxrefs we add one more
+    #The final result can be Dbxref:"EMBL:10","EMBL:20"
+    #This does not make sense for Dbxref but it does for GO
+    dbxrefs = dbxrefs.union(new_dbxrefs)
 
-    dbxrefs = ['%s:%s' % (db, acc) for db, acc in dbxrefs.items()]
-    dbxrefs = ','.join(dbxrefs)
-    feature['attributes']['Dbxref'] = dbxrefs
+    return ','.join(dbxrefs)
 
 def modify_gff(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     'It modifies the gff features with the given mappers and filters'
