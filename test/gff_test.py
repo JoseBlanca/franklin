@@ -74,7 +74,7 @@ class GffTest(unittest.TestCase):
         gff_in_fhand = self._create_gff_file()
         gff = GffFile(fpath=gff_in_fhand.name)
         for kind, item in gff.items:
-            gff_out.write(kind, item)
+            gff_out.write((kind, item))
         gff_out.flush()
 
         result = open(gff_out_fhand.name).read()
@@ -92,33 +92,20 @@ class GffTest(unittest.TestCase):
         assert features[1]['id'] == 'ctg 0'
         assert features[98]['name'] == 'Cm13_B04'
 
-    def test_gff_mappers(self):
-        'It test that the mappers in gff are runs'
-        database = 'database'
-        relations = {'gene00001': 'acc1'}
-        dbxref_mapper = create_dbxref_feature_mapper(database, relations)
-
-        fhand = self._create_gff_file()
-        gff   = GffFile(fpath=fhand.name, feature_mappers=[dbxref_mapper])
-        items = list(gff.items)
-        assert items[1][1]['attributes']['Dbxref'] == 'database:acc1'
-
     def test_gff_filters(self):
         'It test that we can use filters for features in gff'
         types = ['gene']
         fhand = self._create_gff_file()
         type_filter = create_feature_type_filter(types)
-        gff   = GffFile(fpath=fhand.name, feature_filters=[type_filter])
-        items = list(gff.items)
+        gff   = GffFile(fpath=fhand.name,)
+        items = filter(type_filter, gff.items)
         assert items[1][1]['id'] == 'gene00001'
-
-
 
         types = ['contig']
         fhand = self._create_gff_file()
         type_filter = create_feature_type_filter(types)
-        gff   = GffFile(fpath=fhand.name, feature_filters=[type_filter])
-        items = list(gff.items)
+        gff   = GffFile(fpath=fhand.name)
+        items = filter(type_filter, gff.items)
         assert len(items) == 2
 
 class GffMappersTest(unittest.TestCase):
@@ -228,10 +215,10 @@ class GffFilterTest(unittest.TestCase):
                    'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
 
         type_filter = create_feature_type_filter(['contig'])
-        assert filter(type_filter, [feature])
+        assert filter(type_filter, [(FEATURE, feature)])
 
         type_filter = create_feature_type_filter(['gene'])
-        assert not filter(type_filter, [feature])
+        assert not filter(type_filter, [(FEATURE, feature)])
 
 class GffOutTest(unittest.TestCase):
     'It tests the gff writer'
