@@ -95,9 +95,8 @@ class GffTest(unittest.TestCase):
     def test_gff_mappers(self):
         'It test that the mappers in gff are runs'
         database = 'database'
-        relations = 'gene00001\tacc1\n'
-        rels_fhand = StringIO(relations)
-        dbxref_mapper = create_dbxref_feature_mapper(database, rels_fhand)
+        relations = {'gene00001': 'acc1'}
+        dbxref_mapper = create_dbxref_feature_mapper(database, relations)
 
         fhand = self._create_gff_file()
         gff   = GffFile(fpath=fhand.name, feature_mappers=[dbxref_mapper])
@@ -130,13 +129,12 @@ class GffMappersTest(unittest.TestCase):
         'It tests the dbxref feature mapper'
 
         database = 'database'
-        relations = 'ctg0\tacc1\n'
-        rels_fhand = StringIO(relations)
+        relations = {'ctg0': 'acc1'}
         feature = {'end': 140722177, 'name': 'ctg0', 'start': 1,
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
                    'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
                    'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
-        mapper = create_dbxref_feature_mapper(database, rels_fhand)
+        mapper = create_dbxref_feature_mapper(database, relations)
         mapper(feature)
 
         # add an already given database
@@ -144,7 +142,7 @@ class GffMappersTest(unittest.TestCase):
         assert feature['attributes']['Dbxref'] == 'database:acc1'
 
         # add a second dbxref
-        mapper = create_dbxref_feature_mapper('database2', rels_fhand)
+        mapper = create_dbxref_feature_mapper('database2', relations)
         mapper(feature)
         assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
 
@@ -153,7 +151,7 @@ class GffMappersTest(unittest.TestCase):
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
                    'attributes': {'ID': 'test', 'Name': 'test'},
                    'score': '.', 'type': 'contig', 'id':'test', 'strand': '.'}
-        mapper = create_dbxref_feature_mapper('database2', rels_fhand)
+        mapper = create_dbxref_feature_mapper('database2', relations)
         mapper(feature)
         assert 'Dbxref' not in feature['attributes']
 

@@ -45,12 +45,32 @@ def get_parameters():
     return ingff3_fpath, outgff3_fpath, rels_fhand, database
 
 
+def _get_relations(rels_fhand):
+    'It returns a dict with the relations between accessions'
+
+    rels_fhand.seek(0)
+
+    acc_relations = {}
+    for line_index, line in enumerate(rels_fhand):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            acc1, acc2 = line.split()
+        except ValueError:
+            msg = 'Malformed relations file in line number %i: %s' % \
+                                                          (line_index + 1, line)
+            raise ValueError(msg)
+        acc_relations[acc1] = acc2
+    return acc_relations
+
 def main():
     'It runs the script'
     ingff3_fpath, outgff3_fpath, rels_fhand, database = get_parameters()
 
+    relations = _get_relations(rels_fhand)
     mappers = []
-    mappers.append(create_dbxref_feature_mapper(database, rels_fhand))
+    mappers.append(create_dbxref_feature_mapper(database, relations))
 
     modify_gff3(ingff3_fpath, outgff3_fpath, mappers=mappers)
 

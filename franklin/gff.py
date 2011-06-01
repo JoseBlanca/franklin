@@ -381,8 +381,6 @@ def create_id_to_name_mapper():
         return feature
     return id_to_name_mapper
 
-
-
 def create_go_annot_mapper(annot_fhand):
     '''It creates a mapper that adds the geneontology term provided in an b2go
     annot file to the provided features'''
@@ -420,20 +418,18 @@ def _add_go_term_to_feature(feature, go_terms):
 
     feature['attributes']['Ontology_term'] = ','.join(already_gos)
 
-def create_dbxref_feature_mapper(dbxref_db, rels_fhand):
+def create_dbxref_feature_mapper(dbxref_db, relations):
     '''It creates a mapper that adds a dbxref to the feature.
 
-    It looks in the provided relations to add the dbxref
+    It looks in the provided relations dict to add the dbxref.
     '''
-    relations = _get_relations(rels_fhand)
-
-    def dbxref_feature_mapper(feature):
+    def add_dbxref_to_feature(feature):
         'it adds a dbxref to a feature'
         if feature['id'] in relations:
             dbxref_id = relations[feature['id']]
             _add_dbxref_to_feature(feature, dbxref_db, dbxref_id)
         return feature
-    return dbxref_feature_mapper
+    return add_dbxref_to_feature
 
 def _add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
     '''It adds the dbxref to the feature. If the dbxref tag is not in feature
@@ -450,25 +446,6 @@ def _add_dbxref_to_feature(feature, dbxref_db, dbxref_id):
     dbxrefs = ['%s:%s' % (db, acc) for db, acc in dbxrefs.items()]
     dbxrefs = ','.join(dbxrefs)
     feature['attributes']['Dbxref'] = dbxrefs
-
-def _get_relations(rels_fhand):
-    'It returns a dict with the relations between accessions'
-
-    rels_fhand.seek(0)
-
-    acc_relations = {}
-    for line_index, line in enumerate(rels_fhand):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            acc1, acc2 = line.split()
-        except ValueError:
-            msg = 'Malformed relations file in line number %i: %s' % \
-                                                          (line_index + 1, line)
-            raise ValueError(msg)
-        acc_relations[acc1] = acc2
-    return acc_relations
 
 def modify_gff3(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     'It modifies the gff with the goven mappers'
