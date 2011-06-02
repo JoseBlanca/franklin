@@ -158,6 +158,8 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     'It maps the reads with gmap'
     threads = parameters['threads']
     reference_dir, reference_name = os.path.split(reference_fpath)
+    if not reference_dir:
+        reference_dir = '.'
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 

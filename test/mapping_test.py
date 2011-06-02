@@ -92,8 +92,7 @@ class GmapTest(unittest.TestCase):
         temp_sam_fhand = NamedTemporaryFile(suffix='.sam')
         bam2sam(out_bam_fpath, temp_sam_fhand.name, True)
         result = open(temp_sam_fhand.name).read()
-        assert 'seq\t68\t*\t0\t0' in result
-
+        assert 'seq\t4\t*\t0\t0' in result
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'GmapTest.test_gmap_gff3_writer']
