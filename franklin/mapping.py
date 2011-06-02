@@ -99,7 +99,7 @@ def create_bowtie_reference(reference_fpath, color=False):
 
 def _modify_gmap_makefile(makefile):
     'It modifies the gmap makefile to use proper binaries'
-    fhand = NamedTemporaryFile()
+    fhand = NamedTemporaryFile(delete=False)
     bin_dir = get_external_bin_dir()
     for line in open(makefile):
         if line.startswith('FA_COORDS'):
@@ -114,43 +114,52 @@ def _modify_gmap_makefile(makefile):
             line = 'PMAPINDEX = %s/pmapindex\n' % bin_dir
         fhand.write(line)
     fhand.flush()
-    shutil.copy(fhand.name, makefile)
+    shutil.move(fhand.name, makefile)
 
 def create_gmap_reference(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
-    cmd = ['gmap_setup', '-d', name, '-D', dir_, reference_fpath]
+    if not dir_:
+        dir_ = '.'
+    makefile_fpath = os.path.join(dir_, 'Makefile.%s' % name)
+    #the gmap_setup command would not accept a file, to avoid thread conflicts
+    #we first create a name with a random name and them we move it where it
+    #belongs
+    temp_makefile = NamedTemporaryFile(delete=False)
+    cmd = ['gmap_setup', '-d', name, '-D', dir_, '-o', temp_makefile.name,
+           reference_fpath]
     try:
         call(cmd, raise_on_error=True)
     except OSError:
         raise OSError('Gmap mapper is not installed or not in the path')
+    shutil.move(temp_makefile.name, makefile_fpath)
 
-    makefile = 'Makefile.%s' % name
-    _modify_gmap_makefile(makefile)
+    _modify_gmap_makefile(makefile_fpath)
 
-    cmd = ['make', '-f', makefile , 'coords']
+    cmd = ['make', '-f', makefile_fpath , 'coords']
     call(cmd, raise_on_error=True, add_ext_dir=False)
 
-    cmd = ['make', '-f', makefile, 'gmapdb']
+    cmd = ['make', '-f', makefile_fpath, 'gmapdb']
     call(cmd, raise_on_error=True, add_ext_dir=False)
 
-    cmd = ['make', '-f', makefile, 'install']
+    cmd = ['make', '-f', makefile_fpath, 'install']
     call(cmd, raise_on_error=True, add_ext_dir=False)
 
     #we remove the makefile and an extra file with some instructions
-    os.remove(makefile)
+    os.remove(makefile_fpath)
     coords_fpath = 'coords.%s' % name
     install_fpath = 'INSTALL.%s' % name
     for fpath in (coords_fpath, install_fpath):
         if os.path.exists(fpath):
             os.remove(fpath)
 
-
 def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
     'It maps the reads with gmap'
     threads = parameters['threads']
     reference_dir, reference_name = os.path.split(reference_fpath)
+    if not reference_dir:
+        reference_dir = '.'
     if not os.path.exists(reference_fpath + '.chromosome'):
         create_gmap_reference(reference_fpath)
 
