@@ -435,6 +435,10 @@ def modify_gff(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     'It modifies the gff features with the given mappers and filters'
     in_gff  = GffFile(fpath=ingff3_fpath)
     out_gff = GffFile(fpath=outgff3_fpath, mode='w')
+    if filters is None:
+        filters = []
+    if mappers is None:
+        mappers = []
     for item in in_gff.items:
         for mapper in mappers:
             item = mapper(item)
