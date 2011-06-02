@@ -338,19 +338,25 @@ def create_feature_type_filter(types):
 
 def create_mapper_add_id_as_name():
     'It adds the id as name if name not in gff'
-    def id_to_name_mapper(feature):
+    def id_to_name_mapper(item):
         'It adds the name using id if not name'
+        if item[0] != FEATURE:
+            return item
+        feature = item[1]
         if 'name' not in feature:
             feature['name'] = feature['id']
-        return feature
+        return (FEATURE, feature)
     return id_to_name_mapper
 
 def create_description_adder(descriptions):
     '''it adds the description from a dict.
 
     It adds it on the Note field of attributes'''
-    def add_annot_mapper(feature):
+    def add_annot_mapper(item):
         'It adds descriptions to the feature'
+        if item[0] != FEATURE:
+            return item
+        feature = item[1]
         attr_key = 'Note'
         name = feature.get('name', None)
         if not name:
@@ -360,7 +366,7 @@ def create_description_adder(descriptions):
             attr =_add_dbxrefs_to_dbxref(feature['attributes'].get(attr_key, ''),
                                          [description])
             feature['attributes'][attr_key] = attr
-        return feature
+        return (FEATURE, feature)
     return add_annot_mapper
 
 def create_go_annot_adder(go_terms):
@@ -369,18 +375,21 @@ def create_go_annot_adder(go_terms):
     The GO terms should be provided by a dict with the feature names as keys
     and a list of GO terms as values
     '''
-    def go_annot_mapper(feature):
+    def go_annot_mapper(item):
         'It adds the GO terms to the feature'
+        if item[0] != FEATURE:
+            return item
+        feature = item[1]
         attr_key = 'Ontology_term'
         name = feature.get('name', None)
         if not name:
-            return feature
+            return (FEATURE, feature)
         gos = go_terms.get(name, None)
         if gos:
             attr =_add_dbxrefs_to_dbxref(feature['attributes'].get(attr_key, ''),
                                          gos)
             feature['attributes'][attr_key] = attr
-        return feature
+        return (FEATURE, feature)
     return go_annot_mapper
 
 def create_dbxref_adder(dbxref_db, relations):
@@ -389,8 +398,11 @@ def create_dbxref_adder(dbxref_db, relations):
     It looks in the provided relations dict to add the dbxref.
     The relations has the feature Name as key and the dbxref as value
     '''
-    def add_dbxref_to_feature(feature):
+    def add_dbxref_to_feature(item):
         'it adds a dbxref to a feature'
+        if item[0] != FEATURE:
+            return item
+        feature = item[1]
         if feature['id'] in relations:
             dbxref = relations[feature['name']]
             dbxref = dbxref_db + ':' + dbxref
@@ -398,7 +410,7 @@ def create_dbxref_adder(dbxref_db, relations):
                                                                       ''),
                                             [dbxref])
             feature['attributes']['Dbxref'] = dbxref
-        return feature
+        return FEATURE, feature
     return add_dbxref_to_feature
 
 def _add_dbxrefs_to_dbxref(dbxref_str, new_dbxrefs):

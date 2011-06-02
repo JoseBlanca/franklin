@@ -290,15 +290,15 @@ class GffMappersTest(unittest.TestCase):
                    'attributes': {'ID': 'ctg0', 'Name': 'ctg,0'},
                    'score': '.', 'type': 'contig', 'id':'ctg0', 'strand': '.'}
         mapper = create_dbxref_adder(database, relations)
-        mapper(feature)
+        mapper((FEATURE, feature))
 
         # add an already given database
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert feature['attributes']['Dbxref'] == 'database:acc1'
 
         # add a second dbxref
         mapper = create_dbxref_adder('database2', relations)
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
 
 
@@ -307,7 +307,7 @@ class GffMappersTest(unittest.TestCase):
                    'attributes': {'ID': 'test', 'Name': 'test'},
                    'score': '.', 'type': 'contig', 'id':'test', 'strand': '.'}
         mapper = create_dbxref_adder('database2', relations)
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert 'Dbxref' not in feature['attributes']
 
     @staticmethod
@@ -321,7 +321,7 @@ class GffMappersTest(unittest.TestCase):
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
                    'strand': '.'}
         mapper = create_go_annot_adder(go_annot)
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
 
         #wit already go terms
@@ -331,7 +331,7 @@ class GffMappersTest(unittest.TestCase):
                                   'Ontology_term':'GO:0016023'},
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
                    'strand': '.'}
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
 
         #feature without gos
@@ -341,7 +341,7 @@ class GffMappersTest(unittest.TestCase):
                                   'Name': 'MELO3A000001P2'},
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
-        mapper(feature)
+        mapper((FEATURE, feature))
         assert 'Ontology_term' not in feature['attributes']
 
     @staticmethod
@@ -355,7 +355,7 @@ class GffMappersTest(unittest.TestCase):
                                   'Name': 'MELO3A000001P2'},
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
-        changed_feature = mapper(feature)
+        changed_feature = mapper((FEATURE, feature))[1]
         assert  changed_feature['attributes']['Note'] == 'caracola'
         feature = {'end': 140722177, 'name': 'test', 'start': 1,
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
@@ -363,7 +363,7 @@ class GffMappersTest(unittest.TestCase):
                                   'Name': 'test'},
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
-        changed_feature = mapper(feature)
+        changed_feature = mapper((FEATURE, feature))[1]
         assert 'Note' not in changed_feature['attributes']
 
 class GffFilterTest(unittest.TestCase):
