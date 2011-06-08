@@ -404,7 +404,7 @@ def create_dbxref_adder(dbxref_db, relations):
             return item
         feature = item[1]
         if feature['id'] in relations:
-            dbxref = relations[feature['name']]
+            dbxref = relations[feature['id']]
             dbxref = dbxref_db + ':' + dbxref
             dbxref = _add_dbxrefs_to_dbxref(feature['attributes'].get('Dbxref',
                                                                       ''),
