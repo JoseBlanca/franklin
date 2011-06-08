@@ -246,7 +246,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
             splitter = '>'
         elif file_format == 'fasta':
             splitter = '>'
-        elif file_format in ('fastq', 'sfastq', 'ifastq'):
+        elif 'fastq' in file_format:
             splitter = 'fastq'
         elif file_format == 'repr':
             splitter = 'SeqWithQual'
