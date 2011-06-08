@@ -442,8 +442,13 @@ def modify_gff(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     for item in in_gff.items:
         for mapper in mappers:
             item = mapper(item)
+        result = True
         for filter_ in filters:
-            item = filter_(item)
+            result = filter_(item)
+            if not result:
+                break
+        if not result:
+            continue
         if item is not None:
             out_gff.write(item)
     out_gff.flush()
