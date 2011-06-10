@@ -60,6 +60,273 @@ COMMON_ENZYMES = ['EcoRI', 'SmaI', 'BamHI', 'AluI', 'BglII',
                   'HinfI', 'DraI', 'ApaI', 'BstEII', 'ZraI', 'BanI', 'Asp718I']
 UNKNOWN_RG = 'unknown'
 
+MATCH = 0
+INSERTION = 1
+DELETION = 2
+SKIP = 3
+SOFT_CLIP = 4
+HARD_CLIP = 5
+PADDING = 6
+
+IN_FIRST_POS = 1
+IN_MIDDLE_POS = 2
+IN_LAST_POS = 3
+IN_FIRST_AND_LAST = 4
+
+def _get_raw_allele_from_read(aligned_read, index):
+    'It returns allele, quality, is_reverse'
+    allele = aligned_read.seq[index].upper()
+    if aligned_read.qual:
+        qual = _qualities_to_phred(aligned_read.qual[index])
+    else:
+        qual = None
+    return allele, qual
+
+def _get_segments_from_cigar(ref_pos, cigar, read_len):
+    '''It returns two lists (reference and read) in which the firsts nucleotides
+     of the different cigar categories are given.
+
+     67890  12345
+     ATCGA--GATCG
+     atcGATCG--CG
+        12345  67
+
+    CIGAR = 3H2M2I1M2D2M
+
+    ref_segments = [9, None, 11, 12, 14]
+    read_segments = [1, 3, 5, None, 6]
+
+    It also returns the limits of the aligned reference.
+
+    It also returns a list with the cigar category for each segment.
+    '''
+
+    #We ignore hard clipped nucleotides ('H')
+    cigar_elements = []
+    for element in range(len(cigar)):
+        if cigar[element][0] != HARD_CLIP:
+            cigar_elements.append(cigar[element])
+
+    ref_segments = []
+    read_segments = []
+    ref_start = ref_pos
+    segment_type = []
+    segment_lens = []
+
+    read_pos = 0
+
+    for element in cigar_elements:
+        if element[0] == SOFT_CLIP:
+            read_pos += element[1]
+            continue
+        elif element[0] == MATCH:
+            segment_type.append(MATCH)
+            ref_segments.append(ref_pos)
+            read_segments.append(read_pos)
+            segment_lens.append(element[1])
+            ref_pos += element[1]
+            read_pos += element[1]
+            ref_start += element[1]
+            ref_end = ref_start - 1
+        elif element[0] == INSERTION:
+            segment_type.append(INSERTION)
+            ref_segments.append(None)
+            read_segments.append(read_pos)
+            segment_lens.append(element[1])
+            read_pos += element[1]
+        elif element[0] == DELETION or element[0] == SKIP:
+            read_segments.append(None)
+            ref_segments.append(ref_pos)
+            segment_lens.append(element[1])
+            #We differentiate between DELETION or SKIP
+            if element[0] == DELETION:
+                segment_type.append(DELETION)
+            if element[0] == SKIP:
+                segment_type.append(SKIP)
+
+            ref_pos += element[1]
+            ref_start += element[1]
+            ref_end = ref_start - 1
+
+    ref_start = ref_segments[0]
+    ref_limits = [ref_start, ref_end]
+    return (ref_segments, read_segments, sorted(ref_limits),
+            segment_type, segment_lens)
+
+def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
+    'It locates a read position in the segments'
+
+    for segment_index, segment_begin_pos in enumerate(ref_segments):
+        if segment_begin_pos is None:
+            continue
+        end_segment_pos = segment_begin_pos + segment_lens[segment_index] - 1
+        if ref_pos < segment_begin_pos:
+            #we're before the first segment, no read here
+            return None
+        elif ref_pos > end_segment_pos:
+            continue
+        elif ref_pos == segment_begin_pos and segment_begin_pos == end_segment_pos:
+            return segment_index, IN_FIRST_AND_LAST
+        elif ref_pos == segment_begin_pos:
+            return segment_index, IN_FIRST_POS
+        elif ref_pos == end_segment_pos:
+            return segment_index, IN_LAST_POS
+        elif segment_begin_pos < ref_pos < end_segment_pos:
+            return segment_index, IN_MIDDLE_POS
+        else:
+            raise RuntimeError('We should not be here, fix me')
+    #we're outside any segment
+    return None
+
+def _get_insertion(segment_index, segment_type, read_pos, pileup_read,
+                  aligned_read):
+
+    allele = None
+    kind = None
+    qual = None
+
+    if segment_index == len(segment_type) - 1:
+        #we're in the last segment
+        next_segment_pos = None
+    else:
+        next_segment_pos = segment_index + 1
+
+    if (next_segment_pos is not None and
+        segment_type[next_segment_pos] == INSERTION):
+
+        indel_length = pileup_read.indel
+        start = read_pos
+        end = start + indel_length
+
+        allele, qual = _get_raw_allele_from_read(aligned_read,
+                                                 slice(start, end))
+        kind = INSERTION
+
+    return allele, kind, qual
+
+def _from_ref_to_read_pos(segment_type, ref_segment_pos, read_segment_pos,
+                         ref_pos):
+    'Given the segment positions it calculates the read_pos'
+    if segment_type != MATCH:
+        return None
+    read_pos = read_segment_pos + (ref_pos - ref_segment_pos)
+    return read_pos
+
+def _read_pos_around_del(ref_segments, read_segments, segment_types,
+                        segment_index, ref_pos):
+    'It returns the read positions around a deletion'
+    if segment_types[segment_index - 1] == MATCH:
+        read_pos1 = _from_ref_to_read_pos(segment_types[segment_index - 1],
+                                         ref_segments[segment_index - 1],
+                                         read_segments[segment_index - 1],
+                                         ref_segments[segment_index] - 1)
+        read_pos2 = read_pos1 + 1
+    elif segment_types[segment_index + 1] == MATCH:
+        read_pos2 = _from_ref_to_read_pos(segment_types[segment_index + 1],
+                                         ref_segments[segment_index + 1],
+                                         read_segments[segment_index + 1],
+                                         ref_segments[segment_index + 1])
+        read_pos1 = read_pos2 - 1
+    else:
+        msg = 'A deletion is surrounded by two segments that are not matches'
+        raise RuntimeError(msg)
+    return read_pos1, read_pos2
+
+def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
+    '''It returns an allele from the read.
+
+    It returns a list with the alleles in the given position.
+    The returned allele can be an empty list if we're in a deletion.
+    If the position holds an insertion it will return two alleles, the
+    insertion and the nucleotide at that position.
+    '''
+
+    alleles = []
+    aligned_read = pileup_read.alignment
+    begin_pos_read_in_ref = aligned_read.pos
+    read_len = len(aligned_read.seq)
+    cigar = aligned_read.cigar
+
+    (ref_segments, read_segments, ref_limits, segment_types,
+    segment_lens) = _get_segments_from_cigar(begin_pos_read_in_ref, cigar,
+                                             read_len)
+    located_segment = _locate_segment(ref_pos, ref_segments, segment_lens,
+                                      ref_limits)
+    if located_segment is None:
+        return []
+    else:
+        segment_index, segment_pos = located_segment
+    is_reverse = bool(aligned_read.is_reverse)
+    if segment_types[segment_index] == MATCH:
+        read_pos = _from_ref_to_read_pos(MATCH, ref_segments[segment_index],
+                                        read_segments[segment_index], ref_pos)
+        allele, qual = _get_raw_allele_from_read(aligned_read, read_pos)
+        if allele != ref_allele:
+            kind = SNP
+        else:
+            kind = INVARIANT
+
+        alleles.append((allele, kind, qual, is_reverse))
+
+        if segment_pos == IN_LAST_POS or segment_pos == IN_FIRST_AND_LAST:
+            #Is there an insertion in the next position?
+            next_read_pos = read_pos + 1
+            allele, kind, qual = _get_insertion(segment_index, segment_types,
+                                               next_read_pos, pileup_read,
+                                               aligned_read)
+            if kind is not None:
+                alleles.append((allele, kind, qual, is_reverse))
+
+    elif segment_types[segment_index] == DELETION:
+        if (segment_pos == IN_FIRST_POS or segment_pos == IN_FIRST_AND_LAST or
+            segment_pos == IN_LAST_POS):
+            read_pos1, read_pos2 = _read_pos_around_del(ref_segments,
+                                                       read_segments,
+                                                       segment_types,
+                                                       segment_index,
+                                                       ref_pos)
+
+        if segment_pos == IN_FIRST_POS or segment_pos == IN_FIRST_AND_LAST:
+            indel_length = segment_lens[segment_index]
+            allele = DELETION_ALLELE * (indel_length)
+            #in the deletion case the quality is the lowest of the
+            #bases that embrace the deletion
+            if aligned_read.qual:
+                qual0 = aligned_read.qual[read_pos1]
+                qual0 = _qualities_to_phred(qual0)
+                qual1 = aligned_read.qual[read_pos2]
+                qual1 = _qualities_to_phred(qual1)
+                qual = min((qual0, qual1))
+            else:
+                qual = None
+            kind = DELETION
+            alleles.append((allele, kind, qual, is_reverse))
+        if segment_pos ==IN_FIRST_AND_LAST or segment_pos == IN_LAST_POS:
+            #Is there an insertion in the next position?
+            allele, kind, qual = _get_insertion(segment_index, segment_types,
+                                               read_pos1, pileup_read,
+                                               aligned_read)
+            if kind is not None:
+                alleles.append((allele, kind, qual, is_reverse))
+
+    elif segment_types[segment_index] == SKIP:
+        #Is there an insertion in the next position?
+        read_pos1, read_pos2 = _read_pos_around_del(ref_segments,
+                                                       read_segments,
+                                                       segment_types,
+                                                       segment_index,
+                                                       ref_pos)
+
+        allele, kind, qual = _get_insertion(segment_index, segment_types,
+                                           read_pos1, pileup_read,
+                                           aligned_read)
+        if kind is not None:
+            alleles.append((allele, kind, qual, is_reverse))
+
+    elif segment_types[segment_index] == INSERTION:
+        pass    #if we're in an insertion, it is returned in the last position
+                #of the previous match segment
+    return alleles
 def _qualities_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
     if quality is None:
@@ -72,15 +339,6 @@ def _qualities_to_phred(quality):
     else:
         phred_qual = sum(phred_qual) / len(phred_qual)
     return phred_qual
-
-def _get_allele_from_read(aligned_read, index):
-    'It returns allele, quality, is_reverse'
-    allele = aligned_read.seq[index].upper()
-    if aligned_read.qual:
-        qual = _qualities_to_phred(aligned_read.qual[index])
-    else:
-        qual = None
-    return allele, qual, bool(aligned_read.is_reverse)
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
                 mapping_quality, readgroup_info):
@@ -112,7 +370,6 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
 
     min_num_alleles = int(min_num_alleles)
 
-
     read_groups_info = get_read_group_info(bam)
     if not read_groups_info:
         if default_bam_platform is None:
@@ -121,7 +378,6 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
             raise ValueError(msg)
         read_groups_info = {UNKNOWN_RG:{'PL':default_bam_platform}}
 
-    current_deletions = {}
     reference_id = get_seq_name(reference)
     reference_seq = reference.seq
     reference_len = len(reference_seq)
@@ -159,65 +415,13 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 (edge_right is not None and edge_right <= read_pos)):
                 continue
 
-            allele = None
-            qual = None
-            is_reverse = None
-            kind = None
-            start = None
-            end = None
-            #which is the allele for this read in this position?
-            if read_name in current_deletions:
-                current_deletion = current_deletions[read_name]
-                if current_deletion[1]:
-                    allele = DELETION_ALLELE * current_deletion[0]
-                    #in the deletion case the quality is the lowest of the
-                    #bases that embrace the deletion
-                    if aligned_read.qual:
-                        qual0 = aligned_read.qual[read_pos - 1]
-                        qual0 = _qualities_to_phred(qual0)
-                        qual1 = aligned_read.qual[read_pos]
-                        qual1 = _qualities_to_phred(qual1)
-                        qual = min((qual0, qual1))
-                    else:
-                        qual = None
-                    is_reverse = bool(aligned_read.is_reverse)
-                    kind = DELETION
-                    current_deletion[1] = False #we have returned it already
-                #we count how many positions should be skip until this read
-                #has now deletion again
-                current_deletion[0] -= 1
-                if current_deletion[0] == 0:
-                    del current_deletions[read_name]
-            else:
-                allele, qual, is_reverse = _get_allele_from_read(aligned_read,
-                                                                 read_pos)
-                if allele != ref_allele:
-                    kind = SNP
-                else:
-                    kind = INVARIANT
-
-            #is there a deletion in the next column?
-            indel_length = pileup_read.indel
-            if indel_length < 0:
-                #deletion length, return this at the first opportunity
-                current_deletions[read_name] = [-indel_length, True]
-
-            if allele is not None:
+            alleles_here = _get_alleles_from_read(ref_allele, ref_pos,
+                                                  pileup_read)
+            for allele in alleles_here:
+                allele, kind, qual, is_reverse = allele
                 _add_allele(alleles, allele, kind, read_name, read_group,
-                            is_reverse, qual, read_mapping_qual,
-                            read_groups_info)
-
-            #is there an insertion after this column
-            if indel_length > 0:
-                start = read_pos + 1
-                end = start + indel_length
-
-                allele, qual, is_reverse = _get_allele_from_read(aligned_read,
-                                                              slice(start, end))
-                kind = INSERTION
-                _add_allele(alleles, allele, kind, read_name, read_group,
-                            is_reverse, qual, read_mapping_qual,
-                            read_groups_info)
+                    is_reverse, qual, read_mapping_qual,
+                    read_groups_info)
 
         #remove N
         _remove_alleles_n(alleles)

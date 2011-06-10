@@ -21,8 +21,10 @@ Created on 16/02/2010
 from __future__ import division
 from tempfile import NamedTemporaryFile
 import unittest, os
+
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
+import pysam
 
 from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.readers import seqs_in_file
@@ -42,8 +44,12 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          UNKNOWN,
                                          variable_in_groupping,
                                          invariant_in_groupping,
-                                         _remove_alleles_by_read_number)
-
+                                         _remove_alleles_by_read_number,
+                                         _get_segments_from_cigar,
+                                         _locate_segment, IN_FIRST_AND_LAST,
+                                         IN_FIRST_POS, IN_LAST_POS,
+                                         _get_alleles_from_read)
+from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -474,6 +480,187 @@ class TestSnvPipeline(unittest.TestCase):
                                           reference_free=False)
         assert not invariant_in_groupping(snv, 'read_groups', ['rg5', 'rg6'],
                                           reference_free=True)
+
+REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
+
+SAM = '''@HD\tVN:1.3\tSO:coordinate
+@SQ\tSN:ref\tLN:45
+r001/1\t163\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTAAGATAAAGGATACTG\t*
+r002\t0\tref\t9\t30\t3S6M1P1I4M\t*\t0\t0\tAAAAGATAAGGATA\t*
+r003\t0\tref\t9\t30\t5H6M\t*\t0\t0\tAGCTAA\t*\tNM:i:1
+r004\t0\tref\t16\t30\t6M14N5M\t*\t0\t0\tATAGCTTCAGC\t*
+r005\t16\tref\t29\t30\t6H5M\t*\t0\t0\tTAGGC\t*\tNM:i:0
+r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAGCGCCAT\t*
+'''
+
+
+class TestReadPos(unittest.TestCase):
+    'It tests the reference to read pos coordinate conversion'
+
+    @staticmethod
+    def test_get_segments_from_cigar():
+        '''It tests the obtention of reference and reads segments.
+        It also tests the obtention of the reference limits'''
+
+        read = 'TTAGATAAAGGATACTG'
+        ref_pos = 6
+        cigar = [(0, 8), (1, 2), (0, 4), (2, 1), (0, 3)]
+        is_reverse = False
+        read_len = len(read)
+
+        (ref_segments, read_segments, ref_limits, segment_type,
+         segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
+
+        #print ref_segments, read_segments, ref_limits, segment_type
+        assert ref_segments == [6, None, 14, 18, 19]
+        assert read_segments == [0, 8, 10, None, 14]
+        assert ref_limits == [6, 21]
+        assert segment_type == [0, 1, 0, 2, 0]
+
+        read = 'AAAAGATAAGGATA'
+        ref_pos = 8
+        cigar = '3S6M1P1I4M'
+        cigar = [(4, 3), (0, 6),(6, 1), (1, 1), (0, 4)]
+        is_reverse = False
+        read_len = len(read)
+
+        (ref_segments, read_segments, ref_limits, segment_type,
+         segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
+
+        #print ref_segments, read_segments, ref_limits, segment_type
+        assert ref_segments == [8, None, 14]
+        assert read_segments == [3, 9, 10]
+        assert ref_limits == [8, 17]
+        assert segment_type == [0, 1, 0]
+
+        read = 'TAGGCTTTAC'
+        ref_pos = 28
+        cigar = '6H5M3I2M'
+        cigar = [(0, 5),(1, 3), (0, 2)]
+        read_len = len(read)
+
+        (ref_segments, read_segments, ref_limits, segment_type,
+         segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
+
+        #print ref_segments, read_segments, ref_limits, segment_type
+        assert ref_segments == [28, None, 33]
+        assert read_segments == [0, 5, 8]
+        assert ref_limits == [28, 34]
+        assert segment_type == [0, 1, 0]
+
+        read = 'ATCGTAG'
+        ref_pos = 14
+        cigar = '3M4N2M3D2M'
+        cigar = [(0, 3),(3, 4), (0, 2), (2, 3), (0, 2)]
+        read_len = len(read)
+
+        (ref_segments, read_segments, ref_limits, segment_type,
+         segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
+
+        #print ref_segments, read_segments, ref_limits, segment_type
+        assert ref_segments == [14, 17, 21, 23, 26]
+        assert read_segments == [0, None, 3, None, 5]
+        assert ref_limits == [14, 27]
+        assert segment_type == [0, 3, 0, 2, 0]
+
+    @staticmethod
+    def test_locate_segment():
+        'It tests the correct location of a read position in the segments'
+
+        ref_segments = [6, 8, 10, None, 13, 15, 16]
+        ref_limits = [6, 16]
+        segment_lens = [2, 2, 3, 2, 2, 1, 1]
+
+        ref_pos = 8
+        segment_index, segment_pos = _locate_segment(ref_pos, ref_segments,
+                                                    segment_lens, ref_limits)
+        assert segment_index == 1
+        assert segment_pos == IN_FIRST_POS
+
+        ref_pos = 12
+        segment_index, segment_pos = _locate_segment(ref_pos, ref_segments,
+                                                    segment_lens, ref_limits)
+        assert segment_index == 2
+        assert segment_pos == IN_LAST_POS
+
+        ref_pos = 16
+        segment_index, segment_pos = _locate_segment(ref_pos, ref_segments,
+                                                    segment_lens, ref_limits)
+        assert segment_index == 6
+        assert segment_pos == IN_FIRST_AND_LAST
+
+    @staticmethod
+    def test_get_allele_from_read():
+        'It tests the correct extraction of information in each read position'
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+        create_bam_index(bam_fhand.name)
+
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        reference_id = reference.name
+        reference_seq = reference.seq
+
+        #Coor     01234567890123  4567890123456789012345678901234
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #               01234567890123 456
+        #+r001/1        TAAGATAAAGGATA*CTG
+        #              012345678 90123
+        #+r002         aaaAGATAA*GGATA
+        #                 012345
+        #+r003       gcctaAGCTAA
+        #                          012345              67890
+        #+r004                     ATAGCT..............TCAGC
+        #                                       43210
+        #-r005                            ttagctTAGGC
+        #                                               876543210
+        #-r001/2                                        CAGCGCCAT
+
+        expected = {('r001/1', 5): [],
+                    ('r001/1', 6): [('T', INVARIANT, None, False)],
+                    ('r001/1', 7): [('A', SNP, None, False)],
+                    ('r001/1', 13): [('A', INVARIANT, None, False),
+                                     ('AG', INSERTION, None, False)],
+                    ('r001/1', 14): [('G', INVARIANT, None, False)],
+                    ('r001/1', 17): [('A', INVARIANT, None, False)],
+                    ('r001/1', 18): [('-', DELETION, None, False)],
+                    ('r001/1', 22): [],
+                    ('r002', 5): [],
+                    ('r002', 7): [],
+                    ('r002', 8): [('A', INVARIANT, None, False)],
+                    ('r002', 14): [('G', INVARIANT, None, False)],
+                    ('r002', 18): [],
+                    ('r003', 7): [],
+                    ('r003', 8): [('A', INVARIANT, None, False)],
+                    ('r003', 14): [],
+                    ('r004', 20): [('T', INVARIANT, None, False)],
+                    ('r004', 21): [],
+                    ('r004', 34): [],
+                    ('r004', 35): [('T', INVARIANT, None, False)],
+                    ('r005', 27): [],
+                    ('r005', 28): [('T', INVARIANT, None, True)],
+                    ('r005', 29): [('A', INVARIANT, None, True)],
+                    ('r005', 32): [('C', INVARIANT, None, True)],
+                    }
+
+        for column in bam.pileup(reference=reference_id):
+            ref_pos = column.pos
+            ref_allele = reference_seq[ref_pos].upper()
+            for pileup_read in column.pileups:
+                read_name = pileup_read.alignment.qname
+                if (read_name, ref_pos) == ('r005', 28):
+                    pass
+                alleles = _get_alleles_from_read(ref_allele, ref_pos,
+                                                 pileup_read)
+                if (read_name, ref_pos) in expected:
+                    if alleles != expected[(read_name, ref_pos)]:
+                        print repr(alleles)
+                        print expected[(read_name, ref_pos)]
+                    assert alleles == expected[(read_name, ref_pos)]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
