@@ -82,7 +82,10 @@ def _get_raw_allele_from_read(aligned_read, index):
         qual = None
     return allele, qual
 
-def _get_segments_from_cigar(ref_pos, cigar, read_len):
+SEGMENTS_CACHE = {}
+MAX_CACHED_SEGMENTS = 10000
+
+def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
     '''It returns two lists (reference and read) in which the firsts nucleotides
      of the different cigar categories are given.
 
@@ -99,8 +102,13 @@ def _get_segments_from_cigar(ref_pos, cigar, read_len):
     It also returns the limits of the aligned reference.
 
     It also returns a list with the cigar category for each segment.
+    The position in the reference is only used for the cache
     '''
-
+    cigar = tuple(cigar)
+    global SEGMENTS_CACHE
+    cache_key = read_len, begin_pos_read_in_ref, cigar
+    if cache_key in SEGMENTS_CACHE:
+        return SEGMENTS_CACHE[cache_key]['result']
     #We ignore hard clipped nucleotides ('H')
     cigar_elements = []
     for element in range(len(cigar)):
@@ -109,7 +117,8 @@ def _get_segments_from_cigar(ref_pos, cigar, read_len):
 
     ref_segments = []
     read_segments = []
-    ref_start = ref_pos
+    ref_start = begin_pos_read_in_ref
+    ref_pos = begin_pos_read_in_ref
     segment_type = []
     segment_lens = []
 
@@ -150,8 +159,16 @@ def _get_segments_from_cigar(ref_pos, cigar, read_len):
 
     ref_start = ref_segments[0]
     ref_limits = [ref_start, ref_end]
-    return (ref_segments, read_segments, sorted(ref_limits),
+    result = (ref_segments, read_segments, sorted(ref_limits),
             segment_type, segment_lens)
+    if ref_pos is not None:
+        #store cache
+        SEGMENTS_CACHE[cache_key] = {'result':result, 'ref_pos':ref_pos}
+        #clean cache
+        if len(SEGMENTS_CACHE) > MAX_CACHED_SEGMENTS:
+            SEGMENTS_CACHE = {}
+            print 'cleaning'
+    return result
 
 def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
     'It locates a read position in the segments'
@@ -259,7 +276,7 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     is_reverse = bool(aligned_read.is_reverse)
     if segment_types[segment_index] == MATCH:
         read_pos = _from_ref_to_read_pos(MATCH, ref_segments[segment_index],
-                                        read_segments[segment_index], ref_pos)
+                                         read_segments[segment_index], ref_pos)
         allele, qual = _get_raw_allele_from_read(aligned_read, read_pos)
         if allele != ref_allele:
             kind = SNP
@@ -327,6 +344,7 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
         pass    #if we're in an insertion, it is returned in the last position
                 #of the previous match segment
     return alleles
+
 def _qualities_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
     if quality is None:
@@ -381,6 +399,9 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     reference_id = get_seq_name(reference)
     reference_seq = reference.seq
     reference_len = len(reference_seq)
+    #we can clean the cache of segments because we're in a new molecule
+    global SEGMENTS_CACHE
+    SEGMENTS_CACHE = {}
     for column in bam.pileup(reference=reference_id):
         alleles = {}
         ref_pos = column.pos

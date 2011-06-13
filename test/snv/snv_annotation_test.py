@@ -500,38 +500,37 @@ class TestReadPos(unittest.TestCase):
     @staticmethod
     def test_get_segments_from_cigar():
         '''It tests the obtention of reference and reads segments.
-        It also tests the obtention of the reference limits'''
+        It tests the obtention of the reference limits.
+        It tests the obtention of segment types and segment lengths'''
 
         read = 'TTAGATAAAGGATACTG'
         ref_pos = 6
         cigar = [(0, 8), (1, 2), (0, 4), (2, 1), (0, 3)]
-        is_reverse = False
         read_len = len(read)
 
         (ref_segments, read_segments, ref_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
-        #print ref_segments, read_segments, ref_limits, segment_type
         assert ref_segments == [6, None, 14, 18, 19]
         assert read_segments == [0, 8, 10, None, 14]
         assert ref_limits == [6, 21]
         assert segment_type == [0, 1, 0, 2, 0]
+        assert segment_lens == [8, 2, 4, 1, 3]
 
         read = 'AAAAGATAAGGATA'
         ref_pos = 8
         cigar = '3S6M1P1I4M'
         cigar = [(4, 3), (0, 6),(6, 1), (1, 1), (0, 4)]
-        is_reverse = False
         read_len = len(read)
 
         (ref_segments, read_segments, ref_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
-        #print ref_segments, read_segments, ref_limits, segment_type
         assert ref_segments == [8, None, 14]
         assert read_segments == [3, 9, 10]
         assert ref_limits == [8, 17]
         assert segment_type == [0, 1, 0]
+        assert segment_lens == [6, 1, 4]
 
         read = 'TAGGCTTTAC'
         ref_pos = 28
@@ -542,11 +541,11 @@ class TestReadPos(unittest.TestCase):
         (ref_segments, read_segments, ref_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
-        #print ref_segments, read_segments, ref_limits, segment_type
         assert ref_segments == [28, None, 33]
         assert read_segments == [0, 5, 8]
         assert ref_limits == [28, 34]
         assert segment_type == [0, 1, 0]
+        assert segment_lens == [5, 3, 2]
 
         read = 'ATCGTAG'
         ref_pos = 14
@@ -557,11 +556,11 @@ class TestReadPos(unittest.TestCase):
         (ref_segments, read_segments, ref_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
-        #print ref_segments, read_segments, ref_limits, segment_type
         assert ref_segments == [14, 17, 21, 23, 26]
         assert read_segments == [0, None, 3, None, 5]
         assert ref_limits == [14, 27]
         assert segment_type == [0, 3, 0, 2, 0]
+        assert segment_lens == [3, 4, 2, 3, 2]
 
     @staticmethod
     def test_locate_segment():
