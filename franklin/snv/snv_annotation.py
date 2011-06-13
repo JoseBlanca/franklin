@@ -404,16 +404,20 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 read_group = UNKNOWN_RG
 
             read_name = aligned_read.qname
-            platform = read_groups_info[read_group]['PL']
+            if read_groups_info and read_group in read_groups_info:
+                platform = read_groups_info[read_group]['PL']
+            else:
+                platform = default_bam_platform
 
             read_pos = pileup_read.qpos
-            edge_left, edge_right = read_edge_conf[platform]
+            if read_edge_conf and platform in read_edge_conf:
+                edge_left, edge_right = read_edge_conf[platform]
 
-            #if we're in the edge region to be ignored we continue to the next
-            #read, because there's no allele to add for this one.
-            if ((edge_left  is not None and edge_left >= read_pos) or
-                (edge_right is not None and edge_right <= read_pos)):
-                continue
+                #if we're in the edge region to be ignored we continue to the next
+                #read, because there's no allele to add for this one.
+                if ((edge_left  is not None and edge_left >= read_pos) or
+                    (edge_right is not None and edge_right <= read_pos)):
+                    continue
 
             alleles_here = _get_alleles_from_read(ref_allele, ref_pos,
                                                   pileup_read)
