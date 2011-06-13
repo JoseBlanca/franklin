@@ -535,7 +535,16 @@ def _calculate_allele_quality(allele_info):
 
     #we sort all qualities
     quals = allele_info['qualities'][:]
-    quals.sort(lambda x, y: int(y - x))
+
+    #slow alternative
+    #quals.sort(lambda x, y: int(y - x))
+    #fast alternative
+    qual_set = set(quals)
+    for index in range(3):
+        if not qual_set:
+            break
+        quals[index] = max(qual_set)
+        qual_set.remove(quals[index])
 
     total_qual = 0
     if quals:
