@@ -77,7 +77,7 @@ def _get_raw_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
     allele = aligned_read.seq[index].upper()
     if aligned_read.qual:
-        qual = _qualities_to_phred(aligned_read.qual[index])
+        qual = _quality_to_phred(aligned_read.qual[index])
     else:
         qual = None
     return allele, qual
@@ -167,7 +167,6 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
         #clean cache
         if len(SEGMENTS_CACHE) > MAX_CACHED_SEGMENTS:
             SEGMENTS_CACHE = {}
-            print 'cleaning'
     return result
 
 def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
@@ -310,9 +309,9 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
             #bases that embrace the deletion
             if aligned_read.qual:
                 qual0 = aligned_read.qual[read_pos1]
-                qual0 = _qualities_to_phred(qual0)
+                qual0 = _quality_to_phred(qual0)
                 qual1 = aligned_read.qual[read_pos2]
-                qual1 = _qualities_to_phred(qual1)
+                qual1 = _quality_to_phred(qual1)
                 qual = min((qual0, qual1))
             else:
                 qual = None
@@ -345,17 +344,17 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
                 #of the previous match segment
     return alleles
 
-def _qualities_to_phred(quality):
+def _quality_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
     if quality is None:
         return None
-    phred_qual = []
-    for char in quality:
-        phred_qual.append(ord(char) - 33)
-    if quality[0] == 93:  #the character used for unknown qualities
-        phred_qual = None
+    elif len(quality) == 1:
+        phred_qual = ord(quality) - 33
     else:
-        phred_qual = sum(phred_qual) / len(phred_qual)
+        phred_quals = [ord(qual) - 33 for qual in quality]
+        phred_qual = sum(phred_quals) / len(phred_quals)
+    if phred_qual == 93:  #the character used for unknown qualities
+        phred_qual = None
     return phred_qual
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
