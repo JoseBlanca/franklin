@@ -105,18 +105,79 @@ class TestSnvAnnotation(unittest.TestCase):
 
     def test_snv_remove_edges(self):
         'It test that we do not annotate snv in the edges'
-        edge_remove_settings = {'454':(30, None),
-                                'sanger':(None, None)}
 
-        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
+        REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
+
+        #Coor     01234567890123  4567890123456789012345678901234
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #                 012345
+        #+r003       gcctaAGATAA
+        #                          012345              67890
+        #+r004                     ATAGCT..............TCAGC
+        #                                       43210
+        #-r005                            ttagctTAGGC
+        #                                               876543210
+        #-r001/2                                        CAGCGCCAT
+
+        SAM = '''@HD\tVN:1.3\tSO:coordinate
+@SQ\tSN:ref\tLN:45
+r003\t0\tref\t9\t30\t5H6M\t*\t0\t0\tgagccc\t*\tNM:i:1
+r004\t0\tref\t16\t30\t6M14N5M\t*\t0\t0\tATAGCaaCAGC\t*
+r005\t16\tref\t29\t30\t6H5M\t*\t0\t0\tTAGGa\t*\tNM:i:0
+r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
+'''
+
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+        create_bam_index(bam_fhand.name)
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        edge_remove_settings = {'sanger':(None, None)}
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
-                                         read_edge_conf=edge_remove_settings)
-        seqs = list(seqs_in_file(seq_fhand))
-        seq = seqs[1]
-        seq = annotator(seq)
-        assert len(seq.features) == 2
+                                         read_edge_conf=edge_remove_settings,
+                                         default_bam_platform='sanger',
+                                         default_sanger_quality=60,
+                                         min_num_reads_for_allele=1)
+        seq = annotator(reference)
+        assert len(seq.features) == 10
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        edge_remove_settings = {'sanger':(1, 1)}
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         read_edge_conf=edge_remove_settings,
+                                         default_bam_platform='sanger',
+                                         default_sanger_quality=60,
+                                         min_num_reads_for_allele=1)
+        seq = annotator(reference)
+        assert len(seq.features) == 7
+
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        edge_remove_settings = {'sanger':(2, 1)}
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         read_edge_conf=edge_remove_settings,
+                                         default_bam_platform='sanger',
+                                         default_sanger_quality=60,
+                                         min_num_reads_for_allele=1)
+        seq = annotator(reference)
+        assert len(seq.features) == 6
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        edge_remove_settings = {'sanger':(10, 10)}
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         read_edge_conf=edge_remove_settings,
+                                         default_bam_platform='sanger',
+                                         default_sanger_quality=60,
+                                         min_num_reads_for_allele=1)
+        seq = annotator(reference)
+        assert len(seq.features) == 0
 
     @staticmethod
     def test_snv_kind():
@@ -372,7 +433,7 @@ class TestSnvPipeline(unittest.TestCase):
         for seq in sequences:
             num_alleles += len(list(seq.get_features('snv')))
 
-        assert num_alleles == 8
+        assert num_alleles == 9
 
     @staticmethod
     def test_variable_in_read_group():
@@ -508,44 +569,50 @@ class TestReadPos(unittest.TestCase):
         cigar = [(0, 8), (1, 2), (0, 4), (2, 1), (0, 3)]
         read_len = len(read)
 
-        (ref_segments, read_segments, ref_limits, segment_type,
+        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
         assert ref_segments == [6, None, 14, 18, 19]
         assert read_segments == [0, 8, 10, None, 14]
         assert ref_limits == [6, 21]
+        assert read_limits == [0, 16]
         assert segment_type == [0, 1, 0, 2, 0]
         assert segment_lens == [8, 2, 4, 1, 3]
 
-        read = 'AAAAGATAAGGATA'
+
+        read = 'aaaAGATAAGGATA'
         ref_pos = 8
         cigar = '3S6M1P1I4M'
         cigar = [(4, 3), (0, 6),(6, 1), (1, 1), (0, 4)]
         read_len = len(read)
 
-        (ref_segments, read_segments, ref_limits, segment_type,
+        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
         assert ref_segments == [8, None, 14]
         assert read_segments == [3, 9, 10]
         assert ref_limits == [8, 17]
+        assert read_limits == [3, 13]
         assert segment_type == [0, 1, 0]
         assert segment_lens == [6, 1, 4]
 
-        read = 'TAGGCTTTAC'
+
+        read = 'TAGGCTTTACgta'
         ref_pos = 28
-        cigar = '6H5M3I2M'
-        cigar = [(0, 5),(1, 3), (0, 2)]
+        cigar = '6H5M3I2M3S'
+        cigar = [(0, 5),(1, 3), (0, 2), (4, 3)]
         read_len = len(read)
 
-        (ref_segments, read_segments, ref_limits, segment_type,
+        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
         assert ref_segments == [28, None, 33]
         assert read_segments == [0, 5, 8]
         assert ref_limits == [28, 34]
+        assert read_limits == [0, 9]
         assert segment_type == [0, 1, 0]
         assert segment_lens == [5, 3, 2]
+
 
         read = 'ATCGTAG'
         ref_pos = 14
@@ -553,12 +620,13 @@ class TestReadPos(unittest.TestCase):
         cigar = [(0, 3),(3, 4), (0, 2), (2, 3), (0, 2)]
         read_len = len(read)
 
-        (ref_segments, read_segments, ref_limits, segment_type,
+        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
          segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
 
         assert ref_segments == [14, 17, 21, 23, 26]
         assert read_segments == [0, None, 3, None, 5]
         assert ref_limits == [14, 27]
+        assert read_limits ==  [0, 6]
         assert segment_type == [0, 3, 0, 2, 0]
         assert segment_lens == [3, 4, 2, 3, 2]
 
@@ -589,7 +657,7 @@ class TestReadPos(unittest.TestCase):
         assert segment_pos == IN_FIRST_AND_LAST
 
     @staticmethod
-    def test_get_allele_from_read():
+    def test_get_alleles_from_read():
         'It tests the correct extraction of information in each read position'
         sam = NamedTemporaryFile(suffix='.sam')
         sam.write(SAM)
@@ -653,8 +721,9 @@ class TestReadPos(unittest.TestCase):
                 read_name = pileup_read.alignment.qname
                 if (read_name, ref_pos) == ('r005', 28):
                     pass
-                alleles = _get_alleles_from_read(ref_allele, ref_pos,
-                                                 pileup_read)
+                alleles, read_limits = _get_alleles_from_read(ref_allele,
+                                                              ref_pos,
+                                                              pileup_read)
                 if (read_name, ref_pos) in expected:
                     if alleles != expected[(read_name, ref_pos)]:
                         print repr(alleles)

@@ -92,14 +92,15 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
      67890  12345
      ATCGA--GATCG
      atcGATCG--CG
-        12345  67
+        01234  56
 
     CIGAR = 3H2M2I1M2D2M
 
     ref_segments = [9, None, 11, 12, 14]
-    read_segments = [1, 3, 5, None, 6]
+    read_segments = [0, 2, 4, None, 5]
 
-    It also returns the limits of the aligned reference.
+    It also returns the limits of the aligned reference and the limits of the
+    read.
 
     It also returns a list with the cigar category for each segment.
     The position in the reference is only used for the cache
@@ -117,17 +118,26 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
 
     ref_segments = []
     read_segments = []
-    ref_start = begin_pos_read_in_ref
     ref_pos = begin_pos_read_in_ref
+    read_start = 0
+    read_end = 0
     segment_type = []
     segment_lens = []
 
-    read_pos = 0
+    read_pos = read_start
 
-    for element in cigar_elements:
+    for index, element in enumerate(cigar_elements):
         if element[0] == SOFT_CLIP:
-            read_pos += element[1]
-            continue
+            #Is the soft clip at beginning?
+            if index == 0:
+                read_pos += element[1]
+                read_start += element[1]
+                read_end = read_start
+            elif index == len(cigar_elements) - 1:
+                continue
+            else:
+                msg = 'Soft clips in the middle of the read are not supported'
+                raise RuntimeError(msg)
         elif element[0] == MATCH:
             segment_type.append(MATCH)
             ref_segments.append(ref_pos)
@@ -135,14 +145,14 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
             segment_lens.append(element[1])
             ref_pos += element[1]
             read_pos += element[1]
-            ref_start += element[1]
-            ref_end = ref_start - 1
+            read_end += element[1]
         elif element[0] == INSERTION:
             segment_type.append(INSERTION)
             ref_segments.append(None)
             read_segments.append(read_pos)
             segment_lens.append(element[1])
             read_pos += element[1]
+            read_end += element[1]
         elif element[0] == DELETION or element[0] == SKIP:
             read_segments.append(None)
             ref_segments.append(ref_pos)
@@ -154,13 +164,16 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
                 segment_type.append(SKIP)
 
             ref_pos += element[1]
-            ref_start += element[1]
-            ref_end = ref_start - 1
 
+    ref_end = ref_pos - 1
     ref_start = ref_segments[0]
     ref_limits = [ref_start, ref_end]
+
+    read_end = read_end - 1
+    read_limits = [read_start, read_end]
+
     result = (ref_segments, read_segments, sorted(ref_limits),
-            segment_type, segment_lens)
+              sorted(read_limits), segment_type, segment_lens)
     if ref_pos is not None:
         #store cache
         SEGMENTS_CACHE[cache_key] = {'result':result, 'ref_pos':ref_pos}
@@ -263,7 +276,7 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     read_len = len(aligned_read.seq)
     cigar = aligned_read.cigar
 
-    (ref_segments, read_segments, ref_limits, segment_types,
+    (ref_segments, read_segments, ref_limits, read_limits, segment_types,
     segment_lens) = _get_segments_from_cigar(begin_pos_read_in_ref, cigar,
                                              read_len)
     located_segment = _locate_segment(ref_pos, ref_segments, segment_lens,
@@ -273,6 +286,7 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     else:
         segment_index, segment_pos = located_segment
     is_reverse = bool(aligned_read.is_reverse)
+
     if segment_types[segment_index] == MATCH:
         read_pos = _from_ref_to_read_pos(MATCH, ref_segments[segment_index],
                                          read_segments[segment_index], ref_pos)
@@ -342,7 +356,7 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     elif segment_types[segment_index] == INSERTION:
         pass    #if we're in an insertion, it is returned in the last position
                 #of the previous match segment
-    return alleles
+    return alleles, read_limits
 
 def _quality_to_phred(quality):
     'It transforms a qual chrs into a phred quality'
@@ -430,17 +444,24 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 platform = default_bam_platform
 
             read_pos = pileup_read.qpos
+
+            alleles_here, read_limits = _get_alleles_from_read(ref_allele,
+                                                               ref_pos,
+                                                               pileup_read)
+
             if read_edge_conf and platform in read_edge_conf:
                 edge_left, edge_right = read_edge_conf[platform]
 
-                #if we're in the edge region to be ignored we continue to the next
-                #read, because there's no allele to add for this one.
-                if ((edge_left  is not None and edge_left >= read_pos) or
-                    (edge_right is not None and edge_right <= read_pos)):
+                #if we're in the edge region to be ignored we continue to
+                #the next read, because there's no allele to add for this one.
+
+                if (edge_left is not None and
+                    read_limits[0] + edge_left > read_pos):
+                    continue
+                if (edge_right is not None and
+                    read_pos > read_limits[1] - edge_right):
                     continue
 
-            alleles_here = _get_alleles_from_read(ref_allele, ref_pos,
-                                                  pileup_read)
             for allele in alleles_here:
                 allele, kind, qual, is_reverse = allele
                 _add_allele(alleles, allele, kind, read_name, read_group,
@@ -624,7 +645,7 @@ def _summarize_snv(snv):
     return snv
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
-                         min_mapq=15, min_num_alleles=1, max_maf=0.9,
+                         min_mapq=15, min_num_alleles=1, max_maf=None,
                          read_edge_conf=None, default_bam_platform=None,
                          min_num_reads_for_allele=2):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
