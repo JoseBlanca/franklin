@@ -24,12 +24,13 @@ import unittest, os
 
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
+from StringIO import StringIO
 import pysam
 
 from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
-from franklin.seq.writers import SequenceWriter
+from franklin.seq.writers import SequenceWriter, write_seqs_in_file
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX, TRANSITION,
                                          TRANSVERSION,
@@ -48,7 +49,10 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _get_segments_from_cigar,
                                          _locate_segment, IN_FIRST_AND_LAST,
                                          IN_FIRST_POS, IN_LAST_POS,
-                                         _get_alleles_from_read)
+                                         _get_alleles_from_read,
+                                         calculate_pic,
+                                         calculate_heterozygosity)
+
 from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
 
@@ -233,6 +237,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
+
     @staticmethod
     def test_bad_allele_removal():
         'It tests that we can get rid of the alleles with not enough quality'
@@ -464,7 +469,7 @@ class TestSnvPipeline(unittest.TestCase):
                                      reference_free=True, maf=0.6)
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
-                                     min_reads_per_allele=2)
+                                     min_num_reads=2)
 
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
@@ -475,10 +480,11 @@ class TestSnvPipeline(unittest.TestCase):
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_reads_per_allele=2)
+                                     min_num_reads=2)
+        
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_reads_per_allele=3)
+                                     min_num_reads=3)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'])
 
@@ -729,6 +735,69 @@ class TestReadPos(unittest.TestCase):
                         print repr(alleles)
                         print expected[(read_name, ref_pos)]
                     assert alleles == expected[(read_name, ref_pos)]
+
+
+
+class PoblationCalculationsTest(unittest.TestCase):
+    'It checks the calculations of the poblations'
+
+    @staticmethod
+    def test_calculate_pic():
+        'It tests the calculation of PIC(UMVU)'
+
+        alleles_count = [50]*1
+        pic = calculate_pic(alleles_count)
+        #print round(pic, 2)
+        assert round(pic, 2) == 0
+
+        alleles_count = [200]*4
+        pic = calculate_pic(alleles_count)
+        #print round(pic, 2)
+        assert round(pic, 2) == 0.73
+
+        alleles_count = [30]*2
+        pic = calculate_pic(alleles_count)
+        #print round(pic, 2)
+        assert round(pic, 2) == 0.44
+
+        alleles_count = [1, 9]
+        pic = calculate_pic(alleles_count)
+        #print round(pic, 2)
+        assert round(pic, 2) == 0.2
+
+        alleles_count = [20]*10
+        pic = calculate_pic(alleles_count)
+        #print round(pic, 2)
+        assert round(pic, 2) == 0.90
+
+    @staticmethod
+    def test_calculate_heterozygosity():
+        'It tests the calculation of heterozygosity'
+
+        alleles_count = [50]*1
+        heterozygosity = calculate_heterozygosity(alleles_count)
+        #print round(heterozygosity, 2)
+        assert round(heterozygosity, 2) == 0
+
+        alleles_count = [200]*4
+        heterozygosity = calculate_heterozygosity(alleles_count)
+        #print round(heterozygosity, 2)
+        assert round(heterozygosity, 2) == 0.75
+
+        alleles_count = [30]*2
+        heterozygosity = calculate_heterozygosity(alleles_count)
+        #print round(heterozygosity, 2)
+        assert round(heterozygosity, 2) == 0.51
+
+        alleles_count = [1, 9]
+        heterozygosity = calculate_heterozygosity(alleles_count)
+        #print round(heterozygosity, 2)
+        assert round(heterozygosity, 2) == 0.2
+
+        alleles_count = [20]*10
+        heterozygosity = calculate_heterozygosity(alleles_count)
+        #print round(heterozygosity, 2)
+        assert round(heterozygosity, 2) == 0.9
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
