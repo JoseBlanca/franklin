@@ -29,9 +29,11 @@ from franklin.backbone.annotation import DEFINITIONS as annot_defs
 from franklin.backbone.cleaning import DEFINITIONS as clean_defs
 from franklin.backbone.assembling import DEFINITIONS as assembly_defs
 from franklin.backbone.mapping import DEFINITIONS as mapp_defs
+from franklin.backbone.snv_stats import DEFINITIONS as snv_defs
 from franklin.backbone.create_project import create_configuration
 
-DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs]
+
+DEFINITIONS = [annot_defs, clean_defs, assembly_defs, mapp_defs, snv_defs]
 BACKBONESPEC = ''
 
 def get_analysis_especifications():
@@ -45,7 +47,7 @@ def get_analysis_especifications():
     return specifications
 
 class NullHandler(logging.Handler):
-    
+
     def __init__(self):
         logging.Handler.__init__()
     def emit(self, record):
@@ -80,7 +82,7 @@ def _configure_logging(log_fpath, silent):
         log_hand.setFormatter(formatter)
         logger.addHandler(log_hand)
         #create console handler and set level to info
-    
+
         console_hand = logging.StreamHandler()
         console_hand.setFormatter(formatter)
         logger.addHandler(console_hand)
@@ -88,7 +90,7 @@ def _configure_logging(log_fpath, silent):
         #pass
         logger.addHandler(NullHandler)
         logger.setLevel(logging.CRITICAL)
-        
+
 def do_analysis(kind, project_settings=None, analysis_config=None,
                 silent=False):
     'It does one of the predefined analyses'
@@ -109,7 +111,7 @@ def do_analysis(kind, project_settings=None, analysis_config=None,
     log_fpath = os.path.join(settings['General_settings']['project_path'],
                              BACKBONE_DIRECTORIES['log_file'])
     _configure_logging(log_fpath, silent)
-    
+
     try:
         analysis_def = specifications[kind]
     except KeyError:

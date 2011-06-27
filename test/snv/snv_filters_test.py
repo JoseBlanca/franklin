@@ -761,6 +761,8 @@ class PoblationCalculationsTest(unittest.TestCase):
 
     @staticmethod
     def test_get_pic():
+        'It tests the correct calculation of the PIC for each snv'
+
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
                    ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
@@ -779,13 +781,14 @@ class PoblationCalculationsTest(unittest.TestCase):
 
         snv_1 = seq.features[0].qualifiers['filters']['pic']
         snv_2 = seq.features[1].qualifiers['filters']['pic']
-
         assert snv_1 == {None: 0.48571428571428571}
         assert snv_2 == {None: 0.0}
 
 
     @staticmethod
     def test_get_heterozygosity():
+        'It tests the correct calculation of the hetrozygosity for each snv'
+
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
                    ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),

@@ -65,7 +65,8 @@ class TestSnvAnnotation(unittest.TestCase):
     def test_snv_annotation():
         'It tests the annotation of SeqRecords with snvs'
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
                                          min_num_alleles=2)
@@ -74,6 +75,21 @@ class TestSnvAnnotation(unittest.TestCase):
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
             assert expected == len(seq.features)
+
+    @staticmethod
+    def test_snv_annotation_with_pic_and_heterozygosity():
+        'It tests the pic and heterozygosity annotation of SeqRecords with snvs'
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         min_num_alleles=2)
+        seqs = seqs_in_file(seq_fhand)
+        seq = seqs.next()
+        seq = annotator(seq)
+        assert  round(seq.features[0].qualifiers['pic'], 2) == 0.44
+        assert  round(seq.features[0].qualifiers['heterozygosity'], 2) == 0.47
 
     @staticmethod
     def test_snv_annotation_without_rg():
@@ -481,7 +497,7 @@ class TestSnvPipeline(unittest.TestCase):
         assert variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
                                      min_num_reads=2)
-        
+
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
                                      min_num_reads=3)
@@ -736,8 +752,6 @@ class TestReadPos(unittest.TestCase):
                         print expected[(read_name, ref_pos)]
                     assert alleles == expected[(read_name, ref_pos)]
 
-
-
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 
@@ -745,59 +759,60 @@ class PoblationCalculationsTest(unittest.TestCase):
     def test_calculate_pic():
         'It tests the calculation of PIC(UMVU)'
 
-        alleles_count = [50]*1
-        pic = calculate_pic(alleles_count)
-        #print round(pic, 2)
-        assert round(pic, 2) == 0
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
 
-        alleles_count = [200]*4
-        pic = calculate_pic(alleles_count)
-        #print round(pic, 2)
-        assert round(pic, 2) == 0.73
+        calculate_pic(snv)
+        assert round(snv.qualifiers['pic'], 2) == 0.49
 
-        alleles_count = [30]*2
-        pic = calculate_pic(alleles_count)
-        #print round(pic, 2)
-        assert round(pic, 2) == 0.44
+        alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
 
-        alleles_count = [1, 9]
-        pic = calculate_pic(alleles_count)
-        #print round(pic, 2)
-        assert round(pic, 2) == 0.2
+        calculate_pic(snv)
+        assert round(snv.qualifiers['pic'], 2) == 0
 
-        alleles_count = [20]*10
-        pic = calculate_pic(alleles_count)
-        #print round(pic, 2)
-        assert round(pic, 2) == 0.90
+        alleles = {('A', SNP): {'read_groups':{'rg1':1}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':1}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        calculate_pic(snv)
+        assert snv.qualifiers['pic'] == None
 
     @staticmethod
     def test_calculate_heterozygosity():
         'It tests the calculation of heterozygosity'
 
-        alleles_count = [50]*1
-        heterozygosity = calculate_heterozygosity(alleles_count)
-        #print round(heterozygosity, 2)
-        assert round(heterozygosity, 2) == 0
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
 
-        alleles_count = [200]*4
-        heterozygosity = calculate_heterozygosity(alleles_count)
-        #print round(heterozygosity, 2)
-        assert round(heterozygosity, 2) == 0.75
+        calculate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0.53
 
-        alleles_count = [30]*2
-        heterozygosity = calculate_heterozygosity(alleles_count)
-        #print round(heterozygosity, 2)
-        assert round(heterozygosity, 2) == 0.51
+        alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
 
-        alleles_count = [1, 9]
-        heterozygosity = calculate_heterozygosity(alleles_count)
-        #print round(heterozygosity, 2)
-        assert round(heterozygosity, 2) == 0.2
+        calculate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0
 
-        alleles_count = [20]*10
-        heterozygosity = calculate_heterozygosity(alleles_count)
-        #print round(heterozygosity, 2)
-        assert round(heterozygosity, 2) == 0.9
+        alleles = {('A', SNP): {'read_groups':{'rg1':100, 'rg2':150}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':50, 'rg3':100}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+        calculate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']

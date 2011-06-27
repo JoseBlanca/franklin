@@ -26,7 +26,7 @@ from franklin.seq.alignment_result import (filter_alignments,
                                            get_alignment_parser)
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                        similar_sequences_for_blast)
-from franklin.seq.readers import guess_seq_file_format
+from franklin.seq.readers import guess_seq_file_format, seqs_in_file
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
@@ -638,7 +638,9 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
     return min_groups_filter
 
 def create_get_pic():
+    'It creates the function which calculates the PIC'
     def get_pic(sequence):
+        'It calculates the PIC'
         if sequence is None:
             return None
         for snv in sequence.get_features(kind='snv'):
@@ -655,7 +657,9 @@ def create_get_pic():
     return get_pic
 
 def create_get_heterozygosity():
+    'It creates the function which calculates the heterozygosity'
     def get_heterozygosity(sequence):
+        'It calculates the heterozygosity'
         if sequence is None:
             return None
         for snv in sequence.get_features(kind='snv'):
@@ -670,3 +674,4 @@ def create_get_heterozygosity():
             _add_filter_result(snv, 'heterozygosity', heterozygosity)
         return sequence
     return get_heterozygosity
+
