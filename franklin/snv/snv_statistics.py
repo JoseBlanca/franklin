@@ -20,7 +20,7 @@ def create_pic_distribution(seqs, distrib_fhand=None, plot_fhand=None,
             if 'pic' in snv.qualifiers['filters']:
                 pics.append(snv.qualifiers['filters']['pic'][None])
     if list(pics):
-        create_distribution(pics, labels=None, distrib_fhand=distrib_fhand,
+        create_distribution(pics, labels={'title':'pic'}, distrib_fhand=distrib_fhand,
                             bins=None, plot_fhand=plot_fhand, range_=None,
                             summary_fhand=summary_fhand, calculate_freqs=False,
                             remove_outliers=False)
@@ -34,8 +34,9 @@ def create_het_distribution(seqs, distrib_fhand=None, plot_fhand=None,
             if 'heterozygosity' in snv.qualifiers['filters']:
                 hets.append(snv.qualifiers['filters']['heterozygosity'][None])
     if list(hets):
-        create_distribution(hets, labels=None, distrib_fhand=distrib_fhand,
-                            bins=None, plot_fhand=plot_fhand, range_=None,
+        create_distribution(hets, labels={'title':'heterozygosity'},
+                            distrib_fhand=distrib_fhand, bins=None,
+                            plot_fhand=plot_fhand, range_=None,
                             summary_fhand=summary_fhand, calculate_freqs=False,
                             remove_outliers=False)
 
@@ -47,12 +48,10 @@ def create_maf_distribution(seqs, distrib_fhand=None, plot_fhand=None,
         for snv in seq.features:
             mafs.append(calculate_maf_frequency(snv))
     if list(mafs):
-        create_distribution(mafs, labels=None, distrib_fhand=distrib_fhand,
+        create_distribution(mafs, labels={'title':'maf'}, distrib_fhand=distrib_fhand,
                             bins=None, plot_fhand=plot_fhand, range_=None,
                             summary_fhand=summary_fhand, calculate_freqs=False,
                             remove_outliers=False)
-
-#maf_distrib_fhand
 
 STAT_ANALYSIS = {'pic': create_pic_distribution,
                 'het': create_het_distribution,
@@ -65,14 +64,6 @@ def do_snv_stats(seq_path, out_dir):
         seqs = seqs_in_file(open(seq_path.last_version, 'r'))
         dist_fhand = open(join(out_dir, analysis+'_distrib.dist'), 'w')
         svg_fhand = open(join(out_dir, analysis+'_distrib.svg'), 'w')
-        sum_fhand = open(join(out_dir, analysis+'_distrib.sum'), 'w')
+        sum_fhand = open(join(out_dir, 'distrib.sum'), 'a')
         STAT_ANALYSIS[analysis](seqs, distrib_fhand=dist_fhand,
                                 plot_fhand=svg_fhand, summary_fhand=sum_fhand)
-
-
-
-
-
-
-
-
