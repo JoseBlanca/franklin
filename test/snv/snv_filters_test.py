@@ -671,6 +671,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
     @staticmethod
     def test_get_filter_description():
         'It tets get_filter_description function'
+        
+        
+        
         filter_name = 'close_to_intron'
         parameters = 30
         filter_descriptions = {}
@@ -696,14 +699,13 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert name == 'maf2'
         assert desc == 'The most frequent allele in read_group: 1,2. frequency greater than 0.60'
 
-
-
         filter_name = 'by_kind'
         parameters = SNP
         filter_descriptions = {}
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
-        filter_name = 'is_variable'
+        
+        filter_name = 'is_not_variable'
         kind = 'read_groups'
         groups = ['rg1', 'rg2']
         in_union = True
@@ -711,9 +713,24 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_descriptions = {}
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
+        assert name[:4] == 'nvrg'
+        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip += ' All together: True'
+        assert desc == descrip  
+        
+        filter_name = 'is_variable'
+        kind = 'read_groups'
+        groups = ['rg1', 'rg2']
+        maf = 0.6
+        min_num_reads = 3
+        in_union = True
+        parameters = (kind, tuple(groups), in_union, maf, min_num_reads)
+        filter_descriptions = {}
+        name, desc = namer.get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
         assert name[:3] == 'vrg'
         descrip = "It is not variable in the read_groups : rg1,rg2."
-        descrip += ' All together: True'
+        descrip += ' All together: True. maf:0.600000. min_num_reads:3'
         assert desc == descrip
 
         name, desc = namer.get_filter_description(filter_name, parameters,
@@ -723,8 +740,25 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_name = 'is_not_variable'
         kind = 'read_groups'
         groups = ['rg1', 'rg2']
+        maf = 0.7
+        min_num_reads = 2
         in_union = True
-        parameters = (kind, tuple(groups), in_union)
+        parameters = (kind, tuple(groups), in_union, maf, min_num_reads)
+        filter_descriptions = {}
+        name, desc = namer.get_filter_description(filter_name, parameters,
+                                            filter_descriptions)
+        assert name[:4] == 'nvrg'
+        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip += ' All together: True. maf:0.700000. min_num_reads:2'
+        assert desc == descrip
+
+        filter_name = 'is_not_variable'
+        kind = 'read_groups'
+        groups = ['rg1', 'rg2']
+        maf = None
+        min_num_reads = None
+        in_union = True
+        parameters = (kind, tuple(groups), in_union, maf, min_num_reads)
         filter_descriptions = {}
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
