@@ -193,9 +193,9 @@ class SnvNamer(object):
         short_name = id_ % (groups[parameters[0]], filter_counts[desc])
         groups = ','.join(parameters[1])
         description = desc % (parameters[0], groups, parameters[2])
-        if len(parameters)>3 and parameters[3] and parameters[4]:
-            description1 = ('. maf:%f' % parameters[3] + '. '
-                        'min_num_reads:%i' % parameters[4])
+        if parameters[5] and parameters[6]:
+            description1 = ('. maf:%f' % parameters[5] + '. '
+                        'min_num_reads:%i' % parameters[6])
             description += description1
         return short_name, description
 
