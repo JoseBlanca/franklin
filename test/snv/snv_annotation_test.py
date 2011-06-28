@@ -50,8 +50,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _locate_segment, IN_FIRST_AND_LAST,
                                          IN_FIRST_POS, IN_LAST_POS,
                                          _get_alleles_from_read,
-                                         calculate_pic,
-                                         calculate_heterozygosity)
+                                         annotate_pic,
+                                         annotate_heterozygosity)
 
 from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
@@ -756,7 +756,7 @@ class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 
     @staticmethod
-    def test_calculate_pic():
+    def test_annotate_pic():
         'It tests the calculation of PIC(UMVU)'
 
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
@@ -765,7 +765,7 @@ class PoblationCalculationsTest(unittest.TestCase):
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
 
-        calculate_pic(snv)
+        annotate_pic(snv)
         assert round(snv.qualifiers['pic'], 2) == 0.49
 
         alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
@@ -773,7 +773,7 @@ class PoblationCalculationsTest(unittest.TestCase):
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
 
-        calculate_pic(snv)
+        annotate_pic(snv)
         assert round(snv.qualifiers['pic'], 2) == 0
 
         alleles = {('A', SNP): {'read_groups':{'rg1':1}},
@@ -782,11 +782,11 @@ class PoblationCalculationsTest(unittest.TestCase):
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
 
-        calculate_pic(snv)
+        annotate_pic(snv)
         assert snv.qualifiers['pic'] == None
 
     @staticmethod
-    def test_calculate_heterozygosity():
+    def test_annotate_heterozygosity():
         'It tests the calculation of heterozygosity'
 
         alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
@@ -795,7 +795,7 @@ class PoblationCalculationsTest(unittest.TestCase):
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
 
-        calculate_heterozygosity(snv, ploidy=2)
+        annotate_heterozygosity(snv, ploidy=2)
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.53
 
         alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
@@ -803,7 +803,7 @@ class PoblationCalculationsTest(unittest.TestCase):
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
 
-        calculate_heterozygosity(snv, ploidy=2)
+        annotate_heterozygosity(snv, ploidy=2)
         assert round(snv.qualifiers['heterozygosity'], 2) == 0
 
         alleles = {('A', SNP): {'read_groups':{'rg1':100, 'rg2':150}},
@@ -811,7 +811,7 @@ class PoblationCalculationsTest(unittest.TestCase):
         snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
                          qualifiers={'alleles':alleles,
                                      'read_groups':{}})
-        calculate_heterozygosity(snv, ploidy=2)
+        annotate_heterozygosity(snv, ploidy=2)
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":

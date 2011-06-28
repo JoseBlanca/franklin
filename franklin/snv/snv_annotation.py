@@ -681,8 +681,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                               type=type_,
                               qualifiers=qualifiers)
 
-            calculate_pic(snv_feat)
-            calculate_heterozygosity(snv_feat, ploidy=ploidy)
+            annotate_pic(snv_feat)
+            annotate_heterozygosity(snv_feat, ploidy=ploidy)
 
             sequence.features.append(snv_feat)
         return sequence
@@ -1034,7 +1034,7 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
             alleles_for_groups[group][allele] = alleles_info['read_groups'][read_group]
     return alleles_for_groups
 
-def calculate_pic(snv):
+def annotate_pic(snv):
     '''It calculates the uniformly minimum variance unbiased (UMVU) estimator
     of PIC of a locus, given a list with the number of times that each allele
     has been read.
@@ -1082,7 +1082,7 @@ def calculate_pic(snv):
             snv.qualifiers['pic'] = pic
 
 
-def calculate_heterozygosity(snv, ploidy):
+def annotate_heterozygosity(snv, ploidy):
     '''It calculates the estimator of heterozygosity, given a list with the
     number of times that each allele has been read.
 

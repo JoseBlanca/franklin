@@ -33,10 +33,7 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          variable_in_groupping,
                                          invariant_in_groupping,
                                          _get_group, SNP,
-                                         SNV_TYPES,
-                                         _allele_count,
-                                         calculate_pic,
-                                         calculate_heterozygosity)
+                                         SNV_TYPES,)
 from franklin.seq.seqs import get_seq_name
 
 # In a filter TRUE result means that a snv does NOT pass the filter.
@@ -636,42 +633,3 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
         return sequence
 
     return min_groups_filter
-
-def create_get_pic():
-    'It creates the function which calculates the PIC'
-    def get_pic(sequence):
-        'It calculates the PIC'
-        if sequence is None:
-            return None
-        for snv in sequence.get_features(kind='snv'):
-            previous_result = _get_filter_result(snv, 'pic')
-            if previous_result is not None:
-                continue
-            alleles = snv.qualifiers['alleles']
-            values = []
-            for allele in alleles:
-                values.append(_allele_count(allele, alleles))
-            pic = calculate_pic(values)
-            _add_filter_result(snv, 'pic', pic)
-        return sequence
-    return get_pic
-
-def create_get_heterozygosity():
-    'It creates the function which calculates the heterozygosity'
-    def get_heterozygosity(sequence):
-        'It calculates the heterozygosity'
-        if sequence is None:
-            return None
-        for snv in sequence.get_features(kind='snv'):
-            previous_result = _get_filter_result(snv, 'heterozygosity')
-            if previous_result is not None:
-                continue
-            alleles = snv.qualifiers['alleles']
-            values = []
-            for allele in alleles:
-                values.append(_allele_count(allele, alleles))
-            heterozygosity = calculate_heterozygosity(values)
-            _add_filter_result(snv, 'heterozygosity', heterozygosity)
-        return sequence
-    return get_heterozygosity
-

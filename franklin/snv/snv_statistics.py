@@ -17,8 +17,8 @@ def create_pic_distribution(seqs, distrib_fhand=None, plot_fhand=None,
     pics = CachedArray('f')
     for seq in seqs:
         for snv in seq.features:
-            if 'pic' in snv.qualifiers['filters']:
-                pics.append(snv.qualifiers['filters']['pic'][None])
+            if 'pic' in snv.qualifiers:
+                pics.append(snv.qualifiers['pic'])
     if list(pics):
         create_distribution(pics, labels={'title':'pic'}, distrib_fhand=distrib_fhand,
                             bins=None, plot_fhand=plot_fhand, range_=None,
@@ -31,8 +31,8 @@ def create_het_distribution(seqs, distrib_fhand=None, plot_fhand=None,
     hets = CachedArray('f')
     for seq in seqs:
         for snv in seq.features:
-            if 'heterozygosity' in snv.qualifiers['filters']:
-                hets.append(snv.qualifiers['filters']['heterozygosity'][None])
+            if 'heterozygosity' in snv.qualifiers:
+                hets.append(snv.qualifiers['heterozygosity'])
     if list(hets):
         create_distribution(hets, labels={'title':'heterozygosity'},
                             distrib_fhand=distrib_fhand, bins=None,
