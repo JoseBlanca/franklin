@@ -16,7 +16,7 @@ def create_pic_distribution(seqs, distrib_fhand=None, plot_fhand=None,
     'It creates the distribution of the pic'
     pics = CachedArray('f')
     for seq in seqs:
-        for snv in seq.features:
+        for snv in seq.get_features('snv'):
             if 'pic' in snv.qualifiers:
                 pics.append(snv.qualifiers['pic'])
     if list(pics):
@@ -31,7 +31,7 @@ def create_het_distribution(seqs, distrib_fhand=None, plot_fhand=None,
     'It creates the distribution of the heterozygosity'
     hets = CachedArray('f')
     for seq in seqs:
-        for snv in seq.features:
+        for snv in seq.get_features('snv'):
             if 'heterozygosity' in snv.qualifiers:
                 hets.append(snv.qualifiers['heterozygosity'])
     if list(hets):
@@ -46,7 +46,7 @@ def create_maf_distribution(seqs, distrib_fhand=None, plot_fhand=None,
     'It creates the distribution of the maf'
     mafs = CachedArray('f')
     for seq in seqs:
-        for snv in seq.features:
+        for snv in seq.get_features('snv'):
             mafs.append(calculate_maf_frequency(snv))
     if list(mafs):
         create_distribution(mafs, labels={'title':'maf'},
