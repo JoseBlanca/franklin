@@ -921,13 +921,13 @@ def create_alleles(name, allele, kind, ref, loc):
 
 def variable_in_groupping(snv, group_kind, groups, in_union=True,
                            in_all_groups=True, reference_free=True, maf=None,
-                           min_num_reads=None):
+                           min_num_reads=None, min_reads_per_allele=None):
     'It looks if the given snv is variable for the given groups'
 
     alleles = _get_alleles_for_group(snv.qualifiers['alleles'],
                                      groups, group_kind,
                                      snv.qualifiers['read_groups'],
-                                     min_num_reads=min_num_reads)
+                                     min_reads_per_allele=min_reads_per_allele)
     if not alleles:
         return False
 
@@ -1013,7 +1013,7 @@ def _aggregate_alleles(alleles):
     return {None: aggregate}
 
 def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
-                           read_groups=None, min_num_reads=None):
+                           read_groups=None, min_reads_per_allele=None):
     '''It gets the alleles from the given items of type:key, separated by items.
     For example, if you give key rg and items rg1, rg2, it will return
     alleles separated in rg1 and rg2 '''
@@ -1021,8 +1021,8 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
     for allele, alleles_info in alleles.items():
         #print allele, alleles_info
         for read_group in alleles_info['read_groups']:
-            if (min_num_reads and
-                alleles_info['read_groups'][read_group] < min_num_reads):
+            if (min_reads_per_allele and
+                alleles_info['read_groups'][read_group] < min_reads_per_allele):
                 continue
             group = _get_group(read_group, group_kind, read_groups)
             if group not in groups:

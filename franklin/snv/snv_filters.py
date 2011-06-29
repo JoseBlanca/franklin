@@ -26,7 +26,7 @@ from franklin.seq.alignment_result import (filter_alignments,
                                            get_alignment_parser)
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                        similar_sequences_for_blast)
-from franklin.seq.readers import guess_seq_file_format, seqs_in_file
+from franklin.seq.readers import guess_seq_file_format
 from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          snvs_in_window, calculate_snv_kind,
                                          calculate_cap_enzymes,
@@ -575,7 +575,8 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_groups=True, reference_free=True,
-                              maf=None, min_num_reads=None):
+                              maf=None, min_num_reads=None,
+                              min_reads_per_allele = None):
     '''It filters looking if the list of reads is variable in the given
     conditions.'''
 
@@ -584,7 +585,7 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
     else:
         groups = tuple(groups)
     parameters = (group_kind, groups, in_union,in_all_groups, reference_free,
-                  maf, min_num_reads)
+                  maf, min_num_reads, min_reads_per_allele)
 
     def is_variable_filter(sequence):
         'The filter'
@@ -600,7 +601,8 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
                                       in_all_groups=in_all_groups,
                                       reference_free=reference_free,
                                       maf=maf,
-                                      min_num_reads=min_num_reads)
+                                      min_num_reads=min_num_reads,
+                                      min_reads_per_allele=min_reads_per_allele)
 
             _add_filter_result(snv, 'is_variable', not result,
                                threshold=parameters)
