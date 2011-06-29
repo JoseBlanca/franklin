@@ -53,9 +53,12 @@ class VariantCallFormatWriterTest(unittest.TestCase):
                                      'quality': 57.0}}
         filters = {'by_kind':{SNP:True},
                    'high_variable_reg':{(0.8, 0):True},
-                   'is_variable':{('libraries', ('lib1',), False):True,
-                                  ('libraries', ('lib2',), False):True},
-                   'is_not_variable':{('libraries', ('lib1',), False):True},
+                   'is_variable':{('libraries', ('lib1',), False, False,
+                                   None, None):True,
+                                  ('libraries', ('lib2',), False, False,
+                                   None, None):True},
+                   'is_not_variable':{('libraries', ('lib1',), False, False,
+                                       None, None):True},
                     }
         snv2 = SeqFeature(type='snv', location=FeatureLocation(50, 50),
                           qualifiers={'alleles':alleles,
