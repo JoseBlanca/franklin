@@ -24,12 +24,13 @@ import unittest, os
 
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
+from StringIO import StringIO
 import pysam
 
 from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
-from franklin.seq.writers import SequenceWriter
+from franklin.seq.writers import SequenceWriter, write_seqs_in_file
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX, TRANSITION,
                                          TRANSVERSION,
@@ -48,7 +49,10 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _get_segments_from_cigar,
                                          _locate_segment, IN_FIRST_AND_LAST,
                                          IN_FIRST_POS, IN_LAST_POS,
-                                         _get_alleles_from_read)
+                                         _get_alleles_from_read,
+                                         annotate_pic,
+                                         annotate_heterozygosity)
+
 from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
 
@@ -61,7 +65,8 @@ class TestSnvAnnotation(unittest.TestCase):
     def test_snv_annotation():
         'It tests the annotation of SeqRecords with snvs'
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
                                          min_num_alleles=2)
@@ -70,6 +75,21 @@ class TestSnvAnnotation(unittest.TestCase):
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
             assert expected == len(seq.features)
+
+    @staticmethod
+    def test_snv_annotation_with_pic_and_heterozygosity():
+        'It tests the pic and heterozygosity annotation of SeqRecords with snvs'
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         min_num_alleles=2)
+        seqs = seqs_in_file(seq_fhand)
+        seq = seqs.next()
+        seq = annotator(seq)
+        assert  round(seq.features[0].qualifiers['pic'], 2) == 0.44
+        assert  round(seq.features[0].qualifiers['heterozygosity'], 2) == 0.47
 
     @staticmethod
     def test_snv_annotation_without_rg():
@@ -233,6 +253,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
+
     @staticmethod
     def test_bad_allele_removal():
         'It tests that we can get rid of the alleles with not enough quality'
@@ -464,7 +485,7 @@ class TestSnvPipeline(unittest.TestCase):
                                      reference_free=True, maf=0.6)
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
-                                     min_reads_per_allele=2)
+                                     min_num_reads=2)
 
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
@@ -475,10 +496,11 @@ class TestSnvPipeline(unittest.TestCase):
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_reads_per_allele=2)
+                                     min_num_reads=2)
+
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_reads_per_allele=3)
+                                     min_num_reads=3)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'])
 
@@ -729,6 +751,68 @@ class TestReadPos(unittest.TestCase):
                         print repr(alleles)
                         print expected[(read_name, ref_pos)]
                     assert alleles == expected[(read_name, ref_pos)]
+
+class PoblationCalculationsTest(unittest.TestCase):
+    'It checks the calculations of the poblations'
+
+    @staticmethod
+    def test_annotate_pic():
+        'It tests the calculation of PIC(UMVU)'
+
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        annotate_pic(snv)
+        assert round(snv.qualifiers['pic'], 2) == 0.49
+
+        alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        annotate_pic(snv)
+        assert round(snv.qualifiers['pic'], 2) == 0
+
+        alleles = {('A', SNP): {'read_groups':{'rg1':1}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':1}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        annotate_pic(snv)
+        assert snv.qualifiers['pic'] == None
+
+    @staticmethod
+    def test_annotate_heterozygosity():
+        'It tests the calculation of heterozygosity'
+
+        alleles = {('A', SNP): {'read_groups':{'rg1':1, 'rg2':1, 'rg4':2}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        annotate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0.53
+
+        alleles = {('T', INVARIANT): {'read_groups':{'rg1':1, 'rg3':2}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+
+        annotate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0
+
+        alleles = {('A', SNP): {'read_groups':{'rg1':100, 'rg2':150}},
+                   ('T', INVARIANT): {'read_groups':{'rg1':50, 'rg3':100}}}
+        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                         qualifiers={'alleles':alleles,
+                                     'read_groups':{}})
+        annotate_heterozygosity(snv, ploidy=2)
+        assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']

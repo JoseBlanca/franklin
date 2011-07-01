@@ -45,6 +45,7 @@ BACKBONE_DIRECTORIES = {
     'blast_dir':'annotations/blast',
     'blast_databases':'annotations/blast/databases',
     'error_dir': 'backbone_errors',
+    'snv_stats':'annotations/features/stats/snv'
                        }
 BACKBONE_BASENAMES = {
     'contigs':'contigs',

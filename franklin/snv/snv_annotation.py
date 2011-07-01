@@ -34,6 +34,7 @@ from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
 from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
+from franklin.seq.readers import seqs_in_file
 
 DELETION_ALLELE = '-'
 N_ALLLELES = ('n', '?')
@@ -641,13 +642,12 @@ def _summarize_snv(snv):
             new_read_groups[read_group] = info
 
     snv['read_groups'] = new_read_groups
-
     return snv
 
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                          min_mapq=15, min_num_alleles=1, max_maf=None,
                          read_edge_conf=None, default_bam_platform=None,
-                         min_num_reads_for_allele=2):
+                         min_num_reads_for_allele=2, ploidy=2):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -671,15 +671,20 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
             snv = _summarize_snv(snv)
             location = snv['ref_position']
             type_ = 'snv'
+
             qualifiers = {'alleles':snv['alleles'],
                           'reference_allele':snv['reference_allele'],
                           'read_groups':snv['read_groups'],
                           'mapping_quality': snv['mapping_quality'],
                           'quality': snv['quality']}
-            feat = SeqFeature(location=FeatureLocation(location, location),
+            snv_feat = SeqFeature(location=FeatureLocation(location, location),
                               type=type_,
                               qualifiers=qualifiers)
-            sequence.features.append(feat)
+
+            annotate_pic(snv_feat)
+            annotate_heterozygosity(snv_feat, ploidy=ploidy)
+
+            sequence.features.append(snv_feat)
         return sequence
     return annotate_snps
 
@@ -916,7 +921,7 @@ def create_alleles(name, allele, kind, ref, loc):
 
 def variable_in_groupping(snv, group_kind, groups, in_union=True,
                            in_all_groups=True, reference_free=True, maf=None,
-                           min_reads_per_allele=None):
+                           min_num_reads=None, min_reads_per_allele=None):
     'It looks if the given snv is variable for the given groups'
 
     alleles = _get_alleles_for_group(snv.qualifiers['alleles'],
@@ -932,7 +937,7 @@ def variable_in_groupping(snv, group_kind, groups, in_union=True,
     variable_per_read_group = []
     for alleles_in_rg in alleles.values():
         variable = _is_rg_variable(alleles_in_rg, reference_free=reference_free,
-                                       maf=maf)
+                                       maf=maf, min_num_reads=min_num_reads)
         variable_per_read_group.append(variable)
 
     if in_all_groups:
@@ -941,7 +946,8 @@ def variable_in_groupping(snv, group_kind, groups, in_union=True,
         return any(variable_per_read_group)
 
 def invariant_in_groupping(snv, group_kind, groups, in_union=True,
-                           in_all_groups=True, reference_free=True):
+                           in_all_groups=True, reference_free=True, maf=None,
+                           min_num_reads=None):
     'it check if the given snv is invariant form the given groups'
     alleles = _get_alleles_for_group(snv.qualifiers['alleles'],
                                      groups, group_kind,
@@ -957,7 +963,8 @@ def invariant_in_groupping(snv, group_kind, groups, in_union=True,
     invariable_per_read_group = []
     for alleles_in_rg in alleles.values():
         invariable = not _is_rg_variable(alleles_in_rg,
-                                         reference_free=reference_free)
+                                         reference_free=reference_free, maf=maf,
+                                         min_num_reads=min_num_reads)
         invariable_per_read_group.append(invariable)
 
     if in_all_groups:
@@ -965,25 +972,7 @@ def invariant_in_groupping(snv, group_kind, groups, in_union=True,
     else:
         return any(invariable_per_read_group)
 
-
-#def _is_rg_invariable(alleles, reference_free=True):
-#    'It checks if the allele is variable'
-#    allele_count = len(alleles)
-#
-#    ref_in_alleles = False
-#    for allele in alleles.keys():
-#        if allele[1] == INVARIANT:
-#            ref_in_alleles = True
-#
-#    if allele_count == 1:
-#        if reference_free:
-#            return True
-#        elif not reference_free and ref_in_alleles:
-#            return True
-#
-#    return False
-
-def _is_rg_variable(alleles, reference_free=True, maf=None):
+def _is_rg_variable(alleles, reference_free=True, maf=None, min_num_reads=None):
     'It checks if the allele is variable'
     allele_count = len(alleles)
 
@@ -998,17 +987,20 @@ def _is_rg_variable(alleles, reference_free=True, maf=None):
         elif not reference_free and ref_in_alleles:
             return False
 
-    if maf and maf < calc_maf(alleles):
+    maf_allele, num_reads = calc_maf_and_num_reads(alleles)
+    if ((maf and maf < maf_allele) or
+        (min_num_reads and min_num_reads > num_reads)):
         return False
 
     return True
 
-def calc_maf(alleles):
-    'It calculates the maf'
+def calc_maf_and_num_reads(alleles):
+    'It calculates the maf and the number of reads in that position'
     values = alleles.values()
     major = max(values)
-    sum_  = sum(values)
-    return  major/float(sum_)
+    num_reads  = sum(values)
+    maf_allele = major/float(num_reads)
+    return  maf_allele, num_reads
 
 def _aggregate_alleles(alleles):
     'It joins all alleles for the read groups into one'
@@ -1042,54 +1034,94 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
             alleles_for_groups[group][allele] = alleles_info['read_groups'][read_group]
     return alleles_for_groups
 
+def annotate_pic(snv):
+    '''It calculates the uniformly minimum variance unbiased (UMVU) estimator
+    of PIC of a locus, given a list with the number of times that each allele
+    has been read.
 
+    PIC(UMVU) = 1 - summatory((Xi(Xi-1))/(n(n-1))) -
+                summatory((Xi(Xi-1)Xj(Xj-1))/(n(n-1)(n-2)(n-3))
 
-def variable_in_groupping_old(group_kind, feature, groups, in_union=False,
-                           in_all_groups=True):
-    'It looks if the given snv is variable for the given groups'
+    Xi = number of times that allele i-th has been read
+    Xj = number of times that allele j-th has been read
+    n = total number of reads
 
-    alleles = _get_alleles_for_group(feature.qualifiers['alleles'],
-                                     groups, group_kind,
-                                     feature.qualifiers['read_groups'])
-    if not alleles:
-        return None
+    Formula taken from "On Estimating the Heterozygosity and Polymorphism
+    Information Content Value" by Shete S., Tiwari H. and Elston R.C.
+    Theoretical Population Biology. Volume 57, Issue 3, May 2000, Pages 265-271
+    '''
+    alleles = snv.qualifiers['alleles']
+    alleles_reads = []
+    for allele in alleles:
+        alleles_reads.append(_allele_count(allele, alleles))
 
-    if in_union:
-        alleles = _aggregate_alleles(alleles)
-
-    variable_in_read_groups_ = []
-    for allele_list in alleles.values():
-        variable_in_read_groups_.append(True if len(allele_list) > 1 else False)
-
-#    #For the case in which there are no alleles
-#    if not variable_in_read_groups_:
-#        return None
-
-    if in_all_groups:
-        return all(variable_in_read_groups_)
+    if len(alleles_reads) == 1:
+        snv.qualifiers['pic'] = 0
     else:
-        return any(variable_in_read_groups_)
+        total_reads = sum(alleles_reads)
 
-def _aggregate_alleles_old(alleles):
-    'It joins all alleles for the read groups into one'
-    aggregate = set()
-    for allele_list in alleles.values():
-        aggregate = aggregate.union(allele_list)
-    return {None: aggregate}
+        # we need at least 4 reads to calculate pic
+        if total_reads < 4:
+            snv.qualifiers['pic'] = None
+        else:
+            first_element = 0
+            second_element = 0
+            for index, num_allele in enumerate(alleles_reads):
+                first_element_part = ((num_allele*(num_allele - 1))/
+                                      (total_reads*(total_reads - 1)))
+                first_element += first_element_part
 
-def _get_alleles_for_group_old(alleles, groups, group_kind='read_groups',
-                           read_groups=None):
-    '''It gets the alleles from the given items of type:key, separated by items.
-    For example, if you give key rg and items rg1, rg2, it will return
-    alleles separated in rg1 and rg2 '''
+                for num_allele in alleles_reads[index+1:]:
+                    second_element_part = (first_element_part*
+                                           ((num_allele*(num_allele - 1))/
+                                            ((total_reads - 2)*
+                                             (total_reads - 3))))
+                    second_element += second_element_part
 
-    alleles_for_groups = {}
-    for allele, alleles_info in alleles.items():
-        for read_group in alleles_info['read_groups']:
-            group = _get_group(read_group, group_kind, read_groups)
-            if group not in groups:
-                continue
-            if not group in alleles_for_groups:
-                alleles_for_groups[group] = set()
-            alleles_for_groups[group].add(allele)
-    return alleles_for_groups
+            pic = 1 - first_element - second_element
+            snv.qualifiers['pic'] = pic
+
+
+def annotate_heterozygosity(snv, ploidy):
+    '''It calculates the estimator of heterozygosity, given a list with the
+    number of times that each allele has been read.
+
+    heterozygosity(estimator) = (n/(n-1))(1-summatory(xi**2))
+
+    xi = gene frequency of the i-th allele
+    n = total number of reads
+
+    Formula taken from "SAMPLING VARIANCES OF HETEROZYGOSITY AND GENETIC
+    DISTANCE" by MASATOSHI NEI and A. K. ROYCHOUDHURY.
+    Genetics 76: 379-390 February, 1974.
+
+    If the number of individuals is less than 50, formula has to be corrected:
+
+    heterozygosity(estimator) = (2n/(2n-1))(1-summatory(xi**2))
+
+    Taken from "ESTIMATION OF AVERAGE HETEROZYGOSITY AND GENETIC DISTANCE FROM
+    A SMALL NUMBER OF INDIVIDUALS" by MASATOSHI NEI.
+    Genetics 89 : 583-590 July, 1978.
+    '''
+
+    alleles = snv.qualifiers['alleles']
+    alleles_reads = []
+    for allele in alleles:
+        alleles_reads.append(_allele_count(allele, alleles))
+
+    if len(alleles_reads) == 1:
+        snv.qualifiers['heterozygosity'] = 0
+    else:
+        total_reads = sum(alleles_reads)
+
+        sum_  = 0
+        for num_allele in alleles_reads:
+            allele_freq = num_allele/total_reads
+            sum_ += allele_freq**2
+
+        if total_reads/ploidy < 50:
+            heterozygosity = ((2*total_reads)/((2*total_reads) - 1))*(1 - sum_)
+        else:
+            heterozygosity = ((total_reads)/((total_reads) - 1))*(1 - sum_)
+
+        snv.qualifiers['heterozygosity'] = heterozygosity

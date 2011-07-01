@@ -33,7 +33,7 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          variable_in_groupping,
                                          invariant_in_groupping,
                                          _get_group, SNP,
-                                         SNV_TYPES)
+                                         SNV_TYPES,)
 from franklin.seq.seqs import get_seq_name
 
 # In a filter TRUE result means that a snv does NOT pass the filter.
@@ -193,7 +193,10 @@ class SnvNamer(object):
         short_name = id_ % (groups[parameters[0]], filter_counts[desc])
         groups = ','.join(parameters[1])
         description = desc % (parameters[0], groups, parameters[2])
-
+        if parameters[5] and parameters[6]:
+            description1 = ('. maf:%f' % parameters[5] + '. '
+                        'min_num_reads:%i' % parameters[6])
+            description += description1
         return short_name, description
 
     @staticmethod
@@ -515,7 +518,7 @@ def create_kind_filter(kind):
     return kind_filter
 
 def create_cap_enzyme_filter(all_enzymes):
-    'It filters the snv looking if it is detectable by rstriction enzymes'
+    'It filters the snv looking if it is detectable by restriction enzymes'
     def cap_enzyme_filter(sequence):
         'The filter'
         if sequence is None:
@@ -537,15 +540,17 @@ def create_cap_enzyme_filter(all_enzymes):
     return cap_enzyme_filter
 
 def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
-                                        reference_free=True):
-    '''it filters looking if the list of reads is variable in the given
-    conditions. It look in the'''
+                                        reference_free=True, maf=None,
+                                        min_num_reads=None):
+    '''It filters looking if the list of reads is variable in the given
+    conditions.'''
 
     if isinstance(groups, basestring):
         groups = (groups,)
     else:
         groups = tuple(groups)
-    parameters = (group_kind, groups, in_union, reference_free)
+    parameters = (group_kind, groups, in_union, reference_free, maf,
+                  min_num_reads)
 
     def is_not_variable_filter(sequence):
         'The filter'
@@ -558,7 +563,9 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
                 continue
             result = invariant_in_groupping(snv, group_kind, groups,
                                             in_union, in_all_groups=False,
-                                            reference_free=reference_free)
+                                            reference_free=reference_free,
+                                            maf=maf,
+                                            min_num_reads=min_num_reads)
 
             _add_filter_result(snv, 'is_not_variable', not result,
                                threshold=parameters)
@@ -568,16 +575,17 @@ def create_not_variable_in_group_filter(group_kind, groups, in_union=True,
 
 def create_is_variable_filter(group_kind, groups, in_union=True,
                               in_all_groups=True, reference_free=True,
-                              maf=None, min_reads_per_allele=3):
-    '''it filters looking if the list of reads is variable in the given
-    conditions. It look in the'''
+                              maf=None, min_num_reads=None,
+                              min_reads_per_allele = None):
+    '''It filters looking if the list of reads is variable in the given
+    conditions.'''
 
     if isinstance(groups, basestring):
         groups = (groups,)
     else:
         groups = tuple(groups)
     parameters = (group_kind, groups, in_union,in_all_groups, reference_free,
-                  maf, min_reads_per_allele)
+                  maf, min_num_reads, min_reads_per_allele)
 
     def is_variable_filter(sequence):
         'The filter'
@@ -593,8 +601,8 @@ def create_is_variable_filter(group_kind, groups, in_union=True,
                                       in_all_groups=in_all_groups,
                                       reference_free=reference_free,
                                       maf=maf,
+                                      min_num_reads=min_num_reads,
                                       min_reads_per_allele=min_reads_per_allele)
-
 
             _add_filter_result(snv, 'is_variable', not result,
                                threshold=parameters)
