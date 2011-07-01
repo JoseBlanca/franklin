@@ -356,7 +356,7 @@ class GffMappersTest(unittest.TestCase):
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
         changed_feature = mapper((FEATURE, feature))[1]
-        assert  changed_feature['attributes']['Note'] == 'caracola'
+        assert  changed_feature['attributes']['description'] == 'caracola'
         feature = {'end': 140722177, 'name': 'test', 'start': 1,
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
                    'attributes': {'ID': 'test',
@@ -364,7 +364,7 @@ class GffMappersTest(unittest.TestCase):
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
         changed_feature = mapper((FEATURE, feature))[1]
-        assert 'Note' not in changed_feature['attributes']
+        assert 'description' not in changed_feature['attributes']
 
 class GffFilterTest(unittest.TestCase):
     'It test the mappers in GffFile'
