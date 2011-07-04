@@ -357,7 +357,7 @@ def create_description_adder(descriptions):
         if item[0] != FEATURE:
             return item
         feature = item[1]
-        attr_key = 'Note'
+        attr_key = 'description'
         name = feature.get('name', None)
         if not name:
             return feature
