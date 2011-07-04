@@ -1034,7 +1034,7 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
             alleles_for_groups[group][allele] = alleles_info['read_groups'][read_group]
     return alleles_for_groups
 
-def annotate_pic(snv):
+def calculate_pic(snv, read_groups=None, group_kind=None, groups=None):
     '''It calculates the uniformly minimum variance unbiased (UMVU) estimator
     of PIC of a locus, given a list with the number of times that each allele
     has been read.
@@ -1051,18 +1051,22 @@ def annotate_pic(snv):
     Theoretical Population Biology. Volume 57, Issue 3, May 2000, Pages 265-271
     '''
     alleles = snv.qualifiers['alleles']
+    read_groups = snv.qualifiers['read_groups']
     alleles_reads = []
     for allele in alleles:
-        alleles_reads.append(_allele_count(allele, alleles))
+        alleles_reads.append(_allele_count(allele, alleles,
+                                           read_groups=read_groups,
+                                           group_kind=group_kind,
+                                           groups=groups ))
 
     if len(alleles_reads) == 1:
-        snv.qualifiers['pic'] = 0
+        pic = 0
     else:
         total_reads = sum(alleles_reads)
 
         # we need at least 4 reads to calculate pic
         if total_reads < 4:
-            snv.qualifiers['pic'] = None
+            pic = None
         else:
             first_element = 0
             second_element = 0
@@ -1077,12 +1081,17 @@ def annotate_pic(snv):
                                             ((total_reads - 2)*
                                              (total_reads - 3))))
                     second_element += second_element_part
-
             pic = 1 - first_element - second_element
-            snv.qualifiers['pic'] = pic
+    return pic
+
+def annotate_pic(snv):
+    'It annotates the pic'
+    pic = calculate_pic(snv)
+    snv.qualifiers['pic'] = pic
 
 
-def annotate_heterozygosity(snv, ploidy):
+def calculate_heterozygosity(snv, ploidy, group_kind=None,
+                             groups=None):
     '''It calculates the estimator of heterozygosity, given a list with the
     number of times that each allele has been read.
 
@@ -1103,25 +1112,35 @@ def annotate_heterozygosity(snv, ploidy):
     A SMALL NUMBER OF INDIVIDUALS" by MASATOSHI NEI.
     Genetics 89 : 583-590 July, 1978.
     '''
-
     alleles = snv.qualifiers['alleles']
+    read_groups = snv.qualifiers['read_groups']
     alleles_reads = []
     for allele in alleles:
-        alleles_reads.append(_allele_count(allele, alleles))
+        alleles_reads.append(_allele_count(allele, alleles,
+                                           read_groups=read_groups,
+                                           group_kind=group_kind,
+                                           groups=groups))
 
     if len(alleles_reads) == 1:
-        snv.qualifiers['heterozygosity'] = 0
+        heterozygosity = 0
     else:
         total_reads = sum(alleles_reads)
-
-        sum_  = 0
-        for num_allele in alleles_reads:
-            allele_freq = num_allele/total_reads
-            sum_ += allele_freq**2
-
-        if total_reads/ploidy < 50:
-            heterozygosity = ((2*total_reads)/((2*total_reads) - 1))*(1 - sum_)
+        if total_reads == 0:
+            heterozygosity = None
         else:
-            heterozygosity = ((total_reads)/((total_reads) - 1))*(1 - sum_)
+            sum_  = 0
+            for num_allele in alleles_reads:
+                allele_freq = num_allele/total_reads
+                sum_ += allele_freq**2
 
-        snv.qualifiers['heterozygosity'] = heterozygosity
+            if total_reads/ploidy < 50:
+                heterozygosity = ((2*total_reads)/((2*total_reads) - 1))*(1 - sum_)
+            else:
+                heterozygosity = ((total_reads)/((total_reads) - 1))*(1 - sum_)
+    return heterozygosity
+
+def annotate_heterozygosity(snv, ploidy):
+    'It annotates the heterozigosity'
+    heterozygosity = calculate_heterozygosity(snv, ploidy)
+    snv.qualifiers['heterozygosity'] = heterozygosity
+
