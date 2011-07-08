@@ -17,6 +17,8 @@ def parse_options():
                       help='output file')
     parser.add_option('-b', '--blast_result', dest='blast',
                       help='blast results file')
+    parser.add_option('-a', '--array_filter', dest='array_filters',
+                      action='store_true', help='Use array filters')
     return parser
 
 def set_parameters():
@@ -35,24 +37,15 @@ def set_parameters():
     else:
         blast_fhand = open(options.blast)
 
-    return out_fhand, blast_fhand
-def similar_sequences_for_blast(blast_fhand, filters=None):
+    array_filters = options.array_filters
+    return out_fhand, blast_fhand, array_filters
+
+def similar_sequences_for_blast(blast_fhand, filters):
     'It look fro similar sequences ina blast result'
     #now we parse the blast
     blast_parser = get_alignment_parser('blast+')
     blast_result = blast_parser(blast_fhand)
 
-    # We filter the results with appropiate  filters
-    if filters is None:
-        filters = [{'kind'     : 'score_threshold',
-                    'score_key': 'similarity',
-                    'min_score': 90,
-                   },
-                   {'kind'            : 'min_length',
-                    'min_num_residues': 100,
-                    'length_in_query' : True
-                   }
-                  ]
     alignments = filter_alignments(blast_result, config=filters)
     for alignment in alignments:
         query_name = alignment['query'].name
@@ -70,14 +63,25 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
 
 def main():
     'The main part'
-    out_fhand, blast_fhand = set_parameters()
+    out_fhand, blast_fhand, array_filters = set_parameters()
 
     header  = 'query\tsubject\tdescription\tquery_start\tquery_end\tsubject_start\t'
     header += 'subject_end\n'
     out_fhand.write(header)
-
-
-    filters = None
+    if array_filters:
+        filters = [{'kind'     : 'score_threshold',
+                    'score_key': 'similarity',
+                    'min_score': 95},
+                   {'kind'            : 'min_length',
+                    'min_percentage': 80,
+                    'length_in_query' : True }]
+    else:
+        filters =  [{'kind'     : 'score_threshold',
+                     'score_key': 'similarity',
+                     'min_score': 90},
+                    {'kind'            : 'min_length',
+                     'min_num_residues': 200,
+                     'length_in_query' : True }]
 
     for similar_seq in similar_sequences_for_blast(blast_fhand, filters=filters):
         query_name    = similar_seq['query_name']
