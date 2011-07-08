@@ -63,28 +63,28 @@ class SnvStatsTest(unittest.TestCase):
     expected = '''Statistics for heterozygosity
 ------------------------------
 minimum: 0
-maximum: 0.57
-average: 0.28
-variance: 0.08
-sum: 0.57
+maximum: 0.5700
+average: 0.2850
+variance: 0.0812
+sum: 0.5700
 items: 2
 
 Statistics for pic
 -------------------
 minimum: 0
-maximum: 0.48
-average: 0.24
-variance: 0.06
-sum: 0.48
+maximum: 0.4800
+average: 0.2400
+variance: 0.0576
+sum: 0.4800
 items: 2
 
 Statistics for maf
 -------------------
-minimum: 0.57
-maximum: 0.60
-average: 0.59
-variance: 0.00
-sum: 1.17
+minimum: 0.5714
+maximum: 0.6000
+average: 0.5857
+variance: 0.0002
+sum: 1.1714
 items: 2'''
     assert expected in result
     test_dir.close()

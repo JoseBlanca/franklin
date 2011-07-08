@@ -719,7 +719,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
-        descrip = "It is not variable in the read_groups : rg1,rg2."
+        descrip = "It is not variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True. maf:0.600000. min_num_reads:3'
         assert desc == descrip
 
@@ -741,7 +741,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:4] == 'nvrg'
-        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip = "It is variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True. maf:0.700000. min_num_reads:2'
         assert desc == descrip
 
@@ -759,7 +759,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:4] == 'nvrg'
-        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip = "It is variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True'
         assert desc == descrip
 

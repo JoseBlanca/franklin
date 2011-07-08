@@ -67,10 +67,10 @@ FILTER_DESCRIPTIONS = {
          'description':'SNV is not a CAP detectable by the enzymes: %s'},
     'is_variable':
         {'id':'v%s%i',
-        'description':'It is not variable in the %s : %s. All together: %s'},
+        'description':'It is not variable, or no data, in the %s : %s. All together: %s'},
     'is_not_variable':
         {'id':'nv%s%i',
-        'description':'It is variable in the %s : %s. All together: %s'},
+        'description':'It is variable, or no data, in the %s : %s. All together: %s'},
     'ref_not_in_list':
         {'id':'rnl',
         'description':'Filters by given list of seq names'},

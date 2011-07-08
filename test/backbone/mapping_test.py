@@ -214,7 +214,9 @@ class TestBackboneMapping(unittest.TestCase):
 
         stats_fpath = join(stats_dir, BACKBONE_BASENAMES['statistics_file'])
         result = open(stats_fpath).read()
-        expected = 'average: 0.45\nvariance: 1.30\ntotal sequence length: 3941'
+        expected = '''average: 0.4542
+variance: 1.3050
+total sequence length: 3941'''
         assert expected in result
 
         test_dir.close()

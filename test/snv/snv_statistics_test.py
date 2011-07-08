@@ -125,10 +125,10 @@ bin_edges: 0,1'''
         expected = '''Statistics for pic
 -------------------
 minimum: 0
-maximum: 0.75
-average: 0.41
-variance: 0.10
-sum: 1.23
+maximum: 0.7500
+average: 0.4100
+variance: 0.0962
+sum: 1.2300
 items: 3'''
         assert expected in results
 
@@ -149,11 +149,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected = '''Statistics for pic (libraries: l1)
 -----------------------------------
-minimum: 0.33
-maximum: 0.48
-average: 0.40
-variance: 0.00
-sum: 1.20
+minimum: 0.3333
+maximum: 0.4762
+average: 0.4008
+variance: 0.0034
+sum: 1.2024
 items: 3'''
         assert expected in results
 
@@ -174,11 +174,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected = '''Statistics for pic (libraries: l2)
 -----------------------------------
-minimum: 0.47
-maximum: 0.47
-average: 0.47
-variance: 0.00
-sum: 0.47
+minimum: 0.4650
+maximum: 0.4650
+average: 0.4650
+variance: 0.0000
+sum: 0.4650
 items: 1'''
         assert expected in results
 
@@ -228,10 +228,10 @@ bin_edges: 0,1'''
         expected = '''Statistics for heterozygosity
 ------------------------------
 minimum: 0
-maximum: 0.80
-average: 0.46
-variance: 0.11
-sum: 1.37
+maximum: 0.8000
+average: 0.4567
+variance: 0.1131
+sum: 1.3700
 items: 3'''
         assert expected in results
 
@@ -253,11 +253,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected = '''Statistics for heterozygosity (libraries: l1)
 ----------------------------------------------
-minimum: 0.53
-maximum: 0.67
-average: 0.62
-variance: 0.00
-sum: 1.87
+minimum: 0.5333
+maximum: 0.6667
+average: 0.6222
+variance: 0.0040
+sum: 1.8667
 items: 3'''
         assert expected in results
 
@@ -279,11 +279,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected = '''Statistics for heterozygosity (libraries: l2)
 ----------------------------------------------
-minimum: 0.00
-maximum: 0.53
-average: 0.27
-variance: 0.07
-sum: 0.53
+minimum: 0.0000
+maximum: 0.5333
+average: 0.2667
+variance: 0.0711
+sum: 0.5333
 items: 2'''
         assert expected in results
 
@@ -305,11 +305,11 @@ items: 2'''
         results = open(result_fpath).read()
         expected = '''Statistics for heterozygosity (libraries: l4)
 ----------------------------------------------
-minimum: 0.00
-maximum: 0.00
-average: 0.00
-variance: 0.00
-sum: 0.00
+minimum: 0.0000
+maximum: 0.0000
+average: 0.0000
+variance: 0.0000
+sum: 0.0000
 items: 1'''
         assert expected in results
 
@@ -333,11 +333,11 @@ items: 1'''
         results = open(result_fpath).read()
         expected = '''Statistics for maf
 -------------------
-minimum: 0.57
-maximum: 0.60
-average: 0.59
-variance: 0.00
-sum: 1.77
+minimum: 0.5714
+maximum: 0.6000
+average: 0.5905
+variance: 0.0002
+sum: 1.7714
 items: 3'''
         assert expected in results
 
@@ -359,11 +359,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected = '''Statistics for maf (libraries: l1)
 -----------------------------------
-minimum: 0.50
-maximum: 0.67
-average: 0.56
-variance: 0.01
-sum: 1.67
+minimum: 0.5000
+maximum: 0.6667
+average: 0.5556
+variance: 0.0062
+sum: 1.6667
 items: 3'''
         assert expected in results
 
@@ -385,11 +385,11 @@ items: 3'''
         results = open(result_fpath).read()
         expected ='''Statistics for maf (libraries: l2)
 -----------------------------------
-minimum: 0.67
-maximum: 1.00
-average: 0.83
-variance: 0.03
-sum: 1.67
+minimum: 0.6667
+maximum: 1.0000
+average: 0.8333
+variance: 0.0278
+sum: 1.6667
 items: 2'''
         assert expected in results
 
@@ -411,11 +411,11 @@ items: 2'''
         results = open(result_fpath).read()
         expected ='''Statistics for maf (libraries: l4)
 -----------------------------------
-minimum: 1.00
-maximum: 1.00
-average: 1.00
-variance: 0.00
-sum: 1.00
+minimum: 1.0000
+maximum: 1.0000
+average: 1.0000
+variance: 0.0000
+sum: 1.0000
 items: 1'''
         assert expected in results
 
