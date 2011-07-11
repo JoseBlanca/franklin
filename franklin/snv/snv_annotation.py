@@ -1143,4 +1143,3 @@ def annotate_heterozygosity(snv, ploidy):
     'It annotates the heterozigosity'
     heterozygosity = calculate_heterozygosity(snv, ploidy)
     snv.qualifiers['heterozygosity'] = heterozygosity
-

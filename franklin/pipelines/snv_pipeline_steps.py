@@ -33,7 +33,8 @@ from franklin.snv.snv_filters import (create_high_variable_region_filter,
                                       create_is_variable_filter,
                                       create_reference_in_list_filter,
                                       create_not_variable_in_group_filter,
-                                      create_min_groups_filter)
+                                      create_min_groups_filter,
+    create_in_segment_filter)
 
 snv_bam_annotator = {'function':create_snv_annotator,
           'arguments':{'bam_fhand':None, 'min_quality':45,
@@ -125,7 +126,13 @@ min_groups = {
           'type': 'filter',
           'name': 'min_groups',
           'comment': 'Filters by the number of groups that support the SNV'}
-
+in_segment = {
+              'function': create_in_segment_filter,
+              'arguments': {'segments': None},
+              'type': 'filter',
+              'name': 'in_segment',
+              'comment': 'Filters snvs if they are inside the given segments '
+              }
 ################################################################################
 # PIPELINES
 ################################################################################
@@ -137,4 +144,4 @@ SNV_STEPS = [snv_bam_annotator, unique_contiguous_region_filter,
              close_to_snv_filter, close_to_limit_filter,
              major_allele_freq_filter, kind_filter, cap_enzyme_filter,
              is_variable_filter, is_not_variable_filter, ref_not_in_list,
-             min_groups]
+             min_groups, in_segment]

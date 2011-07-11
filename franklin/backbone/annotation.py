@@ -53,7 +53,8 @@ from franklin.pipelines.snv_pipeline_steps import (
                                             is_variable_filter,
                                             is_not_variable_filter,
                                             ref_not_in_list,
-                                            min_groups)
+                                            min_groups,
+                                            in_segment)
 from franklin.seq.writers import (SequenceWriter, SsrWriter,
                                   OrfWriter, OrthologWriter)
 from franklin.gff import SeqGffWriter
@@ -472,7 +473,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                     filter_config[argument] = value
                 if name == 'by_kind' and argument == 'kind':
                     filter_config[argument] =  self._snv_kind_to_franklin(value)
-
+                if name == 'in_segment' and argument == 'segments':
+                    filter_config[argument] = self._get_segments_from_bed(value)
             filter_config['name'] = name
 
             #the uniq_continguous filter can have the genomic db not defined
@@ -501,6 +503,20 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
         elif value in (4, '4', 'INDEL', 'indel'):
             return 4
 
+    @staticmethod
+    def _get_segments_from_bed(fpath):
+        'It parses the bed file and converts it in segments'
+        segments = {}
+        for line in open(fpath):
+            line = line.strip()
+            if not line:
+                continue
+            name, start, end = line.split('\t')
+            if name not in segments:
+                segments[name] = []
+            segments[name].append((int(start), int(end)))
+        return segments
+
     def _get_pipeline_from_step_name(self, configuration):
         'It gets the pipeline steps from filter_names'
         translator = {'uniq_contiguous' : unique_contiguous_region_filter,
@@ -514,7 +530,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                       'is_variable': is_variable_filter,
                       'is_not_variable': is_not_variable_filter,
                       'ref_not_in_list':ref_not_in_list,
-                      'min_groups':min_groups}
+                      'min_groups':min_groups,
+                      'in_segment':in_segment}
         pipeline = []
         for unique_name in configuration:
             step_name = configuration[unique_name]['name']

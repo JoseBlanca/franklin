@@ -27,6 +27,7 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
 from franklin.sam import create_bam_index
+from tempfile import NamedTemporaryFile
 THREADS = None
 
 class TestBackboneMapping(unittest.TestCase):
@@ -37,6 +38,10 @@ class TestBackboneMapping(unittest.TestCase):
         'We can map the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
+        bed_fhand = NamedTemporaryFile(suffix='.bed')
+        bed_fhand.write('AT1G14930.1\t200\t400\nAT1G55265.1\t100\t300\n')
+        bed_fhand.flush()
+
         blastdb_seq = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         snv_filters = {'filter1':{'name':'uniq_contiguous', 'use':True,
                                   'genomic_db':blastdb_seq,
@@ -57,7 +62,10 @@ class TestBackboneMapping(unittest.TestCase):
                        'filter13':{'unique_name': 'variable_in_caracola',
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
-                                   'groups':['hola2']}, }
+                                   'groups':['hola2']},
+                       'filter14':{'name': 'in_segment', 'use':True,
+                                   'segments':bed_fhand.name,
+                                   'edge_avoidance':10}}
 
         configuration = {'Snvs':{'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},
@@ -202,10 +210,12 @@ class TestBackboneMapping(unittest.TestCase):
         vcf_fpath = join(project_dir, 'annotations', 'features',
                          'reference.vcf')
         vcf = open(vcf_fpath).read()
+
         assert 'VLB1' in vcf
         assert 'VLB2' in vcf
         assert 'VLB3' in vcf
         assert 'AT1G14930.1' in vcf
+        assert 'IS10' in vcf
 
         do_analysis(project_settings=settings_path, kind='mapping_stats',
                     silent=True)
@@ -334,5 +344,5 @@ total sequence length: 3941'''
         #and the annotator takes the platform info from the configuration
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackboneMapping.test_snv_annot_without_rg']
+    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_analysis']
     unittest.main()
