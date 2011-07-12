@@ -38,7 +38,8 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_reference_in_list_filter,
                                       create_not_variable_in_group_filter,
                                       create_min_groups_filter,
-                                      SnvNamer)
+                                      SnvNamer,
+                                      create_in_segment_filter)
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -719,7 +720,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:3] == 'vrg'
-        descrip = "It is not variable in the read_groups : rg1,rg2."
+        descrip = "It is not variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True. maf:0.600000. min_num_reads:3'
         assert desc == descrip
 
@@ -741,7 +742,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:4] == 'nvrg'
-        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip = "It is variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True. maf:0.700000. min_num_reads:2'
         assert desc == descrip
 
@@ -759,7 +760,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         name, desc = namer.get_filter_description(filter_name, parameters,
                                             filter_descriptions)
         assert name[:4] == 'nvrg'
-        descrip = "It is variable in the read_groups : rg1,rg2."
+        descrip = "It is variable, or no data, in the read_groups : rg1,rg2."
         descrip += ' All together: True'
         assert desc == descrip
 
@@ -783,6 +784,78 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                             filter_descriptions)
         assert name == 'cef'
         assert desc == 'SNV is not a CAP detectable by the enzymes: cheap ones'
+
+    @staticmethod
+    def test_create_in_segment_filter():
+        'It tests create_in_segment_filter function'
+
+        snv = SeqFeature(type='snv', location=FeatureLocation(0, 0),
+                         qualifiers={})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                          qualifiers={})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(25, 25),
+                          qualifiers={})
+        snv4 = SeqFeature(type='snv', location=FeatureLocation(35, 35),
+                          qualifiers={})
+        snv5 = SeqFeature(type='snv', location=FeatureLocation(50, 75),
+                          qualifiers={})
+        snv6 = SeqFeature(type='snv', location=FeatureLocation(65, 65),
+                          qualifiers={})
+        snv7 = SeqFeature(type='snv', location=FeatureLocation(75, 75),
+                          qualifiers={})
+        snv8 = SeqFeature(type='snv', location=FeatureLocation(80, 80),
+                          qualifiers={})
+        snv9 = SeqFeature(type='snv', location=FeatureLocation(90, 110),
+                          qualifiers={})
+        snv10 = SeqFeature(type='snv', location=FeatureLocation(110, 110),
+                           qualifiers={})
+        snv11 = SeqFeature(type='snv', location=FeatureLocation(125, 125),
+                           qualifiers={})
+        snv12 = SeqFeature(type='snv', location=FeatureLocation(125, 126),
+                           qualifiers={})
+
+        seq1 = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+        seq = SeqWithQuality(seq=Seq(seq1), name='seq1',
+                             features=[snv, snv2, snv3, snv4, snv5, snv6, snv7,
+                                       snv8, snv9, snv10, snv11, snv12])
+
+        segments = {'seq1':[(5,25), (50, 75), (100, 125)]}
+
+        filter_ = create_in_segment_filter(segments, edge_avoidance=None)
+        filter_(seq)
+
+        assert seq.features[0].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[1].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[2].qualifiers['filters']['in_segment'][0]
+        assert seq.features[3].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[4].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[5].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[6].qualifiers['filters']['in_segment'][0]
+        assert seq.features[7].qualifiers['filters']['in_segment'][0]
+        assert seq.features[8].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[9].qualifiers['filters']['in_segment'][0]
+        assert not seq.features[10].qualifiers['filters']['in_segment'][0]
+        assert seq.features[11].qualifiers['filters']['in_segment'][0]
+
+        for i in range(12):
+            del seq.features[i].qualifiers['filters']
+
+        filter_ = create_in_segment_filter(segments, edge_avoidance=3)
+        filter_(seq)
+
+        assert seq.features[0].qualifiers['filters']['in_segment'][3]
+        assert not seq.features[1].qualifiers['filters']['in_segment'][3]
+        assert seq.features[2].qualifiers['filters']['in_segment'][3]
+        assert seq.features[3].qualifiers['filters']['in_segment'][3]
+        assert seq.features[4].qualifiers['filters']['in_segment'][3]
+        assert seq.features[5].qualifiers['filters']['in_segment'][3]
+        assert seq.features[6].qualifiers['filters']['in_segment'][3]
+        assert seq.features[7].qualifiers['filters']['in_segment'][3]
+        assert seq.features[8].qualifiers['filters']['in_segment'][3]
+        assert not seq.features[9].qualifiers['filters']['in_segment'][3]
+        assert seq.features[10].qualifiers['filters']['in_segment'][3]
+        assert seq.features[11].qualifiers['filters']['in_segment'][3]
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_is_not_variable_filter']

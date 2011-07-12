@@ -485,7 +485,7 @@ class TestSnvPipeline(unittest.TestCase):
                                      reference_free=True, maf=0.6)
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg1'],
-                                     min_num_reads=2)
+                                     min_reads_per_allele=2)
 
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
@@ -496,11 +496,11 @@ class TestSnvPipeline(unittest.TestCase):
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_num_reads=2)
+                                     min_reads_per_allele=2)
 
         assert not variable_in_groupping(snv, 'read_groups', ['rg2'],
                                      reference_free=False,
-                                     min_num_reads=3)
+                                     min_reads_per_allele=3)
 
         assert variable_in_groupping(snv, 'read_groups', ['rg2', 'rg3'])
 

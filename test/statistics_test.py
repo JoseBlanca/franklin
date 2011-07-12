@@ -40,10 +40,12 @@ class DistributionTest(unittest.TestCase):
 
         create_distribution(numbers, distrib_fhand=distrib_fhand,
                             summary_fhand=summary_fhand)
-        result = '''minimum: 1
+        result = '''Statistics for histogram
+-------------------------
+minimum: 1
 maximum: 101
-average: 10.56
-variance: 486.91
+average: 10.5556
+variance: 486.9136
 sum: 190
 items: 18'''
         assert result in summary_fhand.getvalue()

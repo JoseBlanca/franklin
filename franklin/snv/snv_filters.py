@@ -33,7 +33,7 @@ from franklin.snv.snv_annotation import (calculate_maf_frequency,
                                          variable_in_groupping,
                                          invariant_in_groupping,
                                          _get_group, SNP,
-                                         SNV_TYPES,)
+                                         SNV_TYPES)
 from franklin.seq.seqs import get_seq_name
 
 # In a filter TRUE result means that a snv does NOT pass the filter.
@@ -67,16 +67,19 @@ FILTER_DESCRIPTIONS = {
          'description':'SNV is not a CAP detectable by the enzymes: %s'},
     'is_variable':
         {'id':'v%s%i',
-        'description':'It is not variable in the %s : %s. All together: %s'},
+        'description':'It is not variable, or no data, in the %s : %s. All together: %s'},
     'is_not_variable':
         {'id':'nv%s%i',
-        'description':'It is variable in the %s : %s. All together: %s'},
+        'description':'It is variable, or no data, in the %s : %s. All together: %s'},
     'ref_not_in_list':
         {'id':'rnl',
         'description':'Filters by given list of seq names'},
     'min_groups':
         {'id':'m%s%i',
         'description':'SNV read in less than %i %s'},
+    'in_segment':
+        {'id':'is%i',
+        'description':'The snv is outside the given segments reduced in %i bases from each edge'},
     }
 
 class SnvNamer(object):
@@ -110,6 +113,8 @@ class SnvNamer(object):
             short_name, description = self._get_nd_maf(id_, desc, parameters)
         elif filter_name == 'close_to_snv':
             short_name, description = self._get_nd_cs(id_, desc, parameters)
+        elif filter_name == 'in_segment':
+            short_name, description = self._get_nd_is(id_, desc, parameters)
         else:
             if '%' in id_:
                 short_name = id_ % parameters
@@ -224,6 +229,17 @@ class SnvNamer(object):
 
         return short_name, description
 
+    @staticmethod
+    def _get_nd_is(id_, desc, parameters):
+        'It returns the name and id of the snv filter for in_segment filter'
+        if parameters:
+            edge_avoidance = parameters
+        else:
+            edge_avoidance = 0
+
+        short_name = id_ % edge_avoidance
+        description = desc % edge_avoidance
+        return short_name, description
 
 def _add_filter_result(snv, filter_name, result, threshold=None):
     'It adds the filter to the SeqFeature qualifiers'
@@ -492,8 +508,7 @@ def create_major_allele_freq_filter(frequency, groups=None, group_kind=None):
                 result = True
             else:
                 result = False
-            _add_filter_result(snv, 'maf', result,
-                               threshold=parameters)
+            _add_filter_result(snv, 'maf', result, threshold=parameters)
         return sequence
     return major_allele_freq_filter
 
@@ -638,3 +653,51 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
         return sequence
 
     return min_groups_filter
+
+def _inside_segment_filter(sequence, segments, edge_avoidance):
+    'It filters and annotates inside the snv the result'
+    index = 0
+    for snv in sequence.get_features(kind='snv'):
+        previous_result = _get_filter_result(snv, 'inside_segment',
+                                             threshold=edge_avoidance)
+        if previous_result is not None:
+            continue
+        result = None if segments else True
+
+        snv_start = snv.location.start.position
+        snv_end = snv.location.end.position
+
+        while result == None:
+            if snv_end > segments[-1][1] - edge_avoidance:
+                result = True
+            elif snv_end < segments[index][0] + edge_avoidance:
+                result = True
+            elif ((snv_end <= segments[index][1] - edge_avoidance) and
+                  (snv_start >= segments[index][0])):
+                result = False
+            elif ((snv_end <= segments[index][1] - edge_avoidance) and not
+                  (snv_start >= segments[index][0])):
+                result = True
+            else:
+                index += 1
+        _add_filter_result(snv, 'in_segment', result, threshold=edge_avoidance)
+    return sequence
+
+def create_in_segment_filter(segments, edge_avoidance=None):
+    'It checks if the snv is inside (False) or outside (True) of the segment'
+
+    edge_avoidance = 0 if edge_avoidance is None else edge_avoidance
+
+    def in_segment_filter(sequence):
+        'The filter'
+        if sequence is None:
+            return None
+        seq_name = sequence.name
+        if seq_name not in segments:
+            seq_segments = []
+        else:
+            seq_segments = segments[sequence.name]
+        _inside_segment_filter(sequence, seq_segments, edge_avoidance)
+
+        return _inside_segment_filter
+    return in_segment_filter
