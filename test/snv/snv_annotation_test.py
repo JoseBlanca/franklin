@@ -51,7 +51,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          IN_FIRST_POS, IN_LAST_POS,
                                          _get_alleles_from_read,
                                          annotate_pic,
-                                         annotate_heterozygosity)
+                                         annotate_heterozygosity,
+    snvs_in_window)
 
 from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
@@ -396,6 +397,38 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert not enzymes
+
+    @staticmethod
+    def test_snvs_in_window():
+        'It tests the snvs_in_window with maf and type'
+        alleles1 = {('A', DELETION): 2,
+                    ('T', INVARIANT): 8}
+        snv1 = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles1})
+        alleles2 = {('A', SNP): 2,
+                    ('T', INVARIANT): 2}
+        snv2 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
+                          qualifiers={'alleles':alleles2})
+        alleles3 = {('A', SNP): 8,
+                    ('T', INVARIANT): 8}
+        snv3 = SeqFeature(location=FeatureLocation(20, 20), type='snv',
+                          qualifiers={'alleles':alleles3})
+        alleles4 = {('A', SNP): 1,
+                    ('T', INVARIANT): 10}
+        snv4 = SeqFeature(location=FeatureLocation(25, 25), type='snv',
+                          qualifiers={'alleles':alleles4})
+        alleles5 = {('A', SNP): 1,
+                    ('T', INVARIANT): 100}
+        snv5 = SeqFeature(location=FeatureLocation(31, 31), type='snv',
+                          qualifiers={'alleles':alleles5})
+
+        snvs = [snv1, snv2, snv3, snv4, snv5]
+
+
+        assert snvs_in_window(snv2, snvs, 8) == 1
+        assert snvs_in_window(snv2, snvs, 30, snv_type=SNP) == 1
+        assert snvs_in_window(snv2, snvs, 30, snv_type=SNP, maf=0.7) == 0
+        assert snvs_in_window(snv3, snvs, 30, maf=0.7) == 2
 
 class TestSnvPipeline(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs using the pipeline'

@@ -50,8 +50,8 @@ FILTER_DESCRIPTIONS = {
         {'id': 'HVR%d',
     'description':'The region has more than %d snvs per 100 bases'},
     'close_to_snv':
-        {'id':'cs%s%2d',
-         'description':'The snv is closer than %d nucleotides to another %s'},
+        {'id':'cs%s%2d%s',
+         'description':'The snv is closer than %d nucleotides to another %s %s'},
     'close_to_limit':
         {'id':'cl%2d',
       'description':'The snv is closer than %d nucleotides the reference edge'},
@@ -132,7 +132,7 @@ class SnvNamer(object):
     @staticmethod
     def _get_nd_cs(id_, desc, parameters):
         'It returns the name an id of the close to snv filter'
-        limit, snv_type = parameters
+        limit, snv_type, maf = parameters
         if snv_type is not None:
             snv_type = SNV_TYPES[snv_type]
 
@@ -142,9 +142,14 @@ class SnvNamer(object):
         else:
             fist_letter = snv_type[0]
             snv_type_name = snv_type
-
-        short_name = id_ % (fist_letter, limit)
-        description = desc % (limit, snv_type_name)
+        if maf:
+            maf_name_str = '_%2f' % maf
+            maf_des_str = ' with maf:%2f' % maf
+        else:
+            maf_name_str = ''
+            maf_des_str = ''
+        short_name = id_ % (fist_letter, limit, maf_name_str)
+        description = desc % (limit, snv_type_name, maf_des_str)
 
         return short_name, description
 
@@ -430,7 +435,7 @@ def create_high_variable_region_filter(max_variability, window=0):
         return sequence
     return high_variable_region_filter
 
-def create_close_to_snv_filter(distance, snv_type=None):
+def create_close_to_snv_filter(distance, snv_type=None, maf=None):
     '''It returns a filter that filters snv by the distance to other snvs.
 
     If the snv has another snv closer than DISTANCE, then this snv is
@@ -442,18 +447,19 @@ def create_close_to_snv_filter(distance, snv_type=None):
         snvs = list(sequence.get_features(kind='snv'))
         for snv in snvs:
             previous_result = _get_filter_result(snv, 'close_to_snv',
-                                                 threshold=(distance, snv_type))
+                                                 threshold=(distance, snv_type,
+                                                            maf))
             if previous_result is not None:
                 continue
 
-            num_snvs = snvs_in_window(snv, snvs, distance * 2, snv_type)
+            num_snvs = snvs_in_window(snv, snvs, distance * 2, snv_type, maf)
             if num_snvs > 1:
                 result = True
             else:
                 result = False
 
             _add_filter_result(snv, 'close_to_snv', result,
-                               threshold=(distance, snv_type))
+                               threshold=(distance, snv_type, maf))
         return sequence
     return close_to_snv_filter
 

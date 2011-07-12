@@ -756,22 +756,37 @@ def sorted_alleles(feature):
         alleles_list.append(allele_info)
     return sorted(alleles_list, _cmp_by_read_num)
 
-def snvs_in_window(snv, snvs, window, snv_type=None):
+def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
     'it gets all the snvs  in a window taking a snv as reference'
     num_of_snvs = 0
-    location = int(str(snv.location.start))
-    left_margin = location - (window / 2)
-    rigth_margin = location + (window / 2)
+    snv_location = int(str(snv.location.start))
+    left_margin = snv_location - (window / 2)
+    rigth_margin = snv_location + (window / 2)
     for snv in snvs:
+        current_location = int(str(snv.location.start))
+        if current_location == snv_location:
+            continue
+        if current_location >= left_margin and current_location <= rigth_margin:
 
-        location = int(str(snv.location.start))
-        if location > left_margin and location < rigth_margin:
-            if  snv_type is None:
+            if snv_type is None and maf is None:
                 num_of_snvs += 1
-            else:
+            elif snv_type is None and maf:
+                alleles = snv.qualifiers['alleles']
+                snv_maf = calc_maf_and_num_reads(alleles)[0]
+                if snv_maf > maf:
+                    num_of_snvs += 1
+            elif snv_type and maf is None:
                 type_ = calculate_snv_kind(snv)
                 if ((snv_type == type_) or
                     (snv_type == INDEL and type_ in(INSERTION, DELETION))):
+                    num_of_snvs += 1
+            else:
+                type_ = calculate_snv_kind(snv)
+                alleles = snv.qualifiers['alleles']
+                snv_maf = calc_maf_and_num_reads(alleles)[0]
+                if (((snv_type == type_) or
+                    (snv_type == INDEL and type_ in(INSERTION, DELETION))) and
+                    (snv_maf > maf)):
                     num_of_snvs += 1
     return num_of_snvs
 

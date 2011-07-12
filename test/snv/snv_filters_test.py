@@ -186,7 +186,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
                                                        window=window)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                 [False, True, True]):
+                                 [False, True, False]):
             result = snv.qualifiers['filters']['high_variable_reg'][threshold]
             assert result == expected
 
@@ -208,11 +208,11 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_close_to_snv_filter(proximity)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                 [False, True, True]):
-            result = snv.qualifiers['filters']['close_to_snv'][(proximity, None)]
+                                 [False, True, False]):
+            result = snv.qualifiers['filters']['close_to_snv'][(proximity, None, None)]
             assert result == expected
 
-
+        snv.qualifiers['filters']['close_to_snv']
         alleles2 = {('A', DELETION): None, ('T', INVARIANT):None}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
                           qualifiers={'alleles':alleles2})
@@ -229,7 +229,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
                                  [False, True, True, False]):
-            result = snv.qualifiers['filters']['close_to_snv'][(proximity, INDEL)]
+            result = snv.qualifiers['filters']['close_to_snv'][(proximity, INDEL, None)]
             assert result == expected
 
 
