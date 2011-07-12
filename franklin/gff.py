@@ -392,7 +392,7 @@ def create_go_annot_adder(go_terms):
         return (FEATURE, feature)
     return go_annot_mapper
 
-def create_dbxref_adder(dbxref_db, relations, dbxref_name='Dbxref'):
+def create_dbxref_adder(dbxref_db, relations, dbxref_tag='Dbxref'):
     '''It creates a mapper that adds a dbxref to the feature.
 
     It looks in the provided relations dict to add the dbxref.
@@ -406,10 +406,10 @@ def create_dbxref_adder(dbxref_db, relations, dbxref_name='Dbxref'):
         if feature['id'] in relations:
             dbxref = relations[feature['id']]
             dbxref = dbxref_db + ':' + dbxref
-            dbxref = _add_dbxrefs_to_dbxref(feature['attributes'].get(dbxref_name,
+            dbxref = _add_dbxrefs_to_dbxref(feature['attributes'].get(dbxref_tag,
                                                                       ''),
                                             [dbxref])
-            feature['attributes'][dbxref_name] = dbxref
+            feature['attributes'][dbxref_tag] = dbxref
         return FEATURE, feature
     return add_dbxref_to_feature
 
