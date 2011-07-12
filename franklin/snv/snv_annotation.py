@@ -771,8 +771,7 @@ def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
             if snv_type is None and maf is None:
                 num_of_snvs += 1
             elif snv_type is None and maf:
-                alleles = snv.qualifiers['alleles']
-                snv_maf = calc_maf_and_num_reads(alleles)[0]
+                snv_maf = calculate_maf_frequency(snv)
                 if snv_maf > maf:
                     num_of_snvs += 1
             elif snv_type and maf is None:
@@ -782,8 +781,7 @@ def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
                     num_of_snvs += 1
             else:
                 type_ = calculate_snv_kind(snv)
-                alleles = snv.qualifiers['alleles']
-                snv_maf = calc_maf_and_num_reads(alleles)[0]
+                snv_maf = calculate_maf_frequency(snv)
                 if (((snv_type == type_) or
                     (snv_type == INDEL and type_ in(INSERTION, DELETION))) and
                     (snv_maf > maf)):

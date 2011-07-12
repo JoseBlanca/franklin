@@ -401,29 +401,40 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
     @staticmethod
     def test_snvs_in_window():
         'It tests the snvs_in_window with maf and type'
-        alleles1 = {('A', DELETION): 2,
-                    ('T', INVARIANT): 8}
+        alleles1 = {('A', DELETION): {'read_groups':{'r1':3}},
+                    ('T', INVARIANT): {'read_groups':{'r1':8}}}
+
         snv1 = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles1})
-        alleles2 = {('A', SNP): 2,
-                    ('T', INVARIANT): 2}
+                          qualifiers={'alleles':alleles1,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'}}})
+        alleles2 = {('A', SNP): {'read_groups':{'r1':2}},
+                    ('T', INVARIANT): {'read_groups':{'r1':2}}}
+
         snv2 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
-                          qualifiers={'alleles':alleles2})
-        alleles3 = {('A', SNP): 8,
-                    ('T', INVARIANT): 8}
+                          qualifiers={'alleles':alleles2,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'}}})
+        alleles3 = {('A', SNP): {'read_groups':{'r1':8}},
+                    ('T', INVARIANT): {'read_groups':{'r1':8}}}
         snv3 = SeqFeature(location=FeatureLocation(20, 20), type='snv',
-                          qualifiers={'alleles':alleles3})
-        alleles4 = {('A', SNP): 1,
-                    ('T', INVARIANT): 10}
+                          qualifiers={'alleles':alleles3,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'}}})
+        alleles4 = {('A', SNP): {'read_groups':{'r1':1}},
+                    ('T', INVARIANT): {'read_groups':{'r1':10}}}
         snv4 = SeqFeature(location=FeatureLocation(25, 25), type='snv',
-                          qualifiers={'alleles':alleles4})
-        alleles5 = {('A', SNP): 1,
-                    ('T', INVARIANT): 100}
+                          qualifiers={'alleles':alleles4,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'}}})
+        alleles5 = {('A', SNP): {'read_groups':{'r1':1}},
+                    ('T', INVARIANT): {'read_groups':{'r1':100}}}
         snv5 = SeqFeature(location=FeatureLocation(31, 31), type='snv',
-                          qualifiers={'alleles':alleles5})
+                          qualifiers={'alleles':alleles5,
+                                      'read_groups':{'r1':{'LB':'l1'},
+                                                     'r2':{'LB':'l2'}}})
 
         snvs = [snv1, snv2, snv3, snv4, snv5]
-
 
         assert snvs_in_window(snv2, snvs, 8) == 1
         assert snvs_in_window(snv2, snvs, 30, snv_type=SNP) == 1
