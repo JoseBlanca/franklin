@@ -144,12 +144,12 @@ class SnvNamer(object):
             snv_type_name = snv_type
         if maf:
             maf_name_str = '_%2f' % maf
-            maf_des_str = ' with maf:%2f' % maf
+            maf_desc_str = ', with maf:%2f' % maf
         else:
             maf_name_str = ''
-            maf_des_str = ''
+            maf_desc_str = ''
         short_name = id_ % (fist_letter, limit, maf_name_str)
-        description = desc % (limit, snv_type_name, maf_des_str)
+        description = desc % (limit, snv_type_name, maf_desc_str)
 
         return short_name, description
 
