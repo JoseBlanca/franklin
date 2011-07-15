@@ -438,8 +438,8 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
 
         assert snvs_in_window(snv2, snvs, 8) == 1
         assert snvs_in_window(snv2, snvs, 30, snv_type=SNP) == 1
-        assert snvs_in_window(snv2, snvs, 30, snv_type=SNP, maf=0.7) == 0
-        assert snvs_in_window(snv3, snvs, 30, maf=0.7) == 2
+        assert snvs_in_window(snv2, snvs, 30, snv_type=SNP, maf=0.7) == 1
+        assert snvs_in_window(snv3, snvs, 30, maf=0.7) == 1
 
 class TestSnvPipeline(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs using the pipeline'

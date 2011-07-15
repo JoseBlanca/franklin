@@ -770,11 +770,11 @@ def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
 
             if snv_type is None and maf is None:
                 num_of_snvs += 1
-            elif snv_type is None and maf:
+            elif snv_type is None and maf is not None:
                 snv_maf = calculate_maf_frequency(snv)
                 if snv_maf < maf:
                     num_of_snvs += 1
-            elif snv_type and maf is None:
+            elif snv_type is not None and maf is None:
                 type_ = calculate_snv_kind(snv)
                 if ((snv_type == type_) or
                     (snv_type == INDEL and type_ in(INSERTION, DELETION))):
