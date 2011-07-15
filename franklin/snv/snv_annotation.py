@@ -757,7 +757,7 @@ def sorted_alleles(feature):
     return sorted(alleles_list, _cmp_by_read_num)
 
 def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
-    'it gets all the snvs  in a window taking a snv as reference'
+    'it gets all the snvs in a window taking a snv as reference'
     num_of_snvs = 0
     snv_location = int(str(snv.location.start))
     left_margin = snv_location - (window / 2)
@@ -772,7 +772,7 @@ def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
                 num_of_snvs += 1
             elif snv_type is None and maf:
                 snv_maf = calculate_maf_frequency(snv)
-                if snv_maf > maf:
+                if snv_maf < maf:
                     num_of_snvs += 1
             elif snv_type and maf is None:
                 type_ = calculate_snv_kind(snv)
@@ -784,7 +784,7 @@ def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
                 snv_maf = calculate_maf_frequency(snv)
                 if (((snv_type == type_) or
                     (snv_type == INDEL and type_ in(INSERTION, DELETION))) and
-                    (snv_maf > maf)):
+                    (snv_maf < maf)):
                     num_of_snvs += 1
     return num_of_snvs
 
