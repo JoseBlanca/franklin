@@ -19,7 +19,7 @@ Created on 19/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
-
+from tempfile import NamedTemporaryFile
 from Bio.SeqFeature import FeatureLocation
 
 from franklin.utils.misc_utils import TEST_DATA_DIR
@@ -39,7 +39,9 @@ from franklin.snv.snv_filters import (create_unique_contiguous_region_filter,
                                       create_not_variable_in_group_filter,
                                       create_min_groups_filter,
                                       SnvNamer,
-                                      create_in_segment_filter)
+                                      create_in_segment_filter,
+                                      create_in_segment_bed_filter)
+from psubprocess.utils import NamedTemporaryDir
 
 class SeqVariationFilteringTest(unittest.TestCase):
     'It checks the filtering methods.'
@@ -856,6 +858,78 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert seq.features[10].qualifiers['filters']['in_segment'][3]
         assert seq.features[11].qualifiers['filters']['in_segment'][3]
 
+    @staticmethod
+    def test_create_in_segment_bed_filter():
+        'It tests create_in_segment_filter function'
+
+        snv = SeqFeature(type='snv', location=FeatureLocation(0, 0),
+                         qualifiers={})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+                          qualifiers={})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(25, 25),
+                          qualifiers={})
+        snv4 = SeqFeature(type='snv', location=FeatureLocation(35, 35),
+                          qualifiers={})
+        snv5 = SeqFeature(type='snv', location=FeatureLocation(50, 75),
+                          qualifiers={})
+        snv6 = SeqFeature(type='snv', location=FeatureLocation(65, 65),
+                          qualifiers={})
+        snv7 = SeqFeature(type='snv', location=FeatureLocation(75, 75),
+                          qualifiers={})
+        snv8 = SeqFeature(type='snv', location=FeatureLocation(80, 80),
+                          qualifiers={})
+        snv9 = SeqFeature(type='snv', location=FeatureLocation(90, 110),
+                          qualifiers={})
+        snv10 = SeqFeature(type='snv', location=FeatureLocation(110, 110),
+                           qualifiers={})
+        snv11 = SeqFeature(type='snv', location=FeatureLocation(125, 125),
+                           qualifiers={})
+        snv12 = SeqFeature(type='snv', location=FeatureLocation(125, 126),
+                           qualifiers={})
+
+        seq1 = 'ATGATGATGgaaattcATGATGATGTGGGAT'
+        seq = SeqWithQuality(seq=Seq(seq1), name='seq1',
+                             features=[snv, snv2, snv3, snv4, snv5, snv6, snv7,
+                                       snv8, snv9, snv10, snv11, snv12])
+        bed = 'seq1\t5\t25\nseq1\t50\t75\nseq1\t100\t125\n'
+        bed_fhand = NamedTemporaryFile()
+        bed_fhand.write(bed)
+        bed_fhand.flush()
+
+        filter_ = create_in_segment_bed_filter(bed_fhand.name, edge_avoidance=None)
+        filter_(seq)
+
+        assert seq.features[0].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[1].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[2].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[3].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[4].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[5].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[6].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[7].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[8].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[9].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[10].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[11].qualifiers['filters']['in_segment_bed'][0]
+
+        for i in range(12):
+            del seq.features[i].qualifiers['filters']
+
+        filter_ = create_in_segment_bed_filter(bed_fhand.name, edge_avoidance=3)
+        filter_(seq)
+
+        assert seq.features[0].qualifiers['filters']['in_segment_bed'][3]
+        assert not seq.features[1].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[2].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[3].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[4].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[5].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[6].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[7].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[8].qualifiers['filters']['in_segment_bed'][3]
+        assert not seq.features[9].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[10].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[11].qualifiers['filters']['in_segment_bed'][3]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_is_not_variable_filter']

@@ -77,7 +77,7 @@ FILTER_DESCRIPTIONS = {
     'min_groups':
         {'id':'m%s%i',
         'description':'SNV read in less than %i %s'},
-    'in_segment':
+    'in_segment_bed':
         {'id':'is%i',
         'description':'The snv is outside the given segments reduced in %i bases from each edge'},
     }
@@ -113,7 +113,7 @@ class SnvNamer(object):
             short_name, description = self._get_nd_maf(id_, desc, parameters)
         elif filter_name == 'close_to_snv':
             short_name, description = self._get_nd_cs(id_, desc, parameters)
-        elif filter_name == 'in_segment':
+        elif filter_name == 'in_segment_bed':
             short_name, description = self._get_nd_is(id_, desc, parameters)
         else:
             if '%' in id_:
@@ -660,11 +660,12 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
 
     return min_groups_filter
 
-def _inside_segment_filter(sequence, segments, edge_avoidance):
+def _inside_segment_filter(sequence, segments, edge_avoidance, filter_name=None):
     'It filters and annotates inside the snv the result'
+    filter_name = 'in_segment' if filter_name is None else filter_name
     index = 0
     for snv in sequence.get_features(kind='snv'):
-        previous_result = _get_filter_result(snv, 'inside_segment',
+        previous_result = _get_filter_result(snv, filter_name,
                                              threshold=edge_avoidance)
         if previous_result is not None:
             continue
@@ -686,10 +687,30 @@ def _inside_segment_filter(sequence, segments, edge_avoidance):
                 result = True
             else:
                 index += 1
-        _add_filter_result(snv, 'in_segment', result, threshold=edge_avoidance)
+        _add_filter_result(snv, filter_name, result, threshold=edge_avoidance)
     return sequence
 
-def create_in_segment_filter(segments, edge_avoidance=None):
+def _get_segments_from_bed(fpath):
+    'It parses the bed file and converts it in segments'
+    segments = {}
+    for line in open(fpath):
+        line = line.strip()
+        if not line:
+            continue
+        name, start, end = line.split('\t')
+        if name not in segments:
+            segments[name] = []
+        segments[name].append((int(start), int(end)))
+    return segments
+
+def create_in_segment_bed_filter(bed_fpath, edge_avoidance=None):
+    '''It checks if the snv is inside (False) or outside (True) of the segment.
+    It calculates the segments using the bed file
+    '''
+    segments = _get_segments_from_bed(bed_fpath)
+    return create_in_segment_filter(segments, edge_avoidance, 'in_segment_bed')
+
+def create_in_segment_filter(segments, edge_avoidance=None, filter_name=None):
     'It checks if the snv is inside (False) or outside (True) of the segment'
 
     edge_avoidance = 0 if edge_avoidance is None else edge_avoidance
@@ -703,7 +724,8 @@ def create_in_segment_filter(segments, edge_avoidance=None):
             seq_segments = []
         else:
             seq_segments = segments[sequence.name]
-        _inside_segment_filter(sequence, seq_segments, edge_avoidance)
+        _inside_segment_filter(sequence, seq_segments, edge_avoidance,
+                               filter_name)
 
         return _inside_segment_filter
     return in_segment_filter
