@@ -223,7 +223,8 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
         start, end = _trim_bad_qual_extremes(boolean_quality_treshold,
                                              min_quality_bases_,
                                              only_3_end=only_3_end)
-
+        if start is None or end is None:
+            return None
         if only_3_end:
             segments = [(end + 1, len(sequence) -1)]
         else:
@@ -241,7 +242,7 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases, only_3_end):
 
     def _get_good_qual_extreme_loc(bool_seq, min_quality_bases, extreme=None):
         'It look qood quality extreme start. Good quality is min_qual_bases'
-        extreme_pos     = 0
+        extreme_pos     = None
         good_count      = 0
         in_good_section = True
         if extreme == 'end':
@@ -257,9 +258,11 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases, only_3_end):
                 in_good_section = False
             if good_count == min_quality_bases:
                 break
+        if extreme_pos is None and in_good_section:
+            extreme_pos = 0
 
-        if extreme == 'end':
-            extreme_pos = len(bool_seq) - extreme_pos
+        if extreme == 'end' and extreme_pos is not None:
+            extreme_pos = len(bool_seq) - extreme_pos - 1
 
         return extreme_pos
 
@@ -267,7 +270,7 @@ def _trim_bad_qual_extremes(bool_seq, min_quality_bases, only_3_end):
         start = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'start')
     else:
         start = 0
-    end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end') - 1
+    end   = _get_good_qual_extreme_loc(bool_seq, min_quality_bases, 'end')
     return start, end
 
 def _calculate_sliding_window_qual(quality, quality_window_width):
