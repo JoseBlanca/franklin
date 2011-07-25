@@ -53,20 +53,38 @@ def similar_sequences_for_blast(blast_fhand, filters):
             #to which sequence our query is similar?
             name = match['subject'].name
             subj_desc = match['subject'].description
+
+            if 'expect' in match['scores']:
+                evalue = str(match['scores']['expect'])
+            else:
+                evalue = None
+            if 'identity'in match['scores']:
+                identity = str(match['scores']['identity'])
+            else:
+                identity = None
+            if 'similarity' in match['scores']:
+                similarity = str(match['scores']['similarity'])
+            else:
+                similarity = None
+
             yield{'name':name,
                   'subject_description':subj_desc,
                   'query_name':query_name,
                   'subject_start': match['subject_start'],
                   'subject_end':   match['subject_end'],
                   'query_start':   match['start'],
-                  'query_end':     match['end']}
+                  'query_end':     match['end'],
+                  'evalue':        evalue,
+                  'identity':      identity,
+                  'similarity':    similarity
+                  }
 
 def main():
     'The main part'
     out_fhand, blast_fhand, array_filters = set_parameters()
 
     header  = 'query\tsubject\tdescription\tquery_start\tquery_end\tsubject_start\t'
-    header += 'subject_end\n'
+    header += 'subject_end\tevalue\n'
     out_fhand.write(header)
     if array_filters:
         filters = [{'kind'     : 'score_threshold',
@@ -91,11 +109,15 @@ def main():
         query_end     = similar_seq['query_end']
         subject_start = similar_seq['subject_start']
         subject_end   = similar_seq['subject_end']
-        out_fhand.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (query_name, subject_name,
+        evalue = similar_seq['evalue'] if similar_seq['evalue'] else ''
+        #similarity = similar_seq['similarity'] if similar_seq['similarity'] else ''
+        #identity = similar_seq['identity'] if similar_seq['identity'] else ''
+        out_fhand.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (query_name, subject_name,
                                                      subject_description,
                                                      query_start, query_end,
                                                      subject_start,
-                                                     subject_end))
+                                                     subject_end,
+                                                     evalue))
     out_fhand.close()
 
 
