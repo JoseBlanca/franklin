@@ -63,8 +63,8 @@ class TestBackboneMapping(unittest.TestCase):
                                    'name': 'is_variable', 'use':True,
                                    'group_kind':'libraries',
                                    'groups':['hola2']},
-                       'filter14':{'name': 'in_segment', 'use':True,
-                                   'segments':bed_fhand.name,
+                       'filter14':{'name': 'in_segment_bed', 'use':True,
+                                   'bed_fpath':bed_fhand.name,
                                    'edge_avoidance':10}}
 
         configuration = {'Snvs':{'min_quality':20},

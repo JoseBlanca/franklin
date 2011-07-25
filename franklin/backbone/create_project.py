@@ -189,6 +189,11 @@ def _add_some_settings(config, project_path, name, config_data):
     config['snv_filters']['filter13']['min_groups'] = 4
     config['snv_filters']['filter13']['group_kind'] = 'samples'
 
+    config['snv_filters']['filter14'] = {}
+    config['snv_filters']['filter14']['name'] = 'in_segment_bed'
+    config['snv_filters']['filter14']['use'] = False
+    config['snv_filters']['filter14']['bed_fpath'] = 'path_to_bed_file'
+
 DEFAULT_CONFIGURATION = OrderedDict([
            ('General_settings',
                 OrderedDict([

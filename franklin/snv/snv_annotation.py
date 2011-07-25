@@ -36,6 +36,9 @@ from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
 from franklin.seq.readers import seqs_in_file
 
+DEFAUL_MIN_NUM_READS_PER_ALLELE = 2
+DEFAULT_PLOIDY = 2
+
 DELETION_ALLELE = '-'
 N_ALLLELES = ('n', '?')
 
@@ -73,6 +76,7 @@ IN_FIRST_POS = 1
 IN_MIDDLE_POS = 2
 IN_LAST_POS = 3
 IN_FIRST_AND_LAST = 4
+
 
 def _get_raw_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
@@ -647,7 +651,7 @@ def _summarize_snv(snv):
 def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                          min_mapq=15, min_num_alleles=1, max_maf=None,
                          read_edge_conf=None, default_bam_platform=None,
-                         min_num_reads_for_allele=2, ploidy=2):
+                         min_num_reads_for_allele=None, ploidy=2):
     'It creates an annotator capable of annotating the snvs in a SeqRecord'
 
     #the bam should have an index, does the index exists?
@@ -656,6 +660,12 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
     read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
+
+    # default min num_reads per allele and ploidy
+    if min_num_reads_for_allele is None:
+        min_num_reads_for_allele = DEFAUL_MIN_NUM_READS_PER_ALLELE
+    if ploidy is None:
+        ploidy = DEFAULT_PLOIDY
 
     def annotate_snps(sequence):
         'It annotates the snvs found in the sequence'

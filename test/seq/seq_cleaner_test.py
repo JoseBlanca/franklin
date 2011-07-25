@@ -70,6 +70,19 @@ class SeqCleanerTest(unittest.TestCase):
     @staticmethod
     def test_strip_seq_by_quality():
         'test trim_seq_by_quality '
+
+        seq  = 'ataataataata'
+        qual = [0] * len(seq)
+        desc = 'hola'
+        seq1 = SeqWithQuality(qual=qual, seq=Seq(seq), description=desc)
+        strip_seq_by_quality = create_striper_by_quality(quality_treshold=40,
+                                                         min_seq_length=2,
+                                                         min_quality_bases=3)
+        seq_trimmer = create_seq_trim_and_masker()
+        new_seq = strip_seq_by_quality(seq1)
+        new_seq = seq_trimmer(new_seq)
+        assert new_seq is None
+
         qual = [20, 20, 20, 60, 60, 60, 60, 60, 20, 20, 20, 20]
         seq  = 'ataataataata'
         desc = 'hola'
