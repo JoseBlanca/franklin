@@ -124,6 +124,18 @@ class RunnerFactorytest(unittest.TestCase):
         assert os.path.exists(dat_fpath)
         os.remove(annot_fpath)
         os.remove(dat_fpath)
+    @staticmethod
+    def xtest_run_iprscan():
+        'It test the runner of iprscan'
+        protfile = os.path.join(TEST_DATA_DIR, 'prot.fasta')
+        seq  = 'MLVNRILKHGKKSLAYQIIYRAMKKIQQKTETNPLSVLRQAIRGVTPDIAVKARRVGGSTH'
+        seq += 'QVPIEIGSTQGKALAIRWLLGASRKRPGRNMAFKLSSELVDAAKGSGDAIRKKEETHRMAEAN'
+        seq += 'RAFAHFR*'
+        seq1 = Seq(seq)
+        run_iprscan_for_seq = create_runner(tool='iprscan', parameters={'format':'html'})
+        run_iprscan_for_seq(seq1)['result']
+
+
 
 class TestCall(unittest.TestCase):
     'It test call'
@@ -172,5 +184,5 @@ class TestCall(unittest.TestCase):
         assert 'root' in stdout.read()
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'RunnerFactorytest.test_create_lucy_runner']
+    import sys;sys.argv = ['', 'RunnerFactorytest.test_run_iprscan']
     unittest.main()

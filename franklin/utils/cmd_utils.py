@@ -24,7 +24,7 @@ import StringIO, logging, copy, shutil, platform
 
 from franklin.seq.writers import temp_fasta_file, temp_qual_file
 from franklin.utils.misc_utils import (NamedTemporaryDir, DisposableFile,
-                                       get_franklin_ext_dir)
+                                       get_franklin_ext_dir, OrderedDict)
 
 def _locate_file(fpath):
     cmd = ['locate', fpath]
@@ -131,6 +131,17 @@ RUNNER_DEFINITIONS = {
     'blastx':BLASTX_DEF,
     'tblastn':TBLASTN_DEF,
     'tblastx':TBLASTX_DEF,
+    'iprscan':{'binary':'iprscan',
+               'parameters': {'in_terminal':{'default':None, 'option':'-cli',
+                                             'first_param':True},
+                              'seqtype' :{'default':'p', 'option': '-seqtype'},
+                              'iprlookup':{'option': '-iprlookup'},
+                              'goterms':{'option':'goterms'},
+                              'format':{'option':'-format'}
+                              },
+            'output':{'result':{'option':'-o'}},
+            'input':{'sequence':{'option':'-i', 'files_format':['fasta']}}
+              },
     'water': {'binary':'water',
             'parameters': {'subject' :{'required':True, 'option': '-bsequence'},
                            'gapopen'   :{'default': 10.0,'option': '-gapopen'},
@@ -219,6 +230,13 @@ def _process_parameters(parameters, parameters_def):
 
     for param, value in parameters.items():
         if param == 'bin':
+            continue
+        if 'first_param' in parameters_def[param]:
+            if'bin' in parameters:
+                position = 1
+            else:
+                position = 0
+            bin_.insert(position, parameters_def[param]['option'])
             continue
         param_opt = parameters_def[param]['option']
         bin_.append(param_opt)
