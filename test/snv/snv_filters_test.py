@@ -826,18 +826,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_in_segment_filter(segments, edge_avoidance=None)
         filter_(seq)
 
-        assert seq.features[0].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[1].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[2].qualifiers['filters']['in_segment'][0]
-        assert seq.features[3].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[4].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[5].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[6].qualifiers['filters']['in_segment'][0]
-        assert seq.features[7].qualifiers['filters']['in_segment'][0]
-        assert seq.features[8].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[9].qualifiers['filters']['in_segment'][0]
-        assert not seq.features[10].qualifiers['filters']['in_segment'][0]
-        assert seq.features[11].qualifiers['filters']['in_segment'][0]
+        assert seq.features[0].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[1].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[2].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[3].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[4].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[5].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[6].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[7].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[8].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[9].qualifiers['filters']['in_segment_bed'][0]
+        assert not seq.features[10].qualifiers['filters']['in_segment_bed'][0]
+        assert seq.features[11].qualifiers['filters']['in_segment_bed'][0]
 
         for i in range(12):
             del seq.features[i].qualifiers['filters']
@@ -845,18 +845,18 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_in_segment_filter(segments, edge_avoidance=3)
         filter_(seq)
 
-        assert seq.features[0].qualifiers['filters']['in_segment'][3]
-        assert not seq.features[1].qualifiers['filters']['in_segment'][3]
-        assert seq.features[2].qualifiers['filters']['in_segment'][3]
-        assert seq.features[3].qualifiers['filters']['in_segment'][3]
-        assert seq.features[4].qualifiers['filters']['in_segment'][3]
-        assert seq.features[5].qualifiers['filters']['in_segment'][3]
-        assert seq.features[6].qualifiers['filters']['in_segment'][3]
-        assert seq.features[7].qualifiers['filters']['in_segment'][3]
-        assert seq.features[8].qualifiers['filters']['in_segment'][3]
-        assert not seq.features[9].qualifiers['filters']['in_segment'][3]
-        assert seq.features[10].qualifiers['filters']['in_segment'][3]
-        assert seq.features[11].qualifiers['filters']['in_segment'][3]
+        assert seq.features[0].qualifiers['filters']['in_segment_bed'][3]
+        assert not seq.features[1].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[2].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[3].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[4].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[5].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[6].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[7].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[8].qualifiers['filters']['in_segment_bed'][3]
+        assert not seq.features[9].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[10].qualifiers['filters']['in_segment_bed'][3]
+        assert seq.features[11].qualifiers['filters']['in_segment_bed'][3]
 
     @staticmethod
     def test_create_in_segment_bed_filter():

@@ -51,7 +51,7 @@ FILTER_DESCRIPTIONS = {
     'description':'The region has more than %d snvs per 100 bases'},
     'close_to_snv':
         {'id':'cs%s%2d%s',
-         'description':'The snv is closer than %d nucleotides to another %s %s'},
+         'description':'The snv is closer than %d nucleotides to another %s%s'},
     'close_to_limit':
         {'id':'cl%2d',
       'description':'The snv is closer than %d nucleotides the reference edge'},
@@ -203,9 +203,13 @@ class SnvNamer(object):
         short_name = id_ % (groups[parameters[0]], filter_counts[desc])
         groups = ','.join(parameters[1])
         description = desc % (parameters[0], groups, parameters[2])
-        if parameters[5] and parameters[6]:
+        if len(parameters)>=7 and parameters[5] and parameters[6]:
             description1 = ('. maf:%f' % parameters[5] + '. '
                         'min_num_reads:%i' % parameters[6])
+            description += description1
+        elif len(parameters)==6 and parameters[4] and parameters[5]:
+            description1 = ('. maf:%f' % parameters[4] + '. '
+                        'min_num_reads:%i' % parameters[5])
             description += description1
         return short_name, description
 
@@ -662,7 +666,7 @@ def create_min_groups_filter(min_groups, group_kind='read_groups'):
 
 def _inside_segment_filter(sequence, segments, edge_avoidance, filter_name=None):
     'It filters and annotates inside the snv the result'
-    filter_name = 'in_segment' if filter_name is None else filter_name
+    filter_name = 'in_segment_bed' if filter_name is None else filter_name
     index = 0
     for snv in sequence.get_features(kind='snv'):
         previous_result = _get_filter_result(snv, filter_name,
