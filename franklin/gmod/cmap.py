@@ -100,6 +100,8 @@ def _map_features(map_, features, map_set_accession, marker_count,
             feat['attributes'] = {}
         feat['attributes']['feature_accs'] = '%s_%s' %  (feat['seqid'],
                                                          marker_name)
+        if 'publication' in feat:
+            feat['attributes']['publication'] = feat['publication']
 
         feats.append((FEATURE, feat))
     return feats
