@@ -17,6 +17,7 @@ Created on 27/10/2009
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 from copy import copy
+from os.path import join, splitext, basename
 
 from itertools import combinations
 from franklin.gff import write_gff, FEATURE, METADATA
@@ -224,3 +225,121 @@ def cmap_to_mcf(data, fhand):
                                                           marker['color']))
         fhand.write('\n\n')
         fhand.flush()
+
+def create_empty_cmap():
+    'It returns an empty cmap structure'
+    # Species is hard coded.
+    species = {'accession':'cmelo',
+               'full_name':'Cucumis melo',
+               'common_name':'melon',
+               'display_order':1}
+    cmap = {'features':{},
+            'map_sets':[],
+            'species':{'cmelo': species}}
+    return cmap
+
+def read_markers(fhand, cmap):
+    'It get all marker names'
+
+    markers = cmap['features']
+    fhand.readline()
+    for line in fhand:
+        line = line.strip()
+        if not line:
+            continue
+        items = line.split(',')
+        marker_type = items[0]
+        reference = items[1]
+        name      = items[2].lower()
+        markers[name] = {'name':name, 'type':marker_type,
+                         'publication':reference}
+    return markers
+
+def read_map(fhand, cmap):
+    'it reads the map and puts into the cmap object'
+    map_name = splitext(basename(fhand.name))[0]
+
+    cmap['map_sets'].append({'species':'cmelo', 'accession':map_name,
+                             'name':map_name,'short_name':map_name,
+                             'type':'Genetic', 'unit_modifier': 0.1,
+                             'maps':[]})
+
+    mapset_index = {}
+    for index, mapset in enumerate(cmap['map_sets']):
+        mapset_index[mapset['name']] = index
+
+    map_index = {}
+
+    markers = cmap['features']
+    our_mapset = cmap['map_sets'][mapset_index[map_name]]
+
+    group = None
+    for line in fhand:
+        line = line.strip()
+        if not line:
+            continue
+        #the group
+
+        if line.startswith('group') or line.startswith('Group'):
+            group = line.split()[1].lower()#.split('_')[1].lower()
+            #print group
+            our_mapset['maps'].append({'accession': group,
+                                          'name': group,
+                                          'display_order':1,
+                                          'feature_locations':[]})
+            map_index[group] = len(our_mapset['maps']) - 1
+            continue
+        line_items = line.split()
+        marker, location = line_items[0], line_items[1]
+        location = location.replace(',', '.')
+
+        location = int(round(float(location)))
+
+        #the marker
+        marker = marker.lower()
+        marker = marker.strip()
+
+        if marker not in markers:
+            markers[marker] = {'name':marker, 'type':'unknown'}
+            #print 'marker not found ->', marker
+
+        #the marker in the map
+        feat_loc = {'feature':marker, 'start':location}
+        group_index = map_index[group]
+        our_mapset['maps'][group_index]['feature_locations'].append(feat_loc)
+
+def fix_marker_types(cmap):
+    'It standarizes the marker types'
+
+    std_types = {
+        'aflp': ('aflp', ),
+        'est-ssr' : ('microsatellite', 'SO:0000289'),
+        'ssr': ('microsatellite', 'SO:0000289'),
+        'ima': ('issr', ),
+        'indel': ('indel', 'SO:1000032'),
+        'snp-indel': ('indel', 'SO:1000032'),
+        'marker' : ('sequence_feature', 'SO:0000110'),
+        'morhological': ('morphological', ),
+        'morphological': ('morphological', ),
+        'trait': ('morphological', ''),
+        'rapd': ('rapd', ),
+        'rapds': ('rapd',),
+        'rflp': ('RFLP_fragment', ),
+        'snp': ('SNP', 'SO:0000694'),
+        'snp-caps': ('SNP', 'SO:0000694', 'caps'),
+        'snp-snapshot-caps': ('SNP', 'SO:0000694', 'caps'),
+        'snp-scar': ('SNP', 'SO:0000694', 'caps'),
+        'scar': ('SNP', 'SO:0000694', 'caps'),
+        'snp-sequencing': ('SNP', 'SO:0000694'),
+        'snp-snapshot': ('SNP', 'SO:0000694'),
+        'spelling error': ('spelling error',),
+        'unknown': ('sequence_feature', 'SO:0000110'),
+        'isozyme' : ('isozyme', )
+    }
+
+    markers = cmap['features']
+    for marker in markers:
+        type_ = markers[marker]['type'].lower()
+        if type_ in std_types:
+            type_ = std_types[type_][0]
+            markers[marker]['type'] = type_
