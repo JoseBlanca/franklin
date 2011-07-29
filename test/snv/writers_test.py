@@ -148,7 +148,7 @@ class SequenomWriterTest(unittest.TestCase):
         position = 8
         writer.write(seq, position)
         sequenom_snv = open(fhand.name).read()
-        assert 'ATGCNTGC[ATG/-]CANNCTG' in sequenom_snv
+        assert 'ATGCHTGC[ATG/-]CANNCTG' in sequenom_snv
 
         # try with Insertion
         fhand = NamedTemporaryFile(mode='a')
@@ -156,7 +156,7 @@ class SequenomWriterTest(unittest.TestCase):
         position = 12
         writer.write(seq, position)
         sequenom_snv = open(fhand.name).read()
-        assert 'ATGCNTGCNNNC[-/AT]CTG' in sequenom_snv
+        assert 'ATGCHTGCNNNC[-/AT]CTG' in sequenom_snv
 
 
 if __name__ == "__main__":

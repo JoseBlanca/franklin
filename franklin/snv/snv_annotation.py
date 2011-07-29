@@ -768,6 +768,7 @@ def sorted_alleles(feature):
 
 def snvs_in_window(snv, snvs, window, snv_type=None, maf=None):
     'it gets all the snvs in a window taking a snv as reference'
+
     num_of_snvs = 0
     snv_location = int(str(snv.location.start))
     left_margin = snv_location - (window / 2)

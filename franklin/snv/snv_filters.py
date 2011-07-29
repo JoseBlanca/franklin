@@ -457,7 +457,7 @@ def create_close_to_snv_filter(distance, snv_type=None, maf=None):
                 continue
 
             num_snvs = snvs_in_window(snv, snvs, distance * 2, snv_type, maf)
-            if num_snvs > 1:
+            if num_snvs >= 1:
                 result = True
             else:
                 result = False

@@ -51,7 +51,7 @@ class SnvSequenomWriter(object):
             if location == position:
                 mysnv = snv
 
-            if abs(location - position) < self._length:
+            elif abs(location - position) < self._length:
                 genotype = _snv_to_n(snv, sequence, position)
                 for index, allele in enumerate(genotype):
                     seq[location + index] = allele
@@ -76,12 +76,40 @@ class SnvSequenomWriter(object):
         self.fhand.write('>%s\n%s\n' % (name, seq_to_print))
         self.fhand.flush()
 
+def _snp_to_iupac(snv):
+    '''It converts a snp into its iupac code'''
+
+    iupac_code = {'M': ['A', 'C'],
+                  'R': ['A', 'G'],
+                  'W': ['A', 'T'],
+                  'S': ['C', 'G'],
+                  'Y': ['C', 'T'],
+                  'K': ['G', 'T'],
+                  'V': ['A', 'C', 'G'],
+                  'H': ['A', 'C', 'T'],
+                  'D': ['A', 'G', 'T'],
+                  'B': ['C', 'G', 'T'],
+                  'N': ['A', 'C', 'G', 'T'],
+                  }
+    snp = []
+    alleles = snv.qualifiers['alleles'].keys()
+    for allele in alleles:
+        snp.append(allele[0])
+
+    sorted_snp = sorted(snp)
+    for code in iupac_code:
+        if iupac_code[code] == sorted_snp:
+            return code
+
+    raise ValueError('Error in getting snp IUPAC code')
+
 def _snv_to_n(snv, sequence, position):
     'It returns the n for each snp'
     genotype = []
     for allele, kind in snv.qualifiers['alleles'].keys():
         if kind == SNP and not genotype:
-            genotype = ['N']
+            snp_iupac = _snp_to_iupac(snv)
+            genotype = [snp_iupac]
         elif kind == DELETION:
             len_del = len(allele)
             genotype.extend(['N'] * (len_del - len(genotype)))
