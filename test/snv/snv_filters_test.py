@@ -210,7 +210,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_close_to_snv_filter(proximity)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                 [False, True, False]):
+                                 [True, True, True]):
             result = snv.qualifiers['filters']['close_to_snv'][(proximity, None, None)]
             assert result == expected
 
@@ -230,7 +230,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_ = create_close_to_snv_filter(proximity, INDEL)
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'),
-                                 [False, True, True, False]):
+                                 [True, True, True, True]):
             result = snv.qualifiers['filters']['close_to_snv'][(proximity, INDEL, None)]
             assert result == expected
 
