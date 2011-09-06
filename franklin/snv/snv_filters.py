@@ -668,7 +668,7 @@ def _inside_segment_filter(sequence, segments, edge_avoidance, filter_name=None)
     'It filters and annotates inside the snv the result'
     filter_name = 'in_segment_bed' if filter_name is None else filter_name
     index = 0
-    for snv in sequence.get_features(kind='snv'):
+    for snv in sequence.get_sorted_features(kind='snv'):
         previous_result = _get_filter_result(snv, filter_name,
                                              threshold=edge_avoidance)
         if previous_result is not None:
@@ -678,7 +678,7 @@ def _inside_segment_filter(sequence, segments, edge_avoidance, filter_name=None)
         snv_start = snv.location.start.position
         snv_end = snv.location.end.position
 
-        while result == None:
+        while result is None:
             if snv_end > segments[-1][1] - edge_avoidance:
                 result = True
             elif snv_end < segments[index][0] + edge_avoidance:

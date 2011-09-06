@@ -284,6 +284,12 @@ class SeqWithQuality(SeqRecord):
             if feature.type == kind:
                 yield feature
 
+    def get_sorted_features(self, kind):
+        'It yields the features that match the given kind sorted by position'
+        feats = self.get_features(kind)
+        key = lambda x: int(x.location.start.position)
+        return sorted(feats, key=key)
+
     def upper(self):
         'It returns the sequence upper cased'
         return self.__class__(seq=self.seq.upper(),
