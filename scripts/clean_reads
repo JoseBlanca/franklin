@@ -591,7 +591,7 @@ def get_input_output_options(parameters):
             format_out = format_in
         format_out = format_in
     if format_out not in SUPPORTED_OUTPUT_FORMATS:
-        msg = 'Format not supported for output sequences: ' + format
+        msg = 'Format not supported for output sequences: ' + format_out
         raise UnknownFormatError(msg)
 
     writer = SequenceWriter(seq_out_fhand, format_out,
