@@ -76,7 +76,7 @@ class SnvSequenomWriter(object):
         self.fhand.write('>%s\n%s\n' % (name, seq_to_print))
         self.fhand.flush()
 
-def _snp_to_iupac(snv):
+def _snp_to_iupac(snv, seq):
     '''It converts a snp into its iupac code'''
 
     iupac_code = {'M': ['A', 'C'],
@@ -92,23 +92,28 @@ def _snp_to_iupac(snv):
                   'N': ['A', 'C', 'G', 'T'],
                   }
     snp = []
+    kind = []
     alleles = snv.qualifiers['alleles'].keys()
     for allele in alleles:
         snp.append(allele[0])
+        kind.append(allele[1])
 
-    sorted_snp = sorted(snp)
-    for code in iupac_code:
-        if iupac_code[code] == sorted_snp:
-            return code
+    if 1 in kind or 2 in kind:
+        return '[COMPLEX]'
+    else:
+        sorted_snp = sorted(snp)
+        for code in iupac_code:
+            if iupac_code[code] == sorted_snp:
+                return code
 
-    raise ValueError('Error in getting snp IUPAC code')
+    raise ValueError('Error in getting SNP IUPAC code')
 
 def _snv_to_n(snv, sequence, position):
     'It returns the n for each snp'
     genotype = []
     for allele, kind in snv.qualifiers['alleles'].keys():
         if kind == SNP and not genotype:
-            snp_iupac = _snp_to_iupac(snv)
+            snp_iupac = _snp_to_iupac(snv, sequence)
             genotype = [snp_iupac]
         elif kind == DELETION:
             len_del = len(allele)
