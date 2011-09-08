@@ -50,6 +50,7 @@ def similar_sequences_for_blast(blast_fhand, filters):
     for alignment in alignments:
         query_name = alignment['query'].name
         for match in alignment['matches']:
+            print match
             #to which sequence our query is similar?
             name = match['subject'].name
             subj_desc = match['subject'].description
