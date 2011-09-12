@@ -15,7 +15,7 @@ from franklin.mapping import map_reads_with_gmap
 from franklin.sam import bam2sam
 
 class GmapTest(unittest.TestCase):
-    'It test the cmap mapper'
+    'It test the gmap mapper'
 
     @staticmethod
     def test_gmap_mapper():
