@@ -110,6 +110,7 @@ def _snp_to_iupac(snv, seq):
     raise ValueError('Error in getting SNP IUPAC code')
 
 def _get_major_allele(snv):
+    'It returns the most frequent allele'
     alleles = snv.qualifiers['alleles']
     major_number_reads = None
     most_freq_allele = None
