@@ -50,6 +50,7 @@ def similar_sequences_for_blast(blast_fhand, filters):
     for alignment in alignments:
         query_name = alignment['query'].name
         for match in alignment['matches']:
+            print match
             #to which sequence our query is similar?
             name = match['subject'].name
             subj_desc = match['subject'].description
@@ -89,9 +90,9 @@ def main():
     if array_filters:
         filters = [{'kind'     : 'score_threshold',
                     'score_key': 'similarity',
-                    'min_score': 100}, #95
+                    'min_score': 95},
                    {'kind'            : 'min_length',
-                    'min_percentage': 80,
+                    'min_percentage': 95,
                     'length_in_query' : True }]
     else:
         filters =  [{'kind'     : 'score_threshold',
