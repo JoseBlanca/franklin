@@ -22,7 +22,7 @@ from tempfile import NamedTemporaryFile
 import datetime, math
 
 from franklin.snv.snv_annotation import (INVARIANT, INSERTION, DELETION, SNP,
-                                         COMPLEX, INDEL)
+                                         COMPLEX, INDEL, calculate_maf_frequency)
 from franklin.seq.seqs import get_seq_name
 from franklin.snv.snv_filters import SnvNamer
 from franklin.snv.snv_annotation import (_allele_count, _get_group,
@@ -42,7 +42,7 @@ class SnvSequenomWriter(object):
         "it checks if the snp is only for illumina"
         return not snv.qualifiers['filters']['is_variable'][('samples', ('rp_75_59_uc82',), True)]
 
-    def write(self, sequence, position):
+    def write(self, sequence, position, maf=None):
         'It does the real write of the features'
         seq = list(sequence.seq)
         # put N in the snps near of the position
@@ -52,7 +52,7 @@ class SnvSequenomWriter(object):
                 mysnv = snv
 
             elif abs(location - position) < self._length:
-                genotype = _snv_to_n(snv, sequence, position)
+                genotype = _snv_to_n(snv, sequence, position, maf=maf)
                 for index, allele in enumerate(genotype):
                     seq[location + index] = allele
 
@@ -94,6 +94,7 @@ def _snp_to_iupac(snv, seq):
     snp = []
     kind = []
     alleles = snv.qualifiers['alleles'].keys()
+
     for allele in alleles:
         snp.append(allele[0])
         kind.append(allele[1])
@@ -108,13 +109,29 @@ def _snp_to_iupac(snv, seq):
 
     raise ValueError('Error in getting SNP IUPAC code')
 
-def _snv_to_n(snv, sequence, position):
+def _get_major_allele(snv):
+    alleles = snv.qualifiers['alleles']
+    major_number_reads = None
+    most_freq_allele = None
+    for allele in alleles:
+        number_reads = _allele_count(allele, alleles)
+        if major_number_reads is None or major_number_reads < number_reads:
+            major_number_reads = number_reads
+            most_freq_allele = allele
+    return most_freq_allele[0]
+
+def _snv_to_n(snv, sequence, position, maf=None):
     'It returns the n for each snp'
     genotype = []
     for allele, kind in snv.qualifiers['alleles'].keys():
         if kind == SNP and not genotype:
-            snp_iupac = _snp_to_iupac(snv, sequence)
-            genotype = [snp_iupac]
+            snv_maf = calculate_maf_frequency(snv)
+            if maf and snv_maf > maf:
+                genotype = [_get_major_allele(snv)]
+            else:
+                snp_iupac = _snp_to_iupac(snv, sequence)
+                genotype = [snp_iupac]
+
         elif kind == DELETION:
             len_del = len(allele)
             genotype.extend(['N'] * (len_del - len(genotype)))
