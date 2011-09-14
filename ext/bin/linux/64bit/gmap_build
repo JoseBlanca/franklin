@@ -4,7 +4,7 @@
 use warnings;	
 
 $gmapdb = "/usr/local/share";
-$package_version = "2011-09-07";
+$package_version = "2011-09-13";
 
 use Getopt::Std;
 use File::Copy;	
