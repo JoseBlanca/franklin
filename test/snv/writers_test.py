@@ -118,16 +118,24 @@ class SequenomWriterTest(unittest.TestCase):
         seq_str = 'ATGCATGCATGCACTG'
 
         filters = 'hola'
-        alleles1 = {('A', SNP):{}, ('T', INVARIANT):{}, ('C', SNP):{}}
+        alleles1 = {('A', SNP):{'read_groups': {'hola_illumina':2, 'hola2':3}},
+                    ('T', INVARIANT):{'read_groups': {'sanger':5, 'hola2':4}},
+                    ('C', SNP):{'read_groups': {'hola_illumina':6}}}
+        read_groups = {'hola_illumina':{'LB':'lib1'},
+                       'hola2':{'LB':'lib2'},
+                       'sanger': {'LB': 'lib3'}}
         snv1 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
                         qualifiers={'alleles':alleles1, 'reference_allele':'T',
-                        'filters':filters})
+                        'filters':filters, 'read_groups':read_groups})
 
-        alleles2 = {('T', INVARIANT):{}, ('---', DELETION):{}}
+        alleles2 = {('T', INVARIANT):{'read_groups': {'hola_illumina':1}},
+                    ('---', DELETION):{'read_groups': {'hola_illumina':1}}}
         snv2 = SeqFeature(type='snv', location=FeatureLocation(8, 8),
-                        qualifiers={'alleles':alleles2, 'reference_allele':'T'})
+                        qualifiers={'alleles':alleles2, 'reference_allele':'T',
+                                    'read_groups':read_groups})
 
-        alleles3 = {('AT', INSERTION):{}, ('T', INVARIANT):{}}
+        alleles3 = {('AT', INSERTION):{'read_groups': {'hola_illumina':1}},
+                    ('T', INVARIANT):{'read_groups': {'hola_illumina':1}}}
         snv3 = SeqFeature(type='snv', location=FeatureLocation(12, 12),
                         qualifiers={'alleles':alleles3, 'reference_allele':'T'})
 

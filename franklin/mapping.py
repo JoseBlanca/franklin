@@ -116,7 +116,7 @@ def _modify_gmap_makefile(makefile):
     fhand.flush()
     shutil.move(fhand.name, makefile)
 
-def create_gmap_reference(reference_fpath):
+def create_gmap_reference_old(reference_fpath):
     'It creates the reference fpath'
     dir_, name = os.path.split(reference_fpath)
     if not dir_:
@@ -153,15 +153,28 @@ def create_gmap_reference(reference_fpath):
         if os.path.exists(fpath):
             os.remove(fpath)
 
+def create_gmap_reference(reference_dir, reference_path, reference_name):
+    'It creates the reference fpath'
+
+    cmd = ['gmap_build',  '-B',  get_external_bin_dir(), '-D',  reference_dir,
+           '-d', reference_name, reference_path]
+
+    call(cmd,raise_on_error=True)
+
+    fpath = '%s.coords' % reference_name
+    if os.path.exists(fpath):
+        os.remove(fpath)
+
 def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
     'It maps the reads with gmap'
     threads = parameters['threads']
-    reference_dir, reference_name = os.path.split(reference_fpath)
+    reference_dir, reference_file_name = os.path.split(reference_fpath)
+    reference_name = reference_file_name.split('.')[0]
     if not reference_dir:
         reference_dir = '.'
     if not os.path.exists(reference_fpath + '.chromosome'):
-        create_gmap_reference(reference_fpath)
+        create_gmap_reference(reference_dir, reference_fpath, reference_name)
 
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'samse']
     if threads:
