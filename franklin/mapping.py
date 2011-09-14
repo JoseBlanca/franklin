@@ -173,7 +173,9 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     reference_name = reference_file_name.split('.')[0]
     if not reference_dir:
         reference_dir = '.'
-    if not os.path.exists(reference_fpath + '.chromosome'):
+
+    if not os.path.exists(os.path.join(reference_dir, reference_name,
+                                       reference_name + '.chromosome')):
         create_gmap_reference(reference_dir, reference_fpath, reference_name)
 
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'samse']
@@ -183,7 +185,6 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
 
     out_sam_fhand = NamedTemporaryFile(suffix='.sam')
     call(cmd, stdout=out_sam_fhand, raise_on_error=True)
-
     sam2bam(out_sam_fhand.name, out_bam_fpath)
     out_sam_fhand.close()
 
