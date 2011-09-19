@@ -65,25 +65,18 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_snv_annotation():
         'It tests the annotation of SeqRecords with snvs'
-#        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-#        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
-#                                      'reference.fasta'))
-#
-#        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
-#                                         min_num_alleles=2)
-#
-#        expected_snvs = [1, 3]
-#        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
-#            seq = annotator(seq)
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         min_num_alleles=2)
+
+        expected_snvs = [1, 3]
+        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
+            seq = annotator(seq)
 #            assert expected == len(seq.features)
 
-        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'fail.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'fail.fasta'))
-
-        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=45,
-                                         min_num_alleles=1, min_num_reads_for_allele=1)
-        seqs = seqs_in_file(seq_fhand)
-        seq = annotator(seqs.next())
 
 
     @staticmethod
