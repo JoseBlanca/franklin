@@ -82,7 +82,10 @@ def _get_raw_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
     allele = aligned_read.seq[index].upper()
     if aligned_read.qual:
-        qual = _quality_to_phred(aligned_read.qual[index])
+        try:
+            qual = _quality_to_phred(aligned_read.qual[index])
+        except ZeroDivisionError:
+            raise RuntimeError('mi error')
     else:
         qual = None
     return allele, qual
@@ -111,6 +114,7 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
     The position in the reference is only used for the cache
     '''
     cigar = tuple(cigar)
+    #print cigar
     global SEGMENTS_CACHE
     cache_key = read_len, begin_pos_read_in_ref, cigar
     if cache_key in SEGMENTS_CACHE:
@@ -212,9 +216,9 @@ def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
     #we're outside any segment
     return None
 
-def _get_insertion(segment_index, segment_type, read_pos, pileup_read,
-                  aligned_read):
-
+def _get_insertion(segment_index, segment_type, read_pos, aligned_read,
+                   segment_lens):
+    #TODO explain function
     allele = None
     kind = None
     qual = None
@@ -225,13 +229,20 @@ def _get_insertion(segment_index, segment_type, read_pos, pileup_read,
     else:
         next_segment_pos = segment_index + 1
 
+
     if (next_segment_pos is not None and
         segment_type[next_segment_pos] == INSERTION):
-
-        indel_length = pileup_read.indel
+        indel_length = segment_lens[next_segment_pos]
+        if indel_length == 0:
+            msg = "An insertion can't be of 0 length\n"
+            msg += 'next_segment_pos ' + str(next_segment_pos)
+            msg += '\nsegment_index ' + str(segment_index)
+            msg += '\nsegment_type ' + str(segment_type)
+            msg += '\nread_pos ' + str(read_pos)
+            msg += '\naligned_read ' + str(aligned_read)
+            raise ValueError(msg)
         start = read_pos
         end = start + indel_length
-
         allele, qual = _get_raw_allele_from_read(aligned_read,
                                                  slice(start, end))
         kind = INSERTION
@@ -307,8 +318,8 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
             #Is there an insertion in the next position?
             next_read_pos = read_pos + 1
             allele, kind, qual = _get_insertion(segment_index, segment_types,
-                                               next_read_pos, pileup_read,
-                                               aligned_read)
+                                                next_read_pos, aligned_read,
+                                                segment_lens)
             if kind is not None:
                 alleles.append((allele, kind, qual, is_reverse))
 
@@ -339,8 +350,8 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
         if segment_pos ==IN_FIRST_AND_LAST or segment_pos == IN_LAST_POS:
             #Is there an insertion in the next position?
             allele, kind, qual = _get_insertion(segment_index, segment_types,
-                                               read_pos1, pileup_read,
-                                               aligned_read)
+                                               read_pos1, aligned_read,
+                                               segment_lens)
             if kind is not None:
                 alleles.append((allele, kind, qual, is_reverse))
 
@@ -351,10 +362,9 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
                                                        segment_types,
                                                        segment_index,
                                                        ref_pos)
-
         allele, kind, qual = _get_insertion(segment_index, segment_types,
-                                           read_pos1, pileup_read,
-                                           aligned_read)
+                                           read_pos1, aligned_read,
+                                           segment_lens)
         if kind is not None:
             alleles.append((allele, kind, qual, is_reverse))
 
@@ -423,7 +433,6 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
     for column in bam.pileup(reference=reference_id):
         alleles = {}
         ref_pos = column.pos
-
         if ref_pos >= reference_len:
             continue
         ref_id = bam.getrname(column.tid)

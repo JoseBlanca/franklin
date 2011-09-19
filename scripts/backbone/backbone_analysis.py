@@ -18,7 +18,9 @@ This script is used to run any of the backbone analysis.
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging, cgitb, datetime
+import os, logging, datetime, tempfile
+
+import franklin.utils.cgitb as cgitb
 
 from franklin.backbone.backbone_runner import (do_analysis,
                                                get_analysis_especifications)
@@ -78,10 +80,20 @@ def main():
             time_elapsed = datetime.datetime.today() - start_time
             logger.info('Time elapsed %s' % str(time_elapsed))
     except Exception as error:
-        logger.exception(error)
         if not os.path.exists(ERROR_DIR):
             os.mkdir(ERROR_DIR)
-        cgitb.handler()
+
+        error_fpath =  tempfile.mkstemp(suffix='.txt', dir=ERROR_DIR)[1]
+        msg  = 'An unexpected error happened.\n'
+        msg += 'The clean_reads developers would appreciate your feedback\n'
+        msg += 'Please send them the error log and take a look at it: '
+        msg += error_fpath + '\n\n'
+
+        logger.exception(str(error)+ '\n' + msg)
+
+        hook = cgitb.Hook(display=0, format='text', logfpath=error_fpath)
+        hook.handle()
+
         raise
 
 if __name__ == '__main__':

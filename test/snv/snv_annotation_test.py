@@ -27,7 +27,7 @@ from Bio.SeqFeature import FeatureLocation
 from StringIO import StringIO
 import pysam
 
-from franklin.utils.misc_utils import TEST_DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR, DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
 from franklin.seq.writers import SequenceWriter, write_seqs_in_file
@@ -65,17 +65,26 @@ class TestSnvAnnotation(unittest.TestCase):
     @staticmethod
     def test_snv_annotation():
         'It tests the annotation of SeqRecords with snvs'
-        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
-                                      'reference.fasta'))
+#        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
+#        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+#                                      'reference.fasta'))
+#
+#        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+#                                         min_num_alleles=2)
+#
+#        expected_snvs = [1, 3]
+#        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
+#            seq = annotator(seq)
+#            assert expected == len(seq.features)
 
-        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
-                                         min_num_alleles=2)
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'fail.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'fail.fasta'))
 
-        expected_snvs = [1, 3]
-        for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
-            seq = annotator(seq)
-            assert expected == len(seq.features)
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=45,
+                                         min_num_alleles=1, min_num_reads_for_allele=1)
+        seqs = seqs_in_file(seq_fhand)
+        seq = annotator(seqs.next())
+
 
     @staticmethod
     def test_snv_annotation_with_pic_and_heterozygosity():
@@ -696,6 +705,15 @@ class TestReadPos(unittest.TestCase):
         assert segment_type == [0, 3, 0, 2, 0]
         assert segment_lens == [3, 4, 2, 3, 2]
 
+
+        read = 'ATCGTAG'
+        ref_pos = 8945400
+        cigar = '41M4907N1I33M1D93M4861N34M'
+        cigar = [(0, 3),(3, 4), (0, 2), (2, 3), (0, 2)]
+        read_len = len(read)
+        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
+         segment_lens) = _get_segments_from_cigar(ref_pos, cigar, read_len)
+
     @staticmethod
     def test_locate_segment():
         'It tests the correct location of a read position in the segments'
@@ -796,6 +814,30 @@ class TestReadPos(unittest.TestCase):
                         print expected[(read_name, ref_pos)]
                     assert alleles == expected[(read_name, ref_pos)]
 
+
+        # It should work without errors
+        sam_fpath = os.path.join(TEST_DATA_DIR, 'samtools', 'fail.sam')
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam_fpath, bam_fhand.name)
+
+        create_bam_index(bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+
+        seq_fpath     = os.path.join(TEST_DATA_DIR, 'samtools', 'ref2.fasta')
+        seqs          = seqs_in_file(open(seq_fpath))
+        reference     = seqs.next()
+        reference_id  = reference.name
+        reference_seq = reference.seq
+        for column in bam.pileup(reference=reference_id):
+            ref_pos = column.pos
+            ref_allele = reference_seq[ref_pos].upper()
+            for pileup_read in column.pileups:
+                read_name = pileup_read.alignment.qname
+                alleles, read_limits = _get_alleles_from_read(ref_allele,
+                                                              ref_pos,
+                                                              pileup_read)
+
+
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 
@@ -859,5 +901,5 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
+    #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation']
     unittest.main()
