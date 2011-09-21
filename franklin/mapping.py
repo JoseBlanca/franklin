@@ -179,10 +179,11 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
         create_gmap_reference(reference_dir, reference_fpath, reference_name)
 
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'samse']
+    # this gmap options doesn' detect deletions close to introns
+    cmd.append('--canonical-mode=0')
     if threads:
         cmd.extend(['-t', str(threads)])
     cmd.append(reads_fpath)
-
     out_sam_fhand = NamedTemporaryFile(suffix='.sam')
     call(cmd, stdout=out_sam_fhand, raise_on_error=True)
     sam2bam(out_sam_fhand.name, out_bam_fpath)
