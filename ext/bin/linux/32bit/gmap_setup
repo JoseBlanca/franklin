@@ -5,7 +5,7 @@ use warnings;
 
 $gmapdb = "/usr/local/share";
 $bindir = "/usr/local/bin";
-$package_version = "2011-09-07";
+$package_version = "2011-10-01";
 
 use IO::File;
 use Getopt::Std;
