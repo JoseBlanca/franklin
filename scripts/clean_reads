@@ -475,7 +475,7 @@ def _prepare_pipeline_for_long(parameters, pipeline_type):
         lucy_params = {'bracket':parameters['lucy_bracket'],
                        'window':parameters['lucy_window'],
                        'error':parameters['lucy_error']}
-        lucy_splice_file = parameters.get('lucy_splice_file', None)
+        lucy_splice_file = parameters.get('lucy_splice', None)
         vector_file = parameters.get('vector_file', None)
         if vector_file and lucy_splice_file:
             lucy_params['vector'] = [vector_file, lucy_splice_file]

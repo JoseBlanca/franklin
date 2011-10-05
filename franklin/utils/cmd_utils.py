@@ -326,6 +326,7 @@ def _build_cmd(cmd_params, runner_def):
     cmd.extend(cmd_args_begin)
     cmd.extend(cmd_params)
     cmd.extend(cmd_args_end)
+
     return cmd, stdin
 
 def create_runner(tool, parameters=None, environment=None):
@@ -369,8 +370,10 @@ def create_runner(tool, parameters=None, environment=None):
         _prepare_output_files(runner_data['output'])
         cmd, stdin = _build_cmd(cmd_param, runner_data)
 
-        #print 'cmd:' + ' '.join(cmd)
+
+        #print 'cmd:' , cmd
         #raw_input('resume?')
+
         try:
             stdout, stderr, retcode = call(cmd, stdin=stdin,
                                            environment=environment)
