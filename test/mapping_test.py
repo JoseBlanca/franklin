@@ -29,7 +29,7 @@ class GmapTest(unittest.TestCase):
         reads_fpath = join(gmap_dir, 'lb_lib1.pl_sanger.sm_sam1.fa')
 
         out_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        parameters = {'threads':None}
+        parameters = {'threads':None, 'kmer':13}
         map_reads_with_gmap(temp_genome, reads_fpath, out_bam_fhand.name,
                             parameters)
 
@@ -51,7 +51,7 @@ class GmapTest(unittest.TestCase):
 
         reads_fpath = join(gmap_dir, 'lb_lib1.pl_sanger.sm_sam1.sfastq')
         out_bam_fhand = NamedTemporaryFile(suffix='.bam')
-        parameters = {'threads':None}
+        parameters = {'threads':None, 'kmer':13}
         map_reads_with_gmap(temp_genome, reads_fpath, out_bam_fhand.name,
                             parameters)
 
@@ -85,7 +85,7 @@ class GmapTest(unittest.TestCase):
         out_bam_fhand = NamedTemporaryFile()
         out_bam_fpath = out_bam_fhand.name
         out_bam_fhand.close()
-        parameters = {'threads':None}
+        parameters = {'threads':None, 'kmer':13}
         map_reads_with_gmap(temp_genome, reads_fhand.name, out_bam_fpath,
                             parameters)
         reads_fhand.close()

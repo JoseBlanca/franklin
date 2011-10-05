@@ -153,12 +153,15 @@ def create_gmap_reference_old(reference_fpath):
         if os.path.exists(fpath):
             os.remove(fpath)
 
-def create_gmap_reference(reference_dir, reference_path, reference_name):
+def create_gmap_reference(reference_dir, reference_path, reference_name,
+                          parameters=None):
     'It creates the reference fpath'
 
     cmd = ['gmap_build',  '-B',  get_external_bin_dir(), '-D',  reference_dir,
-           '-d', reference_name, reference_path]
-
+           '-d', reference_name]
+    if parameters and 'kmer' in parameters:
+        cmd.extend(['-k', str(parameters['kmer'])])
+    cmd.append(reference_path)
     call(cmd,raise_on_error=True)
 
     fpath = '%s.coords' % reference_name
@@ -176,7 +179,8 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
 
     if not os.path.exists(os.path.join(reference_dir, reference_name,
                                        reference_name + '.chromosome')):
-        create_gmap_reference(reference_dir, reference_fpath, reference_name)
+        create_gmap_reference(reference_dir, reference_fpath, reference_name,
+                              parameters)
 
     cmd  = ['gmap', '-d', reference_name, '-D', reference_dir, '-f', 'samse']
     # this gmap options doesn' detect deletions close to introns
