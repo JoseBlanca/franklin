@@ -309,6 +309,8 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
                     silent=True)
 
         clean_stats_dir = join(cleaned_reads_dir, 'stats')
+        print clean_stats_dir
+        raw_input()
         clean_fnames = os.listdir(clean_stats_dir)
         expected_fnames = ['pl_454.lb_a.qual.diff',
                            'pl_illumina.lb_no_raw.qual',
@@ -424,5 +426,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
+    import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis']
     unittest.main()
