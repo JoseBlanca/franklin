@@ -281,7 +281,7 @@ class SamStatsTest(unittest.TestCase):
         assert distribs[('platform', '454')]['distrib'][0] == 1
 
         distribs = bam_distribs(bam_fhand, 'edit_distance')
-        assert distribs[('platform', '454')]['distrib'][0] == 1
+        assert distribs[('platform', '454')]['distrib'][0] == 3
 
     @staticmethod
     def test_sample_bam():

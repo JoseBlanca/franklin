@@ -35,7 +35,8 @@ from franklin.utils.cmd_utils import call, java_cmd, guess_jar_dir
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.utils.misc_utils import get_num_threads
 from franklin.utils.itertools_ import take_sample
-from franklin.statistics import create_distribution, CachedArray
+from franklin.statistics import create_distribution, CachedArray,\
+    IntsStats
 
 def get_read_group_info(bam):
     'It returns a dictionary with the read group info: platform, lb, etc'
@@ -453,7 +454,7 @@ def _get_bam_coverage(bam, rgs, grouping):
 
         for group, value in new_reads_per_colum.items():
             if group not in coverages:
-                coverages[group] = CachedArray('I')
+                coverages[group] = IntsStats(init_len=100)
             coverages[group].append(value)
 
     #we need the total length covered by the references
@@ -481,7 +482,7 @@ def _get_bam_mapping_quality(bam, rgs, grouping):
         except KeyError:
             group = None
         if group not in mquals:
-            mquals[group] = CachedArray('H')
+            mquals[group] = IntsStats(init_len=100)
         mquals[group].append(read_mapping_qual)
     return mquals
 
@@ -502,11 +503,11 @@ def _get_bam_edit_distance(bam, rgs, grouping):
         except KeyError:
             group = None
         if group not in edit_dists:
-            edit_dists[group] = CachedArray('H')
+            edit_dists[group] = IntsStats(init_len=100)
         edit_dists[group].append(edit_distance)
     return edit_dists
 
-def bam_distribs(bam_fhand, kind, basename=None, range_=None,
+def bam_distribs(bam_fhand, kind, basename=None, min_=None, max_=None,
                  grouping=None, sample_size=None, summary_fhand=None,
                  labels=None, plot_file_format='svg'):
     '''It makes the bam coverage distribution.
@@ -575,13 +576,14 @@ def bam_distribs(bam_fhand, kind, basename=None, range_=None,
             grouping = 'sample'
         labels = copy.deepcopy(plot_labels[kind])
         labels['title'] = labels['title'] % (grouping, group_name)
-        remove_outliers = True if kind == 'coverage' else False
-        distrib = create_distribution(values, labels=labels,
-                                      distrib_fhand=distrib_fhand,
-                                      plot_fhand=plot_fhand,
-                                      range_=range_,
-                                      summary_fhand=summary_fhand,
-                                      remove_outliers=remove_outliers)
+        remove_outliers = 5 if kind == 'coverage' else None
+        distrib = values.calculate_distribution(bins=None, min_=min_, max_=max_,
+                                                remove_outliers=remove_outliers)
+        values.draw_distribution(distrib, labels=labels,
+                                 distrib_fhand=distrib_fhand,
+                                 plot_fhand=plot_fhand)
+
+        values.write_general_stats(summary_fhand=summary_fhand, labels=labels)
         results[(grouping, group_name)] = distrib
     return results
 

@@ -65,9 +65,14 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
             if label not in labels:
                 labels[label] = value
     #we do the distribution
-    hist = histogram(numbers, bins=bins, range_=range_,
-                       calculate_freqs=calculate_freqs,
-                       remove_outliers=remove_outliers)
+    if 'histogram' in dir(numbers):
+        hist = numbers.histogram(bins=bins, range_=range_,
+                                 remove_outliers=remove_outliers)
+    else:
+        hist = histogram(numbers, bins=bins, range_=range_,
+                         calculate_freqs=calculate_freqs,
+                         remove_outliers=remove_outliers)
+
     #we write the output
     if distrib_fhand is not None:
         write_distribution(distrib_fhand, hist[0], hist[1])
@@ -176,7 +181,7 @@ def _calculate_range_for_histogram(numbers, range_, remove_outliers):
 
     return range_[0], range_[1], type_
 
-def _calculate_bin_edges(min_, max_, n_bins, type_):
+def calculate_bin_edges(min_, max_, n_bins, type_):
     'It calculates the bin edges'
     if type_ == int and (max_ - min_) < n_bins:
         n_bins = max_ - min_
@@ -204,7 +209,7 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
         raise ValueError('No numbers found')
 
     #now we can calculate the bin edges
-    bin_edges, min_, max_ = _calculate_bin_edges(min_, max_, bins, type_)
+    bin_edges, min_, max_ = calculate_bin_edges(min_, max_, bins, type_)
     bins = len(bin_edges) - 1
     bin_span = (max_ - min_) / bins
     if type_ == int:
@@ -329,7 +334,7 @@ def _color_by_index(index, kind='str'):
 
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                  groups_for_shape=None, title=None, xlabel= None,
-                 ylabel=None, fhand=None):
+                 ylabel=None, fhand=None, ylim=None):
     '''It draws an scatter plot.
 
     x_axe and y_axe should be two lists of numbers. The names should be a list
@@ -343,6 +348,7 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     plot_format = _guess_output_for_matplotlib(fhand)
 
     fig = Figure()
+
     canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
@@ -352,6 +358,9 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.set_ylabel(ylabel)
     if title:
         axes.set_title(title)
+
+    if ylim is not None:
+        axes.set_ylim(ylim)
     #text labels
     if names is not None:
         max_x = max(x_axe)
@@ -408,7 +417,7 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     for scat_index in scatters:
         scat = scatters[scat_index]
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
-                     marker=scat['shape'], s=60)
+                     marker=scat['shape'], s=60, vmax=1)
 
     canvas.print_figure(fhand, format=plot_format)
     fhand.flush()
@@ -775,3 +784,286 @@ def _find_index(sorted_list, value, index_buffer=0):
                                    index_buffer=length_//2 + index_buffer)
             else:
                 return _find_index(first_half, value, index_buffer=index_buffer)
+
+class IntsStats():
+    '''This is an array that counts the values.
+    a = IntsStats()
+    print (a)
+    []
+    a.append(5)
+    print a
+    a= [0,0,0,0,1]
+
+    '''
+    def __init__(self, iterable=None, init_len=None, max_len=None):
+        'the initiator'
+        if init_len is None:
+            init_len = 10
+        self._array = array('I', [0] * init_len)
+        if max_len is None:
+            max_len = 100000000
+        if iterable is not None:
+            self.extend(iterable)
+
+
+    def extend(self, values):
+        'It adds all the values from an iterable'
+        for value in values:
+            self.append(value)
+
+    def append(self, value):
+        'It appends a value to the array'
+        try:
+            self._array[value] += 1
+        except IndexError:
+            new_len = value * 2
+            new_array = array('I', [0] * new_len)
+            for index, value_ in enumerate(self._array):
+                new_array[index] = value_
+
+            self._array = new_array
+            del(new_array)
+            self._array[value] += 1
+
+    def _get_min(self):
+        'Get minimun value'
+        for index, value in enumerate(self._array):
+            if value != 0:
+                return index
+    min = property(_get_min)
+
+    def _get_max(self):
+        'get_maxvalue'
+        for index in xrange(len(self._array) - 1 , 0, -1):
+            if self._array[index] != 0:
+                return index
+    max = property(_get_max)
+
+    def _get_count(self):
+        'It returns the count of the values appended'
+        return sum(self._array)
+    count = property(_get_count)
+
+    def _get_median(self):
+        'It calculates the median of the values appended'
+        median_positions = self._get_quartile_positions()['median']
+        return self._get_value_of_position(median_positions)
+    median = property(_get_median)
+
+    def _calculate_average(self):
+        'It calculates the average'
+        count = self.count
+        sum   = self.sum
+        return sum/count
+    average = property(_calculate_average)
+
+    def _get_sum(self):
+        'It gets the sum of the values'
+        sum = 0
+        for index, value in enumerate(self._array):
+            sum += (index * value)
+        return int(sum)
+    sum = property(_get_sum)
+
+    def _get_variance(self):
+        'It gets the variance of the values'
+        mean  = self.average
+        sum   = 0
+        for index, values in enumerate(self._array):
+            for value in range(values):
+                sum += (index - mean) ** 2
+        return sum / self.count
+    variance = property(_get_variance)
+
+    def _count(self):
+        'It returns the number of values that there are in the array'
+        return int(sum(self._array))
+    count = property(_count)
+
+
+    def _get_quartile_positions(self):
+        'It returns the positions of the quartiles and the median'
+        def _get_median_position(num_len):
+            'It calculates the center position of the array'
+            quotient, remainder = divmod(num_len, 2)
+            if remainder  == 0:
+                position = (quotient, quotient + 1)
+            else:
+                position = (quotient + 1, quotient + 1)
+            return position
+
+        quartiles = {}
+        num_values = self.count
+        median_position = _get_median_position(num_values)
+
+        quartiles['median'] = median_position
+        quartiles['quartile_1'] = _get_median_position(median_position[0])
+        quartiles['quartile_2'] = _get_median_position(median_position[0] + num_values)
+
+        return quartiles
+
+    def _get_value_of_position(self, positions):
+        '''It takes a tuple as a position and it returns the value
+        of the given position'''
+        def _next_position_with_value(index):
+            '''Giving a position in the array, it returns the next position with a
+            value
+
+                a = [8,4,0,0,2]
+                4 = _next_position_with_value(1)
+            '''
+            for i, values  in enumerate(self._array):
+                if i > index and values != 0:
+                    return i
+        value_pos = 0
+        for index, values in enumerate(self._array):
+            value_pos += values
+            if positions[0] == value_pos:
+                pos1 = index
+                pos2 = _next_position_with_value(index)
+                return (pos1 + pos2 ) / 2
+            if positions[0] < value_pos:
+                return index
+
+    def _get_iqr(self):
+        'It gets the inter quartil range'
+        quart_pos =  self._get_quartile_positions()
+        quart_1 = self._get_value_of_position(quart_pos['quartile_1'])
+        quart_2 = self._get_value_of_position(quart_pos['quartile_2'])
+        iqr = quart_2 - quart_1
+        return iqr
+    irq = property(_get_iqr)
+
+    def _get_outlier_limits(self):
+        'It returns the intercuartile'
+        quart_pos =  self._get_quartile_positions()
+        quart_1 = self._get_value_of_position(quart_pos['quartile_1'])
+        quart_2 = self._get_value_of_position(quart_pos['quartile_2'])
+
+        iqr = self.irq
+        limit_distance = round(iqr * 1.5)
+
+        start = int(quart_1 - limit_distance)
+        end   = int(quart_2 + limit_distance)
+        return (start, end)
+    outlier_limits = property(_get_outlier_limits)
+
+
+
+    def _calculate_dist_range(self, min_, max_, remove_outliers):
+        'it calculates the range for the histogram'
+        if min_ is None:
+            min_ = self.min
+        if max_ is None:
+            max_ = self.max
+
+        if remove_outliers:
+            left_limit = self.count * remove_outliers / 100
+            rigth_limit = self.count - left_limit
+            left_value  = self._get_value_of_position((left_limit, left_limit))
+            rigth_value = self._get_value_of_position((rigth_limit,
+                                                       rigth_limit))
+
+            if min_ < left_value:
+                min_ = left_value
+            if max_ > rigth_value:
+                max_ = rigth_value
+        return min_, max_
+
+    @staticmethod
+    def _calculate_bin_edges(min_, max_, n_bins):
+        'It calculates the bin_edges'
+        if n_bins is None:
+            num_values = max_ - min_
+            n_bins     = int(num_values/25)
+            if n_bins == 0:
+                n_bins   = 1
+
+        #now we can calculate the bin edges
+        distrib_span = max_ - min_ if max_ != min_ else 1
+
+        if distrib_span % n_bins:
+            distrib_span = distrib_span + n_bins - (distrib_span % n_bins)
+        bin_span = distrib_span // n_bins
+        bin_edges = [min_ + bin_ * bin_span for bin_ in range(n_bins + 1)]
+        return bin_edges
+
+    def calculate_distribution(self, bins=None, min_=None, max_=None,
+                               remove_outliers=None):
+        'It returns an histogram with the given range and bin'
+        distrib = []
+        min_, max_ = self._calculate_dist_range(min_, max_, remove_outliers)
+        bin_edges  = self._calculate_bin_edges(min_, max_, bins)
+        for index, left_edge in enumerate(bin_edges):
+            try:
+                rigth_edge = bin_edges[index + 1]
+            except IndexError:
+                break
+            sum_values = 0
+            for index, value in enumerate(self._array):
+
+                if (left_edge <= index  and index <  rigth_edge or
+                     left_edge <= index and index == max_):
+                    sum_values += value
+                elif index >  rigth_edge:
+                    break
+            distrib.append(sum_values)
+        return {'distrib':distrib,'bin_edges': bin_edges}
+
+    def _prepare_labels(self, labels):
+        'It prepares the labels for output files'
+        default_labels = {'title':'histogram', 'xlabel':'values',
+                          'ylabel':'count', 'minimum':'minimum',
+                          'maximum':'maximum', 'average':'average',
+                          'variance':'variance', 'sum':'sum',
+                          'items':'items'}
+        if labels is None:
+            labels = default_labels
+        else:
+            for label, value in default_labels.items():
+                if label not in labels:
+                    labels[label] = value
+        return labels
+
+    def draw_distribution(self, distrib, labels=None, distrib_fhand=None,
+                          plot_fhand=None):
+        'It draws distributions and writes the statistics to a file'
+        distrib_  = distrib['distrib']
+        bin_edges = distrib['bin_edges']
+        labels = self._prepare_labels(labels)
+        #we write the output
+        if distrib_fhand is not None:
+            write_distribution(distrib_fhand, distrib_, bin_edges)
+        #do we have to plot it?
+        if plot_fhand is not None:
+            draw_histogram(distrib_, bin_edges,
+                           title=labels['title'], xlabel=labels['xlabel'],
+                           ylabel=labels['ylabel'],
+                           fhand=plot_fhand)
+
+    def write_general_stats(self, summary_fhand, labels=None):
+        'It writes some basic stats of the values'
+        if summary_fhand:
+            labels = self._prepare_labels(labels)
+            #now we write some basic stats
+            format_num = lambda x: str(x) if isinstance(x, int) else '%.4f' % x
+            msg = 'Statistics for %s\n' % labels['title']
+            summary_fhand.write(msg)
+            summary_fhand.write('-' * len(msg) + '\n')
+            summary_fhand.write('%s: %s\n' % (labels['minimum'],
+                                              format_num(self.min)))
+            summary_fhand.write('%s: %s\n' % (labels['maximum'],
+                                              format_num(self.max)))
+            summary_fhand.write('%s: %s\n' % (labels['average'],
+                                              format_num(self.average)))
+            summary_fhand.write('%s: %s\n' % (labels['variance'],
+                                              format_num(self.variance)))
+            if labels['sum'] is not None:
+                summary_fhand.write('%s: %s\n' % (labels['sum'],
+                                                  format_num(self.sum)))
+            summary_fhand.write('%s: %s\n' % (labels['items'], self.count))
+            summary_fhand.write('\n')
+            summary_fhand.flush()
+
+    def __str__(self):
+        return str(self._array)
