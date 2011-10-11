@@ -973,16 +973,17 @@ class IntsStats():
     @staticmethod
     def _calculate_bin_edges(min_, max_, n_bins):
         'It calculates the bin_edges'
-        print min_, max_
+
         if n_bins is None:
             num_values = max_ - min_
             if num_values == 0:
                 n_bins = 1
+            elif num_values < 20:
+                n_bins = num_values
             else:
-                n_bins     = int(num_values/25)
+                n_bins     = int(num_values / 25)
                 if n_bins < 20:
                     n_bins = 20
-
         #now we can calculate the bin edges
         distrib_span = max_ - min_ if max_ != min_ else 1
 

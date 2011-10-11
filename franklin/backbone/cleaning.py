@@ -223,6 +223,8 @@ class ReadsStatsAnalyzer(Analyzer):
 
         #now we can do the statistics
         for pair in paired_paths.values():
+            print pair
+            raw_input()
             self._do_seq_distrib_for_pair(pair)
 
         self._log({'analysis_finished':True})
