@@ -65,14 +65,9 @@ def create_distribution(numbers, labels=None, distrib_fhand=None, bins=None,
             if label not in labels:
                 labels[label] = value
     #we do the distribution
-    if 'histogram' in dir(numbers):
-        hist = numbers.histogram(bins=bins, range_=range_,
-                                 remove_outliers=remove_outliers)
-    else:
-        hist = histogram(numbers, bins=bins, range_=range_,
-                         calculate_freqs=calculate_freqs,
-                         remove_outliers=remove_outliers)
-
+    hist = histogram(numbers, bins=bins, range_=range_,
+                       calculate_freqs=calculate_freqs,
+                       remove_outliers=remove_outliers)
     #we write the output
     if distrib_fhand is not None:
         write_distribution(distrib_fhand, hist[0], hist[1])
@@ -181,7 +176,7 @@ def _calculate_range_for_histogram(numbers, range_, remove_outliers):
 
     return range_[0], range_[1], type_
 
-def calculate_bin_edges(min_, max_, n_bins, type_):
+def _calculate_bin_edges(min_, max_, n_bins, type_):
     'It calculates the bin edges'
     if type_ == int and (max_ - min_) < n_bins:
         n_bins = max_ - min_
@@ -209,7 +204,7 @@ def histogram(numbers, bins, range_= None, calculate_freqs=False,
         raise ValueError('No numbers found')
 
     #now we can calculate the bin edges
-    bin_edges, min_, max_ = calculate_bin_edges(min_, max_, bins, type_)
+    bin_edges, min_, max_ = _calculate_bin_edges(min_, max_, bins, type_)
     bins = len(bin_edges) - 1
     bin_span = (max_ - min_) / bins
     if type_ == int:
@@ -334,7 +329,7 @@ def _color_by_index(index, kind='str'):
 
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                  groups_for_shape=None, title=None, xlabel= None,
-                 ylabel=None, fhand=None, ylim=None):
+                 ylabel=None, fhand=None):
     '''It draws an scatter plot.
 
     x_axe and y_axe should be two lists of numbers. The names should be a list
@@ -348,7 +343,6 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     plot_format = _guess_output_for_matplotlib(fhand)
 
     fig = Figure()
-
     canvas = FigureCanvas(fig)
 
     axes = fig.add_subplot(111)
@@ -358,9 +352,6 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.set_ylabel(ylabel)
     if title:
         axes.set_title(title)
-
-    if ylim is not None:
-        axes.set_ylim(ylim)
     #text labels
     if names is not None:
         max_x = max(x_axe)
@@ -417,7 +408,7 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
     for scat_index in scatters:
         scat = scatters[scat_index]
         axes.scatter(scat['x'], scat['y'], c=scat['color'],
-                     marker=scat['shape'], s=60, vmax=1)
+                     marker=scat['shape'], s=60)
 
     canvas.print_figure(fhand, format=plot_format)
     fhand.flush()
@@ -784,6 +775,7 @@ def _find_index(sorted_list, value, index_buffer=0):
                                    index_buffer=length_//2 + index_buffer)
             else:
                 return _find_index(first_half, value, index_buffer=index_buffer)
+<<<<<<< HEAD
 
 class IntsStats():
     '''This is an array that counts the values.
@@ -1071,3 +1063,5 @@ class IntsStats():
 
     def __str__(self):
         return str(self._array)
+=======
+>>>>>>> parent of b016492... added IntsStats and use it in bam stats

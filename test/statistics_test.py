@@ -23,9 +23,8 @@ import os, random, tempfile
 
 from franklin.statistics import (CachedArray, histogram, create_distribution,
                                  draw_boxplot, draw_histogram,
-                                 draw_stacked_columns, IntsStats)
+                                 draw_stacked_columns)
 import franklin
-from tempfile import NamedTemporaryFile
 
 TEST_DATA_DIR = os.path.join(os.path.split(franklin.__path__[0])[0], 'data')
 
@@ -209,99 +208,6 @@ class CachedArrayTest(unittest.TestCase):
         assert count[1] / (len_sample * 1.0) - 1/3.0 < 0.05
 
         assert storage.get_sample_percentiles([5, 95]) == [0, 2]
-
-class IntsStatsTest(unittest.TestCase):
-    'It test the extensible array class'
-    @staticmethod
-    def create_test_array():
-        d = {'9':'5', '10':'288', '11':'002556688', '12':'00012355555',
-             '13':'0000013555688', '14':'00002555558',
-             '15':'0000000000355555555557', '16':'000045', '17':'000055',
-             '18':'0005', '19':'00005', '21':'5'}
-        ext_array = IntsStats()
-        for key, values in d.items():
-            for num in values:
-                ext_array.append(int(key+num))
-        return ext_array
-
-    @staticmethod
-    def test_array():
-        'Create an extensible array'
-        ext_array = IntsStats(init_len=5)
-        ext_array.append(6)
-        ext_array.append(2)
-        assert  ext_array.min == 2
-        assert  ext_array.max == 6
-        ext_array.append(200)
-        assert ext_array.max == 200
-
-        input_ = (3, 5, 7, 7, 38)
-        ext_array = IntsStats(input_)
-        assert ext_array.median == 7
-
-    def test_distribution(self):
-        'It tests the histogram function'
-#        ints_array = IntsStats(1)
-#        num_integers = 1000000
-#        max_value    = 100000
-#        for i in xrange(num_integers):
-#            ints_array.append(random.randint(0, max_value))
-
-#        (distrib, bin_edges) = ints_array.histogram(25)
-#
-#        (distrib, bin_edges) = ints_array.histogram(25, range_=None)
-#
-#        (distrib, bin_edges) = ints_array.histogram(25, range_=(None, 1000))
-#
-#        (distrib, bin_edges) = ints_array.histogram(25, range_=(1000, None))
-#
-#        (distrib, bin_edges) = ints_array.histogram(25, range_=(1000, 2000))
-
-        ints_array = self.create_test_array()
-        distrib = ints_array.calculate_distribution(bins=10,
-                                                        remove_outliers=5)
-        assert distrib['distrib'] == [7L, 13L, 7L, 10L, 7L, 22L, 6L, 4L, 5L, 5L]
-        assert distrib['bin_edges'] == [110, 118, 126, 134, 142, 150, 158, 166,
-                                        174, 182, 190]
-
-        general_stats = '''Statistics for histogram
--------------------------
-minimum: 95
-maximum: 215
-average: 145.1522
-variance: 557.4334
-sum: 13354
-items: 92'''
-        result_fhand = NamedTemporaryFile()
-        ints_array.write_general_stats(result_fhand)
-        assert general_stats in open(result_fhand.name).read()
-
-
-
-    def test_stats_functs(self):
-        'It test the statistical functions of the class'
-        ext_array = IntsStats()
-        ext_array.append(3)
-        ext_array.append(5)
-        ext_array.append(7)
-        ext_array.append(7)
-        ext_array.append(38)
-        assert ext_array.median == 7
-
-        ext_array = IntsStats()
-        ext_array.append(3)
-        ext_array.append(5)
-        ext_array.append(7)
-        ext_array.append(7)
-        assert ext_array.median == 6
-
-        ext_array = self.create_test_array()
-        assert ext_array.median == 145
-        assert round(ext_array.average, 2) == 145.15
-
-        assert ext_array.sum == 13354
-        assert ext_array.count == 92
-        assert round(ext_array.variance, 2) == 557.43
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
