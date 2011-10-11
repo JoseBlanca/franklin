@@ -775,7 +775,7 @@ def _find_index(sorted_list, value, index_buffer=0):
                                    index_buffer=length_//2 + index_buffer)
             else:
                 return _find_index(first_half, value, index_buffer=index_buffer)
-<<<<<<< HEAD
+
 
 class IntsStats():
     '''This is an array that counts the values.
@@ -1059,5 +1059,3 @@ class IntsStats():
 
     def __str__(self):
         return str(self._array)
-=======
->>>>>>> parent of b016492... added IntsStats and use it in bam stats
