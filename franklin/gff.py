@@ -126,16 +126,15 @@ class GffFile(object):
             except ValueError:
                 msg = 'Malformed attribute: %s' % attribute
                 raise ValueError(msg)
+
             value = value.strip('"')
-            values = [_deescape(value) for value in value.split(',')]
             key = _deescape(key)
-            attributes[key] = values
+            value = _deescape(value)
+            attributes[key] = value
             if key == 'Name':
-                feature['name'] = values[0]
-                attributes[key] = values[0]
+                feature['name'] = value
             if key == 'ID':
-                feature_id = values[0]
-                attributes[key] = values[0]
+                feature_id = value
 
         if not feature_id:
             feature_id = self._create_feature_id(feature['name'])
@@ -150,6 +149,7 @@ class GffFile(object):
         feature['strand']  = strand
         feature['phase']   = phase
         feature['attributes'] = attributes
+
         return feature
 
     def _get_items(self):
@@ -270,6 +270,7 @@ class GffFile(object):
             attributes = feature['attributes']
         else:
             attributes = {}
+
         if 'name' in feature:
             feat_name = feature['name']
         elif 'name' in attributes:
@@ -288,16 +289,13 @@ class GffFile(object):
         attributes['ID'] = feature_id
 
         attribute_list = []
-        for attr_key, attr_values in attributes.items():
-            if attr_values is None:
+        for attr_key, attr_value in attributes.items():
+            if isinstance(attr_value, list):
+                attr_value = ','.join(attr_value)
+            if attr_value is None:
                 continue
-            if isinstance(attr_values, list):
-                attr_values = [self._escape(value) for value in attr_values]
-                attr_value = ','.join(attr_values)
-            else:
-                attr_value = self._escape(attr_values)
-
             attr_key = self._escape(attr_key)
+            attr_value = self._escape(attr_value, escape_coma=False)
             attribute_list.append('%s=%s' % (attr_key, attr_value))
 
         feature_fields.append(';'.join(attribute_list))

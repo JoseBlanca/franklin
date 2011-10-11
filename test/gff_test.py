@@ -34,7 +34,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition
 
 GFF_CONTENT = '''##gff-version 3
 ##sequence-region ctg123 1 1497228
-ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN;note=pa%2Cso,todo
+ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN
 ##FASTA\n>hola\nGATA\n'''
 
 class GffTest(unittest.TestCase):
@@ -59,7 +59,6 @@ class GffTest(unittest.TestCase):
         assert items[1][1] == {'end': 9000, 'name': 'EDEN', 'start': 1000,
                                'source': '.', 'seqid': 'ctg123', 'phase': '.',
                                'attributes': {'ID': 'gene00001',
-                                              'note': ['pa,so', 'todo'],
                                               'Name': 'EDEN'},
                                'score': '.', 'type': 'gene', 'id': 'gene00001',
                                'strand': '.'}
@@ -78,9 +77,7 @@ class GffTest(unittest.TestCase):
         gff_out.flush()
 
         result = open(gff_out_fhand.name).read()
-        assert 'ctg123\t.\tgene\t1000\t9000' in result
-        assert 'note=pa%2Cso,todo' in result
-        assert 'ID=gene00001' in result
+        assert result == GFF_CONTENT
 
     @staticmethod
     def test_items_in_gff():
@@ -115,7 +112,7 @@ class GffOutTest(unittest.TestCase):
 ctg123\t.\tgene\t1000\t9000\t.\t.\t.\tID=gene00001;Name=EDEN\n'''
         outh = NamedTemporaryFile()
         write_gff(outh.name, feats)
-        assert outh.read() in result
+        assert result == outh.read()
 
         feat1 = {'id':'23',
                  'seqid': 'ctg123',
@@ -406,5 +403,5 @@ class GffFilterTest(unittest.TestCase):
         assert not filter(type_filter, [(FEATURE, feature)])
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'GffTest.test_items_in_gff']
+    #import sys;sys.argv = ['', 'GffTest.test_gff_filters']
     unittest.main()
