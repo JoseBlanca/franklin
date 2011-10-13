@@ -415,14 +415,14 @@ def create_dbxref_adder(dbxref_db, relations, dbxref_tag='Dbxref'):
         return FEATURE, feature
     return add_dbxref_to_feature
 
-def _add_dbxrefs_to_dbxref(dbxref_str, new_dbxrefs):
+def _add_dbxrefs_to_dbxref(existing_dbxrefs, new_dbxrefs):
     '''It adds the dbxrefs to the feature.
 
     If the dbxref tag is not in feature attributes it creates it'''
     #if the dbxref_db is already in the feature we have to update
-    if dbxref_str:
+    if existing_dbxrefs:
         #'GO:001,GO:002,SO:001'
-        dbxrefs = set(dbxref_str.split(','))
+        dbxrefs = set(existing_dbxrefs)
     else:
         dbxrefs = set()
 
@@ -430,8 +430,7 @@ def _add_dbxrefs_to_dbxref(dbxref_str, new_dbxrefs):
     #The final result can be Dbxref:"EMBL:10","EMBL:20"
     #This does not make sense for Dbxref but it does for GO
     dbxrefs = dbxrefs.union(new_dbxrefs)
-
-    return ','.join(dbxrefs)
+    return list(dbxrefs)
 
 def modify_gff(ingff3_fpath, outgff3_fpath, mappers=None, filters=None):
     'It modifies the gff features with the given mappers and filters'
