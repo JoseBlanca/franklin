@@ -260,6 +260,7 @@ class IntsStatsTest(unittest.TestCase):
         ints_array = self.create_test_array()
         distrib = ints_array.calculate_distribution(bins=10,
                                                         remove_outliers=5)
+
         assert distrib['distrib'] == [7L, 13L, 7L, 10L, 7L, 22L, 6L, 4L, 5L, 5L]
         assert distrib['bin_edges'] == [110, 118, 126, 134, 142, 150, 158, 166,
                                         174, 182, 190]
@@ -276,7 +277,9 @@ items: 92'''
         ints_array.write_general_stats(result_fhand)
         assert general_stats in open(result_fhand.name).read()
 
+        ints_array = IntsStats([0, 0, 1, 3])
 
+        assert [2, 1, 1]  == ints_array.calculate_distribution(bins=3)['distrib']
 
     def test_stats_functs(self):
         'It test the statistical functions of the class'
@@ -304,5 +307,5 @@ items: 92'''
         assert round(ext_array.variance, 2) == 557.43
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'HistogramTest.test_histogram']
+#    import sys;sys.argv = ['', 'IntsStatsTest.test_distribution']
     unittest.main()

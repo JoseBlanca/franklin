@@ -284,25 +284,27 @@ def _calculate_annot_stats(seqs):
 def _nucleotide_freq_per_position(sequences, positions_to_study=30):
     'It calculates the probability of each nucleotide in each'
     pos_count = []
+
+    for index in range(positions_to_study):
+        pos_count.append({'A':0, 'T':0, 'C':0, 'G':0})
+
     for sequence in sequences:
         positions = positions_to_study
-        if len(sequence) < positions_to_study:
-            positions = len(sequence)
+        sequence_seq = str(sequence.seq)
+        if len(sequence_seq) < positions_to_study:
+            positions = len(sequence_seq)
         for index in range(positions):
-            nucl = sequence.seq[index]
-            try:
-                pos_count[index]
-            except IndexError:
-                pos_count.append({'A':0, 'T':0, 'C':0, 'G':0})
-
+            nucl = sequence_seq[index]
             nucl = nucl.upper()
             if nucl not in ('A', 'T', 'C', 'G'):
                 continue
             pos_count[index][nucl] += 1
-    freq_stats = {'A':[], 'T':[], 'C':[], 'G':[]}
 
+    freq_stats = {'A':[], 'T':[], 'C':[], 'G':[]}
     for index, position in enumerate(pos_count):
         total_nucl = sum(position.values())
+        if total_nucl < 0.001:  #from this position onwards there's no stats
+            break
         for nucl, count in position.items():
             if total_nucl == 0:
                 freq = 0
