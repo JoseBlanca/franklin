@@ -172,9 +172,9 @@ Chrctg0\tFPC\tBAC\t57982978\t58302466\t.\t.\t.\tBAC "Cm22_F20"; Name "Cm22_F20";
     def test_add_dbxref():
         'It adds dbxrefs to the features'
         dbxref = _add_dbxrefs_to_dbxref('', ["test:id100"])
-        assert dbxref == "test:id100"
+        assert dbxref == ["test:id100"]
 
-        dbxref = _add_dbxrefs_to_dbxref('test2:id101', ["test:id100"])
+        dbxref = _add_dbxrefs_to_dbxref(['test2:id101'], ["test:id100"])
         assert 'test:id100' in dbxref
         assert 'test2:id101' in dbxref
 
@@ -297,12 +297,12 @@ class GffMappersTest(unittest.TestCase):
 
         # add an already given database
         mapper((FEATURE, feature))
-        assert feature['attributes']['Dbxref'] == 'database:acc1'
+        assert feature['attributes']['Dbxref'] == ['database:acc1']
 
         # add a second dbxref
         mapper = create_dbxref_adder('database2', relations)
         mapper((FEATURE, feature))
-        assert feature['attributes']['Dbxref'] == 'database2:acc1,database:acc1'
+        assert feature['attributes']['Dbxref'] == ['database2:acc1', 'database:acc1']
 
 
         feature = {'end': 140722177, 'name': 'test', 'start': 1,
@@ -325,17 +325,17 @@ class GffMappersTest(unittest.TestCase):
                    'strand': '.'}
         mapper = create_go_annot_adder(go_annot)
         mapper((FEATURE, feature))
-        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+        assert feature['attributes']['Ontology_term'] == ['GO:0016023', 'GO:0006950']
 
         #wit already go terms
         feature = {'end': 140722177, 'name': 'MELO3A000001P1', 'start': 1,
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
                    'attributes': {'ID': 'MELO3A000001P1', 'Name': 'MELO3A000001P1',
-                                  'Ontology_term':'GO:0016023'},
+                                  'Ontology_term':['GO:0016023']},
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P1',
                    'strand': '.'}
         mapper((FEATURE, feature))
-        assert feature['attributes']['Ontology_term'] == 'GO:0016023,GO:0006950'
+        assert feature['attributes']['Ontology_term'] == ['GO:0016023', 'GO:0006950']
 
         #feature without gos
         feature = {'end': 140722177, 'name': 'MELO3A000001P2', 'start': 1,
@@ -359,7 +359,7 @@ class GffMappersTest(unittest.TestCase):
                    'score': '.', 'type': 'contig', 'id':'MELO3A000001P2',
                    'strand': '.'}
         changed_feature = mapper((FEATURE, feature))[1]
-        assert  changed_feature['attributes']['description'] == 'caracola'
+        assert  changed_feature['attributes']['description'] == ['caracola']
         feature = {'end': 140722177, 'name': 'test', 'start': 1,
                    'source': 'F=PC', 'seqid': 'Chrctg0', 'phase': '.',
                    'attributes': {'ID': 'test',
