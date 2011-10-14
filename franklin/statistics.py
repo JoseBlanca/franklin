@@ -33,6 +33,9 @@ except ImportError:
     pass
 
 SAMPLE_LENGTH = 10000
+MEAN_VALUES_IN_BIN = 10000
+MIN_BINS = 20
+MAX_BINS = 500
 
 def write_distribution(fhand, distribution, bin_edges):
     '''It writes the given distribution in a file.
@@ -329,7 +332,7 @@ def _color_by_index(index, kind='str'):
 
 def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
                  groups_for_shape=None, title=None, xlabel= None,
-                 ylabel=None, fhand=None):
+                 ylabel=None, fhand=None, ylim=None):
     '''It draws an scatter plot.
 
     x_axe and y_axe should be two lists of numbers. The names should be a list
@@ -352,6 +355,8 @@ def draw_scatter(x_axe, y_axe, names=None, groups_for_color=None,
         axes.set_ylabel(ylabel)
     if title:
         axes.set_title(title)
+    if ylim is not None:
+        axes.set_ylim(ylim)
     #text labels
     if names is not None:
         max_x = max(x_axe)
@@ -829,6 +834,7 @@ class IntsStats():
         for index in xrange(len(self._array) - 1 , 0, -1):
             if self._array[index] != 0:
                 return index
+        return 0
     max = property(_get_max)
 
     def _get_count(self):
@@ -962,14 +968,23 @@ class IntsStats():
                 max_ = rigth_value
         return min_, max_
 
-    @staticmethod
-    def _calculate_bin_edges(min_, max_, n_bins):
+
+    def _calculate_bin_edges(self, min_, max_, n_bins):
         'It calculates the bin_edges'
         if n_bins is None:
             num_values = max_ - min_
-            n_bins     = int(num_values/25)
-            if n_bins == 0:
-                n_bins   = 1
+            if num_values == 0:
+                n_bins = 1
+            elif num_values < MIN_BINS:
+                n_bins = num_values
+            else:
+                n_bins     = int(self.count / MEAN_VALUES_IN_BIN)
+                if n_bins < MIN_BINS:
+                    n_bins = MIN_BINS
+                if n_bins > MAX_BINS:
+                    n_bins = MAX_BINS
+                if n_bins > num_values:
+                    n_bins = num_values
 
         #now we can calculate the bin edges
         distrib_span = max_ - min_ if max_ != min_ else 1
@@ -985,20 +1000,23 @@ class IntsStats():
         'It returns an histogram with the given range and bin'
         distrib = []
         min_, max_ = self._calculate_dist_range(min_, max_, remove_outliers)
+        if min_ is None or max_ is None:
+            return None
         bin_edges  = self._calculate_bin_edges(min_, max_, bins)
-        for index, left_edge in enumerate(bin_edges):
+        for bin_index, left_edge in enumerate(bin_edges):
             try:
-                rigth_edge = bin_edges[index + 1]
+                rigth_edge = bin_edges[bin_index + 1]
             except IndexError:
                 break
             sum_values = 0
-            for index, value in enumerate(self._array):
-
-                if (left_edge <= index  and index <  rigth_edge or
-                     left_edge <= index and index == max_):
-                    sum_values += value
-                elif index >  rigth_edge:
+            for index2, value in enumerate(self._array):
+                if index2 >  rigth_edge:
                     break
+
+                elif (left_edge <= index2  and index2 <  rigth_edge or
+                     left_edge <= index2 and index2 == max_):
+                    sum_values += value
+
             distrib.append(sum_values)
         return {'distrib':distrib,'bin_edges': bin_edges}
 
@@ -1020,6 +1038,8 @@ class IntsStats():
     def draw_distribution(self, distrib, labels=None, distrib_fhand=None,
                           plot_fhand=None):
         'It draws distributions and writes the statistics to a file'
+        if distrib is None:
+            return
         distrib_  = distrib['distrib']
         bin_edges = distrib['bin_edges']
         labels = self._prepare_labels(labels)
@@ -1035,7 +1055,7 @@ class IntsStats():
 
     def write_general_stats(self, summary_fhand, labels=None):
         'It writes some basic stats of the values'
-        if summary_fhand:
+        if summary_fhand and self.count != 0:
             labels = self._prepare_labels(labels)
             #now we write some basic stats
             format_num = lambda x: str(x) if isinstance(x, int) else '%.4f' % x

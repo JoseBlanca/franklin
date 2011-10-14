@@ -151,7 +151,7 @@ Sequences with microsatellites: 2
 
         fhand = NamedTemporaryFile(suffix='.svg')
         stats = create_nucleotide_freq_histogram(seqs, fhand, title='test')
-
+        print stats
         assert stats == {
               'A': [0.66666666666666663, 0.33333333333333331, 0.0, 0.0, 0, 0.0],
               'C': [0.33333333333333331, 0.66666666666666663, 0.0, 0.0, 0, 0.0],

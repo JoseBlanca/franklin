@@ -22,7 +22,7 @@ Created on 15/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging, array, shutil
+import os, logging, array
 
 from franklin.backbone.analysis import Analyzer, scrape_info_from_fname
 from franklin.pipelines.pipelines import seq_pipeline_runner
@@ -31,8 +31,8 @@ from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               PLOT_FILE_FORMAT)
 from franklin.utils.seqio_utils import seqs_in_file
 from franklin.seq.writers import SequenceWriter
-from franklin.statistics import (create_distribution, write_distribution,
-                                 draw_histogram, CachedArray, draw_boxplot)
+from franklin.statistics import (write_distribution, draw_histogram,
+                                 draw_boxplot, IntsStats)
 from franklin.seq.seq_stats import create_nucleotide_freq_histogram
 
 class CleanReadsAnalyzer(Analyzer):
@@ -233,10 +233,13 @@ class ReadsStatsAnalyzer(Analyzer):
 
         max_ = max(numbers[0].max, numbers[1].max)
         min_ = min(numbers[0].min, numbers[1].min)
-        range_ = min_, max_
+
         # to get the difference we need both distribs
-        distrib1 = create_distribution(numbers[0], range_=range_)
-        distrib2 = create_distribution(numbers[1], range_=range_)
+        distrib1 = numbers[0].calculate_distribution(max_=max_, min_=min_)
+        distrib2 = numbers[1].calculate_distribution(max_=max_, min_=min_)
+
+        if not distrib1 or not distrib2:
+            return
 
         # now a subtract distrib1 from distrib2
         diff_distrib   = []
@@ -296,22 +299,22 @@ class ReadsStatsAnalyzer(Analyzer):
                 quals[seq_type] = quals_
 
                 #the distributions for the lengths
-                create_distribution(lengths_, PLOT_LABELS['seq_length'],
-                                    distrib_fhand=open(distrib_fpath, 'w'),
-                                    plot_fhand=open(plot_fpath, 'w'),
-                                    range_= (lengths_.min, lengths_.max))
+                distrib  = lengths_.calculate_distribution()
+                lengths_.draw_distribution(distrib, labels=PLOT_LABELS['seq_length'],
+                                           distrib_fhand=open(distrib_fpath, 'w'),
+                                           plot_fhand=open(plot_fpath, 'w'))
 
                 #the distributions for the quals
                 out_fpath = os.path.join(stats_dir, basename + '.qual')
                 plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
                 distrib_fpath = out_fpath + '.dat'
-                if quals_:
-                    create_distribution(quals_, PLOT_LABELS['seq_qual'],
-                                        distrib_fhand=open(distrib_fpath, 'w'),
-                                        plot_fhand=open(plot_fpath, 'w'),
-                                        range_=(quals_.min, quals_.max))
 
-
+                if quals_.count != 0:
+                    distrib  = quals_.calculate_distribution()
+                    quals_.draw_distribution(distrib,
+                                             labels=PLOT_LABELS['seq_qual'],
+                                             plot_fhand=open(plot_fpath, 'w'),
+                                         distrib_fhand=open(distrib_fpath, 'w'))
 
 
                 #the statistics for the statistics file
@@ -328,7 +331,7 @@ class ReadsStatsAnalyzer(Analyzer):
             plot_fpath = out_fpath + '.' + PLOT_FILE_FORMAT
             distrib_fpath = out_fpath + '.dat'
 
-            if not os.path.exists(plot_fpath):
+            if not os.path.exists(plot_fpath) and lengths:
                 #the distributions for the lengths
                 lengths = lengths['raw'], lengths['cleaned']
                 self._do_diff_distrib_for_numbers(lengths,
@@ -343,7 +346,7 @@ class ReadsStatsAnalyzer(Analyzer):
                 distrib_fpath = out_fpath + '.dat'
 
                 quals = quals['raw'], quals['cleaned']
-                if quals[0]:
+                if quals[0].count != 0 and quals[1].count != 0:
                     self._do_diff_distrib_for_numbers(quals,
                                           plot_fhand= open(plot_fpath, 'w'),
                                     distrib_fhand= open(distrib_fpath, 'w'),
@@ -398,9 +401,12 @@ class ReadsStatsAnalyzer(Analyzer):
 
         to_print = 'statistics for %s\n' % os.path.basename(seq_fpath)
         stats_fhand.write(to_print)
+        if lengths.count == 0:
+            stats_fhand.write('File empty, no stats for this file\n')
+            return
         stats_fhand.write('-' * (len(to_print) - 1) + '\n')
 
-        stats_fhand.write('Num sequences: %i\n' % len(lengths))
+        stats_fhand.write('Num sequences: %i\n' % lengths.count)
 
         stats_fhand.write('Total sequence length: %i\n' % lengths.sum)
 
@@ -411,7 +417,7 @@ class ReadsStatsAnalyzer(Analyzer):
         stats_fhand.write('Sequence length average: %.2f\n' % lengths.average)
 
         stats_fhand.write('Sequence length variance: %.2f\n' % lengths.variance)
-        if quals:
+        if quals and quals.count != 0:
             stats_fhand.write('Sequence qualities minimum: %i\n' % quals.min)
 
             stats_fhand.write('Sequence qualities maximum: %i\n' % quals.max)
@@ -425,8 +431,8 @@ class ReadsStatsAnalyzer(Analyzer):
     @staticmethod
     def _get_lengths_quals_from_file(seq_fpath):
         'Given a sequence file it returns the lengths and quals'
-        lengths = CachedArray('I')
-        quals   = CachedArray('H')
+        lengths = IntsStats(init_len=1000)
+        quals   = IntsStats(init_len=100)
         for seq in seqs_in_file(open(seq_fpath)):
             lengths.append(len(seq))
             qual = seq.qual

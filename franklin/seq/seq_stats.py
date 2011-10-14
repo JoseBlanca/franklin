@@ -286,10 +286,12 @@ def _nucleotide_freq_per_position(sequences, positions_to_study=30):
     pos_count = []
     for sequence in sequences:
         positions = positions_to_study
-        if len(sequence) < positions_to_study:
-            positions = len(sequence)
+        sequence_seq = sequence.seq
+        len_sequence = len(sequence)
+        if len_sequence < positions_to_study:
+            positions = len_sequence
         for index in range(positions):
-            nucl = sequence.seq[index]
+            nucl = sequence_seq[index]
             try:
                 pos_count[index]
             except IndexError:
