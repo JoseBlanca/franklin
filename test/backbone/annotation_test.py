@@ -30,6 +30,7 @@ from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_BASENAMES, BACKBONE_DIRECTORIES
 from franklin.seq.readers import seqs_in_file
+from franklin.utils.cmd_utils import guess_jar_dir
 
 THREADS = False
 
@@ -348,13 +349,18 @@ Number of ORFs: 1'''
         project_name = 'backbone'
         nr_path = os.path.join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
         b2g = os.path.join(TEST_DATA_DIR, 'b2gPipe.properties')
+        b2gpipe_bin = os.path.join(guess_jar_dir('blast2go.jar'),
+                                   'blast2go.jar')
+        if not b2gpipe_bin:
+            print "Do not run b2gppe tests, blast2go jar file not found "
+            return
         config = {'blast':{'nr': {'path': nr_path,
                                            'species':'nr'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
                                                  'java_memory':2048,
                                                  'b2g_properties_file':b2g,
-                                                 'blast2go_path':None}
+                                                 'blast2go_path':b2gpipe_bin}
                  }, 'General_settings':{'threads':THREADS}}
 
         settings_path = create_project(directory=test_dir.name,

@@ -22,7 +22,8 @@ This module provides utilities to run external commands into franklin
 import unittest
 
 from franklin.utils.cmd_utils import (_process_parameters, create_runner,
-                                      _which_binary, b2gpipe_runner, call)
+                                      _which_binary, b2gpipe_runner, call,
+    guess_jar_dir)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import TEST_DATA_DIR
 import os, tempfile
@@ -118,7 +119,13 @@ class RunnerFactorytest(unittest.TestCase):
         os.close(fhand)
         fhand, dat_fpath = tempfile.mkstemp()
         os.close(fhand)
-        b2gpipe_runner(blast, annot_fpath, dat_fpath)
+        prop_fpath = os.path.join(TEST_DATA_DIR, 'b2gPipe.properties')
+        b2gpipe_bin = os.path.join(guess_jar_dir('blast2go.jar'),
+                                   'blast2go.jar')
+        if not b2gpipe_bin:
+            print "Do not run b2gppe tests, blast2go jar file not found "
+            return
+        b2gpipe_runner(blast, annot_fpath, b2gpipe_bin, prop_fpath, dat_fpath)
 
         assert os.path.exists(annot_fpath)
         assert os.path.exists(dat_fpath)

@@ -32,7 +32,7 @@ from franklin.seq.seq_annotation import (create_microsatellite_annotator,
 
 from franklin.seq.seqs import SeqWithQuality, Seq, SeqFeature
 from franklin.utils.misc_utils import TEST_DATA_DIR
-from franklin.utils.cmd_utils import b2gpipe_runner
+from franklin.utils.cmd_utils import b2gpipe_runner, guess_jar_dir
 
 class AnnotationTests(unittest.TestCase):
     'Annotations tests'
@@ -196,9 +196,14 @@ class AnnotationTests(unittest.TestCase):
         'It test the go annotator'
         blast = open(os.path.join(TEST_DATA_DIR, 'blastResult.xml'))
         prop_fpath = os.path.join(TEST_DATA_DIR, 'b2gPipe.properties')
+        b2gpipe_bin = os.path.join(guess_jar_dir('blast2go.jar'),
+                                   'blast2go.jar')
         fhand, annot_fpath = tempfile.mkstemp()
         os.close(fhand)
-        b2gpipe_runner(blast, annot_fpath, prop_fpath=prop_fpath)
+        if not b2gpipe_bin:
+            print "Do not run b2gppe tests, blast2go jar file not found "
+            return
+        b2gpipe_runner(blast, annot_fpath, b2gpipe_bin, prop_fpath=prop_fpath)
         blast2go = annot_fpath
         go_annotator = create_go_annotator(blast2go)
         seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))

@@ -650,7 +650,14 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         create_dat  = go_settings['create_dat_file']
         java_memory = go_settings['java_memory']
         prop_fpath  = go_settings['b2g_properties_file']
-        blast2go_dir = go_settings['blast2go_path']
+        if not prop_fpath:
+            msg = 'Blast2go properties file path not given in backbone.conf'
+            raise ValueError(msg)
+
+        blast2go_path = go_settings['blast2go_path']
+        if not blast2go_path:
+            msg = 'Path to blast2go binary not given in backbone.conf'
+            raise ValueError(msg)
 
         blast2go = {}
         for input_ in inputs['input']:
@@ -664,11 +671,11 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 else:
                     dat_fpath = None
 
-                java_conf = {'java_memory':java_memory,
-                             'blast2gopath':blast2go_dir}
+                java_conf = {'java_memory':java_memory}
                 b2gpipe_runner(blast, annot_fpath=annot_fpath,
+                               b2gpipe_bin=blast2go_path, prop_fpath=prop_fpath,
                                dat_fpath=dat_fpath, java_conf=java_conf,
-                               prop_fpath=prop_fpath)
+                               )
                 blast.close()
 
             blast2go[input_fpath] = annot_fpath

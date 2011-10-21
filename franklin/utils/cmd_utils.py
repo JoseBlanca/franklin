@@ -552,20 +552,15 @@ def call(cmd, environment=None, stdin=None, raise_on_error=False,
 
     return stdout_str, stderr_str, retcode
 
-def b2gpipe_runner(blast, annot_fpath, dat_fpath=None, prop_fpath=None,
-                   java_conf=None):
+def b2gpipe_runner(blast, annot_fpath, b2gpipe_bin, prop_fpath, dat_fpath=None,
+                   java_conf=None, ):
     'It runs b2gpipe'
-    java_dir = guess_jar_dir('blast2go.jar', java_conf)
-    b2g_bin = os.path.join(java_dir, 'blast2go.jar')
     tempdir = NamedTemporaryDir()
     out_basename = os.path.join(tempdir.name, 'out')
 
     cmd = java_cmd(java_conf)
-    cmd.extend(['-jar', b2g_bin, '-in', blast.name, '-out', out_basename, '-a'])
-
-    if prop_fpath is None:
-        prop_fpath = os.path.join(java_dir, 'b2gPipe.properties')
-    cmd.extend(['-prop', prop_fpath])
+    cmd.extend(['-jar', b2gpipe_bin, '-in', blast.name, '-out', out_basename,
+                 '-a', '-prop', prop_fpath])
 
     if dat_fpath:
         cmd.append('-d')
