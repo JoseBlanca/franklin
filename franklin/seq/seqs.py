@@ -96,8 +96,7 @@ ALPHABETS = {'alphabet': Alphabet,
              'proteinalphabet':ProteinAlphabet,
              'singleletteralphabet':SingleLetterAlphabet}
 
-_alphabet_name = lambda alpha: str(alpha).split('.')[-1].strip(')').strip('(')
-
+_alphabet_name = lambda alpha: str(alpha).split('.')[-1].strip(')').strip('(').strip('\'>')
 ALPHABETS_REV = dict([(_alphabet_name(alpha), text) for text, alpha in ALPHABETS.items()])
 
 UNKNOWN_NAME = "<unknown name>"
