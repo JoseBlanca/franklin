@@ -234,10 +234,15 @@ class ReadsStatsAnalyzer(Analyzer):
         max_ = max(numbers[0].max, numbers[1].max)
         min_ = min(numbers[0].min, numbers[1].min)
 
-        # to get the difference we need both distribs
-        distrib1 = numbers[0].calculate_distribution(max_=max_, min_=min_)
-        distrib2 = numbers[1].calculate_distribution(max_=max_, min_=min_)
+        bins1 = len(numbers[0].calculate_bin_edges(min_, max_)) - 1
+        bins2 = len(numbers[1].calculate_bin_edges(min_, max_)) - 1
+        bins = bins2 if bins1 >= bins2 else bins1
 
+        # to get the difference we need both distribs
+        distrib1 = numbers[0].calculate_distribution(max_=max_, min_=min_,
+                                                     bins=bins)
+        distrib2 = numbers[1].calculate_distribution(max_=max_, min_=min_,
+                                                     bins=bins)
         if not distrib1 or not distrib2:
             return
 

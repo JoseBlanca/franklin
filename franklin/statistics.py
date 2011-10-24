@@ -969,7 +969,7 @@ class IntsStats():
         return min_, max_
 
 
-    def _calculate_bin_edges(self, min_, max_, n_bins):
+    def calculate_bin_edges(self, min_, max_, n_bins=None):
         'It calculates the bin_edges'
         if n_bins is None:
             num_values = max_ - min_
@@ -1002,7 +1002,7 @@ class IntsStats():
         min_, max_ = self._calculate_dist_range(min_, max_, remove_outliers)
         if min_ is None or max_ is None:
             return None
-        bin_edges  = self._calculate_bin_edges(min_, max_, bins)
+        bin_edges  = self.calculate_bin_edges(min_, max_, bins)
         for bin_index, left_edge in enumerate(bin_edges):
             try:
                 rigth_edge = bin_edges[bin_index + 1]

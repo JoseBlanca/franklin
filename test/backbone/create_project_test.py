@@ -19,18 +19,18 @@ Created on 26/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os.path
+import unittest, os.path, shutil
 from os.path import join, exists
+from tempfile import NamedTemporaryFile
 
 from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import (create_project,
                                               create_configuration)
-from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES,\
-    scrape_info_from_fname
+from franklin.backbone.analysis import (BACKBONE_DIRECTORIES,
+                                        BACKBONE_BASENAMES,
+                                        scrape_info_from_fname)
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.seq.readers import seqs_in_file
-from tempfile import NamedTemporaryFile
-
 
 READS_NOQUAL = '''>FM195262.1
 TACGGCCGGGGTNNCNNANNNNGCATTCTCGCAGGGTCTTTCTACACTATTAGATAAGAT
@@ -360,6 +360,37 @@ Sequence qualities variance: 8.19
         assert '<filter id="colorAdd">' in nucl_freq
 
     @staticmethod
+    def test_read_stats_analysis2():
+
+        # another read stats with real data
+
+        clean_fpath = os.path.join(TEST_DATA_DIR, 'clean_stats', 'cleaned',
+                                   'lb_sflp2.pl_sanger.sm_t111.sfastq')
+        raw_fpath = os.path.join(TEST_DATA_DIR, 'clean_stats', 'raw',
+                                   'lb_sflp2.pl_sanger.sm_t111.sfastq')
+
+        test_dir = NamedTemporaryDir()
+        project_name = 'backbone'
+        project_dir = join(test_dir.name, project_name)
+
+        settings_path = create_project(directory=test_dir.name,
+                                       name=project_name)
+
+        #setup the original reads
+        reads_dir = join(project_dir, 'reads')
+        original_reads_dir = join(reads_dir, 'raw')
+        cleaned_reads_dir = join(reads_dir, 'cleaned')
+        os.mkdir(reads_dir)
+        os.mkdir(original_reads_dir)
+        os.mkdir(cleaned_reads_dir)
+
+        shutil.copy(clean_fpath, cleaned_reads_dir)
+        shutil.copy(raw_fpath, original_reads_dir)
+        do_analysis(project_settings=settings_path, kind='read_stats',
+                    silent=True)
+
+
+    @staticmethod
     def test_remove_output_on_error():
         'We remove files when we have an error on cleaning'
         test_dir = NamedTemporaryDir()
@@ -424,5 +455,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackbone.test_remove_output_on_error']
+#    import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis2']
     unittest.main()
