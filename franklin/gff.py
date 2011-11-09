@@ -278,6 +278,9 @@ class GffFile(object):
             feat_name = attributes['Name']
         attributes['Name'] = feat_name
 
+#        if 'name' in attributes:
+#            del attributes['name']
+
         if 'id' in feature:
             feature_id = feature['id']
         elif 'ID' in attributes:
