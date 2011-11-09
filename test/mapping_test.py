@@ -18,7 +18,7 @@ class GmapTest(unittest.TestCase):
     'It test the gmap mapper'
 
     @staticmethod
-    def xtest_gmap_mapper():
+    def test_gmap_mapper():
         'It test the cmap mapper'
         mappers_dir = join(TEST_DATA_DIR, 'mappers')
         gmap_dir = join(TEST_DATA_DIR, 'mappers', 'gmap')
@@ -68,7 +68,7 @@ class GmapTest(unittest.TestCase):
         sam_fhand.close()
 
     @staticmethod
-    def xtest_gmap_without_mapping_output():
+    def test_gmap_without_mapping_output():
         '''It test that the gmap doesn't map anything'''
 
         mappers_dir = join(TEST_DATA_DIR, 'mappers')
