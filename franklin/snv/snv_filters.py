@@ -132,7 +132,10 @@ class SnvNamer(object):
     @staticmethod
     def _get_nd_cs(id_, desc, parameters):
         'It returns the name an id of the close to snv filter'
-        limit, snv_type, maf = parameters
+        limit = parameters[0]
+        snv_type = parameters[1]
+        maf = parameters[2] if len(parameters)> 2 else None
+
         if snv_type is not None:
             snv_type = SNV_TYPES[snv_type]
 

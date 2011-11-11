@@ -497,8 +497,7 @@ class SeqGffWriter(object):
             attributes['description'] = sequence.description
 
         if 'GOs' in sequence.annotations:
-            gos = ','.join(sequence.annotations['GOs'])
-            attributes['Ontology_term'] = gos
+            attributes['Ontology_term'] = sequence.annotations['GOs']
 
         #orthologs
         orthologs = []
@@ -508,7 +507,7 @@ class SeqGffWriter(object):
                 for ortholog_names in sequence.annotations[annot]:
                     orthologs.append('%s:%s' % (specie, ortholog_names))
         if orthologs:
-            attributes['orthologs'] = ",".join(orthologs)
+            attributes['orthologs'] = orthologs
 
         return attributes
 
@@ -538,19 +537,14 @@ class SeqGffWriter(object):
             if feature['type'] == 'microsatellite':
                 #'microsatellite' #SO:0000289
                 attributes['score'] = str(seq_feature.qualifiers['score'])
-            elif feature['type'] == 'intron':
-                feature['type'] = 'intron_' #SO:0000188
+#            elif feature['type'] == 'intron':
+#                feature['type'] = 'intron_' #SO:0000188
             elif feature['type'] == 'orf':
                 feature['type'] = 'ORF' #SO:0000236
                 strand = seq_feature.qualifiers['strand']
                 attributes['strand'] = '+' if strand == 'forward' else '-'
             elif feature['type'] == 'snv':
                 feature['type'] = 'SNV' #SO:0001483
-            attributes['name'] = feature['seqid'] + '_' + feature['type']
+            attributes['name'] = feature['seqid'] + '_' + feature['type'] + '_' + str(feature['start'])
             feature['attributes'] = attributes
             yield feature
-
-    @staticmethod
-    def _get_subfeature_attributes(id, name, kind, num):
-        '''It gets the attribute section of a sequence's  subfeature'''
-        return 'ID=%s_%s_%d;name=%s_%s_%d' % (id, kind, num, name, kind, num)
