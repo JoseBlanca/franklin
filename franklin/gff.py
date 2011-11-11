@@ -543,7 +543,7 @@ class SeqGffWriter(object):
             elif feature['type'] == 'orf':
                 feature['type'] = 'ORF' #SO:0000236
                 strand = seq_feature.qualifiers['strand']
-                attributes['strand'] = '+' if strand == 'forward' else '-'
+                feature['strand'] = '+' if strand == 'forward' else '-'
             elif feature['type'] == 'snv':
                 feature['type'] = 'SNV' #SO:0001483
             attributes['name'] = feature['seqid'] + '_' + feature['type']
