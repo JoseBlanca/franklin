@@ -209,7 +209,7 @@ class SequenceWriter(unittest.TestCase):
                      'melo-orthologs':['mel1', 'mel2']}
 
         seq = SeqWithQuality(seq=Seq('CTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGN'),
-                             id='seq1;', name='seq1',
+                             id='seq1', name='seq1',
                              description='equal 96%',
                              dbxrefs=[], features=features,
                              annotations=annotations)
@@ -248,14 +248,14 @@ class SequenceWriter(unittest.TestCase):
         gff_writer.write(seq)
         gff_writer.write(seq2)
         gff = open(fhand.name).read()
-
+        print gff
         assert "description=equal%2096%25" in gff
         assert "Ontology_term=GO:0019253" in gff
-        assert 'seq1%3B_microsatellite'in gff
-        assert 'ID=seq1%3B_ORF' in gff
-        assert 'ID=seq1%3B_intron' in gff
+        assert 'core=27;ssr_type=trinucleotide;'in gff
+        assert 'ID=seq2.orf' in gff
+        assert 'ID=seq2.intron1' in gff
         assert 'orthologs=arabidopsis:ara1' in gff
-        assert 'ID=seq1%3B_SNV' in gff
+        assert 'ID=snv2' in gff
 
         orf_feature = SeqFeature(FeatureLocation(ExactPosition(3),
                                                  ExactPosition(5)),

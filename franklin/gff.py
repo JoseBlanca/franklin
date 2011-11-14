@@ -468,6 +468,7 @@ class SeqGffWriter(object):
         self._default_type = default_type
         self._source = source
         self._writer = GffFile(fhand.name, mode='w')
+        self._counters = {}
 
     def write(self, sequence):
         'It does the real write of the features'
@@ -475,10 +476,10 @@ class SeqGffWriter(object):
         self._writer.write((FEATURE, seq_feature))
 
         #subfeature
-        for feature in self._get_sub_features(sequence):
+        counters_by_seq = {}
+        for feature in self._get_sub_features(sequence, counters_by_seq):
             self._writer.write((FEATURE, feature))
             self.num_features += 1
-
     def _get_seq_sofa_type(self, sequence):
         'It gets the type of the feature'
         if 'SO' in sequence.annotations:
@@ -524,7 +525,7 @@ class SeqGffWriter(object):
 
         return feature
 
-    def _get_sub_features(self, sequence):
+    def _get_sub_features(self, sequence, counters_by_seq):
         'It gets the features of the sequence feature'
         for seq_feature in sequence.features:
             feature = {}
@@ -534,17 +535,40 @@ class SeqGffWriter(object):
             feature['end'] = int(str(seq_feature.location.end)) + 1
             feature['source'] = 'franklin'
             attributes = {}
-            if feature['type'] == 'microsatellite':
+            kind = feature['type']
+            if kind not in  self._counters:
+                self._counters[kind] = 1
+            if kind not in counters_by_seq:
+                counters_by_seq[kind] = 1
+
+            if kind == 'microsatellite':
                 #'microsatellite' #SO:0000289
-                attributes['score'] = str(seq_feature.qualifiers['score'])
+                qualifiers = seq_feature.qualifiers
+                feature['score'] = str(qualifiers['score'])
+                attributes['score'] = feature['score']
+                if 'unit' in qualifiers:
+                    attributes['unit'] = qualifiers['unit']
+                if 'type' in qualifiers:
+                    attributes['ssr_type'] = qualifiers['type']
+                attributes['name'] = 'ssr%d' % self._counters[kind]
 #            elif feature['type'] == 'intron':
 #                feature['type'] = 'intron_' #SO:0000188
-            elif feature['type'] == 'orf':
+            elif kind == 'orf':
                 feature['type'] = 'ORF' #SO:0000236
                 strand = seq_feature.qualifiers['strand']
                 feature['strand'] = '+' if strand == 'forward' else '-'
-            elif feature['type'] == 'snv':
+                attributes['name'] = feature['seqid'] + '.orf'
+            elif kind == 'snv':
                 feature['type'] = 'SNV' #SO:0001483
-            attributes['name'] = feature['seqid'] + '_' + feature['type'] + '_' + str(feature['start'])
+                attributes['name'] = 'snv%d' % self._counters[kind]
+            else:
+                name  = feature['seqid'] + '.' + feature['type']
+                name += str(counters_by_seq[kind])
+                attributes['name'] = name
+
             feature['attributes'] = attributes
+            if kind in self._counters:
+                self._counters[kind] += 1
+            if kind in counters_by_seq:
+                counters_by_seq[kind] += 1
             yield feature
