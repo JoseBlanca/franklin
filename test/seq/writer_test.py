@@ -94,7 +94,7 @@ class WriterTest(unittest.TestCase):
         ssrwriter = SsrWriter(fhand)
         ssrwriter.write(seq)
         result = open(fhand.name).read()
-        assert "seq1\t0\t29\t30\t27\ttrinucleotide\tATC" in result
+        assert "seq1\t1\t30\t30\t27\ttrinucleotide\tATC" in result
 
 
     @staticmethod

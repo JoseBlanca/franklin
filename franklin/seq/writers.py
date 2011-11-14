@@ -92,8 +92,8 @@ class SsrWriter(object):
         seq_name = get_seq_name(sequence)
         for ssr in sequence.get_features(kind='microsatellite'):
             self.num_features += 1
-            start = int(str(ssr.location.start))
-            end = int(str(ssr.location.end))
+            start = int(str(ssr.location.start)) + 1
+            end = int(str(ssr.location.end)) + 1
             score = int(ssr.qualifiers['score'])
             kind = ssr.qualifiers['type']
             unit = ssr.qualifiers['unit']
