@@ -255,9 +255,8 @@ def read_markers(fhand, cmap):
                          'publication':reference}
     return markers
 
-def read_map(fhand, cmap):
+def read_map(fhand, cmap, map_name):
     'it reads the map and puts into the cmap object'
-    map_name = splitext(basename(fhand.name))[0]
 
     cmap['map_sets'].append({'species':'cmelo', 'accession':map_name,
                              'name':map_name,'short_name':map_name,
