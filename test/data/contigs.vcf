@@ -1,0 +1,36 @@
+##format=VCFv3.3
+##fileDate=20111114
+##source=franklin
+##reference=contigs.15.pickle
+##INFO=NS,1,Integer,"Number of Samples With Data"
+##INFO=AF,-1,Float,"Allele Frequency"
+##INFO=AC,-1,Integer,"Allele Count"
+##INFO=MQ,-1,Float,"RMS Mapping Quality"
+##INFO=BQ,-1,Float,"RMS Base Quality"
+##INFO=GC,.,String,"Genotype counts for alleles"
+##INFO=EZ,.,String,"CAP enzymes"
+##FORMAT=RG,.,String,"Read group Genotype genotype"
+##FORMAT=AC,.,String,"Allele count"
+##FILTER=NVSM2,"It is variable, or no data, in the samples : mu16. All together: True"
+##FILTER=NVSM1,"It is variable, or no data, in the samples : upv196. All together: True"
+##FILTER=VKS,"It is not an snp"
+##FILTER=CEF,"SNV is not a CAP detectable by the enzymes: cheap ones"
+##FILTER=HVR4,"The region has more than 4 snvs per 100 bases"
+##FILTER=CS60,"The snv is closer than 60 nucleotides to another all"
+##FILTER=I60,"An intron is located closer than 60 base pairs"
+##FILTER=CL60,"The snv is closer than 60 nucleotides the reference edge"
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	UPV196_454_UPV196	MU16_454_MU16
+CUTC000002	79	.	A	G	56	CS60;CEF	AC=4;AF=0.1;MQ=39.45;BQ=27.21;GC=0|1:1,1;GP=0.50	RG:AC	0:41	1:4
+CUTC000002	97	.	A	G	48	CS60;NVSM1;CEF	AC=2;AF=0.0;MQ=39.45;BQ=30.10;GC=0|1:2,1;GP=0.33	RG:AC	0|1:39,2	0:4
+CUTC000002	387	.	G	A	50	I60;NVSM1;CEF	AC=2;AF=0.1;MQ=31.82;BQ=39.23;GC=0|1:2,1;GP=0.33	RG:AC	0|1:26,2	0:1
+CUTC000002	504	.	C	IA	48	I60;NVSM1;NVSM2;VKS;CEF	AC=2;AF=0.5;MQ=24.08;BQ=38.30;GC=0|1:1,1;GP=0.50	RG:AC	0|1:2,2	.:.
+CUTC000002	840	.	T	C	49	NVSM1;NVSM2;CEF	AC=2;AF=0.1;MQ=17.45;BQ=31.48;GC=0|1:1,1;GP=0.50	RG:AC	0|1:16,2	.:.
+CUTC000003	476	.	C	T	53	CL60;NVSM1;NVSM2;CEF	AC=3;AF=0.1;MQ=25.67;BQ=33.32;GC=0|1:2,2;GP=0.50	RG:AC	0|1:22,1	0|1:16,2
+CUTC000004	94	.	A	G	55	CS60;NVSM1;NVSM2;CEF	AC=3;AF=0.0;MQ=24.14;BQ=34.39;GC=0|1:2,2;GP=0.50	RG:AC	0|1:87,2	0|1:24,1
+CUTC000004	119	.	T	D1	45	CS60;NVSM1;NVSM2;VKS;CEF	AC=2;AF=0.0;MQ=23.97;BQ=35.22;GC=0|1:2,2;GP=0.50	RG:AC	0|1:88,1	0|1:24,1
+CUTC000004	161	.	A	G	49	CS60;NVSM1;CEF	AC=2;AF=0.0;MQ=23.63;BQ=34.92;GC=0|1:2,1;GP=0.33	RG:AC	0|1:85,2	0:24
+CUTC000004	188	.	A	G	49	CS60;NVSM1;CEF	AC=2;AF=0.0;MQ=23.64;BQ=27.80;GC=0|1:2,1;GP=0.33	RG:AC	0|1:86,2	0:23
+CUTC000004	203	.	A	G	50	CS60;NVSM1;CEF	AC=2;AF=0.0;MQ=23.61;BQ=36.10;GC=0|1:2,1;GP=0.33	RG:AC	0|1:86,2	0:22
+CUTC000004	299	.	A	G	60	CEF	AC=18;AF=0.2;MQ=28.78;BQ=33.75;GC=0|1:1,1;GP=0.50	RG:AC	0:78	1:18
+CUTC000004	407	.	A	G	45	NVSM2;CEF	AC=2;AF=0.1;MQ=54.53;BQ=29.90;GC=0|1:2,1;GP=0.33	RG:AC	0:15	0|1:14,2
+CUTC000005	62	.	A	G	50	NVSM1;CEF	AC=2;AF=0.1;MQ=21.62;BQ=37.06;GC=0|1:2,1;GP=0.33	RG:AC	0|1:31,2	0:7
