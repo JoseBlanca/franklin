@@ -27,6 +27,8 @@ class TestVcfParser(unittest.TestCase):
 
         vcfs = list(vcf.vcfs)
         assert len(vcfs) == 14
+        assert  vcfs[4]['samples'] == {'MU16_454_MU16': {},
+                                       'UPV196_454_UPV196': {'C': 2, 'T': 16}}
 
 
 if __name__ == "__main__":
