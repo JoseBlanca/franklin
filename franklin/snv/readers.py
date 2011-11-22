@@ -82,7 +82,12 @@ class VcfParser(object):
             allele_count = {}
             alleles, values =  samples[1].split(':')
             for index , allele in enumerate(alleles.split('|')):
-                allele = vcf['REF'] if allele == '0' else vcf['ALT']
+                if allele in (',', '.'):
+                    continue
+                if allele == '0':
+                    allele = vcf['REF']
+                else:
+                    allele = vcf['ALT'].split(',')[int(allele) - 1]
                 try:
                     count_ = int(values.split(',')[index])
                 except ValueError:
