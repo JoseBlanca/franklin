@@ -59,7 +59,6 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
     if not os.path.exists(bwt_fpath):
         create_bwa_reference(reference_fpath, color=colorspace)
 
-    temp_dir = NamedTemporaryDir()
     output_ali = 'output.ali'
     bam_file_bam = 'bam_file.bam'
     output_sai = 'output.sai'
@@ -69,19 +68,16 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
         if colorspace:
             cmd.append('-c')
         sai_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_sai, mode='wb')
-        #sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
         cmd = ['bwa', 'samse', reference_fpath, sai_fhand.name, reads_fpath]
         ali_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_ali, mode='w')
-        #ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
 
     elif reads_length == 'long':
         cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath,
                '-t', str(threads)]
         ali_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_ali)
-#        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:
         raise ValueError('Reads length: short or long')
@@ -92,7 +88,6 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
     # sort bam file
     sort_bam_sam(unsorted_bam.name, bam_fpath, sort_method='coordinate',
                  java_conf=java_conf, strict_validation=False, tmp_dir=tmp_dir)
-    temp_dir.close()
 
 def create_bowtie_reference(reference_fpath, color=False):
     'It creates the bowtie index used by bowtie and tophat'
