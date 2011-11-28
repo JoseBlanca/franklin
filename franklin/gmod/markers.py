@@ -6,7 +6,7 @@ Created on 08/07/2010
 
 @author: peio
 '''
-from franklin.gff import features_in_gff
+from franklin.gff import GffFile
 import csv
 
 SOFA_TRADUCTOR = {'rflp': 'RFLP_fragment',
@@ -131,7 +131,8 @@ def add_marker(markers, name, alias , type_, sofa_type, sequence, pub):
 def add_markers_gff3(infhand, markers, name_cor=None, type_cor=None,
                       sequence_cor = None):
     'It adds markers using a gff3 file'
-    for feature in features_in_gff(infhand, 3):
+    gff = GffFile(infhand.name)
+    for feature in gff.features:
         if feature['type'] not in ACCEPTED_MARKERS:
             continue
         original_name = feature['name'].lower()

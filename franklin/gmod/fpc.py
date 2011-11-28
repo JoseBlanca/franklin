@@ -49,8 +49,8 @@ def fpcgff2_parser(fhand):
 
 def fpcgff2_parser2(fhand):
     'It parses a gff2_annotations file and yields converted gff3 features'
-
-    for feature in features_in_gff(fhand, 2):
+    gff = GffFile(fhand.name)
+    for feature in gff.features:
         annotations = feature['attributes']
         name        = annotations['Name']
         type_ = feature['type']
@@ -173,7 +173,7 @@ class FPCMap(object):
                     remark += line.split(' ', 1)[1].strip('"')
                     remark += '\n'
                     if 'Chr' in remark:
-                        raise NotImplemented('Fixme')
+                        raise NotImplementedError('Fixme')
                 elif line.startswith('Fp_number'):
                     fp_number = line.split()[1]
                     clone['fp_number'] = fp_number
@@ -236,7 +236,7 @@ class FPCMap(object):
                 if not line:
                     break
                 if line.startswith('Global_position'):
-                    raise NotImplemented('Fixme')
+                    raise NotImplementedError('Fixme')
                 elif line.startswith('Anchor_bin'):
                     group = line.split()[1].strip('"')
                     match = re_group.match(group)
