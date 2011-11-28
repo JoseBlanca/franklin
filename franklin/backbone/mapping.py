@@ -59,7 +59,10 @@ class MappingAnalyzer(Analyzer):
     def run(self):
         '''It runs the analysis.'''
         self._log({'analysis_started':True})
-        settings = self._project_settings['Mappers']
+        project_settings = self._project_settings
+        settings = project_settings['Mappers']
+        tmp_dir  = project_settings['General_settings']['tmpdir']
+
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
         output_dir = self._create_output_dirs(timestamped=True)['result']
@@ -97,6 +100,7 @@ class MappingAnalyzer(Analyzer):
                 mapping_parameters['threads']   = self.threads
                 mapping_parameters['java_conf'] = {'java_memory':java_mem,
                                                    'picard_path':picard_path}
+                mapping_parameters['tmp_dir'] = tmp_dir
                 map_reads(mapper,
                           reads_fpath=read_fpath.last_version,
                           reference_fpath=reference_fpath,

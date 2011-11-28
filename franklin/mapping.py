@@ -51,6 +51,8 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
     reads_length = parameters['reads_length']
     threads      = parameters['threads']
     java_conf    = parameters['java_conf']
+    tmp_dir      = parameters['tmp_dir'] if 'tmp_dir' in parameters else None
+
     threads = get_num_threads(threads)
     #the reference should have an index
     bwt_fpath = reference_fpath + '.bwt'
@@ -66,25 +68,30 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
                '-t', str(threads)]
         if colorspace:
             cmd.append('-c')
-        sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
+        sai_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_sai, mode='wb')
+        #sai_fhand = open(os.path.join(temp_dir.name, output_sai), 'wb')
         call(cmd, stdout=sai_fhand, raise_on_error=True)
 
         cmd = ['bwa', 'samse', reference_fpath, sai_fhand.name, reads_fpath]
-        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
+        ali_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_ali, mode='w')
+        #ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
+
     elif reads_length == 'long':
         cmd = ['bwa', 'dbwtsw', reference_fpath, reads_fpath,
                '-t', str(threads)]
-        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
+        ali_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_ali)
+#        ali_fhand = open(os.path.join(temp_dir.name, output_ali), 'w')
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:
         raise ValueError('Reads length: short or long')
     # From sam to Bam
-    unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
-    sam2bam(ali_fhand.name, unsorted_bam)
+#    unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
+    unsorted_bam = NamedTemporaryFile(dir=tmp_dir, suffix=bam_file_bam)
+    sam2bam(ali_fhand.name, unsorted_bam.name)
     # sort bam file
-    sort_bam_sam(unsorted_bam, bam_fpath, sort_method='coordinate',
-                 java_conf=java_conf, strict_validation=False)
+    sort_bam_sam(unsorted_bam.name, bam_fpath, sort_method='coordinate',
+                 java_conf=java_conf, strict_validation=False, tmp_dir=tmp_dir)
     temp_dir.close()
 
 def create_bowtie_reference(reference_fpath, color=False):
@@ -172,6 +179,7 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
                         parameters):
     'It maps the reads with gmap'
     threads = parameters['threads']
+    tmp_dir = parameters['tmp_dir'] if 'tmp_dir' in parameters else None
     reference_dir, reference_file_name = os.path.split(reference_fpath)
     reference_name = reference_file_name.split('.')[0]
     if not reference_dir:
@@ -188,7 +196,7 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     if threads:
         cmd.extend(['-t', str(threads)])
     cmd.append(reads_fpath)
-    out_sam_fhand = NamedTemporaryFile(suffix='.sam')
+    out_sam_fhand = NamedTemporaryFile(suffix='.sam', dir=tmp_dir)
     call(cmd, stdout=out_sam_fhand, raise_on_error=True)
     sam2bam(out_sam_fhand.name, out_bam_fpath)
     out_sam_fhand.close()
