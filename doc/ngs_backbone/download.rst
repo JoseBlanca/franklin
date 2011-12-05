@@ -13,7 +13,7 @@ Be aware that this machine won't be able to run any real sized experiment and it
 ngs_backbone 1.3.3
 ------------------
 
-:download:`ngs_backbone 1.3.3 <downloads/ngs_backbone-1.3.3.tar.gz>`. Relased on 28-04-2011.
+:download:`ngs_backbone 1.3.3 <downloads/ngs_backbone-1.3.3.tar.gz>`. Relased on 05-12-2011.
 
 Changes:
   * Rewriting of the statistical analises
