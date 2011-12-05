@@ -4,6 +4,16 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at github_.
 
+clean_reads 0.2.2
+-----------------
+
+:download:`clean_reads 0.2.2 <downloads/clean_reads-0.2.2.tar.gz>`. Relased on 5-12-2011.
+
+Changes:
+
+ * Bug fix: Show errors of threads when running with threads
+ * Several bug fixes
+
 clean_reads 0.2.1
 -----------------
 
