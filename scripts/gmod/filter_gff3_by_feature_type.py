@@ -4,7 +4,7 @@ Created on 2011 mar 29
 @author: peio
 '''
 from optparse import OptionParser
-from franklin.gff import modify_gff3, create_feature_type_filter
+from franklin.gff import create_feature_type_filter, modify_gff
 
 def parse_options():
     'It parses the command line arguments'
@@ -43,7 +43,7 @@ def main():
     filters = []
     filters.append(create_feature_type_filter(types))
 
-    modify_gff3(ingff3_fpath, outgff3_fpath, filters=filters)
+    modify_gff(ingff3_fpath, outgff3_fpath, filters=filters)
 
 if __name__ == '__main__':
     main()

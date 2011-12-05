@@ -29,10 +29,10 @@ def get_db_url(database_conf):
     if database_conf == 'sqlite':
         return 'sqlite:///%s.db' % database_conf['dbname']
     else:
-        return '%s://%s:%s@%s/%s' % (database_conf['dbname'],
-                                     database_conf['dbuser'],
-                                     database_conf['dbpass'],
-                                     database_conf['dbname'] )
+        return '%s://%s:%s@%s' % (database_conf['dbname'],
+                                  database_conf['dbuser'],
+                                  database_conf['dbpass'],
+                                  database_conf['dbname'] )
 
 def get_foreign_key(table, column):
     '''It returns the table and column names pointed by the foreign key.
@@ -244,7 +244,7 @@ class DbMap(object):
                     row_instance = self.select_one(referenced_table,
                                            attributes=this_col_attributes)
                     #from sqlalchemy.orm import exc as orm_exc
-                except sqlalchemy.orm.exc.NoResultFound:
+                except orm_exc.NoResultFound:
                     msg = 'Failed to select a row instance for:\n'
                     msg += '\ttable %s \n\tattributes: %s' % \
                                     (referenced_table, str(this_col_attributes))
