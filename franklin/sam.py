@@ -615,16 +615,20 @@ def get_binary_flag(flag):
     'It converts the bam decimal flag into binary'
     return bin(flag | 0b10000000000000000)[3:]
 
-def bam_general_stats(bam_fhand, out_fhand):
+def bam_general_stats(bam_fhand, out_fhand, non_mapped_reads_fhand=None):
     'It calculates some general statistics for the bam file'
-
     bam_fpath = bam_fhand.name
     create_bam_index(bam_fpath=bam_fpath)
     bam = pysam.Samfile(bam_fpath, 'rb')
 
     rg_stats = {}
-    total_reads = 0
     not_mapped_reads = 0
+    total_reads = 0
+    if non_mapped_reads_fhand:
+        for line in open(non_mapped_reads_fhand.name):
+            total_reads += 1
+            not_mapped_reads += 1
+
     mapped_reads = {'total':0}
     reads_with_1_x0_best_alignment = 0
     reads_with_several_x0_best_alignment = 0

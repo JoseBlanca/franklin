@@ -308,8 +308,16 @@ class BamStatsAnalyzer(Analyzer):
                                      BACKBONE_BASENAMES['statistics_file'])
         summary_fhand = open(summary_fname, 'w')
 
+        # non mapped_reads_fhand
+        unmapped_fpath = os.path.join(BACKBONE_DIRECTORIES['mappings'],
+                                      BACKBONE_BASENAMES['unmapped_list'])
+        if os.path.exists(unmapped_fpath):
+            unmapped_fhand = open(unmapped_fpath)
+        else:
+            unmapped_fhand = None
+
         #The general statistics
-        bam_general_stats(bam_fhand, summary_fhand)
+        bam_general_stats(bam_fhand, summary_fhand, unmapped_fhand)
 
         for kind in ('coverage', 'mapq'):
             basename = os.path.join(out_dir, "%s" % (project_name))

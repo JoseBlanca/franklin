@@ -316,6 +316,18 @@ class SamStatsTest(unittest.TestCase):
         assert 'illumina\t3\t100.0' in result
         assert 'Secondary alignments: 1' in result
         assert 'Reads with one X0 best alignment: 1' in result
+        assert 'Total number of reads: 7' in result
+
+        out_fhand = StringIO()
+        unmapped_fhand = NamedTemporaryFile()
+        unmapped_fhand.write('1\n2\n3\n')
+        unmapped_fhand.flush()
+        bam_general_stats(bam_fhand, out_fhand, unmapped_fhand)
+        result = out_fhand.getvalue()
+        assert 'illumina\t3\t100.0' in result
+        assert 'Secondary alignments: 1' in result
+        assert 'Reads with one X0 best alignment: 1' in result
+        assert 'Total number of reads: 10' in result
 
 if	__name__	==	"__main__":
     #import sys;sys.argv = ['', 'SamStatsTest.test_general_mapping_stats']
