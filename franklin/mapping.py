@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 from franklin.utils.cmd_utils import call, get_external_bin_dir
 from franklin.utils.misc_utils import NamedTemporaryDir, get_num_threads
-from franklin.sam import (sam2bam, sort_bam_sam)
+from franklin.sam import (sam2bam, sort_bam_sam, guess_mapped)
 
 def create_bwa_reference(reference_fpath, color=False):
     'It creates the bwa index for the given reference'
@@ -81,6 +81,11 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
         call(cmd, stdout=ali_fhand, raise_on_error=True)
     else:
         raise ValueError('Reads length: short or long')
+
+    if 'unmapped_fhand' in parameters and parameters['unmapped_fhand'] is not None:
+        out_ali_fhand = NamedTemporaryFile(dir=tmp_dir, suffix=output_ali)
+        get_out_unmapped(ali_fhand, parameters['unmapped_fhand'], out_ali_fhand)
+        ali_fhand = out_ali_fhand
     # From sam to Bam
 #    unsorted_bam = os.path.join(temp_dir.name, bam_file_bam)
     unsorted_bam = NamedTemporaryFile(dir=tmp_dir, suffix=bam_file_bam)
@@ -88,6 +93,21 @@ def map_reads_with_bwa(reference_fpath, reads_fpath, bam_fpath, parameters):
     # sort bam file
     sort_bam_sam(unsorted_bam.name, bam_fpath, sort_method='coordinate',
                  java_conf=java_conf, strict_validation=False, tmp_dir=tmp_dir)
+
+def get_out_unmapped(ali_fhand, unmapped_fhand, out_ali_fhand):
+    '''This functions takes an input bam and gets aout the unmapped reads from
+    the bam and writes the name of the reads in a file'''
+
+    for line in open(ali_fhand.name):
+        if line[0] == '@':
+            out_ali_fhand.write(line)
+        else:
+            items = line.split()
+            if guess_mapped(int(items[1])):
+                out_ali_fhand.write(line)
+            else:
+                unmapped_fhand.write(items[0] + '\n')
+        out_ali_fhand.flush()
 
 def create_bowtie_reference(reference_fpath, color=False):
     'It creates the bowtie index used by bowtie and tophat'
@@ -193,6 +213,12 @@ def map_reads_with_gmap(reference_fpath, reads_fpath, out_bam_fpath,
     cmd.append(reads_fpath)
     out_sam_fhand = NamedTemporaryFile(suffix='.sam', dir=tmp_dir)
     call(cmd, stdout=out_sam_fhand, raise_on_error=True)
+    if 'unmapped_fhand' in parameters and parameters['unmapped_fhand'] is not None:
+        out_sam_fhand2 = NamedTemporaryFile(dir=tmp_dir, suffix='.sam')
+        get_out_unmapped(out_sam_fhand, parameters['unmapped_fhand'],
+                         out_sam_fhand2)
+        out_sam_fhand = out_sam_fhand2
+
     sam2bam(out_sam_fhand.name, out_bam_fpath)
     out_sam_fhand.close()
 

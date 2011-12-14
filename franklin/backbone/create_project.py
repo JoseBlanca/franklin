@@ -266,6 +266,7 @@ DEFAULT_CONFIGURATION = OrderedDict([
                 'mapper_for_illumina': (STRING, 'bwa'),
                 'mapper_for_solid': (STRING, 'bwa'),
                 'mapper_for_sanger': (STRING, 'bwa'),
+                'keep_unmapped_reads_in_bam':(BOOLEAN, True),
            }),
            ('Sam_processing',{
                 'add_default_qualities': (BOOLEAN, True),

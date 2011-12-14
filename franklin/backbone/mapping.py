@@ -31,7 +31,8 @@ from franklin.utils.cmd_utils import call
 from franklin.utils.misc_utils import (NamedTemporaryDir, VersionedPath,
                                        rel_symlink)
 from franklin.backbone.specifications import (BACKBONE_BASENAMES,
-                                              PLOT_FILE_FORMAT)
+                                              PLOT_FILE_FORMAT,
+    BACKBONE_DIRECTORIES)
 from franklin.sam import (bam2sam, add_header_and_tags_to_sam, merge_sam,
                           sam2bam, sort_bam_sam, standardize_sam, realign_bam,
                           bam_distribs, create_bam_index, bam_general_stats)
@@ -62,6 +63,12 @@ class MappingAnalyzer(Analyzer):
         project_settings = self._project_settings
         settings = project_settings['Mappers']
         tmp_dir  = project_settings['General_settings']['tmpdir']
+        unmapped_fhand = None
+        if 'keep_unmapped_reads_in_bam' in settings:
+            if settings['keep_unmapped_reads_in_bam'] == False:
+                unmapped_fpath = os.path.join(BACKBONE_DIRECTORIES['mappings'],
+                                            BACKBONE_BASENAMES['unmapped_list'])
+                unmapped_fhand = open(unmapped_fpath, 'w')
 
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
@@ -87,6 +94,8 @@ class MappingAnalyzer(Analyzer):
              color_space) = self._prepare_mapper_index(mapping_index_dir,
                                                       reference_path,
                                                       platform, mapper)
+
+            mapping_parameters['unmapped_fhand'] = unmapped_fhand
             mapping_parameters['colorspace'] = color_space
             out_bam_fpath = os.path.join(output_dir,
                                          read_fpath.basename + '.bam')
