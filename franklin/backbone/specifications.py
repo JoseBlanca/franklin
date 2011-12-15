@@ -55,7 +55,7 @@ BACKBONE_BASENAMES = {
     'merged_frg':'all_seq.frg',
     'blast_basename':'blast',
     'statistics_file': 'statistics.txt',
-    'unmapped_list': 'unmapped_reads.txt'
+    'unmapped_list': 'unmapped_reads.gz'
 }
 
 PLOT_FILE_FORMAT = 'svg'

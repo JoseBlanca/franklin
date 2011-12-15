@@ -22,6 +22,7 @@ Created on 15/03/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import os, shutil
+from gzip import GzipFile
 from tempfile import NamedTemporaryFile
 
 from franklin.backbone.analysis import (Analyzer, scrape_info_from_fname,
@@ -70,8 +71,7 @@ class MappingAnalyzer(Analyzer):
                 unmapped_fpath = os.path.join(project_path,
                                             BACKBONE_DIRECTORIES['mappings'][0],
                                             BACKBONE_BASENAMES['unmapped_list'])
-                unmapped_fhand = open(unmapped_fpath, 'w')
-
+                unmapped_fhand = GzipFile(unmapped_fpath, 'w')
         inputs = self._get_input_fpaths()
         reads_fpaths = inputs['reads']
         output_dir = self._create_output_dirs(timestamped=True)['result']
@@ -317,7 +317,7 @@ class BamStatsAnalyzer(Analyzer):
                                       BACKBONE_DIRECTORIES['mappings'][0],
                                       BACKBONE_BASENAMES['unmapped_list'])
         if os.path.exists(unmapped_fpath):
-            unmapped_fhand = open(unmapped_fpath)
+            unmapped_fhand = GzipFile(unmapped_fpath)
         else:
             unmapped_fhand = None
 
@@ -331,6 +331,7 @@ class BamStatsAnalyzer(Analyzer):
                          sample_size=sample_size, summary_fhand=summary_fhand,
                          plot_file_format=PLOT_FILE_FORMAT)
         bam_fhand.close()
+        unmapped_fhand.close()
 
 DEFINITIONS = {
     'set_assembly_as_reference':

@@ -21,13 +21,15 @@ Created on 29/03/2010
 
 import unittest, os, shutil
 from os.path import join, exists
+from tempfile import NamedTemporaryFile
+from gzip import GzipFile
 
 from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 from franklin.backbone.create_project import create_project
 from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.analysis import BACKBONE_DIRECTORIES, BACKBONE_BASENAMES
 from franklin.sam import create_bam_index
-from tempfile import NamedTemporaryFile
+
 THREADS = None
 
 class TestBackboneMapping(unittest.TestCase):
@@ -165,9 +167,9 @@ class TestBackboneMapping(unittest.TestCase):
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
-        unmapped_fpath = join(mapping_dir, 'unmapped_reads.txt')
+        unmapped_fpath = join(mapping_dir, 'unmapped_reads.gz')
         assert exists(unmapped_fpath)
-        unmappeds = open(unmapped_fpath).read()
+        unmappeds = GzipFile(unmapped_fpath).read()
         assert 'seq17' in unmappeds
 
 
