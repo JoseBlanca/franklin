@@ -21,7 +21,7 @@ Created on 05/03/2010
 
 import unittest
 from franklin.seq.seqs import  SeqFeature, SeqWithQuality, Seq
-from Bio.SeqFeature import FeatureLocation, ExactPosition
+from Bio.SeqFeature import FeatureLocation
 from franklin.snv.snv_annotation import SNP, INVARIANT, INSERTION, DELETION
 from tempfile import NamedTemporaryFile
 from franklin.snv.writers import (VariantCallFormatWriter, SnvIlluminaWriter,

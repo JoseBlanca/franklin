@@ -70,7 +70,8 @@ class TestBackboneMapping(unittest.TestCase):
         configuration = {'Snvs':{'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},
                          'snv_filters':snv_filters,
-                         'General_settings':{'threads':THREADS}}
+                         'General_settings':{'threads':THREADS},
+                         'Mappers':{'keep_unmapped_reads_in_bam':False}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -86,28 +87,32 @@ class TestBackboneMapping(unittest.TestCase):
         solexa += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq2\n'
+        solexa += '@seq2\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq14\n'
+        solexa += '@seq14\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq15\n'
+        solexa += '@seq15\n'
         solexa += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq12\n'
+        solexa += '@seq12\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq13\n'
+        solexa += '@seq13\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
-        solexa = '@seq16\n'
+        solexa += '@seq16\n'
         solexa += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa += '+\n'
+        solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa += '@seq17\n'
+        solexa += 'ATGTACTAGCAGTACGATCACACACTGGACAGTACAGACCAGAATGAC\n'
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
 
@@ -160,6 +165,11 @@ class TestBackboneMapping(unittest.TestCase):
         assert exists(result_dir)
         result_dir_by_lib = join(result_dir, 'by_readgroup')
         assert exists(result_dir_by_lib)
+        unmapped_fpath = join(mapping_dir, 'unmapped_reads.txt')
+        assert exists(unmapped_fpath)
+        unmappeds = open(unmapped_fpath).read()
+        assert 'seq17' in unmappeds
+
 
         do_analysis(project_settings=settings_path, kind='merge_bams',
                     silent=True)

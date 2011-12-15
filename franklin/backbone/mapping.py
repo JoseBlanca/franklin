@@ -63,10 +63,12 @@ class MappingAnalyzer(Analyzer):
         project_settings = self._project_settings
         settings = project_settings['Mappers']
         tmp_dir  = project_settings['General_settings']['tmpdir']
+        project_path = project_settings['General_settings']['project_path']
         unmapped_fhand = None
         if 'keep_unmapped_reads_in_bam' in settings:
             if settings['keep_unmapped_reads_in_bam'] == False:
-                unmapped_fpath = os.path.join(BACKBONE_DIRECTORIES['mappings'],
+                unmapped_fpath = os.path.join(project_path,
+                                            BACKBONE_DIRECTORIES['mappings'][0],
                                             BACKBONE_BASENAMES['unmapped_list'])
                 unmapped_fhand = open(unmapped_fpath, 'w')
 
@@ -297,6 +299,7 @@ class BamStatsAnalyzer(Analyzer):
         self._create_output_dirs()['result']
         project_name = settings['General_settings']['project_name']
         sample_size = settings['Sam_stats']['sampling_size']
+        project_path = settings['General_settings']['project_path']
 
         inputs = self._get_input_fpaths()
         bam_path = inputs['bam']
@@ -309,7 +312,9 @@ class BamStatsAnalyzer(Analyzer):
         summary_fhand = open(summary_fname, 'w')
 
         # non mapped_reads_fhand
-        unmapped_fpath = os.path.join(BACKBONE_DIRECTORIES['mappings'],
+
+        unmapped_fpath = os.path.join(project_path,
+                                      BACKBONE_DIRECTORIES['mappings'][0],
                                       BACKBONE_BASENAMES['unmapped_list'])
         if os.path.exists(unmapped_fpath):
             unmapped_fhand = open(unmapped_fpath)
