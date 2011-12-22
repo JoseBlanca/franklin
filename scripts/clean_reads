@@ -639,21 +639,22 @@ def _cast(type_, value):
     if value is None:
         return None
     if type_ == path_exists:
-        value = str(value)
+        value = str(os.path.abspath(value))
         if not os.path.exists(value):
             msg = 'The given file does not exists: %s' % value
             ValidationError(msg)
     elif type_ == path_exists_dict:
         if isinstance(value, dict):
-            for val in value.values():
+            for val_key, val in value.keys():
+                value[val_key] = os.path.abspath(val)
                 if not os.path.exists(val):
                     msg = 'The given file does not exists: %s' % val
                     ValidationError(msg)
         else:
+            value = os.path.abspath(value)
             if not os.path.exists(value):
                 msg = 'The given file does not exists: %s' % val
                 ValidationError(msg)
-
     elif type_ == int:
         value = _cast_int(value)
     elif type_ == float:
