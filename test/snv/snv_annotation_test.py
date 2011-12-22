@@ -52,7 +52,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _get_alleles_from_read,
                                          annotate_pic,
                                          annotate_heterozygosity,
-    snvs_in_window)
+    snvs_in_window, _snvs_in_bam_by_position, make_snv_blocks)
 
 from franklin.sam import create_bam_index, sam2bam
 from franklin.snv.writers import VariantCallFormatWriter
@@ -63,7 +63,7 @@ class TestSnvAnnotation(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs'
 
     @staticmethod
-    def test_snv_annotation():
+    def test_snv_annotation_basic():
         'It tests the annotation of SeqRecords with snvs'
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
@@ -75,8 +75,25 @@ class TestSnvAnnotation(unittest.TestCase):
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
-#            assert expected == len(seq.features)
+            assert expected == len(seq.features)
+    @staticmethod
+    def test_snv_annotation_massive():
+        'It tests the annotation of SeqRecords with snvs'
+        #another example
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'seqs2.bam'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'reference.fasta'))
 
+        bam_fhand = open(os.path.join('/home/peio/merged.1.bam'))
+        seq_fhand = open(os.path.join('/home/peio/reference.fasta'))
+
+
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+                                         min_num_alleles=1,
+                                         min_num_reads_for_allele=1)
+
+        for seq in seqs_in_file(seq_fhand):
+            seq = annotator(seq)
 
 
     @staticmethod
@@ -894,5 +911,5 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation']
+    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
     unittest.main()
