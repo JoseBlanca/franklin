@@ -895,14 +895,29 @@ class TestReadPos(unittest.TestCase):
             for pileup_read in column.pileups:
                 if pileup_read.alignment.qname == 'r001/1':
 
-                    alignment = _get_alignment_section(pileup_read, 16, 21)
-                    assert alignment[0] == 'NNNNN'
-                    assert alignment[1] == 'TA-CT'
+                    alignment = _get_alignment_section(pileup_read, 13, 21)
+                    assert alignment[0] == 'N--NNNNNNNN'
+                    assert alignment[1] == 'AAGGATA-CTG'
 
-                    alignment = _get_alignment_section(pileup_read, 16, 21, reference)
-                    assert alignment[0] == 'TAGCT'
-                    assert alignment[1] == 'TA-CT'
-                    return
+                    alignment = _get_alignment_section(pileup_read, 13, 21, reference)
+                    assert alignment[0] == 'A--GATAGCTG'
+                    assert alignment[1] == 'AAGGATA-CTG'
+
+                    alignment = _get_alignment_section(pileup_read, 14, 21)
+                    assert alignment[0] == 'NNNNNNNN'
+                    assert alignment[1] == 'GATA-CTG'
+
+                    alignment = _get_alignment_section(pileup_read, 14, 21, reference)
+                    assert alignment[0] == 'GATAGCTG'
+                    assert alignment[1] == 'GATA-CTG'
+
+                    alignment = _get_alignment_section(pileup_read, 15, 21)
+                    assert alignment[0] == 'NNNNNNN'
+                    assert alignment[1] == 'ATA-CTG'
+
+                    alignment = _get_alignment_section(pileup_read, 15, 21, reference)
+                    assert alignment[0] == 'ATAGCTG'
+                    assert alignment[1] == 'ATA-CTG'
 
                     alignment = _get_alignment_section(pileup_read, 5, 22)
                     assert alignment[0] == 'NNNNNNNNN--NNNNNNNNN'
@@ -913,12 +928,12 @@ class TestReadPos(unittest.TestCase):
                     assert alignment[1] == ' TAAGATAAAGGATA-CTG '
 
                     alignment = _get_alignment_section(pileup_read, 10, 16)
-                    assert alignment[0] == 'NNNNNNNN--NNN'
-                    assert alignment[1] == 'ATAAAGGAAGGAT'
+                    assert alignment[0] == 'NNNN--NNN'
+                    assert alignment[1] == 'ATAAAGGAT'
 
                     alignment = _get_alignment_section(pileup_read, 10, 16, reference)
-                    assert alignment[0] == 'ATAAGATA--GAT'
-                    assert alignment[1] == 'ATAAAGGAAGGAT'
+                    assert alignment[0] == 'ATAA--GAT'
+                    assert alignment[1] == 'ATAAAGGAT'
 
                 elif pileup_read.alignment.qname == 'r003':
                     alignment = _get_alignment_section(pileup_read, 5, 13)
@@ -930,15 +945,12 @@ class TestReadPos(unittest.TestCase):
                     assert alignment[1] == '   AGCTAA'
                 elif pileup_read.alignment.qname == 'r004':
                     alignment = _get_alignment_section(pileup_read, 18, 38)
-                    assert alignment[0] == 'NNNNNNNNNNNNNNNNNNNNNNNN'
-                    assert alignment[1] == 'GCT-----------------TCAG'
+                    assert alignment[0] == 'NNNNNNNNNNNNNNNNNNNNN'
+                    assert alignment[1] == 'GCT--------------TCAG'
 
                     alignment = _get_alignment_section(pileup_read, 18, 38, reference)
-                    assert alignment[0] == 'GCTGTGGTGCTAGTAGGCAGTCAG'
-                    assert alignment[1] == 'GCT-----------------TCAG'
-
-
-
+                    assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
+                    assert alignment[1] == 'GCT--------------TCAG'
 
 
 class PoblationCalculationsTest(unittest.TestCase):

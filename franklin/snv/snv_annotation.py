@@ -296,13 +296,6 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     (ref_segments, read_segments, ref_limits, read_limits, segment_types,
     segment_lens) = _get_cigar_segments_from_aligned_read(aligned_read)
 
-    print '*' * 40
-    print 'ref_segments', ref_segments
-    print 'read_segments', read_segments
-    print 'ref_limits', ref_limits
-    print 'segment_types', segment_types
-    print 'segment_lens', segment_lens
-
     #in which segment are we?
     start_segment = _locate_segment(start, ref_segments, segment_lens,
                                     ref_limits)
@@ -312,8 +305,6 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
                                     ref_limits)
     if end_segment is not None:
         end_segment = end_segment[0]
-    print 'start_segment', start_segment
-    print 'end_segment', end_segment
 
     #when does the last segment end?
     end_last_segment = ref_limits[1]
@@ -370,37 +361,28 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
             seg_read_seq = DELETION_ALLELE * (seg_len - end_delta)
         else:
             ref_start = ref_seg_start + start_delta
-            ref_end = ref_start + seg_len - end_delta
+            ref_end = ref_start + seg_len - end_delta - start_delta
             if reference_seq is not None:
                 seg_ref_seq = str(reference_seq.seq[ref_start: ref_end])
             else:
-                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - end_delta)
+                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - end_delta - start_delta)
             read_start = read_seg_start + start_delta
-            #############################################
-            corrected_end_delta = None
-            if len(ref_segments) > isegment +1 :
-                next_type = segment_types[isegment + 1]
-                if next_type in (DELETION, SKIP):
-                    corrected_end_delta = 2
-            corrected_end_delta = 0 if corrected_end_delta is None else corrected_end_delta
-            #############################################
-            read_end = read_start + seg_len - end_delta
+            read_end = read_start + seg_len - end_delta - start_delta
             seg_read_seq = read_seq[read_start: read_end]
-            print isegment, read_start, seg_len, end_delta, seg_read_seq
+
         cum_ref_seq += seg_ref_seq
         cum_read_seq += seg_read_seq
 
     #after alignment
     len_after_segment = end - ref_limits[1]
-    print len_after_segment
+
     if reference_seq is None:
         ref_seq_after = UNKNOWN_NUCLEOTYDE * len_after_segment
     else:
         ref_seq_after = str(reference_seq.seq[ref_limits[1] + 1:ref_limits[1] + len_after_segment + 1])
     cum_ref_seq += ref_seq_after
     cum_read_seq += NO_NUCLEOTYDE * len_after_segment
-    print cum_ref_seq
-    print cum_read_seq
+
     return cum_ref_seq, cum_read_seq
 
 
