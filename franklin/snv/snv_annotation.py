@@ -39,6 +39,8 @@ DEFAUL_MIN_NUM_READS_PER_ALLELE = 2
 DEFAULT_PLOIDY = 2
 
 DELETION_ALLELE = '-'
+UNKNOWN_NUCLEOTYDE = 'N'
+NO_NUCLEOTYDE = ' '
 N_ALLLELES = ('n', '?')
 
 SNP = 0
@@ -77,6 +79,9 @@ IN_LAST_POS = 3
 IN_FIRST_AND_LAST = 4
 
 
+CIGAR_DECODE = 'MIDNSHP'
+
+
 def _get_raw_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
     allele = aligned_read.seq[index].upper()
@@ -91,6 +96,7 @@ def _get_raw_allele_from_read(aligned_read, index):
 
 SEGMENTS_CACHE = {}
 MAX_CACHED_SEGMENTS = 10000
+
 def _get_cigar_segments_from_aligned_read(aligned_read):
     'It gets the cigar from an aligened_read of pysam'
     begin_pos_read_in_ref = aligned_read.pos
@@ -118,8 +124,8 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
     It also returns a list with the cigar category for each segment.
     The position in the reference is only used for the cache
     '''
+
     cigar = tuple(cigar)
-    #print cigar
     global SEGMENTS_CACHE
     cache_key = read_len, begin_pos_read_in_ref, cigar
     if cache_key in SEGMENTS_CACHE:
@@ -195,6 +201,7 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
         if len(SEGMENTS_CACHE) > MAX_CACHED_SEGMENTS:
             SEGMENTS_CACHE = {}
     return result
+
 
 def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
     'It locates a read position in the segments'
@@ -282,8 +289,123 @@ def _read_pos_around_del(ref_segments, read_segments, segment_types,
         raise RuntimeError(msg)
     return read_pos1, read_pos2
 
-def _get_allele_from_pileup_read(ref_pos, pileup_read):
-    ''
+def _get_alignment_section(pileup_read, start, end, reference_seq=None):
+    'It gets a section of the alignment of the given read'
+    aligned_read = pileup_read.alignment
+    read_seq     = aligned_read.seq
+    (ref_segments, read_segments, ref_limits, read_limits, segment_types,
+    segment_lens) = _get_cigar_segments_from_aligned_read(aligned_read)
+
+    print '*' * 40
+    print 'ref_segments', ref_segments
+    print 'read_segments', read_segments
+    print 'ref_limits', ref_limits
+    print 'segment_types', segment_types
+    print 'segment_lens', segment_lens
+
+    #in which segment are we?
+    start_segment = _locate_segment(start, ref_segments, segment_lens,
+                                    ref_limits)
+    if start_segment is not None:
+        start_segment = start_segment[0]
+    end_segment = _locate_segment(end, ref_segments, segment_lens,
+                                    ref_limits)
+    if end_segment is not None:
+        end_segment = end_segment[0]
+    print 'start_segment', start_segment
+    print 'end_segment', end_segment
+
+    #when does the last segment end?
+    end_last_segment = ref_limits[1]
+    if end <= end_last_segment:
+        segment_ends = end
+    else:
+        segment_ends = end_last_segment
+    #where does it starts?
+    if start >= ref_limits[0]:
+        segment_starts = start
+    else:
+        segment_starts = ref_limits[0]
+    cum_ref_seq, cum_read_seq = '', ''
+    #before alignment
+    len_before_segment = ref_limits[0] - start
+    if reference_seq is None:
+        ref_seq_before = UNKNOWN_NUCLEOTYDE * len_before_segment
+    else:
+        ref_seq_before = str(reference_seq.seq[ref_limits[0] - len_before_segment:ref_limits[0]])
+    cum_ref_seq += ref_seq_before
+    cum_read_seq += NO_NUCLEOTYDE * len_before_segment
+
+    #in alignment
+    ssegment = 0 if start_segment is None else start_segment
+    esegment = len(ref_segments) - 1 if end_segment is None else end_segment
+
+    for isegment in range(ssegment, esegment + 1):
+        seg_type = segment_types[isegment]
+        seg_len = segment_lens[isegment]
+        ref_seg_start = ref_segments[isegment]
+        read_seg_start = read_segments[isegment]
+        if isegment == ssegment:
+            start_delta = segment_starts - ref_seg_start
+        else:
+            start_delta = 0
+        if isegment == esegment:
+            end_delta = seg_len - segment_ends + ref_seg_start - 1
+        else:
+            end_delta = 0
+        if seg_type == INSERTION:
+            seg_ref_seq = DELETION_ALLELE * (seg_len - end_delta)
+            read_start = read_seg_start + start_delta
+            read_end = read_start + seg_len  - end_delta
+            seg_read_seq = read_seq[read_start: read_end]
+        elif seg_type == DELETION or seg_type == SKIP:
+            ref_start = ref_seg_start + start_delta
+            ref_end = ref_start + seg_len - end_delta
+            if reference_seq is not None:
+                seg_ref_seq = str(reference_seq.seq[ref_start: ref_end])
+            else:
+                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - end_delta)
+            read_start = None
+            read_end = None
+            seg_read_seq = DELETION_ALLELE * (seg_len - end_delta)
+        else:
+            ref_start = ref_seg_start + start_delta
+            ref_end = ref_start + seg_len - end_delta
+            if reference_seq is not None:
+                seg_ref_seq = str(reference_seq.seq[ref_start: ref_end])
+            else:
+                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - end_delta)
+            read_start = read_seg_start + start_delta
+            #############################################
+            corrected_end_delta = None
+            if len(ref_segments) > isegment +1 :
+                next_type = segment_types[isegment + 1]
+                if next_type in (DELETION, SKIP):
+                    corrected_end_delta = 2
+            corrected_end_delta = 0 if corrected_end_delta is None else corrected_end_delta
+            #############################################
+            read_end = read_start + seg_len - end_delta
+            seg_read_seq = read_seq[read_start: read_end]
+            print isegment, read_start, seg_len, end_delta, seg_read_seq
+        cum_ref_seq += seg_ref_seq
+        cum_read_seq += seg_read_seq
+
+    #after alignment
+    len_after_segment = end - ref_limits[1]
+    print len_after_segment
+    if reference_seq is None:
+        ref_seq_after = UNKNOWN_NUCLEOTYDE * len_after_segment
+    else:
+        ref_seq_after = str(reference_seq.seq[ref_limits[1] + 1:ref_limits[1] + len_after_segment + 1])
+    cum_ref_seq += ref_seq_after
+    cum_read_seq += NO_NUCLEOTYDE * len_after_segment
+    print cum_ref_seq
+    print cum_read_seq
+    return cum_ref_seq, cum_read_seq
+
+
+
+
 
 def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     '''It returns an allele from the read.
@@ -427,8 +549,8 @@ def _get_snv_end_position(snv):
         pos += max_length
     return pos
 
-def _add_snv_reads(snv, reads):
-    'It gets the pilup read for each snv_allele'
+def _update_pileup_reads(snv, reads):
+    'It gets the pileup read for each snv_allele'
     snv_name = snv['ref_name'] + '_' + str(snv['ref_position'])
     if snv_name not in reads:
         reads[snv_name] = {}
@@ -446,7 +568,7 @@ def check_read_length(read, position):
         return False
 
 
-def check_reads(reads, position):
+def _check_enough_reads(reads, position):
     '''It checks that the reads in the snv are of the length of the snv.
     Otherwise they will be removed'''
     for snv_name, alleles in reads.items():
@@ -465,7 +587,7 @@ def check_reads(reads, position):
             return False
     return True
 
-def increase_snv_length(snv, snv_block, reads):
+def _increase_snv_length(snv, snv_block, reads):
     '''It checks if we have increase the snv or not. It will check if the reads
     have the proper length and that the increase will produce by deletion
     elongation'''
@@ -473,11 +595,11 @@ def increase_snv_length(snv, snv_block, reads):
         return False
     posible_end = _get_snv_end_position(snv)
     snv_pos = (snv_block['start'], posible_end)
-    return check_reads(reads, snv_pos)
+    return _check_enough_reads(reads, snv_pos)
 
-def make_snv_blocks(snvs):
-    '''It joins snvs that should be just one snv. Pej and deletion that match
-    with another deletion in the same positions
+def _make_snv_blocks(snvs):
+    '''It joins snvs that should be just one snv. e.g. a deletion that match
+    with another deletion in the same position
     '''
     snv_block = {}
     reads = {}
@@ -487,40 +609,81 @@ def make_snv_blocks(snvs):
         if not snv_block:
             snv_block = {'start':start, 'end':end, 'snvs':[snv]}
         else:
-            if increase_snv_length(snv, snv_block, reads):
+            if _increase_snv_length(snv, snv_block, reads):
                 snv_block['end'] = end
                 snv_block['snvs'].append(snv)
             else:
                 yield snv_block
                 reads = {}
                 snv_block = {'start':start, 'end':end, 'snvs':[snv]}
-        _add_snv_reads(snv, reads)
+        _update_pileup_reads(snv, reads)
     else:
         if snv_block:
             yield snv_block
 
+def get_insertions_in_position(reads, position):
+    'it returns the insertions that are found inside de positions'
+    insertions = set()
+    for segments in reads.values():
+        (ref_segments, read_segments, ref_limits, read_limits, segment_types,
+        segment_lens) = segments['segments']
+        for index, segment_type in enumerate(segment_types):
+            if segment_type == 1:
+                insert_start_in_ref = ref_segments[index - 1]
+                insert_end_in_ref = insert_start_in_ref +  segment_lens[index]
+                if ((insert_start_in_ref > position[0] and insert_start_in_ref< position[1]) or
+                    (insert_end_in_ref > position[0] and insert_end_in_ref< position[1])):
+                    insertions.add((insert_start_in_ref, insert_end_in_ref))
+
+    return list(insertions)
+
+def make_multiple_alignment(reads, position):
+    'It makes an multiple alignment of the given reads in the given positions'
+    reads_segments = {}
+    for pileup_read in reads:
+        aligned_read = pileup_read.alignment
+        read_name    = aligned_read.qname
+        reads_segments[read_name] = {'read': aligned_read}
+        reads_segments[read_name]['segments'] = \
+                             _get_cigar_segments_from_aligned_read(aligned_read)
+    # are there inserts.
+    insertions = get_insertions_in_position(reads_segments, position)
+    print insertions
+    start   = position[0]
+    end     = position[1]
+    pos_len = end - start
+
+
+
+#        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
+#        segment_lens) =
+
+
+
+
 def _join_snvs(snv_block):
     'It joins the snvs that should be together'
     snvs = snv_block['snvs']
-    position = (snv_block['start'], snv_block['end'])
     if len(snvs) == 1:
+        print "one snv"
         yield snvs[0]
     else:
+        print "more than one"
+        position = (snv_block['start'], snv_block['end'])
         new_snv = {'ref_name':snvs[0]['ref_name'],
                    'ref_pos':snv_block['start'],
                    'read_groups':snvs[0]['read_groups'],
                    'alleles':{}}
         read_counter = 0
         reads = {}
+        # collect all the reads to make the alignewment
         for snv in snvs:
             for allele, allele_info in snv['alleles'].items():
                 for index, read in enumerate(allele_info['reads']):
                     if read.alignment.qname not in reads:
                         reads[read.alignment.qname] = read
+        make_multiple_alignment(reads.values(), position)
 
-
-#        make_multiple_alignment(reads.values(), position)
-#
 #
 #
 #                    if allele not in new_snv['alleles']:
@@ -536,9 +699,9 @@ def _join_snvs(snv_block):
 #                    new_snv['alleles'][allele]['qualities']    = allele_info['qualities'][index]
 #                    new_snv['alleles'][allele]['mapping_qualities'] = allele_info['mapping_qualities'][index]
 #                read_counter += 1
-#        # falta crear el allelo de referencia,
-
-        yield new_snv
+#         falta crear el allelo de referencia,
+#
+#        yield new_snv
 
 
 def _snvs_in_bam(bam, reference, min_quality,
@@ -551,8 +714,7 @@ def _snvs_in_bam(bam, reference, min_quality,
                                     min_num_alleles,max_maf,
                                     min_num_reads_for_allele, read_edge_conf,
                                     default_bam_platform)
-
-    for snv_block in make_snv_blocks(snvs):
+    for snv_block in _make_snv_blocks(snvs):
         for snv in _join_snvs(snv_block):
             yield snv
 
@@ -582,6 +744,7 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
     for column in bam.pileup(reference=reference_id):
         alleles = {}
         ref_pos = column.pos
+
         if ref_pos >= reference_len:
             continue
         ref_id = bam.getrname(column.tid)
@@ -817,7 +980,6 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
     read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
-
     # default min num_reads per allele and ploidy
     if min_num_reads_for_allele is None:
         min_num_reads_for_allele = DEFAUL_MIN_NUM_READS_PER_ALLELE

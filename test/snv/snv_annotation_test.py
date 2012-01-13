@@ -52,12 +52,15 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _get_alleles_from_read,
                                          annotate_pic,
                                          annotate_heterozygosity,
-    snvs_in_window, _snvs_in_bam_by_position, make_snv_blocks)
+                                         snvs_in_window,
+                                         _get_alignment_section)
 
-from franklin.sam import create_bam_index, sam2bam
+from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
+    bam2sam
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
+from franklin.mapping import map_reads_with_bwa
 
 class TestSnvAnnotation(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs'
@@ -80,19 +83,31 @@ class TestSnvAnnotation(unittest.TestCase):
     def test_snv_annotation_massive():
         'It tests the annotation of SeqRecords with snvs'
         #another example
-        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'seqs2.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'reference.fasta'))
 
-        bam_fhand = open(os.path.join('/home/peio/merged.1.bam'))
-        seq_fhand = open(os.path.join('/home/peio/reference.fasta'))
+        bam_fhand = NamedTemporaryFile(suffix='.bam')
+        sam_fhand = NamedTemporaryFile(prefix='pl_illumina.sm_test.lb_test.',
+                                       suffix='.sam')
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'seqs.sfastq'))
+        ref_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'reference.fasta'))
 
+        # prepare the sam file
+        parameters = {'colorspace':False, 'reads_length':'short',
+                      'threads':None, 'java_conf':None }
+        map_reads_with_bwa(ref_fhand.name, seq_fhand.name, bam_fhand.name,
+                           parameters)
+        bam2sam(bam_fhand.name, sam_fhand.name, header=True)
+        new_sam_fhand = NamedTemporaryFile(suffix='.sam')
+        add_header_and_tags_to_sam(sam_fhand, new_sam_fhand)
+        sam2bam(new_sam_fhand.name, bam_fhand.name)
+        #################################################################
 
-
-        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=20,
                                          min_num_alleles=1,
                                          min_num_reads_for_allele=1)
 
-        for seq in seqs_in_file(seq_fhand):
+        for seq in seqs_in_file(ref_fhand):
             seq = annotator(seq)
 
 
@@ -846,6 +861,84 @@ class TestReadPos(unittest.TestCase):
                 alleles, read_limits = _get_alleles_from_read(ref_allele,
                                                               ref_pos,
                                                               pileup_read)
+    @staticmethod
+    def test_get_aligned_read_section():
+        'It checks that we can get aligned sections from a read'
+        #Coor               1111  1111112222222222333333333344444
+        #Coor     01234567890123  4567890123456789012345678901234
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #               01234567890123 456
+        #+r001/1        TAAGATAAAGGATA*CTG
+        #              012345678 90123
+        #+r002         aaaAGATAA*GGATA
+        #                 012345
+        #+r003       gcctaAGCTAA
+        #                          012345              67890
+        #+r004                     ATAGCT..............TCAGC
+        #                                       43210
+        #-r005                            ttagctTAGGC
+        #                                               876543210
+        #-r001/2                                        CAGCGCCAT
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+        create_bam_index(bam_fhand.name)
+
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        reference_id = reference.name
+
+        for column in bam.pileup(reference=reference_id):
+            for pileup_read in column.pileups:
+                if pileup_read.alignment.qname == 'r001/1':
+
+                    alignment = _get_alignment_section(pileup_read, 16, 21)
+                    assert alignment[0] == 'NNNNN'
+                    assert alignment[1] == 'TA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 16, 21, reference)
+                    assert alignment[0] == 'TAGCT'
+                    assert alignment[1] == 'TA-CT'
+                    return
+
+                    alignment = _get_alignment_section(pileup_read, 5, 22)
+                    assert alignment[0] == 'NNNNNNNNN--NNNNNNNNN'
+                    assert alignment[1] == ' TAAGATAAAGGATA-CTG '
+
+                    alignment = _get_alignment_section(pileup_read, 5, 22, reference)
+                    assert alignment[0] == 'GTTAGATAA--GATAGCTGT'
+                    assert alignment[1] == ' TAAGATAAAGGATA-CTG '
+
+                    alignment = _get_alignment_section(pileup_read, 10, 16)
+                    assert alignment[0] == 'NNNNNNNN--NNN'
+                    assert alignment[1] == 'ATAAAGGAAGGAT'
+
+                    alignment = _get_alignment_section(pileup_read, 10, 16, reference)
+                    assert alignment[0] == 'ATAAGATA--GAT'
+                    assert alignment[1] == 'ATAAAGGAAGGAT'
+
+                elif pileup_read.alignment.qname == 'r003':
+                    alignment = _get_alignment_section(pileup_read, 5, 13)
+                    assert alignment[0] == 'NNNNNNNNN'
+                    assert alignment[1] == '   AGCTAA'
+
+                    alignment = _get_alignment_section(pileup_read, 5, 13, reference)
+                    assert alignment[0] == 'GTTAGATAA'
+                    assert alignment[1] == '   AGCTAA'
+                elif pileup_read.alignment.qname == 'r004':
+                    alignment = _get_alignment_section(pileup_read, 18, 38)
+                    assert alignment[0] == 'NNNNNNNNNNNNNNNNNNNNNNNN'
+                    assert alignment[1] == 'GCT-----------------TCAG'
+
+                    alignment = _get_alignment_section(pileup_read, 18, 38, reference)
+                    assert alignment[0] == 'GCTGTGGTGCTAGTAGGCAGTCAG'
+                    assert alignment[1] == 'GCT-----------------TCAG'
+
+
+
 
 
 class PoblationCalculationsTest(unittest.TestCase):
@@ -911,5 +1004,6 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
     unittest.main()
