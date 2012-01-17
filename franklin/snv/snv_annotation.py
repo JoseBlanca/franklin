@@ -19,7 +19,7 @@ Created on 16/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-
+from operator import attrgetter
 from collections import defaultdict
 from copy import copy
 import math
@@ -289,6 +289,134 @@ def _read_pos_around_del(ref_segments, read_segments, segment_types,
         raise RuntimeError(msg)
     return read_pos1, read_pos2
 
+def _chop_alignment(alignment):
+    'it chops the alignments in lists'
+    ref, read = alignment
+    listed_ref = []
+    listed_read = []
+    inserts = ''
+    read_inserts = ''
+    for index in range(len(ref)):
+        if ref[index] == '-':
+            inserts += '-'
+            read_inserts += read[index]
+        else:
+            if inserts != '':
+                listed_ref.append(inserts)
+                listed_read.append(read_inserts)
+                inserts = ''
+                read_inserts = ''
+            listed_ref.append(ref[index])
+            listed_read.append(read[index])
+    else:
+        if inserts != '':
+            listed_ref.append(inserts)
+            listed_read.append(read_inserts)
+    return listed_ref, listed_read
+
+def _prepare_alignments(alignments):
+    'It prepares the alignements for joining'
+    prepared_alignments = []
+    for name, alignment in alignments.items():
+        ref, read = _chop_alignment(alignment)
+        alignment = {'reference':ref,
+                     'reads':{name:read}}
+        prepared_alignments.append(alignment)
+    return prepared_alignments
+
+def _count_char_in_str(str, char='-'):
+    'It counts the given char in the given string'
+    count= 0
+    for char_ in str:
+        if char_ == char:
+            count +=1
+    return count
+
+def add_collumn(alignment, nalig, index, inserts=''):
+    'It adds a column to the given alignment'
+    for name, read in alignment['reads'].items():
+        if name not in nalig['reads']:
+            nalig['reads'][name] = []
+        nalig['reads'][name].append(read[index] + inserts)
+
+def _join_alignments(alignment1, alignment2):
+    'It joins two alignemnts and makes a new alignment'
+    def _insert_in_seq(list_seq):
+        for element in list_seq:
+            if '-' in element:
+                return True
+        return False
+    ref1 = alignment1['reference']
+    ref2 = alignment2['reference']
+
+    if not _insert_in_seq(ref1) and not _insert_in_seq(ref2):
+        reads = {}
+        for name, read in alignment1['reads'].items():
+            reads[name] = read
+        for name, read in alignment2['reads'].items():
+            reads[name] = read
+        return {'reference':ref1,
+                'reads':reads}
+
+    nalig = {'reference':[], 'reads':{}}
+    index1_delta = 0
+    index2_delta = 0
+    if len(ref1) >= len(ref2):
+        ref_len = len(ref1)
+    else:
+        ref_len = len(ref2)
+
+    for index in range(ref_len):
+        index1 = index - index1_delta
+        index2 = index - index2_delta
+        ref1_item = ref1[index1]
+        ref2_item = ref2[index2]
+        inser_1 = _count_char_in_str(ref1_item)
+        inser_2 = _count_char_in_str(ref2_item)
+        if inser_1 == inser_2:
+            nalig['reference'].append(ref1_item)
+            add_collumn(alignment1, nalig, index1)
+            add_collumn(alignment2, nalig, index2)
+
+        elif inser_1 > inser_2:
+            inser_diff = inser_1 - inser_2
+            nalig['reference'].append(ref1_item)
+            add_collumn(alignment1, nalig, index1)
+
+            for name, read in alignment2['reads'].items():
+                if name not in nalig['reads']:
+                    nalig['reads'][name] = []
+                if inser_2 > 0:
+                    nalig['reads'][name].append(read[index2] + inser_diff * '-')
+                else:
+                    nalig['reads'][name].append(inser_diff * '-')
+                    index2_delta += 1
+
+        else:
+            inser_diff = inser_2 - inser_1
+            nalig['reference'].append(ref2_item)
+            for name, read in alignment1['reads'].items():
+                if name not in nalig['reads']:
+                    nalig['reads'][name] = []
+                if inser_1 > 0:
+                    nalig['reads'][name].append(read[index1] + inser_diff * '-')
+                else:
+                    nalig['reads'][name].append(inser_diff * '-')
+                    index1_delta += 1
+            add_collumn(alignment2, nalig, index)
+
+    return nalig
+
+def _make_multiple_alignment(alignments):
+    'It makes the multime alignments using ref to read sinmple alignments'
+
+    alignments = _prepare_alignments(alignments)
+    alignment = alignments[0]
+    for index in range(1, len(alignments)):
+        alignment = _join_alignments(alignment, alignments[index])
+
+    return alignment
+
 def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     'It gets a section of the alignment of the given read'
     aligned_read = pileup_read.alignment
@@ -384,10 +512,6 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     cum_read_seq += NO_NUCLEOTYDE * len_after_segment
 
     return cum_ref_seq, cum_read_seq
-
-
-
-
 
 def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     '''It returns an allele from the read.
@@ -529,7 +653,7 @@ def _get_snv_end_position(snv):
     pos = snv['ref_position']
     if max_length > 0:
         pos += max_length
-    return pos
+    return pos - 1
 
 def _update_pileup_reads(snv, reads):
     'It gets the pileup read for each snv_allele'
@@ -548,7 +672,6 @@ def check_read_length(read, position):
         return True
     else:
         return False
-
 
 def _check_enough_reads(reads, position):
     '''It checks that the reads in the snv are of the length of the snv.
@@ -579,6 +702,20 @@ def _increase_snv_length(snv, snv_block, reads):
     snv_pos = (snv_block['start'], posible_end)
     return _check_enough_reads(reads, snv_pos)
 
+def _correct_svn_block_start(snv_block):
+    'It corrects the svn_block start depending if the svns are snps or indels'
+    snvs = snv_block['snvs']
+
+    if len(snvs) == 1 :
+        allele_types = set([allele[1] for allele in snvs[0]['alleles'].keys()])
+        if allele_types.intersection(set([1, 2, 4, 5])):
+            start = snv_block['start'] - 1
+        else:
+            start = snv_block['start']
+    else:
+        start = snv_block['start'] - 1
+    snv_block['start'] = start
+
 def _make_snv_blocks(snvs):
     '''It joins snvs that should be just one snv. e.g. a deletion that match
     with another deletion in the same position
@@ -595,12 +732,14 @@ def _make_snv_blocks(snvs):
                 snv_block['end'] = end
                 snv_block['snvs'].append(snv)
             else:
+                _correct_svn_block_start(snv_block)
                 yield snv_block
                 reads = {}
                 snv_block = {'start':start, 'end':end, 'snvs':[snv]}
         _update_pileup_reads(snv, reads)
     else:
         if snv_block:
+            _correct_svn_block_start(snv_block)
             yield snv_block
 
 def get_insertions_in_position(reads, position):
@@ -619,31 +758,7 @@ def get_insertions_in_position(reads, position):
 
     return list(insertions)
 
-def make_multiple_alignment(reads, position):
-    'It makes an multiple alignment of the given reads in the given positions'
-    reads_segments = {}
-    for pileup_read in reads:
-        aligned_read = pileup_read.alignment
-        read_name    = aligned_read.qname
-        reads_segments[read_name] = {'read': aligned_read}
-        reads_segments[read_name]['segments'] = \
-                             _get_cigar_segments_from_aligned_read(aligned_read)
-    # are there inserts.
-    insertions = get_insertions_in_position(reads_segments, position)
-    print insertions
-    start   = position[0]
-    end     = position[1]
-    pos_len = end - start
-
-
-
-#        (ref_segments, read_segments, ref_limits, read_limits, segment_type,
-#        segment_lens) =
-
-
-
-
-def _join_snvs(snv_block):
+def _join_snvs(snv_block, reference_seq=None):
     'It joins the snvs that should be together'
     snvs = snv_block['snvs']
     if len(snvs) == 1:
@@ -651,39 +766,43 @@ def _join_snvs(snv_block):
         yield snvs[0]
     else:
         print "more than one"
-        position = (snv_block['start'], snv_block['end'])
+        start = snv_block['start']
+        end   = snv_block['end']
         new_snv = {'ref_name':snvs[0]['ref_name'],
-                   'ref_pos':snv_block['start'],
+                   'ref_pos':start,
                    'read_groups':snvs[0]['read_groups'],
                    'alleles':{}}
-        read_counter = 0
+
+        # collect all the reads and its alignment
         reads = {}
-        # collect all the reads to make the alignewment
+        alignments = {}
         for snv in snvs:
+            print snv
             for allele, allele_info in snv['alleles'].items():
                 for index, read in enumerate(allele_info['reads']):
-                    if read.alignment.qname not in reads:
-                        reads[read.alignment.qname] = read
-        make_multiple_alignment(reads.values(), position)
+                    alignment = _get_alignment_section(read, start, end,
+                                                    reference_seq=reference_seq)
+                    alignments[read.alignment.qname] = alignment
 
-#
-#
-#                    if allele not in new_snv['alleles']:
-#                        new_snv['alleles'][allele] = {'read_group':[],
-#                                                      'reads':[],
-#                                                      'orientations':[],
-#                                                      'qualities':[],
-#                                                      'mapping_qualities':[]}
-#
-#                    new_snv['alleles'][allele]['read_group']   = allele_info['read_group'][index]
-#                    new_snv['alleles'][allele]['reads']        = allele_info['reads'][index]
-#                    new_snv['alleles'][allele]['orientations'] = allele_info['orientations'][index]
-#                    new_snv['alleles'][allele]['qualities']    = allele_info['qualities'][index]
-#                    new_snv['alleles'][allele]['mapping_qualities'] = allele_info['mapping_qualities'][index]
-#                read_counter += 1
-#         falta crear el allelo de referencia,
-#
-#        yield new_snv
+        malignment = _make_multiple_alignment(alignments)
+        for read, allele in malignment['reads'].items():
+            allele = ''.join(allele)
+            if allele not in new_snv['alleles']:
+                new_snv['alleles'][allele] = {'read_group':[],
+                                              'reads':[],
+                                              'orientations':[],
+                                              'qualities':[],
+                                              'mapping_qualities':[]}
+            new_snv['alleles'][allele]['read_group']   = ''
+            new_snv['alleles'][allele]['reads']        = ''
+            new_snv['alleles'][allele]['orientations'] = ''
+            new_snv['alleles'][allele]['qualities']    = ''
+            new_snv['alleles'][allele]['mapping_qualities'] = ''
+
+        #reference allele
+        new_snv['reference_allele'] = ''.join(malignment['reference'])
+        print new_snv
+        #yield new_snv
 
 
 def _snvs_in_bam(bam, reference, min_quality,

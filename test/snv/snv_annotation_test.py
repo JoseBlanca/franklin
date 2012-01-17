@@ -53,7 +53,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          annotate_pic,
                                          annotate_heterozygosity,
                                          snvs_in_window,
-                                         _get_alignment_section)
+                                         _get_alignment_section,
+                                         _make_multiple_alignment)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -951,7 +952,35 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 18, 38, reference)
                     assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
                     assert alignment[1] == 'GCT--------------TCAG'
+    @staticmethod
+    def test_join_alignments():
+        'It test that we can join single alignments into a multiple alignment'
 
+        # check alignment without inserts
+        # ref     TGTCGTATGTAGTGGTAGTCTAGTAGTA
+        # READ1           GT--TGGT
+        # READ2           GTAGTGGT
+        alignments = {'read1':('GTAGTGGT', 'GT--TGGT'),
+                      'read2':('GTAGTGGT', 'GTAGTGGT')}
+        alig = _make_multiple_alignment(alignments)
+        assert alig['reference'] == ['G', 'T', 'A', 'G', 'T', 'G', 'G', 'T']
+        assert alig['reads']['read1'] == ['G', 'T', '-', '-', 'T', 'G', 'G',
+                                          'T']
+        # ref     TGTCGTATGTAGTG---GTAGTCTAGTAGTA
+        # READ1           GT--TG---GT
+        # READ2           GTAGTG---GT
+        # read3           GTAGTGAA-GT
+        # read4           GTAGTGAACGT
+        alignments = {'read1':('GTAGTGGT', 'GT--TGGT'),
+                      'read2':('GTAGTGGT', 'GTAGTGGT'),
+                      'read3':('GTAGTG--GT', 'GTAGTGAAGT'),
+                      'read4':('GTAGTG---GT', 'GTAGTGAACGT')}
+        alignment = _make_multiple_alignment(alignments)
+        assert alignment == {'reference': ['G','T','A','G','T','G','---','G','T'],
+            'reads':{'read1': ['G', 'T', '-', '-', 'T', 'G', '---', 'G', 'T'],
+                     'read2': ['G', 'T', 'A', 'G', 'T', 'G', '---', 'G', 'T'],
+                     'read3': ['G', 'T', 'A', 'G', 'T', 'G', 'AA-', 'G', 'T'],
+                     'read4': ['G', 'T', 'A', 'G', 'T', 'G', 'AAC', 'G', 'T']}}
 
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
@@ -1016,6 +1045,6 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
-    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
+    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
     unittest.main()
