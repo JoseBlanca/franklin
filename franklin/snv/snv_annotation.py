@@ -733,8 +733,9 @@ def _guess_snp_kind(alleles):
     'It guesses the type of the snp'
     alleles = alleles.keys()
     # if we take into account the reference to decide if there is a variation
-    if len(alleles) < 2:
+    if len(alleles) != 2:
         return UNKNOWN
+
     al0 = _al_type(alleles[0][0])
     al1 = _al_type(alleles[1][0])
     if al0 == UNKNOWN or al1 == UNKNOWN:

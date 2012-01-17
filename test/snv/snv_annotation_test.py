@@ -252,6 +252,14 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                           qualifiers={'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
 
+        alleles = {('T', INVARIANT): {},
+                   ('C', SNP):{},
+                   ('G', SNP):{},}
+        feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
+                          qualifiers={'alleles':alleles})
+        assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
+
+
         alleles = {('A', SNP): {}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
                           qualifiers={'alleles':alleles})
