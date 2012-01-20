@@ -102,14 +102,27 @@ class TestSnvAnnotation(unittest.TestCase):
         new_sam_fhand = NamedTemporaryFile(suffix='.sam')
         add_header_and_tags_to_sam(sam_fhand, new_sam_fhand)
         sam2bam(new_sam_fhand.name, bam_fhand.name)
+#        raw_input(new_sam_fhand.name)
         #################################################################
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=20,
                                          min_num_alleles=1,
                                          min_num_reads_for_allele=1)
 
-        for seq in seqs_in_file(ref_fhand):
-            seq = annotator(seq)
+        seq = list(seqs_in_file(ref_fhand))[0]
+        seq = annotator(seq)
+        snvs = seq.features
+        expected = [(406, [('C--', 2), ('CTA', 3), ('CCA', 0)]),
+                    (415, [('A', 0), ('T', 3)]),
+                    (420, [('CTTC', 3), ('C--C', 2), ('CT--', 2)]),
+                    (429, [('TTC', 1), ('T--', 3)]),
+                    (432, [('CA--T', 3), ('C----', 2), ('CACCT', 1)])]
+
+        for snv, expect in zip(snvs, expected):
+            assert expect[0] == int(str(snv.location.start))
+            assert snv.qualifiers['alleles'].keys() == expect[1]
+
+
 
 
     @staticmethod
@@ -199,7 +212,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 10
+        assert len(seq.features) == 8
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(1, 1)}
@@ -210,7 +223,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 7
+        assert len(seq.features) == 5
 
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -222,7 +235,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 6
+        assert len(seq.features) == 5
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(10, 10)}
@@ -509,10 +522,11 @@ class TestSnvPipeline(unittest.TestCase):
         assert num_alleles == 4
 
         vcf = open(snv_fhand.name).read()
+#        print vcf
         assert '66' in vcf
         assert '55' in vcf
-        assert 'D2' in vcf
-        assert 'IAA' in vcf
+        assert 'CAA' in vcf
+        assert 'GAA' in vcf
 
         #now taking into account the alleles different than the reference
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
@@ -897,59 +911,62 @@ class TestReadPos(unittest.TestCase):
                 if pileup_read.alignment.qname == 'r001/1':
 
                     alignment = _get_alignment_section(pileup_read, 13, 21)
-                    assert alignment[0] == 'N--NNNNNNNN'
-                    assert alignment[1] == 'AAGGATA-CTG'
+                    assert alignment[0] == 'N--NNNNNNN'
+                    assert alignment[1] == 'AAGGATA-CT'
 
                     alignment = _get_alignment_section(pileup_read, 13, 21, reference)
-                    assert alignment[0] == 'A--GATAGCTG'
-                    assert alignment[1] == 'AAGGATA-CTG'
+                    assert alignment[0] == 'A--GATAGCT'
+                    assert alignment[1] == 'AAGGATA-CT'
 
                     alignment = _get_alignment_section(pileup_read, 14, 21)
-                    assert alignment[0] == 'NNNNNNNN'
-                    assert alignment[1] == 'GATA-CTG'
+                    assert alignment[0] == 'NNNNNNN'
+                    assert alignment[1] == 'GATA-CT'
 
                     alignment = _get_alignment_section(pileup_read, 14, 21, reference)
-                    assert alignment[0] == 'GATAGCTG'
-                    assert alignment[1] == 'GATA-CTG'
+                    assert alignment[0] == 'GATAGCT'
+                    assert alignment[1] == 'GATA-CT'
 
                     alignment = _get_alignment_section(pileup_read, 15, 21)
-                    assert alignment[0] == 'NNNNNNN'
-                    assert alignment[1] == 'ATA-CTG'
+                    assert alignment[0] == 'NNNNNN'
+                    assert alignment[1] == 'ATA-CT'
 
                     alignment = _get_alignment_section(pileup_read, 15, 21, reference)
-                    assert alignment[0] == 'ATAGCTG'
-                    assert alignment[1] == 'ATA-CTG'
+                    assert alignment[0] == 'ATAGCT'
+                    assert alignment[1] == 'ATA-CT'
 
-                    alignment = _get_alignment_section(pileup_read, 5, 22)
+                    alignment = _get_alignment_section(pileup_read, 5, 23)
                     assert alignment[0] == 'NNNNNNNNN--NNNNNNNNN'
                     assert alignment[1] == ' TAAGATAAAGGATA-CTG '
 
-                    alignment = _get_alignment_section(pileup_read, 5, 22, reference)
+                    alignment = _get_alignment_section(pileup_read, 5, 23, reference)
                     assert alignment[0] == 'GTTAGATAA--GATAGCTGT'
                     assert alignment[1] == ' TAAGATAAAGGATA-CTG '
 
-                    alignment = _get_alignment_section(pileup_read, 10, 16)
+                    alignment = _get_alignment_section(pileup_read, 10, 17)
                     assert alignment[0] == 'NNNN--NNN'
                     assert alignment[1] == 'ATAAAGGAT'
 
-                    alignment = _get_alignment_section(pileup_read, 10, 16, reference)
+                    alignment = _get_alignment_section(pileup_read, 10, 17, reference)
                     assert alignment[0] == 'ATAA--GAT'
                     assert alignment[1] == 'ATAAAGGAT'
 
+                    alignment = _get_alignment_section(pileup_read, 13, 14, reference)
+                    assert alignment[0] == 'A--'
+                    assert alignment[1] == 'AAG'
                 elif pileup_read.alignment.qname == 'r003':
-                    alignment = _get_alignment_section(pileup_read, 5, 13)
+                    alignment = _get_alignment_section(pileup_read, 5, 14)
                     assert alignment[0] == 'NNNNNNNNN'
                     assert alignment[1] == '   AGCTAA'
 
-                    alignment = _get_alignment_section(pileup_read, 5, 13, reference)
+                    alignment = _get_alignment_section(pileup_read, 5, 14, reference)
                     assert alignment[0] == 'GTTAGATAA'
                     assert alignment[1] == '   AGCTAA'
                 elif pileup_read.alignment.qname == 'r004':
-                    alignment = _get_alignment_section(pileup_read, 18, 38)
+                    alignment = _get_alignment_section(pileup_read, 18, 39)
                     assert alignment[0] == 'NNNNNNNNNNNNNNNNNNNNN'
                     assert alignment[1] == 'GCT--------------TCAG'
 
-                    alignment = _get_alignment_section(pileup_read, 18, 38, reference)
+                    alignment = _get_alignment_section(pileup_read, 18, 39, reference)
                     assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
                     assert alignment[1] == 'GCT--------------TCAG'
     @staticmethod
@@ -981,6 +998,13 @@ class TestReadPos(unittest.TestCase):
                      'read2': ['G', 'T', 'A', 'G', 'T', 'G', '---', 'G', 'T'],
                      'read3': ['G', 'T', 'A', 'G', 'T', 'G', 'AA-', 'G', 'T'],
                      'read4': ['G', 'T', 'A', 'G', 'T', 'G', 'AAC', 'G', 'T']}}
+
+        alignments = {'read1':('N', 'G'),
+                      'read2':('G--', 'GTA')}
+        alignment = _make_multiple_alignment(alignments)
+        assert alignment == {'reference': ['G', '--'],
+                             'reads'    :{'read1':['G', '--'],
+                                          'read2':['G', 'TA']}}
 
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
@@ -1045,6 +1069,7 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
 #    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
+#    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
     unittest.main()

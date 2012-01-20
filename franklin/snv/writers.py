@@ -213,7 +213,7 @@ class SnvIlluminaWriter(object):
             self.fhand.write(illum_str)
         self.fhand.flush()
 
-#http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
+#http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41
 class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name, grouping=None):
@@ -236,7 +236,7 @@ class VariantCallFormatWriter(object):
     def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
         header = self._header
-        header.append('##format=VCFv3.3')
+        header.append('##format=VCFv4.1')
         header.append('##fileDate=%s' %
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
@@ -294,12 +294,8 @@ class VariantCallFormatWriter(object):
             kind = allele[1]
             if kind == INVARIANT:
                 continue
-            if kind == SNP:
-                str_allele = allele[0]
-            elif kind == INSERTION:
-                str_allele = 'I%s' % allele[0]
-            elif kind == DELETION:
-                str_allele = 'D%d' % len(allele[0])
+
+            str_allele = allele[0].replace('-', '')
             str_alleles.append(str_allele)
             alternative_alleles.append(allele)
         if str_alleles:
@@ -451,7 +447,6 @@ class VariantCallFormatWriter(object):
         It takes into account the grouping_key (read_group, sample or library)
         It requires the dict with the information about the read_groups.
         '''
-
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = self._numbers_for_alleles(reference_allele,
                                                   alternative_alleles)
@@ -460,6 +455,10 @@ class VariantCallFormatWriter(object):
         alleles_by_group = {}
         for allele, allele_info in alleles.items():
             #we need the index for the allele
+#            if allele not in alleles_index:
+#                continue
+#            print allele, alleles_index, reference_allele
+
             allele_index = alleles_index[allele]
             for read_group in allele_info['read_groups']:
                 group = _get_group(read_group, grouping_key, read_groups)
@@ -529,7 +528,7 @@ class VariantCallFormatWriter(object):
             id_ = '.'
         items.append(id_)
         qualifiers = snv.qualifiers
-        ref_seq = qualifiers['reference_allele']
+        ref_seq = qualifiers['reference_allele'].replace('-', '')
         items.append(ref_seq)
         toprint_af, alternative_alleles = self._create_alternative_alleles(
                                                           qualifiers['alleles'])
