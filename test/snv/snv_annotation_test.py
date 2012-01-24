@@ -508,7 +508,8 @@ class TestSnvPipeline(unittest.TestCase):
         in_fhands['in_seq'] = seq_fhand
         seq_fhand = NamedTemporaryFile()
         seq_writer = SequenceWriter(seq_fhand, file_format='repr')
-        snv_fhand = NamedTemporaryFile()
+        #snv_fhand = NamedTemporaryFile()
+        snv_fhand = open('/home/peio/test.vcf', 'w')
         snv_writer = VariantCallFormatWriter(snv_fhand,
                                              reference_name='reference')
 
@@ -1072,4 +1073,5 @@ if __name__ == "__main__":
 #    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
 #    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
 #    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
+#    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
     unittest.main()

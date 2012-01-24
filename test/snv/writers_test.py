@@ -74,12 +74,11 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         writer.write(seq)
         writer.close()
         vcf = open(fhand.name).read()
-
-        assert 'GC=0|1|2:2,2,1' in vcf or 'GC=0|2|1:2,2,1' in vcf
+        assert 'GC=2,2,1' in vcf
         assert 'VKS' in vcf
-        assert '##FILTER=VKS' in vcf
-        assert '##FILTER=VLB1' in vcf
-        assert '##FILTER=VLB2' in vcf
+        assert '##FILTER=<ID=VKS' in vcf
+        assert '##FILTER=<ID=VLB1' in vcf
+        assert '##FILTER=<ID=VLB2' in vcf
         assert '1|2:6,2' in vcf
         assert '.:.' in vcf
         assert 'HVR80;VLB1;VLB2;NVLB1;VKS' in vcf

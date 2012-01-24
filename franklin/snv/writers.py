@@ -236,20 +236,22 @@ class VariantCallFormatWriter(object):
     def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
         header = self._header
-        header.append('##format=VCFv4.1')
+        header.append('##fileformat=VCFv4.1')
         header.append('##fileDate=%s' %
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
         header.append('##reference=%s' % reference_name)
-        header.append('##INFO=NS,1,Integer,"Number of Samples With Data"')
-        header.append('##INFO=AF,-1,Float,"Allele Frequency"')
-        header.append('##INFO=AC,-1,Integer,"Allele Count"')
-        header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
-        header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
-        header.append('##INFO=GC,.,String,"Genotype counts for alleles"')
-        header.append('##INFO=EZ,.,String,"CAP enzymes"')
-        header.append('##FORMAT=RG,.,String,"Read group Genotype genotype"')
-        header.append('##FORMAT=AC,.,String,"Allele count"')
+        header.append('##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">')
+        header.append('##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">')
+        header.append('##INFO=<ID=GC,Number=A,Type=Float,Description="Genotype count by allele">')
+        header.append('##INFO=<ID=RC,Number=1,Type=Integer,Description="Read count of the alt alleles">')
+        header.append('##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">')
+        header.append('##INFO=<ID=BQ,Number=1,Type=Float,Description="RMS Base Quality">')
+        header.append('##INFO=<ID=GC,Number=1,Type=String,Description="Genotype counts for alleles">')
+        header.append('##INFO=<ID=GP,Number=1,Type=String,Description="Genotype polimorphism">')
+        header.append('##INFO=<ID=EZ,Number=1,Type=String,Description="CAP enzymes">')
+        header.append('##FORMAT=<ID=GT,Number=1,Type=String,Description="Read group Genotype">')
+        header.append('##FORMAT=<ID=EC,Number=.,Type=Integer,Description="Allele count for the ref and alt alleles in the order listed">')
 
     def close(self):
         'It merges the header and the snv data'
@@ -276,7 +278,7 @@ class VariantCallFormatWriter(object):
     def _add_filters_to_header(self):
         'It adds the used filter tag to the header'
         for name, desc in self._filter_descriptions.values():
-            filter_desc = '##FILTER=%s,"%s"' % (name, desc)
+            filter_desc = '##FILTER=<ID=%s,Description="%s">' % (name, desc)
             self._header.append(filter_desc)
 
     def write(self, sequence):
@@ -338,7 +340,7 @@ class VariantCallFormatWriter(object):
             acount = _allele_count(allele, alleles, group_kind='read_groups')
             acounts.append(acount)
         if acounts:
-            toprint_items.append('AC=%s' % ','.join(map(str, acounts)))
+            toprint_items.append('RC=%s' % ','.join(map(str, acounts)))
 
         #AF allele frequency for each ALT allele in the same order as listed:
         reference_allele = qualifiers['reference_allele'], INVARIANT
@@ -379,7 +381,8 @@ class VariantCallFormatWriter(object):
         #now we print
         alleles = [str(count[0]) for count in genotype_counts]
         counts = [str(count[1]) for count in genotype_counts]
-        toprint_items.append('GC=%s:%s' % ('|'.join(alleles), ','.join(counts)))
+
+        toprint_items.append('GC=%s' % (','.join(counts)))
 
         #genotype polymorphism
         #1 - (number_groups_for_the_allele_with_more_groups / number_groups)
@@ -487,7 +490,7 @@ class VariantCallFormatWriter(object):
 
         items = []
         #the format
-        items.append('RG:AC')
+        items.append('GT:EC')
 
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = self._numbers_for_alleles(reference_allele,
