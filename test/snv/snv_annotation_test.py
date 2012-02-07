@@ -54,7 +54,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          annotate_heterozygosity,
                                          snvs_in_window,
                                          _get_alignment_section,
-                                         _make_multiple_alignment)
+                                         _make_multiple_alignment,
+    _join_alignments)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -212,7 +213,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 8
+        assert len(seq.features) == 10
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(1, 1)}
@@ -223,7 +224,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 5
+        assert len(seq.features) == 7
 
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -235,7 +236,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 5
+        assert len(seq.features) == 6
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(10, 10)}
@@ -508,8 +509,8 @@ class TestSnvPipeline(unittest.TestCase):
         in_fhands['in_seq'] = seq_fhand
         seq_fhand = NamedTemporaryFile()
         seq_writer = SequenceWriter(seq_fhand, file_format='repr')
-        #snv_fhand = NamedTemporaryFile()
-        snv_fhand = open('/home/peio/test.vcf', 'w')
+        snv_fhand = NamedTemporaryFile()
+        #snv_fhand = open('/home/peio/test.vcf', 'w')
         snv_writer = VariantCallFormatWriter(snv_fhand,
                                              reference_name='reference')
 
@@ -973,7 +974,6 @@ class TestReadPos(unittest.TestCase):
     @staticmethod
     def test_join_alignments():
         'It test that we can join single alignments into a multiple alignment'
-
         # check alignment without inserts
         # ref     TGTCGTATGTAGTGGTAGTCTAGTAGTA
         # READ1           GT--TGGT
@@ -1007,6 +1007,28 @@ class TestReadPos(unittest.TestCase):
                              'reads'    :{'read1':['G', '--'],
                                           'read2':['G', 'TA']}}
 
+        # a test from a bug in melon_solid
+        alignment1 = {'reads': {'1000_340_1465_F3': ['T', 'T', 'G', 'A'],
+                                '1001_1122_1038_F3': ['T', '-', '-', '-'],
+                                '1004_47_1811_F3': ['T', 'T', 'G', 'A'],
+                                '1009_1228_1902_F3': ['T', 'T', 'G', 'A'],
+                                '1012_988_562_F3': ['T', 'T', 'G', 'A'],
+                                '1013_1209_643_F3': ['T', 'T', 'G', 'A'],
+                                '1013_655_286_F3': ['T', 'T', 'G', 'A'],
+                                '1018_1255_370_F3': ['T', 'T', 'G', 'A'],
+                                '1021_621_1929_F3': ['T', 'T', 'G', 'A'],
+                                '1023_1188_2027_F3': ['T', 'T', 'G', 'A']},
+                        'reference': ['T', 'T', 'G', 'T', 'G', 'A']}
+        alignment2 = {'reads': {'325_444_138_F3': ['T', 'TGA', 'T', 'G', 'A']},
+                      'reference': ['T', '---', 'T', 'G', 'A']}
+        ma = _join_alignments(alignment1, alignment2, {})
+
+        alignments = {'seq1': ('CTT', 'CTT'),
+                      'seq2': ('CTTT', '--TT')}
+        align = _make_multiple_alignment(alignments)
+        assert  align == {'reads': {'seq2': ['-', '-', 'T', 'T'],
+                                    'seq1': ['C', 'T', 'T', '']},
+                          'reference': ['C', 'T', 'T', 'T']}
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 

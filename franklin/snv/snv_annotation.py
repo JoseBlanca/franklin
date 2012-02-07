@@ -187,6 +187,13 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
 
     ref_end = ref_pos - 1
     ref_start = ref_segments[0]
+    # Somethimes the first segment is an insertion and the reference por the
+    # start position is in the next segment
+    if ref_segments[0] is not None:
+        ref_start = ref_segments[0]
+    else:
+        ref_start = ref_segments[1]
+
     ref_limits = [ref_start, ref_end]
 
     read_end = read_end - 1
@@ -319,6 +326,7 @@ def _prepare_alignments(alignments):
     prepared_alignments = []
     for name, alignment in alignments.items():
         ref, read = _chop_alignment(alignment)
+        assert len(ref) == len(read)
         alignment = {'reference':ref,
                      'reads':{name:read}}
         prepared_alignments.append(alignment)
@@ -337,6 +345,17 @@ def add_collumn(alignment, nalig, index, diff_length=0):
 
 def _join_alignments(alignment1, alignment2, snv_types_per_read):
     'It joins two alignemnts and makes a new alignment'
+#    try:
+#        assert len(alignment1['reads'].values()[0]) == len(alignment1['reference'])
+#    except AssertionError:
+#        print alignment1['reads'].values()[0], alignment1['reference']
+#        raise
+#    try:
+#        assert len(alignment2['reads'].values()[0]) == len(alignment2['reference'])
+#    except AssertionError:
+#        print alignment2['reads'].values()[0], alignment2['reference']
+#        raise
+
     def _insert_in_seq(list_seq):
         for element in list_seq:
             if '-' in element:
@@ -353,7 +372,8 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
     ref1 = align1['reference']
     ref2 = align2['reference']
 
-    if not _insert_in_seq(ref1) and not _insert_in_seq(ref2):
+    if (not _insert_in_seq(ref1) and not _insert_in_seq(ref2) and
+        len(ref1) == len(ref2)):
         reads = {}
         for name, read in align1['reads'].items():
             reads[name] = read
@@ -366,6 +386,7 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
     index1_delta = 0
     index2_delta = 0
     for index in range(len(ref1)):
+
         index1 = index - index1_delta
         index2 = index - index2_delta
         ref1_item = ref1[index1]
@@ -387,7 +408,7 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
             inser_diff = inser_1 - inser_2
             nalig['reference'].append(ref1_item)
             add_collumn(align1, nalig, index1)
-
+            just_once = True
             for name, read in align2['reads'].items():
                 if name not in nalig['reads']:
                     nalig['reads'][name] = []
@@ -395,11 +416,14 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
                     nalig['reads'][name].append(read[index2] + inser_diff * '-')
                 else:
                     nalig['reads'][name].append(inser_diff * '-')
-                    index2_delta += 1
+                    if just_once:
+                        index2_delta += 1
+                        just_once = False
 
         else:
             inser_diff = inser_2 - inser_1
             nalig['reference'].append(ref2_item)
+            just_once = True
             for name, read in align1['reads'].items():
                 if name not in nalig['reads']:
                     nalig['reads'][name] = []
@@ -407,7 +431,9 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
                     nalig['reads'][name].append(read[index1] + inser_diff * '-')
                 else:
                     nalig['reads'][name].append(inser_diff * '-')
-                    index1_delta += 1
+                    if just_once:
+                        index1_delta += 1
+                        just_once = False
             add_collumn(align2, nalig, index)
 
 
@@ -415,12 +441,23 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
 
 def _make_multiple_alignment(alignments):
     'It makes the multime alignments using ref to read sinmple alignments'
+    orig_align = alignments
     snv_types_per_read = {}
     alignments = _prepare_alignments(alignments)
+    if not alignments:
+        return None
     alignment = alignments[0]
+    assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
     for index in range(1, len(alignments)):
+        assert len(alignments[index]['reads'].values()[0]) == len(alignments[index]['reference'])
         alignment = _join_alignments(alignment, alignments[index],
                                      snv_types_per_read)
+    try:
+        assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
+    except AssertionError:
+        print 'input alignments: ', orig_align
+        print 'resul_alignment: ', alignment
+        raise
     return alignment
 
 def _get_alignment_section(pileup_read, start, end, reference_seq=None):
@@ -541,6 +578,7 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     cum_ref_seq += ref_seq_after
     cum_read_seq += NO_NUCLEOTYDE * len_after_segment
 
+    assert len(cum_ref_seq) == len(cum_read_seq)
     return cum_ref_seq, cum_read_seq
 
 def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
@@ -713,7 +751,8 @@ def _increase_snv_length(snv, snv_block, reads):
     '''It checks if we have increase the snv or not. It will check if the reads
     have the proper length and that the increase will produce by deletion
     elongation'''
-    if snv_block['end'] < snv['ref_position']:
+
+    if snv_block['end'] <= snv['ref_position']:
         return False
     posible_end = _get_snv_end_position(snv)
     snv_pos = (snv_block['start'], posible_end)
@@ -836,12 +875,30 @@ def _calculate_snv_kinds(kinds):
         kind = _calculate_kind(kind, kinds[index])
     return kind
 
-def _join_snvs(snv_block, reference_seq=None):
+def _remove_allele_from_alignments(alignments, min_num_reads_for_allele):
+    ''' It removes alignments/alleles taking into account the times it appears
+    min_num_reads_for_allele'''
+    allele_count = {}
+    for ref, allele in alignments.values():
+        if allele not in allele_count:
+            allele_count[allele] = 0
+        allele_count[allele] +=1
+
+    for read_name, alignment in alignments.items():
+        read_allele = alignment[1]
+        if allele_count[read_allele] < min_num_reads_for_allele:
+            del alignments[read_name]
+
+
+def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
+               min_quality, reference_seq=None):
     'It joins the snvs that should be together'
     snvs = snv_block['snvs']
     if len(snvs) == 1 and _is_snv_of_kind(snvs[0], SNP):
         yield snvs[0]
+#        print snvs[0]['alleles'].keys()
     else:
+
         start = snv_block['start']
         end   = snv_block['end']
         new_snv = {'ref_name':snvs[0]['ref_name'],
@@ -882,29 +939,57 @@ def _join_snvs(snv_block, reference_seq=None):
                         alignment = _get_alignment_section(read, start, end,
                                                     reference_seq=reference_seq)
                         alignments[read_name] = alignment
-        malignment = _make_multiple_alignment(alignments)
-        for read, allele in malignment['reads'].items():
-            kind = _calculate_snv_kinds(allele_kinds[read])
-            allele = ''.join(allele)
-            allele = (allele, kind)
-            if allele not in new_snv['alleles']:
-                new_snv['alleles'][allele] = {'read_groups':[],
-                                              'reads':[],
-                                              'orientations':[],
-                                              'qualities':[],
-                                              'mapping_qualities':[]}
-            new_snv['alleles'][allele]['read_groups'].append(reads[read]['read_group'])
-            new_snv['alleles'][allele]['reads'].append(reads[read]['read'])
-            new_snv['alleles'][allele]['orientations'].append(reads[read]['orientation'])
-            new_snv['alleles'][allele]['qualities'].append(reads[read]['quality'])
-            new_snv['alleles'][allele]['mapping_qualities'].append(reads[read]['mapping_quality'])
+        _remove_allele_from_alignments(alignments, min_num_reads_for_allele)
+        try:
+            malignment = _make_multiple_alignment(alignments)
+        except AssertionError:
+            print 'ref_name: ', snvs[0]['ref_name']
+            print 'position: ', start
+            raise
+        if malignment is not None:
+            for read, allele in malignment['reads'].items():
+                kind = _calculate_snv_kinds(allele_kinds[read])
+                allele = ''.join(allele)
+                allele = (allele, kind)
+                if allele not in new_snv['alleles']:
+                    new_snv['alleles'][allele] = {'read_groups':[],
+                                                  'reads':[],
+                                                  'orientations':[],
+                                                  'qualities':[],
+                                                  'mapping_qualities':[]}
+                new_snv['alleles'][allele]['read_groups'].append(reads[read]['read_group'])
+                new_snv['alleles'][allele]['reads'].append(reads[read]['read'])
+                new_snv['alleles'][allele]['orientations'].append(reads[read]['orientation'])
+                new_snv['alleles'][allele]['qualities'].append(reads[read]['quality'])
+                new_snv['alleles'][allele]['mapping_qualities'].append(reads[read]['mapping_quality'])
+        else:
+            new_snv = None
 
-        # calculate snv quality
-        for allele_info in new_snv['alleles'].values():
-            allele_info['quality'] = _calculate_allele_quality(allele_info)
-        #reference allele
-        new_snv['reference_allele'] = ''.join(malignment['reference'])
-        yield new_snv
+        if new_snv is not None:
+            # calculate snv quality
+            for allele_info in new_snv['alleles'].values():
+                allele_info['quality'] = _calculate_allele_quality(allele_info)
+            #reference allele
+            new_snv['reference_allele'] = ''.join(malignment['reference'])
+
+            alleles = new_snv['alleles']
+
+            #remove bad quality alleles
+            _remove_bad_quality_alleles(alleles, min_quality)
+
+            # min_num_reads_for_allele
+            _remove_alleles_by_read_number(alleles, min_num_reads_for_allele)
+
+            #if there are a min_num number of alleles requested and there are more
+            #alleles than that
+            #OR
+            #there is some allele different than invariant
+            #a variation is yield
+            if (len(alleles) > min_num_alleles or
+                (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
+                (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
+                yield new_snv
+
 
 
 def _snvs_in_bam(bam, reference, min_quality,
@@ -912,13 +997,16 @@ def _snvs_in_bam(bam, reference, min_quality,
                              max_maf, min_num_reads_for_allele,
                              read_edge_conf=None, default_bam_platform=None):
     'It returns the snvs in a bam for the given reference'
+
     snvs = _snvs_in_bam_by_position(bam, reference, min_quality,
-                                    default_sanger_quality, min_mapq,
-                                    min_num_alleles,max_maf,
-                                    min_num_reads_for_allele, read_edge_conf,
-                                    default_bam_platform)
+                                default_sanger_quality, min_mapq,
+                                min_num_alleles,max_maf,
+                                min_num_reads_for_allele, read_edge_conf,
+                                default_bam_platform)
     for snv_block in _make_snv_blocks(snvs):
-        for snv in _join_snvs(snv_block, reference_seq=reference):
+        for snv in _join_snvs(snv_block, min_num_alleles,
+                              min_num_reads_for_allele, min_quality,
+                              reference_seq=reference):
             yield snv
 
 def _snvs_in_bam_by_position(bam, reference, min_quality,
