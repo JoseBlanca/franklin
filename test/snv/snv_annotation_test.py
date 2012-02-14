@@ -24,16 +24,14 @@ import unittest, os
 
 from Bio.Seq import UnknownSeq
 from Bio.SeqFeature import FeatureLocation
-from StringIO import StringIO
 import pysam
 
-from franklin.utils.misc_utils import TEST_DATA_DIR, DATA_DIR
+from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
-from franklin.seq.writers import SequenceWriter, write_seqs_in_file
+from franklin.seq.writers import SequenceWriter
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
-                                         INDEL, COMPLEX, TRANSITION,
-                                         TRANSVERSION,
+                                         INDEL, COMPLEX, TRANSVERSION,
                                          _remove_bad_quality_alleles,
                                          _add_default_sanger_quality,
                                          calculate_snv_kind,
@@ -75,7 +73,7 @@ class TestSnvAnnotation(unittest.TestCase):
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
-#            assert expected == len(seq.features)
+            assert expected == len(seq.features)
 
 
 
@@ -99,7 +97,8 @@ class TestSnvAnnotation(unittest.TestCase):
         'It tests the annotation of SeqRecords with snvs'
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
                                       'seqs_without_rg.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
 
         # this test should fail because we did not provide the read group
         # parameters
@@ -119,17 +118,18 @@ class TestSnvAnnotation(unittest.TestCase):
         annotator = create_snv_annotator(bam_fhand=bam_fhand,
                                          min_quality=30,
                                          min_num_alleles=2,
-                                        default_bam_platform=default_bam_platform)
+                                      default_bam_platform=default_bam_platform)
 
         expected_snvs = [1, 3]
         for seq, expected in zip(seqs_in_file(seq_fhand), expected_snvs):
             seq = annotator(seq)
             assert expected == len(seq.features)
 
-    def test_snv_remove_edges(self):
+    @staticmethod
+    def test_snv_remove_edges():
         'It test that we do not annotate snv in the edges'
 
-        REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
+        ref = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
 
         #Coor     01234567890123  4567890123456789012345678901234
         #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
@@ -142,7 +142,7 @@ class TestSnvAnnotation(unittest.TestCase):
         #                                               876543210
         #-r001/2                                        CAGCGCCAT
 
-        SAM = '''@HD\tVN:1.3\tSO:coordinate
+        sam_content = '''@HD\tVN:1.3\tSO:coordinate
 @SQ\tSN:ref\tLN:45
 r003\t0\tref\t9\t30\t5H6M\t*\t0\t0\tgagccc\t*\tNM:i:1
 r004\t0\tref\t16\t30\t6M14N5M\t*\t0\t0\tATAGCaaCAGC\t*
@@ -151,13 +151,13 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
 '''
 
         sam = NamedTemporaryFile(suffix='.sam')
-        sam.write(SAM)
+        sam.write(sam_content)
         sam.flush()
         bam_fhand = NamedTemporaryFile()
         sam2bam(sam.name, bam_fhand.name)
         create_bam_index(bam_fhand.name)
 
-        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        reference = SeqWithQuality(seq=Seq(ref), name='ref')
         edge_remove_settings = {'sanger':(None, None)}
 
         annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=30,
@@ -460,7 +460,8 @@ class TestSnvPipeline(unittest.TestCase):
         pipeline = 'snv_bam_annotator'
 
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
-        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'reference.fasta'))
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
+                                      'reference.fasta'))
 
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
                                                'min_quality':30,
@@ -806,9 +807,8 @@ class TestReadPos(unittest.TestCase):
                 read_name = pileup_read.alignment.qname
                 if (read_name, ref_pos) == ('r005', 28):
                     pass
-                alleles, read_limits = _get_alleles_from_read(ref_allele,
-                                                              ref_pos,
-                                                              pileup_read)
+                alleles = _get_alleles_from_read(ref_allele, ref_pos,
+                                                 pileup_read)[0]
                 if (read_name, ref_pos) in expected:
                     if alleles != expected[(read_name, ref_pos)]:
                         print repr(alleles)
@@ -834,9 +834,8 @@ class TestReadPos(unittest.TestCase):
             ref_allele = reference_seq[ref_pos].upper()
             for pileup_read in column.pileups:
                 read_name = pileup_read.alignment.qname
-                alleles, read_limits = _get_alleles_from_read(ref_allele,
-                                                              ref_pos,
-                                                              pileup_read)
+                alleles = _get_alleles_from_read(ref_allele, ref_pos,
+                                                 pileup_read)[0]
 
 
 class PoblationCalculationsTest(unittest.TestCase):
