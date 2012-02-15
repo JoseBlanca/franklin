@@ -461,7 +461,17 @@ class VariantCallFormatWriter(object):
             #we need the index for the allele
 #            if allele not in alleles_index:
 #                continue
-            allele_index = alleles_index[allele]
+
+            try:
+                allele_index = alleles_index[allele]
+            except KeyError:
+                print 'allele', allele
+                print "allele index", alleles_index
+                print 'ref_allele', reference_allele
+                print 'alternative_alleles', alternative_alleles
+                print 'alleles', alleles
+                raise
+
             for read_group in allele_info['read_groups']:
                 group = _get_group(read_group, grouping_key, read_groups)
                 if group not in self._genotype_groups:

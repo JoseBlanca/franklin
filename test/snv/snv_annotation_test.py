@@ -971,6 +971,32 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 18, 39, reference)
                     assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
                     assert alignment[1] == 'GCT--------------TCAG'
+
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'merged.2.bam'))
+        create_bam_index(bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+        ref_s  = 'TGAAATAACCATAGTGGATGCAGCGAATGGGCGTCAAGTGGTTGATATTATCCCTCCAGG'
+        ref_s += 'ACCAGAACTTCTTGTTTCAGAGGGCGAATCCATCAAACTTGATCAACCATTAACGAGTAA'
+        ref_s += 'TCCTAATGTGGGAGGATTTGGTCAGGGAGATGCGGAAATCGTCCTTCAAGATCCATTACG'
+        ref_s += 'TGTCCAAGGCCTTTTGTTCTTTTTTTTGCATCTGTTATTTTGGCACAAATCTTTTTAGTT'
+        ref_s += 'CTTAAAAAGAAACAGTTTGAGAAGGTTCAATTGTCCGAAATGAATTTCTAAATCTGGGGA'
+        ref_s += 'TTTATCAAATAAAGTTCGTTAAAAAAAAAACCAAATTCTTGTTGGCAATTCTATAATTTA'
+        ref_s += 'ATTATGTATGATCAAAAAATTATGAAAAACTTTTTCCC'
+        reference = SeqWithQuality(seq=Seq(ref_s), name='CM3.5_contig43467')
+        reference_id = reference.name
+        for column in bam.pileup(reference=reference_id):
+            for pileup_read in column.pileups:
+                if pileup_read.alignment.qname == '1858_1507_1273_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', '-TT')
+                if pileup_read.alignment.qname == '1511_568_1327_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', 'C--')
+
+
     @staticmethod
     def test_join_alignments():
         'It test that we can join single alignments into a multiple alignment'
@@ -1023,12 +1049,7 @@ class TestReadPos(unittest.TestCase):
                       'reference': ['T', '---', 'T', 'G', 'A']}
         ma = _join_alignments(alignment1, alignment2, {})
 
-        alignments = {'seq1': ('CTT', 'CTT'),
-                      'seq2': ('CTTT', '--TT')}
-        align = _make_multiple_alignment(alignments)
-        assert  align == {'reads': {'seq2': ['-', '-', 'T', 'T'],
-                                    'seq1': ['C', 'T', 'T', '']},
-                          'reference': ['C', 'T', 'T', 'T']}
+
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 
