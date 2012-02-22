@@ -55,7 +55,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          snvs_in_window,
                                          _get_alignment_section,
                                          _make_multiple_alignment,
-    _join_alignments)
+    _join_alignments, _calculate_allele_kind)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -122,8 +122,6 @@ class TestSnvAnnotation(unittest.TestCase):
         for snv, expect in zip(snvs, expected):
             assert expect[0] == int(str(snv.location.start))
             assert snv.qualifiers['alleles'].keys() == expect[1]
-
-
 
 
     @staticmethod
@@ -955,7 +953,9 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 13, 14, reference)
                     assert alignment[0] == 'A--'
                     assert alignment[1] == 'AAG'
+
                 elif pileup_read.alignment.qname == 'r003':
+
                     alignment = _get_alignment_section(pileup_read, 5, 14)
                     assert alignment[0] == 'NNNNNNNNN'
                     assert alignment[1] == '   AGCTAA'
@@ -971,6 +971,17 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 18, 39, reference)
                     assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
                     assert alignment[1] == 'GCT--------------TCAG'
+
+                    alignment = _get_alignment_section(pileup_read, 18, 25, reference)
+                    assert alignment[0] == 'GCTGTGC'
+                    assert alignment[1] == 'GCT----'
+
+                    alignment = _get_alignment_section(pileup_read, 30, 37, reference)
+                    assert alignment[0] == 'GGCAGTC'
+                    assert alignment[1] == '-----TC'
+
+
+
 
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
                                       'merged.2.bam'))
@@ -1033,21 +1044,63 @@ class TestReadPos(unittest.TestCase):
                              'reads'    :{'read1':['G', '--'],
                                           'read2':['G', 'TA']}}
 
-        # a test from a bug in melon_solid
-        alignment1 = {'reads': {'1000_340_1465_F3': ['T', 'T', 'G', 'A'],
-                                '1001_1122_1038_F3': ['T', '-', '-', '-'],
-                                '1004_47_1811_F3': ['T', 'T', 'G', 'A'],
-                                '1009_1228_1902_F3': ['T', 'T', 'G', 'A'],
-                                '1012_988_562_F3': ['T', 'T', 'G', 'A'],
-                                '1013_1209_643_F3': ['T', 'T', 'G', 'A'],
-                                '1013_655_286_F3': ['T', 'T', 'G', 'A'],
-                                '1018_1255_370_F3': ['T', 'T', 'G', 'A'],
-                                '1021_621_1929_F3': ['T', 'T', 'G', 'A'],
-                                '1023_1188_2027_F3': ['T', 'T', 'G', 'A']},
-                        'reference': ['T', 'T', 'G', 'T', 'G', 'A']}
-        alignment2 = {'reads': {'325_444_138_F3': ['T', 'TGA', 'T', 'G', 'A']},
-                      'reference': ['T', '---', 'T', 'G', 'A']}
-        ma = _join_alignments(alignment1, alignment2, {})
+
+        #print ma
+        #                    kind
+        #    ref    C-T
+        #    read1  C-T      invariant
+        #    read2  CTT      insertion
+        #    read3  T-T      snp
+        #    read4  C--      del
+
+        alignment = {'read1':('CT', 'CT'),
+                     'read2':('C-T', 'CTT'),
+                     'read3':('CT', 'TT'),
+                     'read4':('CT', 'C-')}
+        malignment = _make_multiple_alignment(alignment)
+        assert malignment['reads']['read1'] == ['C', '-', 'T']
+        assert malignment['reads']['read2'] == ['C', 'T', 'T']
+        assert malignment['reads']['read3'] == ['T', '-', 'T']
+        assert malignment['reads']['read4'] == ['C', '-', '-']
+        assert malignment['reference'] == ['C', '-', 'T']
+
+    def test_calculate_allele_kind(self):
+        'We can calculate allele kind'
+        ref_allele = ['T']
+        allele = ['T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', '-', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', 'T', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INSERTION
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['T', '-', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == SNP
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', '-', '-']
+        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', 'T', 'G', 'A', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', 'TGA', 'T', 'G', 'A', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', '-', '-', '-', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', '-', '-', '-', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
 
 
 class PoblationCalculationsTest(unittest.TestCase):
@@ -1113,8 +1166,9 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive2']
 #    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
+#    import sys;sys.argv = ['', 'TestReadPos.test_calculate_allele_kind']
 #    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
 #    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
     unittest.main()

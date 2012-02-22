@@ -549,7 +549,13 @@ class VariantCallFormatWriter(object):
                                           alternative_alleles))
         filters = self._create_filters(qualifiers)
         items.append(filters)
-        items.append(self._create_info(qualifiers, alternative_alleles))
+        try:
+            items.append(self._create_info(qualifiers, alternative_alleles))
+        except KeyError:
+            print 'sequence', get_seq_name(sequence)
+            print 'position', str(int(snv.location.start.position))
+            raise
+
         items.append(self._create_genotypes(qualifiers, alternative_alleles))
 
         self._temp_fhand.write('%s\n' % '\t'.join(items))
