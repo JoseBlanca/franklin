@@ -481,7 +481,8 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     # we can look the difference between the end_segment and
     # the origial_end_segment
     # If the difference is bigger than 1 is because there is an insertion
-    if (end_segment is not None and end_segment - stop_segment > 1):
+    if (end_segment is not None and stop_segment is not None and
+        end_segment - stop_segment > 1):
         stop_segment += 1
 
     cum_ref_seq, cum_read_seq = '', ''
