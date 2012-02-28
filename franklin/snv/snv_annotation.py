@@ -440,12 +440,7 @@ def _make_multiple_alignment(alignments, reads=None):
         assert len(alignments[index]['reads'].values()[0]) == len(alignments[index]['reference'])
         alignment = _join_alignments(alignment, alignments[index],
                                      snv_types_per_read)
-    try:
-        assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
-    except AssertionError:
-        print 'input alignments: ', orig_align
-        print 'resul_alignment: ', alignment
-        raise
+    assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
     return alignment
 
 def _get_alignment_section(pileup_read, start, end, reference_seq=None):
@@ -454,35 +449,50 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
     #  [start, end[
     #  [start, stop]
 
+    if start > end:
+        raise ValueError('Start (%i) is bigger than end (%i)' % (start, end))
+
     stop = end - 1
 
     aligned_read = pileup_read.alignment
     read_seq     = aligned_read.seq
 
-    (ref_segments, read_segments, ref_limits, read_limits, segment_types,
+    (ref_segments, read_segments, ali_ref_limits, ali_read_limits, segment_types,
     segment_lens) = _get_cigar_segments_from_aligned_read(aligned_read)
 
+    if (start < 0 or (reference_seq and len(reference_seq) < end)):
+        ref_len = len(reference_seq) if reference_seq else None
+        msg  = 'Section outside the alignment: start (%d),'
+        msg += 'stop (%d), limits (1, %d)'
+        msg %= start, stop, ref_len
+        raise ValueError(msg)
+
     #in which segment starts the section
-    start_segment = _locate_segment(start, ref_segments, segment_lens, ref_limits)
+    start_segment = _locate_segment(start, ref_segments, segment_lens, ali_ref_limits)
     start_segment = start_segment[0] if start_segment is not None else None
 
-    end_segment  = _locate_segment(end, ref_segments, segment_lens, ref_limits)
+    end_segment  = _locate_segment(end, ref_segments, segment_lens, ali_ref_limits)
     end_segment  = end_segment[0]  if end_segment  is not None else None
 
-    stop_segment = _locate_segment(stop, ref_segments, segment_lens, ref_limits)
-    stop_segment = stop_segment[0] if stop_segment is not None else None
+    stop_segment = _locate_segment(stop, ref_segments, segment_lens, ali_ref_limits)
+    if stop_segment is not None:
+        stop_segment, stop_segment_pos = stop_segment
+    else:
+        stop_segment, stop_segment_pos = None, None
 
     #when does the read start and end in the reference coordinate system
-    ref_start_limit, ref_end_limit = ref_limits
+    ref_start_limit, ref_end_limit = ali_ref_limits
     read_start_in_ref = start if start >= ref_start_limit else ref_start_limit
     read_stop_in_ref  = stop  if stop  <= ref_end_limit   else ref_end_limit
+
 
     # we have to look if  the position of the end is in an insertion. For that
     # we can look the difference between the end_segment and
     # the origial_end_segment
-    # If the difference is bigger than 1 is because there is an insertion
-    if (end_segment is not None and stop_segment is not None and
-        end_segment - stop_segment > 1):
+
+    if (stop_segment is not None and stop_segment_pos == IN_LAST_POS and
+        len(ref_segments) > stop_segment + 1 and
+        segment_types[stop_segment + 1] == INSERTION):
         stop_segment += 1
 
     cum_ref_seq, cum_read_seq = '', ''
@@ -504,7 +514,13 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
         ref_seg_start = ref_segments[isegment]
         # when the segment is an insert there is no start, we have to calculate
         if ref_seg_start is None:
-            ref_seg_start = ref_segments[isegment + 1] - 1
+            try:
+                ref_seg_start = ref_segments[isegment + 1] - 1
+            except IndexError:
+                prev_seg_start = ref_segments[isegment -1]
+                prev_seg_len   = segment_lens[isegment -1]
+                ref_seg_start = prev_seg_start + prev_seg_len
+
 
         read_seg_start = read_segments[isegment]
         if isegment == ssegment:
@@ -514,12 +530,10 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
 
         if isegment == esegment:
             end_delta = seg_len - read_stop_in_ref + ref_seg_start - 1
-#            end_delta =  read_stop_in_ref - ref_seg_start + 1
         else:
             end_delta = 0
 
         if seg_type == INSERTION:
-#            seg_ref_seq = DELETION_ALLELE * (seg_len - end_delta)
             seg_ref_seq = DELETION_ALLELE * seg_len
             read_start = read_seg_start + start_delta
             read_end = read_start + seg_len  #- end_delta
@@ -551,15 +565,14 @@ def _get_alignment_section(pileup_read, start, end, reference_seq=None):
         cum_read_seq += seg_read_seq
 
     #after alignment
-    len_after_segment = stop - ref_limits[1]
+    len_after_alignment = stop - ali_ref_limits[1]
 
     if reference_seq is None:
-        ref_seq_after = UNKNOWN_NUCLEOTYDE * len_after_segment
+        ref_seq_after = UNKNOWN_NUCLEOTYDE * len_after_alignment
     else:
-        ref_seq_after = str(reference_seq.seq[ref_limits[1] + 1:ref_limits[1] + len_after_segment + 1])
+        ref_seq_after = str(reference_seq.seq[ali_ref_limits[1] + 1:ali_ref_limits[1] + len_after_alignment + 1])
     cum_ref_seq  += ref_seq_after
-    cum_read_seq += NO_NUCLEOTYDE * len_after_segment
-
+    cum_read_seq += NO_NUCLEOTYDE * len_after_alignment
     assert len(cum_ref_seq) == len(cum_read_seq)
     return cum_ref_seq, cum_read_seq
 
@@ -752,9 +765,10 @@ def _get_snv_start_vcf4(snv):
 
     This is the result and
     '''
-
-    if (_is_snv_of_kind(snv, DELETION) or _is_snv_of_kind(snv, INDEL) or
-        _is_snv_of_kind(snv, COMPLEX)):
+    allele_types = [allele[1] for allele in snv['alleles'].keys()]
+    snv_kind = _calculate_snv_kinds(allele_types)
+    if (snv_kind in (DELETION, INDEL) or snv_kind == COMPLEX and
+        DELETION in allele_types):
         start = snv['ref_position'] - 1
     else:
         start = snv['ref_position']
@@ -764,7 +778,10 @@ def _get_snv_end_position(snv):
     'it returns the snv position plus the length of the allele'
 
     end = snv['ref_position']
-    if _is_snv_of_kind(snv, INSERTION) or _is_snv_of_kind(snv, SNP):
+    allele_types = [allele[1] for allele in snv['alleles'].keys()]
+    snv_kind = _calculate_snv_kinds(allele_types)
+    if (snv_kind in (INSERTION, SNP) or
+       (snv_kind == COMPLEX and INSERTION in allele_types)):
         end += 1
     else:
         max_length = 0
@@ -788,9 +805,9 @@ def _make_snv_blocks(snvs):
     except StopIteration:
         pass
     for snv in snvs1:
-#        if  snv['ref_position'] == 724056:
-#            print snv['alleles'].keys()
-#            pass
+        if  snv['ref_position'] == 1166:
+            print snv['alleles'].keys()
+            pass
         try:
             next_snv = snvs2.next()
         except StopIteration:
@@ -916,7 +933,9 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
         alignments = {}
         allele_kinds = {}
         for snv in snvs:
+
             for allele, allele_info in snv['alleles'].items():
+
                 allele_kind = allele[1]
                 for index in range(len(allele_info['reads'])):
                     name = allele_info['reads'][index].alignment.qname
@@ -943,20 +962,9 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
                     if read_name not in alignments:
                         alignment = _get_alignment_section(read, start, end,
                                                     reference_seq=reference_seq)
-#                        print read_name, alignment, start, end
                         alignments[read_name] = alignment
         _remove_allele_from_alignments(alignments, min_num_reads_for_allele)
-        try:
-            malignment = _make_multiple_alignment(alignments, reads)
-#            alis = []
-#            for ali in malignment['reads'].values():
-#                if ali not in alis:
-#                    alis.append(ali)
-#            print 'alis', alis
-        except AssertionError:
-            print 'ref_name: ', snvs[0]['ref_name']
-            print 'position: ', start
-            raise
+        malignment = _make_multiple_alignment(alignments, reads)
 
         if malignment is not None:
             ref_allele = malignment['reference']
@@ -1107,8 +1115,6 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
         #add default sanger qualities to the sanger reads with no quality
         _add_default_sanger_quality(alleles, default_sanger_quality,
                                     read_groups_info)
-        if ref_pos == 724058:
-            print alleles.keys()
 
         #remove bad quality alleles
         _remove_bad_quality_alleles(alleles, min_quality)
