@@ -35,6 +35,7 @@ from franklin.statistics import (write_distribution, draw_histogram,
                                  draw_boxplot, IntsStats)
 from franklin.seq.seq_stats import create_nucleotide_freq_histogram
 
+
 class CleanReadsAnalyzer(Analyzer):
     'It does a cleaning reads analysis'
 
@@ -77,11 +78,12 @@ class CleanReadsAnalyzer(Analyzer):
         configuration = {}
 
         configuration['remove_vectors_blastdb'] = {}
-        configuration['remove_vectors_blastdb']['vectors'] = settings['vector_database']
+        vec_db = settings['vector_database']
+        configuration['remove_vectors_blastdb']['vectors'] = vec_db
 
         configuration['remove_vectors_file'] = {}
-        configuration['remove_vectors_file']['vectors'] = settings['vector_file']
-
+        vec_file = settings['vector_file']
+        configuration['remove_vectors_file']['vectors'] = vec_file
 
         # adaptors settings
         adap_param = 'adaptors_file_%s' % platform
@@ -114,9 +116,9 @@ class CleanReadsAnalyzer(Analyzer):
         else:
             vector_settings = None
 
-        parameters = {'bracket':lucy_settings['bracket'],
-                      'window':lucy_settings['window'],
-                      'error':lucy_settings['error']}
+        parameters = {'bracket': lucy_settings['bracket'],
+                      'window': lucy_settings['window'],
+                      'error': lucy_settings['error']}
         if vector_settings:
             parameters['vector'] = vector_settings
 
@@ -128,7 +130,7 @@ class CleanReadsAnalyzer(Analyzer):
         configuration['strip_trimpoly']['ntrim_above_percent'] = n_trim
 
         #edge_remover
-        left =  settings['edge_removal']['%s_left' % platform]
+        left = settings['edge_removal']['%s_left' % platform]
         right = settings['edge_removal']['%s_right' % platform]
         configuration['edge_removal'] = {}
         configuration['edge_removal']['left_length'] = left
@@ -192,16 +194,17 @@ class CleanReadsAnalyzer(Analyzer):
 BASENAME_FOR_ALL_TOGETHER = 'all'
 
 PLOT_LABELS = {
-        'seq_length':{'title':'Sequence length distribution',
-                              'xlabel':'Sequence length',
-                              'ylabel': 'Number of sequences'},
-        'seq_qual'      :{'title':'Sequence quality distribution',
-                              'xlabel':'quality',
-                              'ylabel':'Number of bp'},
-        'qual_boxplot'  :{'title':'Qualities along the sequence',
-                              'xlabel':'seqence position',
-                              'ylabel':'quality distribution'},
+        'seq_length': {'title': 'Sequence length distribution',
+                       'xlabel': 'Sequence length',
+                       'ylabel': 'Number of sequences'},
+        'seq_qual': {'title': 'Sequence quality distribution',
+                     'xlabel': 'quality',
+                     'ylabel': 'Number of bp'},
+        'qual_boxplot': {'title': 'Qualities along the sequence',
+                         'xlabel': 'seqence position',
+                         'ylabel': 'quality distribution'},
         }
+
 
 class ReadsStatsAnalyzer(Analyzer):
     '''It calculates stats for original and cleaned reads.
@@ -209,9 +212,8 @@ class ReadsStatsAnalyzer(Analyzer):
 
     def run(self):
         'It runs the analysis'
-        self._log({'analysis_started':True})
-        self._create_output_dirs()['original_reads']
-        self._create_output_dirs()['cleaned_reads']
+        self._log({'analysis_started': True})
+        self._create_output_dirs()
 
         clean_paths = self._get_input_fpaths()['cleaned_reads']
         original_paths = self._get_input_fpaths()['original_reads']
@@ -224,7 +226,7 @@ class ReadsStatsAnalyzer(Analyzer):
         for pair in paired_paths.values():
             self._do_seq_distrib_for_pair(pair)
 
-        self._log({'analysis_finished':True})
+        self._log({'analysis_finished': True})
 
     @staticmethod
     def _do_diff_distrib_for_numbers(numbers, plot_fhand, distrib_fhand,
@@ -247,7 +249,7 @@ class ReadsStatsAnalyzer(Analyzer):
             return
 
         # now a subtract distrib1 from distrib2
-        diff_distrib   = []
+        diff_distrib = []
         diff_bin_edges = distrib1['bin_edges']
         for i in range(len(distrib1['distrib'])):
             diff = distrib1['distrib'][i] - distrib2['distrib'][i]
@@ -266,7 +268,7 @@ class ReadsStatsAnalyzer(Analyzer):
         'It does the distribution for a pair of cleaned and raw seqs'
 
         get_stats_dir = lambda seq_type: os.path.join(self._get_project_path(),
-                              BACKBONE_DIRECTORIES['%s_reads_stats' % seq_type])
+                             BACKBONE_DIRECTORIES['%s_reads_stats' % seq_type])
 
         #the statistics for both clean and raw sequences
         lengths = {}
@@ -305,9 +307,10 @@ class ReadsStatsAnalyzer(Analyzer):
 
                 #the distributions for the lengths
                 distrib  = lengths_.calculate_distribution()
-                lengths_.draw_distribution(distrib, labels=PLOT_LABELS['seq_length'],
-                                           distrib_fhand=open(distrib_fpath, 'w'),
-                                           plot_fhand=open(plot_fpath, 'w'))
+                lengths_.draw_distribution(distrib,
+                                         labels=PLOT_LABELS['seq_length'],
+                                         distrib_fhand=open(distrib_fpath, 'w'),
+                                         plot_fhand=open(plot_fpath, 'w'))
 
                 #the distributions for the quals
                 out_fpath = os.path.join(stats_dir, basename + '.qual')

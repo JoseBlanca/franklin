@@ -645,7 +645,7 @@ def _cast(type_, value):
             ValidationError(msg)
     elif type_ == path_exists_dict:
         if isinstance(value, dict):
-            for val_key, val in value.keys():
+            for val_key, val in value.items():
                 value[val_key] = os.path.abspath(val)
                 if not os.path.exists(val):
                     msg = 'The given file does not exists: %s' % val

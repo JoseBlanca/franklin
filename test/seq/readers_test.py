@@ -319,7 +319,7 @@ class TestNumSeqsInFile(unittest.TestCase):
         assert num_seqs_in_file(fasta_fhand) == 7
 
         fastq_fhand = open(join(TEST_DATA_DIR, 'solexa.fastq'))
-        assert num_seqs_in_file(fastq_fhand, format='sfastq') == 3
+        assert num_seqs_in_file(fastq_fhand, format_='sfastq') == 3
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

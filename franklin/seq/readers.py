@@ -38,7 +38,7 @@ from franklin.utils.misc_utils import get_fhand
 #the translation between our formats and the biopython formats
 BIOPYTHON_FORMATS = {'fasta': 'fasta',
                      'fastq': 'fastq',
-                     'sfastq':'fastq',
+                     'sfastq': 'fastq',
                      'fastq-sanger': 'fastq',
                      'ifastq': 'fastq-illumina',
                      'fastq-illumina': 'fastq-illumina',
@@ -47,6 +47,7 @@ BIOPYTHON_FORMATS = {'fasta': 'fasta',
                      'gb': 'genbank',
                      'embl': 'embl',
                      'qual': 'qual', }
+
 
 def _is_sfastq(fhand, max_iterations=1000):
     '''It guess if the file is sanger fastq or not. If it can't now it for
@@ -65,6 +66,7 @@ def _is_sfastq(fhand, max_iterations=1000):
                 fhand.seek(tell_)
                 return True
     return False
+
 
 def guess_seq_file_format(fhand):
     'Given a sequence file it returns its format'
@@ -94,21 +96,23 @@ def guess_seq_file_format(fhand):
     fhand.seek(0)
     return format_
 
-def num_seqs_in_file(seq_fhand, format=None):
+
+def num_seqs_in_file(seq_fhand, format_=None):
     'It counts seqs in file. '
     seq_fhand = get_fhand(seq_fhand)
-    if format is None:
-        format = guess_seq_file_format(seq_fhand)
+    if format_ is None:
+        format_ = guess_seq_file_format(seq_fhand)
 
-    if format == 'fasta':
+    if format_ == 'fasta':
         return count_str_in_file(seq_fhand, '^>')
-    elif format == 'repr':
+    elif format_ == 'repr':
         class_name = SeqWithQuality.__class__.__name__.split('.')[-1]
         return count_str_in_file(seq_fhand, "^%s" % class_name)
-    elif 'fastq' in format:
+    elif 'fastq' in format_:
         return _num_seqs_in_fastq(seq_fhand)
     else:
-        raise NotImplementedError('I can not count this format: %s' % format)
+        raise NotImplementedError('I can not count this format: %s' % format_)
+
 
 def count_str_in_file(fhand, regex):
     'it counts the string  in file content'
@@ -121,6 +125,7 @@ def count_str_in_file(fhand, regex):
     fhand.seek(pos_at_start)
     return counter
 
+
 def _num_seqs_in_fastq(fhand):
     'it counts seqs in a fastq file '
     pos_at_start = fhand.tell()
@@ -130,6 +135,7 @@ def _num_seqs_in_fastq(fhand):
         counter += 1
     fhand.seek(pos_at_start)
     return counter
+
 
 def seqs_in_file(seq_fhand, qual_fhand=None, format=None, sample_size=None,
                  double_encoding=False):

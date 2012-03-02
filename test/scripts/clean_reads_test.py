@@ -289,6 +289,7 @@ T0..11031202101103031103110303212300122113032213202
         cmd = [CLEAN_READS, '-i', inseq_fhand.name, '-o', outseq_fhand.name,
                '-p', '454', '-f', 'fastq', '-a']
         stdout, stderr, retcode = _call_python(cmd)
+        print stderr
         assert retcode == 0
         assert  "--adaptors_file: {'454': '" in stdout
 
