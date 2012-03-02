@@ -17,7 +17,7 @@ There are different annotation analyses for the sequences, but they all operate 
 SNP calling
 -----------
 
-SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/bams/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The ngs_backbone analysis is: annotate_snv.
+SNP calling is a form of sequence annotation. To annotate some sequences you need the input sequences to annotate, a bam file in mapping/bams/merged.bam and a reference genome in mapping/reference/reference.fasta. SNP calling is based on the samtools pileup with some filters on top. The ngs_backbone analysis is: annotate_snvs.
 
 Configuration parameters
 ________________________

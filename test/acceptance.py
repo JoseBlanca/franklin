@@ -23,6 +23,7 @@ from franklin.backbone.backbone_runner import do_analysis
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from franklin.utils.misc_utils import NamedTemporaryDir, TEST_DATA_DIR
 
+
 def test_backbone(analysis=None, analysis_dir=None):
     '''It tests the backbone infrastructure.
 
