@@ -54,7 +54,8 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          annotate_heterozygosity,
                                          snvs_in_window,
                                          _get_alignment_section,
-                                         _make_multiple_alignment)
+                                         _make_multiple_alignment,
+                                         _calculate_allele_kind)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -121,8 +122,6 @@ class TestSnvAnnotation(unittest.TestCase):
         for snv, expect in zip(snvs, expected):
             assert expect[0] == int(str(snv.location.start))
             assert snv.qualifiers['alleles'].keys() == expect[1]
-
-
 
 
     @staticmethod
@@ -212,7 +211,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 8
+        assert len(seq.features) == 10
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(1, 1)}
@@ -223,7 +222,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 5
+        assert len(seq.features) == 7
 
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -235,7 +234,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 5
+        assert len(seq.features) == 6
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(10, 10)}
@@ -508,8 +507,8 @@ class TestSnvPipeline(unittest.TestCase):
         in_fhands['in_seq'] = seq_fhand
         seq_fhand = NamedTemporaryFile()
         seq_writer = SequenceWriter(seq_fhand, file_format='repr')
-        #snv_fhand = NamedTemporaryFile()
-        snv_fhand = open('/home/peio/test.vcf', 'w')
+        snv_fhand = NamedTemporaryFile()
+        #snv_fhand = open('/home/peio/test.vcf', 'w')
         snv_writer = VariantCallFormatWriter(snv_fhand,
                                              reference_name='reference')
 
@@ -663,11 +662,14 @@ REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
 SAM = '''@HD\tVN:1.3\tSO:coordinate
 @SQ\tSN:ref\tLN:45
 r001/1\t163\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTAAGATAAAGGATACTG\t*
+r007\t0\tref\t9\t30\t6M2I\t=\t0\t0\tAGATAATT\t*
 r002\t0\tref\t9\t30\t3S6M1P1I4M\t*\t0\t0\tAAAAGATAAGGATA\t*
 r003\t0\tref\t9\t30\t5H6M\t*\t0\t0\tAGCTAA\t*\tNM:i:1
 r004\t0\tref\t16\t30\t6M14N5M\t*\t0\t0\tATAGCTTCAGC\t*
 r005\t16\tref\t29\t30\t6H5M\t*\t0\t0\tTAGGC\t*\tNM:i:0
 r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAGCGCCAT\t*
+r006\t0\tref\t39\t30\t7M2I\t=\t0\t0\tGCGCCATTA\t*
+
 '''
 
 
@@ -797,8 +799,8 @@ class TestReadPos(unittest.TestCase):
         reference_id = reference.name
         reference_seq = reference.seq
 
-        #Coor     01234567890123  4567890123456789012345678901234
-        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #Coor     01234567890123  456789012345678901234567890123456
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT**
         #               01234567890123 456
         #+r001/1        TAAGATAAAGGATA*CTG
         #              012345678 90123
@@ -811,7 +813,8 @@ class TestReadPos(unittest.TestCase):
         #-r005                            ttagctTAGGC
         #                                               876543210
         #-r001/2                                        CAGCGCCAT
-
+        #
+        #-r006                                            GCGCCATTA
         expected = {('r001/1', 5): [],
                     ('r001/1', 6): [('T', INVARIANT, None, False)],
                     ('r001/1', 7): [('A', SNP, None, False)],
@@ -877,12 +880,12 @@ class TestReadPos(unittest.TestCase):
                 alleles, read_limits = _get_alleles_from_read(ref_allele,
                                                               ref_pos,
                                                               pileup_read)
-    @staticmethod
-    def test_get_aligned_read_section():
+
+    def test_get_aligned_read_section(self):
         'It checks that we can get aligned sections from a read'
-        #Coor               1111  1111112222222222333333333344444
-        #Coor     01234567890123  4567890123456789012345678901234
-        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #Coor               1111  111111222222222233333333334444444
+        #Coor     01234567890123  456789012345678901234567890123456
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT**
         #               01234567890123 456
         #+r001/1        TAAGATAAAGGATA*CTG
         #              012345678 90123
@@ -895,13 +898,17 @@ class TestReadPos(unittest.TestCase):
         #-r005                            ttagctTAGGC
         #                                               876543210
         #-r001/2                                        CAGCGCCAT
+        #                                                 012345678
+        #-r006                                            GCGCCATTA
+        #                 01234567
+        #-r007            AGATAATT
+
         sam = NamedTemporaryFile(suffix='.sam')
         sam.write(SAM)
         sam.flush()
         bam_fhand = NamedTemporaryFile()
         sam2bam(sam.name, bam_fhand.name)
         create_bam_index(bam_fhand.name)
-
         bam = pysam.Samfile(bam_fhand.name, "rb")
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -954,11 +961,16 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 13, 14, reference)
                     assert alignment[0] == 'A--'
                     assert alignment[1] == 'AAG'
+
+                    alignment = _get_alignment_section(pileup_read, 0, 10, reference)
+                    assert alignment[0] == 'AGCATGTTAG'
+                    assert alignment[1] == '      TAAG'
+
                 elif pileup_read.alignment.qname == 'r003':
+
                     alignment = _get_alignment_section(pileup_read, 5, 14)
                     assert alignment[0] == 'NNNNNNNNN'
                     assert alignment[1] == '   AGCTAA'
-
                     alignment = _get_alignment_section(pileup_read, 5, 14, reference)
                     assert alignment[0] == 'GTTAGATAA'
                     assert alignment[1] == '   AGCTAA'
@@ -970,10 +982,71 @@ class TestReadPos(unittest.TestCase):
                     alignment = _get_alignment_section(pileup_read, 18, 39, reference)
                     assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
                     assert alignment[1] == 'GCT--------------TCAG'
+
+                    alignment = _get_alignment_section(pileup_read, 18, 25, reference)
+                    assert alignment[0] == 'GCTGTGC'
+                    assert alignment[1] == 'GCT----'
+
+                    alignment = _get_alignment_section(pileup_read, 30, 37, reference)
+                    assert alignment[0] == 'GGCAGTC'
+                    assert alignment[1] == '-----TC'
+                elif pileup_read.alignment.qname == 'r006':
+                    try:
+                        alignment = _get_alignment_section(pileup_read, 44, 46, reference)
+                        self.fail()
+                    except ValueError:
+                        pass
+
+                    alignment = _get_alignment_section(pileup_read, 44, 45, reference)
+                    assert alignment[0] == 'T--'
+                    assert alignment[1] == 'TTA'
+                    alignment = _get_alignment_section(pileup_read, 44, 45)
+                    assert alignment[0] == 'N--'
+                    assert alignment[1] == 'TTA'
+                elif pileup_read.alignment.qname == 'r007':
+                    alignment = _get_alignment_section(pileup_read, 8, 13, reference)
+                    assert alignment[0] == 'AGATA'
+                    assert alignment[1] == 'AGATA'
+
+                    alignment = _get_alignment_section(pileup_read, 8, 14, reference)
+                    assert alignment[0] == 'AGATAA--'
+                    assert alignment[1] == 'AGATAATT'
+
+                    alignment = _get_alignment_section(pileup_read, 8, 15, reference)
+                    assert alignment[0] == 'AGATAA--G'
+                    assert alignment[1] == 'AGATAATT '
+                    alignment = _get_alignment_section(pileup_read, 8, 16, reference)
+                    assert alignment[0] == 'AGATAA--GA'
+                    assert alignment[1] == 'AGATAATT  '
+
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'merged.2.bam'))
+        create_bam_index(bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+        ref_s  = 'TGAAATAACCATAGTGGATGCAGCGAATGGGCGTCAAGTGGTTGATATTATCCCTCCAGG'
+        ref_s += 'ACCAGAACTTCTTGTTTCAGAGGGCGAATCCATCAAACTTGATCAACCATTAACGAGTAA'
+        ref_s += 'TCCTAATGTGGGAGGATTTGGTCAGGGAGATGCGGAAATCGTCCTTCAAGATCCATTACG'
+        ref_s += 'TGTCCAAGGCCTTTTGTTCTTTTTTTTGCATCTGTTATTTTGGCACAAATCTTTTTAGTT'
+        ref_s += 'CTTAAAAAGAAACAGTTTGAGAAGGTTCAATTGTCCGAAATGAATTTCTAAATCTGGGGA'
+        ref_s += 'TTTATCAAATAAAGTTCGTTAAAAAAAAAACCAAATTCTTGTTGGCAATTCTATAATTTA'
+        ref_s += 'ATTATGTATGATCAAAAAATTATGAAAAACTTTTTCCC'
+        reference = SeqWithQuality(seq=Seq(ref_s), name='CM3.5_contig43467')
+        reference_id = reference.name
+        for column in bam.pileup(reference=reference_id):
+            for pileup_read in column.pileups:
+                if pileup_read.alignment.qname == '1858_1507_1273_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', '-TT')
+                if pileup_read.alignment.qname == '1511_568_1327_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', 'C--')
+
+
     @staticmethod
     def test_join_alignments():
         'It test that we can join single alignments into a multiple alignment'
-
         # check alignment without inserts
         # ref     TGTCGTATGTAGTGGTAGTCTAGTAGTA
         # READ1           GT--TGGT
@@ -1006,6 +1079,65 @@ class TestReadPos(unittest.TestCase):
         assert alignment == {'reference': ['G', '--'],
                              'reads'    :{'read1':['G', '--'],
                                           'read2':['G', 'TA']}}
+
+
+        #print ma
+        #                    kind
+        #    ref    C-T
+        #    read1  C-T      invariant
+        #    read2  CTT      insertion
+        #    read3  T-T      snp
+        #    read4  C--      del
+
+        alignment = {'read1':('CT', 'CT'),
+                     'read2':('C-T', 'CTT'),
+                     'read3':('CT', 'TT'),
+                     'read4':('CT', 'C-')}
+        malignment = _make_multiple_alignment(alignment)
+        assert malignment['reads']['read1'] == ['C', '-', 'T']
+        assert malignment['reads']['read2'] == ['C', 'T', 'T']
+        assert malignment['reads']['read3'] == ['T', '-', 'T']
+        assert malignment['reads']['read4'] == ['C', '-', '-']
+        assert malignment['reference'] == ['C', '-', 'T']
+
+    def test_calculate_allele_kind(self):
+        'We can calculate allele kind'
+        ref_allele = ['T']
+        allele = ['T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', '-', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', 'T', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == INSERTION
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['T', '-', 'T']
+        assert  _calculate_allele_kind(ref_allele, allele) == SNP
+
+        ref_allele = ['C', '-', 'T']
+        allele = ['C', '-', '-']
+        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', 'T', 'G', 'A', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', 'TGA', 'T', 'G', 'A', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', '-', '-', '-', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+#
+#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
+#        allele =     ['T', '---', '-', '-', '-', '']
+#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
+
 
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
@@ -1070,8 +1202,9 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive2']
 #    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
+#    import sys;sys.argv = ['', 'TestReadPos.test_calculate_allele_kind']
 #    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
 #    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
     unittest.main()

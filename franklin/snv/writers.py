@@ -451,6 +451,7 @@ class VariantCallFormatWriter(object):
         It requires the dict with the information about the read_groups.
         '''
         #a map from alleles to allele index (0 for reference, etc)
+
         alleles_index = self._numbers_for_alleles(reference_allele,
                                                   alternative_alleles)
         grouping_key = self._genotype_grouping_key
@@ -460,9 +461,17 @@ class VariantCallFormatWriter(object):
             #we need the index for the allele
 #            if allele not in alleles_index:
 #                continue
-#            print allele, alleles_index, reference_allele
 
-            allele_index = alleles_index[allele]
+            try:
+                allele_index = alleles_index[allele]
+            except KeyError:
+                print 'allele', allele
+                print "allele index", alleles_index
+                print 'ref_allele', reference_allele
+                print 'alternative_alleles', alternative_alleles
+                print 'alleles', alleles
+                raise
+
             for read_group in allele_info['read_groups']:
                 group = _get_group(read_group, grouping_key, read_groups)
                 if group not in self._genotype_groups:
@@ -540,8 +549,14 @@ class VariantCallFormatWriter(object):
                                           alternative_alleles))
         filters = self._create_filters(qualifiers)
         items.append(filters)
-        items.append(self._create_info(qualifiers, alternative_alleles))
-        items.append(self._create_genotypes(qualifiers,
-                                            alternative_alleles))
+        try:
+            items.append(self._create_info(qualifiers, alternative_alleles))
+        except KeyError:
+            print 'sequence', get_seq_name(sequence)
+            print 'position', str(int(snv.location.start.position))
+            raise
+
+        items.append(self._create_genotypes(qualifiers, alternative_alleles))
+
         self._temp_fhand.write('%s\n' % '\t'.join(items))
         self._temp_fhand.flush()
