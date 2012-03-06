@@ -323,7 +323,7 @@ class VariantCallFormatWriter(object):
                 self._filter_descriptions[name, parameters] = (short_name,
                                                                description)
         if not filter_strs:
-            return '.'
+            return 'PASS'
         else:
             return ';'.join(filter_strs)
 
