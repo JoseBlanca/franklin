@@ -19,7 +19,7 @@ The analysis is run in divided in two ngs_backbone analysis:
 mapping
   It maps the reads with bwa creating one bam for every input file
 
-merge_bam
+merge_bams
   It merges all bam files located in mapping/bams/by_readgroup into mapping/bams/merged.bam. The obtained bam will comply not only with the samtools standard but also with the picard and GATK requirements.
 
 

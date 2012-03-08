@@ -85,6 +85,7 @@ class VariantCallFormatWriterTest(unittest.TestCase):
         assert 'AF=0.3,0.2' in vcf
         assert 'GP=0.60' in vcf
         assert 'EZ=EcoRI' in vcf
+        assert 'PASS' in vcf
 
         #test writer with a non read_groups grouping
         fhand = NamedTemporaryFile(mode='a')
