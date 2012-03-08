@@ -461,6 +461,39 @@ Number of GOs: 12'''
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
 
+        solexa2 = '@seq18\n'
+        solexa2 += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq19\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq20\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq21\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq22\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq23\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq24\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq25\n'
+        solexa2 += 'ATGTACTAGCAGTACGATCACACACTGGACAGTACAGACCAGAATGAC\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+
         sanger = '>seq3\n'
         sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
         sanger += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
@@ -480,6 +513,24 @@ Number of GOs: 12'''
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
+        sange2 = '>seq6\n'
+        sange2 += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
+        sange2 += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
+        sange2 += 'TTGTTTCTTCTTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATA'
+        sange2 += 'TCTGTTGAATGCAATTTACACATTGACTGAGGAACAACATGAACATGGCAGCTTTCTCAA'
+        sange2 += 'AATTGAACCACAGAAGGCTTAAAAGCAAAGTCTTTGGAGAATCAGACTAAGCTTGAGA\n'
+        sange2 += '>seq7\n'
+        sange2 += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sange2 += 'CTATATATTCTAATGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sange2 += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sange2 += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sange2 += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+        sange2 += '>seq8\n'
+        sange2 += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sange2 += 'CTATATATTCTAAAGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sange2 += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sange2 += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sange2 += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
         fpath_sanger = join(clean_reads_dir, 'lb_hola1.pl_sanger.sm_hola.fasta')
         fpath_solexa = join(clean_reads_dir,
                                     'lb_hola2.pl_illumina.sm_hola.sfastq')
@@ -489,8 +540,8 @@ Number of GOs: 12'''
         fpath_sanger2 = join(clean_reads_dir, 'lb_adios.pl_sanger.fasta')
         fpath_solexa2 = join(clean_reads_dir,
                                     'lb_adios.pl_illumina.sfastq')
-        open(fpath_sanger2, 'w').write(sanger)
-        open(fpath_solexa2, 'w').write(solexa)
+        open(fpath_sanger2, 'w').write(sange2)
+        open(fpath_solexa2, 'w').write(solexa2)
 
         #the reference
         reference_dir = join(project_dir, 'mapping/reference')

@@ -118,6 +118,39 @@ class TestBackboneMapping(unittest.TestCase):
         solexa += '+\n'
         solexa += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
 
+        solexa2 = '@seq18\n'
+        solexa2 += 'TCATTGAAAGTTGAAACTGATAGTAGCAGAGTTTTTTCCTCTGTTTGG\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIIIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq19\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq20\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq21\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq22\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq23\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq24\n'
+        solexa2 += 'ATATGATTGAAGATATTTCTGGACTTTAAGGGTTCTTGAGGATTTATA\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+        solexa2 += '@seq25\n'
+        solexa2 += 'ATGTACTAGCAGTACGATCACACACTGGACAGTACAGACCAGAATGAC\n'
+        solexa2 += '+\n'
+        solexa2 += 'IIIIIIHIIIIIIIIIIIIIIIZIIUJUAUGJUUJUDFAOUDJOFSUD\n'
+
         sanger = '>seq3\n'
         sanger += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
         sanger += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
@@ -137,6 +170,25 @@ class TestBackboneMapping(unittest.TestCase):
         sanger += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
         sanger += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
 
+        sange2 = '>seq6\n'
+        sange2 += 'GATATGATTGAAGATATTTCTGGGCTTTAAGGGTTCTTGAGGATTTATAGGAGATACTGA'
+        sange2 += 'GATTCTGGAATCTCTGAGTTTCTGGGTTCAAGTTGCACTGACCATTGTTGGATTTGTAGA'
+        sange2 += 'TTGTTTCTTCTTTCATTAGGCATTGATTATGGGTAAATGCGTGGGTACATATAATATATA'
+        sange2 += 'TCTGTTGAATGCAATTTACACATTGACTGAGGAACAACATGAACATGGCAGCTTTCTCAA'
+        sange2 += 'AATTGAACCACAGAAGGCTTAAAAGCAAAGTCTTTGGAGAATCAGACTAAGCTTGAGA\n'
+        sange2 += '>seq7\n'
+        sange2 += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sange2 += 'CTATATATTCTAATGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sange2 += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sange2 += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sange2 += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+        sange2 += '>seq8\n'
+        sange2 += 'TCCATACTTTACTCTATCTCTTTCTGTGTTTGGTAACACGCGAGGATTGGATGATAT'
+        sange2 += 'CTATATATTCTAAAGTGGACTAAAAATGTGTGTGTGTGTATGAAGATGGGAAGCCGGAAG'
+        sange2 += 'TCATCAAGGAGAAAAGAGAGATAGACGACGAGAAGATGGCGTTGACGTTCAGAGGACTAG'
+        sange2 += 'AGGGTCATGTGATGGAGAAGTACAAGAAGTATGAGGTTATCTTACAGTTCATTCCCAAGT'
+        sange2 += 'CGAACGAAGGCTGCGTCTGCAAAGTCACTCTGATATGGGAGAATCGCAACGAAGACTCCC'
+
         fpath_sanger = join(clean_reads_dir, 'lb_hola1.pl_sanger.sm_hola.fasta')
         fpath_solexa = join(clean_reads_dir,
                                     'lb_hola2.pl_illumina.sm_hola.sfastq')
@@ -146,8 +198,8 @@ class TestBackboneMapping(unittest.TestCase):
         fpath_sanger2 = join(clean_reads_dir, 'lb_adios.pl_sanger.fasta')
         fpath_solexa2 = join(clean_reads_dir,
                                     'lb_adios.pl_illumina.sfastq')
-        open(fpath_sanger2, 'w').write(sanger)
-        open(fpath_solexa2, 'w').write(solexa)
+        open(fpath_sanger2, 'w').write(sange2)
+        open(fpath_solexa2, 'w').write(solexa2)
 
         #the reference
         reference_dir = join(project_dir, 'mapping/reference')
@@ -202,18 +254,20 @@ class TestBackboneMapping(unittest.TestCase):
         annot_input_dir = join(project_dir, 'annotations', 'input')
         os.makedirs(annot_input_dir)
         os.symlink(reference_fpath, join(annot_input_dir, 'reference.fasta'))
+
         do_analysis(project_settings=settings_path, kind='annotate_snvs',
                     silent=True)
-        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'reference.0.pickle')
-        assert 'snv' in  open(json_fpath).read()
+        pickle_content = open(pickle_fpath).read()
+        #print pickle_content
+        assert 'snv' in pickle_content
 
         do_analysis(project_settings=settings_path, kind='filter_snvs',
                     silent=True)
-        json_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
+        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'reference.1.pickle')
-        result = open(json_fpath).read()
-        #print result
+        result = open(pickle_fpath).read()
         assert 'snv' in result
         assert 'adios_sanger' in result
 
@@ -355,5 +409,5 @@ total sequence length: 3941'''
         #and the annotator takes the platform info from the configuration
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_analysis']
+#    import sys;sys.argv = ['', 'TestBackboneMapping.test_mapping_analysis']
     unittest.main()
