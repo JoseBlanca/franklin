@@ -331,7 +331,8 @@ class BamStatsAnalyzer(Analyzer):
                          sample_size=sample_size, summary_fhand=summary_fhand,
                          plot_file_format=PLOT_FILE_FORMAT)
         bam_fhand.close()
-        unmapped_fhand.close()
+        if unmapped_fhand is not None:
+            unmapped_fhand.close()
 
 DEFINITIONS = {
     'set_assembly_as_reference':
