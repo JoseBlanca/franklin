@@ -54,8 +54,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          annotate_heterozygosity,
                                          snvs_in_window,
                                          _get_alignment_section,
-                                         _make_multiple_alignment,
-                                         _calculate_allele_kind)
+                                         _make_multiple_alignment)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -113,11 +112,11 @@ class TestSnvAnnotation(unittest.TestCase):
         seq = list(seqs_in_file(ref_fhand))[0]
         seq = annotator(seq)
         snvs = seq.features
-        expected = [(406, [('C--', 2), ('CTA', 3), ('CCA', 0)]),
+        expected = [(406, [('CCA', 9), ('C', 9), ('CTA', 3)]),
                     (415, [('A', 0), ('T', 3)]),
-                    (420, [('CTTC', 3), ('C--C', 2), ('CT--', 2)]),
-                    (429, [('TTC', 1), ('T--', 3)]),
-                    (432, [('CA--T', 3), ('C----', 2), ('CACCT', 1)])]
+                    (420, [('CTTC', 3), ('CC', 9), ('CT', 9)]),
+                    (429, [('TTC', 9), ('T', 3)]),
+                    (432, [('CAT', 3), ('C', 9), ('CACCT', 9)])]
 
         for snv, expect in zip(snvs, expected):
             assert expect[0] == int(str(snv.location.start))
@@ -174,18 +173,18 @@ class TestSnvAnnotation(unittest.TestCase):
     def test_snv_remove_edges(self):
         'It test that we do not annotate snv in the edges'
 
-        REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
-
-        #Coor     01234567890123  4567890123456789012345678901234
-        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        REF =    'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
+        #                   11111111112222222222333333333344444
+        #Coor     012345678901234567890123456789012345678901234
+        #ref      AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
         #                 012345
-        #+r003       gcctaAGATAA
-        #                          012345              67890
-        #+r004                     ATAGCT..............TCAGC
-        #                                       43210
-        #-r005                            ttagctTAGGC
-        #                                               876543210
-        #-r001/2                                        CAGCGCCAT
+        #+r003            GAGCCC
+        #                        012345              67890
+        #+r004                   ATAGCa..............aCAGC
+        #                                     43210
+        #-r005                                TAGGa
+        #                                             876543210
+        #-r001/2                                      CAcCGCCAT
 
         SAM = '''@HD\tVN:1.3\tSO:coordinate
 @SQ\tSN:ref\tLN:45
@@ -211,7 +210,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 10
+        assert len(seq.features) == 4
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(1, 1)}
@@ -222,7 +221,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 7
+        assert len(seq.features) == 3
 
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -234,7 +233,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 6
+        assert len(seq.features) == 3
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(10, 10)}
@@ -253,39 +252,44 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         seq = SeqWithQuality(UnknownSeq(100))
         alleles = {('A', INVARIANT): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         seq.features.append(feat)
 
         assert calculate_snv_kind(feat) == INVARIANT
 
         alleles = {('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AT',
+                                      'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == DELETION
 
-        alleles = {('A', INVARIANT): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
+        alleles = {('AA', INVARIANT): {'read_names':['r1']},
+                   ('ATA', INSERTION): {'read_names':['r1']},
+                   ('ACA', INSERTION): {'read_names':['r1']},
                    ('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AA',
+                                      'alleles':alleles})
         seq.features.append(feat)
-        assert calculate_snv_kind(feat) == INDEL
+        assert calculate_snv_kind(feat) == COMPLEX
 
-        alleles = {('A', INVARIANT): {'read_names':['r1']},
-                   ('A', SNP): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
+        alleles = {('AA', INVARIANT): {'read_names':['r1']},
+                   ('AT', SNP): {'read_names':['r1']},
+                   ('ATA', INSERTION): {'read_names':['r1']},
                    ('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AA',
+                                      'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == COMPLEX
 
         alleles = {('A', INVARIANT): {},
                    ('T', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         assert calculate_snv_kind(feat) == SNP
 
         #detailed
@@ -294,13 +298,15 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         alleles = {('A', INVARIANT): {},
                    ('C', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
 
         alleles = {('A', SNP): {}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
-        assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
+                          qualifiers={'reference_allele':'G',
+                                      'alleles':alleles})
+        assert calculate_snv_kind(feat, detailed=True) == TRANSITION
 
     @staticmethod
     def test_bad_allele_removal():
@@ -449,35 +455,38 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
     def test_snvs_in_window():
         'It tests the snvs_in_window with maf and type'
         alleles1 = {('A', DELETION): {'read_groups':{'r1':3}},
-                    ('T', INVARIANT): {'read_groups':{'r1':8}}}
-
-        snv1 = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles1,
+                    ('AT', INVARIANT): {'read_groups':{'r1':8}}}
+        snv1 = SeqFeature(location=FeatureLocation(3, 5), type='snv',
+                          qualifiers={'reference_allele': 'AT',
+                                      'alleles':alleles1,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles2 = {('A', SNP): {'read_groups':{'r1':2}},
                     ('T', INVARIANT): {'read_groups':{'r1':2}}}
-
-        snv2 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
-                          qualifiers={'alleles':alleles2,
+        snv2 = SeqFeature(location=FeatureLocation(7, 8), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles2,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles3 = {('A', SNP): {'read_groups':{'r1':8}},
                     ('T', INVARIANT): {'read_groups':{'r1':8}}}
-        snv3 = SeqFeature(location=FeatureLocation(20, 20), type='snv',
-                          qualifiers={'alleles':alleles3,
+        snv3 = SeqFeature(location=FeatureLocation(20, 21), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles3,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles4 = {('A', SNP): {'read_groups':{'r1':1}},
                     ('T', INVARIANT): {'read_groups':{'r1':10}}}
-        snv4 = SeqFeature(location=FeatureLocation(25, 25), type='snv',
-                          qualifiers={'alleles':alleles4,
+        snv4 = SeqFeature(location=FeatureLocation(25, 26), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles4,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles5 = {('A', SNP): {'read_groups':{'r1':1}},
                     ('T', INVARIANT): {'read_groups':{'r1':100}}}
-        snv5 = SeqFeature(location=FeatureLocation(31, 31), type='snv',
-                          qualifiers={'alleles':alleles5,
+        snv5 = SeqFeature(location=FeatureLocation(31, 32), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles5,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
 
@@ -1100,45 +1109,6 @@ class TestReadPos(unittest.TestCase):
         assert malignment['reads']['read4'] == ['C', '-', '-']
         assert malignment['reference'] == ['C', '-', 'T']
 
-    def test_calculate_allele_kind(self):
-        'We can calculate allele kind'
-        ref_allele = ['T']
-        allele = ['T']
-        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
-
-        ref_allele = ['C', '-', 'T']
-        allele = ['C', '-', 'T']
-        assert  _calculate_allele_kind(ref_allele, allele) == INVARIANT
-
-        ref_allele = ['C', '-', 'T']
-        allele = ['C', 'T', 'T']
-        assert  _calculate_allele_kind(ref_allele, allele) == INSERTION
-
-        ref_allele = ['C', '-', 'T']
-        allele = ['T', '-', 'T']
-        assert  _calculate_allele_kind(ref_allele, allele) == SNP
-
-        ref_allele = ['C', '-', 'T']
-        allele = ['C', '-', '-']
-        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
-
-#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
-#        allele =     ['T', '---', 'T', 'G', 'A', '']
-#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
-#
-#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
-#        allele =     ['T', 'TGA', 'T', 'G', 'A', '']
-#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
-#
-#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
-#        allele =     ['T', '---', '-', '-', '-', '']
-#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
-#
-#        ref_allele = ['T', '---', 'T', 'G', 'T', 'G']
-#        allele =     ['T', '---', '-', '-', '-', '']
-#        assert  _calculate_allele_kind(ref_allele, allele) == DELETION
-
-
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
 
@@ -1202,9 +1172,11 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive2']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
 #    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
 #    import sys;sys.argv = ['', 'TestReadPos.test_calculate_allele_kind']
 #    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
 #    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
+
     unittest.main()

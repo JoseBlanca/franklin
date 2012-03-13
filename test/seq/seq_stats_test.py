@@ -45,9 +45,11 @@ class SeqStatsTest(unittest.TestCase):
         ssr2 = SeqFeature(FeatureLocation(7, 10), type='microsatellite',
                           qualifiers={'unit':'GAA'})
         snv = SeqFeature(FeatureLocation(7, 7), type='snv',
-                          qualifiers={'alleles':{('T',0):'', ('G',0):''}})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':{('T',0):'', ('A',3):''}})
         snv2 = SeqFeature(FeatureLocation(7, 7), type='snv',
-                          qualifiers={'alleles':{('T',0):'', ('R',0):''}})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':{('T',0):'', ('R',0):''}})
 
         feats1 = [intron, ssr1]
         feats2 = [orf, ssr2, snv, snv2]
@@ -112,7 +114,6 @@ Sequences with microsatellites: 2
    total|              0|              2|              0|              0|              0|        |
 
 '''
-
         result = result.splitlines()
         expected = expected.splitlines()
         for index, line in enumerate(result):

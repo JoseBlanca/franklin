@@ -215,16 +215,20 @@ class SeqVariationFilteringTest(unittest.TestCase):
             assert result == expected
 
         snv.qualifiers['filters']['close_to_snv']
-        alleles2 = {('A', DELETION): None, ('T', INVARIANT):None}
-        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
-                          qualifiers={'alleles':alleles2})
-        snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 4),
-                          qualifiers={'alleles':alleles2})
-        snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 6),
-                          qualifiers={'alleles':alleles2})
-        alleles3 = {('A', INSERTION): None, ('T', INVARIANT):None}
-        snv4 = SeqFeature(type='snv', location=FeatureLocation(9, 9),
-                          qualifiers={'alleles':alleles3})
+        alleles2 = {('A', DELETION): None, ('AT', INVARIANT):None}
+        snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 3),
+                          qualifiers={'reference_allele':'AT',
+                                      'alleles':alleles2})
+        snv2 = SeqFeature(type='snv', location=FeatureLocation(4, 6),
+                          qualifiers={'reference_allele':'AT',
+                                      'alleles':alleles2})
+        snv3 = SeqFeature(type='snv', location=FeatureLocation(6, 8),
+                          qualifiers={'reference_allele':'AT',
+                                      'alleles':alleles2})
+        alleles3 = {('AC', INSERTION): None, ('A', INVARIANT):None}
+        snv4 = SeqFeature(type='snv', location=FeatureLocation(9, 10),
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles3})
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),
                              features=[snv1, snv2, snv3, snv4])
         filter_ = create_close_to_snv_filter(proximity, INDEL)
@@ -308,12 +312,14 @@ class SeqVariationFilteringTest(unittest.TestCase):
                    ('T', SNP)      :{}}
 
         snv1 = SeqFeature(type='snv', location=FeatureLocation(1, 1),
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         alleles = {('A', INVARIANT):{},
-                   ('T', INDEL)    :{}}
+                   ('TC', INSERTION)    :{}}
 
         snv2 = SeqFeature(type='snv', location=FeatureLocation(3, 3),
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
 
         seq_str = 'AATATA'
         seq = SeqWithQuality(seq=Seq(seq_str), qual=[30] * len(seq_str),

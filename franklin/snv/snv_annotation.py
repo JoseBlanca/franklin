@@ -52,6 +52,7 @@ COMPLEX = 5
 TRANSITION = 6
 TRANSVERSION = 7
 UNKNOWN = 8
+VARIANT = 9 # non-invariant allele
 
 SNV_TYPES = {SNP:'SNP', INSERTION:'insertion', DELETION:'deletion',
              INVARIANT:'invariant', INDEL:'indel', COMPLEX:'complex',
@@ -710,16 +711,27 @@ def _add_pileup_reads(snv, reads):
     for allele, allele_info in snv['alleles'].items():
         reads[snv_name][allele] = allele_info['reads']
 
-def _check_read_length(read, position):
-    'If checks if the given pileup read fills all the snv extension'
+def _check_read_length(read, position, read_edge_conf, read_groups_info,
+                       default_bam_platform):
+    'If checks if the given pileup read covers all the snv extension'
     aligned_read = read.alignment
-    read_in_ref = _get_cigar_segments_from_aligned_read(aligned_read)[2]
-    if read_in_ref[0] < position[0] and read_in_ref[1] > position[1]:
+    read_start_in_ref, read_end_in_ref = _get_cigar_segments_from_aligned_read(aligned_read)[2]
+    if read_edge_conf:
+        platform, read_group = _get_platform_from_aligned_read(aligned_read,
+                                                              read_groups_info,
+                                                           default_bam_platform)
+        if platform in read_edge_conf:
+            edge_left, edge_right = read_edge_conf[platform]
+            if edge_left:
+                read_start_in_ref += edge_left
+            if edge_right:
+                read_end_in_ref -= edge_right
+    if read_start_in_ref <= position[0] and read_end_in_ref >= position[1] - 1:
         return True
     else:
         return False
 
-def _get_snv_start_vcf4(snv):
+def _get_fixed_snv_start_vcf4(snv):
     '''It corrects the start of the snv to the new vcf4 system
 
            01234567      snp_caller                 vcf_format
@@ -758,9 +770,9 @@ def _get_snv_end_position(snv):
         end += max_length
     return end
 
-def _init_snv_block(snv):
+def _init_snv_block(snv, read_groups_info, default_bam_platform, read_edge_conf):
     'It inits the data structure for the first snv of a block'
-    start = _get_snv_start_vcf4(snv)
+    start = _get_fixed_snv_start_vcf4(snv)
     end   = _get_snv_end_position(snv)
     reads = {}
     _add_pileup_reads(snv, reads)
@@ -768,14 +780,15 @@ def _init_snv_block(snv):
     if snv['ref_position'] != start:
         # we're checking for the case in which a deletion increments the
         # svn to the left
-        _remove_not_covering_reads(reads, (start, end))
+        _remove_not_covering_reads(reads, (start, end), read_groups_info, default_bam_platform, read_edge_conf)
     return snv_block, reads
 
-def _remove_not_covering_reads(reads, position):
-    '''It checks that the reads in the snv are of the length of the snv.'''
+def _remove_not_covering_reads(reads, position, read_groups_info,
+                               default_bam_platform, read_edge_conf):
+    '''It checks that the reads in the snv cover the length of the snv.'''
     for snv_name, alleles in reads.items():
         for allele, pileup_reads in alleles.items():
-            valid_reads = [r for r in pileup_reads if _check_read_length(r, position)]
+            valid_reads = [r for r in pileup_reads if _check_read_length(r, position, read_edge_conf, read_groups_info, default_bam_platform)]
             if not valid_reads:
                 del reads[snv_name][allele]
             else:
@@ -784,42 +797,81 @@ def _remove_not_covering_reads(reads, position):
         if not alleles or (len(alleles) == 1 and alleles[0][1] == INVARIANT):
             del reads[snv_name]
 
-def _make_snv_blocks(snvs):
+def _make_snv_blocks(snvs, read_edge_conf=None, read_groups_info=None,
+                     default_bam_platform=None):
     '''It joins snvs that should be just one snv. e.g. a deletion that match
     with another deletion in the same position.
     '''
-    try:
-        snv = snvs.next()
-        snv_block, reads = _init_snv_block(snv)
-    except StopIteration:
-        raise StopIteration
 
+    def add_one_to_left_if_snp(snv_block, reads):
+        '''It yields an snv_block,
+
+        but first it checks if we have to add
+        one base to the left because we have an SNP as the first snv of the
+        block. In that case it would check if there are enough reads covering'''
+        # if there are several SNPs together and the first one is an
+        # SNP we should add one base to the block in order to have
+        # a non-variant position as the first base of the new COMPLEX
+        # block
+        first_snv = snv_block['snvs'][0]
+        if (len(snv_block['snvs']) > 1 and
+            _is_snv_of_kind(first_snv, SNP) and
+            first_snv['ref_position'] == snv_block['start']):
+            snv_block['start'] -= 1
+            snv_span = (snv_block['start'], snv_block['end'])
+            _remove_not_covering_reads(reads, snv_span, read_groups_info,
+                                       default_bam_platform, read_edge_conf)
+            if not reads:
+                snv_block, reads = None, None
+        return snv_block, reads
+
+    snv_block, reads = None, None
     for snv in snvs:
-        snv_start = _get_snv_start_vcf4(snv)
+        if snv_block is None:
+            snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                               default_bam_platform,
+                                               read_edge_conf)
+            continue
+        snv_start = _get_fixed_snv_start_vcf4(snv)
+        if snv_start == 38:
+            pass
         snv_end   = _get_snv_end_position(snv)
-        if (snv_block['end'] <= snv_start and
-            not (snv_block['end'] + 1 == snv_start and _is_snv_of_kind(snv, DELETION))):
+        if snv_block['end'] + 1 <= snv_start:
             # we do not add the snv to the block because the snv starts to the
             # right of the current snv_block
-            yield snv_block
-            snv_block, reads = _init_snv_block(snv)
-        else:
-            _remove_not_covering_reads(reads, (snv_block['start'], snv_end))
-            if not reads:
-                # we do not add the snv because there would be not enough reads
-                # covering the snv_block
+            snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+            if snv_block is not None:
                 yield snv_block
-                snv_block, reads = _init_snv_block(snv)
+            snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                               default_bam_platform,
+                                               read_edge_conf)
+        else:
+            _remove_not_covering_reads(reads, (snv_block['start'], snv_end),
+                                       read_groups_info, default_bam_platform,
+                                       read_edge_conf)
+            if not reads:
+                if not _is_snv_of_kind(snv, SNP):
+                    # we do not add the snv because there would be not enough reads
+                    # covering the snv_block
+                    snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+                    if snv_block is not None:
+                        yield snv_block
+                    snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                                       default_bam_platform,
+                                                       read_edge_conf)
             else:
+                #we have decided to add the new snv to the block
                 if snv_block['end'] < snv_end:
                     snv_block['end'] = snv_end
                 snv_block['snvs'].append(snv)
     else:
         if snv_block:
-            yield snv_block
+            snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+            if snv_block is not None:
+                yield snv_block
 
 def get_insertions_in_position(reads, position):
-    'it returns the insertions that are found inside de positions'
+    'it returns the insertions that are found inside the given range'
     insertions = set()
     for segments in reads.values():
         (ref_segments, read_segments, ref_limits, read_limits, segment_types,
@@ -836,6 +888,9 @@ def get_insertions_in_position(reads, position):
 
 def _is_snv_of_kind(snv, kind):
     'True if it is a insertion false if not'
+    #This function works with the kinds used in the one column old codification
+    #DELETIONC, INSERTION, etc. Not in the new multicolumn kind specification
+    #VARIANT, INVARIANT
     allele_types = [allele[1] for allele in snv['alleles'].keys()]
     snv_kind = _calculate_snv_kinds(allele_types)
     if snv_kind == kind:
@@ -843,32 +898,28 @@ def _is_snv_of_kind(snv, kind):
     else:
         return False
 
+def _sum_snv_kinds(kind1, kind2):
+    'It calculates the result of the union of two kinds'
+    if kind1 == kind2:
+        return kind1
+    else:
+        if kind1 == INVARIANT:
+            return kind2
+        elif kind2 == INVARIANT:
+            return kind1
+        elif kind1 in [SNP, COMPLEX] or kind2 in [SNP, COMPLEX]:
+            return COMPLEX
+        else:
+            return INDEL
+
 def _calculate_snv_kinds(kinds):
     'It returns the snv kind for the given feature'
     if len(kinds) == 1:
         return kinds[0]
     kind = kinds[0]
     for index in range(1, len(kinds)):
-        kind = _calculate_kind(kind, kinds[index])
+        kind = _sum_snv_kinds(kind, kinds[index])
     return kind
-
-def _calculate_allele_kind(ref_allele, allele):
-    'It calculates the allele kind'
-    if ref_allele == allele:
-        return INVARIANT
-    kinds = []
-    for ref_n, allele_n in zip(ref_allele, allele):
-        if ref_n == allele_n or ref_n == '' or allele_n == '':
-            kind = INVARIANT
-        elif '-' in ref_n :
-            kind = INSERTION
-        elif '-' in allele_n:
-            kind = DELETION
-        else:
-            kind = SNP
-        kinds.append(kind)
-    return _calculate_snv_kinds(kinds)
-
 
 def _remove_allele_from_alignments(alignments, min_num_reads_for_allele):
     ''' It removes alignments/alleles taking into account the times it appears
@@ -900,9 +951,7 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
         alignments = {}
         allele_kinds = {}
         for snv in snvs:
-
             for allele, allele_info in snv['alleles'].items():
-
                 allele_kind = allele[1]
                 for index in range(len(allele_info['reads'])):
                     name = allele_info['reads'][index].alignment.qname
@@ -937,37 +986,30 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
                 del alignments[read_name]
                 del reads[read_name]
         _remove_allele_from_alignments(alignments, min_num_reads_for_allele)
-
         if alignments:
             malignment = _make_multiple_alignment(alignments, reads)
             # We create the new alleles that span the complete snv_block
-            new_snv = {'ref_name':snvs[0]['ref_name'],
-                       'ref_position':block_start ,
-                       'read_groups':snvs[0]['read_groups'],
-                       'alleles':{}}
-            ref_allele = malignment['reference']
+            alleles = {}
+            ref_allele = ''.join(malignment['reference'])
+            ref_allele = ref_allele.replace('-', '')
             for read, allele in malignment['reads'].items():
-                kind = _calculate_allele_kind(ref_allele, allele)
-
                 allele = ''.join(allele)
-                allele = (allele, kind)
-                if allele not in new_snv['alleles']:
-                    new_snv['alleles'][allele] = {'read_groups':[],
+                allele = allele.replace(DELETION_ALLELE, '')
+                kind = INVARIANT if allele == ref_allele else VARIANT
+                allele = allele, kind
+                if allele not in alleles:
+                    alleles[allele] = {'read_groups':[],
                                                   'reads':[],
                                                   'orientations':[],
                                                   'qualities':[],
                                                   'mapping_qualities':[]}
-                allele_info = new_snv['alleles'][allele]
+                allele_info = alleles[allele]
                 allele_info['read_groups'].append(reads[read]['read_group'])
                 allele_info['reads'].append(reads[read]['read'])
                 allele_info['orientations'].append(reads[read]['orientation'])
                 allele_info['qualities'].append(reads[read]['quality'])
                 allele_info['mapping_qualities'].append(reads[read]['mapping_quality'])
                 allele_info['quality'] = _calculate_allele_quality(allele_info)
-            #reference allele
-            new_snv['reference_allele'] = ''.join(ref_allele)
-
-            alleles = new_snv['alleles']
 
             #remove bad quality alleles
             _remove_bad_quality_alleles(alleles, min_quality)
@@ -983,7 +1025,12 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
             if alleles and ((len(alleles) > min_num_alleles) or
                 (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
                 (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
-                yield new_snv
+                snv = {'ref_name':snvs[0]['ref_name'],
+                       'ref_position':block_start ,
+                       'read_groups':snvs[0]['read_groups'],
+                       'alleles':alleles,
+                       'reference_allele': ref_allele}
+                yield snv
 
 
 def _snvs_in_bam(bam, reference, min_quality,
@@ -991,13 +1038,22 @@ def _snvs_in_bam(bam, reference, min_quality,
                              max_maf, min_num_reads_for_allele,
                              read_edge_conf=None, default_bam_platform=None):
     'It returns the snvs in a bam for the given reference'
+    read_groups_info = get_read_group_info(bam)
+    if not read_groups_info:
+        if default_bam_platform is None:
+            msg = 'Platform is not present either in header or in '
+            msg += 'configuration'
+            raise ValueError(msg)
+        read_groups_info = {UNKNOWN_RG:{'PL':default_bam_platform}}
+
     snvs = _snvs_in_bam_by_position(bam, reference, min_quality,
                                 default_sanger_quality, min_mapq,
                                 min_num_alleles,max_maf,
                                 min_num_reads_for_allele, read_edge_conf,
-                                default_bam_platform)
+                                default_bam_platform, read_groups_info)
 
-    for snv_block in _make_snv_blocks(snvs):
+    for snv_block in _make_snv_blocks(snvs, read_edge_conf, read_groups_info,
+                                      default_bam_platform):
         for snv in _join_snvs(snv_block, min_num_alleles,
                               min_num_reads_for_allele, min_quality,
                               reference_seq=reference):
@@ -1006,18 +1062,11 @@ def _snvs_in_bam(bam, reference, min_quality,
 def _snvs_in_bam_by_position(bam, reference, min_quality,
                              default_sanger_quality, min_mapq, min_num_alleles,
                              max_maf, min_num_reads_for_allele,
-                             read_edge_conf, default_bam_platform):
+                             read_edge_conf, default_bam_platform,
+                             read_groups_info):
     '''It yields the snv information for every snv in the given reference,
     for each position'''
     min_num_alleles = int(min_num_alleles)
-
-    read_groups_info = get_read_group_info(bam)
-    if not read_groups_info:
-        if default_bam_platform is None:
-            msg = 'Platform is not present either in header or in '
-            msg += 'configuration'
-            raise ValueError(msg)
-        read_groups_info = {UNKNOWN_RG:{'PL':default_bam_platform}}
 
     reference_id = get_seq_name(reference)
     reference_seq = reference.seq
@@ -1035,25 +1084,18 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
         for pileup_read in column.pileups:
             #for each read in the column we add its allele to the alleles dict
             aligned_read = pileup_read.alignment
+            read_name = aligned_read.qname
 
             read_mapping_qual = aligned_read.mapq
             #We ignore the reads that are likely to be missaligned
             if read_mapping_qual < min_mapq:
                 continue
 
-            try:
-                read_group = aligned_read.opt('RG')
-            except KeyError:
-                read_group = UNKNOWN_RG
-
-            read_name = aligned_read.qname
-            if read_groups_info and read_group in read_groups_info:
-                platform = read_groups_info[read_group]['PL']
-            else:
-                platform = default_bam_platform
+            platform, read_group = _get_platform_from_aligned_read(aligned_read,
+                                                               read_groups_info,
+                                                           default_bam_platform)
 
             read_pos = pileup_read.qpos
-
 
             alleles_here, read_limits = _get_alleles_from_read(ref_allele,
                                                                ref_pos,
@@ -1113,6 +1155,20 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
                    'reference_allele':ref_allele,
                    'alleles':alleles,
                    'read_groups':read_groups_info}
+
+def _get_platform_from_aligned_read(aligned_read, read_groups_info,
+                                    default_bam_platform):
+    'It returns the platform'
+    try:
+        read_group = aligned_read.opt('RG')
+    except KeyError:
+        read_group = UNKNOWN_RG
+
+    if read_groups_info and read_group in read_groups_info:
+        platform = read_groups_info[read_group]['PL']
+    else:
+        platform = default_bam_platform
+    return platform, read_group
 
 def _remove_alleles_by_read_number(alleles, min_num_reads_for_allele):
     'It remove alleles with less reads than the given value'
@@ -1283,7 +1339,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 default_bam_platform=default_bam_platform,
                              min_num_reads_for_allele=min_num_reads_for_allele):
             snv = _summarize_snv(snv)
-            location = snv['ref_position']
+            start = snv['ref_position']
+            stop  = snv['ref_position'] + len(snv['reference_allele'])
             type_ = 'snv'
 
             qualifiers = {'alleles':snv['alleles'],
@@ -1291,7 +1348,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                           'read_groups':snv['read_groups'],
                           'mapping_quality': snv['mapping_quality'],
                           'quality': snv['quality']}
-            snv_feat = SeqFeature(location=FeatureLocation(location, location),
+            snv_feat = SeqFeature(location=FeatureLocation(start, stop),
                               type=type_,
                               qualifiers=qualifiers)
 
@@ -1304,16 +1361,30 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
 
 def calculate_snv_kind(feature, detailed=False):
     'It returns the snv kind for the given feature'
-    snv_kind = INVARIANT
-    alleles = feature.qualifiers['alleles']
-    for allele in alleles.keys():
-        allele_kind = allele[1]
-        snv_kind = _calculate_kind(allele_kind, snv_kind)
+    alleles = feature.qualifiers['alleles'].keys()
+    ref_allele = feature.qualifiers['reference_allele']
 
-    if snv_kind == SNP and detailed:
-        snv_kind = _guess_snp_kind(alleles)
-
-    return snv_kind
+    lengths = [len(ref_allele)]
+    for a , kind in alleles :
+        if kind != INVARIANT:
+            lengths.append(len(a))
+    #lengths.extend([len(a) for a , kind in alleles if kind != INVARIANT])
+    if len(lengths) == 1:
+        return INVARIANT
+    elif all([l == 1 for l in lengths]):
+        if detailed:
+            return _guess_snp_kind(feature.qualifiers['alleles'], ref_allele)
+        else:
+            return SNP
+    elif len(lengths) > 2:
+        return COMPLEX
+    else:
+        if lengths[0] < lengths[1]:
+            return INSERTION
+        elif lengths[0] > lengths[1]:
+            return DELETION
+        else:
+            raise RuntimeError('I shouldnt be here, fixme.')
 
 def _al_type(allele):
     'I guesses the type of the allele'
@@ -1324,14 +1395,17 @@ def _al_type(allele):
         return 'pirimidine'
     return UNKNOWN
 
-def _guess_snp_kind(alleles):
+def _guess_snp_kind(alleles, ref_allele):
     'It guesses the type of the snp'
     alleles = alleles.keys()
     # if we take into account the reference to decide if there is a variation
-    if len(alleles) < 2:
+    alleles = [a for a, kind in alleles if kind != INVARIANT]
+    if len(alleles) > 1:
         return UNKNOWN
-    al0 = _al_type(alleles[0][0])
-    al1 = _al_type(alleles[1][0])
+
+    al0 = _al_type(alleles[0])
+    al1 = _al_type(ref_allele)
+
     if al0 == UNKNOWN or al1 == UNKNOWN:
         snv_kind = UNKNOWN
     elif al0 == al1:
@@ -1339,20 +1413,6 @@ def _guess_snp_kind(alleles):
     else:
         snv_kind = TRANSVERSION
     return snv_kind
-
-def _calculate_kind(kind1, kind2):
-    'It calculates the result of the union of two kinds'
-    if kind1 == kind2:
-        return kind1
-    else:
-        if kind1 is INVARIANT:
-            return kind2
-        elif kind2 is INVARIANT:
-            return kind1
-        elif kind1 in [SNP, COMPLEX] or kind2 in [SNP, COMPLEX]:
-            return COMPLEX
-        else:
-            return INDEL
 
 def _cmp_by_read_num(allele1, allele2):
     'cmp by the number of reads for each allele'
