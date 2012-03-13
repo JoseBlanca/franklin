@@ -46,25 +46,25 @@ class SnvSequenomWriter(object):
     def write(self, sequence, selected_snv_location):
         'It writes a seq with the alternative alleles in one position and Ns in the others.'
         start = selected_snv_location - self._length
-        stop =  selected_snv_location + self._length + 1
+        end =  selected_snv_location + self._length + 1
         if start < 0:
             start = 0
-        if stop > len(sequence):
-            stop = len(sequence)
-        sequence = sequence[start: stop]
+        if end > len(sequence):
+            end = len(sequence)
+        sequence = sequence[start: end]
 
         selected_snv_location -= start
         maf_threshold = self._maf
-        prev_seq_stop = 0
+        prev_seq_end = 0
         seq_to_print = ''
         for snv in sequence.get_features(kind='snv'):
             # snv start and end [start, end[.
             # Correcting the previous sequence slice
             snv_start = snv.location.start.position - start
-            snv_stop = snv.location.end.position - start
+            snv_end = snv.location.end.position - start
             # join the previous sequence to the sequence to print
-            seq_to_print += str(sequence[prev_seq_stop:snv_start].seq)
-            prev_seq_stop = snv_stop
+            seq_to_print += str(sequence[prev_seq_end:snv_start].seq)
+            prev_seq_end = snv_end
 
             if snv_start == selected_snv_location:
                 #subtituir por allelos
@@ -96,7 +96,7 @@ class SnvSequenomWriter(object):
 
             seq_to_print += to_print
         else:
-            seq_to_print += str(sequence[prev_seq_stop:stop + 1].seq)
+            seq_to_print += str(sequence[prev_seq_end:end + 1].seq)
 
         name = sequence.name + '_' + str(selected_snv_location + 1)
         self.fhand.write('>%s\n%s\n' % (name, seq_to_print))

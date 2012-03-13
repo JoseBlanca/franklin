@@ -833,8 +833,6 @@ def _make_snv_blocks(snvs, read_edge_conf=None, read_groups_info=None,
                                                read_edge_conf)
             continue
         snv_start = _get_fixed_snv_start_vcf4(snv)
-        if snv_start == 38:
-            pass
         snv_end   = _get_snv_end_position(snv)
         if snv_block['end'] + 1 <= snv_start:
             # we do not add the snv to the block because the snv starts to the
@@ -1340,7 +1338,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                              min_num_reads_for_allele=min_num_reads_for_allele):
             snv = _summarize_snv(snv)
             start = snv['ref_position']
-            stop  = snv['ref_position'] + len(snv['reference_allele'])
+            end = snv['ref_position'] + len(snv['reference_allele'])
             type_ = 'snv'
 
             qualifiers = {'alleles':snv['alleles'],
@@ -1348,7 +1346,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                           'read_groups':snv['read_groups'],
                           'mapping_quality': snv['mapping_quality'],
                           'quality': snv['quality']}
-            snv_feat = SeqFeature(location=FeatureLocation(start, stop),
+            snv_feat = SeqFeature(location=FeatureLocation(start, end),
                               type=type_,
                               qualifiers=qualifiers)
 
