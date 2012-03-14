@@ -307,7 +307,7 @@ class VariantCallFormatWriter(object):
         header.append('##INFO=<ID=RC,Number=A,Type=Integer,Description="Read count of the alt alleles">')
         header.append('##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">')
         header.append('##INFO=<ID=BQ,Number=1,Type=Float,Description="RMS Base Quality">')
-        header.append('##INFO=<ID=GC,Number=G,Type=String,Description="Genotype Counts: Num. genotypes in which every alleles has been detected">')
+        header.append('##INFO=<ID=GC,Number=.,Type=String,Description="Genotype Counts: Num. genotypes in which every alleles has been detected">')
         header.append('##INFO=<ID=GP,Number=1,Type=String,Description="Genotype polimorphism">')
         header.append('##INFO=<ID=EZ,Number=1,Type=String,Description="CAP enzymes">')
         header.append('##FORMAT=<ID=GT,Number=1,Type=String,Description="Read group Genotype">')
