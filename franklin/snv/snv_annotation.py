@@ -814,9 +814,17 @@ def _make_snv_blocks(snvs, read_edge_conf=None, read_groups_info=None,
         # a non-variant position as the first base of the new COMPLEX
         # block
         first_snv = snv_block['snvs'][0]
-        if (len(snv_block['snvs']) > 1 and
-            _is_snv_of_kind(first_snv, SNP) and
-            first_snv['ref_position'] == snv_block['start']):
+        two_snps_together = (len(snv_block['snvs']) > 1 and
+                             _is_snv_of_kind(first_snv, SNP))
+        # a complex allele would have an insertion and a deletion or an
+        # insertion and a snp in the same allele
+        # ref  A-   A-
+        # read GT   -T
+        complex_kinds = [k for a, k in first_snv['alleles'].keys() if k == COMPLEX]
+        complex_allele_in_first_snv = True if complex_kinds else False
+
+        if (first_snv['ref_position'] == snv_block['start'] and
+            (two_snps_together or complex_allele_in_first_snv)):
             snv_block['start'] -= 1
             snv_span = (snv_block['start'], snv_block['end'])
             _remove_not_covering_reads(reads, snv_span, read_groups_info,
@@ -1098,9 +1106,29 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
             alleles_here, read_limits = _get_alleles_from_read(ref_allele,
                                                                ref_pos,
                                                                pileup_read)
-            #if read_name == '964_643_534_F3':
-            #    print alleles_here, read_pos, ref_pos
-
+            #there is an special case that we had not considered before and that
+            #can't be coded with the schema returned by this function, an SNP
+            #followed by an insertion
+            # ref  CA-C
+            # read CGCC
+            # we will code it as a complex, C and we will remove the SNP
+            if len(alleles_here) > 1:
+                kinds = [a[1] for a in alleles_here if a[1] != INVARIANT]
+                if len(kinds) == 1:
+                    pass
+                elif len(kinds) == 2:
+                    if kinds[0] == INSERTION:
+                        ins_allele = list(alleles_here[0])
+                    elif kinds[1] == INSERTION:
+                        ins_allele = list(alleles_here[1])
+                    else:
+                        msg = 'At least one allele should be an insertion'
+                        raise RuntimeError(msg)
+                    ins_allele[1] = COMPLEX
+                    alleles_here = [tuple(ins_allele)]
+                else:
+                    msg = '3 alleles in one read, I should not be here'
+                    raise RuntimeError(msg)
             if read_edge_conf and platform in read_edge_conf:
                 edge_left, edge_right = read_edge_conf[platform]
 
@@ -1382,7 +1410,10 @@ def calculate_snv_kind(feature, detailed=False):
         elif lengths[0] > lengths[1]:
             return DELETION
         else:
-            raise RuntimeError('I shouldnt be here, fixme.')
+            if lengths[0] == 2:
+                raise RuntimeError('This snv is not well contructed.')
+            return COMPLEX
+
 
 def _al_type(allele):
     'I guesses the type of the allele'
