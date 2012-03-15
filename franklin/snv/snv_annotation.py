@@ -1077,8 +1077,10 @@ def _snvs_in_bam(bam, reference, min_quality,
 
     for snv_block in _make_snv_blocks(snvs, read_edge_conf, read_groups_info,
                                       default_bam_platform):
-        yield _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
+        snv =_join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
                          min_quality, reference_seq=reference)
+        if snv is not None:
+            yield snv
 
 def _snvs_in_bam_by_position(bam, reference, min_quality,
                              default_sanger_quality, min_mapq, min_num_alleles,
