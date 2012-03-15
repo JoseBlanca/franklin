@@ -23,6 +23,7 @@ from operator import attrgetter
 from collections import defaultdict
 from copy import copy
 import math, itertools
+import logging
 
 try:
     import pysam
@@ -386,7 +387,6 @@ def _join_alignments(alignment1, alignment2, snv_types_per_read):
 
         inser_1 = ref1_item.count('-')
         inser_2 = ref2_item.count('-')
-#        print ref1_item, ref2_item, inser_1, inser_2
         if inser_1 == inser_2:
 
             nalig['reference'].append(ref1_item)
@@ -947,7 +947,7 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
     'It joins the snvs that should be together'
     snvs = snv_block['snvs']
     if len(snvs) == 1 and _is_snv_of_kind(snvs[0], SNP):
-        yield snvs[0]
+        return snvs[0]
     else:
         block_start = snv_block['start']
         block_end   = snv_block['end']
@@ -984,6 +984,7 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
                                                    block_start, block_end,
                                                    reference_seq=reference_seq)
                 alignments[read_name] = alignment
+
         # we need to remove the reads that do not cover the alignment in its
         # complete span
         for read_name in list(reads.keys()):
@@ -1036,7 +1037,23 @@ def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
                        'read_groups':snvs[0]['read_groups'],
                        'alleles':alleles,
                        'reference_allele': ref_allele}
-                yield snv
+                #some alleles might end up here because the functions that do
+                #the SNP calling might have some problems.For instance
+                # ref TACTG  qualities
+                # al1 TA--G  45 45       45
+                # al2 T-CTG  10    60 45 45
+                alleles_different_in_first_base = [(a, k) for a, k in alleles.keys() if ref_allele[0] != a[0]]
+                alleles_not_invariant = [(a, k) for a, k in alleles.keys() if k != INVARIANT]
+                if len(alleles_not_invariant) - len(alleles_different_in_first_base) > 0:
+                    #we remove the offending alleles
+                    for allele in alleles_different_in_first_base:
+                        del snv['alleles'][allele]
+                else:
+                    msg = 'One allele in molecule %s position %i will be malformed'
+                    msg %= snv['ref_name'], snv['ref_position']
+                    logger = logging.getLogger('franklin')
+                    logger.warn(msg)
+                return snv
 
 
 def _snvs_in_bam(bam, reference, min_quality,
@@ -1060,10 +1077,8 @@ def _snvs_in_bam(bam, reference, min_quality,
 
     for snv_block in _make_snv_blocks(snvs, read_edge_conf, read_groups_info,
                                       default_bam_platform):
-        for snv in _join_snvs(snv_block, min_num_alleles,
-                              min_num_reads_for_allele, min_quality,
-                              reference_seq=reference):
-            yield snv
+        yield _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
+                         min_quality, reference_seq=reference)
 
 def _snvs_in_bam_by_position(bam, reference, min_quality,
                              default_sanger_quality, min_mapq, min_num_alleles,
@@ -1147,7 +1162,6 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
                 _add_allele(alleles, allele, kind, read_name, read_group,
                     is_reverse, qual, read_mapping_qual,
                     read_groups_info, pileup_read)
-
         #remove N
         _remove_alleles_n(alleles)
 
@@ -1172,6 +1186,7 @@ def _snvs_in_bam_by_position(bam, reference, min_quality,
         #a variation is yield
         if not alleles:
             continue
+
         if (len(alleles) > min_num_alleles or
             (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
             (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
@@ -1735,7 +1750,6 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
     alleles separated in rg1 and rg2 '''
     alleles_for_groups = {}
     for allele, alleles_info in alleles.items():
-        #print allele, alleles_info
         for read_group in alleles_info['read_groups']:
             if (min_reads_per_allele and
                 alleles_info['read_groups'][read_group] < min_reads_per_allele):
