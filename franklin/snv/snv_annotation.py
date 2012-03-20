@@ -1427,8 +1427,6 @@ def calculate_snv_kind(feature, detailed=False):
         elif lengths[0] > lengths[1]:
             return DELETION
         else:
-            if lengths[0] == 2:
-                raise RuntimeError('This snv is not well contructed.')
             return COMPLEX
 
 
