@@ -60,7 +60,8 @@ from franklin.seq.writers import (SequenceWriter, SsrWriter,
 from franklin.gff import SeqGffWriter
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seq_stats import do_annotation_statistics
-from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter
+from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter,\
+    compress_and_index_vcf
 
 from franklin.utils.misc_utils import (VersionedPath, xml_itemize,
                                        get_num_threads)
@@ -385,6 +386,8 @@ class WriteAnnotationAnalyzer(Analyzer):
                 if kind in feature_counter:
                     self._close_and_remove_files(fhands,
                                                  feature_counter[kind_key])
+        if 'vcf' in outputs:
+            compress_and_index_vcf(outputs['vcf'].name)
 
     @staticmethod
     def _close_and_remove_files(fhands, num_features):

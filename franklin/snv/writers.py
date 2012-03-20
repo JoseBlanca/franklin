@@ -28,6 +28,7 @@ from franklin.snv.snv_filters import SnvNamer
 from franklin.snv.snv_annotation import (_allele_count, _get_group,
                                          calculate_snv_kind)
 from franklin.utils.misc_utils import OrderedDict
+from franklin.utils.cmd_utils import call
 
 class SnvSequenomWriter(object):
     'It writes the snv in the sequenom format'
@@ -273,6 +274,15 @@ class SnvIlluminaWriter(object):
                                      seq_left.seq + alleles_str + seq_rigth.seq)
             self.fhand.write(illum_str)
         self.fhand.flush()
+def compress_and_index_vcf(vcf_fpath):
+    '''It indexes the vcf file using tabix and bgzip. the indexes file will be
+    vcf_filename.gz
+    '''
+    cmd = ['bgzip', '-f', vcf_fpath]
+    call(cmd, raise_on_error=True)
+
+    cmd = ['tabix', '-f', '{0:s}.gz'.format(vcf_fpath)]
+    call(cmd, raise_on_error=True)
 
 #http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41
 class VariantCallFormatWriter(object):
