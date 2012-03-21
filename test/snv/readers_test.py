@@ -32,6 +32,19 @@ class TestVcfParser(unittest.TestCase):
         assert vcfs[14]['samples'] == {'MU16_454_MU16': {'A': 2},
                                        'UPV196_454_UPV196': {'G': 2}}
 
+        #version 4.1
+        vcf_path = join(TEST_DATA_DIR, 'snvs_to_igv.vcf')
+        vcf = VcfParser(vcf_path)
+        assert vcf.version == '4.1'
+        assert  vcf.header['FILTER'] == {'q10': 'Quality below 10'}
+        vcf_ = vcf.get_snv(('ctg1', '36'))
+        vcfs = list(vcf.vcfs)
+        assert len(vcfs) == 2
+        assert vcfs[0] == vcf_
+
+        assert 'GROUP11' in vcf_['samples']
+        assert vcf_['FILTER'] == ['.']
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_vcfparser']
     unittest.main()

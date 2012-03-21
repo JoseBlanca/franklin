@@ -1,0 +1,19 @@
+##fileformat=VCFv4.1
+##fileDate=20120320
+##source=franklin
+##reference=contigs.st_nucl.11.pickle
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##INFO=<ID=RC,Number=A,Type=Integer,Description="Read count of the alt alleles">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=BQ,Number=1,Type=Float,Description="RMS Base Quality">
+##INFO=<ID=GC,Number=.,Type=String,Description="Genotype Counts: Num. genotypes in which every alleles has been detected">
+##INFO=<ID=GP,Number=1,Type=String,Description="Genotype polimorphism">
+##INFO=<ID=EZ,Number=1,Type=String,Description="CAP enzymes">
+##FILTER=<ID=q10,Description="Quality below 10">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Read group Genotype">
+##FORMAT=<ID=EC,Number=.,Type=Integer,Description="Allele count for the ref and alt alleles in the order listed">
+##contig=<ID=ctg1,URL=ftp://somewhere.org/assembly.fa>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	GROUP1	GROUP2	GROUP3	GROUP4	GROUP5	GROUP6	GROUP7	GROUP8	GROUP9	GROUP10	GROUP11	GROUP12	GROUP13	GROUP14
+ctg1	36	.	G	A	76	.	RC=5;AF=0.1;MQ=35.61;BQ=46.78;GC=11,4;GP=0.27	GT:EC	0:17	0|1:2,1	0:6	0:4	0:20	0:5	0:13	0:13	0:1	0:4	0:1	1:1	1:1	1:2
+ctg1	218	.	G	A	76	.	RC=5;AF=0.1;MQ=35.61;BQ=46.78;GC=11,4;GP=0.27	GT:EC	0:17	0|1:2,1	0:6	0:4	0:20	0:5	0:13	0:13	0:1	0:4	0:1	1:1	1:1	1:2

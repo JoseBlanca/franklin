@@ -9,16 +9,29 @@ class VcfParser(object):
         'Class initiator'
         self._fpath = fpath
         self.header = None
-        self._get_header()
+
+        if float(self.version) < 4:
+            self._get_header_v3()
+        else:
+            self._get_header_v4()
         self._index = None
 
     def _get_version(self):
         'version of the vcf'
-        version_unformat = self.header['format']
-        return version_unformat.split('v')[1]
+        fhand = open(self._fpath)
+        first_line = fhand.readline()
+        fhand.close()
+        first_line = first_line.strip()
+        first_line =  first_line.lstrip('##')
+        kind, value = first_line.split('=', 1)
+        if kind not in ('fileformat', 'format'):
+            msg = 'Vcf file malformed. first line must be version info'
+            raise ValueError(msg)
+        return value.split('v')[1]
+
     version = property(_get_version)
 
-    def _get_header(self):
+    def _get_header_v3(self):
         'it returns the header'
         if self.header is not None:
             return self.header
@@ -47,6 +60,47 @@ class VcfParser(object):
                 line = line.lstrip('#')
                 headers['colnames'] = line.split()
         self.header = headers
+
+    def _get_header_v4(self):
+        'it returns the header'
+        if self.header is not None:
+            return self.header
+        headers = {}
+        for line in open(self._fpath):
+            if not line.startswith('#'):
+                break
+            if line.startswith('##'):
+                line = line.strip()
+                line = line.lstrip('##')
+                kind, value = line.split('=', 1)
+                if kind == 'FILTER':
+                    if kind not in headers:
+                        headers[kind] = {}
+                    values = self._parse_header_line_v4(value)
+                    headers[kind][values['ID']] = values['Description']
+                elif kind in ('FORMAT', 'INFO'):
+                    if kind not in headers:
+                        headers[kind] = {}
+                    values = self._parse_header_line_v4(value)
+                    name = values['ID']
+                    del values['ID']
+                    headers[kind][name] = values
+            else:
+                line = line.lstrip('#')
+                headers['colnames'] = line.split()
+
+        self.header = headers
+
+    @staticmethod
+    def _parse_header_line_v4(line):
+        'it parses a header line, but olny the value part. between <>'
+        values = {}
+        line = line.strip('<')
+        line = line.strip('>')
+        for pair in line.split(','):
+            key, value = pair.split('=')
+            values[key] = value.strip('"')
+        return values
 
     def _get_vcfs(self):
         'vcf generator'
