@@ -281,7 +281,7 @@ def compress_and_index_vcf(vcf_fpath):
     cmd = ['bgzip', '-f', vcf_fpath]
     call(cmd, raise_on_error=True)
 
-    cmd = ['tabix', '-f', '{0:s}.gz'.format(vcf_fpath)]
+    cmd = ['tabix', '-p', 'vcf', '-f', '{0:s}.gz'.format(vcf_fpath)]
     call(cmd, raise_on_error=True)
 
 #http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41
