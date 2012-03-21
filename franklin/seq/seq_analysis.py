@@ -106,7 +106,6 @@ def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
 
     #parse est2genome
     result = est2genome_parser(stdout)
-
     #get_introns_from parser_result
     return result['cdna']['introns']
 

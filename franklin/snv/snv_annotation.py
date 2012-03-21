@@ -19,10 +19,11 @@ Created on 16/02/2010
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-
+from operator import attrgetter
 from collections import defaultdict
 from copy import copy
-import math
+import math, itertools
+import logging
 
 try:
     import pysam
@@ -34,12 +35,13 @@ from Bio.Restriction import Analysis, CommOnly, RestrictionBatch
 from franklin.seq.seqs import SeqFeature, get_seq_name
 from franklin.utils.misc_utils import get_fhand
 from franklin.sam import create_bam_index, get_read_group_info
-from franklin.seq.readers import seqs_in_file
 
 DEFAUL_MIN_NUM_READS_PER_ALLELE = 2
 DEFAULT_PLOIDY = 2
 
 DELETION_ALLELE = '-'
+UNKNOWN_NUCLEOTYDE = 'N'
+NO_NUCLEOTYDE = ' '
 N_ALLLELES = ('n', '?')
 
 SNP = 0
@@ -51,6 +53,7 @@ COMPLEX = 5
 TRANSITION = 6
 TRANSVERSION = 7
 UNKNOWN = 8
+VARIANT = 9 # non-invariant allele
 
 SNV_TYPES = {SNP:'SNP', INSERTION:'insertion', DELETION:'deletion',
              INVARIANT:'invariant', INDEL:'indel', COMPLEX:'complex',
@@ -78,6 +81,9 @@ IN_LAST_POS = 3
 IN_FIRST_AND_LAST = 4
 
 
+CIGAR_DECODE = 'MIDNSHP'
+
+
 def _get_raw_allele_from_read(aligned_read, index):
     'It returns allele, quality, is_reverse'
     allele = aligned_read.seq[index].upper()
@@ -92,6 +98,13 @@ def _get_raw_allele_from_read(aligned_read, index):
 
 SEGMENTS_CACHE = {}
 MAX_CACHED_SEGMENTS = 10000
+
+def _get_cigar_segments_from_aligned_read(aligned_read):
+    'It gets the cigar from an aligened_read of pysam'
+    begin_pos_read_in_ref = aligned_read.pos
+    read_len = len(aligned_read.seq)
+    cigar = aligned_read.cigar
+    return _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len)
 
 def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
     '''It returns two lists (reference and read) in which the firsts nucleotides
@@ -113,8 +126,8 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
     It also returns a list with the cigar category for each segment.
     The position in the reference is only used for the cache
     '''
+
     cigar = tuple(cigar)
-    #print cigar
     global SEGMENTS_CACHE
     cache_key = read_len, begin_pos_read_in_ref, cigar
     if cache_key in SEGMENTS_CACHE:
@@ -176,6 +189,13 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
 
     ref_end = ref_pos - 1
     ref_start = ref_segments[0]
+    # Somethimes the first segment is an insertion and the reference por the
+    # start position is in the next segment
+    if ref_segments[0] is not None:
+        ref_start = ref_segments[0]
+    else:
+        ref_start = ref_segments[1]
+
     ref_limits = [ref_start, ref_end]
 
     read_end = read_end - 1
@@ -190,6 +210,7 @@ def _get_segments_from_cigar(begin_pos_read_in_ref, cigar, read_len):
         if len(SEGMENTS_CACHE) > MAX_CACHED_SEGMENTS:
             SEGMENTS_CACHE = {}
     return result
+
 
 def _locate_segment(ref_pos, ref_segments, segment_lens, ref_limits):
     'It locates a read position in the segments'
@@ -277,6 +298,282 @@ def _read_pos_around_del(ref_segments, read_segments, segment_types,
         raise RuntimeError(msg)
     return read_pos1, read_pos2
 
+def _chop_alignment(alignment):
+    'it chops the alignments in lists'
+    ref, read = alignment
+    listed_ref = []
+    listed_read = []
+    inserts = ''
+    read_inserts = ''
+    for index in range(len(ref)):
+        if ref[index] == '-':
+            inserts += '-'
+            read_inserts += read[index]
+        else:
+            if inserts != '':
+                listed_ref.append(inserts)
+                listed_read.append(read_inserts)
+                inserts = ''
+                read_inserts = ''
+            listed_ref.append(ref[index])
+            listed_read.append(read[index])
+    else:
+        if inserts != '':
+            listed_ref.append(inserts)
+            listed_read.append(read_inserts)
+    return listed_ref, listed_read
+
+def _prepare_alignments(alignments):
+    'It prepares the alignments for joining'
+    prepared_alignments = []
+    for name, alignment in alignments.items():
+        ref, read = _chop_alignment(alignment)
+        assert len(ref) == len(read)
+        alignment = {'reference':ref,
+                     'reads':{name:read}}
+        prepared_alignments.append(alignment)
+    return prepared_alignments
+
+def add_collumn(alignment, nalig, index, diff_length=0):
+    'It adds a column to the given alignment'
+    for name, read in alignment['reads'].items():
+        if name not in nalig['reads']:
+            nalig['reads'][name] = []
+        try:
+            to_add = read[index]
+        except IndexError:
+            to_add = diff_length * '-'
+        nalig['reads'][name].append(to_add)
+
+def _join_alignments(alignment1, alignment2, snv_types_per_read):
+    'It joins two alignments and makes a new alignment'
+    def _insert_in_seq(list_seq):
+        for element in list_seq:
+            if '-' in element:
+                return True
+        return False
+    if len(alignment1['reference']) > len(alignment2['reference']):
+        align1 = alignment1
+        align2 = alignment2
+    else:
+        align1 = alignment2
+        align2 = alignment1
+
+    ref1 = align1['reference']
+    ref2 = align2['reference']
+
+    if (not _insert_in_seq(ref1) and not _insert_in_seq(ref2) and
+        len(ref1) == len(ref2)):
+        reads = {}
+        for name, read in align1['reads'].items():
+            reads[name] = read
+        for name, read in align2['reads'].items():
+            reads[name] = read
+        return {'reference':ref1,
+                'reads':reads}
+
+    nalig = {'reference':[], 'reads':{}}
+    index1_delta = 0
+    index2_delta = 0
+    for index in range(len(ref1)):
+
+        index1 = index - index1_delta
+        index2 = index - index2_delta
+        ref1_item = ref1[index1]
+        try:
+            ref2_item = ref2[index2]
+        except IndexError:
+            ref2_item = ref1_item
+
+        inser_1 = ref1_item.count('-')
+        inser_2 = ref2_item.count('-')
+        if inser_1 == inser_2:
+
+            nalig['reference'].append(ref1_item)
+            add_collumn(align1, nalig, index1, inser_1)
+            add_collumn(align2, nalig, index2, inser_2)
+
+        elif inser_1 > inser_2:
+            inser_diff = inser_1 - inser_2
+            nalig['reference'].append(ref1_item)
+            add_collumn(align1, nalig, index1)
+            just_once = True
+            for name, read in align2['reads'].items():
+                if name not in nalig['reads']:
+                    nalig['reads'][name] = []
+                if inser_2 > 0:
+                    nalig['reads'][name].append(read[index2] + inser_diff * '-')
+                else:
+                    nalig['reads'][name].append(inser_diff * '-')
+                    if just_once:
+                        index2_delta += 1
+                        just_once = False
+
+        else:
+            inser_diff = inser_2 - inser_1
+            nalig['reference'].append(ref2_item)
+            just_once = True
+            for name, read in align1['reads'].items():
+                if name not in nalig['reads']:
+                    nalig['reads'][name] = []
+                if inser_1 > 0:
+                    nalig['reads'][name].append(read[index1] + inser_diff * '-')
+                else:
+                    nalig['reads'][name].append(inser_diff * '-')
+                    if just_once:
+                        index1_delta += 1
+                        just_once = False
+            add_collumn(align2, nalig, index)
+    return nalig
+
+def _make_multiple_alignment(alignments, reads=None):
+    'It makes the multiple alignments using ref to read sinmple alignments'
+    snv_types_per_read = {}
+    alignments = _prepare_alignments(alignments)
+    if not alignments:
+        raise RuntimeError('No alignments to create the multiple one')
+    alignment = alignments[0]
+    assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
+    for index in range(1, len(alignments)):
+        assert len(alignments[index]['reads'].values()[0]) == len(alignments[index]['reference'])
+        alignment = _join_alignments(alignment, alignments[index],
+                                     snv_types_per_read)
+    assert len(alignment['reads'].values()[0]) == len(alignment['reference'])
+    return alignment
+
+def _get_alignment_section(pileup_read, start, end, reference_seq=None):
+    'It gets a section of the alignment of the given read'
+    # we don't get the last position because our politic is:
+    #  [start, end[
+    #  [start, stop]
+
+    if start > end:
+        raise ValueError('Start (%i) is bigger than end (%i)' % (start, end))
+
+    stop = end - 1
+
+    aligned_read = pileup_read.alignment
+    read_seq     = aligned_read.seq
+
+    (ref_segments, read_segments, ali_ref_limits, ali_read_limits, segment_types,
+    segment_lens) = _get_cigar_segments_from_aligned_read(aligned_read)
+
+    if (start < 0 or (reference_seq and len(reference_seq) < end)):
+        ref_len = len(reference_seq) if reference_seq else None
+        msg  = 'Section outside the alignment: start (%d),'
+        msg += 'stop (%d), limits (1, %d)'
+        msg %= start, stop, ref_len
+        raise ValueError(msg)
+
+    #in which segment starts the section
+    start_segment = _locate_segment(start, ref_segments, segment_lens, ali_ref_limits)
+    start_segment = start_segment[0] if start_segment is not None else None
+
+    end_segment  = _locate_segment(end, ref_segments, segment_lens, ali_ref_limits)
+    end_segment  = end_segment[0]  if end_segment  is not None else None
+
+    stop_segment = _locate_segment(stop, ref_segments, segment_lens, ali_ref_limits)
+    if stop_segment is not None:
+        stop_segment, stop_segment_pos = stop_segment
+    else:
+        stop_segment, stop_segment_pos = None, None
+
+    #when does the read start and end in the reference coordinate system
+    ref_start_limit, ref_end_limit = ali_ref_limits
+    read_start_in_ref = start if start >= ref_start_limit else ref_start_limit
+    read_stop_in_ref  = stop  if stop  <= ref_end_limit   else ref_end_limit
+
+
+    # we have to look if  the position of the end is in an insertion. For that
+    # we can look the difference between the end_segment and
+    # the origial_end_segment
+
+    if (stop_segment is not None and stop_segment_pos == IN_LAST_POS and
+        len(ref_segments) > stop_segment + 1 and
+        segment_types[stop_segment + 1] == INSERTION):
+        stop_segment += 1
+
+    cum_ref_seq, cum_read_seq = '', ''
+    #before alignment
+    len_before_segment = ref_start_limit - start
+    if reference_seq is None:
+        ref_seq_before = UNKNOWN_NUCLEOTYDE * len_before_segment
+    else:
+        ref_seq_before = str(reference_seq.seq[ref_start_limit - len_before_segment:ref_start_limit])
+    cum_ref_seq += ref_seq_before
+    cum_read_seq += NO_NUCLEOTYDE * len_before_segment
+
+    #in alignment
+    ssegment = 0 if start_segment is None else start_segment
+    esegment = len(ref_segments) - 1 if stop_segment is None else stop_segment
+    for isegment in range(ssegment, esegment + 1):
+        seg_type = segment_types[isegment]
+        seg_len = segment_lens[isegment]
+        ref_seg_start = ref_segments[isegment]
+        # when the segment is an insert there is no start, we have to calculate
+        if ref_seg_start is None:
+            try:
+                ref_seg_start = ref_segments[isegment + 1] - 1
+            except IndexError:
+                prev_seg_start = ref_segments[isegment -1]
+                prev_seg_len   = segment_lens[isegment -1]
+                ref_seg_start = prev_seg_start + prev_seg_len
+
+
+        read_seg_start = read_segments[isegment]
+        if isegment == ssegment:
+            start_delta = read_start_in_ref - ref_seg_start
+        else:
+            start_delta = 0
+
+        if isegment == esegment:
+            end_delta = seg_len - read_stop_in_ref + ref_seg_start - 1
+        else:
+            end_delta = 0
+
+        if seg_type == INSERTION:
+            seg_ref_seq = DELETION_ALLELE * seg_len
+            read_start = read_seg_start + start_delta
+            read_end = read_start + seg_len  #- end_delta
+            seg_read_seq = read_seq[read_start: read_end]
+        elif seg_type == DELETION or seg_type == SKIP:
+            ref_start = ref_seg_start + start_delta
+            ref_end = ref_start + seg_len - start_delta - end_delta
+
+            if reference_seq is not None:
+                seg_ref_seq = str(reference_seq.seq[ref_start: ref_end])
+            else:
+                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - start_delta - end_delta)
+            read_start = None
+            read_end = None
+            seg_read_seq = DELETION_ALLELE * (seg_len - start_delta - end_delta)
+
+        else:
+            ref_start = ref_seg_start + start_delta
+            ref_end = ref_start + seg_len - end_delta - start_delta
+            if reference_seq is not None:
+                seg_ref_seq = str(reference_seq.seq[ref_start: ref_end])
+            else:
+                seg_ref_seq = UNKNOWN_NUCLEOTYDE * (seg_len - end_delta - start_delta)
+            read_start = read_seg_start + start_delta
+            read_end = read_start + seg_len - end_delta - start_delta
+            seg_read_seq = read_seq[read_start: read_end]
+
+        cum_ref_seq += seg_ref_seq
+        cum_read_seq += seg_read_seq
+
+    #after alignment
+    len_after_alignment = stop - ali_ref_limits[1]
+
+    if reference_seq is None:
+        ref_seq_after = UNKNOWN_NUCLEOTYDE * len_after_alignment
+    else:
+        ref_seq_after = str(reference_seq.seq[ali_ref_limits[1] + 1:ali_ref_limits[1] + len_after_alignment + 1])
+    cum_ref_seq  += ref_seq_after
+    cum_read_seq += NO_NUCLEOTYDE * len_after_alignment
+    assert len(cum_ref_seq) == len(cum_read_seq)
+    return cum_ref_seq, cum_read_seq
+
 def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
     '''It returns an allele from the read.
 
@@ -288,13 +585,9 @@ def _get_alleles_from_read(ref_allele, ref_pos, pileup_read):
 
     alleles = []
     aligned_read = pileup_read.alignment
-    begin_pos_read_in_ref = aligned_read.pos
-    read_len = len(aligned_read.seq)
-    cigar = aligned_read.cigar
 
     (ref_segments, read_segments, ref_limits, read_limits, segment_types,
-    segment_lens) = _get_segments_from_cigar(begin_pos_read_in_ref, cigar,
-                                             read_len)
+    segment_lens) = _get_cigar_segments_from_aligned_read(aligned_read)
     located_segment = _locate_segment(ref_pos, ref_segments, segment_lens,
                                       ref_limits)
     if located_segment is None:
@@ -387,17 +680,18 @@ def _quality_to_phred(quality):
     return phred_qual
 
 def _add_allele(alleles, allele, kind, read_name, read_group, is_reverse, qual,
-                mapping_quality, readgroup_info):
+                mapping_quality, readgroup_info, pileup_read):
     'It adds one allele to the alleles dict'
     key = (allele, kind)
     if key not in alleles:
         alleles[key] = {'read_groups':[], 'orientations':[],
-                        'qualities':[], 'mapping_qualities':[]}
+                        'qualities':[], 'mapping_qualities':[], 'reads':[]}
     allele_info = alleles[key]
     allele_info['read_groups'].append(read_group)
     allele_info['orientations'].append(not(is_reverse))
     allele_info['qualities'].append(qual)
     allele_info['mapping_qualities'].append(mapping_quality)
+    allele_info['reads'].append(pileup_read)
 
 def _normalize_read_edge_conf(read_edge_conf):
     'It returns a dict with all valid keys'
@@ -409,13 +703,364 @@ def _normalize_read_edge_conf(read_edge_conf):
             read_edge_conf[platform] = (None, None)
     return read_edge_conf
 
-def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
-                 min_mapq, min_num_alleles, max_maf, min_num_reads_for_allele,
-                 read_edge_conf=None, default_bam_platform=None):
-    'It yields the snv information for every snv in the given reference'
+def _add_pileup_reads(snv, reads):
+    'It adds the pileup reads for each snv_allele to the reads structure'
+    snv_name = snv['ref_name'] + '_' + str(snv['ref_position'])
+    if snv_name not in reads:
+        reads[snv_name] = {}
+    for allele, allele_info in snv['alleles'].items():
+        reads[snv_name][allele] = allele_info['reads']
 
-    min_num_alleles = int(min_num_alleles)
+def _check_read_length(read, position, read_edge_conf, read_groups_info,
+                       default_bam_platform):
+    'If checks if the given pileup read covers all the snv extension'
+    aligned_read = read.alignment
+    read_start_in_ref, read_end_in_ref = _get_cigar_segments_from_aligned_read(aligned_read)[2]
+    if read_edge_conf:
+        platform, read_group = _get_platform_from_aligned_read(aligned_read,
+                                                              read_groups_info,
+                                                           default_bam_platform)
+        if platform in read_edge_conf:
+            edge_left, edge_right = read_edge_conf[platform]
+            if edge_left:
+                read_start_in_ref += edge_left
+            if edge_right:
+                read_end_in_ref -= edge_right
+    if read_start_in_ref <= position[0] and read_end_in_ref >= position[1] - 1:
+        return True
+    else:
+        return False
 
+def _get_fixed_snv_start_vcf4(snv):
+    '''It corrects the start of the snv to the new vcf4 system
+
+           01234567      snp_caller                 vcf_format
+      ref  atctgtag
+    read1  atccgtag       snp in pos 3             snp in pos 3
+    read2  atctgcctag     inser in pos 5           inser in pos 5
+    read3  atgcctag       del in pos 2             del in pos 1
+
+    This is the result and
+    '''
+    allele_types = [allele[1] for allele in snv['alleles'].keys()]
+    snv_kind = _calculate_snv_kinds(allele_types)
+    if (snv_kind in (DELETION, INDEL) or snv_kind == COMPLEX and
+        DELETION in allele_types):
+        start = snv['ref_position'] - 1
+    else:
+        start = snv['ref_position']
+    return start
+
+def _get_snv_end_position(snv):
+    'it returns the snv position plus the length of the allele'
+
+    end = snv['ref_position']
+    allele_types = [allele[1] for allele in snv['alleles'].keys()]
+    snv_kind = _calculate_snv_kinds(allele_types)
+    if (snv_kind in (INSERTION, SNP) or
+       (snv_kind == COMPLEX and INSERTION in allele_types)):
+        end += 1
+    else:
+        max_length = 0
+        for allele in snv['alleles'].keys():
+            allele, kind = allele
+            allele_length = len(allele)
+            if kind == DELETION and allele_length > max_length:
+                max_length = allele_length
+        end += max_length
+    return end
+
+def _init_snv_block(snv, read_groups_info, default_bam_platform, read_edge_conf):
+    'It inits the data structure for the first snv of a block'
+    start = _get_fixed_snv_start_vcf4(snv)
+    end   = _get_snv_end_position(snv)
+    reads = {}
+    _add_pileup_reads(snv, reads)
+    snv_block = {'start':start, 'end':end, 'snvs':[snv]}
+    if snv['ref_position'] != start:
+        # we're checking for the case in which a deletion increments the
+        # svn to the left
+        _remove_not_covering_reads(reads, (start, end), read_groups_info, default_bam_platform, read_edge_conf)
+    return snv_block, reads
+
+def _remove_not_covering_reads(reads, position, read_groups_info,
+                               default_bam_platform, read_edge_conf):
+    '''It checks that the reads in the snv cover the length of the snv.'''
+    for snv_name, alleles in reads.items():
+        for allele, pileup_reads in alleles.items():
+            valid_reads = [r for r in pileup_reads if _check_read_length(r, position, read_edge_conf, read_groups_info, default_bam_platform)]
+            if not valid_reads:
+                del reads[snv_name][allele]
+            else:
+                reads[snv_name][allele] = valid_reads
+        alleles = reads[snv_name].keys()
+        if not alleles or (len(alleles) == 1 and alleles[0][1] == INVARIANT):
+            del reads[snv_name]
+
+def _make_snv_blocks(snvs, read_edge_conf=None, read_groups_info=None,
+                     default_bam_platform=None):
+    '''It joins snvs that should be just one snv. e.g. a deletion that match
+    with another deletion in the same position.
+    '''
+
+    def add_one_to_left_if_snp(snv_block, reads):
+        '''It yields an snv_block,
+
+        but first it checks if we have to add
+        one base to the left because we have an SNP as the first snv of the
+        block. In that case it would check if there are enough reads covering'''
+        # if there are several SNPs together and the first one is an
+        # SNP we should add one base to the block in order to have
+        # a non-variant position as the first base of the new COMPLEX
+        # block
+        first_snv = snv_block['snvs'][0]
+        two_snps_together = (len(snv_block['snvs']) > 1 and
+                             _is_snv_of_kind(first_snv, SNP))
+        # a complex allele would have an insertion and a deletion or an
+        # insertion and a snp in the same allele
+        # ref  A-   A-
+        # read GT   -T
+        complex_kinds = [k for a, k in first_snv['alleles'].keys() if k == COMPLEX]
+        complex_allele_in_first_snv = True if complex_kinds else False
+
+        if (first_snv['ref_position'] == snv_block['start'] and
+            (two_snps_together or complex_allele_in_first_snv)):
+            snv_block['start'] -= 1
+            snv_span = (snv_block['start'], snv_block['end'])
+            _remove_not_covering_reads(reads, snv_span, read_groups_info,
+                                       default_bam_platform, read_edge_conf)
+            if not reads:
+                snv_block, reads = None, None
+        return snv_block, reads
+
+    snv_block, reads = None, None
+    for snv in snvs:
+        if snv_block is None:
+            snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                               default_bam_platform,
+                                               read_edge_conf)
+            continue
+        snv_start = _get_fixed_snv_start_vcf4(snv)
+        snv_end   = _get_snv_end_position(snv)
+        if snv_block['end'] + 1 <= snv_start:
+            # we do not add the snv to the block because the snv starts to the
+            # right of the current snv_block
+            snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+            if snv_block is not None:
+                yield snv_block
+            snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                               default_bam_platform,
+                                               read_edge_conf)
+        else:
+            _remove_not_covering_reads(reads, (snv_block['start'], snv_end),
+                                       read_groups_info, default_bam_platform,
+                                       read_edge_conf)
+            if not reads:
+                if not _is_snv_of_kind(snv, SNP):
+                    # we do not add the snv because there would be not enough reads
+                    # covering the snv_block
+                    snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+                    if snv_block is not None:
+                        yield snv_block
+                    snv_block, reads = _init_snv_block(snv, read_groups_info,
+                                                       default_bam_platform,
+                                                       read_edge_conf)
+            else:
+                #we have decided to add the new snv to the block
+                if snv_block['end'] < snv_end:
+                    snv_block['end'] = snv_end
+                snv_block['snvs'].append(snv)
+    else:
+        if snv_block:
+            snv_block, reads = add_one_to_left_if_snp(snv_block, reads)
+            if snv_block is not None:
+                yield snv_block
+
+def get_insertions_in_position(reads, position):
+    'it returns the insertions that are found inside the given range'
+    insertions = set()
+    for segments in reads.values():
+        (ref_segments, read_segments, ref_limits, read_limits, segment_types,
+        segment_lens) = segments['segments']
+        for index, segment_type in enumerate(segment_types):
+            if segment_type == 1:
+                insert_start_in_ref = ref_segments[index - 1]
+                insert_end_in_ref = insert_start_in_ref +  segment_lens[index]
+                if ((insert_start_in_ref > position[0] and insert_start_in_ref< position[1]) or
+                    (insert_end_in_ref > position[0] and insert_end_in_ref< position[1])):
+                    insertions.add((insert_start_in_ref, insert_end_in_ref))
+
+    return list(insertions)
+
+def _is_snv_of_kind(snv, kind):
+    'True if it is a insertion false if not'
+    #This function works with the kinds used in the one column old codification
+    #DELETIONC, INSERTION, etc. Not in the new multicolumn kind specification
+    #VARIANT, INVARIANT
+    allele_types = [allele[1] for allele in snv['alleles'].keys()]
+    snv_kind = _calculate_snv_kinds(allele_types)
+    if snv_kind == kind:
+        return True
+    else:
+        return False
+
+def _sum_snv_kinds(kind1, kind2):
+    'It calculates the result of the union of two kinds'
+    if kind1 == kind2:
+        return kind1
+    else:
+        if kind1 == INVARIANT:
+            return kind2
+        elif kind2 == INVARIANT:
+            return kind1
+        elif kind1 in [SNP, COMPLEX] or kind2 in [SNP, COMPLEX]:
+            return COMPLEX
+        else:
+            return INDEL
+
+def _calculate_snv_kinds(kinds):
+    'It returns the snv kind for the given feature'
+    if len(kinds) == 1:
+        return kinds[0]
+    kind = kinds[0]
+    for index in range(1, len(kinds)):
+        kind = _sum_snv_kinds(kind, kinds[index])
+    return kind
+
+def _remove_allele_from_alignments(alignments, min_num_reads_for_allele):
+    ''' It removes alignments/alleles taking into account the times it appears
+    min_num_reads_for_allele'''
+    allele_count = {}
+    for ref, allele in alignments.values():
+        if allele not in allele_count:
+            allele_count[allele] = 0
+        allele_count[allele] +=1
+
+    for read_name, alignment in alignments.items():
+        read_allele = alignment[1]
+        if allele_count[read_allele] < min_num_reads_for_allele:
+            del alignments[read_name]
+
+
+def _join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
+               min_quality, reference_seq=None):
+    'It joins the snvs that should be together'
+    snvs = snv_block['snvs']
+    if len(snvs) == 1 and _is_snv_of_kind(snvs[0], SNP):
+        return snvs[0]
+    else:
+        block_start = snv_block['start']
+        block_end   = snv_block['end']
+
+        # collect all the reads and its alignment
+        reads = {}
+        alignments = {}
+        allele_kinds = {}
+        for snv in snvs:
+            for allele, allele_info in snv['alleles'].items():
+                allele_kind = allele[1]
+                for index in range(len(allele_info['reads'])):
+                    name = allele_info['reads'][index].alignment.qname
+                    if name in reads:
+                        continue
+                    read        = allele_info['reads'][index]
+                    read_group  = allele_info['read_groups'][index]
+                    orientation = allele_info['orientations'][index]
+                    quality     = allele_info['qualities'][index]
+                    mapping_quality =  allele_info['mapping_qualities'][index]
+
+                    reads[name] = {'read': read,
+                                   'read_group': read_group,
+                                   'orientation': orientation,
+                                   'quality': quality,
+                                   'mapping_quality': mapping_quality}
+        # do the multiple alignments
+        for read_name in reads:
+            if read_name not in allele_kinds:
+                allele_kinds[read_name] = []
+            allele_kinds[read_name].append(allele_kind)
+            if read_name not in alignments:
+                alignment = _get_alignment_section(reads[read_name]['read'],
+                                                   block_start, block_end,
+                                                   reference_seq=reference_seq)
+                alignments[read_name] = alignment
+
+        # we need to remove the reads that do not cover the alignment in its
+        # complete span
+        for read_name in list(reads.keys()):
+            aligned_read = alignments[read_name][1]
+            if NO_NUCLEOTYDE in aligned_read:
+                del alignments[read_name]
+                del reads[read_name]
+        _remove_allele_from_alignments(alignments, min_num_reads_for_allele)
+        if alignments:
+            malignment = _make_multiple_alignment(alignments, reads)
+            # We create the new alleles that span the complete snv_block
+            alleles = {}
+            ref_allele = ''.join(malignment['reference'])
+            ref_allele = ref_allele.replace('-', '')
+            for read, allele in malignment['reads'].items():
+                allele = ''.join(allele)
+                allele = allele.replace(DELETION_ALLELE, '')
+                kind = INVARIANT if allele == ref_allele else VARIANT
+                allele = allele, kind
+                if allele not in alleles:
+                    alleles[allele] = {'read_groups':[],
+                                                  'reads':[],
+                                                  'orientations':[],
+                                                  'qualities':[],
+                                                  'mapping_qualities':[]}
+                allele_info = alleles[allele]
+                allele_info['read_groups'].append(reads[read]['read_group'])
+                allele_info['reads'].append(reads[read]['read'])
+                allele_info['orientations'].append(reads[read]['orientation'])
+                allele_info['qualities'].append(reads[read]['quality'])
+                allele_info['mapping_qualities'].append(reads[read]['mapping_quality'])
+                allele_info['quality'] = _calculate_allele_quality(allele_info)
+
+            #remove bad quality alleles
+            _remove_bad_quality_alleles(alleles, min_quality)
+
+            # min_num_reads_for_allele
+            _remove_alleles_by_read_number(alleles, min_num_reads_for_allele)
+
+            #if there are a min_num number of alleles requested and there are more
+            #alleles than that
+            #OR
+            #there is some allele different than invariant
+            #a variation is yield
+            if alleles and ((len(alleles) > min_num_alleles) or
+                (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
+                (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
+                snv = {'ref_name':snvs[0]['ref_name'],
+                       'ref_position':block_start ,
+                       'read_groups':snvs[0]['read_groups'],
+                       'alleles':alleles,
+                       'reference_allele': ref_allele}
+                #some alleles might end up here because the functions that do
+                #the SNP calling might have some problems.For instance
+                # ref TACTG  qualities
+                # al1 TA--G  45 45       45
+                # al2 T-CTG  10    60 45 45
+                alleles_different_in_first_base = [(a, k) for a, k in alleles.keys() if ref_allele[0] != a[0]]
+                alleles_not_invariant = [(a, k) for a, k in alleles.keys() if k != INVARIANT]
+                if len(alleles_not_invariant) - len(alleles_different_in_first_base) > 0:
+                    #we remove the offending alleles
+                    for allele in alleles_different_in_first_base:
+                        del snv['alleles'][allele]
+                else:
+                    msg = 'One allele in molecule %s position %i will be malformed'
+                    msg %= snv['ref_name'], snv['ref_position']
+                    logger = logging.getLogger('franklin')
+                    logger.warn(msg)
+                return snv
+
+
+def _snvs_in_bam(bam, reference, min_quality,
+                             default_sanger_quality, min_mapq, min_num_alleles,
+                             max_maf, min_num_reads_for_allele,
+                             read_edge_conf=None, default_bam_platform=None):
+    'It returns the snvs in a bam for the given reference'
     read_groups_info = get_read_group_info(bam)
     if not read_groups_info:
         if default_bam_platform is None:
@@ -423,6 +1068,28 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
             msg += 'configuration'
             raise ValueError(msg)
         read_groups_info = {UNKNOWN_RG:{'PL':default_bam_platform}}
+
+    snvs = _snvs_in_bam_by_position(bam, reference, min_quality,
+                                default_sanger_quality, min_mapq,
+                                min_num_alleles,max_maf,
+                                min_num_reads_for_allele, read_edge_conf,
+                                default_bam_platform, read_groups_info)
+
+    for snv_block in _make_snv_blocks(snvs, read_edge_conf, read_groups_info,
+                                      default_bam_platform):
+        snv =_join_snvs(snv_block, min_num_alleles, min_num_reads_for_allele,
+                         min_quality, reference_seq=reference)
+        if snv is not None:
+            yield snv
+
+def _snvs_in_bam_by_position(bam, reference, min_quality,
+                             default_sanger_quality, min_mapq, min_num_alleles,
+                             max_maf, min_num_reads_for_allele,
+                             read_edge_conf, default_bam_platform,
+                             read_groups_info):
+    '''It yields the snv information for every snv in the given reference,
+    for each position'''
+    min_num_alleles = int(min_num_alleles)
 
     reference_id = get_seq_name(reference)
     reference_seq = reference.seq
@@ -440,29 +1107,45 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
         for pileup_read in column.pileups:
             #for each read in the column we add its allele to the alleles dict
             aligned_read = pileup_read.alignment
+            read_name = aligned_read.qname
 
             read_mapping_qual = aligned_read.mapq
             #We ignore the reads that are likely to be missaligned
             if read_mapping_qual < min_mapq:
                 continue
 
-            try:
-                read_group = aligned_read.opt('RG')
-            except KeyError:
-                read_group = UNKNOWN_RG
-
-            read_name = aligned_read.qname
-            if read_groups_info and read_group in read_groups_info:
-                platform = read_groups_info[read_group]['PL']
-            else:
-                platform = default_bam_platform
+            platform, read_group = _get_platform_from_aligned_read(aligned_read,
+                                                               read_groups_info,
+                                                           default_bam_platform)
 
             read_pos = pileup_read.qpos
 
             alleles_here, read_limits = _get_alleles_from_read(ref_allele,
                                                                ref_pos,
                                                                pileup_read)
-
+            #there is an special case that we had not considered before and that
+            #can't be coded with the schema returned by this function, an SNP
+            #followed by an insertion
+            # ref  CA-C
+            # read CGCC
+            # we will code it as a complex, C and we will remove the SNP
+            if len(alleles_here) > 1:
+                kinds = [a[1] for a in alleles_here if a[1] != INVARIANT]
+                if len(kinds) == 1:
+                    pass
+                elif len(kinds) == 2:
+                    if kinds[0] == INSERTION:
+                        ins_allele = list(alleles_here[0])
+                    elif kinds[1] == INSERTION:
+                        ins_allele = list(alleles_here[1])
+                    else:
+                        msg = 'At least one allele should be an insertion'
+                        raise RuntimeError(msg)
+                    ins_allele[1] = COMPLEX
+                    alleles_here = [tuple(ins_allele)]
+                else:
+                    msg = '3 alleles in one read, I should not be here'
+                    raise RuntimeError(msg)
             if read_edge_conf and platform in read_edge_conf:
                 edge_left, edge_right = read_edge_conf[platform]
 
@@ -480,8 +1163,7 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
                 allele, kind, qual, is_reverse = allele
                 _add_allele(alleles, allele, kind, read_name, read_group,
                     is_reverse, qual, read_mapping_qual,
-                    read_groups_info)
-
+                    read_groups_info, pileup_read)
         #remove N
         _remove_alleles_n(alleles)
 
@@ -506,14 +1188,30 @@ def _snvs_in_bam(bam, reference, min_quality, default_sanger_quality,
         #a variation is yield
         if not alleles:
             continue
+
         if (len(alleles) > min_num_alleles or
             (min_num_alleles == 1 and alleles.keys()[0][1] != INVARIANT) or
             (min_num_alleles > 1 and len(alleles) >= min_num_alleles)):
+
             yield {'ref_name':ref_id,
                    'ref_position':ref_pos,
                    'reference_allele':ref_allele,
                    'alleles':alleles,
                    'read_groups':read_groups_info}
+
+def _get_platform_from_aligned_read(aligned_read, read_groups_info,
+                                    default_bam_platform):
+    'It returns the platform'
+    try:
+        read_group = aligned_read.opt('RG')
+    except KeyError:
+        read_group = UNKNOWN_RG
+
+    if read_groups_info and read_group in read_groups_info:
+        platform = read_groups_info[read_group]['PL']
+    else:
+        platform = default_bam_platform
+    return platform, read_group
 
 def _remove_alleles_by_read_number(alleles, min_num_reads_for_allele):
     'It remove alleles with less reads than the given value'
@@ -525,8 +1223,6 @@ def _remove_alleles_by_read_number(alleles, min_num_reads_for_allele):
     if alleles_to_remove:
         for allele_to_remove in alleles_to_remove:
             del(alleles[allele_to_remove])
-
-
 
 def _add_default_sanger_quality(alleles, default_sanger_quality,
                                 read_groups_info):
@@ -570,7 +1266,6 @@ def _calculate_allele_quality(allele_info):
 
     #we sort all qualities
     quals = allele_info['qualities'][:]
-
     #slow alternative
     #quals.sort(lambda x, y: int(y - x))
     #fast alternative
@@ -580,7 +1275,6 @@ def _calculate_allele_quality(allele_info):
             break
         quals[index] = max(qual_set)
         qual_set.remove(quals[index])
-
     total_qual = 0
     if quals:
         total_qual += quals[0]
@@ -647,6 +1341,7 @@ def _summarize_snv(snv):
         del allele_info['mapping_qualities']
         del allele_info['qualities']
         del allele_info['orientations']
+        del allele_info['reads']
 
     #we remove from the read_groups the ones not used in this snv
     new_read_groups = {}
@@ -669,7 +1364,6 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
     read_edge_conf = _normalize_read_edge_conf(read_edge_conf)
 
     bam = pysam.Samfile(bam_fhand.name, 'rb')
-
     # default min num_reads per allele and ploidy
     if min_num_reads_for_allele is None:
         min_num_reads_for_allele = DEFAUL_MIN_NUM_READS_PER_ALLELE
@@ -688,7 +1382,8 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                                 default_bam_platform=default_bam_platform,
                              min_num_reads_for_allele=min_num_reads_for_allele):
             snv = _summarize_snv(snv)
-            location = snv['ref_position']
+            start = snv['ref_position']
+            end = snv['ref_position'] + len(snv['reference_allele'])
             type_ = 'snv'
 
             qualifiers = {'alleles':snv['alleles'],
@@ -696,7 +1391,7 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
                           'read_groups':snv['read_groups'],
                           'mapping_quality': snv['mapping_quality'],
                           'quality': snv['quality']}
-            snv_feat = SeqFeature(location=FeatureLocation(location, location),
+            snv_feat = SeqFeature(location=FeatureLocation(start, end),
                               type=type_,
                               qualifiers=qualifiers)
 
@@ -709,16 +1404,31 @@ def create_snv_annotator(bam_fhand, min_quality=45, default_sanger_quality=25,
 
 def calculate_snv_kind(feature, detailed=False):
     'It returns the snv kind for the given feature'
-    snv_kind = INVARIANT
-    alleles = feature.qualifiers['alleles']
-    for allele in alleles.keys():
-        allele_kind = allele[1]
-        snv_kind = _calculate_kind(allele_kind, snv_kind)
+    alleles = feature.qualifiers['alleles'].keys()
+    ref_allele = feature.qualifiers['reference_allele']
 
-    if snv_kind == SNP and detailed:
-        snv_kind = _guess_snp_kind(alleles)
+    lengths = [len(ref_allele)]
+    for a , kind in alleles :
+        if kind != INVARIANT:
+            lengths.append(len(a))
+    #lengths.extend([len(a) for a , kind in alleles if kind != INVARIANT])
+    if len(lengths) == 1:
+        return INVARIANT
+    elif all([l == 1 for l in lengths]):
+        if detailed:
+            return _guess_snp_kind(feature.qualifiers['alleles'], ref_allele)
+        else:
+            return SNP
+    elif len(lengths) > 2:
+        return COMPLEX
+    else:
+        if lengths[0] < lengths[1]:
+            return INSERTION
+        elif lengths[0] > lengths[1]:
+            return DELETION
+        else:
+            return COMPLEX
 
-    return snv_kind
 
 def _al_type(allele):
     'I guesses the type of the allele'
@@ -729,15 +1439,17 @@ def _al_type(allele):
         return 'pirimidine'
     return UNKNOWN
 
-def _guess_snp_kind(alleles):
+def _guess_snp_kind(alleles, ref_allele):
     'It guesses the type of the snp'
     alleles = alleles.keys()
     # if we take into account the reference to decide if there is a variation
-    if len(alleles) != 2:
+    alleles = [a for a, kind in alleles if kind != INVARIANT]
+    if len(alleles) > 1:
         return UNKNOWN
 
-    al0 = _al_type(alleles[0][0])
-    al1 = _al_type(alleles[1][0])
+    al0 = _al_type(alleles[0])
+    al1 = _al_type(ref_allele)
+
     if al0 == UNKNOWN or al1 == UNKNOWN:
         snv_kind = UNKNOWN
     elif al0 == al1:
@@ -745,20 +1457,6 @@ def _guess_snp_kind(alleles):
     else:
         snv_kind = TRANSVERSION
     return snv_kind
-
-def _calculate_kind(kind1, kind2):
-    'It calculates the result of the union of two kinds'
-    if kind1 == kind2:
-        return kind1
-    else:
-        if kind1 is INVARIANT:
-            return kind2
-        elif kind2 is INVARIANT:
-            return kind1
-        elif kind1 in [SNP, COMPLEX] or kind2 in [SNP, COMPLEX]:
-            return COMPLEX
-        else:
-            return INDEL
 
 def _cmp_by_read_num(allele1, allele2):
     'cmp by the number of reads for each allele'
@@ -837,7 +1535,6 @@ def check_maf_ok(alleles, max_maf):
 def _allele_count(allele, alleles, read_groups=None,
                   groups=None, group_kind=None, alleles_is_dict=True):
     'It returns the number of reads for the given allele'
-
     counts = []
     if not alleles_is_dict:
         return len(alleles[allele]['read_groups'])
@@ -1053,7 +1750,6 @@ def _get_alleles_for_group(alleles, groups, group_kind='read_groups',
     alleles separated in rg1 and rg2 '''
     alleles_for_groups = {}
     for allele, alleles_info in alleles.items():
-        #print allele, alleles_info
         for read_group in alleles_info['read_groups']:
             if (min_reads_per_allele and
                 alleles_info['read_groups'][read_group] < min_reads_per_allele):

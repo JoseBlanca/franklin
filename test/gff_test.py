@@ -248,7 +248,6 @@ class SequenceWriter(unittest.TestCase):
         gff_writer.write(seq)
         gff_writer.write(seq2)
         gff = open(fhand.name).read()
-        print gff
         assert "description=equal%2096%25" in gff
         assert "Ontology_term=GO:0019253" in gff
         assert 'core=27;ssr_type=trinucleotide;'in gff

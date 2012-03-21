@@ -214,5 +214,5 @@ class AnnotationTests(unittest.TestCase):
         os.remove(annot_fpath)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTests.test_get_description_with_funct']
+    import sys;sys.argv = ['', 'AnnotationTests.test_intron_annotator']
     unittest.main()

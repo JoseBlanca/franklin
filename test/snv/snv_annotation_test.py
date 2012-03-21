@@ -32,6 +32,7 @@ from franklin.seq.seqs import SeqWithQuality, SeqFeature, Seq
 from franklin.seq.writers import SequenceWriter
 from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          INDEL, COMPLEX, TRANSVERSION,
+                                         TRANSITION,
                                          _remove_bad_quality_alleles,
                                          _add_default_sanger_quality,
                                          calculate_snv_kind,
@@ -50,18 +51,22 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          _get_alleles_from_read,
                                          annotate_pic,
                                          annotate_heterozygosity,
-    snvs_in_window)
+                                         snvs_in_window,
+                                         _get_alignment_section,
+                                         _make_multiple_alignment)
 
-from franklin.sam import create_bam_index, sam2bam
+from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
+    bam2sam
 from franklin.snv.writers import VariantCallFormatWriter
 
 from franklin.pipelines.pipelines import seq_pipeline_runner
+from franklin.mapping import map_reads_with_bwa
 
 class TestSnvAnnotation(unittest.TestCase):
     'It tests the annotation of SeqRecords with snvs'
 
     @staticmethod
-    def test_snv_annotation():
+    def test_snv_annotation_basic():
         'It tests the annotation of SeqRecords with snvs'
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools', 'seqs.bam'))
         seq_fhand = open(os.path.join(TEST_DATA_DIR, 'samtools',
@@ -75,6 +80,47 @@ class TestSnvAnnotation(unittest.TestCase):
             seq = annotator(seq)
             assert expected == len(seq.features)
 
+    @staticmethod
+    def test_snv_annotation_massive():
+        'It tests the annotation of SeqRecords with snvs'
+        #another example
+
+        bam_fhand = NamedTemporaryFile(suffix='.bam')
+        sam_fhand = NamedTemporaryFile(prefix='pl_illumina.sm_test.lb_test.',
+                                       suffix='.sam')
+        seq_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'seqs.sfastq'))
+        ref_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'reference.fasta'))
+
+        # prepare the sam file
+        parameters = {'colorspace':False, 'reads_length':'short',
+                      'threads':None, 'java_conf':None }
+        map_reads_with_bwa(ref_fhand.name, seq_fhand.name, bam_fhand.name,
+                           parameters)
+        bam2sam(bam_fhand.name, sam_fhand.name, header=True)
+        new_sam_fhand = NamedTemporaryFile(suffix='.sam')
+        add_header_and_tags_to_sam(sam_fhand, new_sam_fhand)
+        sam2bam(new_sam_fhand.name, bam_fhand.name)
+#        raw_input(new_sam_fhand.name)
+        #################################################################
+
+        annotator = create_snv_annotator(bam_fhand=bam_fhand, min_quality=20,
+                                         min_num_alleles=1,
+                                         min_num_reads_for_allele=1)
+
+        seq = list(seqs_in_file(ref_fhand))[0]
+        seq = annotator(seq)
+        snvs = seq.features
+        expected = [(406, [('CCA', 9), ('C', 9), ('CTA', 3)]),
+                    (415, [('A', 0), ('T', 3)]),
+                    (420, [('CTTC', 3), ('CC', 9), ('CT', 9)]),
+                    (429, [('TTC', 9), ('T', 3)]),
+                    (432, [('CAT', 3), ('C', 9), ('CACCT', 9)])]
+
+        for snv, expect in zip(snvs, expected):
+            assert expect[0] == int(str(snv.location.start))
+            assert snv.qualifiers['alleles'].keys() == expect[1]
 
 
     @staticmethod
@@ -129,18 +175,18 @@ class TestSnvAnnotation(unittest.TestCase):
     def test_snv_remove_edges():
         'It test that we do not annotate snv in the edges'
 
-        ref = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
-
-        #Coor     01234567890123  4567890123456789012345678901234
-        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        ref =    'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
+        #                   11111111112222222222333333333344444
+        #Coor     012345678901234567890123456789012345678901234
+        #ref      AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
         #                 012345
-        #+r003       gcctaAGATAA
-        #                          012345              67890
-        #+r004                     ATAGCT..............TCAGC
-        #                                       43210
-        #-r005                            ttagctTAGGC
-        #                                               876543210
-        #-r001/2                                        CAGCGCCAT
+        #+r003            GAGCCC
+        #                        012345              67890
+        #+r004                   ATAGCa..............aCAGC
+        #                                     43210
+        #-r005                                TAGGa
+        #                                             876543210
+        #-r001/2                                      CAcCGCCAT
 
         sam_content = '''@HD\tVN:1.3\tSO:coordinate
 @SQ\tSN:ref\tLN:45
@@ -166,7 +212,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 10
+        assert len(seq.features) == 4
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(1, 1)}
@@ -177,7 +223,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 7
+        assert len(seq.features) == 3
 
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
@@ -189,7 +235,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                                          default_sanger_quality=60,
                                          min_num_reads_for_allele=1)
         seq = annotator(reference)
-        assert len(seq.features) == 6
+        assert len(seq.features) == 3
 
         reference = SeqWithQuality(seq=Seq(REF), name='ref')
         edge_remove_settings = {'sanger':(10, 10)}
@@ -208,39 +254,44 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         seq = SeqWithQuality(UnknownSeq(100))
         alleles = {('A', INVARIANT): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         seq.features.append(feat)
 
         assert calculate_snv_kind(feat) == INVARIANT
 
         alleles = {('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AT',
+                                      'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == DELETION
 
-        alleles = {('A', INVARIANT): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
+        alleles = {('AA', INVARIANT): {'read_names':['r1']},
+                   ('ATA', INSERTION): {'read_names':['r1']},
+                   ('ACA', INSERTION): {'read_names':['r1']},
                    ('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AA',
+                                      'alleles':alleles})
         seq.features.append(feat)
-        assert calculate_snv_kind(feat) == INDEL
+        assert calculate_snv_kind(feat) == COMPLEX
 
-        alleles = {('A', INVARIANT): {'read_names':['r1']},
-                   ('A', SNP): {'read_names':['r1']},
-                   ('A', INSERTION): {'read_names':['r1']},
+        alleles = {('AA', INVARIANT): {'read_names':['r1']},
+                   ('AT', SNP): {'read_names':['r1']},
+                   ('ATA', INSERTION): {'read_names':['r1']},
                    ('A', DELETION): {'read_names':['r1']}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'AA',
+                                      'alleles':alleles})
         seq.features.append(feat)
         assert calculate_snv_kind(feat) == COMPLEX
 
         alleles = {('A', INVARIANT): {},
                    ('T', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         assert calculate_snv_kind(feat) == SNP
 
         #detailed
@@ -249,21 +300,24 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         alleles = {('A', INVARIANT): {},
                    ('C', SNP):{}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'A',
+                                      'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == TRANSVERSION
 
         alleles = {('T', INVARIANT): {},
                    ('C', SNP):{},
                    ('G', SNP):{},}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
+                          qualifiers={'reference_allele':'T',
+                                      'alleles':alleles})
         assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
 
 
         alleles = {('A', SNP): {}}
         feat = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles})
-        assert calculate_snv_kind(feat, detailed=True) == UNKNOWN
+                          qualifiers={'reference_allele':'G',
+                                      'alleles':alleles})
+        assert calculate_snv_kind(feat, detailed=True) == TRANSITION
 
     @staticmethod
     def test_bad_allele_removal():
@@ -412,35 +466,38 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
     def test_snvs_in_window():
         'It tests the snvs_in_window with maf and type'
         alleles1 = {('A', DELETION): {'read_groups':{'r1':3}},
-                    ('T', INVARIANT): {'read_groups':{'r1':8}}}
-
-        snv1 = SeqFeature(location=FeatureLocation(3, 3), type='snv',
-                          qualifiers={'alleles':alleles1,
+                    ('AT', INVARIANT): {'read_groups':{'r1':8}}}
+        snv1 = SeqFeature(location=FeatureLocation(3, 5), type='snv',
+                          qualifiers={'reference_allele': 'AT',
+                                      'alleles':alleles1,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles2 = {('A', SNP): {'read_groups':{'r1':2}},
                     ('T', INVARIANT): {'read_groups':{'r1':2}}}
-
-        snv2 = SeqFeature(location=FeatureLocation(7, 7), type='snv',
-                          qualifiers={'alleles':alleles2,
+        snv2 = SeqFeature(location=FeatureLocation(7, 8), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles2,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles3 = {('A', SNP): {'read_groups':{'r1':8}},
                     ('T', INVARIANT): {'read_groups':{'r1':8}}}
-        snv3 = SeqFeature(location=FeatureLocation(20, 20), type='snv',
-                          qualifiers={'alleles':alleles3,
+        snv3 = SeqFeature(location=FeatureLocation(20, 21), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles3,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles4 = {('A', SNP): {'read_groups':{'r1':1}},
                     ('T', INVARIANT): {'read_groups':{'r1':10}}}
-        snv4 = SeqFeature(location=FeatureLocation(25, 25), type='snv',
-                          qualifiers={'alleles':alleles4,
+        snv4 = SeqFeature(location=FeatureLocation(25, 26), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles4,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
         alleles5 = {('A', SNP): {'read_groups':{'r1':1}},
                     ('T', INVARIANT): {'read_groups':{'r1':100}}}
-        snv5 = SeqFeature(location=FeatureLocation(31, 31), type='snv',
-                          qualifiers={'alleles':alleles5,
+        snv5 = SeqFeature(location=FeatureLocation(31, 32), type='snv',
+                          qualifiers={'reference_allele': 'T',
+                                      'alleles':alleles5,
                                       'read_groups':{'r1':{'LB':'l1'},
                                                      'r2':{'LB':'l2'}}})
 
@@ -472,6 +529,7 @@ class TestSnvPipeline(unittest.TestCase):
         seq_fhand = NamedTemporaryFile()
         seq_writer = SequenceWriter(seq_fhand, file_format='repr')
         snv_fhand = NamedTemporaryFile()
+        #snv_fhand = open('/home/peio/test.vcf', 'w')
         snv_writer = VariantCallFormatWriter(snv_fhand,
                                              reference_name='reference')
 
@@ -485,10 +543,11 @@ class TestSnvPipeline(unittest.TestCase):
         assert num_alleles == 4
 
         vcf = open(snv_fhand.name).read()
+#        print vcf
         assert '66' in vcf
         assert '55' in vcf
-        assert 'D2' in vcf
-        assert 'IAA' in vcf
+        assert 'CAA' in vcf
+        assert 'GAA' in vcf
 
         #now taking into account the alleles different than the reference
         configuration = {'snv_bam_annotator': {'bam_fhand':bam_fhand,
@@ -624,11 +683,14 @@ REF = 'AGCATGTTAGATAAGATAGCTGTGCTAGTAGGCAGTCAGCGCCAT'
 SAM = '''@HD\tVN:1.3\tSO:coordinate
 @SQ\tSN:ref\tLN:45
 r001/1\t163\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTAAGATAAAGGATACTG\t*
+r007\t0\tref\t9\t30\t6M2I\t=\t0\t0\tAGATAATT\t*
 r002\t0\tref\t9\t30\t3S6M1P1I4M\t*\t0\t0\tAAAAGATAAGGATA\t*
 r003\t0\tref\t9\t30\t5H6M\t*\t0\t0\tAGCTAA\t*\tNM:i:1
 r004\t0\tref\t16\t30\t6M14N5M\t*\t0\t0\tATAGCTTCAGC\t*
 r005\t16\tref\t29\t30\t6H5M\t*\t0\t0\tTAGGC\t*\tNM:i:0
 r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAGCGCCAT\t*
+r006\t0\tref\t39\t30\t7M2I\t=\t0\t0\tGCGCCATTA\t*
+
 '''
 
 
@@ -758,8 +820,8 @@ class TestReadPos(unittest.TestCase):
         reference_id = reference.name
         reference_seq = reference.seq
 
-        #Coor     01234567890123  4567890123456789012345678901234
-        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT
+        #Coor     01234567890123  456789012345678901234567890123456
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT**
         #               01234567890123 456
         #+r001/1        TAAGATAAAGGATA*CTG
         #              012345678 90123
@@ -772,7 +834,8 @@ class TestReadPos(unittest.TestCase):
         #-r005                            ttagctTAGGC
         #                                               876543210
         #-r001/2                                        CAGCGCCAT
-
+        #
+        #-r006                                            GCGCCATTA
         expected = {('r001/1', 5): [],
                     ('r001/1', 6): [('T', INVARIANT, None, False)],
                     ('r001/1', 7): [('A', SNP, None, False)],
@@ -837,6 +900,224 @@ class TestReadPos(unittest.TestCase):
                 alleles = _get_alleles_from_read(ref_allele, ref_pos,
                                                  pileup_read)[0]
 
+    def test_get_aligned_read_section(self):
+        'It checks that we can get aligned sections from a read'
+        #Coor               1111  111111222222222233333333334444444
+        #Coor     01234567890123  456789012345678901234567890123456
+        #ref      AGCATGTTAGATAA**GATAGCTGTGCTAGTAGGCAGTCAGCGCCAT**
+        #               01234567890123 456
+        #+r001/1        TAAGATAAAGGATA*CTG
+        #              012345678 90123
+        #+r002         aaaAGATAA*GGATA
+        #                 012345
+        #+r003       gcctaAGCTAA
+        #                          012345              67890
+        #+r004                     ATAGCT..............TCAGC
+        #                                       43210
+        #-r005                            ttagctTAGGC
+        #                                               876543210
+        #-r001/2                                        CAGCGCCAT
+        #                                                 012345678
+        #-r006                                            GCGCCATTA
+        #                 01234567
+        #-r007            AGATAATT
+
+        sam = NamedTemporaryFile(suffix='.sam')
+        sam.write(SAM)
+        sam.flush()
+        bam_fhand = NamedTemporaryFile()
+        sam2bam(sam.name, bam_fhand.name)
+        create_bam_index(bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+
+        reference = SeqWithQuality(seq=Seq(REF), name='ref')
+        reference_id = reference.name
+
+        for column in bam.pileup(reference=reference_id):
+            for pileup_read in column.pileups:
+                if pileup_read.alignment.qname == 'r001/1':
+
+                    alignment = _get_alignment_section(pileup_read, 13, 21)
+                    assert alignment[0] == 'N--NNNNNNN'
+                    assert alignment[1] == 'AAGGATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 13, 21, reference)
+                    assert alignment[0] == 'A--GATAGCT'
+                    assert alignment[1] == 'AAGGATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 14, 21)
+                    assert alignment[0] == 'NNNNNNN'
+                    assert alignment[1] == 'GATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 14, 21, reference)
+                    assert alignment[0] == 'GATAGCT'
+                    assert alignment[1] == 'GATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 15, 21)
+                    assert alignment[0] == 'NNNNNN'
+                    assert alignment[1] == 'ATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 15, 21, reference)
+                    assert alignment[0] == 'ATAGCT'
+                    assert alignment[1] == 'ATA-CT'
+
+                    alignment = _get_alignment_section(pileup_read, 5, 23)
+                    assert alignment[0] == 'NNNNNNNNN--NNNNNNNNN'
+                    assert alignment[1] == ' TAAGATAAAGGATA-CTG '
+
+                    alignment = _get_alignment_section(pileup_read, 5, 23, reference)
+                    assert alignment[0] == 'GTTAGATAA--GATAGCTGT'
+                    assert alignment[1] == ' TAAGATAAAGGATA-CTG '
+
+                    alignment = _get_alignment_section(pileup_read, 10, 17)
+                    assert alignment[0] == 'NNNN--NNN'
+                    assert alignment[1] == 'ATAAAGGAT'
+
+                    alignment = _get_alignment_section(pileup_read, 10, 17, reference)
+                    assert alignment[0] == 'ATAA--GAT'
+                    assert alignment[1] == 'ATAAAGGAT'
+
+                    alignment = _get_alignment_section(pileup_read, 13, 14, reference)
+                    assert alignment[0] == 'A--'
+                    assert alignment[1] == 'AAG'
+
+                    alignment = _get_alignment_section(pileup_read, 0, 10, reference)
+                    assert alignment[0] == 'AGCATGTTAG'
+                    assert alignment[1] == '      TAAG'
+
+                elif pileup_read.alignment.qname == 'r003':
+
+                    alignment = _get_alignment_section(pileup_read, 5, 14)
+                    assert alignment[0] == 'NNNNNNNNN'
+                    assert alignment[1] == '   AGCTAA'
+                    alignment = _get_alignment_section(pileup_read, 5, 14, reference)
+                    assert alignment[0] == 'GTTAGATAA'
+                    assert alignment[1] == '   AGCTAA'
+                elif pileup_read.alignment.qname == 'r004':
+                    alignment = _get_alignment_section(pileup_read, 18, 39)
+                    assert alignment[0] == 'NNNNNNNNNNNNNNNNNNNNN'
+                    assert alignment[1] == 'GCT--------------TCAG'
+
+                    alignment = _get_alignment_section(pileup_read, 18, 39, reference)
+                    assert alignment[0] == 'GCTGTGCTAGTAGGCAGTCAG'
+                    assert alignment[1] == 'GCT--------------TCAG'
+
+                    alignment = _get_alignment_section(pileup_read, 18, 25, reference)
+                    assert alignment[0] == 'GCTGTGC'
+                    assert alignment[1] == 'GCT----'
+
+                    alignment = _get_alignment_section(pileup_read, 30, 37, reference)
+                    assert alignment[0] == 'GGCAGTC'
+                    assert alignment[1] == '-----TC'
+                elif pileup_read.alignment.qname == 'r006':
+                    try:
+                        alignment = _get_alignment_section(pileup_read, 44, 46, reference)
+                        self.fail()
+                    except ValueError:
+                        pass
+
+                    alignment = _get_alignment_section(pileup_read, 44, 45, reference)
+                    assert alignment[0] == 'T--'
+                    assert alignment[1] == 'TTA'
+                    alignment = _get_alignment_section(pileup_read, 44, 45)
+                    assert alignment[0] == 'N--'
+                    assert alignment[1] == 'TTA'
+                elif pileup_read.alignment.qname == 'r007':
+                    alignment = _get_alignment_section(pileup_read, 8, 13, reference)
+                    assert alignment[0] == 'AGATA'
+                    assert alignment[1] == 'AGATA'
+
+                    alignment = _get_alignment_section(pileup_read, 8, 14, reference)
+                    assert alignment[0] == 'AGATAA--'
+                    assert alignment[1] == 'AGATAATT'
+
+                    alignment = _get_alignment_section(pileup_read, 8, 15, reference)
+                    assert alignment[0] == 'AGATAA--G'
+                    assert alignment[1] == 'AGATAATT '
+                    alignment = _get_alignment_section(pileup_read, 8, 16, reference)
+                    assert alignment[0] == 'AGATAA--GA'
+                    assert alignment[1] == 'AGATAATT  '
+
+        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'snv_annotator',
+                                      'merged.2.bam'))
+        create_bam_index(bam_fhand.name)
+        bam = pysam.Samfile(bam_fhand.name, "rb")
+        ref_s  = 'TGAAATAACCATAGTGGATGCAGCGAATGGGCGTCAAGTGGTTGATATTATCCCTCCAGG'
+        ref_s += 'ACCAGAACTTCTTGTTTCAGAGGGCGAATCCATCAAACTTGATCAACCATTAACGAGTAA'
+        ref_s += 'TCCTAATGTGGGAGGATTTGGTCAGGGAGATGCGGAAATCGTCCTTCAAGATCCATTACG'
+        ref_s += 'TGTCCAAGGCCTTTTGTTCTTTTTTTTGCATCTGTTATTTTGGCACAAATCTTTTTAGTT'
+        ref_s += 'CTTAAAAAGAAACAGTTTGAGAAGGTTCAATTGTCCGAAATGAATTTCTAAATCTGGGGA'
+        ref_s += 'TTTATCAAATAAAGTTCGTTAAAAAAAAAACCAAATTCTTGTTGGCAATTCTATAATTTA'
+        ref_s += 'ATTATGTATGATCAAAAAATTATGAAAAACTTTTTCCC'
+        reference = SeqWithQuality(seq=Seq(ref_s), name='CM3.5_contig43467')
+        reference_id = reference.name
+        for column in bam.pileup(reference=reference_id):
+            for pileup_read in column.pileups:
+                if pileup_read.alignment.qname == '1858_1507_1273_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', '-TT')
+                if pileup_read.alignment.qname == '1511_568_1327_F3':
+                    alignment = _get_alignment_section(pileup_read, 198, 201,
+                                                       reference)
+                    assert alignment == ('CTT', 'C--')
+
+
+    @staticmethod
+    def test_join_alignments():
+        'It test that we can join single alignments into a multiple alignment'
+        # check alignment without inserts
+        # ref     TGTCGTATGTAGTGGTAGTCTAGTAGTA
+        # READ1           GT--TGGT
+        # READ2           GTAGTGGT
+        alignments = {'read1':('GTAGTGGT', 'GT--TGGT'),
+                      'read2':('GTAGTGGT', 'GTAGTGGT')}
+        alig = _make_multiple_alignment(alignments)
+        assert alig['reference'] == ['G', 'T', 'A', 'G', 'T', 'G', 'G', 'T']
+        assert alig['reads']['read1'] == ['G', 'T', '-', '-', 'T', 'G', 'G',
+                                          'T']
+        # ref     TGTCGTATGTAGTG---GTAGTCTAGTAGTA
+        # READ1           GT--TG---GT
+        # READ2           GTAGTG---GT
+        # read3           GTAGTGAA-GT
+        # read4           GTAGTGAACGT
+        alignments = {'read1':('GTAGTGGT', 'GT--TGGT'),
+                      'read2':('GTAGTGGT', 'GTAGTGGT'),
+                      'read3':('GTAGTG--GT', 'GTAGTGAAGT'),
+                      'read4':('GTAGTG---GT', 'GTAGTGAACGT')}
+        alignment = _make_multiple_alignment(alignments)
+        assert alignment == {'reference': ['G','T','A','G','T','G','---','G','T'],
+            'reads':{'read1': ['G', 'T', '-', '-', 'T', 'G', '---', 'G', 'T'],
+                     'read2': ['G', 'T', 'A', 'G', 'T', 'G', '---', 'G', 'T'],
+                     'read3': ['G', 'T', 'A', 'G', 'T', 'G', 'AA-', 'G', 'T'],
+                     'read4': ['G', 'T', 'A', 'G', 'T', 'G', 'AAC', 'G', 'T']}}
+
+        alignments = {'read1':('N', 'G'),
+                      'read2':('G--', 'GTA')}
+        alignment = _make_multiple_alignment(alignments)
+        assert alignment == {'reference': ['G', '--'],
+                             'reads'    :{'read1':['G', '--'],
+                                          'read2':['G', 'TA']}}
+
+
+        #print ma
+        #                    kind
+        #    ref    C-T
+        #    read1  C-T      invariant
+        #    read2  CTT      insertion
+        #    read3  T-T      snp
+        #    read4  C--      del
+
+        alignment = {'read1':('CT', 'CT'),
+                     'read2':('C-T', 'CTT'),
+                     'read3':('CT', 'TT'),
+                     'read4':('CT', 'C-')}
+        malignment = _make_multiple_alignment(alignment)
+        assert malignment['reads']['read1'] == ['C', '-', 'T']
+        assert malignment['reads']['read2'] == ['C', 'T', 'T']
+        assert malignment['reads']['read3'] == ['T', '-', 'T']
+        assert malignment['reads']['read4'] == ['C', '-', '-']
+        assert malignment['reference'] == ['C', '-', 'T']
 
 class PoblationCalculationsTest(unittest.TestCase):
     'It checks the calculations of the poblations'
@@ -901,5 +1182,11 @@ class PoblationCalculationsTest(unittest.TestCase):
         assert round(snv.qualifiers['heterozygosity'], 2) == 0.47
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_annotation_massive']
+#    import sys;sys.argv = ['', 'TestReadPos.test_join_alignments']
+#    import sys;sys.argv = ['', 'TestReadPos.test_calculate_allele_kind']
+#    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
+#    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
+
     unittest.main()

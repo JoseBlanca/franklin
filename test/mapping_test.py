@@ -53,7 +53,7 @@ class GmapTest(unittest.TestCase):
 
     @staticmethod
     def test_gmap_mapper():
-        'It test the cmap mapper'
+        'It test the gmap mapper'
         mappers_dir = join(TEST_DATA_DIR, 'mappers')
         gmap_dir = join(TEST_DATA_DIR, 'mappers', 'gmap')
         work_dir = NamedTemporaryDir()

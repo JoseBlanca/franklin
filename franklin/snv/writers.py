@@ -28,21 +28,83 @@ from franklin.snv.snv_filters import SnvNamer
 from franklin.snv.snv_annotation import (_allele_count, _get_group,
                                          calculate_snv_kind)
 from franklin.utils.misc_utils import OrderedDict
+from franklin.utils.cmd_utils import call
 
 class SnvSequenomWriter(object):
     'It writes the snv in the sequenom format'
-    def __init__(self, fhand, length=150):
+    def __init__(self, fhand, length=150, maf=None):
         'It initiates the class'
         self.fhand = fhand
         self.num_features = 0
         self._length = length
+        self._maf = maf
 
     @staticmethod
     def snv_in_illumina(snv):
         "it checks if the snp is only for illumina"
         return not snv.qualifiers['filters']['is_variable'][('samples', ('rp_75_59_uc82',), True)]
 
-    def write(self, sequence, position, maf=None):
+    def write(self, sequence, selected_snv_location):
+        'It writes a seq with the alternative alleles in one position and Ns in the others.'
+        start = selected_snv_location - self._length
+        end =  selected_snv_location + self._length + 1
+        if start < 0:
+            start = 0
+        if end > len(sequence):
+            end = len(sequence)
+        sequence = sequence[start: end]
+
+        selected_snv_location -= start
+        maf_threshold = self._maf
+        prev_seq_end = 0
+        seq_to_print = ''
+        for snv in sequence.get_features(kind='snv'):
+            # snv start and end [start, end[.
+            # Correcting the previous sequence slice
+            snv_start = snv.location.start.position - start
+            snv_end = snv.location.end.position - start
+            # join the previous sequence to the sequence to print
+            seq_to_print += str(sequence[prev_seq_end:snv_start].seq)
+            prev_seq_end = snv_end
+
+            if snv_start == selected_snv_location:
+                #subtituir por allelos
+                snv_kind = calculate_snv_kind(snv)
+                if snv_kind != SNP:
+                    msg = "We don't know how to print anything but SNPs"
+                    raise NotImplementedError(msg)
+                alleles = '/'.join([a[0] for a in snv.qualifiers['alleles'].keys()])
+                to_print = '[{0:s}]'.format(alleles)
+            else:
+                if maf_threshold is not None:
+                    snv_maf = calculate_maf_frequency(snv)
+                    write_abundant_allele = True if snv_maf > maf_threshold else False
+                else:
+                    write_abundant_allele = False
+                if write_abundant_allele:
+                    # most abundant allele
+                    to_print = _get_major_allele(snv)
+                else:
+                    # Ns
+                    snv_kind = calculate_snv_kind(snv)
+                    if snv_kind == SNP:
+                        to_print = _snp_to_iupac(snv, sequence)
+                    elif snv_kind in (DELETION, COMPLEX, INDEL):
+                        ref_allele = snv.qualifiers['reference_allele']
+                        to_print = ref_allele[0] + 'N' * (len(ref_allele) - 1)
+                    else:
+                        to_print = 'N'
+
+            seq_to_print += to_print
+        else:
+            seq_to_print += str(sequence[prev_seq_end:end + 1].seq)
+
+        name = sequence.name + '_' + str(selected_snv_location + 1)
+        self.fhand.write('>%s\n%s\n' % (name, seq_to_print))
+        self.fhand.flush()
+
+
+    def write_old(self, sequence, position):
         'It does the real write of the features'
         seq = list(sequence.seq)
         # put N in the snps near of the position
@@ -52,7 +114,7 @@ class SnvSequenomWriter(object):
                 mysnv = snv
 
             elif abs(location - position) < self._length:
-                genotype = _snv_to_n(snv, sequence, position, maf=maf)
+                genotype = _snv_to_n(snv, sequence, position, maf=self._maf)
                 for index, allele in enumerate(genotype):
                     seq[location + index] = allele
 
@@ -212,8 +274,17 @@ class SnvIlluminaWriter(object):
                                      seq_left.seq + alleles_str + seq_rigth.seq)
             self.fhand.write(illum_str)
         self.fhand.flush()
+def compress_and_index_vcf(vcf_fpath):
+    '''It indexes the vcf file using tabix and bgzip. the indexes file will be
+    vcf_filename.gz
+    '''
+    cmd = ['bgzip', '-f', vcf_fpath]
+    call(cmd, raise_on_error=True)
 
-#http://1000genomes.org/wiki/doku.php?id=1000_genomes:analysis:vcf3.3
+    cmd = ['tabix', '-p', 'vcf', '-f', '{0:s}.gz'.format(vcf_fpath)]
+    call(cmd, raise_on_error=True)
+
+#http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41
 class VariantCallFormatWriter(object):
     'It writes variant call format files for the snvs.'
     def __init__(self, fhand, reference_name, grouping=None):
@@ -236,20 +307,21 @@ class VariantCallFormatWriter(object):
     def _get_pre_header(self, reference_name):
         'It writes the header of the vcf file'
         header = self._header
-        header.append('##format=VCFv3.3')
+        header.append('##fileformat=VCFv4.1')
         header.append('##fileDate=%s' %
                                       datetime.date.today().strftime('%Y%m%d'))
         header.append('##source=franklin')
         header.append('##reference=%s' % reference_name)
-        header.append('##INFO=NS,1,Integer,"Number of Samples With Data"')
-        header.append('##INFO=AF,-1,Float,"Allele Frequency"')
-        header.append('##INFO=AC,-1,Integer,"Allele Count"')
-        header.append('##INFO=MQ,-1,Float,"RMS Mapping Quality"')
-        header.append('##INFO=BQ,-1,Float,"RMS Base Quality"')
-        header.append('##INFO=GC,.,String,"Genotype counts for alleles"')
-        header.append('##INFO=EZ,.,String,"CAP enzymes"')
-        header.append('##FORMAT=RG,.,String,"Read group Genotype genotype"')
-        header.append('##FORMAT=AC,.,String,"Allele count"')
+        header.append('##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">')
+        header.append('##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">')
+        header.append('##INFO=<ID=RC,Number=A,Type=Integer,Description="Read count of the alt alleles">')
+        header.append('##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">')
+        header.append('##INFO=<ID=BQ,Number=1,Type=Float,Description="RMS Base Quality">')
+        header.append('##INFO=<ID=GC,Number=.,Type=String,Description="Genotype Counts: Num. genotypes in which every alleles has been detected">')
+        header.append('##INFO=<ID=GP,Number=1,Type=String,Description="Genotype polimorphism">')
+        header.append('##INFO=<ID=EZ,Number=1,Type=String,Description="CAP enzymes">')
+        header.append('##FORMAT=<ID=GT,Number=1,Type=String,Description="Read group Genotype">')
+        header.append('##FORMAT=<ID=EC,Number=.,Type=Integer,Description="Allele count for the ref and alt alleles in the order listed">')
 
     def close(self):
         'It merges the header and the snv data'
@@ -276,7 +348,7 @@ class VariantCallFormatWriter(object):
     def _add_filters_to_header(self):
         'It adds the used filter tag to the header'
         for name, desc in self._filter_descriptions.values():
-            filter_desc = '##FILTER=%s,"%s"' % (name, desc)
+            filter_desc = '##FILTER=<ID=%s,Description="%s">' % (name, desc)
             self._header.append(filter_desc)
 
     def write(self, sequence):
@@ -294,12 +366,8 @@ class VariantCallFormatWriter(object):
             kind = allele[1]
             if kind == INVARIANT:
                 continue
-            if kind == SNP:
-                str_allele = allele[0]
-            elif kind == INSERTION:
-                str_allele = 'I%s' % allele[0]
-            elif kind == DELETION:
-                str_allele = 'D%d' % len(allele[0])
+
+            str_allele = allele[0].replace('-', '')
             str_alleles.append(str_allele)
             alternative_alleles.append(allele)
         if str_alleles:
@@ -325,7 +393,7 @@ class VariantCallFormatWriter(object):
                 self._filter_descriptions[name, parameters] = (short_name,
                                                                description)
         if not filter_strs:
-            return '.'
+            return 'PASS'
         else:
             return ';'.join(filter_strs)
 
@@ -335,14 +403,14 @@ class VariantCallFormatWriter(object):
 
         alleles = qualifiers['alleles']
 
-        #AC allele count in genotypes, for each ALT allele, in the same order as
+        #RC allele count in genotypes, for each ALT allele, in the same order as
         #listed
         acounts = [] #allele_count
         for allele in alternative_alleles:
             acount = _allele_count(allele, alleles, group_kind='read_groups')
             acounts.append(acount)
         if acounts:
-            toprint_items.append('AC=%s' % ','.join(map(str, acounts)))
+            toprint_items.append('RC=%s' % ','.join(map(str, acounts)))
 
         #AF allele frequency for each ALT allele in the same order as listed:
         reference_allele = qualifiers['reference_allele'], INVARIANT
@@ -371,23 +439,18 @@ class VariantCallFormatWriter(object):
                                            reference_allele=reference_allele[0],
                                         alternative_alleles=alternative_alleles,
                                           read_groups=qualifiers['read_groups'],
-                                                              count_reads=False)
-        genotype_counts = [(al, len(groups))for al, groups in allele_counts.items()]
-        #we have to sort by the number of groups
-        #sort on allele index (secondary key)
-        genotype_counts = sorted(genotype_counts, key=lambda x: x[0])
-        #sort on number of genotypes (primary_key)
-        genotype_counts = sorted(genotype_counts, key=lambda x: x[1],
-                                 reverse=True)
+                                          count_reads=False)
+        #if some allele is missing there are 0 counts of it
+        n_als = max(allele_counts.keys()) + 1
+        genotype_counts = [(al, len(allele_counts.get(al, [])))for al in range(n_als)]
 
         #now we print
-        alleles = [str(count[0]) for count in genotype_counts]
         counts = [str(count[1]) for count in genotype_counts]
-        toprint_items.append('GC=%s:%s' % ('|'.join(alleles), ','.join(counts)))
-
+        toprint_items.append('GC=%s' % (','.join(counts)))
         #genotype polymorphism
         #1 - (number_groups_for_the_allele_with_more_groups / number_groups)
         number_of_groups = sum([count[1] for count in genotype_counts])
+
         genotype_polymorphism = 1 - genotype_counts[0][1] / float(number_of_groups)
         toprint_items.append('GP=%.2f' % genotype_polymorphism)
 
@@ -451,8 +514,8 @@ class VariantCallFormatWriter(object):
         It takes into account the grouping_key (read_group, sample or library)
         It requires the dict with the information about the read_groups.
         '''
-
         #a map from alleles to allele index (0 for reference, etc)
+
         alleles_index = self._numbers_for_alleles(reference_allele,
                                                   alternative_alleles)
         grouping_key = self._genotype_grouping_key
@@ -460,7 +523,19 @@ class VariantCallFormatWriter(object):
         alleles_by_group = {}
         for allele, allele_info in alleles.items():
             #we need the index for the allele
-            allele_index = alleles_index[allele]
+#            if allele not in alleles_index:
+#                continue
+
+            try:
+                allele_index = alleles_index[allele]
+            except KeyError:
+                print 'allele', allele
+                print "allele index", alleles_index
+                print 'ref_allele', reference_allele
+                print 'alternative_alleles', alternative_alleles
+                print 'alleles', alleles
+                raise
+
             for read_group in allele_info['read_groups']:
                 group = _get_group(read_group, grouping_key, read_groups)
                 if group not in self._genotype_groups:
@@ -488,7 +563,7 @@ class VariantCallFormatWriter(object):
 
         items = []
         #the format
-        items.append('RG:AC')
+        items.append('GT:EC')
 
         #a map from alleles to allele index (0 for reference, etc)
         alleles_index = self._numbers_for_alleles(reference_allele,
@@ -529,7 +604,7 @@ class VariantCallFormatWriter(object):
             id_ = '.'
         items.append(id_)
         qualifiers = snv.qualifiers
-        ref_seq = qualifiers['reference_allele']
+        ref_seq = qualifiers['reference_allele'].replace('-', '')
         items.append(ref_seq)
         toprint_af, alternative_alleles = self._create_alternative_alleles(
                                                           qualifiers['alleles'])
@@ -538,8 +613,14 @@ class VariantCallFormatWriter(object):
                                           alternative_alleles))
         filters = self._create_filters(qualifiers)
         items.append(filters)
-        items.append(self._create_info(qualifiers, alternative_alleles))
-        items.append(self._create_genotypes(qualifiers,
-                                            alternative_alleles))
+        try:
+            items.append(self._create_info(qualifiers, alternative_alleles))
+        except KeyError:
+            print 'sequence', get_seq_name(sequence)
+            print 'position', str(int(snv.location.start.position))
+            raise
+
+        items.append(self._create_genotypes(qualifiers, alternative_alleles))
+
         self._temp_fhand.write('%s\n' % '\t'.join(items))
         self._temp_fhand.flush()
