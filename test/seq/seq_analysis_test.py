@@ -20,13 +20,14 @@ Created on 26/11/2009
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, os
-
+from tempfile import NamedTemporaryFile
 from Bio import SeqIO
 
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      look_for_similar_sequences,
-                                     est2genome_parser)
+                                     est2genome_parser,
+    do_transitive_clustering_on_blast, select_longer_sequence_from_cluster)
 from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class IntronTest(unittest.TestCase):
@@ -97,9 +98,49 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         similar_seqs = look_for_similar_sequences(seq1, database=database,
                                                   blast_program='blastn')
 
+
         assert similar_seqs[0]['name']          == 'AT5G19860.1'
         assert similar_seqs[0]['query_start']   == 1
         assert similar_seqs[0]['subject_start'] == 323
+
+class TestTransitiveClustering(unittest.TestCase):
+    'It tests the transitive clustering'
+
+    def test_transitive_clustering(self):
+        'We do a transitive clustering'
+
+        blast_fhand = open(os.path.join(TEST_DATA_DIR,
+                                        'transitive_cluster.blastout.xml'),
+                           'rt')
+        filter1 = {'kind': 'score_threshold',
+                   'score_key': 'similarity',
+                   'min_score': 98,
+                  }
+        filter2 = {'kind': 'min_length',
+                   'min_num_residues': 50,
+                   'length_in_query': True
+                  }
+        filters = [filter1, filter2]
+        clusters = do_transitive_clustering_on_blast(blast_fhand, filters)
+        assert set([u'seq3', u'seq2', u'seq1']) in clusters
+        assert set([u'seq4']) in clusters
+
+
+class TestSelectLongerSeq(unittest.TestCase):
+    'It tests the selection of the longer sequences'
+
+    def test_select_longer_seq(self):
+        'We select one sequence for each group'
+        seqs = '>seq1\nAC\n>seq2\nACTG\n>seq3\nACTT\n>seq4\nA\n'
+        seqs_fhand = NamedTemporaryFile()
+        seqs_fhand.write(seqs)
+        seqs_fhand.flush()
+        seqs_fname = seqs_fhand.name
+        seqs_index = SeqIO.index(seqs_fname, 'fasta')
+        clusters = [('seq1', 'seq2'), ('seq3', 'seq4')]
+        long_seqs = select_longer_sequence_from_cluster(seqs_index, clusters)
+        assert [seq.name for seq in long_seqs] == ['seq2', 'seq3']
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

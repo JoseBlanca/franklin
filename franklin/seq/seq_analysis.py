@@ -27,23 +27,25 @@ from franklin.seq.alignment_result import (filter_alignments,
 
 def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
                   sub2_def_as_acc=None):
-    '''It return orthologs from two pools. It needs the xml otput blast of the
+    '''It return orthologs from two pools. It needs the xml output blast of the
     pools'''
     # First we have to get hist from the first blast. We will put the in a set
     blast1_hits = set()
-    for hits in get_hit_pairs_fom_blast(get_fhand(blast1_fhand),
+    for hits in get_hit_pairs_from_blast(get_fhand(blast1_fhand),
                                         sub_def_as_acc=sub1_def_as_acc):
         blast1_hits.add(hits)
 
     # Know we will see if the hits in the second blast in the first too
-    for hits in get_hit_pairs_fom_blast(get_fhand(blast2_fhand),
+    for hits in get_hit_pairs_from_blast(get_fhand(blast2_fhand),
                                         sub_def_as_acc=sub2_def_as_acc):
         hits = (hits[1], hits[0])
         if hits in blast1_hits:
             yield hits
 
-def get_hit_pairs_fom_blast(blast_fhand, sub_def_as_acc=None, filters=None):
-    'It return a iterator with query subjetc tuples of the hist in the blast'
+def get_hit_pairs_from_blast(blast_fhand, sub_def_as_acc=None, filters=None):
+    '''It returns an iterator with query-subject tuples of the hits
+    in the blast
+    '''
 
     blasts = BlastParser(fhand=blast_fhand, subj_def_as_accesion=sub_def_as_acc)
     if filters is None:
@@ -132,7 +134,10 @@ def est2genome_parser(output):
     return result
 
 def look_for_similar_sequences(sequence, database, blast_program, filters=None):
-    'It return a list with the similar sequences in the database'
+    '''It return a list with the similar sequences in the database.
+    First it makes a blast of the sequences against the database and then
+    in joins the similar sequences
+    '''
     parameters = {'database': database}
 
     blast_runner = create_runner(tool=blast_program, parameters=parameters)
@@ -140,7 +145,7 @@ def look_for_similar_sequences(sequence, database, blast_program, filters=None):
     return similar_sequences_for_blast(blast_fhand, filters=filters)
 
 def similar_sequences_for_blast(blast_fhand, filters=None):
-    'It look fro similar sequences ina blast result'
+    'It look for similar sequences in a blast result'
     #now we parse the blast
     blast_parser = get_alignment_parser('blast+')
     blast_result = blast_parser(blast_fhand)
@@ -172,3 +177,45 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
                              'query_end':     match['end']
                              })
     return similar_seqs
+
+def do_transitive_clustering(similar_pairs):
+    'Given an iterator of similar pairs it returns the transtive clusters'
+    clusters = []
+    for pair in similar_pairs:
+        added = True
+        for cluster in clusters:
+            if pair[0] in cluster or pair[1] in cluster:
+                cluster.update(pair)
+                break
+        else:
+            added = False
+        if not added:
+            clusters.append(set(pair))
+    return clusters
+
+
+def do_transitive_clustering_on_blast(blast_fhand, filters=None):
+    '''It does a transtive clustering given a xml blast result.
+
+    It will look for pairs of similar in the blast. Then it will create
+    clusters of sequences using the transitive property in the pairs.
+    e.g. a is similar to b. b to c => a, b and c belong to the same cluster.
+    '''
+    similar_pairs = get_hit_pairs_from_blast(blast_fhand, filters=filters)
+    return do_transitive_clustering(similar_pairs)
+
+
+def select_longer_sequence_from_cluster(seqs_index, clusters):
+    '''It selects one sequence for every cluster and creates an output fasta.
+
+    The sequences should be given as a BioPython sequence index (dict like).
+    '''
+
+    # It returns the index of the maximum value of a list.
+    # If there is more than one max value it will return only the first one.
+    index_of_max = lambda list_: list_.index(max(list_))
+
+    for cluster in clusters:
+        cluster = tuple(cluster)
+        lengths = [len(seqs_index[seq_name]) for seq_name in cluster]
+        yield seqs_index[cluster[index_of_max(lengths)]]
