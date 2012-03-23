@@ -27,7 +27,8 @@ from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      look_for_similar_sequences,
                                      est2genome_parser,
-    do_transitive_clustering_on_blast, select_longer_sequence_from_cluster)
+    do_transitive_clustering_on_blast, select_longer_sequence_from_cluster,
+    get_hit_pairs_from_blast, do_transitive_clustering)
 from franklin.utils.misc_utils import TEST_DATA_DIR
 
 class IntronTest(unittest.TestCase):
@@ -124,6 +125,14 @@ class TestTransitiveClustering(unittest.TestCase):
         clusters = do_transitive_clustering_on_blast(blast_fhand, filters)
         assert set([u'seq3', u'seq2', u'seq1']) in clusters
         assert set([u'seq4']) in clusters
+
+    @staticmethod
+    def test_do_transitive_clustering():
+        similar_pairs = [(1,2), (2,3), (4,5), (6,7), (1,6)]
+        clusters = do_transitive_clustering(similar_pairs)
+        assert len(clusters) == 2
+        assert clusters[1] == set([1, 2, 3, 6, 7])
+        assert clusters[0] == set([4, 5])
 
 
 class TestSelectLongerSeq(unittest.TestCase):

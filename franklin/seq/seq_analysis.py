@@ -180,16 +180,32 @@ def similar_sequences_for_blast(blast_fhand, filters=None):
 
 def do_transitive_clustering(similar_pairs):
     'Given an iterator of similar pairs it returns the transtive clusters'
+
+    # There are much more efficient algorithms like
+    # http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
     clusters = []
     for pair in similar_pairs:
-        added = True
-        for cluster in clusters:
+        # which clusters share a member with this pair?
+        clusters_to_join = []
+        for cluster_index in range(len(clusters)):
+            cluster = clusters[cluster_index]
             if pair[0] in cluster or pair[1] in cluster:
-                cluster.update(pair)
-                break
+                clusters_to_join.append(cluster_index)
+        if len(clusters_to_join) == 1:
+            clusters[clusters_to_join[0]].update(pair)
+        elif len(clusters_to_join) == 2:
+            # we join all clusters that share something
+            joined_cluster = set()
+            for cluster_index in clusters_to_join:
+                joined_cluster.update(clusters[cluster_index])
+            joined_cluster.update(pair)
+            clusters_to_join.sort(reverse=True)
+            for cluster_index in clusters_to_join:
+                del clusters[cluster_index]
+            clusters.append(joined_cluster)
+        elif len(clusters_to_join) > 2:
+            raise RuntimeError('More than two clusters to join. Fix me!')
         else:
-            added = False
-        if not added:
             clusters.append(set(pair))
     return clusters
 
