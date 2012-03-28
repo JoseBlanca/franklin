@@ -55,9 +55,12 @@ def get_hit_pairs_from_blast(blast_fhand, sub_def_as_acc=None, filters=None):
                     'score_tolerance': 10}]
     filtered_results = filter_alignments(blasts, config=filters)
 
-    get_id = lambda x : x.split()[0]
+    return get_pairs_from_alignments(filtered_results)
 
-    for match in filtered_results:
+def get_pairs_from_alignments(alignments):
+    """It gets the pairs from the fiven alignement"""
+    get_id = lambda x : x.split()[0]
+    for match in alignments:
         try:
             query = match['query'].id
         except AttributeError:
@@ -70,6 +73,13 @@ def get_hit_pairs_from_blast(blast_fhand, sub_def_as_acc=None, filters=None):
                 subject = match_hit['subject'].name
             subject = get_id(subject)
             yield(query, subject)
+
+def get_seqs_without_match(alignments, seqs):
+    'It returns the seqs that does not have any match in the given alignment'
+    seq_names = set([seq.name for seq in seqs])
+    matched_seqs = get_pairs_from_alignments(alignments)
+    seqs_with_hit = set([item for sublist in matched_seqs for item in sublist])
+    return seq_names.difference(seqs_with_hit)
 
 def infer_introns_for_cdna(sequence, genomic_db, genomic_seqs_index=None,
                            similar_sequence=None):
@@ -209,7 +219,6 @@ def do_transitive_clustering(similar_pairs):
             clusters.append(set(pair))
     return clusters
 
-
 def do_transitive_clustering_on_blast(blast_fhand, filters=None):
     '''It does a transtive clustering given a xml blast result.
 
@@ -220,6 +229,27 @@ def do_transitive_clustering_on_blast(blast_fhand, filters=None):
     similar_pairs = get_hit_pairs_from_blast(blast_fhand, filters=filters)
     return do_transitive_clustering(similar_pairs)
 
+def do_transitive_clustering_all(blast_fhand, seqs, filters=None):
+    '''It does a transtive clustering given a xml blast result. and the
+    initial seq file.
+
+    It will look for pairs of similar in the blast. Then it will create
+    clusters of sequences using the transitive property in the pairs.
+    e.g. a is similar to b. b to c => a, b and c belong to the same cluster.
+
+    it will use the seqs file to add to the clusters the sequences that are o
+    similar to other seqs: clusters with only one sequence
+    '''
+
+    similar_pairs = list(get_hit_pairs_from_blast(blast_fhand, filters=filters))
+    clusters = do_transitive_clustering(similar_pairs)
+
+    seqs_with_hit = set([item for sublist in similar_pairs for item in sublist])
+    all_seqs = set([seq.name for seq in seqs])
+
+    seqs_without_match= all_seqs.difference(seqs_with_hit)
+
+    return clusters, seqs_without_match
 
 def select_longer_sequence_from_cluster(seqs_index, clusters):
     '''It selects one sequence for every cluster and creates an output fasta.

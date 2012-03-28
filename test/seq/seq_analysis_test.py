@@ -27,9 +27,13 @@ from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      look_for_similar_sequences,
                                      est2genome_parser,
-    do_transitive_clustering_on_blast, select_longer_sequence_from_cluster,
-    get_hit_pairs_from_blast, do_transitive_clustering)
+                                     do_transitive_clustering_on_blast,
+                                     select_longer_sequence_from_cluster,
+                                     do_transitive_clustering,
+                                     do_transitive_clustering_all,
+                                     get_seqs_without_match)
 from franklin.utils.misc_utils import TEST_DATA_DIR
+from franklin.seq.alignment_result import BlastParser
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
@@ -104,6 +108,24 @@ Segment     57  98.3 2272768 2272826 scaffold06070   614   672 SGN-U562593'''
         assert similar_seqs[0]['query_start']   == 1
         assert similar_seqs[0]['subject_start'] == 323
 
+    @staticmethod
+    def test_get_seq_without_match():
+        'It gets the seqs without match'
+        blast_fhand = open(os.path.join(TEST_DATA_DIR,
+                                        'transitive_cluster.blastout.xml'),
+                           'rt')
+
+        seqs = [SeqWithQuality(name='seq1', seq=Seq('aa')),
+                SeqWithQuality(name='seq2', seq=Seq('aa')),
+                SeqWithQuality(name='seq3', seq=Seq('aa')),
+                SeqWithQuality(name='seq4', seq=Seq('aa')),
+                SeqWithQuality(name='seq5', seq=Seq('aa')),
+                SeqWithQuality(name='seq6', seq=Seq('aa'))]
+        alignments = BlastParser(fhand=blast_fhand)
+        no_matched_seqs = get_seqs_without_match(alignments, seqs)
+        assert 'seq6' in  no_matched_seqs
+        assert 'seq5' in  no_matched_seqs
+
 class TestTransitiveClustering(unittest.TestCase):
     'It tests the transitive clustering'
 
@@ -122,9 +144,29 @@ class TestTransitiveClustering(unittest.TestCase):
                    'length_in_query': True
                   }
         filters = [filter1, filter2]
+
         clusters = do_transitive_clustering_on_blast(blast_fhand, filters)
         assert set([u'seq3', u'seq2', u'seq1']) in clusters
         assert set([u'seq4']) in clusters
+
+        # with the secuences
+        blast_fhand = open(os.path.join(TEST_DATA_DIR,
+                                        'transitive_cluster.blastout.xml'),
+                           'rt')
+
+        seqs = [SeqWithQuality(name='seq1', seq=Seq('aa')),
+                SeqWithQuality(name='seq2', seq=Seq('aa')),
+                SeqWithQuality(name='seq3', seq=Seq('aa')),
+                SeqWithQuality(name='seq4', seq=Seq('aa')),
+                SeqWithQuality(name='seq5', seq=Seq('aa')),
+                SeqWithQuality(name='seq6', seq=Seq('aa'))]
+
+        clusters, no_matched = do_transitive_clustering_all(blast_fhand, seqs,
+                                                            filters)
+        assert set([u'seq3', u'seq2', u'seq1']) in clusters
+        assert set([u'seq4']) in clusters
+        assert 'seq5' in no_matched
+        assert 'seq6' in no_matched
 
     @staticmethod
     def test_do_transitive_clustering():
