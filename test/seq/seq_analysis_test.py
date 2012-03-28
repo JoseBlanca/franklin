@@ -34,6 +34,7 @@ from franklin.seq.seq_analysis import (infer_introns_for_cdna,
                                      get_seqs_without_match)
 from franklin.utils.misc_utils import TEST_DATA_DIR
 from franklin.seq.alignment_result import BlastParser
+from franklin.seq.writers import write_seqs_in_file
 
 class IntronTest(unittest.TestCase):
     'It test that we can locate introns'
@@ -153,15 +154,16 @@ class TestTransitiveClustering(unittest.TestCase):
         blast_fhand = open(os.path.join(TEST_DATA_DIR,
                                         'transitive_cluster.blastout.xml'),
                            'rt')
-
+        seqs_fhand = NamedTemporaryFile()
         seqs = [SeqWithQuality(name='seq1', seq=Seq('aa')),
                 SeqWithQuality(name='seq2', seq=Seq('aa')),
                 SeqWithQuality(name='seq3', seq=Seq('aa')),
                 SeqWithQuality(name='seq4', seq=Seq('aa')),
                 SeqWithQuality(name='seq5', seq=Seq('aa')),
                 SeqWithQuality(name='seq6', seq=Seq('aa'))]
-
-        clusters, no_matched = do_transitive_clustering_all(blast_fhand, seqs,
+        write_seqs_in_file(seqs, seqs_fhand)
+        clusters, no_matched = do_transitive_clustering_all(blast_fhand,
+                                                            seqs_fhand,
                                                             filters)
         assert set([u'seq3', u'seq2', u'seq1']) in clusters
         assert set([u'seq4']) in clusters

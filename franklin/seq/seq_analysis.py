@@ -24,6 +24,7 @@ from franklin.utils.misc_utils import get_fhand
 from franklin.seq.writers import temp_fasta_file
 from franklin.seq.alignment_result import (filter_alignments,
                                            get_alignment_parser, BlastParser)
+from franklin.seq.readers import seqs_in_file
 
 def get_orthologs(blast1_fhand, blast2_fhand, sub1_def_as_acc=None,
                   sub2_def_as_acc=None):
@@ -229,7 +230,7 @@ def do_transitive_clustering_on_blast(blast_fhand, filters=None):
     similar_pairs = get_hit_pairs_from_blast(blast_fhand, filters=filters)
     return do_transitive_clustering(similar_pairs)
 
-def do_transitive_clustering_all(blast_fhand, seqs, filters=None):
+def do_transitive_clustering_all(blast_fhand, seqs_fhand, filters=None):
     '''It does a transtive clustering given a xml blast result. and the
     initial seq file.
 
@@ -245,7 +246,7 @@ def do_transitive_clustering_all(blast_fhand, seqs, filters=None):
     clusters = do_transitive_clustering(similar_pairs)
 
     seqs_with_hit = set([item for sublist in similar_pairs for item in sublist])
-    all_seqs = set([seq.name for seq in seqs])
+    all_seqs = set([seq.name for seq in seqs_in_file(seqs_fhand)])
 
     seqs_without_match= all_seqs.difference(seqs_with_hit)
 
