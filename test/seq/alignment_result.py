@@ -932,5 +932,5 @@ class MergeMatchesTests(unittest.TestCase):
         assert covered_segments == [(1, 20)]
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'BlastParserTest.test_blast_parser']
+    #import sys;sys.argv = ['', 'BlastParserTest.test_blast_parser']
     unittest.main()
