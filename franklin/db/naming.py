@@ -346,6 +346,7 @@ class FileNamingSchema(object):
                 self._naming_dict[name] = uniquename
 
 REPLACE_RE = {
+    'contig_member':[(r'^(\S*)(.*)$', 1)],
     'fasta':[(r'^(>)([^ \n]+)(.*)$', 2)],
     'caf'  :[(r'^(DNA *: *)([^ \n]+)(.*)$', 2),
              (r'^(BaseQuality *: *)([^ \n]+)(.*)$', 2),
@@ -375,6 +376,7 @@ def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format):
             replace = []
             for group_i, group in enumerate(matchobj.groups()):
                 if group_i + 1 == group_num:
+
                     replace.append(naming.get_uniquename(name=group))
                 else:
                     replace.append(group)
@@ -394,6 +396,7 @@ def _change_names_in_files_regex(fhand_in, fhand_out, naming, file_format):
     fhand_out.seek(0)
     for line in fhand_in:
         for regex in regex_list:
+
             line = re.sub(regex['re'], regex['function'], line)
         fhand_out.write(line)
 

@@ -123,6 +123,9 @@ CCAAAGGGAAAGTTATTGCAGCAA
 +
 FFFFFFFFFFFFFFFFFFIIIIIIIIIIIIIIIIIIIIIIIIIIIFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 FFBBBF;;>>78@FEEEEFFFFFF
+'''),
+'contig_member':('''METC053253\tMEES077326\tMEES131294\tMEES361145\tMEES714900
+METC053254\tMEES061336\tMEES510889\tMEES134877
 ''')
 }
 
@@ -362,7 +365,31 @@ class ChangeNameTest(unittest.TestCase):
 
         assert open(fhand_out.name).read()[:8] == '@myES000'
 
+    @staticmethod
+    def test_contig_member():
+        'It test that we can change the name in the fasta files.'
+        fhand_in  = StringIO(EXAMPLES['contig_member'])
+
+        fhand_out = StringIO('')
+        engine    = sqlalchemy.create_engine('sqlite:///:memory:')
+        filenaming_fhand = NamedTemporaryFile()
+        filenaming_fhand.write('METC053253:seq1\nMETC053254:seq2\n')
+        filenaming_fhand.flush()
+
+        create_naming_database(engine)
+
+        add_project_to_naming_database(engine, name='test_project', code='my',
+                                       description='a test project')
+        naming = FileNamingSchema(filenaming_fhand)
+
+
+        change_names_in_files(fhand_in, fhand_out, naming, 'contig_member')
+
+        output = fhand_out.getvalue()
+        assert "seq1" in output
+        assert "seq2" in output
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testiprscan_parse']
+#    import sys;sys.argv = ['', 'ChangeNameTest.test_contig_member']
     unittest.main()
 
