@@ -579,7 +579,8 @@ def _create_vector_striper(vectors, aligner, vectors_are_blastdb=False,
     vectors = get_fhand(vectors)
     parameters = {'blast_long'    : {'gapextend': '3', 'gapopen':'3',
                                      'penalty':'-5', 'expect':'700',
-                                     'dust':'20 1 64'},
+                                     'dust':'20 1 64',
+                                     'searchsp':"1750000000000"},
                   'blast_short': {'task': 'blastn-short', 'expect': '0.0001',
                                   'subject': vectors, 'alig_format':6},
                  }

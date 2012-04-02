@@ -92,8 +92,9 @@ BLASTPLUS_DEF = {'binary':'',
                    'gapopen':     {'option': '-gapopen'},
                    'task':        {'option': '-task'},
                    'subject':     {'option': '-subject'},
-                   'no_greedy':   {'option': '-no_greedy'}
-                            },
+                   'no_greedy':   {'option': '-no_greedy'},
+                   'searchsp':{'option':'-searchsp'}
+                },
                  'output':{'blast+':{'option':STDOUT}},
             'input':{'sequence':{'option':'-query', 'files_format':['fasta']}},
                  'ignore_stderrs': ['Karlin-Altschul']}
