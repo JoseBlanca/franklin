@@ -121,6 +121,17 @@ class NamedTemporariDirTest(unittest.TestCase):
         del(temp_dir)
         assert os.path.exists(dir_name) == False
 
+        temp_dir = NamedTemporaryDir(prefix='variation_123_')
+        dir_name = temp_dir.name
+        fhand = open(os.path.join(dir_name, 'peio'), 'w')
+        temp_dir.close()
+        assert os.path.exists(dir_name) == False
+        fhand.write('prueba')
+        fhand.flush()
+        assert os.path.exists(fhand.name) == False
+        fhand.close()
+
+
 
 class VersionedPathTest(unittest.TestCase):
     'It tests the versioned path class'

@@ -95,9 +95,9 @@ def floats_are_equal(num1, num2):
 
 class NamedTemporaryDir(object):
     '''This class creates temporary directories '''
-    def __init__(self):
+    def __init__(self, suffix='', prefix=''):
         '''It initiates the class.'''
-        self._name = tempfile.mkdtemp()
+        self._name = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
 
     def get_name(self):
         'Returns path to the dict'
@@ -107,7 +107,6 @@ class NamedTemporaryDir(object):
         '''It removes the temp dir'''
         if os.path.exists(self._name):
             shutil.rmtree(self._name)
-
     def __del__(self):
         '''It removes de temp dir when instance is removed and the garbaje
         colector decides it'''
