@@ -27,6 +27,8 @@ from franklin.backbone.backbone_runner import (do_analysis,
 from franklin.backbone.specifications import BACKBONE_DIRECTORIES
 from optparse import OptionParser
 
+logging.basicConfig()
+
 ERROR_DIR = os.path.join(BACKBONE_DIRECTORIES['error_dir'])
 cgitb.enable(display=0, format='text', logdir=ERROR_DIR)
 
