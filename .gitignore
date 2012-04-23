@@ -6,8 +6,8 @@ _build
 /dist
 test/backbone/formatdb.log
 .settings
-doc/ngs_backbone/downloads
-doc/clean_reads/downloads
+doc/ngs_backbone/downloads/*
+doc/clean_reads/downloads/*
 test/backbone/error.log
 build/
 scripts/notofranklin/
