@@ -24,7 +24,9 @@ that can skip the first mira assemply run.
 
 from optparse import OptionParser
 from tempfile import NamedTemporaryFile
-
+from franklin.seq.writers import SequenceWriter
+from franklin.seq.readers import seqs_in_file
+from franklin.utils.seqio_utils import seqio
 import os
 
 IASSEMBLER_INPUT_NAME = 'seqs.fasta'
@@ -118,16 +120,34 @@ def main():
     process_contig_readlist(mira_contig_read_fpath, iassembler_contig_mem_fpath)
 
 
-    # copy files into the iassembler project
+    # copy unigene files into the iassembler project
     iassembler_unigenes = os.path.join(mira_1_dir, 'mira2.fa')
     iassembler_unigenes_qual = os.path.join(mira_1_dir, 'mira2.fa.qual')
-    os.symlink(unigenes_fpath, iassembler_unigenes)
-    os.symlink(unigenes_qual_fpath, iassembler_unigenes_qual)
+    iassembler_unigenes_fh = open(iassembler_unigenes, 'w')
+    iassembler_unigenes_qual_fh = open(iassembler_unigenes_qual, 'w')
+    seq_writer = SequenceWriter(fhand=iassembler_unigenes_fh,
+                                file_format='fasta',
+                                qual_fhand=iassembler_unigenes_qual_fh)
 
-    #create iassembler input files. empty files in iassembler dir because we
-    #are going to use the firts mira result as input
-    touch(os.path.join(iassembler_path, IASSEMBLER_INPUT_NAME))
-    touch(os.path.join(iassembler_path, IASSEMBLER_INPUT_NAME + '.qual'))
+    for seq in seqs_in_file(seq_fhand=open(unigenes_fpath), format='sfastq',
+                            qual_fhand=open(unigenes_qual_fpath)):
+        seq.name = 'mira_{0:s}'.format(seq.name.split('_', 1)[1])
+        seq.id = seq.name
+        seq_writer.write(seq)
+
+    #create iassembler input files.
+    seq_fhand = open(os.path.join(iassembler_path, IASSEMBLER_INPUT_NAME), 'w')
+    qual_fhand = open(os.path.join(iassembler_path,
+                                   IASSEMBLER_INPUT_NAME + '.qual'), 'w')
+
+    for file_ in  os.listdir(os.path.join(mira_path, '..')):
+        if '_in' in file_:
+            file_ = os.path.join(mira_path, '..', file_)
+            seqio(in_seq_fhand=open(file_), out_seq_fhand=seq_fhand,
+                  out_qual_fhand=qual_fhand, in_format='sfastq',
+                  out_format='fasta')
+
+
 
     msg  = "To run iassembler you must use this command:\n"
     msg += "iassembler -c -i {0:s}\n".format(IASSEMBLER_INPUT_NAME)
