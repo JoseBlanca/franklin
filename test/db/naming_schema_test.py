@@ -389,7 +389,23 @@ class ChangeNameTest(unittest.TestCase):
         assert "seq1" in output
         assert "seq2" in output
 
+from franklin.db.naming import _CodeGenerator
+class CodegeneratorTest(unittest.TestCase):
+    'It test the code generator class'
+
+
+    @staticmethod
+    def test_codegenerator():
+        'Basic code genertaor runs'
+        codegen = _CodeGenerator('999')
+        assert codegen.next() == 'A00'
+
+        codegen = _CodeGenerator('A999')
+        assert codegen.next() == 'B000'
+
+        codegen = _CodeGenerator('OZZZZ9')
+        assert codegen.next() == 'PAAAA0'
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'ChangeNameTest.test_contig_member']
+#    import sys;sys.argv = ['', 'CodegeneratorTest.test_codegenerator']
     unittest.main()
 

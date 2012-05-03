@@ -220,13 +220,13 @@ def _lines_for_every_tab_blast(fhand):
         else:
             (query, subject, identity, ali_len, mis, gap_opens, query_start,
              query_end, subject_start, subject_end, expect, score) = items
-        query_start   = int(query_start) - 1
-        query_end     = int(query_end) - 1
+        query_start = int(query_start) - 1
+        query_end = int(query_end) - 1
         subject_start = int(subject_start) - 1
-        subject_end   = int(subject_end) - 1
-        expect        = float(expect)
-        score         = float(score)
-        identity      = float(identity)
+        subject_end = int(subject_end) - 1
+        expect = float(expect)
+        score = float(score)
+        identity = float(identity)
         match_part = {'subject_start': subject_start,
                       'subject_end'  : subject_end,
                       'query_start'  : query_start,
@@ -327,8 +327,8 @@ class BlastParser(object):
         self._blast_file = fhand
         metadata = self._get_blast_metadata()
         blast_version = metadata['version']
-        plus          = metadata['plus']
-        self.db_name  = metadata['db_name']
+        plus = metadata['plus']
+        self.db_name = metadata['db_name']
 
         self._blast_file.seek(0, 0)
 
@@ -470,7 +470,7 @@ class BlastParser(object):
         tell_ = self._blast_file.tell()
         version = None
         db_name = None
-        plus    = False
+        plus = False
         for line in self._blast_file:
             line = line.strip()
             if line.startswith('<BlastOutput_version>'):
@@ -600,7 +600,7 @@ class ExonerateParser(object):
 def _strand_transform(strand):
     '''It transfrom the +/- strand simbols in our user case 1/-1 caracteres '''
     if strand == '-':
-        return - 1
+        return -1
     elif strand == '+':
         return 1
 
@@ -726,7 +726,7 @@ def build_relations_from_aligment(fhand, query_name, subject_name):
     segments = []
     for ali_pos in range(len(seq1['seq'])):
         try:
-            nucl0, nucl1 = seq0['seq'][ali_pos+1], seq1['seq'][ali_pos+1]
+            nucl0, nucl1 = seq0['seq'][ali_pos + 1], seq1['seq'][ali_pos + 1]
             if (nucl0 == gap or nucl1 == gap) and segment_start:
                 do_segment = True
                 segment_end = pos_seq0 - 1, pos_seq1 - 1
@@ -736,8 +736,8 @@ def build_relations_from_aligment(fhand, query_name, subject_name):
             do_segment = True
             segment_end = pos_seq0, pos_seq1
         if do_segment:
-            segment= {seq0['name']: (segment_start[0], segment_end[0]),
-                      seq1['name']: (segment_start[1], segment_end[1]),}
+            segment = {seq0['name']: (segment_start[0], segment_end[0]),
+                      seq1['name']: (segment_start[1], segment_end[1]), }
             segments.append(segment)
             segment_start = None
         if nucl0 != gap and nucl1 != gap and segment_start is None:
@@ -827,7 +827,7 @@ def _create_scores_mapper_(score_key, score_tolerance=None,
                 if _score_above_threshold(score, min_score, max_score,
                                           log_tolerance, log_best_score):
                     filtered_match_parts.append(match_part)
-            match['match_parts']= filtered_match_parts
+            match['match_parts'] = filtered_match_parts
             if not len(match['match_parts']):
                 continue
             #is this match ok?
@@ -876,7 +876,7 @@ def _fix_match_scores(match, score_keys):
         return
     match_part = match['match_parts'][0]
     for key in score_keys:
-        scores[key] =  match_part['scores'][key]
+        scores[key] = match_part['scores'][key]
     match['scores'] = scores
 
 def _fix_match_start_end(match):
@@ -932,36 +932,34 @@ def _create_fix_matches_mapper():
     '''
     return _fix_matches
 
-def _covered_segments(match_parts, in_query=True):
+
+def covered_segments(match_parts, in_query=True, merge_segments_closer=1):
     '''Given a list of match_parts it returns the coverd segments.
 
        match_part 1  -------        ----->    -----------
        match_part 2       ------
        It returns the list of segments coverd by the match parts either in the
        query or in the subject.
+       merge_segments_closer is an integer. Segments closer than the given 
+       number of residues will be merged.
     '''
-    molecule = 'query' if in_query else 'subj'
 
     #we collect all start and ends
     START = 0
-    END   = 1
-    limits = [] #all hsp starts and ends
+    END = 1
+    limits = []     # all hsp starts and ends
     for match_part in match_parts:
         if in_query:
             start = match_part['query_start']
-            end   = match_part['query_end']
+            end = match_part['query_end']
         else:
             start = match_part['subject_start']
-            end   = match_part['subject_end']
+            end = match_part['subject_end']
         limit_1 = (START, start)
         limit_2 = (END, end)
         limits.append(limit_1)
         limits.append(limit_2)
 
-    #now we sort the hsp limits according their location
-    def cmp_query_location(hsp_limit1, hsp_limit2):
-        'It compares the locations'
-        return hsp_limit1[molecule] - hsp_limit2[molecule]
     #sort by secondary key: start before end
     limits.sort(key=itemgetter(0))
     #sort by location (primary key)
@@ -975,7 +973,7 @@ def _covered_segments(match_parts, in_query=True):
             previous_limit = limit
             continue
         if (previous_limit[0] == END and limit[0] == START and
-            previous_limit[1] == limit[1] - 1):
+            previous_limit[1] >= limit[1] - merge_segments_closer):
             #These limits cancelled each other
             previous_limit = None
             continue
@@ -1000,12 +998,13 @@ def _covered_segments(match_parts, in_query=True):
                 segments.append(segment)
     return segments
 
+
 def _match_length(match, length_from_query):
     '''It returns the match length.
 
     It does take into account only the length covered by match_parts.
     '''
-    segments = _covered_segments(match['match_parts'], length_from_query)
+    segments = covered_segments(match['match_parts'], length_from_query)
     length = 0
     for segment in segments:
         match_part_len = segment[1] - segment[0] + 1
@@ -1024,7 +1023,7 @@ def _create_min_length_mapper(length_in_query, min_num_residues=None,
     if min_num_residues is None and min_percentage is None:
         raise ValueError('min_num_residues or min_percentage should be given')
     elif min_num_residues is not None and min_percentage is not None:
-        msg =  'Both min_num_residues or min_percentage can not be given at the'
+        msg = 'Both min_num_residues or min_percentage can not be given at the'
         msg += ' same time'
         raise ValueError(msg)
     def map_(alignment):
@@ -1087,7 +1086,7 @@ def filter_alignments(alignments, config):
     #create the pipeline
     for conf in config:
         funct_fact = FILTER_COLLECTION[conf['kind']]['funct_factory']
-        kind     = FILTER_COLLECTION[conf['kind']]['kind']
+        kind = FILTER_COLLECTION[conf['kind']]['kind']
         del conf['kind']
         function = funct_fact(**conf)
         if kind == MAPPER:

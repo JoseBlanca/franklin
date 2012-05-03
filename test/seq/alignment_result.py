@@ -30,7 +30,7 @@ from franklin.seq.alignment_result import (BlastParser,
                                            ExonerateParser,
                                            build_relations_from_aligment,
                                            filter_alignments,
-                                           _covered_segments,
+                                           covered_segments,
                                             TextBlastParser)
 from franklin.seq.seqs import SeqWithQuality, Seq
 from franklin.utils.misc_utils import floats_are_equal
@@ -50,15 +50,15 @@ def _check_sequence(sequence, expected):
 def _check_match_part(match_part, expected):
     'It matches a match_part against an expected result'
     if 'query_start' in expected:
-        assert match_part['query_start']    == expected['query_start']
+        assert match_part['query_start'] == expected['query_start']
     if 'query_end' in expected:
-        assert match_part['query_end']      == expected['query_end']
+        assert match_part['query_end'] == expected['query_end']
     if 'query_strand' in expected:
-        assert match_part['query_strand']   == expected['query_strand']
+        assert match_part['query_strand'] == expected['query_strand']
     if 'subject_start' in expected:
-        assert match_part['subject_start']  == expected['subject_start']
+        assert match_part['subject_start'] == expected['subject_start']
     if 'subject_end' in expected:
-        assert match_part['subject_end']    == expected['subject_end']
+        assert match_part['subject_end'] == expected['subject_end']
     if 'subject_strand' in expected:
         assert match_part['subject_strand'] == expected['subject_strand']
     for key in expected['scores']:
@@ -138,7 +138,7 @@ class BlastParserTest(unittest.TestCase):
         expected_results = [
             {'query':{'name':'cCL1Contig2',
                       'description':'<unknown description>',
-                      'length':1924}},{}, {}, {}]
+                      'length':1924}}, {}, {}, {}]
         parser = BlastParser(fhand=blast_file)
         for index, blast in enumerate(parser):
             _check_blast(blast, expected_results[index])
@@ -320,7 +320,7 @@ def _summarize_matches(parser):
     summary = {}
     for result in parser:
         query_name = result['query'].name
-        matches    = result['matches']
+        matches = result['matches']
         summary[query_name] = matches
     return summary
 
@@ -355,7 +355,7 @@ class ExonerateParserTest(unittest.TestCase):
             {'query':{'name':'prueba', 'description':"<unknown description>",
                       'length':54},
              'matches':[
-                 {'subject':{'name':'adaptor2','length':35},
+                 {'subject':{'name':'adaptor2', 'length':35},
                   'scores':{'score':136},
                   'start':0,
                   'end':53,
@@ -373,7 +373,7 @@ class ExonerateParserTest(unittest.TestCase):
                                   'scores':{'score':136, 'similarity':95}},
                                   ]}],
                  },
-            {},{}]
+            {}, {}]
 
         n_exonerates = 0
         for index, exonerate in enumerate(parser):
@@ -610,10 +610,10 @@ class AlignmentFilters(unittest.TestCase):
 
         align1 = {'matches': [{'match_parts':[{'query_start':0, 'query_end':100,
                                                'subject_start':0,
-                                               'subject_end':100,}]},
+                                               'subject_end':100, }]},
                               {'match_parts':[{'query_start':0, 'query_end':50,
                                                'subject_start':0,
-                                               'subject_end':100,}]},
+                                               'subject_end':100, }]},
                              ]
                  }
         alignments = [align1]
@@ -621,7 +621,7 @@ class AlignmentFilters(unittest.TestCase):
         filtered_alignments = list(filter_alignments(alignments,
                                                      config=[filter1]))
         expected_align1 = {'matches': [{'start':0, 'end':100,
-                                        'subject_start':0,  'subject_end':100,},
+                                        'subject_start':0, 'subject_end':100, },
                                       ]
                           }
         _check_blast(filtered_alignments[0], expected_align1)
@@ -634,9 +634,9 @@ class AlignmentFilters(unittest.TestCase):
         filtered_alignments = list(filter_alignments(alignments,
                                                      config=[filter]))
         expected_align1 = {'matches': [{'start':0, 'end':100,
-                                        'subject_start':0,  'subject_end':100,},
+                                        'subject_start':0, 'subject_end':100, },
                                         {'start':0, 'end':50,
-                                        'subject_start':0,  'subject_end':100,},
+                                        'subject_start':0, 'subject_end':100, },
                                       ]
                           }
         _check_blast(filtered_alignments[0], expected_align1)
@@ -649,10 +649,10 @@ class AlignmentFilters(unittest.TestCase):
         align1 = {'query':UnknownSeq(100),
                   'matches': [{'match_parts':[{'query_start':0, 'query_end':90,
                                                'subject_start':0,
-                                               'subject_end':100,}]},
+                                               'subject_end':100, }]},
                               {'match_parts':[{'query_start':0, 'query_end':50,
                                                'subject_start':0,
-                                               'subject_end':100,}]},
+                                               'subject_end':100, }]},
                              ]
                  }
         alignments = [align1]
@@ -660,7 +660,7 @@ class AlignmentFilters(unittest.TestCase):
         filtered_alignments = list(filter_alignments(alignments,
                                                      config=[filter]))
         expected_align1 = {'matches': [{'start':0, 'end':90,
-                                        'subject_start':0,  'subject_end':100,},
+                                        'subject_start':0, 'subject_end':100, },
                                       ]
                           }
         _check_blast(filtered_alignments[0], expected_align1)
@@ -673,11 +673,11 @@ class AlignmentFilters(unittest.TestCase):
         align1 = {'matches': [{'subject': UnknownSeq(100),
                                'match_parts':[{'query_start':0, 'query_end':100,
                                                'subject_start':0,
-                                               'subject_end':90,}]},
+                                               'subject_end':90, }]},
                               {'subject': UnknownSeq(100),
                                'match_parts':[{'query_start':0, 'query_end':100,
                                                'subject_start':0,
-                                               'subject_end':89,}]},
+                                               'subject_end':89, }]},
                              ]
                  }
         alignments = [align1]
@@ -685,7 +685,7 @@ class AlignmentFilters(unittest.TestCase):
         filtered_alignments = list(filter_alignments(alignments,
                                                      config=[filter]))
         expected_align1 = {'matches': [{'start':0, 'end':100,
-                                        'subject_start':0,  'subject_end':90,},
+                                        'subject_start':0, 'subject_end':90, },
                                       ]
                           }
         _check_blast(filtered_alignments[0], expected_align1)
@@ -700,7 +700,7 @@ class AlignmentFilters(unittest.TestCase):
         #lcl|3_0 cCL1Contig3
         #lcl|4_0 cCL1Contig4
         #lcl|5_0 cCL1Contig5
-        expected  = {'cCL1Contig2':3, 'cCL1Contig3':1,
+        expected = {'cCL1Contig2':3, 'cCL1Contig3':1,
                      'cCL1Contig4':5, 'cCL1Contig5':8}
         _check_match_summary(match_summary, expected)
 
@@ -712,7 +712,7 @@ class AlignmentFilters(unittest.TestCase):
                     'max_score'      : 1e-4,
                     'score_tolerance': 10
                    }]
-        expected  = {'cCL1Contig2':2, 'cCL1Contig3':1,
+        expected = {'cCL1Contig2':2, 'cCL1Contig3':1,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -728,7 +728,7 @@ class AlignmentFilters(unittest.TestCase):
                     'score_key': 'expect',
                     'max_score': 1e-34,
                    }]
-        expected  = {'cCL1Contig2':2, 'cCL1Contig3':0,
+        expected = {'cCL1Contig2':2, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -740,7 +740,7 @@ class AlignmentFilters(unittest.TestCase):
                     'score_key': 'similarity',
                     'min_score': 92,
                    }]
-        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
+        expected = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -756,7 +756,7 @@ class AlignmentFilters(unittest.TestCase):
                     'min_num_residues': 500,
                     'length_in_query':True
                    }]
-        expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
+        expected = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':1}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -768,7 +768,7 @@ class AlignmentFilters(unittest.TestCase):
                     'min_percentage': 70,
                     'length_in_query':True
                    }]
-        expected  = {'cCL1Contig2':0, 'cCL1Contig3':0,
+        expected = {'cCL1Contig2':0, 'cCL1Contig3':0,
                      'cCL1Contig4':2, 'cCL1Contig5':0}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -780,7 +780,7 @@ class AlignmentFilters(unittest.TestCase):
                     'min_percentage' : 0.002,
                     'length_in_query': False
                    }]
-        expected  = {'cCL1Contig2':3, 'cCL1Contig3':0,
+        expected = {'cCL1Contig2':3, 'cCL1Contig3':0,
                      'cCL1Contig4':1, 'cCL1Contig5':2}
         blasts = BlastParser(fhand=blast_file)
         filtered_blasts = filter_alignments(blasts, config=filters)
@@ -793,7 +793,7 @@ class AlignmentSearchSimilDistribTest(unittest.TestCase):
     @staticmethod
     def test_alignment_results_scores():
         'It tests that we can get all the scores from a result'
-        query    = SeqWithQuality(seq=UnknownSeq(length=25), name='query')
+        query = SeqWithQuality(seq=UnknownSeq(length=25), name='query')
         subject1 = SeqWithQuality(seq=UnknownSeq(length=32), name='hola')
         subject2 = SeqWithQuality(seq=UnknownSeq(length=32), name='query')
         match_part1 = {'scores':{'similarity':90.0},
@@ -844,7 +844,7 @@ class WaterTests(unittest.TestCase):
     def test_build_water_relations():
         '''it test the function that makes the relations between two sequences
          using a markx10 format file'''
-        seq  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
+        seq = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
         seq += 'AGCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTTTTATGTA'
         seq += 'CTGTTTTNACTCGCANGACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAG'
         seq += 'GGCNTGAAGGTGTGCCCACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGA'
@@ -852,7 +852,7 @@ class WaterTests(unittest.TestCase):
         seq += 'GCATTGAATTCGACATTCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATAC'
         seq += 'TTCGATGGACGCTACTGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
 
-        seq2  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
+        seq2 = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
         seq2 += 'GCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCAN'
         seq2 += 'GACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCC'
         seq2 += 'CACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAA'
@@ -860,8 +860,8 @@ class WaterTests(unittest.TestCase):
         seq2 += 'TCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATACTTCGATGGACGCTAC'
         seq2 += 'TGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
 
-        subject_seq = SeqWithQuality(seq=Seq(seq),  name='subject')
-        query_seq   = SeqWithQuality(seq=Seq(seq2), name='query')
+        subject_seq = SeqWithQuality(seq=Seq(seq), name='subject')
+        query_seq = SeqWithQuality(seq=Seq(seq2), name='query')
 
         subject_fhand = temp_fasta_file(subject_seq)
         parameters = {'subject':subject_fhand.name}
@@ -873,63 +873,76 @@ class WaterTests(unittest.TestCase):
         assert relations == {'query': [(0, 50), (51, 112), (113, 409)],
                              'subject': [(0, 50), (52, 113), (129, 425)]}
 
+
 class MergeMatchesTests(unittest.TestCase):
     'Tests overlaping match_parts merging'
+
     def test_match_parts_merging(self):
         '''Merging match parts'''
         # ---   ---
         #  ---
-        match_part1 = {'query_start':80,   'query_end':100,
-                       'subject_start':180, 'subject_end':200}
-        match_part2 = {'query_start':90,   'query_end':110,
-                       'subject_start':190, 'subject_end':210}
-        match_part3 = {'query_start':190,   'query_end':200,
-                       'subject_start':290, 'subject_end':300}
+        match_part1 = {'query_start': 80, 'query_end': 100,
+                       'subject_start': 180, 'subject_end': 200}
+        match_part2 = {'query_start': 90, 'query_end': 110,
+                       'subject_start': 190, 'subject_end': 210}
+        match_part3 = {'query_start': 190, 'query_end': 200,
+                       'subject_start': 290, 'subject_end': 300}
         mparts = [match_part1, match_part2, match_part3]
-        covered_segments = _covered_segments(mparts)
-        assert covered_segments == [(80,   110), (190, 200)]
+        covered_segs = covered_segments(mparts)
+        assert covered_segs == [(80, 110), (190, 200)]
 
-        match_part2 = {'query_start':90,   'query_end':110,
-                       'subject_start':190, 'subject_end':210}
-        match_part3 = {'query_start':190,   'query_end':200,
-                       'subject_start':290, 'subject_end':300}
-        covered_segments = _covered_segments([match_part2, match_part3])
-        assert covered_segments == [(90, 110), (190, 200)]
+        match_part2 = {'query_start': 90, 'query_end': 110,
+                       'subject_start': 190, 'subject_end': 210}
+        match_part3 = {'query_start': 190, 'query_end': 200,
+                       'subject_start': 290, 'subject_end': 300}
+        covered_segs = covered_segments([match_part2, match_part3])
+        assert covered_segs == [(90, 110), (190, 200)]
 
         # q 0---10
         # s 0---10
         #   q 5---15
         #   s 15--25
 
-        match_part1 = {'query_start':0,   'query_end':10,
-                       'subject_start':0, 'subject_end':10}
-        match_part2 = {'query_start':5,   'query_end':15,
-                       'subject_start':15, 'subject_end':25}
+        match_part1 = {'query_start': 0, 'query_end': 10,
+                       'subject_start': 0, 'subject_end': 10}
+        match_part2 = {'query_start': 5, 'query_end': 15,
+                       'subject_start': 15, 'subject_end': 25}
         mparts = [match_part1, match_part2]
-        covered_segments = _covered_segments(mparts)
-        assert covered_segments == [(0, 15)]
+        covered_segs = covered_segments(mparts)
+        assert covered_segs == [(0, 15)]
 
-        covered_segments = _covered_segments(mparts, in_query=False)
-        assert covered_segments == [(0, 10), (15, 25)]
+        covered_segs = covered_segments(mparts, in_query=False)
+        assert covered_segs == [(0, 10), (15, 25)]
 
-        match_part1 = {'query_start':1,   'query_end':10,
-                       'subject_start':1, 'subject_end':10}
-        match_part2 = {'query_start':11,   'query_end':20,
-                       'subject_start':11, 'subject_end':20}
-        match_part3 = {'query_start':30,   'query_end':40,
-                       'subject_start':30, 'subject_end':40}
+        match_part1 = {'query_start': 1, 'query_end': 10,
+                       'subject_start': 1, 'subject_end': 10}
+        match_part2 = {'query_start': 11, 'query_end': 20,
+                       'subject_start': 11, 'subject_end': 20}
+        match_part3 = {'query_start': 30, 'query_end': 40,
+                       'subject_start': 30, 'subject_end': 40}
         mparts = [match_part1, match_part2, match_part3]
-        covered_segments = _covered_segments(mparts)
-        assert covered_segments == [(1, 20), (30, 40)]
+        covered_segs = covered_segments(mparts)
+        assert covered_segs == [(1, 20), (30, 40)]
 
-
-        match_part1 = {'query_start':1,   'query_end':10,
-                       'subject_start':1, 'subject_end':10}
-        match_part2 = {'query_start':10,   'query_end':20,
-                       'subject_start':10, 'subject_end':20}
+        match_part1 = {'query_start': 1, 'query_end': 10,
+                       'subject_start': 1, 'subject_end': 10}
+        match_part2 = {'query_start': 10, 'query_end': 20,
+                       'subject_start': 10, 'subject_end': 20}
         mparts = [match_part1, match_part2]
-        covered_segments = _covered_segments(mparts)
-        assert covered_segments == [(1, 20)]
+        covered_segs = covered_segments(mparts)
+        assert covered_segs == [(1, 20)]
+
+        match_part1 = {'query_start': 80, 'query_end': 85,
+                       'subject_start': 180, 'subject_end': 185}
+        match_part2 = {'query_start': 90, 'query_end': 110,
+                       'subject_start': 190, 'subject_end': 210}
+        match_part3 = {'query_start': 190, 'query_end': 200,
+                       'subject_start': 290, 'subject_end': 300}
+        mparts = [match_part1, match_part2, match_part3]
+        covered_segs = covered_segments(mparts, merge_segments_closer=10)
+        assert covered_segs == [(80, 110), (190, 200)]
+        covered_segs = covered_segments(mparts)
+        assert covered_segs == [(80, 85), (90, 110), (190, 200)]
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'BlastParserTest.test_blast_parser']
