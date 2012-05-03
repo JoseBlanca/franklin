@@ -357,7 +357,7 @@ Sequence qualities variance: 8.19
         assert exp in open(boxplot_fpath).read()
         freq_nucl_fpath = join(clean_stats_dir, 'pl_454.lb_a.freq_position.svg')
         nucl_freq = open(freq_nucl_fpath).read()
-        assert '<filter id="colorAdd">' in nucl_freq
+        assert 'style="fill:#0000ff;stroke:#000000;"/>' in nucl_freq
 
     @staticmethod
     def test_read_stats_analysis2():
