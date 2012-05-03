@@ -53,7 +53,7 @@ from franklin.snv.snv_annotation import (SNP, INSERTION, DELETION, INVARIANT,
                                          annotate_heterozygosity,
                                          snvs_in_window,
                                          _get_alignment_section,
-                                         _make_multiple_alignment)
+                                         _make_multiple_alignment, VARIANT)
 
 from franklin.sam import create_bam_index, sam2bam, add_header_and_tags_to_sam,\
     bam2sam
@@ -435,9 +435,9 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         reference = SeqWithQuality(seq=Seq('ATGATGATGgaaattcATGATGATGTGGGAT'),
                                    name='ref')
         alleles = {('A', DELETION): None,
-                   ('A', INVARIANT): None}
+                   ('AA', INVARIANT): None}
 
-        feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
+        feat1 = SeqFeature(location=FeatureLocation(10, 11), type='snv',
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert 'EcoRI'  in enzymes
@@ -445,8 +445,13 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
         #with an insertion
         seq = 'ATGATGATG' + 'gaattc' + 'ATGATGATGTGGGAT'
         reference = SeqWithQuality(seq=Seq(seq), name='ref')
-        alleles = {('A', INSERTION): None,
+        alleles = {('AA', INSERTION): None,
                    ('A', INVARIANT): None}
+
+        feat1 = SeqFeature(location=FeatureLocation(10, 11), type='snv',
+                           qualifiers={'alleles':alleles})
+        enzymes = calculate_cap_enzymes(feat1, reference, True)
+        assert 'EcoRI' in enzymes
 
         feat1 = SeqFeature(location=FeatureLocation(11, 11), type='snv',
                            qualifiers={'alleles':alleles})
@@ -461,6 +466,7 @@ r001/2\t83\tref\t37\t30\t9M\t=\t7\t-39\tCAcCGCCAT\t*
                            qualifiers={'alleles':alleles})
         enzymes = calculate_cap_enzymes(feat1, reference, True)
         assert not enzymes
+
 
     @staticmethod
     def test_snvs_in_window():
@@ -1187,6 +1193,6 @@ if __name__ == "__main__":
 #    import sys;sys.argv = ['', 'TestReadPos.test_calculate_allele_kind']
 #    import sys;sys.argv = ['', 'TestReadPos.test_get_aligned_read_section']
 #    import sys;sys.argv = ['', 'TestSnvPipeline.test_snv_annotation_bam']
-#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_remove_edges']
+#    import sys;sys.argv = ['', 'TestSnvAnnotation.test_snv_cap']
 
     unittest.main()

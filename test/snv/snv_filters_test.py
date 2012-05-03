@@ -337,9 +337,9 @@ class SeqVariationFilteringTest(unittest.TestCase):
         'It test the cap enzyme filter'
         seq = 'ATGATGATG' + 'gaaattc' + 'ATGATGATGTGGGAT'
 
-        alleles = {('A', INVARIANT):{},
+        alleles = {('AA', INVARIANT):{},
                    ('A', DELETION) :{}}
-        snv = SeqFeature(type='snv', location=FeatureLocation(11, 11),
+        snv = SeqFeature(type='snv', location=FeatureLocation(10, 11),
                          qualifiers={'alleles':alleles})
         seq = SeqWithQuality(seq=Seq(seq), name='ref', features=[snv])
 
@@ -348,6 +348,7 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [False]):
             result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
+            print result, expected
             assert result == expected
 
         #No cap
@@ -938,5 +939,5 @@ class SeqVariationFilteringTest(unittest.TestCase):
         assert seq.features[11].qualifiers['filters']['in_segment_bed'][3]
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_is_not_variable_filter']
+#    import sys;sys.argv = ['', 'SeqVariationFilteringTest.test_cap_enzyme_filter']
     unittest.main()

@@ -1590,7 +1590,7 @@ def calculate_cap_enzymes(feature, sequence, all_enzymes=False):
     enzymes = set()
     alleles = list(alleles)
     reference = sequence
-    location = int(str(feature.location.start))
+    location = feature.location
     for i_index in range(len(alleles)):
         for j_index in range(i_index, len(alleles)):
             if i_index == j_index:
@@ -1614,8 +1614,6 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
 
     It returns a set.
     '''
-    kind1 = allele1['kind']
-    kind2 = allele2['kind']
     allele1 = allele1['allele']
     allele2 = allele2['allele']
 
@@ -1625,8 +1623,9 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
     else:
         restriction_batch = RestrictionBatch(COMMON_ENZYMES)
 
-    seq1 = create_alleles('seq1', allele1, kind1, reference, location)
-    seq2 = create_alleles('seq2', allele2, kind2, reference, location)
+    sseq = reference.seq
+    seq1 = sseq[0:location.start] + allele1 + sseq[location.end + 1:]
+    seq2 = sseq[0:location.start] + allele2 + sseq[location.end + 1:]
 
     anal1 = Analysis(restriction_batch, seq1, linear=True)
     enzymes1 = set(anal1.with_sites().keys())
@@ -1636,19 +1635,6 @@ def _cap_enzymes_between_alleles(allele1, allele2, reference, location,
     enzymes = set(enzymes1).symmetric_difference(set(enzymes2))
 
     return enzymes
-
-def create_alleles(name, allele, kind, ref, loc):
-    'The returns the sequence for the given allele'
-    sseq = ref.seq
-    if kind == INVARIANT:
-        seq = sseq
-    elif kind == SNP:
-        seq = sseq[0:loc] + allele + sseq[loc + 1:]
-    elif kind == DELETION:
-        seq = sseq[0:loc + 1] + sseq[loc + len(allele) + 1:]
-    elif kind == INSERTION:
-        seq = sseq[0:loc] + allele + sseq[loc:]
-    return seq
 
 def variable_in_groupping(snv, group_kind, groups, in_union=True,
                            in_all_groups=True, reference_free=True, maf=None,
