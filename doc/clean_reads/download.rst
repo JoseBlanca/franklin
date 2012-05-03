@@ -4,6 +4,16 @@ Download
 
 The recommended method to get ngs_backbone is to download one of the releases, but if you want to access to the latest code you can do it at github_.
 
+clean_reads 0.2.3
+-----------------
+
+:download:`clean_reads 0.2.3 <downloads/clean_reads-0.2.3.tar.gz>`. Relased on 04-05-2012.
+
+Changes:
+  * updated blast to version 2.2.26
+  * updated univec to version 7.0
+  * Several bug fixes
+
 clean_reads 0.2.2
 -----------------
 

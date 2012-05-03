@@ -10,6 +10,20 @@ Virtual Machine
 To ease the evaluation of ngs_backbone without having to follow the complete install process we have prepared a `VirtualBox <http://www.virtualbox.org/>`_ `virtual machine <http://bioinf.comav.upv.es/_downloads/ngs_machine_v3.tar.gz>`_ already pre-installed with the software and with the files required to do our `NGS workshop <http://bioinf.comav.upv.es/courses/ngs_workshop/>`_.
 Be aware that this machine won't be able to run any real sized experiment and it will only be useful for testing and evaluation purposes.
 
+ngs_backbone 1.4.0
+------------------
+
+:download:`ngs_backbone 1.4.0 <downloads/ngs_backbone-1.4.0.tar.gz>`. Relased on 03-05-2012.
+
+Changes:
+  * changed the snv caller: Join snvs that shoul be together and changed the vcf output file to version 4.1
+  * updated blast to version 2.2.26
+  * updated univec to version 7.0
+  * added function to make transitive clusters of sequences using a blast output
+  * config option to keep or remove unmapped reads from the resulting bam
+  * compress and index vcf after writing it in backbone
+  * Several bug fixes
+
 ngs_backbone 1.3.3
 ------------------
 
