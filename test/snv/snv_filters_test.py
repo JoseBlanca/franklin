@@ -348,7 +348,6 @@ class SeqVariationFilteringTest(unittest.TestCase):
         filter_(seq)
         for snv, expected in zip(seq.get_features(kind='snv'), [False]):
             result = snv.qualifiers['filters']['cap_enzymes'][all_enzymes]
-            print result, expected
             assert result == expected
 
         #No cap
