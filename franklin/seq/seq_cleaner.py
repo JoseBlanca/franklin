@@ -117,6 +117,7 @@ def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False,
 
         #trimming
         trim_locs = trim_rec.get('vector', []) + trim_rec.get('quality', [])
+
         if trim and trim_locs:
             if keep_5segment:
                 trim_limits = _get_5prima_segment_limits(sequence, trim_locs)
@@ -130,7 +131,6 @@ def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False,
                     return None
         else:
             trim_limits = []
-
         if trim and trim_limits:
             if trim_as_mask:
                 masks = []
@@ -651,15 +651,7 @@ def _create_vector_striper(vectors, aligner, vectors_are_blastdb=False,
 
         alignment_matches = _get_non_matched_locations(alignments)
 
-        segments  = _get_longest_non_matched_seq_region_limits(sequence,
-                                                              alignment_matches)
-
-        if segments is None:
-            return None
-
-        segments  = _get_non_matched_from_matched_locations([segments],
-                                                            len(sequence))
-        _add_trim_segments(segments, sequence)
+        _add_trim_segments(alignment_matches, sequence)
         return sequence
 
     return strip_vector_by_alignment
