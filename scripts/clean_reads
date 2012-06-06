@@ -121,6 +121,10 @@ PARAMETERS = OrderedDict([
                       help:"Do not trim the reads, just mask them.",
                       action:'store_true',
                       type_:bool}),
+    ('keep_5segment', {long_param: '--keep_5segment',
+                      help:"Keep the 5 prime segment when trimming sequences.",
+                      action:'store_true',
+                      type_:bool}),
     ('double_encoding', {long_param: '--double_encoding',
                     help:"Use double encoding for solid (default Not use).",
                          action:'store_true',
@@ -311,8 +315,15 @@ def _prepare_pipeline(pipeline_type, parameters):
 
     # triming and seq_lengh steps
     if 'mask_no_trim' in parameters:
-        configuration['trim_and_mask_seq'] = {'trim_as_mask':
-                                                     parameters['mask_no_trim']}
+        if'trim_and_mask_seq' not  in configuration:
+            configuration['trim_and_mask_seq'] = {}
+        configuration['trim_and_mask_seq']['trim_as_mask'] = \
+                                                     parameters['mask_no_trim']
+    if 'keep_5segment' in parameters:
+        if'trim_and_mask_seq' not  in configuration:
+            configuration['trim_and_mask_seq'] = {}
+        configuration['trim_and_mask_seq']['keep_5segment'] = \
+                                                     parameters['keep_5segment']
     pipeline.append(sequence_trimmer)
     min_len = parameters.get('min_len', None)
     if min_len:
