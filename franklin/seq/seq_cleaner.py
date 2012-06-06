@@ -88,7 +88,19 @@ def _mask_sequence(sequence, segments):
     return copy_seq_with_quality(sequence, seq=Seq(new_seq,
                                                    sequence.seq.alphabet))
 
-def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False):
+
+def _get_5prima_segment_limits(sequence, trim_locs):
+    'It returns the limits of the 5 prima segment althougth being smaller'
+    left_limit = None
+    for trim_loc in trim_locs:
+        if left_limit is None or trim_loc[0] < left_limit:
+            left_limit = trim_loc[0]
+    if left_limit != 0:
+        left_limit -= 1
+    return (0, left_limit)
+
+def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False,
+                               keep_5segment=False):
     'It actually trims the sequence taking into account trimming recommendations'
     def sequence_trimmer(sequence):
         'It trims the sequences'
@@ -106,7 +118,10 @@ def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False):
         #trimming
         trim_locs = trim_rec.get('vector', []) + trim_rec.get('quality', [])
         if trim and trim_locs:
-            trim_limits = _get_longest_non_matched_seq_region_limits(sequence,
+            if keep_5segment:
+                trim_limits = _get_5prima_segment_limits(sequence, trim_locs)
+            else:
+                trim_limits = _get_longest_non_matched_seq_region_limits(sequence,
                                                                      trim_locs)
             if trim_limits is None:
                 if trim_as_mask:
@@ -119,11 +134,16 @@ def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False):
         if trim and trim_limits:
             if trim_as_mask:
                 masks = []
-                mask_01 = trim_limits[0] - 1
-                if mask_01 >= 0:
-                    masks.append((0, mask_01))
-                if trim_limits[1] + 1 <= len(sequence):
-                    masks.append((trim_limits[1] + 1, len(sequence)))
+                if trim_limits[0] != 0:
+                    mask_01 = trim_limits[0] - 1
+                    if mask_01 >= 0:
+                        masks.append((0, mask_01))
+                if trim_limits[1] == 0:
+                    rigth_limit = 0
+                else:
+                    rigth_limit = trim_limits[1] + 1
+                if rigth_limit <= len(sequence):
+                    masks.append((rigth_limit, len(sequence)))
                 sequence = _mask_sequence(sequence, masks)
             else:
                 sequence = sequence[trim_limits[0]:trim_limits[1] + 1]

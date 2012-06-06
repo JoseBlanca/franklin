@@ -636,6 +636,35 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq2.annotations == {'trimming_recommendations':
                                                     {'mask': [(0, 1), (5, 6)]}}
 
+
+        #keep 5segment = False
+        seq_trimmer = create_seq_trim_and_masker()
+        trim_rec['vector']  = [(3, 5)]
+        trim_rec['quality'] = []
+        trim_rec['mask']    = []
+        seq2 = seq_trimmer(seq)
+        assert seq2.seq == 'CATCATCAGGG'
+
+        #keep 5segment = True
+        seq_trimmer = create_seq_trim_and_masker(keep_5segment=True)
+        trim_rec['vector']  = [(3, 5)]
+        trim_rec['quality'] = []
+        trim_rec['mask']    = []
+        seq2 = seq_trimmer(seq)
+        assert seq2.seq == 'GGG'
+
+        #masking the regions to trim
+        seq_trimmer = create_seq_trim_and_masker(mask=True, trim_as_mask=True,
+                                                 keep_5segment=True)
+        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['quality'] = []
+        trim_rec['mask']    = [(0, 1), (5, 6)]
+        seq2 = seq_trimmer(seq)
+        assert seq2.seq == seq.seq.lower()
+        assert seq2.annotations == {'trimming_recommendations':
+                                                    {'mask': [(0, 1), (5, 6)]}}
+
+
     @staticmethod
     def test_sequence_masker():
         'It test the sequence masker'
@@ -687,5 +716,5 @@ class SegmentsTests(unittest.TestCase):
         assert result is None
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'SeqCleanerTest.test_strip_adaptor_blast']
+#    import sys;sys.argv = ['', 'SeqSplitterTests.test_sequence_stripper']
     unittest.main()
