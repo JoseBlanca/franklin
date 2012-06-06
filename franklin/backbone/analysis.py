@@ -30,6 +30,7 @@ from franklin.backbone.specifications import (BACKBONE_DIRECTORIES,
                                               BACKBONE_BASENAMES)
 from franklin.utils.misc_utils import (VersionedPath, get_num_threads,
                                        rel_symlink)
+ACCEPTED_PLATFORMS = ('illumina', '454', 'sanger', 'solid')
 
 def scrape_info_from_fname(path):
     'It guess pipeline taking into account the platform and the file format'
@@ -48,8 +49,17 @@ def scrape_info_from_fname(path):
         if len(item) < 3 or item[2] != '_':
             continue
         key, value = item.split('_', 1)
+        if key == 'pl':
+            value = value.lower()
         file_info[key] = value
     file_info['fpath'] = path
+
+    if file_info['pl'] not in ACCEPTED_PLATFORMS:
+        msg = "The platform of your file({0:s}) is not".format(file_info['pl'])
+        msg += 'in the accepted ones {0:s}'.format(ACCEPTED_PLATFORMS)
+        raise RuntimeError(msg)
+
+
     return file_info
 
 def _is_sequence_file(path):

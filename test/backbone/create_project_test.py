@@ -130,6 +130,32 @@ BBA?;BBBBBA3AB=%=BBB@A=A=%<><@?
 '''
 THREADS = False
 
+class TestBackboneUtils(unittest.TestCase):
+    'It tests the backbone utils'
+
+
+    def test_scrape_info_from_fname(self):
+        'it tests scrape_info_from_fname'
+        fhand = NamedTemporaryFile(prefix='pl_illumina.sm_test.lb_lib1.',
+                                   suffix='sfastq')
+        fhand.write(READS_ILL)
+        fhand.flush()
+        file_info = scrape_info_from_fname(fhand.name)
+        assert file_info['lb'] == 'lib1'
+        assert file_info['format'] == 'fastq'
+
+        # this should fail
+        fhand = NamedTemporaryFile(prefix='pl__illumina.sm_test.lb_lib1.',
+                                   suffix='sfastq')
+        fhand.write(READS_ILL)
+        fhand.flush()
+        try:
+            file_info = scrape_info_from_fname(fhand.name)
+            self.fail()
+        except RuntimeError:
+            pass
+
+
 class TestBackbone(unittest.TestCase):
     'It tests the backbone'
 
@@ -455,5 +481,5 @@ class UtilTest(unittest.TestCase):
         assert info['st'] == 'prot'
 
 if __name__ == "__main__":
-#    import sys;sys.argv = ['', 'TestBackbone.test_read_stats_analysis2']
+#    import sys;sys.argv = ['', 'TestBackboneUtils.test_scrape_info_from_fname']
     unittest.main()
