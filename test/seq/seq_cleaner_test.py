@@ -665,6 +665,12 @@ class SeqSplitterTests(unittest.TestCase):
                                                     {'mask': [(0, 1), (5, 6)]}}
 
 
+        seq_trimmer = create_seq_trim_and_masker(keep_5segment=True)
+        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['quality'] = []
+        trim_rec['mask']    = [(0, 1), (5, 6)]
+        assert None == seq_trimmer(seq)
+
     @staticmethod
     def test_sequence_masker():
         'It test the sequence masker'

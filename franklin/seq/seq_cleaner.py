@@ -146,6 +146,8 @@ def create_seq_trim_and_masker(mask=True, trim=True, trim_as_mask=False,
                     masks.append((rigth_limit, len(sequence)))
                 sequence = _mask_sequence(sequence, masks)
             else:
+                if trim_limits == (0, 0):
+                    return None
                 sequence = sequence[trim_limits[0]:trim_limits[1] + 1]
 
             #fixing the trimming recommendations
