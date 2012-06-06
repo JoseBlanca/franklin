@@ -247,10 +247,14 @@ def create_striper_by_quality(quality_treshold, min_quality_bases=None,
                                              only_3_end=only_3_end)
         if start is None or end is None:
             return None
+
         if only_3_end:
             segments = [(end + 1, len(sequence) -1)]
         else:
-            segments = [(0, start -1), (end + 1, len(sequence) -1)]
+            segments = []
+            if start != 0:
+                segments.append((0, start -1))
+            segments.append((end + 1, len(sequence) -1))
 
         _add_trim_segments(segments, sequence, vector=False)
         if (end - start) < min_seq_length_:
