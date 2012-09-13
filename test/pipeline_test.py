@@ -19,7 +19,8 @@ Created on 2009 uzt 30
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os
+import unittest
+import os
 from tempfile import NamedTemporaryFile
 
 from franklin.pipelines.pipelines import  (configure_pipeline,
@@ -50,6 +51,7 @@ ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATCATCGACTGCATCGATGA
 AACCGTTTGACTTACGATATTTGCCCATTGTGATTCTAGTCGATTTGCATAACGTGTACGTATCGGTATTGTGACTGATTCGATGCTATTGCAAACAGTTTTGATTGTGTGATCGTGATGCATGCTAGTCTGATCGAGTCTGATCGTAGTCTAGTCGTAGTCGATGTCGATTTATCAGTAGTCGATGCTAGTCTAGTCTAGTCTACTAGTCTAGTCATGCTAGTCGAGTCGAT
 '''
 
+
 class PipelineTests(unittest.TestCase):
     'It test pipeline related functions'
 
@@ -58,15 +60,15 @@ class PipelineTests(unittest.TestCase):
         pipeline = 'sanger_with_qual'
         Univec = 'Univec+'
 
-        configuration = {'remove_vectors_blastdb': {'vectors':Univec},
-                         'remove_adaptors':{'adaptors':'hola'}}
+        configuration = {'remove_vectors_blastdb': {'vectors': Univec},
+                         'remove_adaptors': {'adaptors': 'hola'}}
         pipeline = configure_pipeline(pipeline, configuration)
 
         assert pipeline[1]['arguments']['adaptors'] == 'hola'
         assert pipeline[3]['arguments']['vectors'] == Univec
 
         # Now it should fail because one of the arguments is Not set
-        configuration = {'remove_vectors': {'vectors':Univec}}
+        configuration = {'remove_vectors': {'vectors': Univec}}
         try:
             pipeline = configure_pipeline(pipeline, configuration)
             self.fail()
@@ -86,15 +88,16 @@ class PipelineTests(unittest.TestCase):
         arabidopsis_genes = 'arabidopsis_genes+'
 
         univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors_blastdb': {'vectors':univec},
-                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
+        configuration = {'remove_vectors_blastdb': {'vectors': univec},
+                         'remove_adaptors': {'adaptors': fhand_adaptors.name}}
 
         seq_fhand = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
         qual_fhand = open(os.path.join(TEST_DATA_DIR, 'qual.fasta'), 'r')
 
         seq_iter = seqs_in_file(seq_fhand, qual_fhand)
 
-        filtered_seq_iter = _pipeline_builder(pipeline, seq_iter, configuration)
+        filtered_seq_iter = _pipeline_builder(pipeline, seq_iter,
+                                              configuration)
 
         seq_list = list(filtered_seq_iter)
         assert 'CGAtcgggggg' in str(seq_list[0].seq)
@@ -110,20 +113,21 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors_blastdb': {'vectors':univec},
-                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
+        configuration = {'remove_vectors_blastdb': {'vectors': univec},
+                         'remove_adaptors': {'adaptors': fhand_adaptors.name}}
 
         in_fhands = {}
-        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'), 'r')
-        in_fhands['in_qual'] = open(os.path.join(TEST_DATA_DIR, 'qual.fasta'), 'r')
-
+        in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'),
+                                   'r')
+        in_fhands['in_qual'] = open(os.path.join(TEST_DATA_DIR, 'qual.fasta'),
+                                    'r')
 
         out_seq_fhand = NamedTemporaryFile()
         out_qual_fhand = NamedTemporaryFile()
         writer = SequenceWriter(out_seq_fhand, qual_fhand=out_qual_fhand,
                                 file_format='fasta')
         seq_pipeline_runner(pipeline, configuration, in_fhands,
-                            writers={'seq':writer})
+                            writers={'seq': writer})
         result_seq = open(out_seq_fhand.name).read()
         assert result_seq.count('>') == 6
 
@@ -139,8 +143,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors': {'vectors':univec},
-                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
+        configuration = {'remove_vectors': {'vectors': univec},
+                         'remove_adaptors': {'adaptors': fhand_adaptors.name}}
 
         in_fhands = {}
         in_fhands['in_seq'] = open(os.path.join(TEST_DATA_DIR, 'seq.fasta'),
@@ -167,8 +171,8 @@ class PipelineTests(unittest.TestCase):
         fhand_adaptors.flush()
         arabidopsis_genes = 'arabidopsis_genes+'
         univec = os.path.join(TEST_DATA_DIR, 'blast', arabidopsis_genes)
-        configuration = {'remove_vectors': {'vectors':univec},
-                         'remove_adaptors':{'adaptors':fhand_adaptors.name}}
+        configuration = {'remove_vectors': {'vectors': univec},
+                         'remove_adaptors': {'adaptors': fhand_adaptors.name}}
 
         seq1 = create_random_seqwithquality(500, qual_range=50)
         seq2 = create_random_seqwithquality(500, qual_range=51)
@@ -194,5 +198,5 @@ class PipelineTests(unittest.TestCase):
         assert result_seq.count('>') == 3
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'PipelineTests.test_seq_pipeline_parallel_run']
+    import sys;sys.argv = ['', 'PipelineTests.test_seq_pipeline_parallel_run']
     unittest.main()

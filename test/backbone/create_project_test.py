@@ -474,7 +474,7 @@ class UtilTest(unittest.TestCase):
     @staticmethod
     def test_scrape_info_from_fname():
         'scrape info from fpath'
-        fhand = NamedTemporaryFile(prefix='st_prot.A.', suffix='.fasta')
+        fhand = NamedTemporaryFile(prefix='st_prot.pl_454.A.', suffix='.fasta')
         fhand.write('>seq\nTGATGC')
         fhand.flush()
         info = scrape_info_from_fname(fhand.name)

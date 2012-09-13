@@ -62,15 +62,15 @@ class AnnotationTest(unittest.TestCase):
 
         # create blast results
         melon_tair_blastdir = join(project_dir, 'annotations', 'blast',
-                                   'melon.st_nucl', 'tair')
+                                   'melon.st_nucl.pl_454', 'tair')
         melon_tair2_blastdir = join(project_dir, 'annotations', 'blast',
-                                   'melon.st_nucl', 'tair2')
+                                   'melon.st_nucl.pl_454', 'tair2')
         os.makedirs(melon_tair_blastdir)
         os.makedirs(melon_tair2_blastdir)
         tair_melon_blastdir = join(project_dir, 'annotations', 'blast',
-                                   'tair', 'melon.st_nucl')
+                                   'tair', 'melon.st_nucl.pl_454')
         tair2_melon_blastdir = join(project_dir, 'annotations', 'blast',
-                                   'tair2', 'melon.st_nucl')
+                                   'tair2', 'melon.st_nucl.pl_454')
         os.makedirs(tair_melon_blastdir)
         os.makedirs(tair2_melon_blastdir)
         blast_fname = BACKBONE_BASENAMES['blast_basename'] + '.tblastx.xml'
@@ -89,12 +89,12 @@ class AnnotationTest(unittest.TestCase):
         seq1 = SeqWithQuality(Seq('A'), id='melon1')
         seq2 = SeqWithQuality(Seq('A'), id='melon2')
         write_seqs_in_file([seq1, seq2],
-                           open(join(input_dir, 'melon.st_nucl.fasta'), 'a'))
+                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'), 'a'))
 
         do_analysis(project_settings=settings_path, kind='annotate_orthologs',
                     silent=True)
         pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'melon.st_nucl.0.pickle')
+                          'melon.st_nucl.pl_454.0.pickle')
         pickle = open(pickle_fpath).read()
         assert 'arabidopsis-orthologs' in pickle
         assert 'arabidopsis2-orthologs' in pickle
@@ -103,17 +103,17 @@ class AnnotationTest(unittest.TestCase):
                     silent=True)
 
         orf_fpath = join(project_dir, 'annotations', 'features',
-                         'melon.st_nucl.orthologs')
+                         'melon.st_nucl.pl_454.orthologs')
         assert os.path.exists(orf_fpath)
         assert "tair1" in open(orf_fpath).read()
 
-        orf_fpath = join(project_dir, 'annotations', 'features', 'melon.st_nucl.orf')
+        orf_fpath = join(project_dir, 'annotations', 'features', 'melon.st_nucl.pl_454.orf')
         assert not os.path.exists(orf_fpath)
 
         do_analysis(project_settings=settings_path, kind='annotation_stats',
                     silent=True)
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
-                           'melon.st_nucl.txt')
+                           'melon.st_nucl.pl_454.txt')
         result = open(stats_fpath).read()
         expected = '''Orthologs
 _________
@@ -148,7 +148,7 @@ Number of arabidopsis2 orthologs: 2'''
         #some melon file to annotate
         input_dir = join(project_dir, BACKBONE_DIRECTORIES['annotation_input'])
         os.makedirs(input_dir)
-        seq_  = 'AGGTGTCACCGTTCACGAGGGCGACTGGGACTCCCACGGGGCCATCAAGTCCTGGAACTACA'
+        seq_ = 'AGGTGTCACCGTTCACGAGGGCGACTGGGACTCCCACGGGGCCATCAAGTCCTGGAACTACA'
         seq_ += 'CATGCGGTCCTCTATCTCATTCTCTATTTGTATGAATATGTGTTTATTACTAGCTAGGGTTT'
         seq_ += 'CTATTAATGAAAGGTTCATGTAAATATATGAAGATGGGAAGCAAGAGGTGTTCAAGGAGAAG'
         seq_ += 'AGGGAGTTAGACGACCAGAAGAT'
@@ -157,13 +157,13 @@ Number of arabidopsis2 orthologs: 2'''
         seq2 = SeqWithQuality(Seq('Atagtagcatcagatgagcatcgacttctagctagctagct'),
                                id='CUTC021853')
         write_seqs_in_file([seq1, seq2],
-                           open(join(input_dir, 'melon.st_nucl.fasta'), 'a'))
+                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'), 'a'))
 
         do_analysis(project_settings=settings_path,
                     kind='annotate_descriptions', silent=True)
 
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'melon.st_nucl.0.pickle')
+                          'melon.st_nucl.pl_454.0.pickle')
         result = open(repr_fpath).read()
         #print result
         assert 'yet another one' in result
@@ -171,7 +171,7 @@ Number of arabidopsis2 orthologs: 2'''
         do_analysis(project_settings=settings_path, kind='annotation_stats',
                     silent=True)
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
-                           'melon.st_nucl.txt')
+                           'melon.st_nucl.pl_454.txt')
         result = open(stats_fpath).read()
         expected = '''Annotation statistics
 ---------------------
@@ -279,7 +279,7 @@ Number of introns: 3'''
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
                            'seqs.txt')
         result = open(stats_fpath).read()
-        expected ='Sequences with microsatellites: 1'
+        expected = 'Sequences with microsatellites: 1'
         assert expected in result
 
         test_dir.close()
@@ -379,7 +379,7 @@ Number of ORFs: 1'''
 
         #create some seqs to annotate
         fasta = '>seq1\n%s\n' % seq
-        fhand = open(os.path.join(annot_input_dir, 'seqs.st_nucl.fasta'), 'w')
+        fhand = open(os.path.join(annot_input_dir, 'seqs.st_nucl.pl_454.fasta'), 'w')
         fhand.write(fasta)
         fhand.close()
         bdir = join(project_dir, 'annotations', 'blast', 'seqs.st_nucl',
@@ -391,20 +391,21 @@ Number of ORFs: 1'''
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'seqs.st_nucl.0.pickle')
+                          'seqs.st_nucl.pl_454.0.pickle')
         result = open(repr_fpath).read()
         assert 'GO:0019253' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
-                                           'features', 'seqs.st_nucl.b2g.dat'))
+                                           'features', 'seqs.st_nucl.pl_454.b2g.dat'))
         assert os.path.exists(os.path.join(project_dir, 'annotations',
-                                           'features', 'seqs.st_nucl.b2g.annot'))
+                                           'features', 'seqs.st_nucl.pl_454.b2g.annot'))
+
         do_analysis(project_settings=settings_path, kind='annotate_gos',
                     silent=True)
 
         do_analysis(project_settings=settings_path, kind='annotation_stats',
                     silent=True)
         stats_fpath = join(project_dir, 'annotations', 'features', 'stats',
-                           'seqs.st_nucl.txt')
+                           'seqs.st_nucl.pl_454.txt')
         result = open(stats_fpath).read()
         expected = '''Sequences with GOs: 1
 Number of GOs: 12'''
@@ -416,7 +417,7 @@ Number of GOs: 12'''
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         matrix = os.path.join(TEST_DATA_DIR, 'At.smat')
-        configuration = {'Snvs':{'min_quality':20},
+        configuration = {'Snvs': {'min_quality':20},
                          'Sam_processing':{'add_default_qualities':True},
                          'Annotation':{'orf_annotation':
                                                      {'estscan_matrix':matrix}},

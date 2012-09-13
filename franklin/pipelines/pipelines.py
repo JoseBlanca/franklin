@@ -11,8 +11,8 @@ The pipeline can hold three step types: filter, mapper and bulk_processor. They
 differ in the interface of the function that process the sequences:
     - mapper: These functions take a sequence and return a new processed
     sequence.
-    - filter: These functions take a sequence and return True or False according
-    to the match of some criteria by the sequence.
+    - filter: These functions take a sequence and return True or False
+    according to the match of some criteria by the sequence.
     - bulk_processor: These functions take a sequence iterator and return a new
     sequence iterator will the processed sequence.
 The pipeline runner knows how to use these three kinds of steps to filter and
@@ -35,8 +35,13 @@ modify the sequences.
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging, os, tempfile, copy, sys
+import logging
+import os
+import tempfile
+import copy
+import sys
 import cPickle as pickle
+
 from itertools import imap, ifilter
 from tempfile import gettempdir, NamedTemporaryFile
 
@@ -61,9 +66,11 @@ STEPS = SEQ_STEPS
 STEPS.extend(SNV_STEPS)
 STEPS.extend(ANNOT_STEPS)
 
+
 def _get_name_in_config(step):
     'It returns the name in config or the name'
     return step.get('name_in_config', step['name'])
+
 
 def configure_pipeline(pipeline, configuration):
     '''It chooses the proper pipeline and configures it.'''
@@ -73,8 +80,8 @@ def configure_pipeline(pipeline, configuration):
         pipeline = PIPELINES[pipeline]
 
     # This is done to be able to use the same step more than once. For that we
-    # need to have indexed the configuration in different names but knowing wich
-    # is the pipeline step
+    # need to have indexed the configuration in different names but knowing
+    # witch is the pipeline step
 
     # set the configuration in the pipeline
     for step in pipeline:
@@ -83,17 +90,8 @@ def configure_pipeline(pipeline, configuration):
             for key, value in configuration[name_in_config].items():
                 step['arguments'][key] = value
 
-#    # Here I check that none of the arguments have a none value
-#    for step in pipeline:
-#        for key, value in step['arguments'].items():
-#            # If the step is remove_adaptors, the vectors value can be None
-#            if (value is None and
-#                (key == 'vectors' and step['name'] != 'remove_adaptors') or :
-#
-#                msg = 'Parameter %s in step %s from pipeline %s must be set' % \
-#                            (key, step['name'], pipeline)
-#                raise RuntimeError(msg)
     return pipeline
+
 
 def _get_func_tools(processes):
     'It returns a mapping function from multiprocessing or itertools'
@@ -103,12 +101,13 @@ def _get_func_tools(processes):
         #multiprocessing
         import multiprocessing
         if not isinstance(processes, int):
-            processes = None    #number determined by cpu_count
+            processes = None    # number determined by cpu_count
         pool = multiprocessing.Pool(processes)
         map_ = pool.imap_unordered
         raise RuntimeError('Multiprocessing not supported yet')
     filter_ = ifilter
     return {'map': map_, 'filter': filter_}
+
 
 def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     '''It runs all the analysis for the given pipeline.
@@ -118,8 +117,8 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     A working directory can be given in which the analysis intermediate files
     will be created. If not given a temporary directory will be created that
     will be removed once the analysis is completed.
-    If the checkpoints are requested an intermediate file for every step will be
-    created.
+    If the checkpoints are requested an intermediate file for every step will
+    be created.
     '''
     if configuration is None:
         configuration = {}
@@ -146,8 +145,9 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
             cleaner_function = function_factory()
         else:
             #pylint:disable-msg=W0142
-            cleaner_function = function_factory(**arguments) #IGNORE:W0142
-        cleaner_functions[_get_name_in_config(analysis_step)] = cleaner_function
+            cleaner_function = function_factory(**arguments)  # IGNORE:W0142
+        cleaner_functions[_get_name_in_config(analysis_step)] = \
+                                                               cleaner_function
 
     #are we multiprocessing?
     functs = _get_func_tools(processes)
@@ -171,6 +171,7 @@ def _pipeline_builder(pipeline, items, configuration=None, processes=False):
     logging.info('Done!')
 
     return items
+
 
 def process_sequences_for_script(in_fpath_seq, file_format, pipeline,
                                  configuration, out_fpath, in_fpath_qual=None):
@@ -206,8 +207,9 @@ def process_sequences_for_script(in_fpath_seq, file_format, pipeline,
         writer.write(sequence)
     out_fhand.close()
 
+
 def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
-                                pipeline, configuration, processes):
+                                pipeline, configuration, processes, out_fpath):
     '''It returns a generator with the processed sequences
 
     This function does the job calling an external script that does the
@@ -225,10 +227,6 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
     #everything should be pickle because it will run with an external script
     pipeline = pickle.dumps(pipeline)
     configuration = pickle.dumps(configuration)
-
-    #we need a file that will be removed when the close is called in it
-    fhand, out_fpath = tempfile.mkstemp()
-    os.close(fhand)
 
     #debug = 'function'
     #debug = 'subprocess'
@@ -271,7 +269,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         cmd_def = [{'options': 2, 'io': 'in', 'splitter':splitter},
                    {'options':-2, 'io': 'out'}]
         if in_fhand_qual:
-            cmd_def.append({'options': 3, 'io': 'in', 'splitter':splitter})
+            cmd_def.append({'options': 3, 'io': 'in', 'splitter': splitter})
 
         stdout = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
@@ -294,6 +292,7 @@ def _parallel_process_sequences(in_fhand_seqs, in_fhand_qual, file_format,
         stderr.close()
     return seqs_in_file(DisposableFile(out_fpath), format='pickle')
 
+
 def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
                                           configuration):
     'It returns a generator with the processed sequences'
@@ -302,6 +301,7 @@ def _process_sequences(in_fhand_seqs, in_fhand_qual, file_format, pipeline,
     # the pipeline that will process the generator is build
     processed_seqs = _pipeline_builder(pipeline, sequences, configuration)
     return processed_seqs
+
 
 def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
                         writers=None, processes=False):
@@ -313,8 +313,8 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
     A working directory can be given in which the analysis intermediate files
     will be created. If not given a temporary directory will be created that
     will be removed once the analysis is completed.
-    If the checkpoints are requested an intermediate file for every step will be
-    created.
+    If the checkpoints are requested an intermediate file for every step will
+    be created.
     '''
     if isinstance(pipeline, str):
         pipeline = PIPELINES[pipeline]
@@ -332,12 +332,15 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
     # Here the SeqRecord generator is created
     processes = None if processes == 1 else processes
     if processes:
+        temp_out_fhand = NamedTemporaryFile()
+        temp_out_fpath = temp_out_fhand.name
         sequences = _parallel_process_sequences(in_fhand_seqs,
                                                 in_fhand_qual,
                                                 file_format, pipeline,
                                                 configuration,
-                                                processes)
+                                                processes, temp_out_fpath)
     else:
+        temp_out_fhand = None
         sequences = _process_sequences(in_fhand_seqs, in_fhand_qual,
                                        file_format, pipeline,
                                        configuration)
@@ -346,6 +349,10 @@ def seq_pipeline_runner(pipeline, configuration, in_fhands, file_format=None,
     for sequence in sequences:
         for writer in writers.values():
             writer.write(sequence)
+
+    # close and remove the temporary files
+    if temp_out_fhand is not None:
+        temp_out_fhand.close()
 
     # Some of the writers needs to close in order to finish its work
     feature_counter = {}
