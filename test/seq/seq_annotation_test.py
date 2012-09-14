@@ -65,12 +65,12 @@ class AnnotationTests(unittest.TestCase):
         descrip_annotator = create_description_annotator([blast])
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021854')
         sequence = descrip_annotator(sequence)
-        desc  = 'Similar to ankyrin repeat family protein '
+        desc = 'Similar to ankyrin repeat family protein '
         desc += '(tair9_pep_20090619:AT1G34050.1)'
         assert sequence.description == desc
         sequence = SeqWithQuality(seq=Seq('aaa'), name='CUTC021853')
         sequence = descrip_annotator(sequence)
-        desc  = 'Similar to DNA-binding protein-related '
+        desc = 'Similar to DNA-binding protein-related '
         desc += '(tair9_pep_20090619:AT1G23750.1)'
         assert sequence.description == desc
 
@@ -78,7 +78,7 @@ class AnnotationTests(unittest.TestCase):
     def test_snv_prot_change_annotator():
         'It test the snv_prot_changepolia annotator'
         # first annotate orf
-        seq  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
+        seq = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCCTGCTCA'
         seq += 'AGCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTTTTATGTA'
         seq += 'CTGTTTTNACTCGCANGACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAG'
         seq += 'GGCNTGAAGGTGTGCCCACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGA'
@@ -86,7 +86,7 @@ class AnnotationTests(unittest.TestCase):
         seq += 'GCATTGAATTCGACATTCACAGTGGATTCGTTTACCGTGAGACCCACAGGTCACCAGGATAC'
         seq += 'TTCGATGGACGCTACTGGACCATGTGGAAGCTGCCCATGTTTGGCTGCACCGAT'
 
-        orf  = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
+        orf = 'ATGGCTTCATCCATTCTCTCATCCGCCGNTGTGGCCTTTGNCAACAGGGCTTCCCTGCTCAA'
         orf += 'GCTAGCATGGGGGCACCATTCACTGGCCTAAAATCCGCCGCTGCTTTCCCNGTNACTCGCAN'
         orf += 'GACCAACGACATCACCACTTTGGTTAGCAATGGGGGAAGAGTTCAGGGCNTGAAGGTGTGCC'
         orf += 'CACCACTTGGATTGAAGAAGTTCGAGACTCTTTCTTACCTTCCTGATATGAGTAACGAGCAA'
@@ -99,19 +99,19 @@ class AnnotationTests(unittest.TestCase):
                              qualifiers=qualifiers)
         alleles = {('A', SNP): None, ('G', INVARIANT):None}
         snv = SeqFeature(location=FeatureLocation(24, 24), type='snv',
-                          qualifiers = {'alleles':alleles})
+                          qualifiers={'alleles':alleles})
         alleles = {('A', SNP): None, ('T', INVARIANT):None}
         snv2 = SeqFeature(location=FeatureLocation(56, 56), type='snv',
-                          qualifiers = {'alleles':alleles})
+                          qualifiers={'alleles':alleles})
         alleles = {('T', SNP): None, ('A', INVARIANT):None}
         snv3 = SeqFeature(location=FeatureLocation(399, 399), type='snv',
-                          qualifiers = {'alleles':alleles})
+                          qualifiers={'alleles':alleles})
         alleles = {('T', INVARIANT):None, ('AG', INSERTION):None}
         snv4 = SeqFeature(location=FeatureLocation(250, 250), type='snv',
-                          qualifiers = {'alleles':alleles})
+                          qualifiers={'alleles':alleles})
         alleles = {('G', INVARIANT):None, ('--', DELETION):None}
         snv5 = SeqFeature(location=FeatureLocation(251, 251), type='snv',
-                          qualifiers = {'alleles':alleles})
+                          qualifiers={'alleles':alleles})
 
 
 
@@ -209,10 +209,10 @@ class AnnotationTests(unittest.TestCase):
         seq = SeqWithQuality(name='seq1', seq=Seq('aaaa'))
 
         go_annotator(seq)
-        assert 'GO:0009853' in seq.annotations['GOs']
+        assert 'GO:0016491' in seq.annotations['GOs']
 
         os.remove(annot_fpath)
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'AnnotationTests.test_intron_annotator']
+#    import sys;sys.argv = ['', 'AnnotationTests.test_go_annotator']
     unittest.main()

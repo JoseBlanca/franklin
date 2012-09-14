@@ -60,7 +60,7 @@ from franklin.seq.writers import (SequenceWriter, SsrWriter,
 from franklin.gff import SeqGffWriter
 from franklin.seq.readers import seqs_in_file
 from franklin.seq.seq_stats import do_annotation_statistics
-from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter,\
+from franklin.snv.writers import VariantCallFormatWriter, SnvIlluminaWriter, \
     compress_and_index_vcf
 
 from franklin.utils.misc_utils import (VersionedPath, xml_itemize,
@@ -183,7 +183,7 @@ class AnnotateOrthologsAnalyzer(AnnotationAnalyzer):
 
                 blast = {'fpath':blast,
                          'subj_def_as_acc': subj_def_as_acc}
-                blast_program  = guess_blast_program(db_kind, seq_type,
+                blast_program = guess_blast_program(db_kind, seq_type,
                                                     prefer_tblastx=True)
                 reverse_blast = backbone_blast_runner(
                                               query_fpath=blastdb_seq_fpath,
@@ -288,7 +288,7 @@ class SnvCallerAnalyzer(AnnotationAnalyzer):
                 configuration['snv_bam_annotator'][config_param] = param_value
 
             if 'default_bam_platform' in snv_settings:
-                configuration['snv_bam_annotator']['default_bam_platform'] =  \
+                configuration['snv_bam_annotator']['default_bam_platform'] = \
                                              snv_settings['default_bam_platform']
 
         return self._run_annotation(pipeline=pipeline,
@@ -322,7 +322,7 @@ class WriteAnnotationAnalyzer(Analyzer):
                         'orf':('orf_seq.fasta', 'orf_pep.fasta'),
                         'ssr':('ssr',),
                         'gff':('gff3',),
-                        'orthologs':('orthologs',),}
+                        'orthologs':('orthologs',), }
 
         for seq_path in pickle_paths:
             outputs = {}
@@ -376,7 +376,7 @@ class WriteAnnotationAnalyzer(Analyzer):
             feature_counter = seq_pipeline_runner(pipeline=None,
                                                   configuration=None,
                                                   in_fhands=in_fhands,
-                                                  writers = writers)
+                                                  writers=writers)
 
             # We need to close fhands and remove void files.
             # sequence writer could have a qual fhand
@@ -446,8 +446,8 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
             if 'group_kind' not in conf_step or 'groups' not in conf_step:
                 continue
             group_kind = conf_step['group_kind']
-            groups     = set(conf_step['groups'])
-            diffs      = groups.difference(sam_groups[group_kind])
+            groups = set(conf_step['groups'])
+            diffs = groups.difference(sam_groups[group_kind])
             for diff in diffs:
                 bads.add(diff)
         if bads:
@@ -475,7 +475,7 @@ class SnvFilterAnalyzer(AnnotationAnalyzer):
                 else:
                     filter_config[argument] = value
                 if name == 'by_kind' and argument == 'kind':
-                    filter_config[argument] =  self._snv_kind_to_franklin(value)
+                    filter_config[argument] = self._snv_kind_to_franklin(value)
             filter_config['name'] = name
 
             #the uniq_continguous filter can have the genomic db not defined
@@ -643,16 +643,16 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
     def run(self):
         'It runs the analysis.'
         inputs, output_dirs = self._get_inputs_and_prepare_outputs()
-        db_dir       = output_dirs['db_dir']
-        result_dir     = output_dirs['result']
+        db_dir = output_dirs['db_dir']
+        result_dir = output_dirs['result']
         blast_settings = self._project_settings['blast']
 
         go_settings = self._project_settings['Annotation']['go_annotation']
 
         go_database = go_settings['blast_database']
-        create_dat  = go_settings['create_dat_file']
+        create_dat = go_settings['create_dat_file']
         java_memory = go_settings['java_memory']
-        prop_fpath  = go_settings['b2g_properties_file']
+        prop_fpath = go_settings['b2g_properties_file']
         if not prop_fpath:
             msg = 'Blast2go properties file path not given in backbone.conf'
             raise ValueError(msg)
@@ -674,7 +674,7 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
                 else:
                     dat_fpath = None
 
-                java_conf = {'java_memory':java_memory}
+                java_conf = {'java_memory': java_memory}
                 b2gpipe_runner(blast, annot_fpath=annot_fpath,
                                b2gpipe_bin=blast2go_path, prop_fpath=prop_fpath,
                                dat_fpath=dat_fpath, java_conf=java_conf,
@@ -708,10 +708,10 @@ class AnnotateGoAnalyzer(AnnotationAnalyzer):
         seq_type = scrape_info_from_fname(input_fpath)['st']
         blast_program = guess_blast_program(seq_type, db_kind,
                                             prefer_tblastx=True)
-        blastdb     = goblast_settings['path']
+        blastdb = goblast_settings['path']
 
         project_dir = self._project_settings['General_settings']['project_path']
-        blast       = backbone_blast_runner(query_fpath=input_fpath,
+        blast = backbone_blast_runner(query_fpath=input_fpath,
                                             project_dir=project_dir,
                                             blast_program=blast_program,
                                             blast_db=blastdb,

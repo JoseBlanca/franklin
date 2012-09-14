@@ -19,7 +19,9 @@ Created on 16/03/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os, shutil
+import unittest
+import os
+import shutil
 
 from os.path import join, exists
 
@@ -34,6 +36,7 @@ from franklin.utils.cmd_utils import guess_jar_dir
 
 THREADS = False
 
+
 class AnnotationTest(unittest.TestCase):
     'It test the ortholog analysis'
 
@@ -43,17 +46,16 @@ class AnnotationTest(unittest.TestCase):
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
 
-        config = {'blast':{'arabidopsis': {'path':'/path/to/tair',
-                                           'species':'arabidopsis',
-                                           'kind':'nucl'},
-                          'arabidopsis2':{'path':'/path/to/tair2',
-                                           'species':'arabidopsis2',
+        config = {'blast': {'arabidopsis': {'path': '/path/to/tair',
+                                           'species': 'arabidopsis',
+                                           'kind': 'nucl'},
+                          'arabidopsis2': {'path': '/path/to/tair2',
+                                           'species': 'arabidopsis2',
                                            'kind': 'nucl'}},
 
-                  'Annotation':{'ortholog_annotation':{'ortholog_databases':
+                  'Annotation': {'ortholog_annotation': {'ortholog_databases':
                                             ['arabidopsis', 'arabidopsis2']}},
-                'General_settings':{'threads':THREADS}}
-
+                'General_settings': {'threads': THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -89,12 +91,14 @@ class AnnotationTest(unittest.TestCase):
         seq1 = SeqWithQuality(Seq('A'), id='melon1')
         seq2 = SeqWithQuality(Seq('A'), id='melon2')
         write_seqs_in_file([seq1, seq2],
-                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'), 'a'))
+                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'),
+                                 'a'))
 
         do_analysis(project_settings=settings_path, kind='annotate_orthologs',
                     silent=True)
-        pickle_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
-                          'melon.st_nucl.pl_454.0.pickle')
+        pickle_fpath = join(project_dir,
+                            BACKBONE_DIRECTORIES['annotation_dbs'],
+                            'melon.st_nucl.pl_454.0.pickle')
         pickle = open(pickle_fpath).read()
         assert 'arabidopsis-orthologs' in pickle
         assert 'arabidopsis2-orthologs' in pickle
@@ -107,7 +111,8 @@ class AnnotationTest(unittest.TestCase):
         assert os.path.exists(orf_fpath)
         assert "tair1" in open(orf_fpath).read()
 
-        orf_fpath = join(project_dir, 'annotations', 'features', 'melon.st_nucl.pl_454.orf')
+        orf_fpath = join(project_dir, 'annotations', 'features',
+                         'melon.st_nucl.pl_454.orf')
         assert not os.path.exists(orf_fpath)
 
         do_analysis(project_settings=settings_path, kind='annotation_stats',
@@ -132,12 +137,12 @@ Number of arabidopsis2 orthologs: 2'''
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
         arab_blastdb = join(TEST_DATA_DIR, 'blast', 'arabidopsis_genes+')
-        config = {'blast':{'arabidopsis': {'path': arab_blastdb,
-                                           'species':'arabidopsis'}},
-                  'Annotation':{'description_annotation':{
+        config = {'blast': {'arabidopsis': {'path': arab_blastdb,
+                                           'species': 'arabidopsis'}},
+                  'Annotation': {'description_annotation': {
                                                     'description_databases':
-                                                              ['arabidopsis']}},
-                'General_settings':{'threads':THREADS}
+                                                             ['arabidopsis']}},
+                'General_settings': {'threads': THREADS}
                  }
 
         settings_path = create_project(directory=test_dir.name,
@@ -157,7 +162,8 @@ Number of arabidopsis2 orthologs: 2'''
         seq2 = SeqWithQuality(Seq('Atagtagcatcagatgagcatcgacttctagctagctagct'),
                                id='CUTC021853')
         write_seqs_in_file([seq1, seq2],
-                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'), 'a'))
+                           open(join(input_dir, 'melon.st_nucl.pl_454.fasta'),
+                                'a'))
 
         do_analysis(project_settings=settings_path,
                     kind='annotate_descriptions', silent=True)
@@ -189,9 +195,9 @@ Sequences with description: 1'''
         blast_db_path = os.path.join(TEST_DATA_DIR, 'blast')
         genomic_db = os.path.join(blast_db_path, 'tomato_genome2+')
         config = {'Annotation':
-                        {'Cdna_intron_annotation':{'genomic_db': genomic_db,
-                                                'genomic_seq_file':genomic_db}},
-                'General_settings':{'threads':THREADS}}
+                        {'Cdna_intron_annotation': {'genomic_db': genomic_db,
+                                              'genomic_seq_file': genomic_db}},
+                'General_settings': {'threads': THREADS}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                       configuration=config)
@@ -354,7 +360,7 @@ Number of ORFs: 1'''
         if not b2gpipe_bin:
             print "Do not run b2gppe tests, blast2go jar file not found "
             return
-        config = {'blast':{'nr': {'path': nr_path,
+        config = {'blast': {'nr': {'path': nr_path,
                                            'species':'nr'}},
                   'Annotation':{'go_annotation':{'blast_database':'nr',
                                                  'create_dat_file':True,
@@ -382,7 +388,7 @@ Number of ORFs: 1'''
         fhand = open(os.path.join(annot_input_dir, 'seqs.st_nucl.pl_454.fasta'), 'w')
         fhand.write(fasta)
         fhand.close()
-        bdir = join(project_dir, 'annotations', 'blast', 'seqs.st_nucl',
+        bdir = join(project_dir, 'annotations', 'blast', 'seqs.st_nucl.pl_454',
                     'arabidopsis_genes+')
         os.makedirs(bdir)
         shutil.copy(join(TEST_DATA_DIR, 'blastResult.xml'),
@@ -393,7 +399,7 @@ Number of ORFs: 1'''
         repr_fpath = join(project_dir, BACKBONE_DIRECTORIES['annotation_dbs'],
                           'seqs.st_nucl.pl_454.0.pickle')
         result = open(repr_fpath).read()
-        assert 'GO:0019253' in result
+        assert 'GO:0043094' in result
         assert os.path.exists(os.path.join(project_dir, 'annotations',
                                            'features', 'seqs.st_nucl.pl_454.b2g.dat'))
         assert os.path.exists(os.path.join(project_dir, 'annotations',
@@ -408,7 +414,7 @@ Number of ORFs: 1'''
                            'seqs.st_nucl.pl_454.txt')
         result = open(stats_fpath).read()
         expected = '''Sequences with GOs: 1
-Number of GOs: 12'''
+Number of GOs: 10'''
         assert expected in result
 
     @staticmethod
@@ -596,5 +602,5 @@ Number of GOs: 12'''
         test_dir.close()
 
 if    __name__ == "__main__":
-    #import sys;sys.argv = ['', 'AnnotationTest.test_description_annotation_analysis']
+    import sys;sys.argv = ['', 'AnnotationTest.test_go_annotation_analysis']
     unittest.main()
