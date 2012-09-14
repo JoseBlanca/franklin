@@ -1,9 +1,3 @@
-'''
-Created on 14/06/2010
-
-@author: jose
-'''
-
 # Copyright 2009 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of project.
 # franklin is free software: you can redistribute it and/or modify
@@ -22,6 +16,7 @@ from __future__ import division
 from franklin.seq.seqs import UNKNOWN_DESCRIPTION
 from franklin.snv.snv_annotation import calculate_snv_kind, SNV_TYPES
 from franklin.statistics import draw_stacked_columns
+
 
 def _location_to_orf(orfs, feat):
     'It returns the location of the feature respect the orf'
@@ -54,10 +49,12 @@ MICROSATELLITE_TYPES = ['dinucleotide',
                         'pentanucleotide',
                         'hexanucleotide']
 
+
 def _do_ssr_stats(stats, feats, orfs):
     'It adds the ssr stats'
 
-    types = dict([(index+2, type_) for index, type_ in enumerate(MICROSATELLITE_TYPES)])
+    types = dict([(index + 2, type_) for index, type_ in enumerate(
+                                                        MICROSATELLITE_TYPES)])
 
     some_feat = False
     for feat in feats:
@@ -83,6 +80,7 @@ def _do_ssr_stats(stats, feats, orfs):
 
     if some_feat:
         stats['microsatellites']['n_seqs'] += 1
+
 
 def _do_snv_stats(stats, feats, orfs):
     'It adds the ssr stats'
@@ -110,6 +108,7 @@ def do_annotation_statistics(seqs, out_fhand):
     stats = _calculate_annot_stats(seqs)
     _write_annot_stats(stats, out_fhand)
 
+
 def _write_snp_annot_stats(stats, out_fhand):
     'It writes the snp annot stats to a file'
     stats = stats['snvs']
@@ -131,6 +130,7 @@ def _write_snp_annot_stats(stats, out_fhand):
         if type_ in stats['locations']:
             out_fhand.write('\t%s: %i\n' % (type_, stats['locations'][type_]))
 
+
 def _write_ssr_annot_stats(stats, out_fhand):
     'It writes the ssr annot stats to a file'
     stats = stats['microsatellites']
@@ -151,8 +151,7 @@ def _write_ssr_annot_stats(stats, out_fhand):
                                                       MICROSATELLITE_TYPES[4],
                                                       'Total')
     out_fhand.write(header + '\n')
-    out_fhand.write('-' * len(header) + '\n' )
-
+    out_fhand.write('-' * len(header) + '\n')
 
     for loc in ('utr3', 'utr5', 'orf', 'unknown'):
         out_fhand.write('%8s|' % loc)
@@ -169,7 +168,7 @@ def _write_ssr_annot_stats(stats, out_fhand):
             loc_sum += value
         out_fhand.write('%8s|\n' % loc_sum)
 
-    out_fhand.write('-' * len(header) + '\n' )
+    out_fhand.write('-' * len(header) + '\n')
     out_fhand.write('%8s|' % 'total')
 
     for type_ in MICROSATELLITE_TYPES:
@@ -179,8 +178,6 @@ def _write_ssr_annot_stats(stats, out_fhand):
             value = 0
         out_fhand.write('%15s|' % value)
     out_fhand.write('%8s|\n' % ' ')
-
-
 
 
 def _write_annot_stats(stats, out_fhand):
@@ -221,23 +218,24 @@ def _write_annot_stats(stats, out_fhand):
 
     out_fhand.write('\n')
 
+
 def _calculate_annot_stats(seqs):
     'Given some seqs it calculates the annotation statistics'
 
     annot_stats = {'total_seqs': 0,
                    'seqs_with_desc':0,
                    'orf': {'n_seqs':0,
-                           'n_feats':0,},
+                           'n_feats':0, },
                    'intron': {'n_seqs':0,
-                              'n_feats':0,},
+                              'n_feats':0, },
                    'microsatellites': {'n_seqs':0,
                                        'units':{},
                                        'types':{},
-                                       'locations':{},},
+                                       'locations':{}, },
                    'snvs': {'n_snvs':0,
                             'n_seqs':0,
                             'types':{},
-                            'locations':{},},
+                            'locations':{}, },
                    'orthologs':{},
                    'GOs':{'n_seqs':0, 'n_annots':0},
                    }
@@ -281,6 +279,7 @@ def _calculate_annot_stats(seqs):
         annot_stats['total_seqs'] += 1
     return annot_stats
 
+
 def _nucleotide_freq_per_position(sequences, positions_to_study=30):
     'It calculates the probability of each nucleotide in each'
     pos_count = []
@@ -309,10 +308,11 @@ def _nucleotide_freq_per_position(sequences, positions_to_study=30):
             if total_nucl == 0:
                 freq = 0
             else:
-                freq = count/total_nucl
+                freq = count / total_nucl
 
             freq_stats[nucl].append(freq)
     return freq_stats
+
 
 def create_nucleotide_freq_histogram(sequences, fhand=None, title=None,
                                      positions_to_study=30):

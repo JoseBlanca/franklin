@@ -19,7 +19,9 @@ Created on 26/01/2010
 # You should have received a copy of the GNU Affero General Public License
 # along with franklin. If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, os.path, shutil
+import unittest
+import os.path
+import shutil
 from os.path import join, exists
 from tempfile import NamedTemporaryFile
 
@@ -182,8 +184,7 @@ class TestBackbone(unittest.TestCase):
         'We can clean the reads'
         test_dir = NamedTemporaryDir()
         project_name = 'backbone'
-        univec = os.path.join(TEST_DATA_DIR, 'blast', 'univec')
-        configuration = {'Cleaning':{'vector_database':None}}
+        configuration = {'Cleaning': {'vector_database': None}}
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
                                        configuration=configuration)
@@ -198,7 +199,7 @@ class TestBackbone(unittest.TestCase):
         os.makedirs(join(project_dir, 'config_data', 'lucy'))
         lucy_settings = join(project_dir, 'config_data', 'lucy', 'lucy.conf')
         luc_c = open(lucy_settings, 'w')
-        luc_c.write(repr({'ps':{'vector_file':'tmp' , 'splice_file':'tmp'}}))
+        luc_c.write(repr({'ps': {'vector_file': 'tmp', 'splice_file': 'tmp'}}))
         luc_c.flush()
 
         #print original_reads_dir
@@ -235,12 +236,12 @@ class TestBackbone(unittest.TestCase):
         adaptors_path_454 = join(adaptors_dir, '454_adaptors')
         words = ['^ATGAAC', 'TTGATTTGGT']
         univec = os.path.join(TEST_DATA_DIR, 'blast', 'univec+')
-        configuration = {'Cleaning':{'vector_database':univec,
-                                     'adaptors_file_454':adaptors_path_454,
-                                     'short_adaptors_454':words,
-                                     'edge_removal':{'454_left':3,
-                                                     '454_right':3}},
-                         'General_settings':{'threads':THREADS}}
+        configuration = {'Cleaning': {'vector_database': univec,
+                                     'adaptors_file_454': adaptors_path_454,
+                                     'short_adaptors_454': words,
+                                     'edge_removal': {'454_left': 3,
+                                                      '454_right': 3}},
+                         'General_settings': {'threads': THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -287,7 +288,6 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
         clean_seqs = open(cleaned_solid).read()
         assert '10_1824_570_F3' not in clean_seqs
 
-
         do_analysis(project_settings=settings_path,
                     kind='prepare_mira_assembly', silent=True)
         assembly_input = join(project_dir, 'assembly', 'input')
@@ -300,7 +300,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
         do_analysis(project_settings=settings_path, kind='mira_assembly',
                     silent=True)
         assembly_dir = join(project_dir, 'assembly')
-        singular_assembly_dir = sorted(os.listdir(assembly_dir))[0]
+        sorted(os.listdir(assembly_dir))
         test_dir.close()
 
     @staticmethod
@@ -336,12 +336,10 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
 
         clean_stats_dir = join(cleaned_reads_dir, 'stats')
         clean_fnames = os.listdir(clean_stats_dir)
-        expected_fnames = ['pl_454.lb_a.qual.diff',
-                           'pl_illumina.lb_no_raw.qual',
+        expected_fnames = ['pl_illumina.lb_no_raw.qual',
                            'pl_454.lb_a.qual',
                            'pl_illumina.lb_no_raw.length',
-                           'pl_454.lb_a.length',
-                           'pl_454.lb_a.length.diff']
+                           'pl_454.lb_a.length']
         for fname in expected_fnames:
             assert fname + '.dat' in clean_fnames
             assert fname + '.svg' in clean_fnames
@@ -349,20 +347,7 @@ GGTTCAAGGTTTGAGAAAGGATGGGAAG\n''')
         statistics_fpath = join(clean_stats_dir,
                                 BACKBONE_BASENAMES['statistics_file'])
         content = open(statistics_fpath).read()
-        assert content == '''statistics for pl_illumina.lb_no_raw.sfastq
--------------------------------------------
-Num sequences: 6
-Total sequence length: 172
-Sequence length minimum: 24
-Sequence length maximum: 31
-Sequence length average: 28.67
-Sequence length variance: 10.89
-Sequence qualities minimum: 4
-Sequence qualities maximum: 34
-Sequence qualities average: 29.63
-Sequence qualities variance: 47.80
-
-statistics for pl_454.lb_a.sfastq
+        assert content == '''statistics for pl_454.lb_a.sfastq
 ---------------------------------
 Num sequences: 4
 Total sequence length: 759
@@ -374,6 +359,19 @@ Sequence qualities minimum: 20
 Sequence qualities maximum: 40
 Sequence qualities average: 36.99
 Sequence qualities variance: 8.19
+
+statistics for pl_illumina.lb_no_raw.sfastq
+-------------------------------------------
+Num sequences: 6
+Total sequence length: 172
+Sequence length minimum: 24
+Sequence length maximum: 31
+Sequence length average: 28.67
+Sequence length variance: 10.89
+Sequence qualities minimum: 4
+Sequence qualities maximum: 34
+Sequence qualities average: 29.63
+Sequence qualities variance: 47.80
 
 '''
 
@@ -415,7 +413,6 @@ Sequence qualities variance: 8.19
         do_analysis(project_settings=settings_path, kind='read_stats',
                     silent=True)
 
-
     @staticmethod
     def test_remove_output_on_error():
         'We remove files when we have an error on cleaning'
@@ -423,9 +420,8 @@ Sequence qualities variance: 8.19
         project_name = 'backbone'
         project_dir = join(test_dir.name, project_name)
 
-        configuration = {'Cleaning':{'adaptors_file_454':'AKHSGDASD'},
-                         'General_settings':{'threads':THREADS}}
-
+        configuration = {'Cleaning': {'adaptors_file_454': 'AKHSGDASD'},
+                         'General_settings': {'threads': THREADS}}
 
         settings_path = create_project(directory=test_dir.name,
                                        name=project_name,
@@ -438,8 +434,6 @@ Sequence qualities variance: 8.19
         os.mkdir(original_reads_dir)
 
         #fake solid reads
-        fpath_solid = join(original_reads_dir, 'pl_454.lbx_b.sfastq')
-
         try:
             do_analysis(project_settings=settings_path, kind='clean_reads',
                         silent=True)
@@ -447,6 +441,7 @@ Sequence qualities variance: 8.19
             pass
         output__fpath = join(reads_dir, 'cleaned', 'pl_454.lb_b.sfastq')
         assert not exists(output__fpath)
+
 
 class ConfigurationTest(unittest.TestCase):
     'Tests for configirations'
@@ -467,6 +462,7 @@ class ConfigurationTest(unittest.TestCase):
         config_fpath = fhand.name
         config = create_configuration(config_fpath)
         assert config['Snvs']['min_quality'] == 45
+
 
 class UtilTest(unittest.TestCase):
     'test utils from backbone'
