@@ -295,7 +295,7 @@ def _prepare_pipeline(pipeline_type, parameters):
     try:
         _prepare_adaptors_file(parameters)
     except KeyError:
-        msg  = 'clean_reads does not have default adaptors file for the given'
+        msg = 'clean_reads does not have default adaptors file for the given'
         msg += "platform and your haven't provided a file with adaptors"
         raise AdaptorError(msg)
 
@@ -333,7 +333,7 @@ def _prepare_pipeline(pipeline_type, parameters):
 
 def _prepare_pipeline_for_solid(parameters):
     'it prepares the solid pipeline'
-    pipeline      = []
+    pipeline = []
     configuration = {}
 
     use_double_encoding = parameters.get('double_encoding', None)
@@ -393,7 +393,7 @@ def _add_adaptor_and_vectors_step(parameters, pipeline, configuration):
             msg = 'The edge trim parameter should be a list of 2 integers'
             msg += ', but it was: ' + str(edge_trim)
             raise ValidationError(msg)
-        left  = None if edge_trim[0] == 0 else edge_trim[1]
+        left = None if edge_trim[0] == 0 else edge_trim[0]
         rigth = None if edge_trim[0] == 0 else edge_trim[1]
         pipeline.append(edge_remover)
         configuration['edge_removal'] = {'left_length':left,
@@ -446,7 +446,7 @@ def _add_blast_filtering_step(parameters, pipeline, configuration):
 
 def _prepare_pipeline_for_illumina(parameters):
     'it prepares the illumina pipeline'
-    pipeline      = []
+    pipeline = []
     configuration = {}
 
     #upcase
@@ -469,7 +469,7 @@ def _prepare_pipeline_for_illumina(parameters):
 
 def _prepare_pipeline_for_long(parameters, pipeline_type):
     'it prepares the sanger pipeline'
-    pipeline      = []
+    pipeline = []
     configuration = {}
 
     #upcase
@@ -797,7 +797,7 @@ def _guess_pipeline_type(parameters, format_in):
     if 'qual_in' in parameters:
         platform = LONG_WITH_QUALITY
     elif format_in == 'fasta':
-        platform =  LONG_WITHOUT_QUALITY
+        platform = LONG_WITHOUT_QUALITY
     elif 'fastq' in format_in:
         platform = LONG_WITH_QUALITY
     elif platform == _454:

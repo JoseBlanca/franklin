@@ -71,7 +71,7 @@ class SeqCleanerTest(unittest.TestCase):
     def test_strip_seq_by_quality():
         'test trim_seq_by_quality '
 
-        seq  = 'ataataataata'
+        seq = 'ataataataata'
         qual = [0] * len(seq)
         desc = 'hola'
         seq1 = SeqWithQuality(qual=qual, seq=Seq(seq), description=desc)
@@ -84,7 +84,7 @@ class SeqCleanerTest(unittest.TestCase):
         assert new_seq is None
 
         qual = [20, 20, 20, 60, 60, 60, 60, 60, 20, 20, 20, 20]
-        seq  = 'ataataataata'
+        seq = 'ataataataata'
         desc = 'hola'
         seq1 = SeqWithQuality(qual=qual, seq=Seq(seq), description=desc)
         strip_seq_by_quality = create_striper_by_quality(quality_treshold=40,
@@ -97,13 +97,13 @@ class SeqCleanerTest(unittest.TestCase):
         assert new_seq.description == desc
 
         qual = [60, 60, 60, 60, 60, 60, 60]
-        seq  = 'ataataa'
+        seq = 'ataataa'
         new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         new_seq = seq_trimmer(new_seq)
         assert  new_seq.seq == 'ataataa'
 
         qual = [60, 60, 60, 60, 60, 60, 0]
-        seq  = 'ataataa'
+        seq = 'ataataa'
         new_seq = strip_seq_by_quality(SeqWithQuality(qual=qual, seq=Seq(seq)))
         new_seq = seq_trimmer(new_seq)
         assert new_seq.seq == 'ataata'
@@ -124,7 +124,7 @@ class SeqCleanerTest(unittest.TestCase):
 
         qual = [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40, 4, 11, 40, 40, 10, 10,
                 21, 3, 40, 9, 9, 12, 10, 9]
-        seq  = 'atatatatatatatatatatatata'
+        seq = 'atatatatatatatatatatatata'
         strip_seq_by_quality = create_striper_by_quality(quality_treshold=20,
                                                          min_seq_length=2,
                                                          min_quality_bases=3,
@@ -136,7 +136,7 @@ class SeqCleanerTest(unittest.TestCase):
         #remove only from 3'
         qual = [1, 1, 1, 1, 1, 1, 1, 4, 27, 38, 40, 4, 11, 40, 40, 40, 40, 40,
                 40, 40, 10, 10, 21, 3, 40, 9, 9, 12, 10, 9]
-        seq  = 'atatatatatatatataaaaaatatatata'
+        seq = 'atatatatatatatataaaaaatatatata'
         strip_seq_by_quality = create_striper_by_quality(quality_treshold=20,
                                                          min_seq_length=2,
                                                          min_quality_bases=3,
@@ -177,14 +177,14 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert len(masked_seq.qual) == 61
         assert masked_seq.description == desc
 
-        seq  = 'GGGGGTTTCTTAAATTCGCCTGGAGATTTCATTCGGGGGGGGGGTTCTCCCCAGGGGGGGGTG'
+        seq = 'GGGGGTTTCTTAAATTCGCCTGGAGATTTCATTCGGGGGGGGGGTTCTCCCCAGGGGGGGGTG'
         seq += 'GGGAAACCCCCCGTTTCCCCCCCCGCGCGCCTTTTCGGGGAAAATTTTTTTTTGTTCCCCCCG'
         seq += 'GAAAAAAAAATATTTCTCCTGCGGGGCCCCCGCGAAGAAAAAAGAAAAAAAAAAAGAGGAGGA'
         seq += 'GGGGGGGGGGGGCGAAAATATAGTTTGG'
         seq1 = SeqWithQuality(seq=Seq(seq))
         masked_seq = mask_low_complexity(seq1)
         masked_seq = sequence_trimmer(masked_seq)
-        expected =  'GGGGGTTTCTTAAATTCGCCTGGAGATTTCATtcggggggggggttctccccaggggg'
+        expected = 'GGGGGTTTCTTAAATTCGCCTGGAGATTTCATtcggggggggggttctccccaggggg'
         expected += 'gggtggggAAaccccccgtttccccccccgcgcgccttttcggggaaaattttttttt'
         expected += 'gttccccccGGAAAAAAAAATATTTCTCCTGCGGGGCCCCCGCGaagaaaaaagaaaa'
         expected += 'aaaaaaaGAGGAGGAGGGgggggggggCGAAAATATAGTTTGG'
@@ -208,7 +208,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
 
     def test_trim_seq_by_qual_trimpoly(self):
         'It test trimpoly  but with trim low quality parameters'
-        seq  = 'ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATG'
+        seq = 'ATCGATCTGATCTAGTCGATGTCTAGCTGAGCTACATAGCTAACGATCTAGTCTAGTCTATG'
         seq += 'TCATGTCATGTCGATGTCTAGTCTAGTCTAGTGAGTCACTGACTAGATCATGACATCGANNN'
         seq += 'NNNNNNNNNNNNNNNNNNTACTAGTC'
         seq = Seq(seq)
@@ -224,7 +224,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert trimmed_seq.seq.endswith('ATGACATCGA')
 
         #another seq with the problem at the begining
-        seq  = 'TNNNNNNAGGGCTTTCCTGACAGCTANNNNNTTTGCGGGCAACATCCAGAACAAGCACCG'
+        seq = 'TNNNNNNAGGGCTTTCCTGACAGCTANNNNNTTTGCGGGCAACATCCAGAACAAGCACCG'
         seq += 'GCAGATTGGCAATGCCGTGCCCCCGCCTCTTGCCTATGCACTTGGGAGGAAGCTGAAGGA'
         seq += 'AGCCGTTGACAAGCGTCAGGAAGCCAGCGCAGGCGTGCCTGCACCATGAGAAGTTTTCCT'
         seq = Seq(seq)
@@ -236,7 +236,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert str_seq.startswith('TTTGCGGGCAACA')
         assert str_seq.endswith('GAGAAGTTTTCCT')
 
-        seq  = 'TGACATCGAACCTCGGCGCCGAGCACCTCCTCGCTGGGATGGTGGGCAAGAACTCCATGA'
+        seq = 'TGACATCGAACCTCGGCGCCGAGCACCTCCTCGCTGGGATGGTGGGCAAGAACTCCATGA'
         seq += 'AGGTCGCTCGCGATCTGGTCATGCAGGAGGTGAGGAGGCACTTCCGCCCTGAGCTGCTGA'
         seq += 'ACCGTCTCGACGAGATCGTGATCTTCGATCCTCTGTCCCACGAGCAGCTGAGGAAGGTCG'
         seq += 'CTCGCCTTCAGATGAAGGATGTGGCCGTCCGTCTTGCCGAANNNNNCATCGCTCTGGCTG'
@@ -249,7 +249,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert str_seq.startswith('TGACATCGAA')
         assert str_seq.endswith('TCTTGCCGAA')
 
-        seq  = 'TACGGCCGGGGTNNCNNANNNNGCATTCTCGCAGGGTCTTTCTACACTATTAGATAAGAT'
+        seq = 'TACGGCCGGGGTNNCNNANNNNGCATTCTCGCAGGGTCTTTCTACACTATTAGATAAGAT'
         seq += 'GGATCCTTCTCAGAGAGTGAAGTTTGTTCAGGAAGTCAAGAAGGTTCTTGGATGATGATA'
         seq += 'TGATACCAACACATCCAACACAATATGCGCATGCTACATGTTATTTTTCAAGTACATACA'
         seq += 'TAGAAGGATATTGCTTGGCCTTGATTGATCATGTCTGATCTAAGTCGATCATTATTTTCT'
@@ -267,10 +267,10 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
     @staticmethod
     def test_strip_seq_by_quality_lucy():
         'It tests strip_seq_by_quality_lucy2'
-        seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
+        seq = 'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCA'
-        qual =  '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        qual = '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
         qual += '00 00 00 00 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
         qual += '60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 60 '
@@ -281,9 +281,9 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         qual = qual.split()
         seq = Seq(seq)
         seqrec1 = SeqWithQuality(name='seq1', seq=seq, qual=qual,
-                                  description ='desc1')
+                                  description='desc1')
 
-        qual  = '40 40 40 37 40 40 37 37 37 37 37 37 37 37 40 42 42 42 44 44 '
+        qual = '40 40 40 37 40 40 37 37 37 37 37 37 37 37 40 42 42 42 44 44 '
         qual += '56 56 42 40 40 40 40 36 36 28 35 32 35 35 40 42 37 37 35 37 '
         qual += '32 35 35 35 35 35 35 38 33 33 24 33 33 42 33 35 35 35 35 33 '
         qual += '36 30 30 24 29 29 35 35 35 35 29 29 29 35 38 38 38 37 35 33 '
@@ -294,13 +294,13 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         qual += '16 13 21 19 31 19 27 27 28 26 29 25 25 20 19 23 28 28 19 20 '
         qual += '13 9 9 9 9 9 17 15 21 17 14 12 21 17 19 24 28 24 23 '
         quality = qual.split()
-        seq =  'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
+        seq = 'ATCGATCAGTCAGACTGACAGACTCAGATCAGATCAGCATCAGCATACGATACGCATCAGACT'
         seq += 'ACGATCGATCGATCGACAGATCATCGATCATCGACGACTAGACGATCATCGATACGCAGACTC'
         seq += 'AGCAGACTACGAGATCAGCAGCATCAGCAGCAAGCAGACTACGAGATCAGCAGCATCAGCAGC'
         seq += 'ATTACGATGAT'
         seq = Seq(seq)
         seqrec2 = SeqWithQuality(seq=seq, qual=quality, name='seq2',
-                                 description ='desc2')
+                                 description='desc2')
         seq_iter = iter([seqrec1, seqrec2])
         seq_trimmer = create_seq_trim_and_masker()
         lucy_striper = create_striper_by_quality_lucy()
@@ -351,22 +351,22 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert seq3.description == 'hola'
 
         fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name, seq=vec1.seq+vec2.seq+seq2.seq)
+        seq1 = SeqWithQuality(name=seq2.name, seq=vec1.seq + vec2.seq + seq2.seq)
         seq3 = strip_vector_by_alignment(seq1)
         seq3 = seq_trimmer(seq3)
         assert str(seq2.seq) == str(seq3.seq)
 
         # overlaping vectors
         fhand_vectors.seek(0)
-        new_seq = vec1.seq[:-2]+vec2.seq+seq2.seq+vec2.seq
-        seq1  = SeqWithQuality(name=seq2.name, seq=new_seq)
+        new_seq = vec1.seq[:-2] + vec2.seq + seq2.seq + vec2.seq
+        seq1 = SeqWithQuality(name=seq2.name, seq=new_seq)
         seq3 = strip_vector_by_alignment(seq1)
         seq3 = seq_trimmer(seq3)
         assert str(seq2.seq) == str(seq3.seq)
 
         # Now only vectors
         fhand_vectors.seek(0)
-        new_seq = vec1.seq+vec2.seq+vec2.seq
+        new_seq = vec1.seq + vec2.seq + vec2.seq
         seq1 = SeqWithQuality(name=seq2.name, seq=new_seq)
         seq3 = strip_vector_by_alignment(seq1)
         seq3 = seq_trimmer(seq3)
@@ -380,8 +380,8 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         assert str(seq2.seq) == str(seq3.seq)
 
         fhand_vectors.seek(0)
-        seq1  = SeqWithQuality(name=seq2.name,
-                               seq=vec1.seq[::-1]+vec2.seq+seq2.seq)
+        seq1 = SeqWithQuality(name=seq2.name,
+                               seq=vec1.seq[::-1] + vec2.seq + seq2.seq)
         seq3 = strip_vector_by_alignment(seq1)
         seq3 = seq_trimmer(seq3)
         assert str(seq2.seq) == str(seq3.seq)
@@ -409,10 +409,10 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
     def test_strip_short_adaptors():
         'It tests the short adaptor removal with J. Forment sequences'
 
-        seq  = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATCTCGTTAATCCATTCATGCGCGTCACTAATTAG'
+        seq = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATCTCGTTAATCCATTCATGCGCGTCACTAATTAG'
         seq += 'ATGACGAGGCATTTGGCTACCTTAAGAGAGTCATAGTTACTCCCGCCGTTTA'
-        seq  = Seq(seq)
-        seq  = SeqWithQuality(name='seq', seq=seq)
+        seq = Seq(seq)
+        seq = SeqWithQuality(name='seq', seq=seq)
         seq_trimmer = create_seq_trim_and_masker()
         strip_adap = create_re_word_striper(words=['CGTGTCTCTA', 'TATATATA'])
 
@@ -423,22 +423,22 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         #two words
         #       000000000011111111112222222222333333333344444444
         #       012345678901234567890123456789012345678901234567
-        seq  = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATTTTTTTcCGTGTCTCTAc'
-        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        seq = 'CgCGTGTCTCTAgATAGGGACAGTAGGAATTTTTTTcCGTGTCTCTAc'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq))
         clean_seq = strip_adap(seq)
         clean_seq = seq_trimmer(clean_seq)
         assert str(clean_seq.seq) == 'gATAGGGACAGTAGGAATTTTTTTc'
 
         #We don't want the first region even if it's the longest one
-        seq  = 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCgCGTGTCTCTAgC'
-        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        seq = 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCgCGTGTCTCTAgC'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq))
         clean_seq = strip_adap(seq)
         clean_seq = seq_trimmer(clean_seq)
         assert str(clean_seq.seq) == 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCg'
 
         #Everything works if the adaptors are at the beginning and ends
-        seq  = 'CGTGTCTCTAcccccccccccccccTATATATAggggggggggCGTGTCTCTA'
-        seq  = SeqWithQuality(name='seq', seq=Seq(seq))
+        seq = 'CGTGTCTCTAcccccccccccccccTATATATAggggggggggCGTGTCTCTA'
+        seq = SeqWithQuality(name='seq', seq=Seq(seq))
         clean_seq = strip_adap(seq)
         clean_seq = seq_trimmer(clean_seq)
         assert str(clean_seq.seq) == 'ccccccccccccccc'
@@ -449,7 +449,7 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
         seq1 = word + seq2 + word
         word = '^' + word
         seq1 = Seq(seq1)
-        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        seq = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
         remover = create_re_word_striper([word])
         seq = remover(seq)
@@ -460,11 +460,11 @@ NACGATACGCTATGGGGAATGGCGAAAAAAGGGAAGGGAACTCACAGGA
     def test_strip_vector_align_blast():
         'It tests strip_vector_by_alignment using blast and UniVec'
         vector = os.path.join(TEST_DATA_DIR, 'blast', 'univec+')
-        vec1  = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
+        vec1 = 'CTCGGGCCGTCTCTTGGGCTTGATCGGCCTTCTTGCGCATCTCACGCGCTCCTGCGGCGGCC'
         vec1 += 'TGTAGGGCAGGCTCATACCCCTGCCGAACCGCTTTTGTCAGCCGGTCGGCCACGGCTTCCGG'
         vec1 += 'CGTCTCAACGCGCTTT'
         seq1 = 'ATGCATCAGATGCATGCATGACTACGACTACGATCAGCATCAGCGATCAGCATCGATACGATC'
-        seq  = SeqWithQuality(name='seq', seq=Seq(seq1+vec1))
+        seq = SeqWithQuality(name='seq', seq=Seq(seq1 + vec1))
         seq_trimmer = create_seq_trim_and_masker()
         strip_vector_by_alignment = create_vector_striper(vector, 'blastn')
         striped_seq = strip_vector_by_alignment(seq)
@@ -513,7 +513,7 @@ class SeqSplitterTests(unittest.TestCase):
         'it tests get_matched_region function'
         seq1 = 'AATTaatAATTAATtctcTTCtctctctctctcGCGCGCGCGCCC'
         seq = SeqWithQuality(seq=Seq(seq1), name='seq')
-        locations =  _get_unmasked_locations(seq)
+        locations = _get_unmasked_locations(seq)
 
         seqs = list(_get_matched_locations(seq, locations, 3))
         assert str(seqs[0].seq) == 'AATT'
@@ -547,7 +547,7 @@ class SeqSplitterTests(unittest.TestCase):
         word = 'ATAT'
         seq1 = word + 'tctcatcatca'.upper()
         seq1 = Seq(seq1)
-        seq  = SeqWithQuality(seq1, qual=[30] * len(seq1))
+        seq = SeqWithQuality(seq1, qual=[30] * len(seq1))
 
         remover = create_word_masker([word])
         seq = remover(seq)
@@ -556,14 +556,14 @@ class SeqSplitterTests(unittest.TestCase):
         assert seq.seq[0] == 'a'
 
         seq1 = 'atactctcatcatca'.upper()
-        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
         seq = remover(seq)
         seq = sequence_trimmer(seq)
         assert seq.seq == seq1
 
         word = 'CA'
         seq1 = 'ATCATCATCATCA'
-        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
         remover = create_word_masker([word], False)
         seq = remover(seq)
         seq = sequence_trimmer(seq)
@@ -573,13 +573,28 @@ class SeqSplitterTests(unittest.TestCase):
     def test_edge_stripper():
         'It test if we remove edges of the seq'
         seq1 = 'gggtctcatcatcaggg'
-        seq  = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
 
         edge_stripperr = create_edge_stripper(left_length=3, right_length=3)
         sequence_trimmer = create_seq_trim_and_masker()
         seq = edge_stripperr(seq)
         seq = sequence_trimmer(seq)
         assert seq.seq == 'tctcatcatca'
+
+        seq1 = 'gggtctcatcatcaggg'
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+        edge_stripper = create_edge_stripper(left_length=1, right_length=2)
+        seq = edge_stripper(seq)
+        seq = sequence_trimmer(seq)
+        assert seq.seq == 'ggtctcatcatcag'
+
+        seq1 = 'gggtctcatcatcaggg'
+        seq = SeqWithQuality(Seq(seq1), qual=[30] * len(seq1))
+        edge_stripper = create_edge_stripper(left_length=10, right_length=0)
+        seq = edge_stripper(seq)
+        seq = sequence_trimmer(seq)
+        assert seq.seq == 'atcaggg'
+
 
     @staticmethod
     def test_sequence_stripper():
@@ -591,33 +606,33 @@ class SeqSplitterTests(unittest.TestCase):
         trim_rec = seq.annotations[TRIMMING_RECOMMENDATIONS]
         seq_trimmer = create_seq_trim_and_masker()
 
-        trim_rec['vector']  = [(0,3), (8, 12)]
+        trim_rec['vector'] = [(0, 3), (8, 12)]
         seq2 = seq_trimmer(seq)
         assert str(seq2.seq) == 'CTCA'
 
-        trim_rec['vector']  = [(0, 0), (8, 12)]
+        trim_rec['vector'] = [(0, 0), (8, 12)]
         seq2 = seq_trimmer(seq)
         assert str(seq2.seq) == 'GGTCTCA'
 
 
-        trim_rec['vector']  = [(0, 0), (8, 12)]
+        trim_rec['vector'] = [(0, 0), (8, 12)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = [(0, 3), (5, 6)]
+        trim_rec['mask'] = [(0, 3), (5, 6)]
         seq2 = seq_trimmer(seq)
         assert seq2.seq == 'ggtCtcA'
         assert 'vector' not in trim_rec
         assert 'quality' not in trim_rec
         assert trim_rec['mask'] == [(0, 2), (4, 5)]
 
-        trim_rec['vector']  = [(0, 1), (8, 12)]
+        trim_rec['vector'] = [(0, 1), (8, 12)]
         trim_rec['quality'] = [(1, 8), (13, 17)]
         seq2 = seq_trimmer(seq)
         assert seq2 is None
 
         seq_trimmer = create_seq_trim_and_masker(mask=False)
-        trim_rec['vector']  = [(0, 0), (8, 12)]
+        trim_rec['vector'] = [(0, 0), (8, 12)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = [(0, 3), (5, 6)]
+        trim_rec['mask'] = [(0, 3), (5, 6)]
         seq2 = seq_trimmer(seq)
         assert seq2.seq == 'GGTCTCA'
         assert seq2.annotations == {'trimming_recommendations':
@@ -628,9 +643,9 @@ class SeqSplitterTests(unittest.TestCase):
 
         #masking the regions to trim
         seq_trimmer = create_seq_trim_and_masker(mask=True, trim_as_mask=True)
-        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['vector'] = [(0, 2), (8, 12)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = [(0, 1), (5, 6)]
+        trim_rec['mask'] = [(0, 1), (5, 6)]
         seq2 = seq_trimmer(seq)
         assert seq2.seq == 'gggTCtcAtcatcaggg'
         assert seq2.annotations == {'trimming_recommendations':
@@ -639,26 +654,26 @@ class SeqSplitterTests(unittest.TestCase):
 
         #keep 5segment = False
         seq_trimmer = create_seq_trim_and_masker()
-        trim_rec['vector']  = [(3, 5)]
+        trim_rec['vector'] = [(3, 5)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = []
+        trim_rec['mask'] = []
         seq2 = seq_trimmer(seq)
         assert seq2.seq == 'CATCATCAGGG'
 
         #keep 5segment = True
         seq_trimmer = create_seq_trim_and_masker(keep_5segment=True)
-        trim_rec['vector']  = [(3, 5)]
+        trim_rec['vector'] = [(3, 5)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = []
+        trim_rec['mask'] = []
         seq2 = seq_trimmer(seq)
         assert seq2.seq == 'GGG'
 
         #masking the regions to trim
         seq_trimmer = create_seq_trim_and_masker(mask=True, trim_as_mask=True,
                                                  keep_5segment=True)
-        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['vector'] = [(0, 2), (8, 12)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = [(0, 1), (5, 6)]
+        trim_rec['mask'] = [(0, 1), (5, 6)]
         seq2 = seq_trimmer(seq)
         assert seq2.seq == seq.seq.lower()
         assert seq2.annotations == {'trimming_recommendations':
@@ -666,9 +681,9 @@ class SeqSplitterTests(unittest.TestCase):
 
 
         seq_trimmer = create_seq_trim_and_masker(keep_5segment=True)
-        trim_rec['vector']  = [(0, 2), (8, 12)]
+        trim_rec['vector'] = [(0, 2), (8, 12)]
         trim_rec['quality'] = []
-        trim_rec['mask']    = [(0, 1), (5, 6)]
+        trim_rec['mask'] = [(0, 1), (5, 6)]
         assert None == seq_trimmer(seq)
 
     @staticmethod
@@ -697,13 +712,13 @@ class SegmentsTests(unittest.TestCase):
     @staticmethod
     def test_get_all_segments():
         'Give a list of discontinious segments we get all segments'
-        segments =  _get_all_segments([(0, 10), (15, 20)], 30)
+        segments = _get_all_segments([(0, 10), (15, 20)], 30)
         assert segments == [((0, 10), True), ((11, 14), False),
                             ((15, 20), True), ((21, 29), False)]
-        segments =  _get_all_segments([(15, 20)], 30)
+        segments = _get_all_segments([(15, 20)], 30)
         assert segments == [((0, 14), False),
                             ((15, 20), True), ((21, 29), False)]
-        segments =  _get_all_segments([(15, 29)], 30)
+        segments = _get_all_segments([(15, 29)], 30)
         assert segments == [((0, 14), False), ((15, 29), True)]
 
     @staticmethod
